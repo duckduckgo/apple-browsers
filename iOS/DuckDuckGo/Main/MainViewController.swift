@@ -4700,12 +4700,6 @@ extension MainViewController: BrowserChromeDelegate {
         static let morphCollapseDuration = 0.30
         static let morphExpandDuration = 0.34
 
-        static let morphCollapseCurve = ChromeMorphAnimator.Curve.smoothstep
-
-        static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
-
-        static let minMorphDurationScale: CGFloat = 0.55
-
         /// The top address bar collapses into the pill a little slower than the bottom one, so the
         /// transformation reads as deliberate rather than a snap.
         static let topMorphCollapseDurationMultiplier = 1.25
@@ -4741,9 +4735,6 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
-        // Start any morph scrub from where the chrome visually is (a scrub already in flight, or the
-        // last committed fraction) so an interruption resumes smoothly rather than snapping.
-        let fromPercent = chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
         lastChromeVisibilityPercent = percent
 
         if percent < 1 {
@@ -4760,36 +4751,15 @@ extension MainViewController: BrowserChromeDelegate {
 
         // The floating capsule morph geometry and its chrome-alpha handoff are non-linear in
         // `percent`, so a single `UIView.animate` (which only interpolates the endpoints) skips the
-        // morph and the bars pop/slide in. Replay the exact per-frame state the scroll path applies
-        // by scrubbing `percent` with a display link instead.
+        // morph and the bars pop/slide in. Drive `percent` frame by frame instead.
         let useMorphScrub = animated
             && isFloatingCapsuleActive
             && !UIAccessibility.isReduceMotionEnabled
-            && abs(fromPercent - percent) > 0.001
 
         if useMorphScrub {
-            let isExpanding = percent > fromPercent
-            let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
-            let isTopAddressBar = appSettings.currentAddressBarPosition == .top
-            let collapseDuration = isTopAddressBar
-                ? ChromeAnimationConstants.morphCollapseDuration * ChromeAnimationConstants.topMorphCollapseDurationMultiplier
-                : ChromeAnimationConstants.morphCollapseDuration
-            let baseDuration = isExpanding
-                ? ChromeAnimationConstants.morphExpandDuration
-                : collapseDuration
-            // Debug -> Slow Animations sets `window.layer.speed`, which slows every other CA
-            // animation on screen; this display-link scrub integrates wall-clock time instead, so it
-            // would otherwise run at full speed while everything around it crawls. Scale the target
-            // duration by the same factor so the morph can be inspected frame by frame like the rest.
-            let slowAnimationsScale = 1 / Double(max(view.window?.layer.speed ?? 1, 0.01))
-
-            chromeMorphAnimator.animate(
-                from: fromPercent,
-                to: percent,
-                duration: (animationDuration ?? baseDuration * Double(durationScale)) * slowAnimationsScale,
-                curve: isExpanding
-                    ? ChromeAnimationConstants.morphExpandCurve
-                    : ChromeAnimationConstants.morphCollapseCurve,
+            chromeMorphAnimator.setTarget(
+                percent,
+                fullTraversalDuration: animationDuration.map(Double.init),
                 onProgress: { [weak self] progress in
                     guard let self else { return }
                     self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
@@ -4797,22 +4767,19 @@ extension MainViewController: BrowserChromeDelegate {
                 },
                 onComplete: { [weak self] in
                     guard let self else { return }
-                    self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
+                    let settled = self.lastChromeVisibilityPercent
+                    self.applyBarsVisibilityState(settled, postChromeVisibilityNotification: settled == 0 || settled == 1)
                     self.view.layoutIfNeeded()
                 })
-            // `animate(from:to:duration:...)` owns cancellation for this branch: it carries the
-            // display-link clock over when retargeting an already-running scrub (see
-            // `ChromeMorphAnimator.animate`), which an external `cancel()` here would defeat by
-            // tearing the link down before `animate` ever sees it running.
         } else if animated {
-            chromeMorphAnimator.cancel()
+            chromeMorphAnimator.jump(to: percent)
             self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                 self.view.layoutIfNeeded()
             }
         } else {
-            chromeMorphAnimator.cancel()
+            chromeMorphAnimator.jump(to: percent)
             applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
             if isFloatingUIEnabled, percent > 0, percent < 1 {
@@ -4840,7 +4807,7 @@ extension MainViewController: BrowserChromeDelegate {
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
                 barsVisibilityPercent: percent,
-                handoffEnd: FloatingDomainCapsuleController.handoffEnd
+                collapseStart: FloatingDomainCapsuleController.handoffStart
               )
             : 0
         let panelHeight = viewCoordinator.toolbar.setButtonRowCollapseProgress(
@@ -5033,17 +5000,18 @@ extension MainViewController: BrowserChromeDelegate {
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
-    private var floatingTopCapsuleObscuredHeight: CGFloat {
+    private func floatingTopCapsuleObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         guard appSettings.currentAddressBarPosition == .top,
               isFloatingCapsuleActive,
               let domain = currentFloatingDomainText(),
               !domain.isEmpty else {
             return 0
         }
-        return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
-            for: .top,
+        return floatingDomainCapsuleController.obscuredHeightFromTop(
+            barsVisibilityPercent: barsVisibilityPercent,
             safeAreaInsets: view.safeAreaInsets,
-            expandedFrame: floatingBarExpandedFrame())
+            expandedFrame: floatingBarExpandedFrame(),
+            reduceMotion: UIAccessibility.isReduceMotionEnabled)
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
@@ -5099,7 +5067,7 @@ extension MainViewController: BrowserChromeDelegate {
             barsVisibilityPercent: barsVisibilityPercent,
             expandedChromeHeight: expandedChromeHeight,
             visibleChromeHeight: expandedChromeHeight * floatingTopChromeOnScreenFraction(for: barsVisibilityPercent),
-            topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight,
+            topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight(for: barsVisibilityPercent),
             safeAreaTop: safeAreaTop
         )
     }
@@ -5116,10 +5084,6 @@ extension MainViewController: BrowserChromeDelegate {
     /// fraction.
     var currentBarsVisibility: CGFloat {
         chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
-    }
-
-    var isAnimatingBarsVisibility: Bool {
-        chromeMorphAnimator.isAnimating
     }
 
     func restoreCurrentBarsVisibilityAfterLayoutRefresh() {

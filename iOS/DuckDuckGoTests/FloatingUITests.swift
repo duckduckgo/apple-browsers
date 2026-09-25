@@ -747,21 +747,24 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
         XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.725, from: 0.6, to: 0.85), 0.5, accuracy: 0.001)
     }
 
-    func testWhenInsideTheHandoffBandThenToolbarButtonRowIsAlreadyFullyCollapsed() {
-        for percent in [CGFloat(0.85), 0.75, 0.6, 0.0] {
+    func testWhenAtOrBelowCollapseStartThenToolbarButtonRowIsFullyCollapsed() {
+        for percent in [CGFloat(0.6), 0.45, 0.0] {
             XCTAssertEqual(
-                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, handoffEnd: 0.85),
+                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, collapseStart: 0.6),
                 1,
                 accuracy: 0.001,
-                "the button row must have finished collapsing by handoffEnd, at percent \(percent)"
+                "the button row must have finished collapsing by collapseStart, at percent \(percent)"
             )
         }
     }
 
-    func testWhenAboveHandoffEndThenToolbarButtonRowCollapseTracksPercent() {
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, handoffEnd: 0.85), 0, accuracy: 0.001)
-        // Halfway between handoffEnd (0.85) and 1.0 (0.925) should be halfway collapsed.
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.925, handoffEnd: 0.85), 0.5, accuracy: 0.001)
+    func testWhenAboveCollapseStartThenToolbarButtonRowCollapseIsGradual() {
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, collapseStart: 0.6), 0, accuracy: 0.001)
+        // Halfway between collapseStart (0.6) and 1.0 (0.8) should be halfway collapsed.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.8, collapseStart: 0.6), 0.5, accuracy: 0.001)
+        // A single unanimated scroll frame must not consume most of the ~56pt height change: a 0.1
+        // step down from rest collapses a quarter of the row, not two thirds.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.9, collapseStart: 0.6), 0.25, accuracy: 0.001)
     }
 }
 
@@ -1750,112 +1753,5 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(outgoingView.layer.mask)
         XCTAssertNil(incomingView.layer.mask)
         XCTAssertNil(incomingView.superview)
-    }
-}
-
-final class ChromeMorphAnimatorCurveTests: XCTestCase {
-
-    private let expandCurve = MainViewController.ChromeAnimationConstants.morphExpandCurve
-    private let collapseCurve = MainViewController.ChromeAnimationConstants.morphCollapseCurve
-
-    func testWhenCurveIsSmoothstepThenItEasesInAndOutSymmetrically() {
-        let curve = ChromeMorphAnimator.Curve.smoothstep
-
-        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 0.5), 0.5, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
-    }
-
-    func testWhenCurveIsEaseOutCubicThenItStartsFastAndDecelerates() {
-        let curve = ChromeMorphAnimator.Curve.easeOutCubic
-
-        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
-        XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
-    }
-
-    func testWhenCollapsingThenTheCurveNeverOvershoots() {
-        for step in 0...100 {
-            let value = collapseCurve.value(at: CGFloat(step) / 100)
-            XCTAssertLessThanOrEqual(value, 1.0, "Collapse must not overshoot at t = \(CGFloat(step) / 100)")
-        }
-    }
-
-    func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
-        XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(expandCurve.value(at: 1),
-                       1,
-                       accuracy: 0.001,
-                       "Residual at the cutoff becomes a snap. Raise naturalFrequency or the damping ratio.")
-    }
-
-    func testWhenExpandingThenOvershootStaysBelowOnePointFivePercent() {
-        var peak: CGFloat = 0
-        for step in 0...200 {
-            peak = max(peak, expandCurve.value(at: CGFloat(step) / 200))
-        }
-
-        XCTAssertGreaterThan(peak, 1.0, "A lightly damped spring is expected to overshoot slightly")
-        XCTAssertLessThan(peak, 1.015, "Overshoot on a bar that clips the screen edge reads as a glitch")
-    }
-
-    func testWhenSpringIsCriticallyDampedThenItNeverOvershoots() {
-        let curve = ChromeMorphAnimator.Curve.spring(dampingRatio: 1, naturalFrequency: 8.84)
-
-        for step in 0...100 {
-            XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
-        }
-        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
-    }
-}
-
-final class ChromeMorphAnimatorRetargetTests: XCTestCase {
-
-    // `animate()` cancels any running link and starts a fresh one whose first tick only records a
-    // timestamp; a caller that retargets every frame (scroll tracking mid fast-scroll catch-up)
-    // would therefore never see `currentValue` advance unless the clock carries over the retarget.
-    //
-    // Note: retargeting to the same fixed duration on every single frame indefinitely is not what
-    // `BarsAnimator` actually does — it only retargets while the rendered value lags the scroll
-    // ratio by more than a small epsilon, and stops (falling back to direct 1:1 tracking) once it
-    // catches up. So this test checks the two things that contract actually needs: the value keeps
-    // advancing across a run of retargets (the stall this fix addresses), and once retargeting
-    // stops, the in-flight leg still runs to completion.
-    func testWhenRetargetedEveryFrameThenValueStillAdvances() {
-        let animator = ChromeMorphAnimator()
-        var latestValue: CGFloat = 0
-        var didComplete = false
-
-        animator.animate(from: 0, to: 1, duration: 0.2, curve: .smoothstep,
-                          onProgress: { latestValue = $0 },
-                          onComplete: { didComplete = true })
-
-        let deadline = Date().addingTimeInterval(2)
-        while latestValue < 0.05, Date() < deadline {
-            RunLoop.current.run(until: Date().addingTimeInterval(0.016))
-        }
-        XCTAssertGreaterThan(latestValue, 0, "the initial run should already be progressing")
-
-        // Retarget on (roughly) every remaining frame, as `floatingDidScroll` would while a catch-up
-        // is in flight during continued scrolling.
-        let valueBeforeRetargets = latestValue
-        for _ in 0..<5 {
-            animator.animate(from: animator.currentValue, to: 1, duration: 0.2, curve: .smoothstep,
-                              onProgress: { latestValue = $0 },
-                              onComplete: { didComplete = true })
-            RunLoop.current.run(until: Date().addingTimeInterval(0.016))
-        }
-        XCTAssertGreaterThan(latestValue, valueBeforeRetargets, "value must keep advancing across repeated same-frame retargets, not stall")
-
-        // Once scrolling settles and retargeting stops, the last-assigned leg must still complete.
-        let settleDeadline = Date().addingTimeInterval(2)
-        while !didComplete, Date() < settleDeadline {
-            RunLoop.current.run(until: Date().addingTimeInterval(0.016))
-        }
-        XCTAssertTrue(didComplete, "the animation must reach completion once retargeting stops")
-        // `onProgress` isn't re-invoked with the exact endpoint on completion (only `onComplete`
-        // fires), so check the authoritative `currentValue` rather than the last progress callback.
-        XCTAssertEqual(animator.currentValue, 1, accuracy: 0.001)
     }
 }

@@ -23,7 +23,7 @@ import FoundationExtensions
 import ContentBlocking
 import Foundation
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages

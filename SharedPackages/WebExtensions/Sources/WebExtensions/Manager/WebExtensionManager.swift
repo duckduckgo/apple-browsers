@@ -31,6 +31,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         /// Completes lifecycle reporting for identifiers whose data-clearing unload already emitted `willReload`.
         case reloadFallback(trigger: WebExtensionReloadTrigger, identifiers: Set<String>)
 
+        func reloadFailureContext(for identifier: String) -> (trigger: WebExtensionReloadTrigger, phase: WebExtensionReloadFailurePhase)? {
+            switch self {
+            case .initial:
+                return nil
+            case .reloadAll(let trigger, let identifiers):
+                return identifiers.contains(identifier) ? (trigger, .fullLoad) : nil
+            case .reloadFallback(let trigger, let identifiers):
+                return identifiers.contains(identifier) ? (trigger, .fallbackLoad) : nil
+            }
+        }
+
         func loadSucceededEvent(identifier: String, type: DuckDuckGoWebExtensionType?) -> WebExtensionLifecycleEvent? {
             switch self {
             case .initial:
@@ -115,6 +126,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
+    /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
+    public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
+    /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
+    private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
 
     // MARK: - AsyncStream
 
@@ -141,6 +156,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
+                cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
+                isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil) {
@@ -157,6 +174,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
+        self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.scriptletConfiguration = scriptletConfiguration
@@ -178,6 +197,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         controller.delegate = self
         self.loader.delegate = self
+
+        if let cpmDiagnosticsRecorder {
+            (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.diagnosticsProvider = cpmDiagnosticsRecorder
+            cpmDiagnosticsRecorder.nativeMessageHandlerCheck = { [weak self] context in
+                self?.messageRouter.hasHandler(for: context.uniqueIdentifier, featureName: "autoconsent") ?? false
+            }
+        }
+
+        if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+            healthMonitor.onConfirmedHang = { [weak self] in
+                Task { @MainActor [weak self] in
+                    await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
+                }
+            }
+        }
     }
 
     // MARK: - Computed Properties
@@ -266,15 +300,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
             Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
             Logger.webExtensions.debug("⚠️ Extension '\(identifier)' was not loaded in memory: \(error.localizedDescription)")
+            cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
         do {
             try storageProvider.removeExtension(identifier: identifier)
         } catch {
             Logger.webExtensions.error("❌ Failed to remove extension files for '\(identifier)': \(error.localizedDescription)")
+            cpmDiagnosticsRecorder?.extensionFilesRemoveFailed(identifier: identifier, error: error)
             pixelFiring.fire(.uninstallError(error: error))
             throw WebExtensionError.failedToRemoveWebExtension(error)
         }
@@ -334,6 +371,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: .dataClearing))
             do {
                 try controller.unload(context)
+                cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
                 // uses it to re-create the context without re-reading and re-parsing from disk.
@@ -343,6 +381,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
+                pixelFiring.fire(.reloadError(type: type,
+                                              trigger: .dataClearing,
+                                              phase: .unload,
+                                              error: error))
                 reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: .dataClearing))
                 failureCount += 1
             }
@@ -395,8 +438,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
             // The extension and its native handlers are still active when unload fails.
+            cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
+            pixelFiring.fire(.reloadError(type: type,
+                                          trigger: trigger,
+                                          phase: .unload,
+                                          error: error))
             reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: trigger))
             throw error
         }
@@ -414,6 +463,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             // `loadWebExtension` registers handlers as part of loading, so a partially completed
             // load can leave some behind for a context that never became active. Clear them again.
             unregisterHandlers(for: identifier)
+            pixelFiring.fire(.reloadError(type: type,
+                                          trigger: trigger,
+                                          phase: .load,
+                                          error: error))
             reportLifecycleEvent(.reloadFailed(identifier: identifier, type: type, trigger: trigger))
             throw error
         }
@@ -514,6 +567,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 }
                 summary.failedIdentifiers.append(installedExtension.uniqueIdentifier)
                 summary.firstError = summary.firstError ?? error
+                if let failureContext = lifecycle.reloadFailureContext(for: installedExtension.uniqueIdentifier) {
+                    pixelFiring.fire(.reloadError(type: installedExtension.embeddedType,
+                                                  trigger: failureContext.trigger,
+                                                  phase: failureContext.phase,
+                                                  error: error))
+                }
             }
         }
         return summary
@@ -564,6 +623,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to reload web extension '\(identifier)': \(error.localizedDescription)")
+                pixelFiring.fire(.reloadError(type: type,
+                                              trigger: .dataClearing,
+                                              phase: .lightweightLoad,
+                                              error: error))
                 failedExtensionIdentifiers.append(identifier)
             }
         }
@@ -615,6 +678,25 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))
     }
 
+    @MainActor
+    private func reloadEmbeddedExtensionAfterCPMMessagingHang() async {
+        guard isCPMMessagingHangRecoveryEnabled() else {
+            Logger.webExtensions.info("[CPM Health Monitor] Skipping embedded extension reload after a confirmed hang because cpmMessagingHangRecovery is disabled")
+            return
+        }
+
+        guard let installedExtension = installedEmbeddedExtension(for: .embedded) else {
+            Logger.webExtensions.warning("[CPM Health Monitor] Cannot reload the embedded extension after a confirmed hang because it is not installed")
+            return
+        }
+
+        do {
+            try await reloadExtension(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
+        } catch {
+            Logger.webExtensions.error("[CPM Health Monitor] Failed to reload the embedded extension after a confirmed hang: \(error.localizedDescription)")
+        }
+    }
+
     func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
@@ -625,6 +707,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
 @available(macOS 15.4, iOS 18.4, *)
 extension WebExtensionManager: WKWebExtensionControllerDelegate {
+
+    @objc(_webExtensionController:didCreateBackgroundWebView:forExtensionContext:)
+    public func webExtensionController(_ controller: WKWebExtensionController,
+                                       didCreateBackgroundWebView webView: WKWebView,
+                                       forExtensionContext extensionContext: WKWebExtensionContext) {
+        guard extensionContext.webExtension.duckDuckGoWebExtensionType == .embedded else { return }
+        MainActor.assumeIsolated {
+            cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
+        }
+    }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        openWindowsFor extensionContext: WKWebExtensionContext) -> [any WKWebExtensionWindow] {

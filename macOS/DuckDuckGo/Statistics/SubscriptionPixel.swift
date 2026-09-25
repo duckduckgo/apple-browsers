@@ -65,6 +65,10 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionPaidAIChatSettingsImpression
     case subscriptionIdentityRestorationSettings
     case subscriptionIdentityRestorationSettingsImpression
+    /// Fired when the user clicks Subscriber Offers in the DuckDuckGo Subscription section of the
+    /// settings sidebar, which opens the Partnerships Hub in a new tab. Sidebar clicks only —
+    /// routing to the pane from a `duck://settings` deep link does not fire it.
+    case subscriptionPartnerBenefitsSettings
     case subscriptionManagementEmail
     case subscriptionManagementPlanBilling
     case subscriptionManagementRemoval
@@ -183,6 +187,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
         case .subscriptionIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
         case .subscriptionIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
+            // `app-settings`, not the `settings` segment its neighbours use: the suffix is shared
+            // verbatim with Android and Windows, and `partner-benefits` predates the label being
+            // renamed to "Subscriber Offers".
+        case .subscriptionPartnerBenefitsSettings: return "m_mac_\(appDistribution)_privacy-pro_app-settings_partner-benefits_click"
         case .subscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
         case .subscriptionManagementPlanBilling: return "m_mac_\(appDistribution)_privacy-pro_settings_change-plan-or-billing_click"
         case .subscriptionManagementRemoval: return "m_mac_\(appDistribution)_privacy-pro_settings_remove-from-device_click"
@@ -345,6 +353,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionPaidAIChatSettingsImpression,
                 .subscriptionIdentityRestorationSettings,
                 .subscriptionIdentityRestorationSettingsImpression,
+                .subscriptionPartnerBenefitsSettings,
                 .subscriptionManagementEmail,
                 .subscriptionManagementPlanBilling,
                 .subscriptionManagementRemoval,

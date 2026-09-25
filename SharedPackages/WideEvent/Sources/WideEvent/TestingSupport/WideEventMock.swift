@@ -75,7 +75,8 @@ public final class WideEventMock: WideEventManaging {
     }
 
     public func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T? {
-        return started.first { ($0 as? T)?.globalData.id == globalID && !completedIDs.contains($0.globalData.id) } as? T
+        let lookup = started + updates
+        return lookup.last { ($0 as? T)?.globalData.id == globalID && !completedIDs.contains($0.globalData.id) } as? T
     }
 
     public func getAllFlowData<T: WideEventData>(_ type: T.Type) -> [T] {

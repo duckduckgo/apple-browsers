@@ -71,6 +71,22 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?)
 
+    /// A method, not a value: the high-usage notice is keyed off the selected model, so it has to be
+    /// re-resolved per read.
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits?
+
+    @MainActor
+    func dismissUsageLimits()
+
+    /// `modelId` is set when the user picked a model, primary or from the chevron menu.
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome
+
+    /// Published so the client can push `omnibar_onConfigUpdate` when web republishes the usage
+    /// snapshot, or the user settles a message, keeping an open NTP in sync without a reload.
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

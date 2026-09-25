@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import WebKit
 import XCTest
+
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -32,6 +34,17 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         XCTAssertFalse(didBecomeStuck)
         XCTAssertEqual(pixelFiring.events, ["initialization_failed_session_restoration"])
+    }
+
+    func testFirstHangAfterInitializationFailureInvokesConfirmedHangHandler() {
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: CapturingWebExtensionPixelFiring())
+        var confirmedHangCount = 0
+        monitor.onConfirmedHang = { confirmedHangCount += 1 }
+
+        XCTAssertFalse(beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other))
+        XCTAssertTrue(beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other))
+
+        XCTAssertEqual(confirmedHangCount, 1)
     }
 
     func testRepeatedSessionRestorationFailuresDoNotStartStuckEpisode() {
@@ -1005,9 +1018,75 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let reloadStuck = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmMessagingStuck(reason: .extensionReload)))
         XCTAssertEqual(reloadStuck.name, "debug_web_extension_cpm_messaging_stuck_extension_reload")
 
-        let recovered = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmMessagingRecoveredAfterExtensionReload))
+        let recovered = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmMessagingRecoveredAfterExtensionReload(from: .messagingStuck)))
         XCTAssertEqual(recovered.name, "debug_web_extension_cpm_messaging_recovered_after_extension_reload")
         XCTAssertEqual(recovered.frequency, .dailyAndCount)
+        XCTAssertEqual(recovered.parameters, ["recovery_from": "messaging_stuck"])
+    }
+
+    func testRecoveryParametersDistinguishEpisodeStateWithAndWithoutReload() throws {
+        for wasStuck in [false, true] {
+            for didReload in [false, true] {
+                let pixelFiring = CapturingWebExtensionPixelFiring()
+                let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+                beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other)
+                if wasStuck {
+                    beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other)
+                }
+                if didReload {
+                    monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .dataClearing))
+                }
+                let measurement = monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other)
+                monitor.reportSuccess(measurement)
+                let recovery = try XCTUnwrap(pixelFiring.metadata.last)
+                let suffix = didReload ? "after_extension_reload" : "without_extension_reload"
+                XCTAssertEqual(recovery.name, "debug_web_extension_cpm_messaging_recovered_\(suffix)")
+                XCTAssertEqual(recovery.parameters, ["recovery_from": wasStuck ? "messaging_stuck" : "initialization_failed"])
+                XCTAssertEqual(recovery.frequency, .dailyAndCount)
+                let eventCount = pixelFiring.events.count
+                monitor.reportSuccess(measurement)
+                XCTAssertEqual(pixelFiring.events.count, eventCount)
+            }
+        }
+    }
+
+    func testReloadErrorPixelMetadataIncludesDomainAndCode() {
+        let metadata = WebExtensionReloadErrorPixelMetadata(
+            type: .embedded,
+            trigger: .dataClearing,
+            phase: .lightweightLoad,
+            error: NSError(
+                domain: WKWebExtensionContext.errorDomain,
+                code: WKWebExtensionContext.Error.Code.baseURLAlreadyInUse.rawValue
+            )
+        )
+
+        XCTAssertEqual(WebExtensionReloadErrorPixelMetadata.name, "debug_web_extension_reload_failed")
+        XCTAssertEqual(metadata.parameters, [
+            "extension_type": "embedded",
+            "reload_trigger": "data_clearing",
+            "reload_phase": "light_load",
+            "d": WKWebExtensionContext.errorDomain,
+            "e": String(WKWebExtensionContext.Error.Code.baseURLAlreadyInUse.rawValue)
+        ])
+    }
+
+    func testReloadErrorPixelPreservesUnknownDomainAndUnderlyingCodeWithoutUserInfo() {
+        let underlying = NSError(domain: NSURLErrorDomain, code: -1009,
+                                 userInfo: [NSLocalizedDescriptionKey: "https://private.example/path"])
+        let error = NSError(domain: "CustomReloadError", code: 42,
+                            userInfo: [NSUnderlyingErrorKey: underlying, NSFilePathErrorKey: "/Users/private/file"])
+        let metadata = WebExtensionReloadErrorPixelMetadata(type: nil, trigger: .explicit, phase: .load, error: error)
+
+        XCTAssertEqual(metadata.parameters, [
+            "extension_type": "unknown",
+            "reload_trigger": "explicit",
+            "reload_phase": "load",
+            "d": "CustomReloadError",
+            "e": "42",
+            "ud": NSURLErrorDomain,
+            "ue": "-1009"
+        ])
     }
 
     func testCPMDocumentMatchingIncludesQueryAndIgnoresFragment() {
@@ -1120,16 +1199,86 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     }
 }
 
+// MARK: - Diagnostics
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+final class CPMMessagingHealthMonitorDiagnosticsTests: XCTestCase {
+
+    func testWithoutProviderFailurePixelsFireSynchronouslyWithoutDiagnostics() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+
+        let measurement = monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other)
+        monitor.reportFailure(measurement)
+
+        XCTAssertEqual(pixelFiring.events, ["initialization_failed_other"])
+        XCTAssertEqual(pixelFiring.diagnostics, [nil])
+    }
+
+    func testProviderDiagnosticsAreAttachedToFailureAndStuckPixels() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let provider = StubDiagnosticsProvider()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        monitor.diagnosticsProvider = provider
+
+        monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other))
+        let didBecomeStuck = monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab-2", navigationKind: .other))
+
+        XCTAssertTrue(didBecomeStuck)
+        XCTAssertEqual(pixelFiring.events.sorted(), ["initialization_failed_other", "initialization_failed_other", "stuck_other"])
+        XCTAssertEqual(pixelFiring.diagnostics.compactMap { $0 }.count, 3)
+        XCTAssertEqual(provider.requests.map(\.tabIdentifier), ["tab-1", "tab-2", "tab-2"])
+    }
+
+    func testWhenContextChangesAfterFailureThenPixelKeepsFailureTimeDiagnostics() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let provider = StubDiagnosticsProvider()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        monitor.diagnosticsProvider = provider
+        provider.diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: false, tabKnownToWebKit: false)
+
+        monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other))
+        provider.diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: true, tabKnownToWebKit: true)
+
+        XCTAssertEqual(pixelFiring.events, ["initialization_failed_other"])
+        XCTAssertEqual(pixelFiring.diagnostics, [CPMMessagingDiagnostics(extensionContextLoaded: false, tabKnownToWebKit: false)])
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
+    struct Request: Equatable {
+        let tabIdentifier: String
+    }
+
+    private(set) var requests: [Request] = []
+    var diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: true, tabKnownToWebKit: true)
+
+    func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
+        requests.append(Request(tabIdentifier: tabIdentifier))
+        return diagnostics
+    }
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 private final class CapturingWebExtensionPixelFiring: WebExtensionPixelFiring {
+    private(set) var metadata: [CPMWebExtensionPixelMetadata] = []
     private(set) var events: [String] = []
+    private(set) var diagnostics: [CPMMessagingDiagnostics?] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
+        if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+            self.metadata.append(metadata)
+        }
         switch event {
-        case .cpmInitializationFailed(let reason):
+        case .cpmInitializationFailed(let reason, let diagnostics):
             events.append("initialization_failed_\(reason.rawValue)")
-        case .cpmMessagingStuck(let reason):
+            self.diagnostics.append(diagnostics)
+        case .cpmMessagingStuck(let reason, let diagnostics):
             events.append("stuck_\(reason.rawValue)")
+            self.diagnostics.append(diagnostics)
         case .cpmMessagingRecoveredWithoutExtensionReload:
             events.append("recovered_without_reload")
         case .cpmMessagingRecoveredAfterExtensionReload:

@@ -18,7 +18,7 @@
 
 import Foundation
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import WebKit
 import Common
 

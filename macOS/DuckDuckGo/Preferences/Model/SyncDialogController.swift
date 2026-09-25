@@ -108,6 +108,8 @@ final class SyncDialogController {
     private var syncPromoSource: String?
     private var authenticationCancelledPromptContinuation: (@MainActor () -> Void)?
     private var pairingV2PeerKind: PairingV2DeviceKind?
+    private var pairingV2ConfirmationRequest: PendingPairingConfirmation?
+    private var pairingV2ConfirmationWasDismissedByController = false
     private var didCreateSyncAccountDuringPairing = false
     private var displayedCodeSetupSource: SyncSetupSource?
 
@@ -877,6 +879,15 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, .qrCode))
     }
 
+    func controllerDismissPairingV2Confirmation() async {
+        guard let pairingV2ConfirmationRequest else {
+            return
+        }
+        pairingV2ConfirmationWasDismissedByController = true
+        pairingV2ConfirmationRequest.dismiss()
+        self.pairingV2ConfirmationRequest = nil
+    }
+
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
         let peerName = pairingV2DisplayName(for: peerName)
         let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
@@ -884,10 +895,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             presentDialog(for: .prepareToSync(.twoDevicePairing))
         }
         let isConfirmed = await showPairingV2Confirmation(message: message)
-        if !isConfirmed {
+        let wasDismissedByController = pairingV2ConfirmationWasDismissedByController
+        pairingV2ConfirmationWasDismissedByController = false
+        if !isConfirmed, !wasDismissedByController {
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
             managementDialogModel.endFlow()
-        } else {
+        } else if isConfirmed {
             pairingV2PeerKind = peerKind
             if let dialog = Self.postPairingConfirmationDialog(
                 isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled
@@ -1203,23 +1216,34 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             return await showLegacyPairingV2Confirmation(message: message)
         }
         guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {
-            return await showLegacyPairingV2Confirmation(message: message)
+            return false
         }
 
         let presentationWindow = parentWindow.attachedSheet ?? parentWindow
         return await withCheckedContinuation { continuation in
-            var isConfirmed = false
-
-            SyncPairingConfirmationViewV2(
+            let request = PendingPairingConfirmation(continuation: continuation, parentWindow: presentationWindow)
+            let confirmationView = SyncPairingConfirmationViewV2(
                 title: UserText.syncPairingV2ConfirmationTitle,
                 message: message,
                 cancelButtonTitle: UserText.cancel,
                 confirmButtonTitle: UserText.syncPairingV2ConfirmationAction,
-                onCancel: { isConfirmed = false },
-                onConfirm: { isConfirmed = true }
+                onCancel: { request.decision = false },
+                onConfirm: { request.decision = true }
             )
-            .show(in: presentationWindow) {
-                continuation.resume(returning: isConfirmed)
+            let sheetWindow = SheetHostingWindow(rootView: confirmationView)
+            request.sheetWindow = sheetWindow
+            pairingV2ConfirmationRequest = request
+            if !presentationWindow.isKeyWindow {
+                presentationWindow.makeKeyAndOrderFront(nil)
+            }
+            presentationWindow.beginSheet(sheetWindow) { [weak self, weak request] _ in
+                guard let request else {
+                    return
+                }
+                request.resolve(request.decision)
+                if self?.pairingV2ConfirmationRequest === request {
+                    self?.pairingV2ConfirmationRequest = nil
+                }
             }
         }
     }
@@ -1228,12 +1252,53 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         let alert = NSAlert.syncPairingV2Confirmation(message: message)
 
         guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {
-            return await alert.runModal() == .alertFirstButtonReturn
+            return false
         }
 
         let presentationWindow = parentWindow.attachedSheet ?? parentWindow
-        return await alert.beginSheetModal(for: presentationWindow) == .alertFirstButtonReturn
+        return await withCheckedContinuation { continuation in
+            let request = PendingPairingConfirmation(continuation: continuation,
+                                                        parentWindow: presentationWindow,
+                                                        sheetWindow: alert.window)
+            pairingV2ConfirmationRequest = request
+            alert.beginSheetModal(for: presentationWindow) { [weak self, weak request] response in
+                guard let request else {
+                    return
+                }
+                request.resolve(response == .alertFirstButtonReturn)
+                if self?.pairingV2ConfirmationRequest === request {
+                    self?.pairingV2ConfirmationRequest = nil
+                }
+            }
+        }
     }
 }
 
-extension SyncPairingConfirmationViewV2: ModalView {}
+@MainActor
+private final class PendingPairingConfirmation {
+    private var continuation: CheckedContinuation<Bool, Never>?
+    private weak var parentWindow: NSWindow?
+    weak var sheetWindow: NSWindow?
+    var decision = false
+
+    init(continuation: CheckedContinuation<Bool, Never>, parentWindow: NSWindow, sheetWindow: NSWindow? = nil) {
+        self.continuation = continuation
+        self.parentWindow = parentWindow
+        self.sheetWindow = sheetWindow
+    }
+
+    func resolve(_ isConfirmed: Bool) {
+        guard let continuation else {
+            return
+        }
+        self.continuation = nil
+        continuation.resume(returning: isConfirmed)
+    }
+
+    func dismiss() {
+        resolve(false)
+        if let sheetWindow {
+            parentWindow?.endSheet(sheetWindow)
+        }
+    }
+}

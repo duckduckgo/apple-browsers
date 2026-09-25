@@ -57,6 +57,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let syncCredentialsAdapter: SyncCredentialsAdapter
     let syncCreditCardsAdapter: SyncCreditCardsAdapter?
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
+    weak var scanCodeNavigationController: UINavigationController?
     var codeCollectionIntent: CodeCollectionIntent?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
@@ -99,6 +100,9 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
     var pairingV2JoinerCodeSource: SyncCodeSource?
+    var pairingV2ConfirmationAlert: UIAlertController?
+    var pairingV2ConfirmationContinuation: CheckedContinuation<Bool, Never>?
+    var pairingV2ConfirmationWasDismissedByController = false
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
 
@@ -694,6 +698,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             await handleError(.thirdPartyAccountAlreadyUpgraded, error: nil, event: nil)
         case .syncCancelledFromOtherDevice:
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
+            await dismissPairingV2Setup()
             await handleError(.syncCancelledFromOtherDevice, error: nil, event: nil)
         case .failedToFetchPublicKey,
                 .failedToFetchConnectRecoveryKey,

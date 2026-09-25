@@ -31,6 +31,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerWillPerformServerSyncOperation(setupRole: SyncSetupRole) async -> Bool
     func controllerShouldAllowPairingV2PeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool
+    func controllerDismissPairingV2Confirmation() async
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
@@ -654,7 +655,8 @@ public class SyncConnectionController: SyncConnectionControlling {
                 .hostSendingRecoveryCode,
                 .joinerWaitingForRecoveryCode:
             return .waitingForRecoveryCode
-        case .hostWaitingForJoinStatus:
+        case .hostWaitingForJoinStatus,
+                .hostJoinOutcomeUnknown:
             return .waitingForJoinStatus
         case .joinerLoggingIn:
             return .loggingIn
@@ -711,16 +713,22 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func shouldDismissPairingV2PresenterCode(for state: PairingV2State) -> Bool {
         switch state {
-        case .waitingForPeerStatus,
-             .hostWaitingForConfirmation,
-             .hostPreparingRecoveryCode,
+        case .hostPreparingRecoveryCode,
              .hostSendingRecoveryCode,
              .hostWaitingForJoinStatus,
-             .joinerWaitingForConfirmation,
+             .hostJoinOutcomeUnknown,
              .joinerWaitingForRecoveryCode,
-             .joinerLoggingIn:
+             .joinerLoggingIn,
+             .completed(.recoveryCodeSent),
+             .completed(.loggedIn):
             return true
-        case .idle, .waitingForPeerHello, .completed, .failed:
+        case .idle,
+             .waitingForPeerHello,
+             .waitingForPeerStatus,
+             .hostWaitingForConfirmation,
+             .joinerWaitingForConfirmation,
+             .completed(.alreadyConnected),
+             .failed:
             return false
         }
     }
@@ -942,6 +950,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             return .invalidCredentials
         case .loginFailed:
             return .transportFailure
+        case .peerDisconnected:
+            return .transportFailure
+        case .peerCancelled:
+            return .syncCancelledFromOtherDevice
         case .upgradeFailed:
             return .accountUpgradeFailed
         case .nativeCredentialAlreadyPresent:
@@ -1034,6 +1046,9 @@ public extension SyncConnectionControllerDelegate {
         false
     }
 
+    func controllerDismissPairingV2Confirmation() async {
+    }
+
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
     }
 }
@@ -1046,6 +1061,10 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
 
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
         await delegate?.controllerShouldJoinPairingV2Peer(peerName: peerName, peerKind: peerKind) ?? false
+    }
+
+    func pairingV2CoordinatorDismissConfirmation() async {
+        await delegate?.controllerDismissPairingV2Confirmation()
     }
 
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {

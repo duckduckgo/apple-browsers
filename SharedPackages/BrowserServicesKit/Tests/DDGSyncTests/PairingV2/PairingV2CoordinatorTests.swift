@@ -23,6 +23,7 @@ import XCTest
 
 private enum PairingV2CoordinatorTestError: Error {
     case expectedLocalHello
+    case expectedPendingConfirmation
     case keyGenerationFailed
     case loginFailed
     case secretGenerationFailed
@@ -39,18 +40,33 @@ private typealias NativeJoinerThirdPartyUpgradeSetup = (
 private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDelegate {
     var shouldAllowPeerToJoin = true
     var shouldJoinPeer = true
+    var allowPeerToJoinHandler: (() async -> Bool)?
+    var joinPeerHandler: (() async -> Bool)?
+    var dismissConfirmationHandler: (() async -> Void)?
     var allowPeerToJoinCalls: [(peerName: String?, peerKind: PairingV2DeviceKind)] = []
     var joinPeerCalls: [(peerName: String?, peerKind: PairingV2DeviceKind)] = []
     var didCreateSyncAccountCalls: [PairingV2DeviceKind] = []
+    var dismissConfirmationCallCount = 0
 
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
         allowPeerToJoinCalls.append((peerName, peerKind))
+        if let allowPeerToJoinHandler {
+            return await allowPeerToJoinHandler()
+        }
         return shouldAllowPeerToJoin
     }
 
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
         joinPeerCalls.append((peerName, peerKind))
+        if let joinPeerHandler {
+            return await joinPeerHandler()
+        }
         return shouldJoinPeer
+    }
+
+    func pairingV2CoordinatorDismissConfirmation() async {
+        dismissConfirmationCallCount += 1
+        await dismissConfirmationHandler?()
     }
 
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
@@ -319,7 +335,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
         try await coordinator.pollOnce()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [secret])
         XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, [secret, secret])
@@ -350,7 +369,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                                                         publicKey: peerKeyPair.publicKey))
                 }
                 try await coordinator.pollOnce()
+                let closeChannelExpectation = expectation(description: "Local channel closed")
+                messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
                 await coordinator.cancel()
+                await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
                 XCTAssertEqual(coordinator.negotiatedVersion, .v2)
                 XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [secret])
@@ -373,7 +395,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
         try await coordinator.pollOnce()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(messageExchanger.openChannelAuthorizationSecrets, [nil])
         XCTAssertEqual(messageExchanger.sendAuthorizationSecrets, [nil, nil])
@@ -598,6 +623,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let peerKeyPair = try makePeerKeyPair()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger, messageCrypto: messageCrypto)
         let error = PairingV2Error.secondHello
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
 
         try await coordinator.startScanning(qrPayload: .init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey))
         let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
@@ -612,6 +639,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.pollOnce()
 
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
         XCTAssertEqual(coordinator.state, .failed(error))
         XCTAssertEqual(messageExchanger.closeChannelCalls, [hello.channelId])
     }
@@ -711,6 +739,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         let account = try XCTUnwrap(syncService.account)
         let recoveryCode = try XCTUnwrap(account.recoveryCodeV2)
@@ -772,6 +801,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         guard case .hostWaitingForJoinStatus = coordinator.state else {
             XCTFail("Expected host to wait for join status, got \(coordinator.state)")
@@ -789,6 +819,237 @@ final class PairingV2CoordinatorTests: XCTestCase {
         try await coordinator.pollOnce()
 
         XCTAssertEqual(coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+    }
+
+    func testWhenV21PeerCancelsWhileConfirmationIsPendingThenDismissesAndNeverReleasesRecoveryCode() async throws {
+        let confirmationGate = PairingV2CoordinatorTestGate()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        confirmationDelegate.allowPeerToJoinHandler = {
+            await confirmationGate.wait()
+            return true
+        }
+        confirmationDelegate.dismissConfirmationHandler = {
+            await confirmationGate.open()
+        }
+        let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+        try await setup.coordinator.pollOnce()
+        try await setup.coordinator.pollOnce() // A dismissed confirmation must not affect the finished session.
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+        let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
+                                                     peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                     messageCrypto: setup.messageCrypto)
+        XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 1)
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
+        XCTAssertFalse(sentMessages.contains { message in
+            if case .recoveryCodeResponse = message { return true }
+            return false
+        })
+        XCTAssertEqual(sentMessages.last, .bye(.init(reason: .done)))
+        XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
+    }
+
+    func testWhenPeerLeavesDuringConfirmationThenTeardownSendsByeDoneForEveryReason() async throws {
+        for reason in [PairingV2ByeReason.done, .cancelled, .error, .unknown("future_reason")] {
+            let confirmationGate = PairingV2CoordinatorTestGate()
+            let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+            confirmationDelegate.allowPeerToJoinHandler = {
+                await confirmationGate.wait()
+                return false
+            }
+            confirmationDelegate.dismissConfirmationHandler = {
+                await confirmationGate.open()
+            }
+            let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate, byeReason: reason)
+            let closeChannelExpectation = expectation(description: "Local channel closed")
+            setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+
+            try await setup.coordinator.pollOnce()
+            await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+            let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
+                                                         peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                         messageCrypto: setup.messageCrypto)
+            XCTAssertEqual(sentMessages.last, .bye(.init(reason: .done)))
+            XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
+        }
+    }
+
+    func testWhenConfirmationIsHandledBeforeByeThenReleasesRecoveryCodeOnlyOnce() async throws {
+        let confirmationGate = PairingV2CoordinatorTestGate()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        confirmationDelegate.allowPeerToJoinHandler = {
+            await confirmationGate.wait()
+            return true
+        }
+        let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+        let byeMessages = setup.messageExchanger.fetchMessagesStub
+        setup.messageExchanger.fetchMessagesStub = []
+
+        await confirmationGate.open()
+        try await settlePendingConfirmation(in: setup.coordinator)
+        guard case .hostWaitingForJoinStatus = setup.coordinator.state else {
+            XCTFail("Expected host to await join status, got \(setup.coordinator.state)")
+            return
+        }
+
+        setup.messageExchanger.fetchMessagesStub = byeMessages
+        try await setup.coordinator.pollOnce()
+        try await setup.coordinator.pollOnce()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+        let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
+                                                     peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                     messageCrypto: setup.messageCrypto)
+        XCTAssertEqual(sentMessages.filter { message in
+            if case .recoveryCodeResponse = message { return true }
+            return false
+        }.count, 1)
+        XCTAssertEqual(sentMessages.filter { message in
+            if case .bye = message { return true }
+            return false
+        }.count, 1)
+        XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 0)
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
+        XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
+    }
+
+    func testWhenConfirmationAndByeArriveDuringSamePollThenNeverReleasesRecoveryCode() async throws {
+        let confirmationGate = PairingV2CoordinatorTestGate()
+        let confirmationAnswered = expectation(description: "UI returns acceptance during the peer message fetch")
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        confirmationDelegate.allowPeerToJoinHandler = {
+            await confirmationGate.wait()
+            confirmationAnswered.fulfill()
+            return true
+        }
+        let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        setup.messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+        let byeMessages = setup.messageExchanger.fetchMessagesStub
+        setup.messageExchanger.fetchMessagesHandler = { _, _ in
+            // This poll has already checked for a confirmation result. Release the UI answer
+            // while its fetch is in flight, then deliver bye in the same poll.
+            await confirmationGate.open()
+            await self.fulfillment(of: [confirmationAnswered], timeout: 1)
+            return byeMessages
+        }
+
+        try await setup.coordinator.pollOnce()
+        try await setup.coordinator.pollOnce()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+        let sentMessages = try decryptedSentMessages(from: setup.messageExchanger,
+                                                     peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                     messageCrypto: setup.messageCrypto)
+        XCTAssertFalse(sentMessages.contains { message in
+            if case .recoveryCodeResponse = message { return true }
+            return false
+        })
+        XCTAssertEqual(sentMessages.filter { message in
+            if case .bye = message { return true }
+            return false
+        }.count, 1)
+        XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 1)
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
+        XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
+    }
+
+    func testWhenV21FinalByeFailsThenStillDeletesChannelOnceWithoutRetrying() async throws {
+        let dependencies = MockSyncDependencies()
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        var operations: [String] = []
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.sendHandler = { messages, _ in
+            operations.append("send")
+            if messages.first?.version == PairingV2ProtocolVersion.v2Point1.rawValue {
+                throw PairingV2CoordinatorTestError.loginFailed
+            }
+        }
+        messageExchanger.closeChannelHandler = { _ in
+            operations.append("close")
+            closeChannelExpectation.fulfill()
+        }
+        let coordinator = makeCoordinator(syncService: DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies),
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          advertisedVersion: .v2Point1)
+
+        try await coordinator.startScanning(
+            qrPayload: .init(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        )
+        await coordinator.cancel()
+        await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+        let sentMessages = try decryptedSentMessages(from: messageExchanger,
+                                                     peerPrivateKey: peerKeyPair.privateKey,
+                                                     messageCrypto: messageCrypto)
+        XCTAssertEqual(operations.suffix(2), ["send", "close"])
+        XCTAssertEqual(sentMessages.filter { message in
+            if case .bye = message { return true }
+            return false
+        }, [.bye(.init(reason: .cancelled))])
+        XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
+        XCTAssertEqual(messageExchanger.sendAuthorizationSecrets.last, messageExchanger.closeChannelAuthorizationSecrets.last)
+    }
+
+    func testWhenV2SessionIsCancelledThenClosesWithoutSendingBye() async throws {
+        let dependencies = MockSyncDependencies()
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let coordinator = makeCoordinator(syncService: DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies),
+                                          messageExchanger: messageExchanger,
+                                          advertisedVersion: .v2)
+
+        try await coordinator.startScanning(
+            qrPayload: .init(version: "2", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        )
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+        await coordinator.cancel()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
+
+        XCTAssertEqual(messageExchanger.sendCalls.flatMap(\.messages).map(\.version), ["2", "2"])
+        XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
+    }
+
+    func testWhenV2SessionReceivesByeThenIgnoresIt() async throws {
+        let dependencies = MockSyncDependencies()
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let coordinator = makeCoordinator(syncService: DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies),
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          advertisedVersion: .v2)
+
+        try await coordinator.startScanning(
+            qrPayload: .init(version: "2", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        )
+        let hello = try localHello(from: messageExchanger,
+                                   peerPrivateKey: peerKeyPair.privateKey,
+                                   messageCrypto: messageCrypto)
+        let encryptedBye = try messageCrypto.encrypt(.bye(.init(reason: .cancelled)),
+                                                     recipientPublicKey: hello.publicKey,
+                                                     senderChannelID: peerKeyPair.channelID)
+        messageExchanger.fetchMessagesStub = [
+            .init(seq: 1, version: encryptedBye.version, payload: encryptedBye.payload)
+        ]
+
+        try await coordinator.pollOnce()
+
+        guard case .waitingForPeerStatus = coordinator.state else {
+            XCTFail("Expected v2 session to ignore bye, got \(coordinator.state)")
+            return
+        }
+        XCTAssertTrue(messageExchanger.closeChannelCalls.isEmpty)
     }
 
     func testWhenNoAccountPresenterHostsNativePeerThenCreatesAccountAfterConfirmedAndBeforeRecoveryCodeResponse() async throws {
@@ -819,6 +1080,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         let account = try XCTUnwrap(syncService.account)
         let recoveryCode = try XCTUnwrap(account.recoveryCodeV2)
@@ -878,6 +1140,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         let failure = await pairingFailure {
             try await coordinator.pollOnce()
+            try await settlePendingConfirmation(in: coordinator)
         }
 
         XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterSendConfirmationStatus, kind: .unavailable))
@@ -921,6 +1184,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         do {
             try await coordinator.pollOnce()
+            try await settlePendingConfirmation(in: coordinator)
             XCTFail("Expected PairingV2Error.accountCreationFailed")
         } catch PairingV2Error.accountCreationFailed {
         } catch {
@@ -978,6 +1242,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         let failure = await pairingFailure {
             try await coordinator.pollOnce()
+            try await settlePendingConfirmation(in: coordinator)
         }
 
         XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterSendRecoveryUnavailable, kind: .networkError))
@@ -1014,14 +1279,18 @@ final class PairingV2CoordinatorTests: XCTestCase {
             peerKeyPair: peerKeyPair,
             messageCrypto: messageCrypto
         )
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
 
         do {
             try await coordinator.pollOnce()
+            try await settlePendingConfirmation(in: coordinator)
             XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed")
         } catch PairingV2Error.recoveryCodePreparationFailed {
         } catch {
             XCTFail("Expected PairingV2Error.recoveryCodePreparationFailed, got \(error)")
         }
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(coordinator.state, .failed(.recoveryCodePreparationFailed))
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])
@@ -1064,6 +1333,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         XCTAssertEqual(confirmationDelegate.allowPeerToJoinCalls.map { $0.peerName }, ["Peer"])
         XCTAssertEqual(confirmationDelegate.allowPeerToJoinCalls.map { $0.peerKind }, [.ddg])
@@ -1109,6 +1379,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         let failure = await pairingFailure {
             try await coordinator.pollOnce()
+            try await settlePendingConfirmation(in: coordinator)
         }
 
         XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .scannerSendRecoveryDenied, kind: .httpError))
@@ -1163,6 +1434,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     senderChannelID: peerKeyPair.channelID).payload)
         ]
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         let recoveryCode = try Self.makeRecoveryCodeV2(userId: userId,
                                                        secret: Base64URL.encode(primaryKey),
@@ -1229,6 +1501,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         let sentDone = try decryptSentMessage(at: 2,
                                               from: messageExchanger,
@@ -1236,8 +1509,82 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                               messageCrypto: messageCrypto)
         XCTAssertEqual(sentDone, .recoveryCodeDone(.init(reason: .success)))
         XCTAssertEqual(messageExchanger.sendCalls[2].messages.first?.version, "2.1")
-        XCTAssertEqual(messageExchanger.sendCalls.count, 3, "Joiners must report their outcome at most once")
+        XCTAssertEqual(try recoveryCodeDoneCount(in: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto), 1)
+        XCTAssertEqual(try decryptedSentMessages(from: messageExchanger,
+                                                 peerPrivateKey: peerKeyPair.privateKey,
+                                                 messageCrypto: messageCrypto).last,
+                       .bye(.init(reason: .done)))
         XCTAssertEqual(coordinator.state, .completed(.loggedIn))
+    }
+
+    func testWhenRecoveryCodeArrivesBeforeConfirmationThenRetainsItAcrossPollsUntilAccepted() async throws {
+        let setup = try await makeNativeJoinerReadyForLogin()
+        let confirmationGate = PairingV2CoordinatorTestGate()
+        setup.confirmationDelegate.joinPeerHandler = {
+            await confirmationGate.wait()
+            return true
+        }
+
+        try await setup.coordinator.pollOnce()
+        guard case .joinerWaitingForConfirmation = setup.coordinator.state else {
+            XCTFail("Expected pending joiner confirmation, got \(setup.coordinator.state)")
+            await confirmationGate.open()
+            return
+        }
+        XCTAssertNil(setup.coordinator.pendingRecoveryKey)
+
+        let hello = try localHello(from: setup.messageExchanger,
+                                   peerPrivateKey: setup.peerKeyPair.privateKey,
+                                   messageCrypto: setup.messageCrypto)
+        let confirmed = try setup.messageCrypto.encrypt(
+            .recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed)),
+            recipientPublicKey: hello.publicKey,
+            senderChannelID: setup.peerKeyPair.channelID)
+        setup.messageExchanger.fetchMessagesStub = [.init(seq: 3, version: confirmed.version, payload: confirmed.payload)]
+        try await setup.coordinator.pollOnce()
+        XCTAssertNil(setup.coordinator.pendingRecoveryKey)
+
+        setup.messageExchanger.fetchMessagesStub = []
+        await confirmationGate.open()
+        try await settlePendingConfirmation(in: setup.coordinator)
+
+        XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
+        XCTAssertNotNil(setup.coordinator.pendingRecoveryKey)
+        XCTAssertEqual(try recoveryCodeDoneCount(in: setup.messageExchanger,
+                                                 peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                 messageCrypto: setup.messageCrypto), 1)
+    }
+
+    func testWhenPeerDeniesWhileConfirmationIsPendingThenDismissesAndDiscardsBufferedRecoveryCode() async throws {
+        let setup = try await makeNativeJoinerReadyForLogin()
+        let confirmationGate = PairingV2CoordinatorTestGate()
+        setup.confirmationDelegate.joinPeerHandler = {
+            await confirmationGate.wait()
+            return true
+        }
+        setup.confirmationDelegate.dismissConfirmationHandler = {
+            await confirmationGate.open()
+        }
+
+        try await setup.coordinator.pollOnce()
+        let hello = try localHello(from: setup.messageExchanger,
+                                   peerPrivateKey: setup.peerKeyPair.privateKey,
+                                   messageCrypto: setup.messageCrypto)
+        let denied = try setup.messageCrypto.encrypt(
+            .recoveryCodeDenied(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeDenied)),
+            recipientPublicKey: hello.publicKey,
+            senderChannelID: setup.peerKeyPair.channelID)
+        setup.messageExchanger.fetchMessagesStub = [.init(seq: 3, version: denied.version, payload: denied.payload)]
+
+        try await setup.coordinator.pollOnce()
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(setup.coordinator.state, .failed(.recoveryCodeDenied))
+        XCTAssertEqual(setup.confirmationDelegate.dismissConfirmationCallCount, 1)
+        XCTAssertNil(setup.coordinator.pendingRecoveryKey)
+        XCTAssertEqual(try recoveryCodeDoneCount(in: setup.messageExchanger,
+                                                 peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                 messageCrypto: setup.messageCrypto), 0)
     }
 
     func testWhenV21NativeJoinerLoginFailsThenReportsLoginFailedOnce() async throws {
@@ -1252,6 +1599,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
             do {
                 try await setup.coordinator.pollOnce()
+                try await settlePendingConfirmation(in: setup.coordinator)
                 XCTFail("Expected \(testCase.name) login to fail")
             } catch let error as PairingV2Error {
                 XCTAssertEqual(error, testCase.expectedError, testCase.name)
@@ -1267,7 +1615,15 @@ final class PairingV2CoordinatorTests: XCTestCase {
                 .recoveryCodeDone(.init(reason: .loginFailed)),
                 testCase.name
             )
-            XCTAssertEqual(setup.messageExchanger.sendCalls.count, 3, "\(testCase.name) must be reported at most once")
+            XCTAssertEqual(try recoveryCodeDoneCount(in: setup.messageExchanger,
+                                                     peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                     messageCrypto: setup.messageCrypto), 1,
+                           "\(testCase.name) must be reported at most once")
+            XCTAssertEqual(try decryptedSentMessages(from: setup.messageExchanger,
+                                                     peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                     messageCrypto: setup.messageCrypto).last,
+                           .bye(.init(reason: .error)),
+                           testCase.name)
             XCTAssertEqual(setup.coordinator.state, .failed(testCase.expectedError), testCase.name)
         }
     }
@@ -1376,6 +1732,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     senderChannelID: peerKeyPair.channelID).payload)
         ]
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
         XCTAssertEqual(confirmationDelegate.joinPeerCalls.map { $0.peerName }, ["Peer"])
         XCTAssertEqual(confirmationDelegate.joinPeerCalls.map { $0.peerKind }, [.thirdParty])
         XCTAssertEqual(
@@ -1457,7 +1814,9 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                    messageCrypto: setup.messageCrypto),
             .recoveryCodeDone(.init(reason: .success))
         )
-        XCTAssertEqual(setup.messageExchanger.sendCalls.count, 3, "Joiners must report their outcome at most once")
+        XCTAssertEqual(try recoveryCodeDoneCount(in: setup.messageExchanger,
+                                                 peerPrivateKey: setup.peerKeyPair.privateKey,
+                                                 messageCrypto: setup.messageCrypto), 1)
         XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
     }
 
@@ -1523,6 +1882,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     senderChannelID: peerKeyPair.channelID).payload)
         ]
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 2,
@@ -1540,6 +1900,53 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.completedRegisteredDevices)
         XCTAssertEqual(coordinator.state, .failed(.cancelled))
         XCTAssertEqual(messageExchanger.closeChannelCalls.count, 1)
+    }
+
+    private func makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: PairingV2ConfirmationDelegateMock,
+                                                             byeReason: PairingV2ByeReason = .cancelled) async throws -> (
+        coordinator: PairingV2Coordinator,
+        messageExchanger: PairingV2MessageExchangingMock,
+        messageCrypto: PairingV2MessageCrypto,
+        peerKeyPair: PairingV2KeyPair,
+        localChannelID: String
+    ) {
+        let dependencies = MockSyncDependencies()
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          confirmationDelegate: confirmationDelegate,
+                                          advertisedVersion: .v2Point1)
+
+        let payload = try await coordinator.startPresenting()
+        messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [
+                .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: "2.1")),
+                .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                           name: "Peer",
+                                           kind: .ddg))
+            ],
+            recipientPublicKey: payload.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: messageCrypto
+        )
+        try await coordinator.pollOnce()
+        guard case .hostWaitingForConfirmation = coordinator.state else {
+            XCTFail("Expected pending host confirmation, got \(coordinator.state)")
+            throw PairingV2CoordinatorTestError.expectedPendingConfirmation
+        }
+
+        let encryptedBye = try messageCrypto.encrypt(.bye(.init(reason: byeReason)),
+                                                     recipientPublicKey: payload.publicKey,
+                                                     senderChannelID: peerKeyPair.channelID)
+        messageExchanger.fetchMessagesStub = [
+            .init(seq: 3, version: encryptedBye.version, payload: encryptedBye.payload)
+        ]
+        return (coordinator, messageExchanger, messageCrypto, peerKeyPair, payload.channelId)
     }
 
     private func makeNativeJoinerReadyForThirdPartyUpgrade(
@@ -1585,6 +1992,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     senderChannelID: peerKeyPair.channelID).payload)
         ]
         try await coordinator.pollOnce()
+        try await settlePendingConfirmation(in: coordinator)
 
         messageExchanger.fetchMessagesStub = [
             .init(seq: 2,
@@ -1598,7 +2006,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         return (coordinator, upgradeCoordinator, messageExchanger, messageCrypto, peerKeyPair)
     }
 
-    private func makeNativeJoinerReadyForLogin(loginError: Error) async throws -> (
+    private func makeNativeJoinerReadyForLogin(loginError: Error? = nil) async throws -> (
         coordinator: PairingV2Coordinator,
         messageExchanger: PairingV2MessageExchangingMock,
         messageCrypto: PairingV2MessageCrypto,
@@ -1646,6 +2054,20 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         return (coordinator, messageExchanger, messageCrypto, peerKeyPair, confirmationDelegate)
+    }
+
+    private func settlePendingConfirmation(in coordinator: PairingV2Coordinator) async throws {
+        for _ in 0..<100 {
+            switch coordinator.state {
+            case .hostWaitingForConfirmation, .joinerWaitingForConfirmation:
+                await Task.yield()
+                try await coordinator.pollOnce()
+            default:
+                return
+            }
+        }
+
+        XCTFail("Confirmation did not settle")
     }
 
     private func makeCoordinator(syncService: DDGSyncing,
@@ -1726,6 +2148,30 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let sendCall = try XCTUnwrap(optionalSendCall, file: file, line: line)
         let encryptedMessage = try XCTUnwrap(sendCall.messages.first, file: file, line: line)
         return try XCTUnwrap(try messageCrypto.decrypt(encryptedMessage, privateKey: peerPrivateKey), file: file, line: line)
+    }
+
+    private func decryptedSentMessages(from messageExchanger: PairingV2MessageExchangingMock,
+                                       peerPrivateKey: SecKey,
+                                       messageCrypto: PairingV2MessageCrypto) throws -> [PairingV2ApplicationMessage] {
+        try messageExchanger.sendCalls.indices.map {
+            try decryptSentMessage(at: $0,
+                                   from: messageExchanger,
+                                   peerPrivateKey: peerPrivateKey,
+                                   messageCrypto: messageCrypto)
+        }
+    }
+
+    private func recoveryCodeDoneCount(in messageExchanger: PairingV2MessageExchangingMock,
+                                       peerPrivateKey: SecKey,
+                                       messageCrypto: PairingV2MessageCrypto) throws -> Int {
+        try decryptedSentMessages(from: messageExchanger,
+                                  peerPrivateKey: peerPrivateKey,
+                                  messageCrypto: messageCrypto).count { message in
+            if case .recoveryCodeDone = message {
+                return true
+            }
+            return false
+        }
     }
 
     private func assertRecoveryCodeResponse(_ message: PairingV2ApplicationMessage,

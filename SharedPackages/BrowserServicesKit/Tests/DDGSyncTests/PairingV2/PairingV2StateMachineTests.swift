@@ -804,7 +804,7 @@ final class PairingV2StateMachineTests: XCTestCase {
         XCTAssertEqual(doneStateMachine.state, unknownState)
 
         let failureCases: [(reason: PairingV2ByeReason, error: PairingV2Error)] = [
-            (.cancelled, .cancelled),
+            (.cancelled, .peerCancelled),
             (.error, .peerDisconnected),
             (.unknown("future_reason"), .peerDisconnected)
         ]

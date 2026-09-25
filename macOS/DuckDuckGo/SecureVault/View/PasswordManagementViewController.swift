@@ -769,7 +769,7 @@ final class PasswordManagementViewController: NSViewController {
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @objc func openExportLogins(_ sender: Any) {
@@ -781,7 +781,7 @@ final class PasswordManagementViewController: NSViewController {
     @objc func onImportClicked(_ sender: NSButton) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @objc func onSyncClicked(_ sender: Any) {

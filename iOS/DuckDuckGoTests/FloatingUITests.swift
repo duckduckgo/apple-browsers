@@ -731,6 +731,41 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
             ))
         }
     }
+
+    func testWhenAtOrBelowHandoffStartThenRampedProgressIsZero() {
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.6, from: 0.6, to: 0.85), 0, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.4, from: 0.6, to: 0.85), 0, accuracy: 0.001)
+    }
+
+    func testWhenAtOrAboveHandoffEndThenRampedProgressIsOne() {
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.85, from: 0.6, to: 0.85), 1, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(1, from: 0.6, to: 0.85), 1, accuracy: 0.001)
+    }
+
+    func testWhenInsideTheHandoffBandThenRampedProgressIsLinear() {
+        // Midway between 0.6 and 0.85 (0.725) should read as halfway through the ramp.
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.725, from: 0.6, to: 0.85), 0.5, accuracy: 0.001)
+    }
+
+    func testWhenAtOrBelowCollapseStartThenToolbarButtonRowIsFullyCollapsed() {
+        for percent in [CGFloat(0.6), 0.45, 0.0] {
+            XCTAssertEqual(
+                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, collapseStart: 0.6),
+                1,
+                accuracy: 0.001,
+                "the button row must have finished collapsing by collapseStart, at percent \(percent)"
+            )
+        }
+    }
+
+    func testWhenAboveCollapseStartThenToolbarButtonRowCollapseIsGradual() {
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, collapseStart: 0.6), 0, accuracy: 0.001)
+        // Halfway between collapseStart (0.6) and 1.0 (0.8) should be halfway collapsed.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.8, collapseStart: 0.6), 0.5, accuracy: 0.001)
+        // A single unanimated scroll frame must not consume most of the ~56pt height change: a 0.1
+        // step down from rest collapses a quarter of the row, not two thirds.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.9, collapseStart: 0.6), 0.25, accuracy: 0.001)
+    }
 }
 
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
@@ -1277,6 +1312,46 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertEqual(obscured, padding + controller.capsuleHeight, accuracy: 0.001)
         XCTAssertLessThan(obscured, insets.bottom + FloatingDomainCapsuleController.restEdgePadding + controller.capsuleHeight)
     }
+
+    func testWhenInsideTheHandoffBandThenPillFadesInWhileHoldingTheBarFrame() {
+        for position in [AddressBarPosition.top, .bottom] {
+            let alphaEnd = FloatingDomainCapsuleController.alphaHandoffEnd(for: position)
+            let midBandPercent = (FloatingDomainCapsuleController.handoffStart + alphaEnd) / 2
+            let button = update(barsVisibilityPercent: midBandPercent, addressBarPosition: position)
+
+            XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01, "position \(position)")
+            // Both bar and pill are geometry-locked throughout the band: the pill already sits at the
+            // bar's full expanded size, so widening the fade can't make either visibly creep.
+            XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5, "position \(position)")
+            XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5, "position \(position)")
+        }
+    }
+
+    func testWhenAtItsAlphaHandoffEndThenPillIsHidden() {
+        for position in [AddressBarPosition.top, .bottom] {
+            update(barsVisibilityPercent: FloatingDomainCapsuleController.alphaHandoffEnd(for: position), addressBarPosition: position)
+
+            XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001, "position \(position)")
+            XCTAssertEqual(capsuleButton?.isHidden, true, "position \(position)")
+        }
+    }
+
+    // The top bar has no button row to sequence a collapse cue through first, so its fade must start
+    // immediately at rest (percent 1) rather than holding at full pill-alpha-zero through a silent
+    // dead zone before suddenly fading — that dead-then-fast pattern is what reads as an abrupt swap.
+    func testWhenTopBarAndBarelyScrolledThenPillHasAlreadyStartedFadingIn() {
+        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .top)
+
+        XCTAssertGreaterThan(button?.alpha ?? 0, 0, "the top bar's pill must start fading in the instant scrolling begins, not after a dead zone")
+    }
+
+    // The bottom bar's button row collapses first (over `[handoffEnd, 1]`), so the pill should still
+    // be fully hidden at the same point that would already show a fade on the top bar.
+    func testWhenBottomBarAndBarelyScrolledThenPillHasNotStartedFadingInYet() {
+        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .bottom)
+
+        XCTAssertEqual(button?.alpha ?? -1, 0, accuracy: 0.001, "the bottom bar's pill should wait for the button row to collapse first")
+    }
 }
 
 final class FloatingDomainCapsuleGeometryTests: XCTestCase {
@@ -1678,62 +1753,5 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(outgoingView.layer.mask)
         XCTAssertNil(incomingView.layer.mask)
         XCTAssertNil(incomingView.superview)
-    }
-}
-
-final class ChromeMorphAnimatorCurveTests: XCTestCase {
-
-    private let expandCurve = MainViewController.ChromeAnimationConstants.morphExpandCurve
-    private let collapseCurve = MainViewController.ChromeAnimationConstants.morphCollapseCurve
-
-    func testWhenCurveIsSmoothstepThenItEasesInAndOutSymmetrically() {
-        let curve = ChromeMorphAnimator.Curve.smoothstep
-
-        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 0.5), 0.5, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
-    }
-
-    func testWhenCurveIsEaseOutCubicThenItStartsFastAndDecelerates() {
-        let curve = ChromeMorphAnimator.Curve.easeOutCubic
-
-        XCTAssertEqual(curve.value(at: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 0.5), 0.875, accuracy: 0.0001)
-        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.0001)
-        XCTAssertGreaterThan(curve.value(at: 0.25), 0.5)
-    }
-
-    func testWhenCollapsingThenTheCurveNeverOvershoots() {
-        for step in 0...100 {
-            let value = collapseCurve.value(at: CGFloat(step) / 100)
-            XCTAssertLessThanOrEqual(value, 1.0, "Collapse must not overshoot at t = \(CGFloat(step) / 100)")
-        }
-    }
-
-    func testWhenExpandingThenTheSpringSettlesByTheEndOfItsDuration() {
-        XCTAssertEqual(expandCurve.value(at: 0), 0, accuracy: 0.0001)
-        XCTAssertEqual(expandCurve.value(at: 1),
-                       1,
-                       accuracy: 0.001,
-                       "Residual at the cutoff becomes a snap. Raise naturalFrequency or the damping ratio.")
-    }
-
-    func testWhenExpandingThenOvershootStaysBelowOnePointFivePercent() {
-        var peak: CGFloat = 0
-        for step in 0...200 {
-            peak = max(peak, expandCurve.value(at: CGFloat(step) / 200))
-        }
-
-        XCTAssertGreaterThan(peak, 1.0, "A lightly damped spring is expected to overshoot slightly")
-        XCTAssertLessThan(peak, 1.015, "Overshoot on a bar that clips the screen edge reads as a glitch")
-    }
-
-    func testWhenSpringIsCriticallyDampedThenItNeverOvershoots() {
-        let curve = ChromeMorphAnimator.Curve.spring(dampingRatio: 1, naturalFrequency: 8.84)
-
-        for step in 0...100 {
-            XCTAssertLessThanOrEqual(curve.value(at: CGFloat(step) / 100), 1.0)
-        }
-        XCTAssertEqual(curve.value(at: 1), 1, accuracy: 0.01)
     }
 }

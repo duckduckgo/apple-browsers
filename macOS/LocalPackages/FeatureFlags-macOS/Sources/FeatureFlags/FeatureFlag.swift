@@ -95,6 +95,18 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
+    /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
+    case cpmBackgroundDelegateProxy
+
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
+    case cpmDiagnosticsRecorder
+
+    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    /// https://app.asana.com/0/0/1218855001685906
+    case cpmMessagingHangRecovery
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
@@ -222,6 +234,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211969496845106?focus=true
     case blackFridayCampaign
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746481
+    case partnershipsHub
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
 
@@ -237,9 +252,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Prevents IME composition-confirm Return from submitting the address bar.
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
     case addressBarIMEConfirmFix
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
-    case dataImportNewExperience
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1217589459874947
     case dataImportDataDirectoryAccess
@@ -412,14 +424,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Autoplay policy control via WKWebpagePreferences
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
-    case autoplayPolicy
-
-    /// Enables the promo service to coordinate promos/calls to action
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
-    case promoQueue
-
     /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
     case promoQueueBookmarkToolbarPromo
@@ -542,6 +546,35 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
+    /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
+    /// Internal-only while the front end is in development.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserTools
+
+    /// Gates the `listOpenTabs` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolListOpenTabs
+
+    /// Gates the `searchHistory` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolSearchHistory
+
+    /// Gates the `switchToTab` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolSwitchToTab
+
+    /// Gates the `readTabContent` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolReadTabContent
+
+    /// Gates the `findInPage` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolFindInPage
+
+    /// Gates the `highlightInPage` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolHighlightInPage
+
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
@@ -649,6 +682,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
+        case .cpmBackgroundDelegateProxy:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
+        case .cpmDiagnosticsRecorder:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
+        case .cpmMessagingHangRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -729,6 +768,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.winBackOffer), category: .vpn)
         case .blackFridayCampaign:
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign), category: .subscription)
+        case .partnershipsHub:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub), category: .subscription)
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
         case .syncIdentities:
@@ -739,8 +780,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
-        case .dataImportNewExperience:
-            Config(source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
         case .dataImportDataDirectoryAccess:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
@@ -754,7 +793,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webNotifications:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.webNotifications), category: .webNotifications)
         case .websitePermissionsSettings:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings))
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
+                   supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .firstTimeQuitSurveySkipNonUserQuit:
@@ -796,7 +837,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
         case .updatedCreateImage:
-            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.updatedCreateImage), category: .duckAI)
         case .aiChatOmnibarWebSearch:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
@@ -839,8 +880,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueue:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .promoQueueBookmarkToolbarPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkToolbarPromo))
         case .promoQueueSyncFaviconsPromo:
@@ -888,8 +927,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),
                    supportsLocalOverriding: true,
                    category: .duckAI)
-        case .autoplayPolicy:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:
@@ -916,6 +953,21 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatBrowserTools:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
+        case .aiChatBrowserToolListOpenTabs:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs), category: .duckAI)
+        case .aiChatBrowserToolSearchHistory:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchHistory), category: .duckAI)
+        case .aiChatBrowserToolSwitchToTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab), category: .duckAI)
+        case .aiChatBrowserToolReadTabContent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.readTabContent), category: .duckAI)
+        case .aiChatBrowserToolFindInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage), category: .duckAI)
+        case .aiChatBrowserToolHighlightInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage), category: .duckAI)
+
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         }

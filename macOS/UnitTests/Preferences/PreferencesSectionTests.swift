@@ -220,4 +220,64 @@ final class PreferencesSectionTests: XCTestCase {
         let purchaseSubscriptionSection = sections.first { $0.id ==  .subscription }!
         XCTAssertEqual(purchaseSubscriptionSection.panes, [.subscriptionSettings])
     }
+
+    func testPartnershipsHubPaneIsAbsentWhenUnavailable() throws {
+        // Given
+        let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
+                                                                    shouldHideSubscriptionPurchase: false,
+                                                                    isIdentityTheftRestorationAvailable: true,
+                                                                    isPartnershipsHubAvailable: false)
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        let subscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(subscriptionSection.panes, [.identityTheftRestoration, .subscriptionSettings])
+    }
+
+    func testPartnershipsHubPaneFollowsIdentityTheftRestorationAndPrecedesSubscriptionSettings() throws {
+        // Given
+        let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
+                                                                    shouldHideSubscriptionPurchase: false,
+                                                                    isNetworkProtectionRemovalAvailable: true,
+                                                                    isIdentityTheftRestorationAvailable: true,
+                                                                    isPartnershipsHubAvailable: true)
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        let subscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(subscriptionSection.panes, [.vpn, .identityTheftRestoration, .partnershipsHub, .subscriptionSettings])
+    }
+
+    func testPartnershipsHubPaneIsAbsentWithoutASubscription() throws {
+        // Given
+        // The entry point is for subscribers, so an available hub must not surface it on its own.
+        let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: false,
+                                                                    shouldHideSubscriptionPurchase: false,
+                                                                    isPartnershipsHubAvailable: true)
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        XCTAssertFalse(sections.flatMap(\.panes).contains(.partnershipsHub))
+    }
 }

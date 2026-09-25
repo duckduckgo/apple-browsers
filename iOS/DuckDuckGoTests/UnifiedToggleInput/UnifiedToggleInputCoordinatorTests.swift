@@ -22,6 +22,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+import SubscriptionTestingUtilities
 import UIKit
 import UserScript
 import WebKit
@@ -37,6 +38,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
     private var mockFeatureDiscovery: MockFeatureDiscovery!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var retainedBridgeReadyWebView: WKWebView?
     private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
@@ -47,10 +49,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockToggleModeStorage = MockToggleModeStorage()
         mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
         mockFeatureDiscovery = MockFeatureDiscovery()
+        subscriptionManager = SubscriptionManagerMock()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             toggleModeStorage: mockToggleModeStorage,
             switchBarSubmissionMetrics: mockSubmissionMetrics,
             featureDiscovery: mockFeatureDiscovery,
@@ -63,6 +67,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     override func tearDown() {
         cancellables.removeAll()
         sut = nil
+        subscriptionManager = nil
         mockDelegate = nil
         mockPreferences = nil
         mockToggleModeStorage = nil
@@ -71,6 +76,36 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         retainedBridgeReadyWebView = nil
         retainedBridgeReadyBroker = nil
         super.tearDown()
+    }
+
+    func testRejectedStaleModelSelectionDoesNotCreatePendingChoice() {
+        mockPreferences.selectedModelId = "free"
+        sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),
+                                 makeModel(id: "paid", access: false, accessTier: ["plus"])]
+        subscriptionManager.hasAppStoreProductsAvailable = false
+
+        sut.handleModelSelection("paid")
+        sut.modelStore.models = [makeModel(id: "free", access: true), makeModel(id: "paid", access: true)]
+        sut.modelStore.onModelsUpdated?()
+
+        XCTAssertEqual(sut.persistedModelId, "free")
+        XCTAssertEqual(mockPreferences.selectedModelId, "free")
+    }
+
+    func testAvailabilityRefreshUpdatesPickerAndHeaderWithoutChangingSelection() async throws {
+        mockPreferences.selectedModelId = "free"
+        sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),
+                                 makeModel(id: "paid", access: false, accessTier: ["plus"])]
+        for available in [false, true] {
+            let refreshed = expectation(description: "header availability refreshed")
+            sut.onSubscriptionUpsellAvailabilityChanged = { refreshed.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [refreshed], timeout: 1)
+
+            let menu = try XCTUnwrap(sut.viewController.modelPickerMenu)
+            XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.flatMap(\.children).count, available ? 2 : 1)
+            XCTAssertEqual(sut.persistedModelId, "free")
+        }
     }
 
     // MARK: - Paste handler wiring

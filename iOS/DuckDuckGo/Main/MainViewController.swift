@@ -8067,6 +8067,8 @@ extension MainViewController {
         // Unrelated trait changes must preserve that hierarchy.
         if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
             || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
+            // A raster captured before editing cannot follow a later appearance change.
+            restingNewTabPageSnapshot = nil
             refreshSettledFloatingGlassAppearance()
         }
         updateFindInPage()

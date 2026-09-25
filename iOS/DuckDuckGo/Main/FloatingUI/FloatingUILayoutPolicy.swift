@@ -1,0 +1,113 @@
+//
+//  FloatingUILayoutPolicy.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Core
+import UIKit
+
+enum FloatingUILayoutPolicy {
+
+    static func shouldApplyFloatingTopContentInset(isFloatingUIEnabled: Bool,
+                                                   addressBarPosition: AddressBarPosition,
+                                                   isUnifiedToggleInputAffectingLayout: Bool) -> Bool {
+        isFloatingUIEnabled && addressBarPosition == .top && !isUnifiedToggleInputAffectingLayout
+    }
+
+    static func newTabPageBottomAdditionalSafeAreaInset(isFloatingUIEnabled: Bool,
+                                                        addressBarPosition: AddressBarPosition,
+                                                        floatingBottomObscuredHeight: CGFloat,
+                                                        safeAreaBottom: CGFloat,
+                                                        omnibarHeight: CGFloat,
+                                                        reservesAddressBarSpace: Bool = true) -> CGFloat {
+        if isFloatingUIEnabled {
+            return max(0, floatingBottomObscuredHeight - safeAreaBottom)
+        }
+        return addressBarPosition.isBottom && reservesAddressBarSpace ? omnibarHeight : 0
+    }
+
+    /// Fraction of a bar's slide travel that is still on screen while the domain capsule morph owns the
+    /// transition. The pill morphs out of the bar's *resting* frame, so the bar has to hold that frame
+    /// until the cross-fade has finished — sliding during the fade separates the two and the bar
+    /// visibly creeps away before it disappears. It slides out over `[0, handoffStart]` instead, by
+    /// which point it is no longer drawn.
+    static func chromeOnScreenFraction(barsVisibilityPercent: CGFloat, handoffStart: CGFloat) -> CGFloat {
+        guard handoffStart > 0 else { return barsVisibilityPercent > 0 ? 1 : 0 }
+        let clampedPercent = max(0, min(1, barsVisibilityPercent))
+        return min(1, clampedPercent / handoffStart)
+    }
+
+    /// Linear ramp of `percent` from 0 at `start` to 1 at `end`, clamped outside that range. Shared by
+    /// every bar<->pill crossfade (`chromeAlpha`, `pillAlpha`) so both halves of the fade always sum to 1.
+    static func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
+        guard end > start else { return percent < end ? 0 : 1 }
+        return ((percent - start) / (end - start)).clamped(to: 0...1)
+    }
+
+    /// The bottom toolbar's button-row collapse progress, ramped over `[collapseStart, 1]`. The band
+    /// must stay wide: it carries a ~56pt height change, so a narrow one turns an ordinary unanimated
+    /// scroll frame into a visible jolt before the morph even starts.
+    static func toolbarButtonRowCollapseProgress(barsVisibilityPercent: CGFloat, collapseStart: CGFloat) -> CGFloat {
+        1 - rampedProgress(barsVisibilityPercent, from: collapseStart, to: 1)
+    }
+
+    /// Height obscured by the visible bottom chrome, measured from the web view container's bottom edge
+    /// (the screen bottom). The floating web view is resized up by this amount so a page `position: fixed`
+    /// footer pins to the top of whatever is on screen at the bottom:
+    /// - toolbar shown -> `toolbarSlotHeight` (footer above the toolbar),
+    /// - toolbar still on screen during the morph -> `visibleToolbarHeight` (footer above the live bar),
+    /// - toolbar hidden + bottom capsule -> `bottomCapsuleObscuredHeight` (footer above the capsule),
+    /// - neither -> `safeAreaBottom` (footer at the safe area).
+    ///
+    /// `max` gives a smooth crossover: the shrinking toolbar term and the on-screen floor dominate while
+    /// the bars are visible, then the (stable) capsule / safe-area term takes over once the bars have hidden.
+    static func webViewBottomObscuredHeight(barsVisibilityPercent: CGFloat,
+                                            toolbarSlotHeight: CGFloat,
+                                            visibleToolbarHeight: CGFloat = 0,
+                                            bottomCapsuleObscuredHeight: CGFloat,
+                                            safeAreaBottom: CGFloat) -> CGFloat {
+        let clampedPercent = max(0, min(1, barsVisibilityPercent))
+        return max(toolbarSlotHeight * clampedPercent, visibleToolbarHeight, bottomCapsuleObscuredHeight, safeAreaBottom)
+    }
+
+    /// Top counterpart of `webViewBottomObscuredHeight`. `visibleChromeHeight` is the on-screen floor
+    /// while the top bar is pinned through the capsule hand-off, so a page `position: fixed` header
+    /// stays below the bar the user can still see instead of sliding under it.
+    static func webViewTopObscuredHeight(barsVisibilityPercent: CGFloat,
+                                         expandedChromeHeight: CGFloat,
+                                         visibleChromeHeight: CGFloat = 0,
+                                         topCapsuleObscuredHeight: CGFloat,
+                                         safeAreaTop: CGFloat) -> CGFloat {
+        let clampedPercent = max(0, min(1, barsVisibilityPercent))
+        return max(expandedChromeHeight * clampedPercent, visibleChromeHeight, topCapsuleObscuredHeight, safeAreaTop)
+    }
+
+    static func shouldHostOmnibarInFloatingToolbar(isFloatingUIEnabled: Bool,
+                                                   addressBarPosition: AddressBarPosition,
+                                                   isUnifiedToggleInputVisible: Bool,
+                                                   isMinimalChromeLayout: Bool) -> Bool {
+        // Excludes minimal chrome, where the toolbar is hidden and would take the omnibar with it.
+        isFloatingUIEnabled && addressBarPosition.isBottom && !isUnifiedToggleInputVisible && !isMinimalChromeLayout
+    }
+
+    static func shouldShowFloatingDomainCapsule(isFloatingUIEnabled: Bool,
+                                                isUnifiedToggleInputActive: Bool,
+                                                isAITab: Bool,
+                                                isMinimalChromeLayout: Bool) -> Bool {
+        isFloatingUIEnabled && !isUnifiedToggleInputActive && !isAITab && !isMinimalChromeLayout
+    }
+}

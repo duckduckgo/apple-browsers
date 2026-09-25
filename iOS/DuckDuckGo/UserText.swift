@@ -2003,6 +2003,9 @@ public struct UserText {
 
     // MARK: - New Tab Page customization
 
+    public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
+    public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
+
     public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
     public static let newTabPageCustomizationAlwaysShowKeyboard = NotLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")

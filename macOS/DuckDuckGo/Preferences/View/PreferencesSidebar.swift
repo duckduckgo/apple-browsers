@@ -202,7 +202,11 @@ extension Preferences {
                                 themeManager: themeManager,
                                 shouldShowWinBackCampaignBadge: model.shouldShowWinBackCampaignBadge(pane: pane),
                                 action: {
-                                    model.selectPane(pane)
+                                    if pane == .partnershipsHub {
+                                        model.openSubscriberOffers()
+                                    } else {
+                                        model.selectPane(pane)
+                                    }
                                 })
             }
             if section != model.sections.last {

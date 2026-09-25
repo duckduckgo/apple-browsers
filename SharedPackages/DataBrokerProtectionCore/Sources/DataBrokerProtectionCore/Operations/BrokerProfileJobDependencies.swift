@@ -70,6 +70,8 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let wideEvent: WideEventManaging?
     public let contentBlocking: DBPWebViewContentBlocking?
     public let isAuthenticatedUserProvider: () async -> Bool
+    /// POC: used instead of the webview scan runner when `featureFlagger.isRemoteScanExecutionOn`.
+    public let remoteScanService: RemoteScanServiceProviding
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -87,7 +89,8 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
                 wideEvent: WideEventManaging? = nil,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
-                isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
+                isAuthenticatedUserProvider: @escaping () async -> Bool = { true },
+                remoteScanService: RemoteScanServiceProviding? = nil
     ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
@@ -106,11 +109,18 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.wideEvent = wideEvent
         self.contentBlocking = contentBlocking
         self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
+        self.remoteScanService = remoteScanService ?? RemoteScanService(settings: dataBrokerProtectionSettings)
     }
 
     public func createScanRunner(profileQuery: SubJobContextProviding,
                                  stageDurationCalculator: StageDurationCalculator,
                                  shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning {
+        if featureFlagger.isRemoteScanExecutionOn {
+            return RemoteBrokerProfileScanSubJobRunner(service: remoteScanService,
+                                                       context: profileQuery,
+                                                       pollInterval: executionConfig.remoteScanPollInterval)
+        }
+
         return BrokerProfileScanSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,

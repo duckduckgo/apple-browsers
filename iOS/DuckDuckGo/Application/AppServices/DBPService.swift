@@ -201,6 +201,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
+    var isRemoteScanExecutionOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteScanExecution)
+    }
+
     var isFreemiumPIREnabled: Bool {
         freemiumPIRDebugSettings.isEligibilityForced
             || appDependencies.featureFlagger.isFeatureOn(.dbpFreemiumPIR)

@@ -56,6 +56,10 @@ final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }
 
+    var isRemoteScanExecutionOn: Bool {
+        featureFlagger.isFeatureOn(.dbpRemoteScanExecution)
+    }
+
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }

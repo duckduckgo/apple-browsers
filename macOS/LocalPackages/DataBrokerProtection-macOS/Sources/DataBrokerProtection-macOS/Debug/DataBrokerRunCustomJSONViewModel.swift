@@ -338,19 +338,33 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                     details: details,
                                                     progressText: progressText)
                             }
-                            let runner = BrokerProfileScanSubJobWebRunner(
-                                privacyConfig: self.privacyConfigManager,
-                                prefs: self.contentScopeProperties,
-                                context: query,
-                                emailConfirmationDataService: self.emailConfirmationDataService,
-                                captchaService: self.captchaService,
-                                featureFlagger: self.featureFlagger,
-                                applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
-                                stageDurationCalculator: stageCalculator,
-                                pixelHandler: fakePixelHandler,
-                                executionConfig: self.brokerJobExecutionConfig,
-                                shouldRunNextStep: { true }
-                            )
+                            let runner: BrokerProfileScanSubJobWebRunning
+                            if self.featureFlagger.isRemoteScanExecutionOn {
+                                // POC: delegate the scan to the remote scan server instead of the webview.
+                                // The server uses its own copy of the broker JSON, looked up by "<url>.json",
+                                // so only the pasted JSON's `url` matters here.
+                                let settings = DataBrokerProtectionSettings(defaults: .dbp)
+                                self.updateProgress("Submitting remote scan to \(settings.remoteJobServerURL.absoluteString) for \(query.dataBroker.url).json...")
+                                runner = RemoteBrokerProfileScanSubJobRunner(
+                                    service: RemoteScanService(settings: settings),
+                                    context: query,
+                                    pollInterval: self.brokerJobExecutionConfig.remoteScanPollInterval
+                                )
+                            } else {
+                                runner = BrokerProfileScanSubJobWebRunner(
+                                    privacyConfig: self.privacyConfigManager,
+                                    prefs: self.contentScopeProperties,
+                                    context: query,
+                                    emailConfirmationDataService: self.emailConfirmationDataService,
+                                    captchaService: self.captchaService,
+                                    featureFlagger: self.featureFlagger,
+                                    applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
+                                    stageDurationCalculator: stageCalculator,
+                                    pixelHandler: fakePixelHandler,
+                                    executionConfig: self.brokerJobExecutionConfig,
+                                    shouldRunNextStep: { true }
+                                )
+                            }
                             let extractedProfiles = try await self.withOptionalTimeout(scanTimeout) {
                                 try await runner.scan(showWebView: true) { true }
                             }

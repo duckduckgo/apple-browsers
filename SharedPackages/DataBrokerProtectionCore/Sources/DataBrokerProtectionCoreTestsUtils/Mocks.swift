@@ -2213,19 +2213,51 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeature
     public let isOptOutRetryErrorFrequencyExperimentOn: Bool
     public let isFreemiumPIREnabled: Bool
     public let isExtractedProfileRefreshOn: Bool
+    public let isRemoteScanExecutionOn: Bool
 
     public init(isForegroundRunningOnAppActiveFeatureOn: Bool = true,
                 isContinuedProcessingFeatureOn: Bool = true,
                 isWebViewUserAgentOn: Bool = false,
                 isOptOutRetryErrorFrequencyExperimentOn: Bool = false,
                 isFreemiumPIREnabled: Bool = false,
-                isExtractedProfileRefreshOn: Bool = true) {
+                isExtractedProfileRefreshOn: Bool = true,
+                isRemoteScanExecutionOn: Bool = false) {
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isContinuedProcessingFeatureOn = isContinuedProcessingFeatureOn
         self.isWebViewUserAgentOn = isWebViewUserAgentOn
         self.isOptOutRetryErrorFrequencyExperimentOn = isOptOutRetryErrorFrequencyExperimentOn
         self.isFreemiumPIREnabled = isFreemiumPIREnabled
         self.isExtractedProfileRefreshOn = isExtractedProfileRefreshOn
+        self.isRemoteScanExecutionOn = isRemoteScanExecutionOn
+    }
+}
+
+public final class MockRemoteScanService: RemoteScanServiceProviding {
+    public var scanId = "scan-123"
+    public var submitError: Error?
+    public var statusError: Error?
+    /// Consumed in order on each `status` call; the last entry repeats once exhausted.
+    public var statusResponses: [RemoteScanStatusResponse] = []
+
+    public private(set) var submittedRequests: [RemoteScanRequest] = []
+    public private(set) var statusCallCount = 0
+
+    public init() {}
+
+    public func submit(_ request: RemoteScanRequest) async throws -> RemoteScanSubmitResponse {
+        if let submitError { throw submitError }
+        submittedRequests.append(request)
+        return RemoteScanSubmitResponse(scanId: scanId, status: .queued)
+    }
+
+    public func status(scanId: String) async throws -> RemoteScanStatusResponse {
+        if let statusError { throw statusError }
+        statusCallCount += 1
+        guard !statusResponses.isEmpty else {
+            return RemoteScanStatusResponse(scanId: scanId, status: .completed, matches: [], error: nil)
+        }
+        let index = min(statusCallCount - 1, statusResponses.count - 1)
+        return statusResponses[index]
     }
 }
 

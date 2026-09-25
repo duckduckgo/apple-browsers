@@ -34,6 +34,7 @@ public final class DataBrokerProtectionSettings {
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
         static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
+        static let remoteJobServerURLKey = "dbp.remoteJobServerURL"
     }
 
     public enum SelectedEnvironment: String, Codable {
@@ -108,6 +109,32 @@ public final class DataBrokerProtectionSettings {
         set {
             defaults.set(newValue, forKey: Keys.serviceRootKey)
         }
+    }
+
+    // MARK: - Remote scan server (POC)
+
+    public static let defaultRemoteJobServerURL = URL(string: "http://localhost:8080")!
+
+    /// Raw override for the remote scan server base URL, set from the debug menu. Empty means "use the default".
+    public var remoteJobServerURLString: String {
+        get {
+            defaults.string(forKey: Keys.remoteJobServerURLKey) ?? ""
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.remoteJobServerURLKey)
+        }
+    }
+
+    /// Base URL used by `RemoteScanService` when the `dbpRemoteScanExecution` flag is on.
+    public var remoteJobServerURL: URL {
+        let override = remoteJobServerURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !override.isEmpty,
+           let url = URL(string: override),
+           url.scheme != nil,
+           url.host != nil {
+            return url
+        }
+        return Self.defaultRemoteJobServerURL
     }
 
     public var endpointURL: URL {

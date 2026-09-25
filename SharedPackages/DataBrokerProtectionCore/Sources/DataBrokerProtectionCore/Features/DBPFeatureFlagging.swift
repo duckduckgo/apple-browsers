@@ -23,6 +23,7 @@ public typealias DBPFeatureFlagging = ForegroundRunningFeatureFlagging
     & WebViewUserAgentFeatureFlagging
     & OptOutRetryErrorFeatureFlagging
     & ExtractedProfileRefreshFeatureFlagging
+    & RemoteScanExecutionFeatureFlagging
 
 public protocol ForegroundRunningFeatureFlagging {
     var isForegroundRunningOnAppActiveFeatureOn: Bool { get }
@@ -42,6 +43,12 @@ public protocol OptOutRetryErrorFeatureFlagging {
 
 public protocol ExtractedProfileRefreshFeatureFlagging {
     var isExtractedProfileRefreshOn: Bool { get }
+}
+
+/// POC: when on, scans are submitted to a remote server (see `RemoteScanService`) instead of
+/// running in the hidden webview. Opt-outs are unaffected.
+public protocol RemoteScanExecutionFeatureFlagging {
+    var isRemoteScanExecutionOn: Bool { get }
 }
 
 public struct DisabledOptOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging {

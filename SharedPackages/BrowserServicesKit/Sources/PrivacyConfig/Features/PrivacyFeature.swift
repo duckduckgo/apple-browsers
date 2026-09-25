@@ -285,6 +285,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
+    case remoteScanExecution
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

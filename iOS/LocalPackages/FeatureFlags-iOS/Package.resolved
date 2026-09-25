@@ -1,5 +1,5 @@
 {
-  "originHash" : "63e7953909781dd4d96f61e156c1e71fc1e7309bc85b5c9206603239efbcd3ab",
+  "originHash" : "ba8236f22871929b32a9107d1582f8018588e1377f15cf9ff89e63dcf06c56df",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
@@ -56,21 +56,12 @@
       }
     },
     {
-      "identity" : "swift-algorithms",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-algorithms",
-      "state" : {
-        "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
-        "version" : "1.2.1"
-      }
-    },
-    {
       "identity" : "swift-asn1",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "a54383ada6cecde007d374f58f864e29370ba5c3",
-        "version" : "1.3.2"
+        "revision" : "3b6410f7dee09eb33cdd26260c5fd47fda19b0e2",
+        "version" : "1.7.3"
       }
     },
     {
@@ -78,17 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "e8d6eba1fef23ae5b359c46b03f7d94be2f41fed",
-        "version" : "3.12.3"
-      }
-    },
-    {
-      "identity" : "swift-numerics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-numerics.git",
-      "state" : {
-        "revision" : "e0ec0f5f3af6f3e4d5e7a19d2af26b481acb6ba8",
-        "version" : "1.0.3"
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {
@@ -107,15 +89,6 @@
       "state" : {
         "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
         "version" : "4.0.0"
-      }
-    },
-    {
-      "identity" : "zipfoundation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/weichsel/ZIPFoundation.git",
-      "state" : {
-        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
-        "version" : "0.9.20"
       }
     }
   ],

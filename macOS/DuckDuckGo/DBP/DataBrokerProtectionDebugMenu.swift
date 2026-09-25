@@ -58,6 +58,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let defaultEndpointMenuItem = NSMenuItem(title: "Use Default Endpoint", action: #selector(DataBrokerProtectionDebugMenu.useDBPDefaultEndpoint))
     private let customEndpointMenuItem = NSMenuItem(title: "Use Custom Endpoint...", action: #selector(DataBrokerProtectionDebugMenu.useDBPCustomEndpoint))
 
+    private let currentRemoteScanServerMenuItem = NSMenuItem(title: "Current URL:")
+    private let defaultRemoteScanServerMenuItem = NSMenuItem(title: "Use Default URL", action: #selector(DataBrokerProtectionDebugMenu.useRemoteScanServerDefaultURL))
+    private let customRemoteScanServerMenuItem = NSMenuItem(title: "Use Custom URL...", action: #selector(DataBrokerProtectionDebugMenu.useRemoteScanServerCustomURL))
+
     private let subscriptionEnvironmentMenuItem = NSMenuItem(title: "Subscription Environment:")
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
@@ -187,6 +191,14 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 customEndpointMenuItem.targetting(self)
             }
 
+            NSMenuItem(title: "Remote Scan Server") {
+                currentRemoteScanServerMenuItem.isEnabled = false
+                currentRemoteScanServerMenuItem
+
+                defaultRemoteScanServerMenuItem.targetting(self)
+                customRemoteScanServerMenuItem.targetting(self)
+            }
+
             NSMenuItem.separator()
 
             NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNBypass))
@@ -228,6 +240,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     override func update() {
         updateWebUIMenuItemsState()
         updateServiceRootMenuItemState()
+        updateRemoteScanServerMenuItemState()
         updateSubscriptionEnvironmentMenuItem()
         updateShowStatusMenuIconMenu()
     }
@@ -351,6 +364,42 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
     // swiftlint:enable force_try
+
+    @objc private func useRemoteScanServerDefaultURL() {
+        settings.remoteJobServerURLString = ""
+    }
+
+    @objc private func useRemoteScanServerCustomURL() {
+        let sheet = CustomTextEntrySheet(
+            title: "Remote Scan Server URL",
+            fieldLabel: "Base URL",
+            placeholder: DataBrokerProtectionSettings.defaultRemoteJobServerURL.absoluteString,
+            content: { _, isValid in
+                if !isValid.wrappedValue {
+                    Text(verbatim: "Enter a full http(s) URL, e.g. http://localhost:8080")
+                        .dbpSecondaryTextStyle()
+                }
+                Text(verbatim: "Only used while the dbpRemoteScanExecution feature flag is on.")
+                    .dbpSecondaryTextStyle()
+            },
+            onApply: { [weak self] value in
+                guard let self else { return false }
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let url = URL(string: trimmed),
+                      let scheme = url.scheme?.lowercased(),
+                      ["http", "https"].contains(scheme),
+                      url.host != nil else {
+                    return false
+                }
+                self.settings.remoteJobServerURLString = trimmed
+                return true
+            }
+        )
+
+        Task { @MainActor in
+            sheet.show()
+        }
+    }
 
     @objc private func startScheduledOperations(_ sender: NSMenuItem) {
         Logger.dataBrokerProtection.log("Running queued operations...")
@@ -560,6 +609,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 customEndpointMenuItem.state = .on
             }
         }
+    }
+
+    private func updateRemoteScanServerMenuItemState() {
+        currentRemoteScanServerMenuItem.title = "Current URL: \(settings.remoteJobServerURL.absoluteString)"
+        let isCustom = !settings.remoteJobServerURLString.isEmpty
+        defaultRemoteScanServerMenuItem.state = isCustom ? .off : .on
+        customRemoteScanServerMenuItem.state = isCustom ? .on : .off
     }
 
     func menuItem(withTitle title: String, action: Selector, representedObject: Any?) -> NSMenuItem {

@@ -50,6 +50,9 @@ public struct BrokerJobExecutionConfig {
 
         /// Wall-clock ceiling for the native `getEmailData` action's polling loop
         public static let defaultGetEmailDataTotalTimeout: TimeInterval = .seconds(60)
+
+        /// Delay between status polls when a scan runs on the remote scan server (POC)
+        public static let defaultRemoteScanPollInterval: TimeInterval = .seconds(3)
     }
 
     let intervalBetweenSameBrokerJobs: TimeInterval
@@ -60,6 +63,7 @@ public struct BrokerJobExecutionConfig {
     public let clickAwaitTimeForOptOut: TimeInterval
     public let clickAwaitTimeForScan: TimeInterval
     public let getEmailDataTotalTimeout: TimeInterval
+    public let remoteScanPollInterval: TimeInterval
 
     private let concurrentJobsDifferentBrokers: Int
     // https://app.asana.com/0/481882893211075/1206981742767469/f
@@ -82,7 +86,8 @@ public struct BrokerJobExecutionConfig {
                 concurrentJobsOnManualScans: Int = Constants.defaultConcurrentJobsOnManualScans,
                 clickAwaitTimeForOptOut: TimeInterval = Constants.defaultClickAwaitTimeForOptOut,
                 clickAwaitTimeForScan: TimeInterval = Constants.defaultClickAwaitTimeForScan,
-                getEmailDataTotalTimeout: TimeInterval = Constants.defaultGetEmailDataTotalTimeout) {
+                getEmailDataTotalTimeout: TimeInterval = Constants.defaultGetEmailDataTotalTimeout,
+                remoteScanPollInterval: TimeInterval = Constants.defaultRemoteScanPollInterval) {
         self.intervalBetweenSameBrokerJobs = intervalBetweenSameBrokerJobs
         self.scanJobTimeout = scanJobTimeout
         self.optOutJobTimeout = optOutJobTimeout
@@ -93,5 +98,6 @@ public struct BrokerJobExecutionConfig {
         self.clickAwaitTimeForOptOut = clickAwaitTimeForOptOut
         self.clickAwaitTimeForScan = clickAwaitTimeForScan
         self.getEmailDataTotalTimeout = getEmailDataTotalTimeout
+        self.remoteScanPollInterval = remoteScanPollInterval
     }
 }

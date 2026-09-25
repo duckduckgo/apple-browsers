@@ -24,6 +24,7 @@ import SwiftUI
 struct RedesignedFavoritesView: View {
     @ObservedObject var model: FavoritesViewModel
     @State private var isExpanded = false
+    private let haptics = UIImpactFeedbackGenerator()
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
 
     private var hasOverflow: Bool { model.allFavorites.count > Metrics.collapsedCount }
@@ -54,6 +55,7 @@ struct RedesignedFavoritesView: View {
                 } preview: { favorite in
                     RedesignedFavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
                 } onMove: { from, to in
+                    haptics.impactOccurred()
                     withAnimation { model.moveFavorites(from: from, to: to) }
                 } onMoveFinished: {
                     model.favoritesReordered()

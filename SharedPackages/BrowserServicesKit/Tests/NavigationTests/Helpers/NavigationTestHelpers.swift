@@ -19,7 +19,7 @@
 import Combine
 import Common
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 
 // swiftlint:disable cyclomatic_complexity

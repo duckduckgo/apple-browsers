@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import Combine
-import Navigation
+import DDGNavigation
 import WebKit
 import UserScript
 import Subscription

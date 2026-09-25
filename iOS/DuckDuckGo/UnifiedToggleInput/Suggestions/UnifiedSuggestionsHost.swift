@@ -125,7 +125,7 @@ final class UnifiedSuggestionsHost {
         }
     }
 
-    var isShowingLogo: Bool { viewModel.isShowingLogo && redesignedSearchPresentation?.showsSearchModules != true }
+    var isShowingLogo: Bool { viewModel.isShowingLogo }
     var isShowingFavorites: Bool { viewModel.isShowingFavorites }
 
     /// Fire tabs render the fire empty state instead of the Dax logo for the empty (`.logo`) state.

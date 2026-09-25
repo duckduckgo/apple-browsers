@@ -113,7 +113,6 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        guard !showsRedesignedSearchModules else { return false }
         if case .logo = viewModel.content { return true }
         return false
     }

@@ -33,6 +33,7 @@ final class RedesignedFocusedSearchPresentation: ObservableObject {
             .sink { [weak self] inputs, dismissBehavior, isFireTab in
                 guard let self, dismissBehavior == .none else { return }
                 let showsSearchModules = inputs.mode == .search && !inputs.isTyping && !isFireTab
+                    && (inputs.hasFavorites || inputs.hasMessages)
                 guard self.showsSearchModules != showsSearchModules else { return }
                 self.showsSearchModules = showsSearchModules
             }

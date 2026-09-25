@@ -26,6 +26,14 @@ final class HangMetricsSubscriberTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_000_000)
     private let version = "7.100.0"
 
+    private var expectedName: String {
+#if os(macOS)
+        "app-hangs_metrickit_hang-bucket_macos"
+#else
+        "app-hangs_metrickit_hang-bucket"
+#endif
+    }
+
     private func makeSubscriber(store: KeyValueStoring,
                                 pixelFiring: PixelKitMock) -> HangMetricsSubscriber {
         HangMetricsSubscriber(store: store,
@@ -49,11 +57,18 @@ final class HangMetricsSubscriberTests: XCTestCase {
 
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
         let call = pixelKit.actualFireCalls.first
-        XCTAssertEqual(call?.pixel.name, "app-hangs_metrickit_hang-bucket")
+        XCTAssertEqual(call?.pixel.name, expectedName)
         XCTAssertEqual(call?.frequency, .standard)
         XCTAssertEqual(call?.pixel.parameters?[HangMetricsPixelParameters.minMs], "123")
         XCTAssertEqual(call?.pixel.parameters?[HangMetricsPixelParameters.maxMs], "457")
         XCTAssertEqual(call?.pixel.parameters?[HangMetricsPixelParameters.count], "17")
+    }
+
+    func testPixelNameNeverCarriesTheLegacyMacPrefix() {
+        let pixel = HangMetricsPixel.hangBucket(minMs: 0, maxMs: 1, count: 1)
+        XCTAssertFalse(pixel.name.hasPrefix("m_mac_"))
+        XCTAssertEqual(pixel.name, expectedName)
+        XCTAssertEqual(pixel.namePrefix, .none)
     }
 
     func testFiresOncePerBucketRatherThanOncePerHang() {

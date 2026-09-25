@@ -91,7 +91,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -279,13 +279,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+    // @MainActor so the webView URL read below is synchronous. A nonisolated body runs on the
+    // global executor (SE-0338) and the mid-body hop to the main actor for `url` stalls the
+    // WKScriptMessageHandlerWithReply reply on Xcode 16.2 builds (macOS 14 CI leg) — the frontend
+    // awaits this config on every duckduckgo.com/duck.ai load, so pages never rendered.
+    @MainActor public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
         // Consume exactly once per document, at load, before the user can submit a prompt. Guarded by
         // a flag (not by `conversationSource == nil`) so a chat that loaded with an empty mailbox
         // can't later steal a different chat's pending source on a subsequent config fetch.
         if !didConsumeConversationSource {
             didConsumeConversationSource = true
-            let url = await message.messageWebView?.url
+            let url = message.messageWebView?.url
             // Only a chat may claim the stamp: duckduckgo.com's other pages fetch this config too, and
             // the mailbox is app-wide. A nil URL can't be told apart from a chat, so it consumes.
             if url == nil || url?.isDuckAIURL == true {

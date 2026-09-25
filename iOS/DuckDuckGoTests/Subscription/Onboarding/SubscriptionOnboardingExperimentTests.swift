@@ -47,69 +47,73 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
     func test_resolveCohort_eligibleForFreeTrialsAndNotYetEnrolled_enrollsAndReturnsControl() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.control, isAlreadyAssigned: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
 
-        XCTAssertEqual(cohort, .control)
+        XCTAssertEqual(result.cohort, .control)
+        XCTAssertTrue(result.isFreshlyEnrolled)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
     func test_resolveCohort_eligibleForFreeTrialsAndNotYetEnrolled_enrollsAndReturnsTreatment() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment, isAlreadyAssigned: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
 
-        XCTAssertEqual(cohort, .treatment)
+        XCTAssertEqual(result.cohort, .treatment)
+        XCTAssertTrue(result.isFreshlyEnrolled)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
     func test_resolveCohort_eligibleForPaidSubsAndNotYetEnrolled_enrollsAndReturnsTreatment() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsSep2026Cohort.treatment, isAlreadyAssigned: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.enUS)
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.enUS)
 
-        XCTAssertEqual(cohort, .treatment)
+        XCTAssertEqual(result.cohort, .treatment)
+        XCTAssertTrue(result.isFreshlyEnrolled)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
     func test_resolveCohort_notEnrolled_returnsNil() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil, isAlreadyAssigned: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS)
 
-        XCTAssertNil(cohort)
+        XCTAssertNil(result.cohort)
+        XCTAssertFalse(result.isFreshlyEnrolled)
         XCTAssertTrue(featureFlagger.didCallResolveCohort)
     }
 
     func test_resolveCohort_localeIsNotEnUS_doesNotEnroll() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment, isAlreadyAssigned: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.nonEnUS)
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.nonEnUS)
 
-        XCTAssertNil(cohort)
+        XCTAssertNil(result.cohort)
+        XCTAssertFalse(result.isFreshlyEnrolled)
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
-    /// An existing assignment always wins over current trial status — no re-enrollment on conversion.
+    /// An existing assignment always wins over current trial status — no re-enrollment on conversion. Also
+    /// the "already enrolled" case: a read of an existing assignment is never a fresh enrollment.
     func test_resolveCohort_trialStatusChangedAfterEnrollment_returnsExistingCohort() {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.nonEnUS)
+        let result = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: false, locale: Self.nonEnUS)
 
-        XCTAssertEqual(cohort, .treatment)
+        XCTAssertEqual(result.cohort, .treatment)
+        XCTAssertFalse(result.isFreshlyEnrolled)
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
     // MARK: - AI features disabled metric
 
     /// Must fire for control too — the metric compares both cohorts, so a control-only reader would be useless.
-    func test_resolveCohort_freshEnrollmentAsControlWithAIChatDisabled_firesAIFeaturesDisabledMetric() {
-        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control",
-                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "control"),
-                                                  isAlreadyAssigned: false)
+    func test_fireAIFeatureDisabledMetricIfNeeded_freshEnrollmentFreeTrialsAsControlWithAIChatDisabled_fires() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: false)
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: true, isAIChatEnabled: false)
 
-        XCTAssertEqual(cohort, .control)
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_control")
         XCTAssertEqual(firedEvents.first?.parameters?["metric"], "ai_features_disabled")
@@ -117,50 +121,32 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    func test_resolveCohort_freshEnrollmentAsTreatmentWithAIChatDisabled_firesAIFeaturesDisabledMetric() {
-        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
-                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"),
-                                                  isAlreadyAssigned: false)
+    func test_fireAIFeatureDisabledMetricIfNeeded_freshEnrollmentPaidSubsAsTreatmentWithAIChatDisabled_fires() {
+        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: false)
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: true, isAIChatEnabled: false)
 
-        XCTAssertEqual(cohort, .treatment)
         XCTAssertEqual(firedEvents.count, 1)
-        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
         XCTAssertEqual(firedEvents.first?.parameters?["metric"], "ai_features_disabled")
     }
 
-    func test_resolveCohort_freshEnrollmentWithAIChatEnabled_doesNotFireAIFeaturesDisabledMetric() {
-        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
-                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"),
-                                                  isAlreadyAssigned: false)
+    func test_fireAIFeatureDisabledMetricIfNeeded_aiChatEnabled_doesNotFire() {
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: true, isAIChatEnabled: true)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: true)
-
-        XCTAssertEqual(cohort, .treatment)
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
     /// A read of an already-assigned cohort is not enrollment, so it must never (re-)fire this metric.
-    func test_resolveCohort_alreadyAssigned_doesNotFireAIFeaturesDisabledMetricEvenIfAIChatDisabled() {
-        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
-                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"))
+    func test_fireAIFeatureDisabledMetricIfNeeded_notFreshlyEnrolled_doesNotFire() {
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: false, isAIChatEnabled: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: false)
-
-        XCTAssertEqual(cohort, .treatment)
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    /// Not eligible (non-en_US) means no enrollment at all, so no metric either, however AI chat is set.
-    func test_resolveCohort_localeIsNotEnUS_doesNotFireAIFeaturesDisabledMetric() {
-        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
-                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"),
-                                                  isAlreadyAssigned: false)
+    func test_fireAIFeatureDisabledMetricIfNeeded_notEnrolled_doesNotFire() {
+        SubscriptionOnboardingExperiment.fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: true, isAIChatEnabled: false)
 
-        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.nonEnUS, isAIChatEnabled: false)
-
-        XCTAssertNil(cohort)
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
@@ -392,25 +378,16 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
     }
 
     /// Seeds a device enrolled in `subfeature` only — the other subfeature ID is left unseeded, so a fire
-    /// attempted against it no-ops. `resolveCohortStub`/`isAlreadyAssigned` additionally support tests that
-    /// call `resolveCohort` itself, e.g. to simulate a fresh enrollment (`isAlreadyAssigned: false`).
-    @discardableResult
-    private func seedActiveExperiment(_ subfeature: PrivacyProSubfeature,
-                                      cohort: String,
-                                      enrollmentDate: Date = Date(),
-                                      resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil,
-                                      isAlreadyAssigned: Bool = true) -> PrivacyConfig.MockFeatureFlagger {
+    /// attempted against it no-ops.
+    private func seedActiveExperiment(_ subfeature: PrivacyProSubfeature, cohort: String, enrollmentDate: Date = Date()) {
         let experimentData = ExperimentData(
             parentID: subfeature.parent.rawValue,
             cohortID: cohort,
             enrollmentDate: enrollmentDate
         )
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(
-            allActiveExperiments: [subfeature.rawValue: experimentData],
-            resolveCohortStub: resolveCohortStub,
-            isAlreadyAssigned: isAlreadyAssigned
+            allActiveExperiments: [subfeature.rawValue: experimentData]
         )
         configurePixelKit(featureFlagger: featureFlagger)
-        return featureFlagger
     }
 }

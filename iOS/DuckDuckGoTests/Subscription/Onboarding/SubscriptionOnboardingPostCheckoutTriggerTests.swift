@@ -19,6 +19,8 @@
 
 import XCTest
 import PrivacyConfig
+import PixelKit
+import PixelExperimentKit
 import FeatureFlags_iOS
 @testable import Subscription
 import SubscriptionTestingUtilities
@@ -91,6 +93,24 @@ final class SubscriptionOnboardingPostCheckoutTriggerTests: XCTestCase {
 final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
 
     private static let enUS = Locale(identifier: "en_US")
+    private var firedEvents: [PixelKit.Event] = []
+
+    override func setUp() {
+        super.setUp()
+        firedEvents = []
+        // isOnboardingFeatureEnabled can report the ai_features_disabled metric on fresh enrollment, which
+        // asserts if PixelKit's experiment kit was never configured — an empty MockFeatureFlagger keeps every
+        // metric call a no-op unless a test below configures one with a matching active experiment.
+        configureExperimentKit(featureFlagger: PrivacyConfig.MockFeatureFlagger())
+    }
+
+    private func configureExperimentKit(featureFlagger: FeatureFlagger) {
+        PixelKit.configureExperimentKit(
+            featureFlagger: featureFlagger,
+            eventTracker: ExperimentEventTracker(),
+            fire: { [weak self] event, _, _ in self?.firedEvents.append(event) }
+        )
+    }
 
     func test_isOnboardingFeatureEnabled_onFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
         let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
@@ -111,6 +131,20 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
         let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true, resolveCohortStub: nil)
 
         XCTAssertFalse(isEnabled)
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    /// Proves the "already enrolled" branch (`resolveCohort`'s early return) threads through end-to-end.
+    /// The metric-reporting guard itself — that a non-fresh enrollment must not fire `ai_features_disabled`
+    /// — is covered deterministically in `SubscriptionOnboardingExperimentTests`, which can inject
+    /// `isAIChatEnabled`; it can't be proven from here, since `AIChatSettings`'s real default is "enabled",
+    /// which would mask a broken guard by never firing anyway.
+    func test_isOnboardingFeatureEnabled_alreadyEnrolledAsTreatment_returnsTrue() async {
+        let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
+                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment,
+                                               isAlreadyAssigned: true)
+
+        XCTAssertTrue(isEnabled)
     }
 
     /// Stubbed to enroll-as-treatment if reached, proving the fetch failure skips enrollment entirely.
@@ -134,13 +168,15 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
         case fetchFailed
     }
 
-    private func isFeatureEnabled(hasActiveTrialOffer: Bool, resolveCohortStub: (any FeatureFlagCohortDescribing)?) async -> Bool {
+    private func isFeatureEnabled(hasActiveTrialOffer: Bool,
+                                  resolveCohortStub: (any FeatureFlagCohortDescribing)?,
+                                  isAlreadyAssigned: Bool = false) async -> Bool {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             activeOffers: hasActiveTrialOffer ? [DuckDuckGoSubscription.Offer(type: .trial)] : []
         ))
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: resolveCohortStub, isAlreadyAssigned: false)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: resolveCohortStub, isAlreadyAssigned: isAlreadyAssigned)
         return await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
                                                                           featureFlagger: featureFlagger,
                                                                           locale: Self.enUS)

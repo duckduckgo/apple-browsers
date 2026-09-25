@@ -56,26 +56,17 @@ enum SubscriptionOnboardingExperiment {
         static let aiFeaturesDisabled = "ai_features_disabled"
     }
 
-    /// Enrolls in whichever ABN test matches trial status, unless already assigned to either — an existing
-    /// assignment always wins, so a trial-to-paid conversion can't cause double-enrollment. Also reports the
-    /// `ai_features_disabled` metric, but only on the branch that performs a fresh enrollment.
-    /// - Returns: The device's cohort, or `nil` if neither experiment is active for this device.
-    @discardableResult
-    static func resolveCohort(using featureFlagger: FeatureFlagger,
-                              isOnFreeTrial: Bool,
-                              locale: Locale,
-                              isAIChatEnabled: @autoclosure () -> Bool = AIChatSettings().isAIChatEnabled) -> Cohort? {
+    /// Enrolls in whichever ABN test matches trial status, unless already assigned to either.
+    /// - Returns: The device's cohort (`nil` if neither experiment is active for this device), and whether
+    ///   this call is the one that freshly enrolled it (`false` for a read of an existing assignment). 
+    static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> (cohort: Cohort?, isFreshlyEnrolled: Bool) {
         if let assigned = assignedCohort(using: featureFlagger) {
-            return assigned
+            return (assigned, false)
         }
-        guard locale.isEnglishUnitedStates else { return nil }
+        guard locale.isEnglishUnitedStates else { return (nil, false) }
         let flag = isOnFreeTrial ? freeTrialsFlag : paidSubsFlag
-        guard let cohort = featureFlagger.resolveCohort(for: flag).flatMap({ Cohort(rawValue: $0.rawValue) }) else {
-            return nil
-        }
-        let subfeatureID = isOnFreeTrial ? freeTrialsSubfeatureID : paidSubsSubfeatureID
-        fireAIFeaturesDisabledMetricIfNeeded(subfeatureID: subfeatureID, isAIChatEnabled: isAIChatEnabled())
-        return cohort
+        let cohort = featureFlagger.resolveCohort(for: flag).flatMap { Cohort(rawValue: $0.rawValue) }
+        return (cohort, cohort != nil)
     }
 
     /// Reads whichever experiment this device is already enrolled in, without enrolling it in either.
@@ -120,15 +111,19 @@ enum SubscriptionOnboardingExperiment {
         fireActivationMetric(Metric.pirActivated)
     }
 
+    /// Reports whether Duck.ai was disabled in the app, unless this isn't the call that freshly enrolled the
+    /// device (see `resolveCohort`). No-ops if not enrolled in either experiment.
+    static func fireAIFeatureDisabledMetricIfNeeded(isFreshlyEnrolled: Bool, isAIChatEnabled: @autoclosure () -> Bool = AIChatSettings().isAIChatEnabled) {
+        guard isFreshlyEnrolled, !isAIChatEnabled() else { return }
+        for target in activationMetricTargets {
+            PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: Metric.aiFeaturesDisabled, conversionWindowDays: d1Window, value: "1")
+        }
+    }
+
     private static func fireActivationMetric(_ metric: String) {
         for target in activationMetricTargets {
             PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric + "_d1", conversionWindowDays: d1Window, value: "1")
             PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric + target.suffix, conversionWindowDays: target.window, value: "1")
         }
-    }
-
-    private static func fireAIFeaturesDisabledMetricIfNeeded(subfeatureID: SubfeatureID, isAIChatEnabled: Bool) {
-        guard !isAIChatEnabled else { return }
-        PixelKit.fireExperimentPixel(for: subfeatureID, metric: Metric.aiFeaturesDisabled, conversionWindowDays: d1Window, value: "1")
     }
 }

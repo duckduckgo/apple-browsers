@@ -122,30 +122,9 @@ final class PermissionAuthorizationViewController: NSViewController {
             showsTwoStepUI: showsTwoStepUI,
             isSystemPermissionDisabled: query.isSystemPermissionDisabled,
             showsDecisionDialog: showsDecisionDialog,
-            onDeny: { [weak self] in
-                self?.handleDeny()
+            onAction: { [weak self] action in
+                self?.handleAction(action)
             },
-            onAllow: { [weak self] in
-                if showsDecisionDialog {
-                    self?.handle(.allowThisVisit)
-                } else {
-                    self?.handleAllow()
-                }
-            },
-            onAlwaysAllow: { [weak self] in
-                self?.handle(.alwaysAllow)
-            },
-            onNeverAllow: { [weak self] in
-                self?.handle(.neverAllow)
-            },
-            onDismiss: { [weak self] in
-                self?.handleDismiss()
-            },
-            onLearnMore: permissionType.learnMoreURL != nil ? {
-                if let url = permissionType.learnMoreURL {
-                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
-                }
-            } : nil,
             systemPermissionManager: systemPermissionManager
         )
 
@@ -162,6 +141,21 @@ final class PermissionAuthorizationViewController: NSViewController {
 
         swiftUIHostingView = hostingView
         isAuthorizationInProgress = true
+    }
+
+    private func handleAction(_ action: PermissionAuthorizationSwiftUIView.Action) {
+        switch action {
+        case .allow:
+            handleAllow()
+        case .deny:
+            handleDeny()
+        case .decision(let decision):
+            handle(decision)
+        case .dismiss:
+            handleDismiss()
+        case .learnMore:
+            handleLearnMore()
+        }
     }
 
     private func handleDeny() {
@@ -198,6 +192,13 @@ final class PermissionAuthorizationViewController: NSViewController {
         let output = decision.output
         fireAuthorizationPixel(decision: output.granted ? .allow : .deny)
         query.handleDecision(grant: output.granted, remember: output.remember)
+    }
+
+    private func handleLearnMore() {
+        guard let query,
+              let url = PermissionAuthorizationType(from: query.permissions).learnMoreURL else { return }
+
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     private func handleDismiss() {

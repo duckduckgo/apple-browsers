@@ -18,7 +18,6 @@
 
 import Foundation
 
-/// A choice made in the Allow this visit / Always allow / Never allow dialog.
 enum PermissionPromptDecision {
     case allowThisVisit
     case alwaysAllow

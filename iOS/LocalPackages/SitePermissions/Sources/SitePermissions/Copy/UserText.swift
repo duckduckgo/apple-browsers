@@ -75,6 +75,9 @@ enum UserText {
         static let neverAllow = NotLocalizedString("sitePermissions.dialog.never-allow", bundle: Bundle.module,
                                                    value: "Never Allow",
                                                    comment: "Button that permanently denies a website permission.")
+        static let deny = NotLocalizedString("sitePermissions.dialog.deny", bundle: Bundle.module,
+                                             value: "Deny",
+                                             comment: "Fire-tab website permission prompt; denial lasts this tab session, never persisted.")
     }
 
     enum PermissionRecovery {

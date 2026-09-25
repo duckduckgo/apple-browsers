@@ -298,17 +298,19 @@ final class SitePermissionsXCUITests: XCTestCase {
         try assertLocationAllowOnceLastsUntilNewDocument(fireMode: true)
     }
 
-    func testWhenFireTabAllowsLocationWhileUsingSiteThenDecisionSurvivesReloadAndStaysInThatTab() throws {
+    func testWhenFireTabSetsAlwaysAllowInSheetThenDecisionSurvivesReloadAndStaysInThatTab() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp(additionalArguments: ["-ff.fireMode", "true"])
         openNewPermissionTab(fireMode: true)
         request("location")
-        assertSiteDialog(permission: "location")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        assertSiteDialog(permission: "location", fireMode: true)
+        tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: true)
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         assertResult("location success 1 37.3317,-122.0301")
         openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.Geolocation"))
+        tap(app.buttons["Always Allow"])
         assertSheetDecision("Geolocation", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
 
@@ -333,7 +335,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         for fireMode in [false, true] {
             openNewPermissionTab(fireMode: fireMode)
             request("location")
-            assertSiteDialog(permission: "location")
+            assertSiteDialog(permission: "location", fireMode: fireMode)
             tap(element("SitePermissions.Dialog.AllowOnce"))
             try simulateLocation(latitude: 37.3317, longitude: -122.0301)
             assertResult("location success 1 37.3317,-122.0301")
@@ -345,7 +347,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         launchApp(additionalArguments: ["-ff.fireMode", "true"])
         openNewPermissionTab(fireMode: true)
         request("location")
-        assertSiteDialog(permission: "location")
+        assertSiteDialog(permission: "location", fireMode: true)
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: true)
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
@@ -893,7 +895,7 @@ final class SitePermissionsXCUITests: XCTestCase {
             openPermissionPage()
         }
         request("location")
-        assertSiteDialog(permission: "location")
+        assertSiteDialog(permission: "location", fireMode: fireMode)
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: true)
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
@@ -917,7 +919,7 @@ final class SitePermissionsXCUITests: XCTestCase {
 
         reloadPermissionPage()
         request("location")
-        assertSiteDialog(permission: "location")
+        assertSiteDialog(permission: "location", fireMode: fireMode)
         tap(element("SitePermissions.Dialog.AllowOnce"))
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         assertResult("location success 1 37.3317,-122.0301")
@@ -926,7 +928,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         openPermissionPage(path: "/camera?next")
         assertResult("location ready")
         request("location")
-        assertSiteDialog(permission: "location")
+        assertSiteDialog(permission: "location", fireMode: fireMode)
         tap(element("SitePermissions.Dialog.NeverAllow"))
         assertResult("location error 1 1")
     }
@@ -944,12 +946,20 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts[result].waitForExistence(timeout: timeout), app.debugDescription, file: file, line: line)
     }
 
-    private func assertSiteDialog(permission: String = "camera", file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(element("SitePermissions.Dialog").waitForExistence(timeout: timeout), file: file, line: line)
+    private func assertSiteDialog(permission: String = "camera", fireMode: Bool = false,
+                                  file: StaticString = #filePath, line: UInt = #line) {
+        let dialog = element("SitePermissions.Dialog")
+        XCTAssertTrue(dialog.waitForExistence(timeout: timeout), file: file, line: line)
         XCTAssertEqual(element("SitePermissions.Dialog.Title").label, "“127.0.0.1” website wants to access your \(permission)",
                        file: file, line: line)
-        for action in ["AllowOnce", "AllowWhileUsingSite", "NeverAllow"] {
-            XCTAssertTrue(element("SitePermissions.Dialog.\(action)").exists, file: file, line: line)
+        let expectedActions = fireMode
+            ? [("AllowOnce", "Allow Once"), ("NeverAllow", "Deny")]
+            : [("AllowOnce", "Allow Once"), ("AllowWhileUsingSite", "Allow While Using Site"), ("NeverAllow", "Never Allow")]
+        XCTAssertEqual(dialog.buttons.count, expectedActions.count, file: file, line: line)
+        for (identifier, label) in expectedActions {
+            let button = dialog.buttons.matching(identifier: "SitePermissions.Dialog.\(identifier)").firstMatch
+            XCTAssertTrue(button.exists, file: file, line: line)
+            XCTAssertEqual(button.label, label, file: file, line: line)
         }
         assertNoSystemAlert(file: file, line: line)
     }

@@ -79,8 +79,27 @@ final class SitePermissionDialogViewModelTests: XCTestCase {
         XCTAssertEqual(actions.map(\.pixelDialogSelection), [.allowOnce, .allowAlways, .never, .dismissed])
     }
 
-    private func prompt(for permissionTypes: Set<SitePermissionType>) -> SitePermissionPrompt {
+    func testOrdinaryAndFirePromptsOfferExactActionsForEveryPermissionType() throws {
+        let permissionSets: [Set<SitePermissionType>] = [
+            [.camera], [.microphone], [.camera, .microphone], [.location]
+        ]
+
+        for permissionTypes in permissionSets {
+            for isFireMode in [false, true] {
+                let viewModel = try XCTUnwrap(SitePermissionDialogViewModel(prompt: prompt(for: permissionTypes, isFireMode: isFireMode)))
+                XCTAssertEqual(viewModel.actions.map(\.action),
+                               isFireMode ? [.allowOnce, .neverAllow] : [.allowOnce, .allowWhileUsingSite, .neverAllow])
+                XCTAssertEqual(viewModel.actions.map(\.title),
+                               isFireMode ? ["Allow Once", "Deny"] : ["Allow Once", "Allow While Using Site", "Never Allow"])
+                XCTAssertEqual(viewModel.actions.map(\.action.promptDecision),
+                               isFireMode ? [.allowOnce, .neverAllow] : [.allowOnce, .allowWhileUsingSite, .neverAllow])
+            }
+        }
+    }
+
+    private func prompt(for permissionTypes: Set<SitePermissionType>, isFireMode: Bool = false) -> SitePermissionPrompt {
         SitePermissionPrompt(site: SitePermissionKey(committedURL: URL(string: "https://example.com")!)!,
-                             permissionTypes: permissionTypes)
+                             permissionTypes: permissionTypes,
+                             isFireMode: isFireMode)
     }
 }

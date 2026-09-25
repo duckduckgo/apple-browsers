@@ -227,7 +227,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
                     let separateDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: remainingCaptureType)
                     XCTAssertEqual(separateDecision, .allow)
-                    XCTAssertEqual(prompts, isRemainingTypeAllowed ? [] : [SitePermissionPrompt(site: site, permissionTypes: [remainingType])])
+                    XCTAssertEqual(prompts, isRemainingTypeAllowed ? [] : [SitePermissionPrompt(site: site, permissionTypes: [remainingType], isFireMode: false)])
                     XCTAssertEqual(requestedMediaTypes, isRemainingTypeAllowed ? [] : [remainingType == .camera ? .video : .audio])
                     requestPermission(on: sut, originHost: site.host, captureType: remainingCaptureType) { XCTAssertEqual($0, .grant) }
                     requestPermission(on: sut, originHost: site.host, captureType: remainingCaptureType) { XCTAssertEqual($0, .deny) }

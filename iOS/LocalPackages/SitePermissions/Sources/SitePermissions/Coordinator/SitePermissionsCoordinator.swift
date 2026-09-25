@@ -65,6 +65,7 @@ public struct SitePermissionPrompt: Equatable, Sendable {
 
     public let site: SitePermissionKey
     public let permissionTypes: Set<SitePermissionType>
+    public let isFireMode: Bool
 }
 
 /// The user's response to an on-site permission prompt.
@@ -586,7 +587,8 @@ public final class SitePermissionsCoordinator {
                         """)
                 }
                 let prompt = SitePermissionPrompt(site: pendingRequest.request.context.topLevelSite,
-                                                  permissionTypes: pendingRequest.request.permissionTypes)
+                                                  permissionTypes: pendingRequest.request.permissionTypes,
+                                                  isFireMode: isFireMode)
                 pendingRequest.promptHandler(prompt) { [weak self, weak pendingRequest] decision in
                     guard let self, let pendingRequest else { return }
                     self.handle(decision, for: pendingRequest)

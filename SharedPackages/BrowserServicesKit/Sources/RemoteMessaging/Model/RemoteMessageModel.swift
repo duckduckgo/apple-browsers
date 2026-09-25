@@ -43,10 +43,12 @@ public enum TriggerFilter: Equatable {
 public struct DisplayConditions: Codable, Equatable {
     public let trigger: MessageTrigger?
     public let dismissAfterDaysShown: Int?
+    public let maxImpressions: Int?
 
-    public init(trigger: MessageTrigger? = nil, dismissAfterDaysShown: Int? = nil) {
+    public init(trigger: MessageTrigger? = nil, dismissAfterDaysShown: Int? = nil, maxImpressions: Int? = nil) {
         self.trigger = trigger
         self.dismissAfterDaysShown = dismissAfterDaysShown
+        self.maxImpressions = maxImpressions
     }
 }
 

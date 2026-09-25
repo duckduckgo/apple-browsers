@@ -1,8 +1,8 @@
 //
-//  TabSwitcherButton.swift
+//  RemoteMessagePixel.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,16 +17,23 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Core
+import PixelKit
 
-protocol TabSwitcherButton: UIView {
-    var delegate: TabSwitcherButtonDelegate? { get set }
+enum RemoteMessagePixel: PixelKit.Event {
 
-    var pointer: UIView? { get }
+    case autoDismissed(messageID: String)
 
-    var tabCount: Int { get set }
-    var hasUnread: Bool { get set }
-    var isFireMode: Bool { get set }
+    var name: String { "m_remote_message_auto_dismissed" }
 
-    func animateUpdate(update: @escaping () -> Void)
+    var parameters: [String: String]? {
+        switch self {
+        case .autoDismissed(let messageID):
+            return [PixelParameters.message: messageID]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: PixelKitNamePrefix { .none }
 }

@@ -81,11 +81,14 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
     private let floatingUIManager: FloatingUIManaging
+    private let notificationCenter: NotificationCenter
 
     private let internalUserCommands: URLBasedDebugCommands
     private let tutorialSettings: TutorialSettings
     /// Supplies the content for the contextual dialogs. Currently only EOJ but we will refactor step by step and "strangle" providing content by DaxDialogs.HomeSpec.
     private let contextualContentProvider: ContextualOnboardingContentProviding
+
+    private(set) var isRemoteMessageSurfacePresented = false
 
     var onViewDidAppear: (() -> Void)?
 
@@ -111,6 +114,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          floatingUIManager: FloatingUIManaging = FloatingUIManager(),
          appWidthObserver: AppWidthObserver = .shared,
+         notificationCenter: NotificationCenter = .default,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
          contextualContentProvider: ContextualOnboardingContentProviding = ContextualOnboardingContentProvider()) {
 
@@ -121,6 +125,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.floatingUIManager = floatingUIManager
+        self.notificationCenter = notificationCenter
         self.internalUserCommands = internalUserCommands
         self.tutorialSettings = tutorialSettings
         self.contextualContentProvider = contextualContentProvider
@@ -149,6 +154,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
         assignFavoriteModelActions()
         assignSessionInstrumentationActions()
+        messagesModel.onMessageVisibilityChanged = { [weak self] in
+            self?.notifyRemoteMessageSurfaceChanged()
+        }
     }
 
     private func assignSessionInstrumentationActions() {
@@ -200,6 +208,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         if let hc = hostingController, hc.parent !== self {
             dismissHostingController(didFinishNTPOnboarding: false)
         }
+        isRemoteMessageSurfacePresented = false
+        notifyRemoteMessageSurfaceChanged()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -217,6 +227,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         onViewDidAppear = nil
 
         associatedTab.viewed = true
+        isRemoteMessageSurfacePresented = true
+        notifyRemoteMessageSurfaceChanged()
 
         presentNextDaxDialog(event: .nextDialogRequested)
 
@@ -422,6 +434,16 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private func presentSubscriptionPromotionIfPending() {
         guard daxDialogsManager.subscriptionPromotionPending else { return }
         showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
+    }
+
+    // MARK: - RMF
+
+    func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
+        messagesModel.hasAppearedRemoteMessage(withID: messageID)
+    }
+
+    private func notifyRemoteMessageSurfaceChanged() {
+        notificationCenter.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: self)
     }
 
     // MARK: -

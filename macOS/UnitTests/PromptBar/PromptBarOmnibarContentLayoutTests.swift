@@ -98,6 +98,8 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
         XCTAssertEqual(containerViewController.suggestionsHeight, 0,
                        "This measurement only isolates the controls row while nothing sits below it")
+        XCTAssertEqual(containerViewController.additionalContentHeight, expectedContainerTopPadding,
+                       "This measurement only isolates the controls row while nothing sits below it")
 
         let buttons = controlsRowButtons(in: view)
         XCTAssertFalse(buttons.isEmpty, "No controls row in the hierarchy")
@@ -155,6 +157,9 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     /// Exact rather than a lower bound: a panel that over-budgets the controls row shows up here as
     /// extra slack, which `>=` waves through.
+    /// Mirrors `AIChatOmnibarContainerViewController.Constants.containerTopPadding`: the only extra height with no attachments or usage warning.
+    private let expectedContainerTopPadding: CGFloat = 5
+
     private var expectedPromptToControlsGap: CGFloat {
         8 + containerViewController.additionalContentHeight
     }

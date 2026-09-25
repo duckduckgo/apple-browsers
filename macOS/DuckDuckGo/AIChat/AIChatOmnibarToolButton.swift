@@ -87,11 +87,8 @@ final class AIChatOmnibarToolButton: NSView {
         static let buttonSize: CGFloat = 28
         static let iconSize: CGFloat = 16
         static let labelTrailingPadding: CGFloat = 28
-        static let legacyLabelTrailingPadding: CGFloat = 18
         static let iconLeadingInset: CGFloat = 11
     }
-
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
 
     private let iconImageView: NonInteractiveImageView = {
         let imageView = NonInteractiveImageView()
@@ -266,10 +263,7 @@ final class AIChatOmnibarToolButton: NSView {
     override var intrinsicContentSize: NSSize {
         if let label, !label.isEmpty {
             let labelWidth = textLabel.intrinsicContentSize.width
-            let labelTrailingPadding = (themeManager.isAppRebranded && !textLabel.isHidden)
-                ? Constants.labelTrailingPadding
-                : Constants.legacyLabelTrailingPadding
-            var width = Constants.iconSize + labelWidth + labelTrailingPadding
+            var width = Constants.iconSize + labelWidth + Constants.labelTrailingPadding
             if trailingImage != nil {
                 width += Self.trailingImageSize + 4
             }

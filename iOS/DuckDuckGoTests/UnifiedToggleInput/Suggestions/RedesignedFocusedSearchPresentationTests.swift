@@ -33,8 +33,32 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.showsSearchModules)
         inputs.send(.init(mode: .search, isTyping: true, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
         XCTAssertFalse(presentation.showsSearchModules)
-        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
         XCTAssertTrue(presentation.showsSearchModules)
+    }
+
+    func testWhenLastFavoriteIsRemovedThenEmptyModulesYieldToLogo() {
+        let presentation = makePresentation()
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+        host.setUsesRedesignedNewTabPageLayout(true)
+        XCTAssertTrue(presentation.showsSearchModules)
+        XCTAssertFalse(host.isShowingLogo)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+
+        XCTAssertFalse(presentation.showsSearchModules)
+        XCTAssertTrue(host.isShowingLogo)
+    }
+
+    func testWhenMessagesRemainAfterRemovingLastFavoriteThenModulesStayVisible() {
+        let presentation = makePresentation()
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+        host.setUsesRedesignedNewTabPageLayout(true)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: true, hasRecents: false, resultsPending: false))
+
+        XCTAssertTrue(presentation.showsSearchModules)
+        XCTAssertFalse(host.isShowingLogo)
     }
 
     func testWhenSwitchingToDuckAIOrFireThenModulesHide() {
@@ -83,7 +107,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
 
         for _ in 0..<3 {
             host?.setUsesRedesignedNewTabPageLayout(true)
-            XCTAssertEqual(host?.isShowingLogo, false)
+            XCTAssertEqual(host?.isShowingLogo, true)
             XCTAssertEqual(activeSubscriptions, 2)
             host?.setUsesRedesignedNewTabPageLayout(true)
             XCTAssertEqual(activeSubscriptions, 2)

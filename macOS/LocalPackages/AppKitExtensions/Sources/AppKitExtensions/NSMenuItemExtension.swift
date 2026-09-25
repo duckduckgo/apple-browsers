@@ -120,8 +120,17 @@ public extension NSMenuItem {
             preferredImageVisibility = visibleOnMacOS27 ? .visible : .hidden
         }
 #else
-        if #available(macOS 27.0, *), visibleOnMacOS27 == false {
-            effectiveImage = nil
+        if #available(macOS 27.0, *) {
+            if visibleOnMacOS27 {
+                // Temporary workaround until we can compile with Xcode 27.
+                // Xcode 26 cannot reference this macOS 27 API directly.
+                // NSMenuItem.ImageVisibility.visible has a raw value of 1.
+                if responds(to: NSSelectorFromString("setPreferredImageVisibility:")) {
+                    setValue(1, forKey: "preferredImageVisibility")
+                }
+            } else {
+                effectiveImage = nil
+            }
         }
 #endif
 

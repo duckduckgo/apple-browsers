@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import os.log
 import Networking
-import PixelKit
+import WideEvent
 
 public enum AuthVersion: String {
     // case v1 // removed
@@ -67,7 +67,11 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     var hasAppStoreProductsAvailable: Bool { get }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    /// Also emits when the initial product fetch finishes, even if availability is unchanged.
     var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the initial App Store product fetch has finished, including an empty result or failure.
+    var hasResolvedAppStoreProducts: Bool { get }
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
@@ -101,7 +105,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription
 
     /// Confirm a purchase with a platform signature
-    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription
+    func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription
 
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
@@ -159,6 +163,16 @@ extension SubscriptionManager {
     @discardableResult
     public func getSubscription() async throws -> DuckDuckGoSubscription? {
         try await getSubscription(forceRefresh: false)
+    }
+
+    /// Whether the current subscription has an active free-trial offer. `false` on any fetch failure.
+    public func isOnFreeTrial() async -> Bool {
+        (try? await getSubscription())?.hasActiveTrialOffer ?? false
+    }
+
+    /// Whether the current subscription is active. `false` on any fetch failure.
+    public func isActiveSubscription() async -> Bool {
+        (try? await getSubscription())?.isActive ?? false
     }
 
     public func signOut(notifyUI: Bool) async {
@@ -234,6 +248,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let isInternalUserEnabled: () -> Bool
     private let userDefaults: UserDefaults
     private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
+    public private(set) var hasResolvedAppStoreProducts = false
     private var cancellables = Set<AnyCancellable>()
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
@@ -289,6 +304,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    /// Also emits after the initial fetch resolves and its result is cached.
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
@@ -327,10 +343,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
             .store(in: &cancellables)
 
-        Task { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
             await storePurchaseManager().updateAvailableProducts()
             userDefaults.cachedHasAppStoreProductsAvailable = storePurchaseManager().areProductsAvailable
+            hasResolvedAppStoreProducts = true
+            hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
         }
     }
 
@@ -798,12 +816,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
         Logger.subscription.log("Confirming Purchase...")
         let accessToken = try await getTokenContainer(policy: .localValid).accessToken
         let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,
                                                                                  signature: signature,
-                                                                                 additionalParams: additionalParams)
+                                                                                 experimentAttribution: experimentAttribution)
         let subscription = try await ingestSubscription(confirmation.subscription)
         Logger.subscription.log("Purchase confirmed!")
         return subscription

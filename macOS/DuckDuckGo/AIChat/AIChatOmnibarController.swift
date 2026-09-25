@@ -868,13 +868,23 @@ final class AIChatOmnibarController {
     private func switchToImageGenerationModelIfNeeded() -> AIChatCreateImageModelSwitchNotice? {
         guard isUpdatedCreateImageEnabled,
               let previousModel = selectedModel,
-              !previousModel.supportsTool(.imageGeneration),
-              let fallbackModel = imageGenerationModel else {
+              !previousModel.supportsTool(.imageGeneration) else {
+            return nil
+        }
+
+        guard let fallbackModel = imageGenerationModel else {
+            pixelHandler.fire(.createImageUnavailable)
             return nil
         }
 
         updateSelectedModel(fallbackModel.id)
-        return AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        let notice = AIChatCreateImageModelSwitchNotice(previousModel: previousModel, newModel: fallbackModel)
+        pixelHandler.fire(.createImageModelSwitched(
+            fromModelId: previousModel.id,
+            toModelId: fallbackModel.id,
+            fromModelPrivacyPreserving: notice.previousModelHasExtraPrivacyProtections
+        ))
+        return notice
     }
 
     /// The model ID to use for the current submission. In image-generation mode an
@@ -1296,7 +1306,7 @@ final class AIChatOmnibarController {
     func viewAllChats() {
         PixelKit.fire(AIChatPixel.aiChatViewAllChatsClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         aiChatConversationSourceHandler.setData(.omnibarViewAllChats)
-        aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        aiChatTabOpener.openAIChatTab(with: .chatHistory, behavior: .newTab(selected: true))
     }
 
     /// Fallback when no window can host the modal: opens the customize URL in a tab.
@@ -1365,15 +1375,9 @@ final class AIChatOmnibarController {
             return
         }
 
-        pixelHandler.fire(.promptSubmitted)
+        firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
-
-        if isImageGenerationMode {
-            pixelHandler.fire(.imageGenerationSubmitted)
-        } else if isWebSearchMode {
-            pixelHandler.fire(.webSearchSubmitted)
-        }
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1503,6 +1507,22 @@ final class AIChatOmnibarController {
         }
 
         currentText = ""
+    }
+
+    private func firePromptSubmissionPixels() {
+        pixelHandler.fire(.promptSubmitted)
+
+        switch activeToolMode {
+        case .imageGeneration:
+            if !selectedModelSupportsImageGeneration {
+                pixelHandler.fire(.createImageSubmittedWithUnsupportedModel)
+            }
+            pixelHandler.fire(.imageGenerationSubmitted)
+        case .webSearch:
+            pixelHandler.fire(.webSearchSubmitted)
+        case nil:
+            break
+        }
     }
 
     /// Eagerly extracts the page context for each omnibar-attached tab, returning a
@@ -1679,7 +1699,11 @@ struct AIChatReasoningPickerItem {
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
     /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
-    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+    /// `hidesGatedModels` is the usage card's chevron: it offers a way out of a spent allowance, so a
+    /// row the user's plan can't pick has nothing to offer there.
+    func modelPickerItems(selectedModelId: String?,
+                          freeModelsOnly: Bool = false,
+                          hidesGatedModels: Bool = false) -> [AIChatModelPickerItem] {
         let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
@@ -1699,7 +1723,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

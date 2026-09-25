@@ -44,12 +44,12 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    func message(for warning: DuckAiUsageWarning) -> UTIFooterMessage {
+    func message(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool = true) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: Self.icon(for: warning),
             title: Self.title(for: warning),
             subtitle: String(format: UserText.utiDuckAIWarningsResetsIn, resetDescriber.describe(warning.resetsIn)),
-            primaryAction: Self.primaryAction(for: warning),
+            primaryAction: Self.primaryAction(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell),
             isDismissible: warning.isDismissible
         )
     }
@@ -96,7 +96,8 @@ struct UTIFooterMessageMapper {
         }
     }
 
-    private static func primaryAction(for warning: DuckAiUsageWarning) -> UTIFooterMessage.PrimaryAction? {
+    private static func primaryAction(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool) -> UTIFooterMessage.PrimaryAction? {
+        if case .tryForFree = warning.action, !allowsSubscriptionUpsell { return nil }
         guard let title = actionTitle(for: warning.action) else { return nil }
         return UTIFooterMessage.PrimaryAction(title: title)
     }

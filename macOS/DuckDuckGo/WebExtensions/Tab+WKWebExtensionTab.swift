@@ -31,19 +31,22 @@ extension Tab: WKWebExtensionTab {
         case notMuted
     }
 
+    private var mainWindowController: MainWindowController? {
+        // The manager prefers the current hosting window for shared pinned tabs, but ignores it
+        // during a handoff once the source collection no longer owns the tab.
+        return Application.appDelegate.windowControllersManager.windowController(for: self)
+    }
+
     private var tabCollectionViewModel: TabCollectionViewModel? {
-        let mainWindowController = Application.appDelegate.windowControllersManager.windowController(for: self)
-        let mainViewController = mainWindowController?.mainViewController
-        return mainViewController?.tabCollectionViewModel
+        return mainWindowController?.mainViewController.tabCollectionViewModel
     }
 
     func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
-        return webView.window?.windowController as? MainWindowController
+        return mainWindowController
     }
 
     private func indexInWindow(for context: WKWebExtensionContext!) -> UInt {
-        let tabCollection = tabCollectionViewModel?.tabCollection
-        return UInt(tabCollection?.firstIndex(of: self) ?? 0)
+        return UInt(tabCollectionViewModel?.webExtensionIndex(of: self) ?? 0)
     }
 
     func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
@@ -202,7 +205,7 @@ extension Tab: WKWebExtensionTab {
 
     func close(for context: WKWebExtensionContext) async throws {
         if let index = tabCollectionViewModel?.indexInAllTabs(of: self) {
-            tabCollectionViewModel?.remove(at: index)
+            tabCollectionViewModel?.close(at: index)
         } else {
             throw WebExtensionTabError.tabNotFound
         }

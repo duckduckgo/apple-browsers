@@ -20,6 +20,7 @@
 import UIKit
 import Persistence
 import Core
+import PixelKit
 
 enum TabsModelStorageKey {
     case normal
@@ -113,9 +114,8 @@ class TabsModelPersistence: TabsModelPersisting {
             }
             return model
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .tabsStoreReadError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.tabsStoreReadError.withError(error),
+                          frequency: .dailyAndStandard)
             Logger.general.error("Something went wrong unarchiving TabsModel \(error.localizedDescription, privacy: .public)")
         }
         return nil
@@ -164,9 +164,8 @@ class TabsModelPersistence: TabsModelPersisting {
         do {
             data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.tabsStoreSaveError.withError(error),
+                          frequency: .dailyAndStandard)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
         }
@@ -185,9 +184,8 @@ class TabsModelPersistence: TabsModelPersisting {
             try targetStore.set(data, forKey: Constants.storageKey)
             return .success(())
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.tabsStoreSaveError.withError(error),
+                          frequency: .dailyAndStandard)
             Logger.general.error("Something went wrong writing TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
         }
@@ -204,9 +202,8 @@ class TabsModelPersistence: TabsModelPersisting {
         do {
             data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                                         error: error)
+            PixelKit.fire(Pixel.Event.tabsStoreSaveError.withError(error),
+                          frequency: .dailyAndStandard)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
             return .failure(error)
         }

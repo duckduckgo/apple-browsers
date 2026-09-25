@@ -26,6 +26,7 @@ import Foundation
 import SyncDataProviders
 import os.log
 import Core
+import PixelKit
 
 public enum AsyncErrorType: String {
     case bookmarksCountLimitExceeded
@@ -115,25 +116,25 @@ public class SyncErrorHandler: EventMapping<SyncError> {
         super.init { event, error, _, _ in
             switch event {
             case .migratedToFileStore:
-                Pixel.fire(pixel: .syncMigratedToFileStore)
+                PixelKit.fire(Pixel.Event.syncMigratedToFileStore)
             case .failedToMigrateToFileStore:
-                Pixel.fire(pixel: .syncFailedToMigrateToFileStore, error: error)
+                PixelKit.fire(Pixel.Event.syncFailedToMigrateToFileStore.withError(error))
             case .failedToInitFileStore:
-                Pixel.fire(pixel: .syncFailedToInitFileStore, error: error)
+                PixelKit.fire(Pixel.Event.syncFailedToInitFileStore.withError(error))
             case .failedToLoadAccount:
-                Pixel.fire(pixel: .syncFailedToLoadAccount, error: error)
+                PixelKit.fire(Pixel.Event.syncFailedToLoadAccount.withError(error))
             case .failedToSetupEngine:
-                Pixel.fire(pixel: .syncFailedToSetupEngine, error: error)
+                PixelKit.fire(Pixel.Event.syncFailedToSetupEngine.withError(error))
             case .failedToReadSecureStore:
-                Pixel.fire(pixel: .syncSecureStorageReadError, error: error)
+                PixelKit.fire(Pixel.Event.syncSecureStorageReadError.withError(error))
             case .failedToDecodeSecureStoreData(let error):
-                Pixel.fire(pixel: .syncSecureStorageDecodingError, error: error)
+                PixelKit.fire(Pixel.Event.syncSecureStorageDecodingError.withError(error))
             case .accountRemoved(let reason):
-                Pixel.fire(pixel: .syncAccountRemoved(reason: reason.rawValue), error: error)
+                PixelKit.fire(Pixel.Event.syncAccountRemoved(reason: reason.rawValue).withError(error))
             default:
                 // Should this be so generic?
                 let domainEvent = Pixel.Event.syncSentUnauthenticatedRequest
-                Pixel.fire(pixel: domainEvent, error: event)
+                PixelKit.fire(domainEvent.withError(event))
             }
         }
     }
@@ -195,21 +196,21 @@ extension SyncErrorHandler {
     private func handleError(_ error: Error, modelType: ModelType) {
         switch error {
         case SyncError.patchPayloadCompressionFailed(let errorCode):
-            Pixel.fire(pixel: modelType.patchPayloadCompressionFailedPixel, withAdditionalParameters: ["error": "\(errorCode)"])
+            PixelKit.fire(modelType.patchPayloadCompressionFailedPixel, options: .parameters(["error": "\(errorCode)"]))
         case let syncError as SyncError:
             handleSyncError(syncError, modelType: modelType)
-            Pixel.fire(pixel: modelType.syncFailedPixel, error: syncError)
+            PixelKit.fire(modelType.syncFailedPixel.withError(syncError))
         case let settingsMetadataError as SettingsSyncMetadataSaveError:
             let underlyingError = settingsMetadataError.underlyingError
             let processedErrors = CoreDataErrorsParser.parse(error: underlyingError as NSError)
             let params = processedErrors.errorPixelParameters
-            Pixel.fire(pixel: .syncSettingsMetadataUpdateFailed, error: underlyingError, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.syncSettingsMetadataUpdateFailed.withError(underlyingError), options: .parameters(params))
         default:
             let nsError = error as NSError
             if nsError.domain != NSURLErrorDomain {
                 let processedErrors = CoreDataErrorsParser.parse(error: error as NSError)
                 let params = processedErrors.errorPixelParameters
-                Pixel.fire(pixel: modelType.syncFailedPixel, error: error, withAdditionalParameters: params)
+                PixelKit.fire(modelType.syncFailedPixel.withError(error), options: .parameters(params))
             }
         }
         let modelTypeString = modelType.rawValue.capitalized
@@ -257,7 +258,7 @@ extension SyncErrorHandler {
             case .aiChats:
                 syncIsPaused(errorType: .badRequestAiChats)
             }
-            DailyPixel.fire(pixel: modelType.badRequestPixel)
+            PixelKit.fire(modelType.badRequestPixel, frequency: .legacyDailyNoSuffix)
         case .unexpectedStatusCode(401):
             switch modelType {
             case .aiChats:
@@ -274,7 +275,7 @@ extension SyncErrorHandler {
             }
         case .unexpectedStatusCode(418), .unexpectedStatusCode(429):
             syncIsPaused(errorType: .tooManyRequests)
-            DailyPixel.fire(pixel: modelType.tooManyRequestsPixel)
+            PixelKit.fire(modelType.tooManyRequestsPixel, frequency: .legacyDailyNoSuffix)
         default:
             break
         }
@@ -286,23 +287,23 @@ extension SyncErrorHandler {
         case .bookmarksCountLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
-            DailyPixel.fire(pixel: .syncBookmarksObjectLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncBookmarksObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .credentialsCountLimitExceeded:
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
-            DailyPixel.fire(pixel: .syncCredentialsObjectLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncCredentialsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .aiChatsCountLimitExceeded:
-            DailyPixel.fire(pixel: .syncAiChatsObjectLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncAiChatsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .bookmarksRequestSizeLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
-            DailyPixel.fire(pixel: .syncBookmarksRequestSizeLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncBookmarksRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .credentialsRequestSizeLimitExceeded:
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
-            DailyPixel.fire(pixel: .syncCredentialsRequestSizeLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncCredentialsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .aiChatsRequestSizeLimitExceeded:
-            DailyPixel.fire(pixel: .syncAiChatsRequestSizeLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncAiChatsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .badRequestBookmarks:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
@@ -320,11 +321,11 @@ extension SyncErrorHandler {
         case .creditCardsCountLimitExceeded:
             currentSyncCreditCardsPausedError = errorType.rawValue
             self.isSyncCreditCardsPaused = true
-            DailyPixel.fire(pixel: .syncCreditCardsObjectLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncCreditCardsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .creditCardsRequestSizeLimitExceeded:
             currentSyncCreditCardsPausedError = errorType.rawValue
             self.isSyncCreditCardsPaused = true
-            DailyPixel.fire(pixel: .syncCreditCardsRequestSizeLimitExceededDaily)
+            PixelKit.fire(Pixel.Event.syncCreditCardsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .badRequestCreditCards:
             currentSyncCreditCardsPausedError = errorType.rawValue
             self.isSyncCreditCardsPaused = true

@@ -27,6 +27,7 @@ import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Sparkle
 import Subscription
@@ -133,7 +134,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     public var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
-    public var lastUpdateNotificationShownDate: Date = .distantPast
 
     private var customFeedURL: String? {
         get {

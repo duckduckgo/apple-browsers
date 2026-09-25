@@ -22,7 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 
 extension Tab: NavigationResponder {
@@ -95,9 +95,6 @@ extension Tab: NavigationResponder {
             .strong(nullable: makeReleaseNotesNavigationResponder(args: args)),
 
             .weak(nullable: self.networkProtection),
-
-            // Internal Feedback Form
-            .weak(nullable: self.internalFeedbackForm),
 
             // Tab Suspension
             .weak(nullable: self.tabSuspension),

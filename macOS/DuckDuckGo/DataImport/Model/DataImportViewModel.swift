@@ -21,6 +21,7 @@ import Common
 import FoundationExtensions
 import UniformTypeIdentifiers
 import PixelKit
+import WideEvent
 import os.log
 import BrowserServicesKit
 import Persistence
@@ -847,12 +848,13 @@ extension DataImportViewModel {
         case sync
         case close
         case grantDirectoryAccess(source: Source)
+        case showSystemPasswordPrompt
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess:
+            case .skip, .done, .cancel, .cancelImport, .back, .submit, .continue, .selectFile, .sync, .close, .grantDirectoryAccess, .showSystemPasswordPrompt:
                 return false
             }
         }
@@ -880,7 +882,7 @@ extension DataImportViewModel {
         case .getFileReadPermission:
             return nil
         case .passwordEntryHelp:
-            return nil
+            return .showSystemPasswordPrompt
 
         case .archiveImport:
             return nil
@@ -964,6 +966,17 @@ extension DataImportViewModel {
                      onCancelled: onCancelled)
     }
 
+    mutating func setDataType(_ dataType: DataType, selected: Bool) {
+        // Ignore no-op writes so confirming the type sheet unchanged isn't treated as user intent.
+        guard selectedDataTypes.contains(dataType) != selected else { return }
+        hasUserModifiedDataTypeSelection = true
+        if selected {
+            selectedDataTypes.insert(dataType)
+        } else {
+            selectedDataTypes.remove(dataType)
+        }
+    }
+
     /// Selects a profile and filters selected data types to only include types available for that profile.
     /// This should be called when the user selects a profile from the profile picker screen.
     /// - Parameter profile: The profile to select
@@ -1040,6 +1053,9 @@ extension DataImportViewModel {
             launchSync(using: dismiss)
         case .grantDirectoryAccess:
             grantAccessButtonPressed()
+
+        case .showSystemPasswordPrompt:
+            initiateImport()
         }
     }
 

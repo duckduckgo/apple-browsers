@@ -20,6 +20,10 @@ The pixel name is the string returned by the `name` computed property (e.g. `"m_
 
 If a pixel name is removed from one file and added to another in the same PR, treat it as a move/refactor, not a new pixel. The existing definition should still be valid.
 
+### `iOS/Core/PixelEvent.swift` Is Deprecated for New Pixels
+
+This file carries a top-of-file notice that it should not receive any more pixels — new iOS pixels should be a separate type conforming to `PixelKit.Event` instead. Flag any PR that adds a new `case` to `Pixel.Event` (the enum declared in this file) or a new arm to its `name` switch. Removing a case, or modifying an existing case's associated values or `name` string, is fine - only genuinely new cases are the target of this rule. CI also enforces this with a hard Danger failure, so such a PR will not merge either way, but call it out in review so the author can fix it before waiting on CI.
+
 ### Dynamic Pixel Names
 
 Some pixel names are constructed using string interpolation (e.g. `"m_mac_crash_\(identifier.rawValue)"` or `"mfbs_negative_\(category)"`). These produce multiple distinct pixel names at runtime.
@@ -139,6 +143,12 @@ CI runs `node scripts/check_wide_event_consistency.mjs` and `node scripts/check_
 **Never hand-edit anything under `wide_events/generated_schemas/`.** Those files are generated artifacts - the pixel validator regenerates each one from its `wide_events/definitions/*.json5` source, and the filename encodes the version, so every version bump produces a brand-new file and leaves the old ones untouched. The only correct way to change a generated schema is to edit the source definition and bump its `meta.version`. Any diff that modifies an existing `generated_schemas/*.json` file in place is wrong - flag it unconditionally. (`scripts/check_wide_event_schema_immutability.mjs` enforces this on CI, but call it out in review too.)
 
 One more case to flag: a wide event added in Swift with no definition files at all. The only thing left to the human reviewer (not the automated checks or the rules above) is validating the deep shape of the schema itself, e.g. nested `ext.ipv4.http.status` - everything above should still be flagged in review.
+
+### iOS Pixel Injection Pattern (PixelKit)
+
+New production code that fires pixels through a dependency-injected seam should inject `(any PixelKitFiring)?` (defaulting to `PixelKit.shared`), not the legacy `Core.PixelFiring.Type` / `DailyPixelFiring.Type`. Tests for such code should mock it with PixelKit's `PixelKitMock` (`@_spi(Testing) import PixelKit`), not `PixelFiringMock`. Flag a new production seam that adopts the legacy protocols instead of the PixelKit one — that is new debt in a direction the codebase is migrating away from.
+
+`PixelKitFiring.fire`'s `event` parameter is the `PixelKit.Event` protocol, not a concrete enum, so leading-dot shorthand does not resolve against it: `pixelFiring?.fire(.someCase)` fails to compile and must be spelled `pixelFiring?.fire(Pixel.Event.someCase)` (or whatever the concrete event type is). This is a compiler error, not a style nit - `swiftc -parse` will not catch it, only a real type-checking build will - so if you spot it in a diff, flag it as broken rather than assuming CI already screens it out.
 
 ### What NOT to Flag
 

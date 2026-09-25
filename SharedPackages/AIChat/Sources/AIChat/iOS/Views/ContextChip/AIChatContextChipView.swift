@@ -31,12 +31,16 @@ public final class AIChatContextChipView: UIView {
 
     private enum Constants {
         static let chipWidth: CGFloat = 240
-        /// Shared by the attached pill and the placeholder button so they never differ in height.
+        /// Shared by every state so they never differ in height.
         static let height: CGFloat = 44
         /// The design's rounded pill variant.
         static let cornerRadius: CGFloat = 24
         static let borderWidth: CGFloat = 1
-        static let placeholderBorderWidth: CGFloat = 1.5
+        /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
+        static let suggestedBorderWidth: CGFloat = 1.5
+        static let suggestedFillAlpha: CGFloat = 0.4
+        static let suggestedBorderAlpha: CGFloat = 0.16
+        static let suggestedDashPattern: [NSNumber] = [5, 7]
 
         static let faviconSize: CGFloat = 28
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its
@@ -46,50 +50,48 @@ public final class AIChatContextChipView: UIView {
 
         static let removeButtonSize: CGFloat = 32
         static let removeButtonTrailing: CGFloat = 10
+        static let removeButtonHitTarget: CGFloat = 44
 
         static let contentSpacing: CGFloat = 8
-
-        /// The design's `Page Context Placekeeper`: content-sized, 12pt padding, 24pt Ai-Chat glyph,
-        /// bold 14 text and a 1.5pt hairline.
-        static let placeholderHorizontalPadding: CGFloat = 12
-        static let placeholderIconSize: CGFloat = 24
-        static let placeholderFontSize: CGFloat = 14
     }
 
     // MARK: - State
 
     public enum State {
-        case placeholder
+        case suggested(title: String, favicon: UIImage?)
         case attached(title: String, favicon: UIImage?)
         case loading
     }
 
-    private var currentState: State = .placeholder
-
+    private var currentState: State?
     private var loadingView: AIChatSuggestionsLoadingView?
 
-    /// Only live in the placeholder state. Left enabled in the attached state it would recognise taps on
-    /// the remove button and cancel them, since it spans the whole chip.
-    private lazy var placeholderTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
+    private lazy var chipTapRecognizer: UITapGestureRecognizer = {
+        let recognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
+        recognizer.delegate = self
+        return recognizer
+    }()
 
-    /// Bold 14 from the design, scaled so it still honours Dynamic Type.
-    private static let placeholderFont = UIFontMetrics(forTextStyle: .footnote)
-        .scaledFont(for: .systemFont(ofSize: Constants.placeholderFontSize, weight: .bold))
+    /// `layer.borderWidth` cannot dash, so the suggested state draws its own outline.
+    private lazy var dashedBorderLayer: CAShapeLayer = {
+        let border = CAShapeLayer()
+        border.fillColor = UIColor.clear.cgColor
+        border.lineWidth = Constants.suggestedBorderWidth
+        border.lineDashPattern = Constants.suggestedDashPattern
+        border.isHidden = true
+        return border
+    }()
 
     private var fixedWidthConstraint: NSLayoutConstraint!
-    private var faviconLeadingConstraint: NSLayoutConstraint!
-    private var faviconWidthConstraint: NSLayoutConstraint!
-    private var faviconHeightConstraint: NSLayoutConstraint!
     private var titleTrailingToRemoveButtonConstraint: NSLayoutConstraint!
-    private var titleTrailingToEdgeConstraint: NSLayoutConstraint!
 
     // MARK: - Properties
 
     /// Callback invoked when the remove button is tapped.
     public var onRemove: (() -> Void)?
 
-    /// Callback invoked when the chip itself is tapped, which in the placeholder state means the user
-    /// is asking for the page to be attached again.
+    /// Callback invoked when the chip itself is tapped, which in the suggested state means the user
+    /// is asking for the page to be attached.
     public var onTap: (() -> Void)?
 
     // MARK: - UI Components
@@ -131,12 +133,14 @@ public final class AIChatContextChipView: UIView {
         return label
     }()
 
-    private lazy var removeButton: UIButton = {
-        let button = UIButton(type: .system)
+    private lazy var removeButton: ExpandedHitTargetButton = {
+        let button = ExpandedHitTargetButton(type: .system)
+        button.minimumHitTarget = Constants.removeButtonHitTarget
         button.setImage(DesignSystemImages.Glyphs.Size16.close.withRenderingMode(.alwaysTemplate), for: .normal)
         button.tintColor = UIColor(designSystemColor: .textSecondary)
         button.addTarget(self, action: #selector(removeButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = Constants.removeButtonSize / 2
         return button
     }()
 
@@ -155,13 +159,20 @@ public final class AIChatContextChipView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
         layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
+
+        dashedBorderLayer.frame = bounds
+        let inset = Constants.suggestedBorderWidth / 2
+        dashedBorderLayer.path = UIBezierPath(
+            roundedRect: bounds.insetBy(dx: inset, dy: inset),
+            cornerRadius: layer.cornerRadius - inset
+        ).cgPath
     }
 
     // MARK: - Configuration
 
     /// Configures the chip with the given state.
     ///
-    /// - Parameter state: The state to display (placeholder or attached with title/favicon).
+    /// - Parameter state: The state to display (suggested, attached or loading).
     public func configure(state: State) {
         currentState = state
         updateUI(for: state)
@@ -171,7 +182,7 @@ public final class AIChatContextChipView: UIView {
     ///
     /// - Parameters:
     ///   - title: The page title to display.
-    ///   - favicon: The favicon image. If nil, a placeholder is shown.
+    ///   - favicon: The favicon image. If nil, a fallback glyph is shown.
     public func configure(title: String, favicon: UIImage?) {
         configure(state: .attached(title: title, favicon: favicon))
     }
@@ -182,12 +193,30 @@ public final class AIChatContextChipView: UIView {
     ///   - title: The new page title to display.
     ///   - favicon: The new favicon image. If nil, the existing favicon is preserved.
     public func update(title: String, favicon: UIImage?) {
-        guard case .attached = currentState else { return }
+        guard case .attached? = currentState else { return }
         titleLabel.text = title
         if let favicon {
             faviconView.image = favicon
         }
         accessibilityLabel = title
+    }
+
+    /// Without this the recogniser, which spans the pill, would swallow taps on the remove button.
+    func shouldReceiveChipTap(at point: CGPoint) -> Bool {
+        !removeButtonHitRect.contains(point)
+    }
+
+    private var removeButtonHitRect: CGRect {
+        let frame = removeButton.convert(removeButton.bounds, to: self)
+        let outset = max(0, (Constants.removeButtonHitTarget - frame.width) / 2)
+        return frame.insetBy(dx: -outset, dy: -outset)
+    }
+
+    /// VoiceOver activation mirrors a tap, so the offer can be accepted without sighted pointing.
+    public override func accessibilityActivate() -> Bool {
+        guard case .suggested = currentState else { return false }
+        onTap?()
+        return true
     }
 }
 
@@ -201,6 +230,7 @@ private extension AIChatContextChipView {
         layer.cornerCurve = .continuous
         clipsToBounds = true
 
+        layer.addSublayer(dashedBorderLayer)
         addSubview(mainStackView)
 
         chipContentView.addSubview(faviconView)
@@ -208,7 +238,7 @@ private extension AIChatContextChipView {
         chipContentView.addSubview(removeButton)
         mainStackView.addArrangedSubview(chipContentView)
 
-        addGestureRecognizer(placeholderTapRecognizer)
+        addGestureRecognizer(chipTapRecognizer)
 
         setupConstraints()
         setupAccessibility()
@@ -218,6 +248,11 @@ private extension AIChatContextChipView {
         hideLoadingView()
         faviconView.isHidden = false
         titleLabel.isHidden = false
+        // Everything the suggested state adds, undone: it is the only state that draws them, and a
+        // chip is reused across states rather than rebuilt.
+        removeButton.backgroundColor = .clear
+        dashedBorderLayer.isHidden = true
+        accessibilityCustomActions = nil
 
         switch state {
         case .loading:
@@ -226,42 +261,54 @@ private extension AIChatContextChipView {
             titleLabel.isHidden = true
             removeButton.isHidden = true
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-            applyBorder(width: Constants.borderWidth)
+            applyBorder(color: UIColor(designSystemColor: .lines))
             fixedWidthConstraint.isActive = false
             titleTrailingToRemoveButtonConstraint.isActive = false
-            titleTrailingToEdgeConstraint.isActive = false
             showLoadingView()
             isUserInteractionEnabled = false
-            placeholderTapRecognizer.isEnabled = false
+            chipTapRecognizer.isEnabled = false
             isAccessibilityElement = true
             accessibilityIdentifier = "AIChat.ContextChip.Loading"
             accessibilityLabel = UserText.askAboutPage
             accessibilityTraits = .none
 
-        case .placeholder:
-            // Reads as a button, since tapping it re-attaches the page the user removed. Keeping it in
-            // the strip means removing and re-attaching never changes the input's height.
-            titleLabel.text = UserText.askAboutPage
-            titleLabel.accessibilityIdentifier = "AIChat.ContextChip.Placeholder"
-            titleLabel.textColor = UIColor(designSystemColor: .textSecondary)
-            titleLabel.font = Self.placeholderFont
-            faviconView.image = DesignSystemImages.Glyphs.Size24.aiChat.withRenderingMode(.alwaysTemplate)
-            faviconView.tintColor = UIColor(designSystemColor: .iconsTertiary)
+        case .suggested(let title, let favicon):
+            let offer = UserText.askAboutPage(title: title)
+            isHidden = false
+            titleLabel.text = offer
+            titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
+            titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+            titleLabel.font = UIFont.daxSubheadSemibold()
+            titleLabel.accessibilityLabel = nil
+            titleLabel.accessibilityTraits = .none
+            applyPillLayout()
+            removeButton.isHidden = false
+            removeButton.tintColor = UIColor(designSystemColor: .icons)
+            removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+            faviconView.tintColor = UIColor(designSystemColor: .accentPrimary)
+            faviconView.image = favicon ?? fallbackFavicon()
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            isHidden = false
-            backgroundColor = .clear
-            removeButton.isHidden = true
-            // One element rather than its parts, so the re-attach tap is what VoiceOver offers.
+            backgroundColor = UIColor(designSystemColor: .accentAltGlowPrimary)
+                .withAlphaComponent(Constants.suggestedFillAlpha)
+            // The chip itself is the button, so VoiceOver activate accepts the offer (a UILabel marked
+            // as a button cannot be activated). Making the chip an element hides the X, so dismissal is
+            // offered as a custom action instead.
             isAccessibilityElement = true
-            accessibilityIdentifier = "AIChat.ContextChip.Placeholder"
-            accessibilityLabel = UserText.askAboutPage
+            accessibilityIdentifier = "AIChat.ContextChip.Suggested"
+            accessibilityLabel = offer
             accessibilityTraits = .button
-            applyBorder(width: Constants.placeholderBorderWidth)
-            applyLayout(hugsContent: true)
+            accessibilityCustomActions = [
+                UIAccessibilityCustomAction(name: removeButton.accessibilityLabel ?? "Remove") { [weak self] _ in
+                    self?.onRemove?()
+                    return true
+                }
+            ]
+            applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary)
+                .withAlphaComponent(Constants.suggestedBorderAlpha))
             isUserInteractionEnabled = true
-            placeholderTapRecognizer.isEnabled = true
+            chipTapRecognizer.isEnabled = true
 
         case .attached(let title, let favicon):
             isHidden = false
@@ -269,10 +316,13 @@ private extension AIChatContextChipView {
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.AttachedTitle"
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.font = UIFont.daxSubheadSemibold()
-            applyLayout(hugsContent: false)
+            titleLabel.accessibilityLabel = nil
+            titleLabel.accessibilityTraits = .none
+            applyPillLayout()
             removeButton.isHidden = false
+            removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
             faviconView.tintColor = UIColor(designSystemColor: .textSecondary)
-            faviconView.image = favicon ?? placeholderFavicon()
+            faviconView.image = favicon ?? fallbackFavicon()
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
@@ -282,29 +332,28 @@ private extension AIChatContextChipView {
             accessibilityIdentifier = nil
             accessibilityLabel = title
             accessibilityTraits = .none
-            applyBorder(width: Constants.borderWidth)
+            applyBorder(color: UIColor(designSystemColor: .lines))
             isUserInteractionEnabled = true
-            placeholderTapRecognizer.isEnabled = false
+            chipTapRecognizer.isEnabled = false
         }
     }
 
-    /// The placeholder button hugs its label with 12pt padding and a 24pt glyph; the attached pill is a
-    /// fixed width with its label running up to the remove button.
-    func applyLayout(hugsContent: Bool) {
-        fixedWidthConstraint.isActive = !hugsContent
-        titleTrailingToRemoveButtonConstraint.isActive = !hugsContent
-        titleTrailingToEdgeConstraint.isActive = hugsContent
-        faviconLeadingConstraint.constant = hugsContent ? Constants.placeholderHorizontalPadding : Constants.faviconLeading
-        let iconSize = hugsContent ? Constants.placeholderIconSize : Constants.faviconSize
-        faviconWidthConstraint.constant = iconSize
-        faviconHeightConstraint.constant = iconSize
+    /// `.loading` drops the fixed geometry, so the pill states have to put it back.
+    func applyPillLayout() {
+        fixedWidthConstraint.isActive = true
+        titleTrailingToRemoveButtonConstraint.isActive = true
     }
 
-    /// `lines` rather than `decorationPrimary`: the design calls for black at 9%, which `lines` matches
-    /// and `decorationPrimary` does not — it is 30%.
-    func applyBorder(width: CGFloat) {
-        layer.borderWidth = width
-        layer.borderColor = UIColor(designSystemColor: .lines).cgColor
+    func applyDashedBorder(color: UIColor) {
+        layer.borderWidth = 0
+        dashedBorderLayer.isHidden = false
+        dashedBorderLayer.strokeColor = color.cgColor
+        setNeedsLayout()
+    }
+
+    func applyBorder(color: UIColor) {
+        layer.borderWidth = Constants.borderWidth
+        layer.borderColor = color.cgColor
     }
 
     func setupConstraints() {
@@ -316,17 +365,8 @@ private extension AIChatContextChipView {
         let width = widthAnchor.constraint(equalToConstant: Constants.chipWidth)
         fixedWidthConstraint = width
 
-        let faviconLeading = faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading)
-        faviconLeadingConstraint = faviconLeading
-        let faviconWidth = faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize)
-        faviconWidthConstraint = faviconWidth
-        let faviconHeight = faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize)
-        faviconHeightConstraint = faviconHeight
-
-        // Only one of these is active at a time: the remove button is absent in the placeholder state,
-        // so the label runs to the chip's own edge instead.
+        // Dropped by `.loading`, which hugs its spinner instead.
         titleTrailingToRemoveButtonConstraint = titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing)
-        titleTrailingToEdgeConstraint = titleLabel.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.placeholderHorizontalPadding)
 
         NSLayoutConstraint.activate([
             width,
@@ -338,10 +378,10 @@ private extension AIChatContextChipView {
 
             height,
 
-            faviconLeading,
+            faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading),
             faviconView.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
-            faviconWidth,
-            faviconHeight,
+            faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
+            faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
 
             titleLabel.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: Constants.contentSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
@@ -360,7 +400,7 @@ private extension AIChatContextChipView {
         removeButton.accessibilityTraits = .button
     }
 
-    func placeholderFavicon() -> UIImage? {
+    func fallbackFavicon() -> UIImage? {
         return DesignSystemImages.Glyphs.Size24.globe.withRenderingMode(.alwaysTemplate)
     }
 
@@ -393,6 +433,15 @@ private extension AIChatContextChipView {
     }
 }
 
+// MARK: - Gesture Delegate
+
+extension AIChatContextChipView: UIGestureRecognizerDelegate {
+
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        shouldReceiveChipTap(at: touch.location(in: self))
+    }
+}
+
 // MARK: - Trait Changes
 
 extension AIChatContextChipView {
@@ -400,11 +449,23 @@ extension AIChatContextChipView {
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            // Re-resolve through the state rather than restating colours here, where the placeholder's
-            // clear background would otherwise be overwritten with the attached fill.
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection),
+           let currentState {
             updateUI(for: currentState)
         }
+    }
+}
+
+// MARK: - Expanded Hit Target
+
+private final class ExpandedHitTargetButton: UIButton {
+
+    var minimumHitTarget: CGFloat = 0
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dx = min(0, (bounds.width - minimumHitTarget) / 2)
+        let dy = min(0, (bounds.height - minimumHitTarget) / 2)
+        return bounds.insetBy(dx: dx, dy: dy).contains(point)
     }
 }
 #endif

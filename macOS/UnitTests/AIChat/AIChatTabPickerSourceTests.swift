@@ -52,6 +52,53 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         return collection([.loaded(loaded), .unloaded(suspended)])
     }
 
+    // MARK: - ownerCollection (browser tool scoping)
+
+    func testWhenOwnerTabIsInExactlyOneWindowThenThatCollectionIsResolved() {
+        let first = regularCollection(urls: ["https://a.example"])
+        let second = regularCollection(urls: ["https://b.example"])
+        let owner = first.tabCollection.tabs[0].uuid
+
+        let resolved = AIChatTabPickerSource.collection(containingTabID: owner, in: manager(with: [second, first]))
+
+        XCTAssertTrue(resolved === first)
+    }
+
+    /// A pinned tab is in every window's collection, so it has no single owner window.
+    func testWhenOwnerTabIsInSeveralWindowsThenNoCollectionIsResolved() {
+        let shared = { UnloadedTab(uuid: "shared", content: .url(URL(string: "https://duck.ai")!, credential: nil, source: .ui), isSuspended: false) }
+        let first = collection([.unloaded(shared())])
+        let second = collection([.unloaded(shared())])
+
+        XCTAssertNil(AIChatTabPickerSource.collection(containingTabID: "shared", in: manager(with: [first, second])))
+    }
+
+    func testWhenOwnerTabIsUnknownThenNoCollectionIsResolved() {
+        let first = regularCollection(urls: ["https://a.example"])
+
+        XCTAssertNil(AIChatTabPickerSource.collection(containingTabID: "nope", in: manager(with: [first])))
+    }
+
+    /// A backgrounded chat's web view has no window. The owner tab decides, never the key window —
+    /// which here is a Fire Window the chat has nothing to do with.
+    func testWhenWebViewHasNoWindowThenOwnerCollectionComesFromTheOwnerTab() {
+        let keyWindow = burnerCollection()
+        let chatWindow = regularCollection(urls: ["https://a.example"])
+        let owner = chatWindow.tabCollection.tabs[0].uuid
+
+        let resolved = AIChatTabPickerSource.ownerCollection(for: nil, ownerTabID: owner, in: manager(with: [keyWindow, chatWindow]))
+
+        XCTAssertTrue(resolved === chatWindow)
+    }
+
+    func testWhenWebViewHasNoWindowAndOwnerIsAmbiguousThenNothingIsResolved() {
+        let shared = { UnloadedTab(uuid: "shared", content: .url(URL(string: "https://duck.ai")!, credential: nil, source: .ui), isSuspended: false) }
+        let first = collection([.unloaded(shared())])
+        let second = collection([.unloaded(shared())])
+
+        XCTAssertNil(AIChatTabPickerSource.ownerCollection(for: nil, ownerTabID: "shared", in: manager(with: [first, second])))
+    }
+
     // MARK: - materializeAttachableTab (wake suspended tabs)
 
     func testMaterializeWakesSuspendedTabWithoutChangingSelection() {

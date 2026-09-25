@@ -67,6 +67,10 @@ final class UnifiedToggleInputViewController: UIViewController {
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
+    func inputCardFrame(in view: UIView) -> CGRect {
+        inputBarView.cardFrame(in: view)
+    }
+
     var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputBarView.cardLeadingAnchor }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputBarView.cardTrailingAnchor }
@@ -393,10 +397,6 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func selectAllText() {
         inputBarView.selectAllText()
-    }
-
-    func moveCaretToStart() {
-        inputBarView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }

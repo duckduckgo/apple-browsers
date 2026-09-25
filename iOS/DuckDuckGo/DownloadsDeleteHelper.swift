@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import Core
+import PixelKit
 
 private enum Const {
     static let defaultUndoTimeoutInterval: TimeInterval = 3.0
@@ -118,7 +119,7 @@ class DownloadsDeleteHelper {
             // Remove this directory from tracking
             self?.temporaryDirectoryURLs.value.removeAll { $0 == directory }
             
-            Pixel.fire(pixel: .downloadsListDeleteUndo)
+            PixelKit.fire(Pixel.Event.downloadsListDeleteUndo)
         }
     }
 }

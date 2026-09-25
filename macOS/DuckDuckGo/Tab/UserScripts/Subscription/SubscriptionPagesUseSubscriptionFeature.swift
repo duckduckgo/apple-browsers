@@ -25,6 +25,7 @@ import UserScript
 import Subscription
 import SubscriptionUI
 import PixelKit
+import WideEvent
 import os.log
 import Freemium
 import DataBrokerProtection_macOS
@@ -386,7 +387,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)
 
-            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
+            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, experimentAttribution: nil)
 
             func completeWideEventFlow(with error: Error) {
                 guard let purchaseWideEventData = self.purchaseWideEventData else { return }

@@ -31,14 +31,19 @@ public protocol AIChatCookieProviding {
 
 @MainActor
 public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
-    private let cookieStore: any DDGHTTPCookieStore
+    private let cookieStore: @MainActor @Sendable () -> any DDGHTTPCookieStore
 
-    public nonisolated init(cookieStore: any DDGHTTPCookieStore = HTTPCookieStoreWrapper(wrapped: WKWebsiteDataStore.default().httpCookieStore)) {
+    public nonisolated init(
+        cookieStore: @autoclosure @escaping @MainActor @Sendable () -> any DDGHTTPCookieStore = HTTPCookieStoreWrapper(
+            wrapped: WKWebsiteDataStore.default().httpCookieStore
+        )
+    ) {
         self.cookieStore = cookieStore
     }
 
     public func cookies(for url: URL) async -> [HTTPCookie] {
-        let cookies = await cookieStore.allCookies()
+        // Accessing the default WebKit store can block; defer it until a fetch, not scene creation.
+        let cookies = await cookieStore().allCookies()
         let domain = url.host ?? ""
         return cookies.filter { cookie in
             let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain

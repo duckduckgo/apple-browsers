@@ -20,7 +20,7 @@ import AppUpdaterShared
 import Cocoa
 import Combine
 import DesignResourcesKitIcons
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
 import UserScript
@@ -133,7 +133,6 @@ private final class MockSparkleUpdateController: NSObject, SparkleUpdateControll
     var notificationDotPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var clearsNotificationDotOnMenuOpen = true
     var lastUpdateCheckDate: Date?
-    var lastUpdateNotificationShownDate = Date.distantPast
 
     @Published var updateProgress: UpdateCycleProgress = .updateCycleNotStarted
     var updateProgressPublisher: Published<UpdateCycleProgress>.Publisher { $updateProgress }

@@ -24,6 +24,7 @@ import DesignResourcesKit
 import PrivacyConfig
 import os.log
 import FeatureFlags_iOS
+import PixelKit
 
 /// Utility for calculating DaxEasterEgg logo frames with consistent sizing across components.
 struct DaxEasterEggLayout {
@@ -201,10 +202,10 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     @objc private func setAsLogoButtonTapped() {
         if isCurrentLogoStored {
             logoStore.clearLogo()
-            DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoResetToDefault)
+            PixelKit.fire(Pixel.Event.daxEasterEggLogoResetToDefault, frequency: .dailyAndCount)
         } else if let urlString = imageURL?.absoluteString {
             logoStore.setLogo(url: urlString)
-            DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoSetAsPermanent)
+            PixelKit.fire(Pixel.Event.daxEasterEggLogoSetAsPermanent, frequency: .dailyAndCount)
         }
         dismiss(animated: true)
     }

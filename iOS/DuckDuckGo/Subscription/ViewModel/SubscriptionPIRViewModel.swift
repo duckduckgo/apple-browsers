@@ -19,12 +19,13 @@
 
 import Foundation
 import Core
+import PixelKit
 
 final class SubscriptionPIRViewModel: ObservableObject {
     
     var viewTitle = UserText.settingsPProDBPTitle
 
     func onFirstAppear() {
-        Pixel.fire(pixel: .subscriptionPersonalInformationRemovalSettings)
+        PixelKit.fire(Pixel.Event.subscriptionPersonalInformationRemovalSettings)
     }
 }

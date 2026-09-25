@@ -26,6 +26,8 @@ import DesignResourcesKit
 import Foundation
 import SecureStorage
 import SwiftUI
+import UniformTypeIdentifiers
+import PixelKit
 
 protocol AutofillLoginDetailsViewModelDelegate: AnyObject {
     func autofillLoginDetailsViewModelDidSave()
@@ -63,6 +65,8 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
     var account: SecureVaultModels.WebsiteAccount?
     var emailManager: EmailManager
     private let syncService: DDGSyncing
+    private let pasteboard: UIPasteboard
+    private let clipboardExpirationInterval: TimeInterval
 
     private let tld: TLD
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
@@ -180,9 +184,13 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
     internal init(account: SecureVaultModels.WebsiteAccount? = nil,
                   syncService: DDGSyncing,
                   tld: TLD,
-                  emailManager: EmailManager = EmailManager()) {
+                  emailManager: EmailManager = EmailManager(),
+                  pasteboard: UIPasteboard = .general,
+                  clipboardExpirationInterval: TimeInterval = .minutes(1)) {
         self.account = account
         self.syncService = syncService
+        self.pasteboard = pasteboard
+        self.clipboardExpirationInterval = clipboardExpirationInterval
         self.tld = tld
         self.headerViewModel = AutofillLoginDetailsHeaderViewModel()
         self.emailManager = emailManager
@@ -244,18 +252,19 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
         switch action {
         case .username:
             message = UserText.autofillCopyToastUsernameCopied
-            UIPasteboard.general.string = username
-            Pixel.fire(pixel: .autofillManagementCopyUsername)
+            pasteboard.string = username
+            PixelKit.fire(Pixel.Event.autofillManagementCopyUsername)
         case .password:
             message = UserText.autofillCopyToastPasswordCopied
-            UIPasteboard.general.string = password
-            Pixel.fire(pixel: .autofillManagementCopyPassword)
+            pasteboard.setItems([[UTType.utf8PlainText.identifier: password]],
+                                options: [.expirationDate: Date().addingTimeInterval(clipboardExpirationInterval)])
+            PixelKit.fire(Pixel.Event.autofillManagementCopyPassword)
         case .address:
             message = UserText.autofillCopyToastAddressCopied
-            UIPasteboard.general.string = address
+            pasteboard.string = address
         case .notes:
             message = UserText.autofillCopyToastNotesCopied
-            UIPasteboard.general.string = notes
+            pasteboard.string = notes
         }
         
         presentCopyConfirmation(message: message)
@@ -280,7 +289,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 
@@ -365,7 +374,7 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
                 delegate?.autofillLoginDetailsViewModelDidAttemptToSaveDuplicateLogin()
             }
         } else {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 

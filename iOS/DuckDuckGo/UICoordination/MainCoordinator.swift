@@ -22,6 +22,7 @@ import Core
 import Combine
 import BrowserServicesKit
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import Persistence
@@ -76,6 +77,7 @@ final class MainCoordinator {
     private let keyValueStore: ThrowingKeyValueStoring
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
     private let privacyStats: PrivacyStatsProviding
+    private let daxGreetingActivity: DaxGreetingActivityStore
     private let wideEvent: WideEventManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
@@ -187,6 +189,11 @@ final class MainCoordinator {
             onboardingProvider: onboardingSearchExperienceProvider,
             daxDialogsStatusProvider: daxDialogs
         )
+        let dailyActivityStore = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: keyValueStore)
+        let daxGreetingActivity = DaxGreetingActivityStore(
+            readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
+            isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
+        self.daxGreetingActivity = daxGreetingActivity
         self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
@@ -322,6 +329,7 @@ final class MainCoordinator {
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
                                         privacyStats: privacyStats,
+                                        daxGreetingActivity: daxGreetingActivity,
                                         whatsNewRepository: whatsNewRepository,
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
@@ -436,6 +444,8 @@ final class MainCoordinator {
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
+            appSession: AppDependencyProvider.shared.appSessionInfo,
+            featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
@@ -682,6 +692,7 @@ final class MainCoordinator {
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
+        daxGreetingActivity.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source
@@ -706,6 +717,7 @@ final class MainCoordinator {
 
     func onBackground() {
         homePageConfiguration.handleAppBackgrounded()
+        promoCoordinationService.handleAppBackgrounded()
         resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()
@@ -720,13 +732,12 @@ final class MainCoordinator {
         let isEnabled = controller.adBlockingAvailability.isEnabled
         let storage: any ThrowingKeyedStoring<YouTubeAdBlockingKeys> = keyValueStore.throwingKeyedStoring()
         let analyticsEnabled = isEnabled && ((try? storage.value(for: \.youTubeAnalyticsEnabled)) ?? false)
-        DailyPixel.fire(
-            pixel: .webExtensionDailyAdBlockingState,
-            withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.webExtensionDailyAdBlockingState,
+                      frequency: .legacyDailyNoSuffix,
+                      options: .parameters([
                 "is_enabled": isEnabled ? "true" : "false",
                 "analytics_enabled": analyticsEnabled ? "true" : "false"
-            ]
-        )
+            ]))
     }
 
 }
@@ -812,10 +823,10 @@ extension MainCoordinator: URLHandling {
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
            let queryItems = components.queryItems,
            queryItems.contains(where: { $0.name == "ls" }) {
-            Pixel.fire(pixel: .autofillLoginsLaunchWidgetLock)
+            PixelKit.fire(Pixel.Event.autofillLoginsLaunchWidgetLock)
             source = .lockScreenWidget
         } else {
-            Pixel.fire(pixel: .autofillLoginsLaunchWidgetHome)
+            PixelKit.fire(Pixel.Event.autofillLoginsLaunchWidgetHome)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -831,10 +842,9 @@ extension MainCoordinator: URLHandling {
               let shortcut = queryItems.first(where: { $0.name == WidgetSourceType.shortcutKey })?.value
         else { return }
 
-        DailyPixel.fireDailyAndCount(
-            pixel: .widgetMediumLaunch,
-            withAdditionalParameters: [PixelParameters.shortcut: shortcut]
-        )
+        PixelKit.fire(Pixel.Event.widgetMediumLaunch,
+                      frequency: .dailyAndCount,
+                      options: .parameters([PixelParameters.shortcut: shortcut]))
     }
 
     func handleAIChatAppIconShortuct() {
@@ -843,7 +853,7 @@ extension MainCoordinator: URLHandling {
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
               self.controller.openAIChat(source: .iconShortcut)
           }
-          Pixel.fire(pixel: .openAIChatFromIconShortcut)
+          PixelKit.fire(Pixel.Event.openAIChatFromIconShortcut)
       }
 }
 
@@ -874,7 +884,7 @@ extension MainCoordinator: ShortcutItemHandling {
         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
-        Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+        PixelKit.fire(Pixel.Event.autofillLoginsLaunchAppShortcut)
     }
 
 }

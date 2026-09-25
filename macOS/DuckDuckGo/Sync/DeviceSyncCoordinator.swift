@@ -24,7 +24,7 @@ import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
-import Navigation
+import DDGNavigation
 import PixelKit
 import os.log
 import BrowserServicesKit
@@ -119,8 +119,8 @@ extension DeviceSyncCoordinator: SyncDeviceFlowLaunching {
 }
 
 extension DeviceSyncCoordinator: SyncSettingsViewHandling {
-    func saveRecoveryPDF() {
-        dialogController.saveRecoveryPDF()
+    func saveRecoveryPDF(requiresAuthentication: Bool) {
+        dialogController.saveRecoveryPDF(requiresAuthentication: requiresAuthentication)
     }
 
     var devicesPublisher: AnyPublisher<[SyncDevice], Never> {

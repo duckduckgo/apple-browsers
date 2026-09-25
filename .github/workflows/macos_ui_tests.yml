@@ -101,14 +101,15 @@ jobs:
   # This job sets up the matrix strategy arguments for the ui-tests jobs
   setup-tests:
     name: Set up tests list
-    runs-on: macos-26
+    runs-on: ubuntu-latest
 
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
-      runner: ${{ steps.define-runners.outputs.runner }}
-      include: ${{ steps.define-runners.outputs.include }}
+      # One object per runner configuration: {"runner": [labels], "os-version", "xcode-version"}.
+      # The ui-tests jobs multiply this list by the test list to build their matrix.
+      config: ${{ steps.define-runners.outputs.config }}
       test: ${{ steps.list-tests.outputs.test }}
       all-os-versions: ${{ steps.define-runners.outputs.all-os-versions }}
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
@@ -123,9 +124,6 @@ jobs:
         with:
           ref: ${{ inputs.branch || github.sha }}
 
-      - name: Print macOS version
-        run: sw_vers
-
       - name: Start measuring duration
         id: start-duration
         uses: ./.github/actions/measure-duration
@@ -136,23 +134,27 @@ jobs:
         id: define-runners
         run: |
           # scheduled runs don't have inputs so let's default to true for all_os_versions
-          all_os_versions="${{ inputs.all_os_versions || 'true' }}"
+          all_os_versions="${{ inputs.all_os_versions }}"
+          # "runner" is always a list of labels, even when the list holds one label. The macOS 26
+          # leg needs two labels to select the Bitrise runner. macos_run_ui_test.yml receives the
+          # list as a JSON string and expands it with fromJSON, because a workflow_call input
+          # cannot be an array.
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
-            runner='["macos-26-xlarge"]'
-            include='[{"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.6"}]'
+            config=$(jq -c <<< '[
+              {"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6"}
+            ]')
           else
             all_os_versions='true'
-            runner='["macos-14-xlarge", "macos-15-xlarge", "macos-26-xlarge"]'
-            include=$(jq -c <<< '[
-              {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "16.2"},
-              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "26.2"},
-              {"runner": "macos-26-xlarge", "os-version": "26", "xcode-version": "26.6"}
+            config=$(jq -c <<< '[
+              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
+              {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
+              {"runner": ["image:osx-tahoe-26", "ui-tests"], "os-version": "26", "xcode-version": "26.6"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
-          echo "runner=${runner}" >> $GITHUB_OUTPUT
-          echo "include=${include}" >> $GITHUB_OUTPUT
+          echo "config=${config}" >> $GITHUB_OUTPUT
+          echo "Runner configurations: ${config}"
 
       - name: Define user-modes
         id: define-user-modes
@@ -235,15 +237,18 @@ jobs:
     if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
       fail-fast: false
+      # The matrix multiplies the runner configurations by the test classes. Keep the
+      # configurations as a matrix key. Do not move them into `include`: GitHub merges an `include`
+      # entry whose keys are absent from the base matrix into every combination, and each later
+      # entry overwrites the earlier one. Only the last configuration would then survive.
       matrix:
-        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
         test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
-        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
-      runner: ${{ matrix.runner }}
-      os-version: ${{ matrix.os-version }}
-      xcode-version: ${{ matrix.xcode-version }}
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -256,15 +261,16 @@ jobs:
     if: needs.setup-tests.outputs.run-internal == 'true'
     strategy:
       fail-fast: false
+      # See the note on ui-tests-production for why the configurations are a matrix key, and not an
+      # `include` list.
       matrix:
-        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
         test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
-        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
     uses: ./.github/workflows/macos_run_ui_test.yml
     with:
-      runner: ${{ matrix.runner }}
-      os-version: ${{ matrix.os-version }}
-      xcode-version: ${{ matrix.xcode-version }}
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: internal
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -309,7 +315,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ needs.setup-tests.outputs.start-timestamp }}
-        pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == true) && 'm_ci_apple_duration_macos_ui_tests_all' || 'm_ci_apple_duration_macos_ui_tests_latest' }}
+        pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == 'true') && 'm_ci_apple_duration_macos_ui_tests_all' || 'm_ci_apple_duration_macos_ui_tests_latest' }}
 
   notify-failure:
     name: Notify on failure

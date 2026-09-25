@@ -214,7 +214,6 @@ extension TabExtensionsBuilder {
         add {
             AutoplayPolicyTabExtension(
                 autoplayPreferences: dependencies.autoplayPreferences,
-                featureFlagger: dependencies.featureFlagger,
                 permissionManager: dependencies.permissionManager,
                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                 telemetryScriptPublisher: userScripts.compactMap { $0 }
@@ -359,13 +358,6 @@ extension TabExtensionsBuilder {
             add {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
-        }
-
-        add {
-            InternalFeedbackFormTabExtension(
-                webViewPublisher: args.webViewFuture,
-                internalUserDecider: dependencies.featureFlagger.internalUserDecider
-            )
         }
 
         add {

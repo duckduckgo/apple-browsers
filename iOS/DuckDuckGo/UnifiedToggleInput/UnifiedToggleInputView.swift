@@ -564,10 +564,12 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
         attachmentsStrip.onPageContextTap = { [weak viewModel] in viewModel?.tapToAttach() }
         viewModel.$state
-            .sink { [weak self] state in self?.attachmentsStrip.setPageContextChipState(state) }
-            .store(in: &pageContextChipCancellables)
-        viewModel.$isVisible
-            .sink { [weak self] isVisible in self?.attachmentsStrip.setPageContextChipVisible(isVisible) }
+            .sink { [weak self] state in
+                if let state {
+                    self?.attachmentsStrip.setPageContextChipState(state)
+                }
+                self?.attachmentsStrip.setPageContextChipVisible(state != nil)
+            }
             .store(in: &pageContextChipCancellables)
     }
 
@@ -583,6 +585,10 @@ final class UnifiedToggleInputView: UIView {
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
+    func cardFrame(in view: UIView) -> CGRect {
+        cardView.convert(cardView.bounds, to: view)
+    }
+
     var cardTopAnchor: NSLayoutYAxisAnchor { cardView.topAnchor }
     var cardLeadingAnchor: NSLayoutXAxisAnchor { cardView.leadingAnchor }
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
@@ -698,6 +704,9 @@ final class UnifiedToggleInputView: UIView {
     /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
     /// pill has been removed from the toolbar by then).
     private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
+    /// The insets are point offsets against the container's width, so they only describe the window
+    /// size they were measured at — a rotation between focus and dismiss invalidates them.
+    private var cachedOmnibarMatchedInsetsWindowSize: CGSize?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
     /// Resting-grey stand-in revealed as the editing fill fades. Flat color (not live glass) so the
     /// morph keeps the card's silhouette without adding glass self-shadowing on top of the toolbar.
@@ -967,6 +976,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var fireModeContentSubviews: [UIView] {
+        // aiTabCollapsed buttons keep their own regular glass, so they must stay on the OS trait.
         subviews.filter {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
@@ -995,10 +1005,6 @@ final class UnifiedToggleInputView: UIView {
 
     func selectAllText() {
         textEntryView.selectAllText()
-    }
-
-    func moveCaretToStart() {
-        textEntryView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { textEntryView.placeholderWindowX }
@@ -1382,7 +1388,8 @@ final class UnifiedToggleInputView: UIView {
             cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
             cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         case .bottom:
-            if let cached = cachedOmnibarMatchedInsets {
+            if let cached = cachedOmnibarMatchedInsets,
+               cachedOmnibarMatchedInsetsWindowSize == window?.bounds.size {
                 // Reproduce the measured pill pose (cached at focus) so the dismiss collapse lands
                 // back on the pill without re-measuring — it's no longer in the toolbar by then.
                 applyOmnibarMatchedInsets(cached)
@@ -1419,6 +1426,7 @@ final class UnifiedToggleInputView: UIView {
             trailing: -(bounds.width - pillInSelf.maxX),
             bottom: -(bounds.height - pillInSelf.maxY))
         cachedOmnibarMatchedInsets = insets
+        cachedOmnibarMatchedInsetsWindowSize = window?.bounds.size
         applyOmnibarMatchedInsets(insets)
         cardView.layer.cornerRadius = collapsedCornerRadius
         layoutIfNeeded()

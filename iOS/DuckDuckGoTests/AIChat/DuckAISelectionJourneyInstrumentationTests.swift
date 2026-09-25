@@ -18,7 +18,7 @@
 //
 
 import Foundation
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import Testing
 @testable import DuckDuckGo
 

@@ -22,6 +22,7 @@ import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 import Core
+import PixelKit
 
 class SwitchBarTextEntryView: UIView {
 
@@ -986,17 +987,6 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
-    func moveCaretToStart() {
-        if usesTextField {
-            let start = textField.beginningOfDocument
-            textField.selectedTextRange = textField.textRange(from: start, to: start)
-        } else {
-            let start = textView.beginningOfDocument
-            textView.selectedTextRange = textView.textRange(from: start, to: start)
-            textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
-        }
-    }
-
     func setQueryText(_ text: String) {
         if usesTextField {
             textField.text = text
@@ -1221,15 +1211,15 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
 private extension SwitchBarTextEntryView {
     func fireTextAreaFocusedPixel() {
         let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarTextAreaFocused, options: .parameters(parameters))
     }
     
     func fireClearButtonPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarClearButtonPressed, options: .parameters(handler.modeParameters))
     }
     
     func fireKeyboardGoPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarKeyboardGoPressed, options: .parameters(handler.modeParameters))
     }
 }
 

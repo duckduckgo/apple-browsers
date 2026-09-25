@@ -21,7 +21,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 import PixelKit
 

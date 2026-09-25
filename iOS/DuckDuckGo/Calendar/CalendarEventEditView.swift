@@ -21,6 +21,7 @@ import Core
 import EventKit
 import EventKitUI
 import SwiftUI
+import PixelKit
 
 /// EKEvent + its store. `EKEvent.eventStore` is weak, so we keep both alive while the editor
 /// is presented.
@@ -41,7 +42,7 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
         editor.event = preparedEvent.event
         editor.eventStore = preparedEvent.store
         editor.editViewDelegate = context.coordinator
-        Pixel.fire(pixel: .icsCalendarEditorPresented)
+        PixelKit.fire(Pixel.Event.icsCalendarEditorPresented)
         return editor
     }
 

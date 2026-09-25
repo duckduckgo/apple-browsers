@@ -233,6 +233,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         - Tier: \(tier?.rawValue ?? "unknown")
         - Features: \(features?.map { $0.debugDescription } ?? [])
         - Pending Plans: \(pendingPlans?.count ?? 0)
+        - Free Trial Length (days): \(trialLengthInDays().map(String.init) ?? "0")
         """
     }
 

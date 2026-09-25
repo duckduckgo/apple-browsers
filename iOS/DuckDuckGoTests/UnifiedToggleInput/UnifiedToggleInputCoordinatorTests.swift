@@ -22,6 +22,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+import SubscriptionTestingUtilities
 import UIKit
 import UserScript
 import WebKit
@@ -37,6 +38,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
     private var mockFeatureDiscovery: MockFeatureDiscovery!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var retainedBridgeReadyWebView: WKWebView?
     private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
@@ -47,10 +49,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockToggleModeStorage = MockToggleModeStorage()
         mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
         mockFeatureDiscovery = MockFeatureDiscovery()
+        subscriptionManager = SubscriptionManagerMock()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             toggleModeStorage: mockToggleModeStorage,
             switchBarSubmissionMetrics: mockSubmissionMetrics,
             featureDiscovery: mockFeatureDiscovery,
@@ -63,6 +67,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     override func tearDown() {
         cancellables.removeAll()
         sut = nil
+        subscriptionManager = nil
         mockDelegate = nil
         mockPreferences = nil
         mockToggleModeStorage = nil
@@ -71,6 +76,36 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         retainedBridgeReadyWebView = nil
         retainedBridgeReadyBroker = nil
         super.tearDown()
+    }
+
+    func testRejectedStaleModelSelectionDoesNotCreatePendingChoice() {
+        mockPreferences.selectedModelId = "free"
+        sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),
+                                 makeModel(id: "paid", access: false, accessTier: ["plus"])]
+        subscriptionManager.hasAppStoreProductsAvailable = false
+
+        sut.handleModelSelection("paid")
+        sut.modelStore.models = [makeModel(id: "free", access: true), makeModel(id: "paid", access: true)]
+        sut.modelStore.onModelsUpdated?()
+
+        XCTAssertEqual(sut.persistedModelId, "free")
+        XCTAssertEqual(mockPreferences.selectedModelId, "free")
+    }
+
+    func testAvailabilityRefreshUpdatesPickerAndHeaderWithoutChangingSelection() async throws {
+        mockPreferences.selectedModelId = "free"
+        sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),
+                                 makeModel(id: "paid", access: false, accessTier: ["plus"])]
+        for available in [false, true] {
+            let refreshed = expectation(description: "header availability refreshed")
+            sut.onSubscriptionUpsellAvailabilityChanged = { refreshed.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [refreshed], timeout: 1)
+
+            let menu = try XCTUnwrap(sut.viewController.modelPickerMenu)
+            XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.flatMap(\.children).count, available ? 2 : 1)
+            XCTAssertEqual(sut.persistedModelId, "free")
+        }
     }
 
     // MARK: - Paste handler wiring
@@ -158,6 +193,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.displayState, .contextualChat(.expanded))
         XCTAssertTrue(sut.hasSubmittedPrompt, "an existing chat has a prompt in it already")
+    }
+
+    func test_contextualChat_submittingPrompt_clearsToolbarVoiceChatActive() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .contextualChat,
+            isToggleEnabled: false,
+            preferences: mockPreferences,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            contextualStart: .expandedPreSubmit
+        )
+        sut.delegate = mockDelegate
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
     // MARK: - Display State: showCollapsed
@@ -403,9 +454,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Recovery Picker Session Pixels
 
     func test_recoveryPickerSession_fullFunnel_smokeTest() {
-        let previousDryRun = Pixel.isDryRun
-        Pixel.isDryRun = true
-        defer { Pixel.isDryRun = previousDryRun }
 
         _ = sut.prepareExternalPromptSubmission()
         let userScript = makeBridgeReadyUserScript()
@@ -420,9 +468,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_recoveryPickerSession_submitChangeModelPixel_smokeTest_withoutRecoveryPin() {
-        let previousDryRun = Pixel.isDryRun
-        Pixel.isDryRun = true
-        defer { Pixel.isDryRun = previousDryRun }
 
         _ = sut.prepareExternalPromptSubmission()
         let userScript = makeBridgeReadyUserScript()
@@ -437,9 +482,6 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_recoveryPickerSession_promptSentPixel_notFiredWithoutRecoveryPin() {
-        let previousDryRun = Pixel.isDryRun
-        Pixel.isDryRun = true
-        defer { Pixel.isDryRun = previousDryRun }
 
         sut.modelStore.models = [makeModel(id: "gpt-5", access: true)]
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first prompt", mode: .aiChat)
@@ -804,6 +846,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_activateFromOmnibar_withPrefilledText_setsPrefilledState() {
         sut.activateFromOmnibar(prefilledText: "test query")
         XCTAssertEqual(sut.textState, .prefilledSelected)
+    }
+
+    func test_activateFromOmnibar_withPrefilledTextAndToggleEnabled_selectsAllText() throws {
+        let text = "test query"
+        sut.updateToggleEnabled(true)
+        sut.activateFromOmnibar(prefilledText: text)
+        let textField = try XCTUnwrap(firstDescendant(of: UITextField.self, in: sut.viewController.view))
+
+        XCTAssertFalse(textField.isHidden)
+        assertAllTextIsSelected(in: textField, expectedLength: text.utf16.count)
+    }
+
+    func test_activateFromOmnibar_withPrefilledAIChatText_selectsAllText() throws {
+        let text = "test prompt"
+        sut.activateFromOmnibar(prefilledText: text, inputMode: .aiChat)
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut.viewController.view))
+
+        XCTAssertFalse(textView.isHidden)
+        assertAllTextIsSelected(in: textView, expectedLength: text.utf16.count)
+    }
+
+    func test_activateFromOmnibar_withPrefilledTextAndToggleDisabled_selectsAllText() throws {
+        let text = "test query"
+        sut.updateToggleEnabled(false)
+        sut.activateFromOmnibar(prefilledText: text)
+        let textField = try XCTUnwrap(firstDescendant(of: UITextField.self, in: sut.viewController.view))
+
+        XCTAssertFalse(textField.isHidden)
+        assertAllTextIsSelected(in: textField, expectedLength: text.utf16.count)
     }
 
     func test_activateFromOmnibar_toggleDisabled_forcesSearchMode() {
@@ -2668,6 +2739,23 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
     }
 
+    func test_submittingPrompt_clearsToolbarVoiceChatActive() {
+        sut.showExpanded(inputMode: .aiChat)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
+    func test_startNewChat_restoresToolbarVoiceChatActive() {
+        sut.showExpanded(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+
+        sut.startNewChat()
+
+        XCTAssertTrue(sut.viewController.isToolbarAIVoiceChatActive)
+    }
+
     func test_showExpanded_inSearchMode_clearsToolbarVoiceChatActive() {
         sut.showExpanded(inputMode: .search)
         XCTAssertFalse(sut.viewController.isToolbarAIVoiceChatActive)
@@ -3195,6 +3283,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         coord.unifiedToggleInputVC(coord.viewController, isDraggingToggle: false)
 
         XCTAssertFalse(coord.contentViewController.isSwipeEnabled, "Restoring after a drag must not enable swipe when the toggle is hidden")
+    }
+
+    private func assertAllTextIsSelected(in textInput: UIView & UITextInput, expectedLength: Int, file: StaticString = #filePath, line: UInt = #line) {
+        let expectation = expectation(description: "All prefilled text selected")
+        DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                guard let selectedRange = textInput.selectedTextRange else {
+                    XCTFail("Expected a selected text range", file: file, line: line)
+                    expectation.fulfill()
+                    return
+                }
+                XCTAssertEqual(textInput.offset(from: textInput.beginningOfDocument, to: selectedRange.start), 0, file: file, line: line)
+                XCTAssertEqual(textInput.offset(from: selectedRange.start, to: selectedRange.end), expectedLength, file: file, line: line)
+                expectation.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 1)
+    }
+
+    private func firstDescendant<View: UIView>(of type: View.Type, in view: UIView) -> View? {
+        for subview in view.subviews {
+            if let match = subview as? View {
+                return match
+            }
+            if let match = firstDescendant(of: type, in: subview) {
+                return match
+            }
+        }
+        return nil
     }
 
     /// Mirrors `test_syncInputModeFromExternalSource_toggleDisabled_forcesAIChatInAITabSession`

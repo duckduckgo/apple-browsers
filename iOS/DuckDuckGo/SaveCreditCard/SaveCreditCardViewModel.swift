@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Core
+import PixelKit
 
 protocol SaveCreditCardViewModelDelegate: AnyObject {
     func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard)
@@ -74,14 +75,14 @@ final class SaveCreditCardViewModel {
         self.vault = vault
         self.card = CreditCardRowViewModel(creditCard: creditCard)
 
-        Pixel.fire(pixel: .autofillCardsSaveCardInlineDisplayed)
+        PixelKit.fire(Pixel.Event.autofillCardsSaveCardInlineDisplayed)
     }
     
     func cancelButtonPressed() {
         updateRejectionCountIfNeeded()
         delegate?.saveCreditCardViewModelCancel(self)
         showDisableAutofillPromptIfNeeded()
-        Pixel.fire(pixel: .autofillCardsSaveCardInlineDismissed)
+        PixelKit.fire(Pixel.Event.autofillCardsSaveCardInlineDismissed)
     }
     
     func save() {
@@ -90,7 +91,7 @@ final class SaveCreditCardViewModel {
             delegate?.saveCreditCardViewModelCancel(self)
             return
         }
-        Pixel.fire(pixel: .autofillCardsSaveCardInlineConfirmed)
+        PixelKit.fire(Pixel.Event.autofillCardsSaveCardInlineConfirmed)
         autofillCreditCardsFirstTimeUser = false
         delegate?.saveCreditCardViewModelDidSave(self, creditCard: card)
     }

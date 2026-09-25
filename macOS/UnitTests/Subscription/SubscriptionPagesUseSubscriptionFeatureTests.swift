@@ -19,13 +19,13 @@
 import BrowserServicesKitTestsUtils
 import Common
 import FoundationExtensions
-import Networking
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import SubscriptionTestingUtilities
 import WebKit
 import XCTest
 import UserScript
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription

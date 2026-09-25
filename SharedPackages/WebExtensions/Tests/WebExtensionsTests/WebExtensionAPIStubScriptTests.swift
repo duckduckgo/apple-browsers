@@ -49,6 +49,35 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try super.tearDownWithError()
     }
 
+    // MARK: - Embedded Frames
+
+    func testWhenPageIsAnEmbeddedFrame_ThenActionOpenPopupIsHidden() throws {
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {}, setIcon: function() {} };
+        var top = {};
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === undefined")
+        try assertTrue("typeof chrome.action.setIcon === 'function'")
+        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('hidden: [action.openPopup]') !== -1; })")
+    }
+
+    func testWhenPageIsTheTopFrame_ThenActionOpenPopupIsLeftAlone() throws {
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        var top = globalThis;
+        var originalOpenPopup = chrome.action.openPopup;
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
+    }
+
     // MARK: - Missing Namespaces
 
     func testWhenNamespaceIsMissing_ThenItsEventsExposeListenerAPI() throws {

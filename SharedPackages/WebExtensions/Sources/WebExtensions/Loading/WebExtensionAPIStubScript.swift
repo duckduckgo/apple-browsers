@@ -889,12 +889,39 @@ enum WebExtensionAPIStubScript {
             console.info("[DuckDuckGo] Could not stub clients: " + error);
         }
 
+        // An extension page loaded in an iframe inside a website runs in that website's web
+        // process. iCloud Passwords' completion list is one: it is the "Enable Password AutoFill"
+        // prompt under a login field. A call to `action.openPopup()` from such a frame is a
+        // message WebKit's UI process treats as invalid, and WebKit answers an invalid message by
+        // terminating the web process, which takes the website down with it. Extensions feature-
+        // detect `action.openPopup` and, when it is absent, open their own popup page with
+        // `window.open()` instead — the path they already ship for Firefox — so the member is
+        // hidden in every frame that is not the top frame. The background page's own offscreen
+        // iframe loses it too, at no cost.
+        var hiddenMembers = [];
+        try {
+            var isEmbeddedFrame = false;
+            try {
+                isEmbeddedFrame = globalThis.top !== undefined && globalThis.top !== globalThis;
+            } catch (error) {
+                // A cross-origin `top` throws on access, which also means this is not the top frame.
+                isEmbeddedFrame = true;
+            }
+            if (isEmbeddedFrame && api.action && api.action.openPopup !== undefined) {
+                if (define(api.action, "openPopup", undefined)) {
+                    hiddenMembers.push("action.openPopup");
+                }
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not hide chrome.action.openPopup: " + error);
+        }
+
         if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || stubbedGlobals.length > 0
-            || wrappedNamespaces.length > 0) {
+            || wrappedNamespaces.length > 0 || hiddenMembers.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
                 + "], globals: [" + stubbedGlobals.join(", ") + "], wrapped: ["
-                + wrappedNamespaces.join(", ") + "]");
+                + wrappedNamespaces.join(", ") + "], hidden: [" + hiddenMembers.join(", ") + "]");
         }
     })();
 

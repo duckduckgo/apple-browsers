@@ -3691,10 +3691,6 @@
 		BB0CB0C12F50956600D9DD93 /* WebViewMemoryUsagePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0CB0BD2F50956600D9DD93 /* WebViewMemoryUsagePixel.swift */; };
 		BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
 		BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
-		BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
-		BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
-		BB0DA4D42DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */; };
-		BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */; };
 		BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
 		BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
 		BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */; };
@@ -3913,8 +3909,6 @@
 		BBDA795D2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */; };
 		BBDAA91A2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
 		BBDAA91B2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
-		BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */; };
-		BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */; };
 		BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDAA9212DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDE001C2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
@@ -6956,8 +6950,6 @@
 		BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateMenuItemFactoryTests.swift; sourceTree = "<group>"; };
 		BB0CB0BD2F50956600D9DD93 /* WebViewMemoryUsagePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewMemoryUsagePixel.swift; sourceTree = "<group>"; };
 		BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldAddressBarStyleProviding.swift; sourceTree = "<group>"; };
-		BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-green-hover.json"; sourceTree = "<group>"; };
-		BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-gray-dot-hover.json"; sourceTree = "<group>"; };
 		BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
 		BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-new.json"; sourceTree = "<group>"; };
 		BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
@@ -7069,7 +7061,6 @@
 		BBD9C3952E9D72050060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionDebugMenu.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
-		BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-button-mouse-over-legacy.json"; sourceTree = "<group>"; };
 		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
 		BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPopover.swift; sourceTree = "<group>"; };
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
@@ -10555,9 +10546,6 @@
 				BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */,
 				BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */,
 				BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */,
-				BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */,
-				BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */,
-				BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */,
 				37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */,
 				37EE55B52D5F197300D53C7C /* dark-shield.json */,
 				37EE55B62D5F197300D53C7C /* dark-shield-dot.json */,
@@ -15006,12 +14994,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29952E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				BBBED48B2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				3706FCB5293F65D500E42796 /* trackerData.json in Resources */,
-				BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */,
 				BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				854DAAAE2A72B613001E2E24 /* BookmarksBarPromptAssets.xcassets in Resources */,
@@ -15030,7 +15016,6 @@
 				7B307A752DCCE19100A07FB0 /* AppStore.xcstrings in Resources */,
 				5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
-				BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
 				37EE56052D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE56062D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE56072D5F197300D53C7C /* dark-trackers-2.json in Resources */,
@@ -15261,12 +15246,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29942E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				BBBED48E2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				9833913127AAA4B500DAF119 /* trackerData.json in Resources */,
-				BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				8511E18425F82B34002F516B /* 01_Fire_really_small.json in Resources */,
 				BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				859F30672A72B38500C20372 /* BookmarksBarPromptAssets.xcassets in Resources */,
@@ -15284,7 +15267,6 @@
 				567311272D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
 				567311282D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE55DB2D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
-				BB0DA4D42DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
 				37EE55DC2D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE55DD2D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE55DE2D5F197300D53C7C /* dark-trackers-2.json in Resources */,

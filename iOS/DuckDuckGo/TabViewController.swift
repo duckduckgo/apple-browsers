@@ -139,6 +139,39 @@ enum WebViewScrollViewInsetUpdater {
     }
 }
 
+/// Tracks whether the page currently being committed is the one an HTTPS upgrade produced, so that
+/// `upgradedHttps` on a breakage report describes that page and nothing that follows it.
+///
+/// Deliberately separate from `TabViewController.lastUpgradedURL`, which outlives a single navigation
+/// on purpose: it stops us re-upgrading a URL the server bounced straight back to HTTP. Reusing that
+/// value for reporting made one upgrade flag every later page on the same registrable domain.
+struct HTTPSUpgradeNavigationTracker {
+
+    private var upgradedURL: URL?
+
+    /// Records an upgrade that is about to be loaded.
+    mutating func didUpgrade(to url: URL) {
+        upgradedURL = url
+    }
+
+    /// Forgets the upgrade as soon as the main frame heads anywhere other than the upgraded URL.
+    mutating func willNavigate(mainFrameTo url: URL?) {
+        if upgradedURL != url {
+            upgradedURL = nil
+        }
+    }
+
+    mutating func reset() {
+        upgradedURL = nil
+    }
+
+    /// Whether `committedURL` is the page the upgrade produced.
+    func isHTTPSForced(committedURL: URL?) -> Bool {
+        guard let upgradedURL, let committedURL else { return false }
+        return upgradedURL == committedURL
+    }
+}
+
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -332,6 +365,7 @@ class TabViewController: UIViewController {
         return handler
     }()
     private var lastUpgradedURL: URL?
+    private var httpsUpgradeTracker = HTTPSUpgradeNavigationTracker()
     private var httpsUpgradeTask: Task<Void, Never>?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
@@ -1541,6 +1575,7 @@ class TabViewController: UIViewController {
     private func load(url: URL, didUpgradeURL: Bool) {
         if !didUpgradeURL {
             lastUpgradedURL = nil
+            httpsUpgradeTracker.reset()
             privacyInfo?.connectionUpgradedTo = nil
         }
 
@@ -2462,27 +2497,12 @@ extension TabViewController: WKNavigationDelegate {
         if isAITab {
             delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
         }
-        let tld = storageCache.tld
-        let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
-        onWebpageDidStartLoading(httpsForced: httpsForced)
+        onWebpageDidStartLoading(httpsForced: httpsUpgradeTracker.isHTTPSForced(committedURL: webView.url))
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
-    }
-
-    /// Whether the committed page was reached via an HTTPS upgrade.
-    ///
-    /// Needs both an upgrade on record and an HTTPS commit: `lastUpgradedURL` isn't reset across
-    /// same-domain navigations, so without the scheme check a later HTTP commit on the same domain
-    /// would be mis-flagged. Mirrors macOS's `connectionUpgradedTo != nil`.
-    static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
-        guard let lastUpgradedURL, let currentURL, currentURL.isHttps else { return false }
-        guard let upgradedDomain = tld.domain(lastUpgradedURL.host) else {
-            return lastUpgradedURL.host == currentURL.host
-        }
-        return upgradedDomain == tld.domain(currentURL.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -3566,6 +3586,10 @@ extension TabViewController: WKNavigationDelegate {
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
         recentNavigationActionShouldPerformDownloadURL = navigationAction.shouldPerformDownload ? navigationAction.request.url : nil
 
+        if navigationAction.isTargetingMainFrame {
+            httpsUpgradeTracker.willNavigate(mainFrameTo: navigationAction.request.url)
+        }
+
         if navigationAction.isTargetingMainFrame
             && tld.domain(navigationAction.request.mainDocumentURL?.host) != tld.domain(lastUpgradedURL?.host) {
             lastUpgradedURL = nil
@@ -3719,6 +3743,7 @@ extension TabViewController: WKNavigationDelegate {
             case let .success(upgradedUrl):
                 if lastUpgradedURL != upgradedUrl {
                     lastUpgradedURL = upgradedUrl
+                    httpsUpgradeTracker.didUpgrade(to: upgradedUrl)
                     privacyInfo?.connectionUpgradedTo = upgradedUrl
                     load(url: upgradedUrl, didUpgradeURL: true)
                     completion(.cancel)

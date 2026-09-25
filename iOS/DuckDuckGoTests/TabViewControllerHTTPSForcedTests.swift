@@ -17,58 +17,121 @@
 //  limitations under the License.
 //
 
-import Common
 import XCTest
 @testable import DuckDuckGo
 
 final class TabViewControllerHTTPSForcedTests: XCTestCase {
 
-    private let tld = TLD()
+    private var tracker = HTTPSUpgradeNavigationTracker()
 
-    // No upgrade recorded → never forced. https:// so we test the nil guard, not the scheme guard.
-    func test_noPriorUpgrade_returnsFalse() {
+    // MARK: - No upgrade on record
+
+    func test_noUpgrade_isNotForced() {
         for host in ["https://printer.local/", "https://192.168.1.10/", "https://intranet/", "https://example.com/"] {
             let url = URL(string: host)!
             XCTAssertFalse(
-                TabViewController.isHTTPSForced(lastUpgradedURL: nil, currentURL: url, tld: tld),
-                "\(host) with no prior upgrade should not be reported as HTTPS-forced"
+                tracker.isHTTPSForced(committedURL: url),
+                "\(host) with no upgrade on record should not be reported as HTTPS-forced"
             )
         }
     }
 
-    // The reported bug: printer.local committed over HTTP shouldn't count as forced. Before the fix,
-    // tld.domain was nil on both sides so nil == nil read as upgraded.
-    func test_priorUpgrade_httpCommitOnNoPSLHost_returnsFalse() {
-        let upgraded = URL(string: "https://printer.local/")!
-        let httpCommit = URL(string: "http://printer.local/")!
-        XCTAssertFalse(TabViewController.isHTTPSForced(lastUpgradedURL: upgraded, currentURL: httpCommit, tld: tld))
+    func test_noCommittedURL_isNotForced() {
+        tracker.didUpgrade(to: URL(string: "https://example.com/")!)
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: nil))
     }
 
-    func test_priorUpgradeToSameDomain_returnsTrue() {
+    // MARK: - The upgraded page itself
+
+    func test_upgradedPageCommits_isForced() {
         let upgraded = URL(string: "https://example.com/")!
-        let current = URL(string: "https://www.example.com/page")!
-        XCTAssertTrue(TabViewController.isHTTPSForced(lastUpgradedURL: upgraded, currentURL: current, tld: tld))
+        tracker.didUpgrade(to: upgraded)
+        tracker.willNavigate(mainFrameTo: upgraded)
+
+        XCTAssertTrue(tracker.isHTTPSForced(committedURL: upgraded))
     }
 
-    func test_priorUpgradeToDifferentDomain_returnsFalse() {
-        let upgraded = URL(string: "https://example.com/")!
-        let current = URL(string: "https://other.com/")!
-        XCTAssertFalse(TabViewController.isHTTPSForced(lastUpgradedURL: upgraded, currentURL: current, tld: tld))
-    }
-
-    // A same-domain sibling keeps the stale lastUpgradedURL, but an HTTP commit still isn't forced.
-    func test_staleUpgrade_httpSiblingOnSameDomain_returnsFalse() {
-        let upgraded = URL(string: "https://www.example.com/")!
-        let current = URL(string: "http://legacy.example.com/")!
-        XCTAssertFalse(TabViewController.isHTTPSForced(lastUpgradedURL: upgraded, currentURL: current, tld: tld))
-    }
-
-    // No known TLD, so we fall back to matching the raw host.
-    func test_priorUpgradeToNoPSLHost_matchesByRawHost() {
+    // A host with no entry in the public suffix list is still matched, by whole URL.
+    func test_upgradedNoPSLHostCommits_isForced() {
         let upgraded = URL(string: "https://printer.local/")!
-        XCTAssertTrue(TabViewController.isHTTPSForced(lastUpgradedURL: upgraded, currentURL: upgraded, tld: tld))
+        tracker.didUpgrade(to: upgraded)
+        tracker.willNavigate(mainFrameTo: upgraded)
 
-        let otherHost = URL(string: "https://scanner.local/")!
-        XCTAssertFalse(TabViewController.isHTTPSForced(lastUpgradedURL: upgraded, currentURL: otherHost, tld: tld))
+        XCTAssertTrue(tracker.isHTTPSForced(committedURL: upgraded))
+    }
+
+    // Reloading the upgraded page is still that page, so it stays forced. Matches Windows, which
+    // compares each navigation exactly against the tab's latest upgrade.
+    func test_upgradedPageReloaded_staysForced() {
+        let upgraded = URL(string: "https://example.com/")!
+        tracker.didUpgrade(to: upgraded)
+        tracker.willNavigate(mainFrameTo: upgraded)
+        tracker.willNavigate(mainFrameTo: upgraded)
+
+        XCTAssertTrue(tracker.isHTTPSForced(committedURL: upgraded))
+    }
+
+    // MARK: - Pages reached after the upgrade
+
+    // The over-reporting bug: one upgrade used to flag every later page on the same registrable domain.
+    func test_pageNavigatedToAfterUpgrade_isNotForced() {
+        tracker.didUpgrade(to: URL(string: "https://example.com/")!)
+
+        let laterPage = URL(string: "https://example.com/page2")!
+        tracker.willNavigate(mainFrameTo: laterPage)
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: laterPage))
+    }
+
+    func test_subdomainNavigatedToAfterUpgrade_isNotForced() {
+        tracker.didUpgrade(to: URL(string: "https://example.com/")!)
+
+        let subdomain = URL(string: "https://www.example.com/page")!
+        tracker.willNavigate(mainFrameTo: subdomain)
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: subdomain))
+    }
+
+    func test_differentDomainNavigatedToAfterUpgrade_isNotForced() {
+        tracker.didUpgrade(to: URL(string: "https://example.com/")!)
+
+        let otherDomain = URL(string: "https://other.com/")!
+        tracker.willNavigate(mainFrameTo: otherDomain)
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: otherDomain))
+    }
+
+    // Regression guard for the nil-PSL case fixed in #6415: a later HTTP page on a host the public
+    // suffix list doesn't know must not inherit the upgrade.
+    func test_httpPageOnNoPSLHostAfterUpgrade_isNotForced() {
+        tracker.didUpgrade(to: URL(string: "https://printer.local/")!)
+
+        let httpPage = URL(string: "http://printer.local/")!
+        tracker.willNavigate(mainFrameTo: httpPage)
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: httpPage))
+    }
+
+    // MARK: - Redirects
+
+    // A server redirect away from the upgraded URL reports false. macOS and Windows behave the same,
+    // so we accept under-reporting here in exchange for never over-reporting.
+    func test_serverRedirectAwayFromUpgradedURL_isNotForced() {
+        let upgraded = URL(string: "https://example.com/")!
+        tracker.didUpgrade(to: upgraded)
+        tracker.willNavigate(mainFrameTo: upgraded)
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: URL(string: "https://www.example.com/")!))
+    }
+
+    // MARK: - Reset
+
+    func test_reset_clearsUpgrade() {
+        let upgraded = URL(string: "https://example.com/")!
+        tracker.didUpgrade(to: upgraded)
+
+        tracker.reset()
+
+        XCTAssertFalse(tracker.isHTTPSForced(committedURL: upgraded))
     }
 }

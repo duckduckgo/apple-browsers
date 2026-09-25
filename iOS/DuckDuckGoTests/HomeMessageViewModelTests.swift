@@ -40,6 +40,7 @@ struct HomeMessageViewModelTests {
             loadRemoteImage: nil,
             onDidClose: onDidClose,
             onDidAppear: {},
+            onDidDisappear: {},
             onAttachAdditionalParameters: nil
         )
     }

@@ -18,7 +18,7 @@
 
 import BrowserServicesKit
 import Combine
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import WebKit
 import XCTest

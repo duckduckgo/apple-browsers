@@ -1,5 +1,5 @@
 //
-//  RedesignedFocusedSearchModulesView.swift
+//  RedesignedNewTabPageEscapeHatchView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,23 +17,24 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
 import SwiftUI
 
-struct RedesignedFocusedSearchModulesView: View {
-    let favoritesModel: FavoritesViewModel?
-    let messagesModel: NewTabPageMessagesModel?
+/// Renders the same eligible return-to-tab model as the production resting page.
+struct RedesignedNewTabPageEscapeHatchView: View {
+    @ObservedObject var pageModel: NewTabPageViewModel
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                if let messagesModel {
-                    RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
-                }
-                RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
-            }
+        if let escapeHatch = pageModel.escapeHatch {
+            EscapeHatchView(model: escapeHatch)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Metrics.horizontalPadding)
+                .padding(.top, Metrics.topPadding)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .background(Color(designSystemColor: .background))
-        .scrollDismissesKeyboardIfAvailable()
     }
+}
+
+private enum Metrics {
+    static let horizontalPadding: CGFloat = 16
+    static let topPadding: CGFloat = 20
 }

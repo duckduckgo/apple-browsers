@@ -29,7 +29,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         static let customizeButtonTopMargin: CGFloat = 10
         static let customizeButtonTrailingMargin: CGFloat = 20
         static let customizeButtonSize: CGFloat = 44
-        static let contentTopInset: CGFloat = 96
+        static let portraitContentTopInset: CGFloat = 96
         static let entranceTranslation: CGFloat = 12
         static let entranceDuration: TimeInterval = 0.25
     }
@@ -43,15 +43,24 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
     private let blocks: [any NewTabPageBlock]
     private let favoritesModel: FavoritesViewModel?
+    private let pageModel: NewTabPageViewModel?
+    private let messagesModel: NewTabPageMessagesModel?
     private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
 
-    private let contentContainerView = UIView()
+    private let contentContainerView: UIView = {
+        let view = UIView()
+        // Clip scrolling content at the page bounds, rather than at the horizontal safe-area edges.
+        view.clipsToBounds = true
+        return view
+    }()
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.alwaysBounceVertical = true
+        // Keep content inside the safe area while allowing its shadows to extend beyond it.
+        scrollView.clipsToBounds = false
         return scrollView
     }()
 
@@ -60,6 +69,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         stackView.axis = .vertical
         return stackView
     }()
+
+    private lazy var contentTopConstraint = blocksStackView.topAnchor.constraint(
+        equalTo: scrollView.contentLayoutGuide.topAnchor,
+        constant: Metrics.portraitContentTopInset)
 
     private lazy var customizeButton: CircularButton = {
         let button = CircularButton()
@@ -74,9 +87,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         return button
     }()
 
-    init(blocks: [any NewTabPageBlock], favoritesModel: FavoritesViewModel? = nil) {
+    init(blocks: [any NewTabPageBlock],
+         favoritesModel: FavoritesViewModel? = nil,
+         pageModel: NewTabPageViewModel? = nil,
+         messagesModel: NewTabPageMessagesModel? = nil) {
         self.blocks = blocks
         self.favoritesModel = favoritesModel
+        self.pageModel = pageModel
+        self.messagesModel = messagesModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -91,6 +109,15 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         view.backgroundColor = UIColor(designSystemColor: .background)
         addSubviews()
         installBlocks()
+        // Load once per page, after the caller has supplied the initial escape-hatch context.
+        messagesModel?.load()
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+
+        let isLandscape = view.bounds.width > view.bounds.height
+        contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
     }
 
     @objc private func customizeButtonTapped() {
@@ -165,10 +192,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
             scrollView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor),
 
-            blocksStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: Metrics.contentTopInset),
+            contentTopConstraint,
             blocksStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             blocksStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             blocksStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
@@ -251,8 +278,13 @@ extension RedesignedNewTabPageViewController: NewTabPageChromeAdapting {
 
 extension RedesignedNewTabPageViewController: NewTabPageEscapeHatchPresenting {
 
-    /// The escape hatch will arrive as a block.
-    func setEscapeHatch(_ model: EscapeHatchModel?) {}
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        pageModel?.escapeHatch = model
+        pageModel?.openedAfterIdle = model != nil
+        if isViewLoaded {
+            messagesModel?.refresh()
+        }
+    }
 }
 
 /// Contextual dialogs are not hosted on this page yet.

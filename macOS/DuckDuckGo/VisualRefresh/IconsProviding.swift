@@ -33,7 +33,7 @@ protocol IconsProviding {
 
 struct IconsProvidingFactory {
 
-    static func buildColorsProvider(featureFlagger: FeatureFlagger) -> IconsProviding {
+    static func buildIconsProvider() -> IconsProviding {
         IconsProvider()
     }
 }

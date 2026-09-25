@@ -150,10 +150,10 @@ final class SuggestionViewController: NSViewController {
         tableView.allowsMultipleSelection = false
         tableView.allowsExpansionToolTips = true
         tableView.autoresizingMask = [.width, .height]
-        // A table created in code defaults to a 17pt horizontal intercell spacing, while the one
-        // decoded from the storyboard used the legacy 3pt. `viewDidLayout` sets the column to the
-        // full frame width, so any spacing makes the table wider than the clip view and the
-        // suggestions scroll sideways. The row's own 8pt/11pt insets provide all the padding needed.
+        // A table created in code defaults to a 17pt horizontal intercell.
+        // `viewDidLayout` sets the column to the full frame width, so any spacing makes
+        // the table wider than the clip view and the suggestions scroll sideways.
+        // The row's own 8pt/11pt insets provide all the padding needed.
         tableView.intercellSpacing = NSSize(width: 0, height: 0)
         tableView.setContentHuggingPriority(.init(750), for: .vertical)
 

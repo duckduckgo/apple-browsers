@@ -831,7 +831,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualSuggestedPrompts:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
         case .contextualActiveChatSuggestions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualActiveChatSuggestions))
         case .showWhatsNewPromptOnDemand:

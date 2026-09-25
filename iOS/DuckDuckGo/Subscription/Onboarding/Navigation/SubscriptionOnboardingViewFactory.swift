@@ -54,10 +54,9 @@ struct SubscriptionOnboardingViewFactory {
             .onFirstAppear { reportShown(section) })
     }
 
-    /// `.vpnTips` is bundled with `.vpnWidget` and shares its pixel name — firing here too would
-    /// double-count a single "vpn_widget shown" impression.
+    /// `.vpnWidget` and `.vpnTips` share `.vpnActivation`'s pixel name ("vpn").
     func reportShown(_ section: SubscriptionOnboardingSection) {
-        guard section != .vpnTips else { return }
+        guard section != .vpnWidget, section != .vpnTips else { return }
         flow.instrumentation.stepShown(section)
     }
 

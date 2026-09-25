@@ -23,6 +23,19 @@ import DesignResourcesKit
 
 // MARK: - Presentation
 
+extension View {
+    /// `.fullScreenCover` replacement, presenting into `SubscriptionOnboardingPortraitHostingController` instead
+    /// of SwiftUI's own hosting controller. Dismiss via `viewCoordinator.finish(...)`, not `item = nil`.
+    func subscriptionOnboardingCover<Item: Identifiable, CoverContent: View>(
+        item: Binding<Item?>,
+        viewCoordinator: SubscriptionOnboardingViewCoordinator,
+        onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping (Item) -> CoverContent
+    ) -> some View {
+        background(SubscriptionOnboardingPresenter(item: item, viewCoordinator: viewCoordinator, onDismiss: onDismiss, content: content))
+    }
+}
+
 /// Owns the presented cover; also serves as its own anchor view controller for
 /// `SubscriptionOnboardingPresenter` below. Held via `@State` by the presenting SwiftUI view.
 final class SubscriptionOnboardingViewCoordinator: UIViewController {
@@ -51,8 +64,7 @@ final class SubscriptionOnboardingViewCoordinator: UIViewController {
     }
 
     /// `beforeDismiss` runs before the cover's own dismiss animation (e.g. an unanimated pop underneath,
-    /// invisible under the still-opaque cover). Must null `presented` first, or a dismantle triggered by
-    /// `beforeDismiss` would kill the cover abruptly instead of no-op'ing.
+    /// invisible under the still-opaque cover).
     @MainActor
     func finish(beforeDismiss: () -> Void = {}) {
         guard let presented else { return }
@@ -70,19 +82,6 @@ final class SubscriptionOnboardingViewCoordinator: UIViewController {
         self.presented = nil
         onDismiss = nil
         presented.dismiss(animated: false)
-    }
-}
-
-extension View {
-    /// `.fullScreenCover` replacement, presenting into `SubscriptionOnboardingPortraitHostingController` instead
-    /// of SwiftUI's own hosting controller. Dismiss via `viewCoordinator.finish(...)`, not `item = nil`.
-    func subscriptionOnboardingCover<Item: Identifiable, CoverContent: View>(
-        item: Binding<Item?>,
-        viewCoordinator: SubscriptionOnboardingViewCoordinator,
-        onDismiss: (() -> Void)? = nil,
-        @ViewBuilder content: @escaping (Item) -> CoverContent
-    ) -> some View {
-        background(SubscriptionOnboardingPresenter(item: item, viewCoordinator: viewCoordinator, onDismiss: onDismiss, content: content))
     }
 }
 

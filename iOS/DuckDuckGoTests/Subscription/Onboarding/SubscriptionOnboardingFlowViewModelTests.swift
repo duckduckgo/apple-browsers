@@ -537,8 +537,32 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         XCTAssertTrue(spy.shown.isEmpty)
     }
 
-    /// `.vpnTips` shares `.vpnWidget`'s pixel name, so its own appearance must not fire a second
-    /// "vpn_widget shown" — only `.vpnWidget`'s own appearance should count.
+    /// `.vpnActivation` is `pixelStepName`'s canonical owner of "vpn" — its own appearance is the one
+    /// that should report.
+    func testWhenVpnActivationAppearsThenItIsReportedShown() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        let factory = SubscriptionOnboardingViewFactory(flow: sut)
+
+        factory.reportShown(.vpnActivation)
+
+        XCTAssertEqual(spy.shown, [.vpnActivation])
+    }
+
+    /// Shares `.vpnActivation`'s pixel name ("vpn"), so its own appearance must not fire a second
+    /// "vpn shown" — only `.vpnActivation`'s own appearance should count.
+    func testWhenVpnWidgetAppearsThenNoShownIsReported() {
+        let spy = SpyInstrumentation()
+        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
+        let factory = SubscriptionOnboardingViewFactory(flow: sut)
+
+        factory.reportShown(.vpnWidget)
+
+        XCTAssertTrue(spy.shown.isEmpty)
+    }
+
+    /// Shares `.vpnActivation`'s pixel name ("vpn"), so its own appearance must not fire a second
+    /// "vpn shown" — only `.vpnActivation`'s own appearance should count.
     func testWhenVpnTipsAppearsThenNoShownIsReported() {
         let spy = SpyInstrumentation()
         let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
@@ -547,16 +571,6 @@ final class SubscriptionOnboardingFlowViewModelTests: XCTestCase {
         factory.reportShown(.vpnTips)
 
         XCTAssertTrue(spy.shown.isEmpty)
-    }
-
-    func testWhenVpnWidgetAppearsThenItIsReportedShown() {
-        let spy = SpyInstrumentation()
-        let sut = makeSUT(entryPoint: .postCheckout, instrumentation: spy)
-        let factory = SubscriptionOnboardingViewFactory(flow: sut)
-
-        factory.reportShown(.vpnWidget)
-
-        XCTAssertEqual(spy.shown, [.vpnWidget])
     }
 
     // MARK: - Flow start

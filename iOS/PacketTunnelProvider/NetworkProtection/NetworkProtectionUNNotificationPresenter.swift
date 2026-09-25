@@ -27,8 +27,8 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
 
     private let userNotificationCenter: UNUserNotificationCenter
 
-    /// While `true`, skips every authorization request this presenter would make. Cleared by
-    /// `showConnectedNotification`/`showConnectionFailureNotification` once this start's outcome is known.
+    /// While `true`, skips every authorization request this presenter would make. Cleared via
+    /// `clearAuthorizationSuppression()` once this start's outcome is known.
     var isAuthorizationRequestSuppressed = false
 
     private var threadIdentifier: String {
@@ -47,6 +47,10 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
     func requestAuthorization() {
         userNotificationCenter.delegate = self
         requestAlertAuthorization()
+    }
+
+    func clearAuthorizationSuppression() {
+        isAuthorizationRequestSuppressed = false
     }
 
     // MARK: - Notification Utility methods
@@ -83,7 +87,6 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
     }
 
     func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {
-        defer { isAuthorizationRequestSuppressed = false }
         let body: String
         if let serverLocation {
             if snoozeEnded {
@@ -110,7 +113,6 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
     }
 
     func showConnectionFailureNotification() {
-        defer { isAuthorizationRequestSuppressed = false }
         let content = notificationContent(body: UserText.networkProtectionConnectionFailureNotificationBody)
         showNotification(.connection, content)
     }

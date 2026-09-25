@@ -180,9 +180,6 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
-            resources: [
-                .process("CoreData/BrowsingHistory.xcdatamodeld")
-            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -533,9 +530,6 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
                 "TrackerRadarKit"
             ],
-            resources: [
-                .process("PrivacyStats.xcdatamodeld")
-            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -577,7 +571,6 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "History",
-                "BookmarksTestsUtils",
             ],
             resources: [
                 .copy("Resources/BrowsingHistory_V1.sqlite"),

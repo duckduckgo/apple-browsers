@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import class Persistence.CoreDataDatabase
-@testable import History
 import Common
 import CoreData
+import Foundation
+import XCTest
+
+@testable import History
 
 final class TabHistoryStoreTests: XCTestCase {
 
@@ -31,9 +32,8 @@ final class TabHistoryStoreTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory")!
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: model)
+        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: .browsingHistory)
         database.loadStore { _, error in
             if let e = error {
                 XCTFail("Could not load store: \(e.localizedDescription)")

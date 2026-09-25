@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import CoreData
 import Combine
-import Persistence
 import Common
+import CoreData
+import Persistence
+import XCTest
+
 @testable import History
 
 class HistoryCoordinatorTests: XCTestCase {
@@ -375,10 +376,7 @@ class HistoryCoordinatorTests: XCTestCase {
 
     @MainActor
     func loadDatabase(name: String) -> CoreDataDatabase? {
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory") else {
-            return nil
-        }
-        let bookmarksDatabase = CoreDataDatabase(name: name, containerLocation: location, model: model)
+        let bookmarksDatabase = CoreDataDatabase(name: name, containerLocation: location, model: .browsingHistory)
         bookmarksDatabase.loadStore()
         return bookmarksDatabase
     }

@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
 import CoreData
-import Persistence
+import Foundation
 import History
+import Persistence
 
 // swiftlint:disable force_try
 
@@ -31,26 +31,16 @@ struct HistoryTestDBBuilder {
     }
 
     private static func generateDatabase(modelVersion: Int) {
-        let bundle = History.bundle
-        var momUrl: URL?
-        if modelVersion == 1 {
-            momUrl = bundle.url(forResource: "BrowsingHistory.momd/BrowsingHistory", withExtension: "mom")
-        } else {
-            momUrl = bundle.url(forResource: "BrowsingHistory.momd/BrowsingHistory \(modelVersion)", withExtension: "mom")
-        }
-
-        guard let momUrl = momUrl else {
-            fatalError("Could not find model URL for version \(modelVersion)")
+        let versions = [BrowsingHistoryModel.v1, BrowsingHistoryModel.v2, BrowsingHistoryModel.v3]
+        guard versions.indices.contains(modelVersion - 1) else {
+            fatalError("Unknown model version \(modelVersion)")
         }
 
         guard let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
             fatalError("Could not find downloads directory")
         }
 
-        let model = NSManagedObjectModel(contentsOf: momUrl)
-        guard let model = model else {
-            fatalError("Could not load model from \(momUrl)")
-        }
+        let model = NSManagedObjectModel(entities: versions[modelVersion - 1]())
 
         let stack = CoreDataDatabase(name: "BrowsingHistory_V\(modelVersion)",
                                      containerLocation: dir,

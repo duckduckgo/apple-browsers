@@ -33,9 +33,8 @@ final class HistoryStoreTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory")!
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: model)
+        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: .browsingHistory)
         database.loadStore { _, error in
             if let e = error {
                 XCTFail("Could not load store: \(e.localizedDescription)")

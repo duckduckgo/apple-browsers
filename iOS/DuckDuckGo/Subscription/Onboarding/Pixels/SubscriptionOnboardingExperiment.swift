@@ -23,6 +23,7 @@ import PrivacyConfig
 import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
+import AIChat
 
 /// Two mutually exclusive ABN tests split by trial status: free-trials vs. paid-subs. Click-through per step
 /// is reported separately via `SubscriptionOnboardingInstrumentation`, not here.
@@ -38,29 +39,43 @@ enum SubscriptionOnboardingExperiment {
     private static let paidSubsFlag = FeatureFlag.subscriptionOnboardingPaidSubsSep2026
     private static let flags: [FeatureFlag] = [freeTrialsFlag, paidSubsFlag]
 
-    /// Per-experiment, not per-metric: every activation metric uses the same window within an experiment.
-    private static let activationMetricTargets: [(subfeatureID: SubfeatureID, conversionWindowDays: ConversionWindow)] = [
-        (PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026.rawValue, 0...7),
-        (PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026.rawValue, 0...30)
+    private static let freeTrialsSubfeatureID = PrivacyProSubfeature.subscriptionOnboardingFreeTrialsSep2026.rawValue
+    private static let paidSubsSubfeatureID = PrivacyProSubfeature.subscriptionOnboardingPaidSubsSep2026.rawValue
+
+    private static let d1Window: ConversionWindow = 0...1
+
+    private static let activationMetricTargets: [(subfeatureID: SubfeatureID, suffix: String, window: ConversionWindow)] = [
+        (freeTrialsSubfeatureID, "_d2_7", 2...7),
+        (paidSubsSubfeatureID, "_d2_30", 2...30)
     ]
 
     private enum Metric {
         static let vpnActivated = "vpnActivated"
         static let duckAiPaidUsed = "duckAiPaidUsed"
         static let pirActivated = "pirActivated"
+        static let aiFeaturesDisabled = "ai_features_disabled"
     }
 
     /// Enrolls in whichever ABN test matches trial status, unless already assigned to either — an existing
-    /// assignment always wins, so a trial-to-paid conversion can't cause double-enrollment.
+    /// assignment always wins, so a trial-to-paid conversion can't cause double-enrollment. Also reports the
+    /// `ai_features_disabled` metric, but only on the branch that performs a fresh enrollment.
     /// - Returns: The device's cohort, or `nil` if neither experiment is active for this device.
     @discardableResult
-    static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> Cohort? {
+    static func resolveCohort(using featureFlagger: FeatureFlagger,
+                              isOnFreeTrial: Bool,
+                              locale: Locale,
+                              isAIChatEnabled: @autoclosure () -> Bool = AIChatSettings().isAIChatEnabled) -> Cohort? {
         if let assigned = assignedCohort(using: featureFlagger) {
             return assigned
         }
         guard locale.isEnglishUnitedStates else { return nil }
         let flag = isOnFreeTrial ? freeTrialsFlag : paidSubsFlag
-        return featureFlagger.resolveCohort(for: flag).flatMap { Cohort(rawValue: $0.rawValue) }
+        guard let cohort = featureFlagger.resolveCohort(for: flag).flatMap({ Cohort(rawValue: $0.rawValue) }) else {
+            return nil
+        }
+        let subfeatureID = isOnFreeTrial ? freeTrialsSubfeatureID : paidSubsSubfeatureID
+        fireAIFeaturesDisabledMetricIfNeeded(subfeatureID: subfeatureID, isAIChatEnabled: isAIChatEnabled())
+        return cohort
     }
 
     /// Reads whichever experiment this device is already enrolled in, without enrolling it in either.
@@ -105,11 +120,15 @@ enum SubscriptionOnboardingExperiment {
         fireActivationMetric(Metric.pirActivated)
     }
 
-    /// Fires `metric` against every experiment's subfeature ID, each with its own window; `fireExperimentPixel`
-    /// no-ops for whichever one the device isn't enrolled in, so only one call ever actually records.
     private static func fireActivationMetric(_ metric: String) {
         for target in activationMetricTargets {
-            PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric, conversionWindowDays: target.conversionWindowDays, value: "1")
+            PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric + "_d1", conversionWindowDays: d1Window, value: "1")
+            PixelKit.fireExperimentPixel(for: target.subfeatureID, metric: metric + target.suffix, conversionWindowDays: target.window, value: "1")
         }
+    }
+
+    private static func fireAIFeaturesDisabledMetricIfNeeded(subfeatureID: SubfeatureID, isAIChatEnabled: Bool) {
+        guard !isAIChatEnabled else { return }
+        PixelKit.fireExperimentPixel(for: subfeatureID, metric: Metric.aiFeaturesDisabled, conversionWindowDays: d1Window, value: "1")
     }
 }

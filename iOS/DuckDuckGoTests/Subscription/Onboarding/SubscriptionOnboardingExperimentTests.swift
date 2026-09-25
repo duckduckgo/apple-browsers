@@ -99,6 +99,71 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 
+    // MARK: - AI features disabled metric
+
+    /// Must fire for control too — the metric compares both cohorts, so a control-only reader would be useless.
+    func test_resolveCohort_freshEnrollmentAsControlWithAIChatDisabled_firesAIFeaturesDisabledMetric() {
+        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control",
+                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "control"),
+                                                  isAlreadyAssigned: false)
+
+        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: false)
+
+        XCTAssertEqual(cohort, .control)
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_control")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "ai_features_disabled")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-1")
+        XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
+    }
+
+    func test_resolveCohort_freshEnrollmentAsTreatmentWithAIChatDisabled_firesAIFeaturesDisabledMetric() {
+        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
+                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"),
+                                                  isAlreadyAssigned: false)
+
+        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: false)
+
+        XCTAssertEqual(cohort, .treatment)
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "ai_features_disabled")
+    }
+
+    func test_resolveCohort_freshEnrollmentWithAIChatEnabled_doesNotFireAIFeaturesDisabledMetric() {
+        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
+                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"),
+                                                  isAlreadyAssigned: false)
+
+        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: true)
+
+        XCTAssertEqual(cohort, .treatment)
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    /// A read of an already-assigned cohort is not enrollment, so it must never (re-)fire this metric.
+    func test_resolveCohort_alreadyAssigned_doesNotFireAIFeaturesDisabledMetricEvenIfAIChatDisabled() {
+        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
+                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"))
+
+        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.enUS, isAIChatEnabled: false)
+
+        XCTAssertEqual(cohort, .treatment)
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
+    /// Not eligible (non-en_US) means no enrollment at all, so no metric either, however AI chat is set.
+    func test_resolveCohort_localeIsNotEnUS_doesNotFireAIFeaturesDisabledMetric() {
+        let featureFlagger = seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment",
+                                                  resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort(rawValue: "treatment"),
+                                                  isAlreadyAssigned: false)
+
+        let cohort = SubscriptionOnboardingExperiment.resolveCohort(using: featureFlagger, isOnFreeTrial: true, locale: Self.nonEnUS, isAIChatEnabled: false)
+
+        XCTAssertNil(cohort)
+        XCTAssertTrue(firedEvents.isEmpty)
+    }
+
     // MARK: - Enrolled-in-treatment read
 
     func test_isEnrolledInTreatment_assignedTreatmentCohort_returnsTrue() {
@@ -148,27 +213,40 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - VPN activated metric
 
-    func test_fireVPNActivatedMetricIfNeeded_subscriptionActiveAndEnrolled_fires() {
+    func test_fireVPNActivatedMetricIfNeeded_onEnrollmentDay_firesDayOneBucket() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
         SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
-        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "vpnActivated")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "vpnActivated_d1")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-1")
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    /// Proves the window is per-experiment: paid-subs uses 0-30, not free-trials' 0-7.
-    func test_fireVPNActivatedMetricIfNeeded_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
-        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
+    /// Proves the day-2-7 bucket is free-trials-specific: 3 days post-enrollment falls inside 2-7, outside 0-1.
+    func test_fireVPNActivatedMetricIfNeeded_threeDaysAfterFreeTrialsEnrollment_firesDayTwoToSevenBucket() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment", enrollmentDate: daysAgo(3))
+
+        SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "vpnActivated_d2_7")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "2-7")
+    }
+
+    /// Proves the day-2-30 bucket is paid-subs-specific: 10 days post-enrollment falls inside 2-30, outside 2-7.
+    func test_fireVPNActivatedMetricIfNeeded_tenDaysAfterPaidSubsEnrollment_firesDayTwoToThirtyBucket() {
+        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment", enrollmentDate: daysAgo(10))
 
         SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-30")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "vpnActivated_d2_30")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "2-30")
     }
 
     func test_fireVPNActivatedMetricIfNeeded_subscriptionInactive_doesNotFire() {
@@ -195,16 +273,28 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - Duck.ai paid used metric
 
-    func test_fireDuckAIPaidUsedMetricIfNeeded_subscriptionActiveAndEnrolled_fires() {
+    func test_fireDuckAIPaidUsedMetricIfNeeded_onEnrollmentDay_firesDayOneBucket() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "control")
 
         SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_control")
-        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "duckAiPaidUsed")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "duckAiPaidUsed_d1")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-1")
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
+    }
+
+    /// Proves the day-2-30 bucket is paid-subs-specific, mirroring the VPN metric's bucket split.
+    func test_fireDuckAIPaidUsedMetricIfNeeded_tenDaysAfterPaidSubsEnrollment_firesDayTwoToThirtyBucket() {
+        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "control", enrollmentDate: daysAgo(10))
+
+        SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_control")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "duckAiPaidUsed_d2_30")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "2-30")
     }
 
     func test_fireDuckAIPaidUsedMetricIfNeeded_subscriptionInactive_doesNotFire() {
@@ -231,27 +321,38 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
 
     // MARK: - PIR activated metric
 
-    func test_firePIRActivatedMetricIfNeeded_enrolledInFreeTrialsExperiment_firesWithSevenDayWindow() {
+    func test_firePIRActivatedMetricIfNeeded_onEnrollmentDay_firesDayOneBucket() {
         seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment")
 
         SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
-        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-7")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated_d1")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-1")
         XCTAssertEqual(firedEvents.first?.parameters?["value"], "1")
     }
 
-    func test_firePIRActivatedMetricIfNeeded_enrolledInPaidSubsExperiment_firesWithThirtyDayWindow() {
-        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment")
+    func test_firePIRActivatedMetricIfNeeded_threeDaysAfterFreeTrialsEnrollment_firesDayTwoToSevenBucket() {
+        seedActiveExperiment(.subscriptionOnboardingFreeTrialsSep2026, cohort: "treatment", enrollmentDate: daysAgo(3))
+
+        SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
+
+        XCTAssertEqual(firedEvents.count, 1)
+        XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingFreeTrialsSep2026_treatment")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated_d2_7")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "2-7")
+    }
+
+    func test_firePIRActivatedMetricIfNeeded_tenDaysAfterPaidSubsEnrollment_firesDayTwoToThirtyBucket() {
+        seedActiveExperiment(.subscriptionOnboardingPaidSubsSep2026, cohort: "treatment", enrollmentDate: daysAgo(10))
 
         SubscriptionOnboardingExperiment.firePIRActivatedMetricIfNeeded(isSubscriptionActive: true, isAlreadyActivated: false)
 
         XCTAssertEqual(firedEvents.count, 1)
         XCTAssertEqual(firedEvents.first?.name, "experiment_metrics_subscriptionOnboardingPaidSubsSep2026_treatment")
-        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated")
-        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "0-30")
+        XCTAssertEqual(firedEvents.first?.parameters?["metric"], "pirActivated_d2_30")
+        XCTAssertEqual(firedEvents.first?.parameters?["conversionWindowDays"], "2-30")
     }
 
     func test_firePIRActivatedMetricIfNeeded_subscriptionInactive_doesNotFire() {
@@ -286,17 +387,30 @@ final class SubscriptionOnboardingExperimentTests: XCTestCase {
         )
     }
 
+    private func daysAgo(_ days: Int) -> Date {
+        Calendar.current.date(byAdding: .day, value: -days, to: Date())!
+    }
+
     /// Seeds a device enrolled in `subfeature` only — the other subfeature ID is left unseeded, so a fire
-    /// attempted against it no-ops.
-    private func seedActiveExperiment(_ subfeature: PrivacyProSubfeature, cohort: String) {
+    /// attempted against it no-ops. `resolveCohortStub`/`isAlreadyAssigned` additionally support tests that
+    /// call `resolveCohort` itself, e.g. to simulate a fresh enrollment (`isAlreadyAssigned: false`).
+    @discardableResult
+    private func seedActiveExperiment(_ subfeature: PrivacyProSubfeature,
+                                      cohort: String,
+                                      enrollmentDate: Date = Date(),
+                                      resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil,
+                                      isAlreadyAssigned: Bool = true) -> PrivacyConfig.MockFeatureFlagger {
         let experimentData = ExperimentData(
             parentID: subfeature.parent.rawValue,
             cohortID: cohort,
-            enrollmentDate: Date()
+            enrollmentDate: enrollmentDate
         )
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(
-            allActiveExperiments: [subfeature.rawValue: experimentData]
+            allActiveExperiments: [subfeature.rawValue: experimentData],
+            resolveCohortStub: resolveCohortStub,
+            isAlreadyAssigned: isAlreadyAssigned
         )
         configurePixelKit(featureFlagger: featureFlagger)
+        return featureFlagger
     }
 }

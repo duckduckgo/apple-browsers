@@ -608,9 +608,6 @@ private final class SpyInstrumentation: SubscriptionOnboardingInstrumenting {
     private(set) var completed: [SubscriptionOnboardingSection] = []
     private(set) var skipped: [SubscriptionOnboardingSection] = []
 
-    /// Deliberately unrecorded: asserting it would mean calling `startPrefetching()`, which starts real
-    /// fetches. The flow-start pixel is covered by `SubscriptionOnboardingInstrumentationTests`.
-    func flowStarted() {}
     func stepShown(_ section: SubscriptionOnboardingSection) { shown.append(section) }
     func stepCompleted(_ section: SubscriptionOnboardingSection) { completed.append(section) }
     func stepSkipped(_ section: SubscriptionOnboardingSection) { skipped.append(section) }
@@ -618,7 +615,6 @@ private final class SpyInstrumentation: SubscriptionOnboardingInstrumenting {
 
 /// The `makeSUT` default for tests that aren't about instrumentation at all.
 private struct NullInstrumentation: SubscriptionOnboardingInstrumenting {
-    func flowStarted() {}
     func stepShown(_ section: SubscriptionOnboardingSection) {}
     func stepCompleted(_ section: SubscriptionOnboardingSection) {}
     func stepSkipped(_ section: SubscriptionOnboardingSection) {}

@@ -931,7 +931,7 @@
             {
                 "type": "string",
                 "description": "The onboarding step that was shown",
-                "enum": ["intro", "features_summary", "vpn", "vpn_widget", "idtr", "duck_ai", "pir", "completion"]
+                "enum": ["intro", "features_summary", "vpn", "idtr", "duck_ai", "pir", "completion"]
             },
             "platform",
             "form_factor"
@@ -992,27 +992,6 @@
                 "type": "string",
                 "description": "Which entry point launched this onboarding run",
                 "enum": ["post_checkout", "subscription_settings"]
-            }
-        ]
-    },
-    "subscription_onboarding_flow_started": {
-        "description": "Fired when the flow starts. The funnel's denominator, and the measurement of how many customers enter with Duck.ai disabled.",
-        "owners": ["hanyutang-sandra"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "entry_point",
-                "type": "string",
-                "description": "Which entry point launched this onboarding run",
-                "enum": ["post_checkout", "subscription_settings"]
-            },
-            {
-                "key": "duck_ai_enabled",
-                "type": "boolean",
-                "description": "Whether Duck.ai was enabled in the app when the customer entered the flow"
             }
         ]
     },

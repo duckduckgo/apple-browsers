@@ -59,7 +59,6 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
     // Subscription Onboarding Flow
-    case subscriptionOnboardingFlowStarted(entryPoint: String, isDuckAIEnabled: Bool)
     case subscriptionOnboardingStepShown(step: String, entryPoint: String)
     case subscriptionOnboardingStepCompleted(step: String, entryPoint: String)
     case subscriptionOnboardingStepSkipped(step: String, entryPoint: String)
@@ -92,7 +91,6 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
         case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
             // Subscription Onboarding Flow
-        case .subscriptionOnboardingFlowStarted: return "subscription_onboarding_flow_started"
         case .subscriptionOnboardingStepShown(let step, _): return "subscription_onboarding_step_shown_\(step)"
         case .subscriptionOnboardingStepCompleted(let step, _): return "subscription_onboarding_step_completed_\(step)"
         case .subscriptionOnboardingStepSkipped(let step, _): return "subscription_onboarding_step_skipped_\(step)"
@@ -109,7 +107,6 @@ enum SubscriptionPixel: PixelKit.Event {
         static let platformKey = "platform"
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
-        static let duckAIEnabledKey = "duck_ai_enabled"
         static let reasonKey = "reason"
     }
 
@@ -138,9 +135,6 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
                 .subscriptionVPNAddressBarClick(let isSubscriptionActive):
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
-        case .subscriptionOnboardingFlowStarted(let entryPoint, let isDuckAIEnabled):
-            return [SubscriptionPixelsDefaults.entryPointKey: entryPoint,
-                    SubscriptionPixelsDefaults.duckAIEnabledKey: String(isDuckAIEnabled)]
         case .subscriptionOnboardingStepShown(_, let entryPoint),
                 .subscriptionOnboardingStepCompleted(_, let entryPoint),
                 .subscriptionOnboardingStepSkipped(_, let entryPoint):
@@ -172,7 +166,6 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNWidgetClick,
                 .subscriptionVPNShortcutClick,
                 .subscriptionVPNNotificationClick,
-                .subscriptionOnboardingFlowStarted,
                 .subscriptionOnboardingStepShown,
                 .subscriptionOnboardingStepCompleted,
                 .subscriptionOnboardingStepSkipped,

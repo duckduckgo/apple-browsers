@@ -125,9 +125,8 @@ final class SubscriptionOnboardingFlowViewModel: ObservableObject, Identifiable 
         }
     }
 
-    /// Reports the flow's start, records the post-checkout started marker, and kicks off prefetching.
+    /// Records the post-checkout started marker and kicks off prefetching.
     func flowDidStart() {
-        instrumentation.flowStarted()
         if entryPoint == .postCheckout {
             progress.recordPostCheckoutFlowStartedIfNeeded(now: Date())
         }

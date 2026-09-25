@@ -31,7 +31,7 @@ public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     private let store: KeyValueStoring
     private let currentAppVersion: String
     private let dateProvider: () -> Date
-    private let fire: (HangMetricsPixel) -> Void
+    private let pixelFiring: (any PixelKitFiring)?
 
     /// Serialises all report processing. Both entry points — MetricKit's system-delivered
     /// payloads (`didReceive`) and our own drain of retained payloads (`processPastPayloads`) —
@@ -47,12 +47,12 @@ public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
          store: KeyValueStoring,
          currentAppVersion: String = AppVersion.shared.versionNumber,
          dateProvider: @escaping () -> Date = Date.init,
-         fire: ((HangMetricsPixel) -> Void)? = nil) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.processor = processor
         self.store = store
         self.currentAppVersion = currentAppVersion
         self.dateProvider = dateProvider
-        self.fire = fire ?? { PixelKit.fire($0) }
+        self.pixelFiring = pixelFiring
         super.init()
     }
 
@@ -83,7 +83,7 @@ public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
                                                              now: dateProvider(),
                                                              lastProcessedEnd: lastProcessedEnd)
         for point in dataPoints {
-            fire(point.pixelKitEvent)
+            pixelFiring?.fire(point.pixelKitEvent)
         }
         if let newest = processor.newestTimestamp(in: reports) {
             lastProcessedEnd = max(newest, lastProcessedEnd ?? .distantPast)

@@ -35,7 +35,7 @@ extension ContextualSuggestedPrompt {
     /// Sends what the user searched for to the chat, in place of the results page's own chips.
     static func askAboutSearch(query: String) -> ContextualSuggestedPrompt {
         ContextualSuggestedPrompt(id: askAboutSearchID,
-                                  label: "\"\(query)\"",
+                                  label: UserText.aiChatSuggestionAskAboutSearchLabel(query),
                                   prompt: query,
                                   icon: nil)
     }

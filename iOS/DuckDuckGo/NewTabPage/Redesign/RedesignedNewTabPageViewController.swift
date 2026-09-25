@@ -286,7 +286,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
             finishEntranceAnimation()
         }
         searchInputView?.alpha = isEditing ? 0 : 1
-        searchInputView?.accessibilityElementsHidden = isEditing
+        view.accessibilityElementsHidden = isEditing
         searchInputView?.isUserInteractionEnabled = !isEditing
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1

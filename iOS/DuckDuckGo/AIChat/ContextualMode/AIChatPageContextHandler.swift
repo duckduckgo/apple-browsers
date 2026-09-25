@@ -320,7 +320,7 @@ private extension AIChatPageContextHandler {
     func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView = webViewProvider() else {
             Logger.aiChat.debug("[PageContext] Document collect skipped - no web view available")
-            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil, contextType: .pdf)
             contextSubject.send(nil)
             return
         }
@@ -345,7 +345,7 @@ private extension AIChatPageContextHandler {
             case .document(let context):
                 Logger.aiChat.debug("[PageContext] Document attached")
                 self.publishContextUpdate(context)
-                self.fireExtractionPixel(.success, trigger: trigger, latency: latency)
+                self.fireExtractionPixel(.success, trigger: trigger, latency: latency, contextType: .pdf)
             case .tooLarge:
                 Logger.aiChat.debug("[PageContext] Document over size ceiling - not attaching")
                 self.contextSubject.send(nil)
@@ -353,7 +353,7 @@ private extension AIChatPageContextHandler {
             case .unavailable:
                 Logger.aiChat.debug("[PageContext] Document bytes unavailable")
                 self.contextSubject.send(nil)
-                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
+                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency, contextType: .pdf)
             }
         }
     }
@@ -385,9 +385,12 @@ private extension AIChatPageContextHandler {
         fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
     }
 
+    /// `contextType` defaults to markdown: every page that isn't a document tab goes over as markdown.
+    /// Prevented outcomes ignore it - their `category` already names the page kind.
     func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
                              trigger: PageContextExtractionTrigger,
-                             latency: PageContextExtractionLatencyBucket?) {
+                             latency: PageContextExtractionLatencyBucket?,
+                             contextType: PageContextType = .markdown) {
         guard isExtractionMeasurementEnabled else { return }
         // Report only the first of a navigation's overlapping collects; .userRequest / .auto always report.
         if trigger == .navigation || trigger == .tabContent {
@@ -395,7 +398,7 @@ private extension AIChatPageContextHandler {
             didReportExtractionForCurrentNavigation = true
         }
         Logger.aiChat.debug("[PageContext] 📊 extraction outcome: \(String(describing: outcome)) trigger: \(trigger.rawValue)")
-        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
     }
 
     /// Fires `.timeout` (and clears the pending entry) for a collect that never resolved within the window.

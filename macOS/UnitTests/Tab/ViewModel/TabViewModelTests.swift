@@ -357,7 +357,7 @@ final class TabViewModelTests: XCTestCase {
             if pane == .otherPlatforms /* this is a link */ {
                 XCTAssertNil(tabViewModel.favicon)
             } else {
-                XCTAssertImagesEqual(tabViewModel.favicon, .settingsMulticolor16Legacy, "Failed for \(pane)")
+                XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.settings, "Failed for \(pane)")
             }
         }
     }
@@ -365,7 +365,7 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForBookmarks() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.bookmarks)
-        let expectedFavicon = NSImage.bookmarksFolder
+        let expectedFavicon = DesignSystemImages.Color.Size16.bookmarksNew
         XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
@@ -373,14 +373,14 @@ final class TabViewModelTests: XCTestCase {
     func testDisplayedFaviconForHistory() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.history)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .historyFaviconLegacy)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.history)
     }
 
     @MainActor
     func testDisplayedFaviconForSubscription() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.baseURL.subscriptionURL(environment: .production))
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .privacyProLegacy)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.subscription)
     }
 
     @MainActor
@@ -427,7 +427,7 @@ final class TabViewModelTests: XCTestCase {
     func testDisplayedFaviconForEmailProtectionURL() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGoEmail)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .emailProtectionIconLegacy)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.emailProtection)
     }
 
     @MainActor

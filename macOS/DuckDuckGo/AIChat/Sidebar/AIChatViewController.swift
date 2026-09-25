@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Persistence
 import AppKit
 import BrowserServicesKit
 import AIChat
@@ -158,9 +157,6 @@ final class AIChatViewController: NSViewController {
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)
         createAndSetupWebViewContainer(in: container)
-#if DEBUG || REVIEW
-        embedBrowserToolsDebugPanelIfEnabled(in: container)
-#endif
 
         NSLayoutConstraint.activate([
             topBar.topAnchor.constraint(equalTo: container.topAnchor),
@@ -665,9 +661,8 @@ extension AIChatViewController {
 
     /// Replaces the chat with the browser tools panel, owned by this sidebar's host tab, so tool
     /// calls, prompts and pushes resolve exactly as they would for a real chat docked here.
-    fileprivate func embedBrowserToolsDebugPanelIfEnabled(in container: NSView) {
-        let settings: any KeyedStoring<BrowserToolsDebugSettings> = UserDefaults.standard.keyedStoring()
-        guard settings.showsPanelInSidebar == true else { return }
+    func showBrowserToolsDebugPanel() {
+        guard !children.contains(where: { $0 is BrowserToolsDebugViewController }) else { return }
 
         let windowControllersManager = NSApp.delegateTyped.windowControllersManager
         let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager) { [weak self] in
@@ -678,7 +673,7 @@ extension AIChatViewController {
         }
         addChild(panel)
         panel.view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(panel.view)
+        view.addSubview(panel.view)
         webViewContainer.isHidden = true
         NSLayoutConstraint.activate([
             panel.view.topAnchor.constraint(equalTo: webViewContainer.topAnchor),

@@ -4423,8 +4423,6 @@
 		AB1E70130000000000000003 /* FindInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70130000000000000001 /* FindInPageBrowserTool.swift */; };
 		AB1E70140000000000000002 /* HighlightInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */; };
 		AB1E70140000000000000003 /* HighlightInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */; };
-		AB1E70050000000000000002 /* BrowserToolsDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */; };
-		AB1E70050000000000000003 /* BrowserToolsDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */; };
 		AB1E70200000000000000002 /* BrowserToolsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */; };
 		AB1E70200000000000000003 /* BrowserToolsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */; };
 		AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
@@ -7323,7 +7321,6 @@
 		AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadTabContentBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70130000000000000001 /* FindInPageBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightInPageBrowserTool.swift; sourceTree = "<group>"; };
-		AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsDebugPanel.swift; sourceTree = "<group>"; };
 		AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsDebugViewController.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000021 /* AIChatTabPickerSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabPickerSourceTests.swift; sourceTree = "<group>"; };
 		D1A7B0010000000000000041 /* AIChatSelectionActionPageContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSelectionActionPageContextTests.swift; sourceTree = "<group>"; };
@@ -8508,7 +8505,6 @@
 				AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */,
 				AB1E70130000000000000001 /* FindInPageBrowserTool.swift */,
 				AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */,
-				AB1E70050000000000000001 /* BrowserToolsDebugPanel.swift */,
 				AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */,
 			);
 			path = BrowserTools;
@@ -16350,7 +16346,6 @@
 				AB1E70120000000000000002 /* ReadTabContentBrowserTool.swift in Sources */,
 				AB1E70130000000000000002 /* FindInPageBrowserTool.swift in Sources */,
 				AB1E70140000000000000002 /* HighlightInPageBrowserTool.swift in Sources */,
-				AB1E70050000000000000002 /* BrowserToolsDebugPanel.swift in Sources */,
 				AB1E70200000000000000002 /* BrowserToolsDebugViewController.swift in Sources */,
 				84CE00162DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */,
 				96B6A494304EC0B5009BF9EC /* WebsitePermissionCategory.swift in Sources */,
@@ -18407,7 +18402,6 @@
 				AB1E70120000000000000003 /* ReadTabContentBrowserTool.swift in Sources */,
 				AB1E70130000000000000003 /* FindInPageBrowserTool.swift in Sources */,
 				AB1E70140000000000000003 /* HighlightInPageBrowserTool.swift in Sources */,
-				AB1E70050000000000000003 /* BrowserToolsDebugPanel.swift in Sources */,
 				AB1E70200000000000000003 /* BrowserToolsDebugViewController.swift in Sources */,
 				C1D3C5682E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift in Sources */,
 				C1D3C5692E747BBE0086A2BD /* SyncCreditCardsAdapter.swift in Sources */,

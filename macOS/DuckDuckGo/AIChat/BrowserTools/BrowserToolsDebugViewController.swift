@@ -20,23 +20,13 @@
 
 import AIChat
 import AppKit
-import Persistence
 import UserScript
 import WebKit
 
-struct BrowserToolsDebugSettings: StoringKeys {
-    let showsPanelInSidebar = StorageKey<Bool>(BrowserToolsDebugSettingsKey.showsPanelInSidebar)
-}
-
-enum BrowserToolsDebugSettingsKey: String, StorageKeyDescribing {
-    case showsPanelInSidebar = "ai-chat_browser-tools-debug-panel-in-sidebar"
-}
-
-/// DEBUG-only stand-in for the Duck.ai front end. Drives the same dispatch and handlers a page
-/// message would, receives the pushes a page would, and answers permission prompts.
+/// Debug and Review builds' stand-in for the Duck.ai front end. Drives the same dispatch and
+/// handlers a page message would, receives the pushes a page would, and answers permission prompts.
 ///
-/// The owner tab comes from `ownerTabProvider`: the selected tab when shown as a window, the host
-/// tab when shown inside a chat sidebar.
+/// Shown in place of the chat inside a sidebar; `ownerTabProvider` resolves that sidebar's host tab.
 @MainActor
 final class BrowserToolsDebugViewController: NSViewController {
 

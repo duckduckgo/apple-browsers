@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -46,7 +47,10 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
+        attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
+        tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
@@ -54,8 +58,46 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
-            isFireTab: false
+            isFireTab: false,
+            attachMoreTabsFeature: attachMoreTabsFeature,
+            tabAttachmentSource: tabAttachmentSource,
+            isCurrentPageAttachInProgress: isCurrentPageAttachInProgress
         )
+    }
+
+    func testMultiTabProviderIsNotInvokedWhileFeatureDisabled() {
+        makeSUT(attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), aiChatSettings: MockAIChatSettingsProvider()))
+        sut.attachedTabContextsProvider = {
+            XCTFail("Disabled feature must not invoke the attachment provider")
+            return nil
+        }
+        let script = makeTestUserScript()
+        sut.bindToUserScript(script)
+
+        XCTAssertNil(script.attachedTabContextsProvider?())
+    }
+
+    func testMultiTabProviderObservesFeatureChangesAfterBinding() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        makeSUT(attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: flagger, aiChatSettings: MockAIChatSettingsProvider()))
+        var requestCount = 0
+        sut.attachedTabContextsProvider = {
+            requestCount += 1
+            return MultiTabAttachmentRequest(contexts: { [] }, didConsume: {})
+        }
+        let script = makeTestUserScript()
+        sut.bindToUserScript(script)
+        XCTAssertNil(script.attachedTabContextsProvider?())
+
+        flagger.enabledFeatureFlags = [.aiChatContextualAttachMoreTabs]
+        XCTAssertNotNil(script.attachedTabContextsProvider?())
+        XCTAssertEqual(requestCount, 1)
+
+        flagger.enabledFeatureFlags = []
+        XCTAssertNil(script.attachedTabContextsProvider?())
+        XCTAssertEqual(requestCount, 1)
     }
 
     func test_chipAttachAction_firesAttachCallback() {
@@ -353,6 +395,81 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(inputView.frame.maxY, second.view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
+    func testTabMenuSharesCurrentPagePendingAndDeliveredState() throws {
+        let url = URL(string: "https://example.com/page")!
+        let context = makeContext(title: "Current page", url: url.absoluteString)
+        let source = makeTabSource(url: url)
+        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .delivered,
+                attachMoreTabsFeature: FixedTabAttachmentFeature(state: .available(maximumTabAttachmentCount: 1)),
+                tabAttachmentSource: source)
+        let parent = UIViewController()
+        sut.mount(in: parent)
+        let input = try XCTUnwrap(parent.children.first as? UnifiedToggleInputViewController)
+
+        var actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions.map(\.state), [.off, .off])
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+
+        sut.setAttachedContext(context, deliveryState: .pendingSubmit)
+        actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions.map(\.state), [.on, .off])
+        XCTAssertTrue(actions[1].attributes.contains(.disabled))
+
+        sut.clearAttachedContext()
+        actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions.map(\.state), [.off, .off])
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+    }
+
+    func testTabMenuReservesCurrentPageSlotDuringExistingCollection() throws {
+        let url = URL(string: "https://example.com/page")!
+        var isCollecting = true
+        makeSUT(attachMoreTabsFeature: FixedTabAttachmentFeature(state: .available(maximumTabAttachmentCount: 1)),
+                tabAttachmentSource: makeTabSource(url: url),
+                isCurrentPageAttachInProgress: { isCollecting })
+        let parent = UIViewController()
+        sut.mount(in: parent)
+        let input = try XCTUnwrap(parent.children.first as? UnifiedToggleInputViewController)
+
+        var actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions[0].state, .on)
+        XCTAssertTrue(actions[1].attributes.contains(.disabled))
+
+        isCollecting = false
+        sut.refreshPageContextAttachability()
+        actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions[0].state, .off)
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+    }
+
+    func testDisabledTabFeaturePreservesCurrentPageActionWithoutReadingTabs() throws {
+        let source = MultiTabAttachmentSource(currentTabID: "current", mode: .normal, tabsProvider: {
+            XCTFail("Disabled multi-tab feature must not request candidates")
+            return []
+        })
+        makeSUT(attachMoreTabsFeature: FixedTabAttachmentFeature(state: .unavailable), tabAttachmentSource: source)
+        let parent = UIViewController()
+        sut.mount(in: parent)
+        let input = try XCTUnwrap(parent.children.first as? UnifiedToggleInputViewController)
+        let menu = try XCTUnwrap(input.attachmentMenu)
+        let actions = menu.children.compactMap { $0 as? UIAction }
+
+        XCTAssertTrue(actions.contains { $0.title == UserText.aiChatAttachmentOptionAskAboutPage && !$0.attributes.contains(.disabled) })
+        XCTAssertFalse(actions.contains { $0.title == UserText.aiChatAttachmentOptionAddTabs })
+    }
+
+    private func makeTabSource(url: URL) -> MultiTabAttachmentSource {
+        let tabs = [Tab(uid: "current", link: Link(title: "Current page", url: url), fireTab: false),
+                    Tab(uid: "other", link: Link(title: "Other page", url: url), fireTab: false)]
+        return MultiTabAttachmentSource(currentTabID: "current", mode: .normal, tabsProvider: { tabs })
+    }
+
+    private func recentTabActions(in input: UnifiedToggleInputViewController) throws -> [UIAction] {
+        let menu = try XCTUnwrap(input.attachmentMenu)
+        let recent = try XCTUnwrap(menu.children.first as? UIMenu)
+        return recent.children.compactMap { $0 as? UIAction }
+    }
+
     private func makeContext(title: String, url: String) -> AIChatPageContext {
         AIChatPageContext(
             contextData: AIChatPageContextData(
@@ -384,4 +501,8 @@ private func XCTAssertEqualState(
     default:
         XCTFail("Expected \(expected), got \(String(describing: actual))", file: file, line: line)
     }
+}
+
+private struct FixedTabAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    let state: AIChatContextualAttachMoreTabsState
 }

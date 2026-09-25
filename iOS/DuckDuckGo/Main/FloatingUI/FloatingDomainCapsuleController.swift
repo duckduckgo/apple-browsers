@@ -24,7 +24,23 @@ final class FloatingDomainCapsuleController {
 
     static let handoffStart: CGFloat = 0.60
 
-    static let handoffBandHalfWidth: CGFloat = 0.02
+    /// End of the bottom bar's button-row collapse band (`[handoffEnd, 1]`) — the row finishes
+    /// shrinking to one line before the pill starts fading in, so the pill never overlaps a still
+    /// two-row toolbar. Both `handoffStart` and this value are geometry-locked for the bar/pill
+    /// (the bar is pinned on screen and the pill sits at the bar's full frame), so widening the span
+    /// between them can't make either visibly creep; it only slows the handoff down enough that a
+    /// fast scroll renders several blended frames instead of a one-frame cut.
+    static let handoffEnd: CGFloat = 0.85
+
+    /// End of the bar<->pill alpha crossfade band (`[handoffStart, alphaHandoffEnd]`). On the bottom
+    /// bar this is pinned to `handoffEnd` so the fade waits for the button row to finish collapsing
+    /// first (see above). The top bar has no button row to sequence before it, so its fade instead
+    /// starts at `1` — the instant any scrolling begins — rather than holding at full opacity through
+    /// an entire silent `[handoffEnd, 1]` dead zone before suddenly fading; that dead-then-fast pattern
+    /// is what reads as an abrupt swap even though the fade itself is smoothly blended.
+    static func alphaHandoffEnd(for addressBarPosition: AddressBarPosition) -> CGFloat {
+        addressBarPosition == .top ? 1 : handoffEnd
+    }
 
     /// Gap between the pill and the adjacent screen edge at rest. Used by the bottom capsule, and
     /// by the top capsule only as a fallback before the expanded frame is known (see `restCenterY`).
@@ -201,7 +217,7 @@ final class FloatingDomainCapsuleController {
         // frozen at a stale size/position the next time it becomes visible.
         applyMorphGeometry(for: p, addressBarPosition: addressBarPosition, expandedFrame: expandedFrame, reduceMotion: reduceMotion, in: view)
 
-        let pillAlpha = pillAlpha(for: p, reduceMotion: reduceMotion)
+        let pillAlpha = pillAlpha(for: p, addressBarPosition: addressBarPosition, reduceMotion: reduceMotion)
         guard pillAlpha > 0.01 else {
             button.alpha = 0
             button.isHidden = true
@@ -216,14 +232,11 @@ final class FloatingDomainCapsuleController {
         }
     }
 
-    private func pillAlpha(for p: CGFloat, reduceMotion: Bool) -> CGFloat {
+    private func pillAlpha(for p: CGFloat, addressBarPosition: AddressBarPosition, reduceMotion: Bool) -> CGFloat {
         if reduceMotion {
             return max(0, min(1, 1 - p))
         }
-        let bandStart = Self.handoffStart - Self.handoffBandHalfWidth
-        let bandEnd = Self.handoffStart + Self.handoffBandHalfWidth
-        guard bandEnd > bandStart else { return p < Self.handoffStart ? 1 : 0 }
-        return 1 - ((p - bandStart) / (bandEnd - bandStart)).clamped(to: 0...1)
+        return 1 - FloatingUILayoutPolicy.rampedProgress(p, from: Self.handoffStart, to: Self.alphaHandoffEnd(for: addressBarPosition))
     }
 
     /// Interpolates the pill's real width/height/vertical-centre (and capsule corner radius) between

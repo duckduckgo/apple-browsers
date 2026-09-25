@@ -27,8 +27,11 @@ class BarsAnimator {
         static let legacyTransitionSpeed: CGFloat = 0.5
 
         static let floatingVelocityCommitThreshold: CGFloat = 0.15
-        static let floatingFastStepThreshold: CGFloat = 0.35
-        static let floatingFastStepAnimationDuration: CGFloat = 0.12
+        static let floatingFastStepThreshold: CGFloat = 0.25
+        /// How far the rendered morph is allowed to lag the latest scroll ratio, while a catch-up
+        /// animation is already in flight, before another frame retargets it. Below this, tracking
+        /// is left to settle on its own rather than restarted every frame.
+        static let floatingCatchUpEpsilon: CGFloat = 0.03
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -118,7 +121,10 @@ class BarsAnimator {
             if barsState != .revealed || transitionProgress != 0 {
                 barsState = .revealed
                 transitionProgress = 0
-                delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
+                // If a catch-up morph is still running, retarget it to 1 instead of cancelling and
+                // snapping — otherwise a drag that overshoots back above the top mid-collapse cuts
+                // the reveal short.
+                delegate?.setBarsVisibility(1, animated: delegate?.isAnimatingBarsVisibility == true, animationDuration: nil)
             }
             transitionStartPosY = pageTopY
             transitionStartProgress = 0
@@ -131,8 +137,15 @@ class BarsAnimator {
             && transitionProgress == ratio
         guard !ratioMatchesSettledState else { return }
 
-        let shouldAnimateFastStep = (ratio == 0 || ratio == 1)
-            && abs(ratio - transitionProgress) >= Metrics.floatingFastStepThreshold
+        let jump = abs(ratio - transitionProgress)
+        // The rendered fraction lags the true scroll ratio while a catch-up from an earlier jump is
+        // still animating; if the two have drifted apart by more than a rounding-level epsilon,
+        // retarget the running morph to the new ratio rather than letting the next unanimated frame
+        // cancel and snap it to wherever it happened to be.
+        let renderedProgress = 1 - (delegate?.currentBarsVisibility ?? 1 - ratio)
+        let isCatchingUp = delegate?.isAnimatingBarsVisibility == true
+            && abs(ratio - renderedProgress) >= Metrics.floatingCatchUpEpsilon
+        let shouldAnimate = jump >= Metrics.floatingFastStepThreshold || isCatchingUp
         if ratio >= 1.0 {
             barsState = .hidden
         } else if ratio <= 0.0 {
@@ -141,10 +154,10 @@ class BarsAnimator {
             barsState = .transitioning
         }
         transitionProgress = ratio
-        delegate?.setBarsVisibility(
-            1.0 - ratio,
-            animated: shouldAnimateFastStep,
-            animationDuration: shouldAnimateFastStep ? Metrics.floatingFastStepAnimationDuration : nil)
+        // Let the delegate's own duration scaling (based on how much of the morph this jump
+        // skipped) time the catch-up, so a fast scroll settles with the same deliberate morph as
+        // any other bars transition instead of a separately shortened snap.
+        delegate?.setBarsVisibility(1.0 - ratio, animated: shouldAnimate, animationDuration: nil)
     }
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {
@@ -303,11 +316,15 @@ class BarsAnimator {
 
     func revealBars(animated: Bool, animationDuration: CGFloat? = nil) {
         let alreadyRevealed = barsState == .revealed
+        // Settling into "already revealed" is normally a no-op animation-wise, but if a catch-up
+        // morph is still running toward some intermediate value, retarget it to 1 rather than
+        // leaving it stuck short of fully revealed.
+        let isCatchingUp = delegate?.isAnimatingBarsVisibility == true
 
         barsState = .revealed
         transitionProgress = 0
 
-        delegate?.setBarsVisibility(1, animated: animated && !alreadyRevealed, animationDuration: animationDuration)
+        delegate?.setBarsVisibility(1, animated: animated && (!alreadyRevealed || isCatchingUp), animationDuration: animationDuration)
     }
 
     func hideBars(animated: Bool, animationDuration: CGFloat? = nil) {

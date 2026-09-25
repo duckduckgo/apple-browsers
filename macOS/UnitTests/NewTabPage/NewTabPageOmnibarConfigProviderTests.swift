@@ -286,6 +286,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // MARK: - usage limits
 
+    @MainActor
     func testUsageLimits_approachingSeedMapsToTheRingDrawer() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -304,6 +305,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     /// The picker's models, not the step-down ones web named.
+    @MainActor
     func testUsageLimits_switchCtaCarriesTheModelPickerAsAlternatives() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -317,6 +319,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testUsageLimits_switchToFreeCtaListsOnlyFreeAccessibleModels() throws {
         let sut = try makeUsageLimitsProvider(seed: .weeklyReachedDegraded)
 
@@ -326,6 +329,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testUsageLimits_nonSwitchCtaHasNoMenu() throws {
         let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
 
@@ -333,6 +337,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(sut.provider.usageLimits()?.cta?.alternatives, [])
     }
 
+    @MainActor
     func testUsageLimits_reachedSeedBlocksThePromptAndDropsTheRing() throws {
         let sut = try makeUsageLimitsProvider(seed: .weeklyReached)
 
@@ -347,6 +352,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(drawer?.cta)
     }
 
+    @MainActor
     func testUsageLimits_subscribeCtaOffersNoModelAndNoMenu() throws {
         let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
 
@@ -358,12 +364,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(cta?.showMenu, false)
     }
 
+    @MainActor
     func testSelectUsageLimitsCta_withoutAModelAsksForTheSubscriptionUpsell() throws {
         let sut = try makeUsageLimitsProvider(seed: .freeDailyReached)
 
         XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: nil), .requiresSubscriptionUpsell)
     }
 
+    @MainActor
     func testSelectUsageLimitsCta_withThePrimaryModelPersistsItAndStandsTheMessageDown() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -375,6 +383,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     /// Settles the message even for a model web never named as a step down.
+    @MainActor
     func testSelectUsageLimitsCta_withAMenuAlternativePersistsItAndStandsTheMessageDown() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -385,6 +394,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
+    @MainActor
     func testSelectUsageLimitsCta_ignoresAModelThatIsNotSelectable() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -394,6 +404,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNotNil(sut.provider.usageLimits())
     }
 
+    @MainActor
     func testSelectUsageLimitsCta_clearsAReasoningEffortTheNewModelDoesNotSupport() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
         sut.persistor.selectedReasoningEffort = AIChatReasoningEffort.medium.rawValue
@@ -404,6 +415,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     /// On a model with no high-usage notice behind it, so a dismissed warning leaves nothing.
+    @MainActor
     func testDismissUsageLimits_hidesTheWarning() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, selectedModelId: "gpt-5.6-luna")
 
@@ -412,6 +424,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
+    @MainActor
     func testSelectedModelId_switchingToTheSuggestedModelStandsTheWarningDown() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -420,6 +433,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(sut.provider.usageLimits())
     }
 
+    @MainActor
     func testSelectedModelId_switchingToAModelTheDrawerDidNotOfferLeavesTheWarningUp() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 
@@ -428,12 +442,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
     }
 
+    @MainActor
     func testUsageLimits_isNilWhenTheFeatureFlagIsOff() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, isUsageWarningsEnabled: false)
 
         XCTAssertNil(sut.provider.usageLimits())
     }
 
+    @MainActor
     func testUsageLimits_fallsBackToTheHighUsageNoticeWhenNoAllowanceMessageApplies() throws {
         let sut = try makeUsageLimitsProvider(seed: nil)
 
@@ -446,6 +462,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(drawer?.cta)
     }
 
+    @MainActor
     func testUsageLimits_prefersTheWarningOverTheHighUsageNotice() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75)
 

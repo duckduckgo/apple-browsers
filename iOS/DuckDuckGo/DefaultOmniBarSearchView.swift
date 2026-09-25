@@ -152,9 +152,8 @@ final class DefaultOmniBarSearchView: UIView {
             leadingConstraint,
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.horizontalInset),
 
-            // Paired with `staticIconLeadingPadding` to centre the notification's shield on the
-            // privacy icon it hands over to.
-            notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 1),
+            notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor,
+                                                           constant: OmniBarNotificationMetrics.leadingInset),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
             notificationContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
             notificationContainer.heightAnchor.constraint(equalTo: textField.heightAnchor, constant: 4),

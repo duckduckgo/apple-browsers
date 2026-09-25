@@ -26,6 +26,23 @@ protocol OmniBarNotificationAnimated: UIViewController {
     func startAnimation(_ completion: @escaping () -> Void)
 }
 
+enum OmniBarNotificationMetrics {
+
+    /// How far inside the omnibar's leading item slot the capsule starts.
+    static let leadingInset: CGFloat = 1
+
+    /// The centre of the leading item slot, where the address bar centres its privacy icon.
+    static let itemCentre: CGFloat = 22
+
+    /// Distance from the capsule's leading edge to the centre of its icon slot, so a notification's
+    /// icon lands on the privacy icon it sits over whatever size that icon is.
+    static var iconCentreFromLeading: CGFloat { itemCentre - leadingInset }
+
+    static func iconLeadingPadding(forIconWidth width: CGFloat) -> CGFloat {
+        iconCentreFromLeading - width / 2
+    }
+}
+
 final class OmniBarNotificationContainerView: UIView {
 
     var currentNotificationController: UIHostingController<OmniBarNotification>?
@@ -81,33 +98,30 @@ final class OmniBarNotificationContainerView: UIView {
     
     static func makeNotificationViewModel(for type: OmniBarNotificationType, useDarkStyle: Bool) -> OmniBarNotificationViewModel {
         let notificationText: String
-        let notificationAnimationName: String
+        let icon: OmniBarNotificationViewModel.Icon
         var eventCount: Int = 0
         var textGenerator: ((Int) -> String)?
-        var staticIconImage: UIImage?
 
         switch type {
         case .cookiePopupManaged:
             notificationText = UserText.omnibarNotificationCookiesManaged
-            notificationAnimationName = useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light"
+            icon = .animation(useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light")
         case .cookiePopupHidden:
             notificationText = UserText.omnibarNotificationPopupHidden
-            notificationAnimationName = useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light"
+            icon = .animation(useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light")
         case .trackersBlocked(let count):
             notificationText = UserText.omnibarNotificationTrackersBlocked(count: count)
-            notificationAnimationName = "" // Use static shield icon
+            icon = .still(AppRebrand.isAppRebranded() ? "shield.new" : "shield.new-legacy")
             // Only animate counting for 5+ trackers, show directly for fewer
             eventCount = count >= 5 ? count : 0
             textGenerator = count >= 5 ? { UserText.omnibarNotificationTrackersBlocked(count: $0) } : nil
         case .youTubeAdBlockOn:
             notificationText = UserText.omnibarNotificationYouTubeAdBlockOn
-            notificationAnimationName = ""
-            staticIconImage = DesignSystemImages.Color.Size24.videoPlayerBlocked
+            icon = .image(DesignSystemImages.Color.Size24.videoPlayerBlocked)
         }
 
         return OmniBarNotificationViewModel(text: notificationText,
-                                            animationName: notificationAnimationName,
-                                            staticIconImage: staticIconImage,
+                                            icon: icon,
                                             eventCount: eventCount,
                                             textGenerator: textGenerator)
     }

@@ -19,8 +19,8 @@
 
 import SwiftUI
 import UIKit
+import Lottie
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 struct OmniBarNotification: View {
 
@@ -34,7 +34,7 @@ struct OmniBarNotification: View {
     var body: some View {
         HStack {
             HStack(spacing: 0) {
-                animation
+                icon
                 text
             }
             .background(background)
@@ -59,30 +59,35 @@ struct OmniBarNotification: View {
     }
     
     @ViewBuilder
-    private var animation: some View {
-        if !viewModel.animationName.isEmpty {
-            LottieView(lottieFile: viewModel.animationName,
-                       isAnimating: $isAnimatingCookie)
-                       .frame(width: Constants.Size.animatedIcon.width, height: Constants.Size.animatedIcon.height)
-        } else if let staticIcon = viewModel.staticIconImage {
-            Image(uiImage: staticIcon)
+    private var icon: some View {
+        switch viewModel.icon {
+        case .animation(let name):
+            LottieView(lottieFile: name, isAnimating: $isAnimatingCookie)
+                .frame(width: Constants.Size.animatedIcon.width, height: Constants.Size.animatedIcon.height)
+                .padding(.leading, Constants.Spacing.leadingPadding(forIconWidth: Constants.Size.animatedIcon.width))
+
+        case .still(let name):
+            Color.clear
+                .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
+                .overlay(
+                    LottieView(lottieFile: name,
+                               isAnimating: .constant(false),
+                               configure: { $0.currentProgress = 0 })
+                        .frame(width: canvasSize(of: name).width, height: canvasSize(of: name).height)
+                )
+                .modifier(IconSlotPadding())
+
+        case .image(let image):
+            Image(uiImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
-                .padding(.leading, Constants.Spacing.staticIconLeadingPadding)
-                .padding(.top, 7)
-                .padding(.bottom, 7)
-                .padding(.trailing, 9)
-        } else {
-            Image(uiImage: DesignSystemImages.Color.Size24.shield)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: Constants.Size.staticIcon.width, height: Constants.Size.staticIcon.height)
-                .padding(.leading, Constants.Spacing.staticIconLeadingPadding)
-                .padding(.top, 7)
-                .padding(.bottom, 7)
-                .padding(.trailing, 9)
+                .modifier(IconSlotPadding())
         }
+    }
+
+    private func canvasSize(of animationName: String) -> CGSize {
+        LottieAnimation.named(animationName)?.size ?? Constants.Size.staticIcon
     }
     
     @ViewBuilder
@@ -111,6 +116,15 @@ struct OmniBarNotification: View {
                     textOffset = -textWidth
                 }
             }
+    }
+}
+
+private struct IconSlotPadding: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.leading, Constants.Spacing.leadingPadding(forIconWidth: Constants.Size.staticIcon.width))
+            .padding(.vertical, 7)
+            .padding(.trailing, 9)
     }
 }
 
@@ -148,7 +162,9 @@ private enum Constants {
     enum Spacing {
         static let textClippingShapeOffset: CGFloat = -7
         static let textTrailingPadding: CGFloat = 12
-        static let staticIconLeadingPadding: CGFloat = 9
+        static func leadingPadding(forIconWidth width: CGFloat) -> CGFloat {
+            OmniBarNotificationMetrics.iconLeadingPadding(forIconWidth: width)
+        }
     }
     
     enum Size {

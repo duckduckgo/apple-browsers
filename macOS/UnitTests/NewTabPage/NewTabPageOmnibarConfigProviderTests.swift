@@ -502,8 +502,10 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         let storage = DuckAiNativeMemoryStorageHandler()
         if let seed {
+            let now = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
             try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
-                                 value: seed.entryValue(switchTargets: ["claude-haiku-4-5", "gpt-5.4-mini"],
+                                 value: seed.entryValue(now: now,
+                                                        switchTargets: ["claude-haiku-4-5", "gpt-5.4-mini"],
                                                         selectedModelId: selectedModelId))
         }
 

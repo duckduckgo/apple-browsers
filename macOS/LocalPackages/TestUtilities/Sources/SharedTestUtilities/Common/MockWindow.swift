@@ -56,6 +56,7 @@ public class MockWindow: NSWindow {
 
     public var makeKeyAndOrderFrontCalled = false
     public var beginSheetCalled = false
+    public var onBeginSheet: (() -> Void)?
 
     public override func orderFront(_ sender: Any?) {
     }
@@ -68,7 +69,11 @@ public class MockWindow: NSWindow {
 
     public override func beginSheet(_ sheetWindow: NSWindow, completionHandler handler: ((NSApplication.ModalResponse) -> Void)? = nil) {
         beginSheetCalled = true
+        // This mock completes presentation immediately, so close the sheet before reporting completion.
+        sheetWindow.isReleasedWhenClosed = false
+        sheetWindow.close()
         handler?(.continue)
+        onBeginSheet?()
     }
 
     public override func toggleFullScreen(_ sender: Any?) {

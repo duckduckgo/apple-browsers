@@ -922,6 +922,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync already on")
         }
 
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.aiChat.rawValue]))
         Task { @MainActor in
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
         }

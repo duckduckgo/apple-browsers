@@ -155,7 +155,7 @@ struct VioletColorPalette: SharedColorPaletteDefinition {
     static let unifiedInputTextPrimary = DynamicColor(lightHex: 0x07050d, lightOpacityHex: 0xf4, darkHex: 0xefefff, darkOpacityHex: 0xf4)
     static let unifiedInputTextSecondary = DynamicColor(lightHex: 0x07050d, lightOpacityHex: 0x99, darkHex: 0xf5f5fe, darkOpacityHex: 0xa8)
 
-    // MARK: - Inherited from FigmaColorPalette
+    // MARK: - Inherited from LatestColorPalette
 
     static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
 

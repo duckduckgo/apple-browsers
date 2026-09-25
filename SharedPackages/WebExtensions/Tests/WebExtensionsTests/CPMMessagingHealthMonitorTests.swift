@@ -36,6 +36,17 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(pixelFiring.events, ["initialization_failed_session_restoration"])
     }
 
+    func testFirstHangAfterInitializationFailureInvokesConfirmedHangHandler() {
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: CapturingWebExtensionPixelFiring())
+        var confirmedHangCount = 0
+        monitor.onConfirmedHang = { confirmedHangCount += 1 }
+
+        XCTAssertFalse(beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other))
+        XCTAssertTrue(beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other))
+
+        XCTAssertEqual(confirmedHangCount, 1)
+    }
+
     func testRepeatedSessionRestorationFailuresDoNotStartStuckEpisode() {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)

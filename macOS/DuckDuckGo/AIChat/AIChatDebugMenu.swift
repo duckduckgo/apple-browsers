@@ -165,7 +165,7 @@ final class AIChatDebugMenu: NSMenu {
     /// Brings back a message dismissed with its close button, and one whose CTA has been run.
     @objc private func clearUsageDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
-        store.setDismissal(nil)
+        DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
     }
 

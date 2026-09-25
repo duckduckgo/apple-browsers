@@ -49,6 +49,33 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try super.tearDownWithError()
     }
 
+    // MARK: - Page Origin
+
+    func testWhenPageIsAWebsite_ThenScriptDoesNothing() throws {
+        context.evaluateScript("""
+        var location = { protocol: "https:" };
+        chrome = { runtime: {} };
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.notifications === undefined")
+        try assertTrue("globalThis['\(WebExtensionAPIStubScript.retentionPropertyName)'] === undefined")
+        try assertTrue("consoleMessages.length === 0")
+    }
+
+    func testWhenPageIsAnExtensionPage_ThenScriptInstallsStubs() throws {
+        context.evaluateScript("""
+        var location = { protocol: "webkit-extension:" };
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.notifications !== undefined")
+    }
+
     // MARK: - Embedded Frames
 
     func testWhenPageIsAnEmbeddedFrame_ThenActionOpenPopupIsHidden() throws {

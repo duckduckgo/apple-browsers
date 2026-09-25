@@ -26,6 +26,7 @@ import PrivacyConfig
 import UniformTypeIdentifiers
 import SharedTestUtilities
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DataImportViewModelTests: XCTestCase {
@@ -1838,6 +1839,86 @@ final class DataImportViewModelTests: XCTestCase {
 
         // THEN
         waitForExpectations(timeout: 0)
+    }
+
+    @MainActor
+    func testLaunchSync_onPickerScreen_firesSyncPromoConfirmedWithDataImportStartSource() {
+        // GIVEN
+        let pixelKit = PixelKitMock()
+        model = DataImportViewModel(
+            importSource: .chrome,
+            screen: .sourceAndDataTypesPicker,
+            syncFeatureVisibility: .show(syncLauncher: SyncLauncherMock()),
+            pixelFiring: pixelKit
+        )
+
+        // WHEN
+        model.launchSync(using: {})
+
+        // THEN
+        XCTAssertEqual(pixelKit.actualFireCalls, [
+            ExpectedFireCall(pixel: SyncPromoPixelKitEvent.syncPromoConfirmed, frequency: .standard, additionalParameters: ["source": "dataImportStart"])
+        ])
+    }
+
+    @MainActor
+    func testLaunchSync_onSummaryScreen_firesSyncPromoConfirmedWithDataImportFinishSource() {
+        // GIVEN
+        let pixelKit = PixelKitMock()
+        let summary: DataImportSummary = [.bookmarks: .success(.init(successful: 10, duplicate: 0, failed: 0))]
+        model = DataImportViewModel(
+            importSource: .chrome,
+            screen: .summary(summary),
+            syncFeatureVisibility: .show(syncLauncher: SyncLauncherMock()),
+            pixelFiring: pixelKit
+        )
+
+        // WHEN
+        model.performAction(for: .sync, dismiss: {})
+
+        // THEN
+        XCTAssertEqual(pixelKit.actualFireCalls, [
+            ExpectedFireCall(pixel: SyncPromoPixelKitEvent.syncPromoConfirmed, frequency: .standard, additionalParameters: ["source": "dataImportFinish"])
+        ])
+    }
+
+    @MainActor
+    func testLaunchSync_afterChangingImportSource_stillFiresSyncPromoConfirmed() {
+        // GIVEN
+        let pixelKit = PixelKitMock()
+        model = DataImportViewModel(
+            importSource: .chrome,
+            screen: .sourceAndDataTypesPicker,
+            syncFeatureVisibility: .show(syncLauncher: SyncLauncherMock()),
+            pixelFiring: pixelKit
+        )
+        model.update(with: .safari)
+
+        // WHEN
+        model.launchSync(using: {})
+
+        // THEN
+        XCTAssertEqual(pixelKit.actualFireCalls, [
+            ExpectedFireCall(pixel: SyncPromoPixelKitEvent.syncPromoConfirmed, frequency: .standard, additionalParameters: ["source": "dataImportStart"])
+        ])
+    }
+
+    @MainActor
+    func testLaunchSync_whenSyncHidden_doesNotFireSyncPromoConfirmed() {
+        // GIVEN
+        let pixelKit = PixelKitMock()
+        model = DataImportViewModel(
+            importSource: .chrome,
+            screen: .sourceAndDataTypesPicker,
+            syncFeatureVisibility: .hide,
+            pixelFiring: pixelKit
+        )
+
+        // WHEN
+        model.launchSync(using: {})
+
+        // THEN
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
     // MARK: - Import Task Lifecycle Tests

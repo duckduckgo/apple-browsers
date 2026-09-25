@@ -963,6 +963,8 @@
 		3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */; };
 		3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B59CC8B290083240058F2F6 /* ConnectBitwardenViewModelTests.swift */; };
 		7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
+		7BD5A0152F0A0C0100000015 /* WebExtensionPageStubUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */; };
+		7BD5A0162F0A0C0100000016 /* WebExtensionPageStubUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */; };
 		7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
 		3706FE1E293F661700E42796 /* GeolocationProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB426A809E60013B453 /* GeolocationProviderTests.swift */; };
 		3706FE20293F661700E42796 /* CLLocationManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0E226B3E7FA00A9DAD1 /* CLLocationManagerMock.swift */; };
@@ -2424,6 +2426,8 @@
 		7BD5049B2E5FA3EA008A0646 /* WebExtensionsDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */; };
 		7BD5049C2E5FA3F3008A0646 /* WebExtensionInternalSiteHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A2B652D2D230000F06679 /* WebExtensionInternalSiteHandler.swift */; };
 		7BD5049E2E5FA40F008A0646 /* WebExtensionNavigationBarUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */; };
+		7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */; };
+		7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */; };
 		7BD504B02E5FA40F008A0646 /* NativeMessagingHostManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE02DC12C0300A96502 /* NativeMessagingHostManifest.swift */; };
 		7BD504B12E5FA40F008A0646 /* NativeMessagingHostSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE22DC12C0300A96502 /* NativeMessagingHostSession.swift */; };
 		7BD504B22E5FA40F008A0646 /* NativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */; };
@@ -6187,10 +6191,12 @@
 		7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDebugMenu.swift; sourceTree = "<group>"; };
 		7BE207382DCCC4230037394C /* DeveloperID.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = DeveloperID.xcstrings; sourceTree = "<group>"; };
 		7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionNavigationBarUpdater.swift; sourceTree = "<group>"; };
+		7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPageStubUserScript.swift; sourceTree = "<group>"; };
 		7BE33DE02DC12C0300A96502 /* NativeMessagingHostManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifest.swift; sourceTree = "<group>"; };
 		7BE33DE22DC12C0300A96502 /* NativeMessagingHostSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSession.swift; sourceTree = "<group>"; };
 		7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandler.swift; sourceTree = "<group>"; };
 		7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifestTests.swift; sourceTree = "<group>"; };
+		7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPageStubUserScriptTests.swift; sourceTree = "<group>"; };
 		7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSessionTests.swift; sourceTree = "<group>"; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
 		7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverView.swift; sourceTree = "<group>"; };
@@ -8091,6 +8097,7 @@
 				1EEBF90E2F3E16DD00DF90F3 /* WebExtensionHandlerProvider+macOS.swift */,
 				1EA1DA212F46063F005387D0 /* AutoconsentMessageHandlerDelegate+macOS.swift */,
 				7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */,
+				7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */,
 				1EC320932F23F12A00A38D09 /* WebExtensionWindowTabProvider+macOS.swift */,
 				1E1B24AD2F4729C100D239CE /* WebExtensionAvailability+macOS.swift */,
 			);
@@ -11535,6 +11542,7 @@
 			children = (
 				7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */,
 				7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */,
+				7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */,
 			);
 			path = WebExtensions;
 			sourceTree = "<group>";
@@ -16923,6 +16931,7 @@
 				F118EA862BEACC7000F77634 /* NonStandardPixel.swift in Sources */,
 				37E307AC2D0745DB00599500 /* PrivacyStatsErrorHandler.swift in Sources */,
 				7BD5049E2E5FA40F008A0646 /* WebExtensionNavigationBarUpdater.swift in Sources */,
+				7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */,
 				7BD504B02E5FA40F008A0646 /* NativeMessagingHostManifest.swift in Sources */,
 				7BD504B12E5FA40F008A0646 /* NativeMessagingHostSession.swift in Sources */,
 				7BD504B22E5FA40F008A0646 /* NativeMessagingHandler.swift in Sources */,
@@ -17387,6 +17396,7 @@
 				3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */,
 				3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */,
 				7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */,
+				7BD5A0152F0A0C0100000015 /* WebExtensionPageStubUserScriptTests.swift in Sources */,
 				7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
@@ -19344,6 +19354,7 @@
 				B64C84E32692DC9F0048FEBE /* PermissionAuthorizationViewController.swift in Sources */,
 				4B92929D26670D2A00AD2C21 /* BookmarkNode.swift in Sources */,
 				7BE33DCD2DC12C4E00A96502 /* WebExtensionNavigationBarUpdater.swift in Sources */,
+				7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */,
 				7BE33DE12DC12C4E00A96502 /* NativeMessagingHostManifest.swift in Sources */,
 				7BE33DE32DC12C4E00A96502 /* NativeMessagingHostSession.swift in Sources */,
 				7BE33DE52DC12C4E00A96502 /* NativeMessagingHandler.swift in Sources */,
@@ -19867,6 +19878,7 @@
 				B6106BA026A7BE0B0013B453 /* PermissionManagerTests.swift in Sources */,
 				4B59CC8C290083240058F2F6 /* ConnectBitwardenViewModelTests.swift in Sources */,
 				7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */,
+				7BD5A0162F0A0C0100000016 /* WebExtensionPageStubUserScriptTests.swift in Sources */,
 				7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */,
 				B68412202B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,

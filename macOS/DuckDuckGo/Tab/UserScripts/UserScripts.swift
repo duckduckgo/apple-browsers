@@ -30,6 +30,7 @@ import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
@@ -63,6 +64,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
+    /// `nil` when web extensions are unavailable.
+    let webExtensionPageStubUserScript: UserScript?
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -217,8 +221,20 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
+        // Extension pages embedded in websites live in tab web views, which the extension
+        // controller's configuration does not cover, so they get the API stubs from here.
+        if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
+            webExtensionPageStubUserScript = WebExtensionPageStubUserScript()
+        } else {
+            webExtensionPageStubUserScript = nil
+        }
+
         if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
             userScripts.append(autoconsentUserScript)
+        }
+
+        if let webExtensionPageStubUserScript {
+            userScripts.append(webExtensionPageStubUserScript)
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)

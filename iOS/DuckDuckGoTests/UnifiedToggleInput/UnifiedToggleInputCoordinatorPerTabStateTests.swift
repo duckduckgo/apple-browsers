@@ -281,6 +281,86 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
                        "Dismiss-time clearText must preserve the per-tab stored draft.")
     }
 
+    func testSameTabReexpandRestoresRetainedAttachmentBeforeAddingAnother() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModel(id: "file-model", access: true, supportedFileTypes: ["application/pdf"])]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.setText("keep this draft")
+        sut.addFileAttachment(makeFileAttachment(fileName: "first.pdf"))
+        let originalID = sut.viewController.currentAttachments.first?.id
+        XCTAssertNotNil(originalID)
+        XCTAssertTrue(sut.completeOmnibarDeactivation())
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.id, originalID)
+        XCTAssertEqual(sut.currentText, "keep this draft")
+        sut.addFileAttachment(makeFileAttachment(fileName: "second.pdf"))
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 2)
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 2)
+        XCTAssertEqual(store.states["tab-A"]?.attachments.first?.id, originalID)
+    }
+
+    func testReexpandWithoutTabActivationRestoresRetainedAttachments() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "first.jpg"))
+        store.states["tab-A"] = TabInputState(attachments: [attachment])
+        sut.activateForTab("tab-A")
+        sut.clearAttachmentsForDismiss()
+
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        XCTAssertEqual(sut.viewController.currentAttachments.map(\.id), [attachment.id])
+        sut.clearAttachmentsForDismiss()
+        sut.showExpanded(activatesInput: false)
+        XCTAssertEqual(sut.viewController.currentAttachments.map(\.id), [attachment.id])
+    }
+
+    func testExplicitClearAfterDismissDoesNotResurrectRetainedAttachments() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "first.jpg"))
+        store.states["tab-A"] = TabInputState(attachments: [attachment])
+        sut.activateForTab("tab-A")
+        sut.clearAttachmentsForDismiss()
+        sut.clearAttachments()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
+    func testOmnibarDismissalAndLaterPersistPreserveAttachmentsWithoutCrossTabLeak() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModel(id: "file-model", access: true, supportedFileTypes: ["application/pdf"])]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "draft to keep")
+        sut.addFileAttachment(makeFileAttachment())
+        let attachmentID = sut.viewController.currentAttachments.first?.id
+        XCTAssertNotNil(attachmentID)
+
+        XCTAssertTrue(sut.completeOmnibarDeactivation())
+        sut.setText("draft to keep")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.first?.id, attachmentID)
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft to keep")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+
+        sut.activateForTab("tab-B")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.id, attachmentID)
+        sut.clearAttachments()
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
     func test_hide_doesNotWipeStoreEntryForCurrentTab() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)

@@ -206,6 +206,7 @@ class FireExecutor: FireExecuting {
                                           idManager: idManager)
         self.aiChatDeleter = aiChatDeleter
         self.fireWorkers = [
+            AttachmentPrivacyNoticeFireWorker(dismissalStore: UTIAttachmentPrivacyNoticeDismissalStore()),
             URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
             WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
                                   dataStore: dataStore,

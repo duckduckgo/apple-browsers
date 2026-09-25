@@ -42,6 +42,7 @@ final class UTIFooterCardView: UIView {
 
     var onPrimaryTap: (() -> Void)?
     var onDismissTap: (() -> Void)?
+    var onLinkTap: ((URL) -> Void)?
 
     let contentView = UIView()
 
@@ -58,6 +59,11 @@ final class UTIFooterCardView: UIView {
     private var actionTrailingConstraint: NSLayoutConstraint?
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
+
+    private var link: UTIFooterMessage.Link?
+    private var linkRange: NSRange?
+    /// Held so a trait change can rebuild the attributed title, whose colours are baked in.
+    private var currentMessage: UTIFooterMessage?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -105,7 +111,7 @@ final class UTIFooterCardView: UIView {
         // A title above a reset line is a headline; a standalone one is body copy.
         let isStandaloneCopy = message.subtitle == nil
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
-        titleLabel.text = message.title
+        applyTitle(message)
 
         subtitleLabel.numberOfLines = message.icon == .modelSwitch ? 3 : (message.primaryAction == nil ? 2 : 1)
         subtitleLabel.text = message.subtitle
@@ -124,6 +130,68 @@ final class UTIFooterCardView: UIView {
         // Otherwise the CTA stops short of the trailing edge by the width of a close button that
         // isn't there.
         actionTrailingConstraint?.constant = message.isDismissible ? -Constants.dismissTrailingFootprint : 0
+    }
+
+    /// Styles the message's trailing link run, if it has one, and remembers the range so a tap can
+    /// be tested against it. Plain text otherwise.
+    private func applyTitle(_ message: UTIFooterMessage) {
+        currentMessage = message
+        link = message.link
+        linkRange = nil
+        titleLabel.isUserInteractionEnabled = message.link != nil
+        titleLabel.accessibilityTraits.remove(.link)
+        titleLabel.accessibilityCustomActions = nil
+
+        guard let link = message.link,
+              let range = message.title.range(of: link.text, options: .backwards) else {
+            titleLabel.attributedText = nil
+            titleLabel.text = message.title
+            return
+        }
+
+        let nsRange = NSRange(range, in: message.title)
+        linkRange = nsRange
+        let attributed = NSMutableAttributedString(
+            string: message.title,
+            attributes: [.font: titleLabel.font as Any, .foregroundColor: UIColor(designSystemColor: .textPrimary)]
+        )
+        attributed.addAttribute(.foregroundColor, value: UIColor(designSystemColor: .accentTextPrimary), range: nsRange)
+        titleLabel.attributedText = attributed
+        titleLabel.accessibilityCustomActions = [UIAccessibilityCustomAction(name: link.text) { [weak self] _ in
+            guard let self, let onLinkTap = self.onLinkTap else { return false }
+            onLinkTap(link.url)
+            return true
+        }]
+    }
+
+    @objc private func titleTapped(_ gesture: UITapGestureRecognizer) {
+        guard let link, let linkRange, tap(gesture, landsIn: linkRange) else { return }
+        onLinkTap?(link.url)
+    }
+
+    /// Maps the tap to a character index through a throwaway layout that mirrors the label's, so
+    /// only the link run responds rather than the whole paragraph.
+    private func tap(_ gesture: UITapGestureRecognizer, landsIn range: NSRange) -> Bool {
+        guard let attributedText = titleLabel.attributedText else { return false }
+
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        let layoutManager = NSLayoutManager()
+        textStorage.addLayoutManager(layoutManager)
+        let textContainer = NSTextContainer(size: titleLabel.bounds.size)
+        textContainer.lineFragmentPadding = 0
+        textContainer.lineBreakMode = titleLabel.lineBreakMode
+        textContainer.maximumNumberOfLines = titleLabel.numberOfLines
+        layoutManager.addTextContainer(textContainer)
+
+        let textRect = titleLabel.textRect(forBounds: titleLabel.bounds, limitedToNumberOfLines: titleLabel.numberOfLines)
+        let location = gesture.location(in: titleLabel)
+        let point = CGPoint(x: location.x - textRect.minX, y: location.y - textRect.minY)
+        let glyphIndex = layoutManager.glyphIndex(for: point, in: textContainer)
+        guard glyphIndex < layoutManager.numberOfGlyphs,
+              layoutManager.boundingRect(forGlyphRange: NSRange(location: glyphIndex, length: 1), in: textContainer).contains(point) else {
+            return false
+        }
+        return NSLocationInRange(layoutManager.characterIndexForGlyph(at: glyphIndex), range)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -178,6 +246,7 @@ private extension UTIFooterCardView {
         titleLabel.lineBreakMode = .byWordWrapping
         titleLabel.font = .daxFootnoteSemibold()
         titleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Title"
+        titleLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(titleTapped)))
         subtitleLabel.numberOfLines = 1
         subtitleLabel.lineBreakMode = .byTruncatingTail
         subtitleLabel.font = .daxCaption1()
@@ -272,6 +341,9 @@ private extension UTIFooterCardView {
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        if let currentMessage, currentMessage.link != nil {
+            applyTitle(currentMessage)
+        }
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         infoIcon.tintColor = UIColor(designSystemColor: .icons)

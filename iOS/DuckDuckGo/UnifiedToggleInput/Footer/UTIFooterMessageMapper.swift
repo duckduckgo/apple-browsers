@@ -40,9 +40,27 @@ struct UTIFooterMessageMapper {
             title: String(format: UserText.utiCreateImageModelSwitchTitle, notice.newModelShortName),
             subtitle: String(format: subtitleFormat, notice.previousModelShortName),
             primaryAction: nil,
-            isDismissible: true
+            isDismissible: true,
+            link: nil
         )
     }
+
+    /// Body copy with a trailing "Learn more" link, no CTA pill — the copy is approved verbatim and
+    /// carries the link inside the sentence.
+    func attachmentPrivacyMessage() -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .info,
+            title: UserText.aiChatAttachmentPrivacyNotice,
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: true,
+            link: URL(string: Self.attachmentPrivacyLearnMoreURL).map {
+                .init(text: UserText.aiChatAttachmentPrivacyNoticeLearnMore, url: $0)
+            }
+        )
+    }
+
+    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"
 
     func message(for warning: DuckAiUsageWarning) -> UTIFooterMessage {
         UTIFooterMessage(
@@ -50,7 +68,8 @@ struct UTIFooterMessageMapper {
             title: Self.title(for: warning),
             subtitle: String(format: UserText.utiDuckAIWarningsResetsIn, resetDescriber.describe(warning.resetsIn)),
             primaryAction: Self.primaryAction(for: warning),
-            isDismissible: warning.isDismissible
+            isDismissible: warning.isDismissible && !warning.blocksInput,
+            link: nil
         )
     }
 
@@ -60,7 +79,8 @@ struct UTIFooterMessageMapper {
             title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
             subtitle: nil,
             primaryAction: nil,
-            isDismissible: true
+            isDismissible: true,
+            link: nil
         )
     }
 

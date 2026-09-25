@@ -29,6 +29,63 @@ import UniformTypeIdentifiers
 
 final class UnifiedToggleInputViewTests: XCTestCase {
 
+    func testReplacingVisibleFooterReportsNewCardAppearance() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        var visibility: [[UTIFooterItem.ID]] = []
+        sut.onFooterVisibilityChanged = { visibility.append($0) }
+        let existing = UTIFooterMessage(icon: .info, title: "Existing notice", subtitle: nil,
+                                       primaryAction: nil, isDismissible: true, link: nil)
+
+        XCTAssertTrue(sut.setFooterMessages([.init(id: .usageWarning, message: existing)]))
+        XCTAssertTrue(sut.setFooterMessages([.init(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())]))
+
+        XCTAssertEqual(visibility, [[.usageWarning], [.attachmentPrivacy]])
+    }
+
+    func testTwoRequiredCardsAddHeightAndRouteSecondCardDismissalByIdentity() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        let first = UTIFooterItem(id: .outOfUsage, message: message)
+        let second = UTIFooterItem(id: .attachmentPrivacy, message: message)
+        prepareForFitting(sut)
+        sut.setFooterMessages([first])
+        let oneCardHeight = applyFittingHeight(to: sut)
+        sut.setFooterMessages([first, second])
+        let twoCardHeight = applyFittingHeight(to: sut)
+        XCTAssertGreaterThan(twoCardHeight, oneCardHeight)
+
+        let stack = try XCTUnwrap(sut.subviews.compactMap { $0 as? UIStackView }.first {
+            $0.arrangedSubviews.contains { $0 is UTIFooterCardView }
+        })
+        let secondCard = try XCTUnwrap(stack.arrangedSubviews.last as? UTIFooterCardView)
+        var dismissed: UTIFooterItem.ID?
+        sut.onFooterDismissTapped = { dismissed = $0 }
+        secondCard.onDismissTap?()
+        XCTAssertEqual(dismissed, .attachmentPrivacy)
+
+        sut.setFooterMessages([first])
+        XCTAssertEqual(applyFittingHeight(to: sut), oneCardHeight, accuracy: 1)
+    }
+
+    func testEditDisclaimerUsesMessagesSelectedByController() {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        var visible: [UTIFooterItem.ID] = []
+        sut.onFooterVisibilityChanged = { visible = $0 }
+        sut.setFooterMessages([.init(id: .attachmentPrivacy, message: message)])
+        sut.setEditMode(true, showsReplaceDisclaimer: true)
+        sut.setFooterMessages([])
+        XCTAssertTrue(visible.isEmpty)
+
+        sut.setEditMode(false, showsReplaceDisclaimer: false)
+        sut.setFooterMessages([.init(id: .usageWarning, message: message)])
+        XCTAssertEqual(visible, [.usageWarning])
+    }
+
     func testWhenExpandedInputSwitchesToSearchThenCardKeepsOutline() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

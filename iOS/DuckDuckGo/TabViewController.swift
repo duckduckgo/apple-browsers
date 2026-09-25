@@ -795,6 +795,7 @@ class TabViewController: UIViewController {
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid
         )
+        coordinator.tabProvider = { [weak self] in self?.tabModel }
         coordinator.delegate = self
         return coordinator
     }()

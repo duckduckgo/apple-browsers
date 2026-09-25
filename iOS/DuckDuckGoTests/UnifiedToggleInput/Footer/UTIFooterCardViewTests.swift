@@ -34,6 +34,47 @@ final class UTIFooterCardViewTests: XCTestCase {
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
     /// The card grows to fit the message instead of cutting it off.
+    func testPrivacyLinkHasAnAccessibilityActionAndClearsItOnReuse() throws {
+        let sut = UTIFooterCardView()
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        var openedURL: URL?
+        sut.onLinkTap = { openedURL = $0 }
+        sut.configure(with: message, animateIcon: false)
+        let label = try XCTUnwrap(titleLabel(in: sut))
+        let action = try XCTUnwrap(label.accessibilityCustomActions?.first)
+        XCTAssertEqual(action.name, "Learn more")
+        XCTAssertEqual(action.actionHandler?(action), true)
+        XCTAssertEqual(openedURL, message.link?.url)
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertNil(label.accessibilityCustomActions)
+        XCTAssertFalse(label.accessibilityTraits.contains(.link))
+    }
+
+    func testPrivacyLinkRejectsTrailingAndBelowTextWhitespace() throws {
+        let sut = UTIFooterCardView()
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com"))
+        sut.configure(with: UTIFooterMessage(icon: .none, title: "Learn more", subtitle: nil,
+                                            primaryAction: nil, isDismissible: true,
+                                            link: .init(text: "Learn more", url: url)), animateIcon: false)
+        let label = try XCTUnwrap(titleLabel(in: sut))
+        label.bounds = CGRect(x: 0, y: 0, width: 300, height: 80)
+        var openedURLs: [URL] = []
+        sut.onLinkTap = { openedURLs.append($0) }
+        let gesture = PositionedFooterTapGestureRecognizer()
+        label.addGestureRecognizer(gesture)
+
+        gesture.point = CGPoint(x: 299, y: label.bounds.midY)
+        sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
+        gesture.point = CGPoint(x: 3, y: 79)
+        sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
+        XCTAssertTrue(openedURLs.isEmpty)
+
+        gesture.point = CGPoint(x: 3, y: label.bounds.midY)
+        sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
+        XCTAssertEqual(openedURLs, [url])
+    }
+
     func test_cardHeight_growsWithAWrappedTitle() {
         let sut = UTIFooterCardView()
 
@@ -356,7 +397,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: title,
                          subtitle: subtitle,
                          primaryAction: primaryAction,
-                         isDismissible: isDismissible)
+                         isDismissible: isDismissible,
+                         link: nil)
     }
 
     /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
@@ -367,7 +409,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "Now using 5.6 Luna",
                          subtitle: subtitle,
                          primaryAction: nil,
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 
     private func makeNotice(title: String = "Opus 4.8 uses limits up to 2-5x faster than basic models.") -> UTIFooterMessage {
@@ -375,7 +418,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: title,
                          subtitle: nil,
                          primaryAction: nil,
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 
     /// The blocked card as shipped: a short title beside a CTA wide enough to compress it, and no
@@ -385,7 +429,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "Daily limit reached",
                          subtitle: "Resets in 5 hours",
                          primaryAction: .init(title: "Start Using Weekly Limit"),
-                         isDismissible: false)
+                         isDismissible: false,
+                         link: nil)
     }
 
     private func makeIconlessMessage() -> UTIFooterMessage {
@@ -393,6 +438,15 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "90% of weekly limit",
                          subtitle: "Resets in 2 days",
                          primaryAction: .init(title: "Switch Model"),
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
+    }
+}
+
+private final class PositionedFooterTapGestureRecognizer: UITapGestureRecognizer {
+    var point: CGPoint = .zero
+
+    override func location(in view: UIView?) -> CGPoint {
+        point
     }
 }

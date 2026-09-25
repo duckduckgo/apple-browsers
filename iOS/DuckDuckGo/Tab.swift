@@ -136,6 +136,9 @@ public class Tab: NSObject, NSCoding {
     /// Indicates whether this tab is a fire tab or not.
     let fireTab: Bool
 
+    /// Fire Tab disclosure dismissal lasts only for this instance and is never archived or copied.
+    var hasDismissedAttachmentPrivacyNotice = false
+
     /// Indicates whether this tab was created from an external launch (URL or shortcut).
     /// Used to determine animation behavior for externally-launched tabs.
     var isExternalLaunch: Bool = false

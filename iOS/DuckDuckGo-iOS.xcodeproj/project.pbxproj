@@ -100,6 +100,7 @@
 		26B891EE56C54E4587912787 /* AIBoundaryNavigationDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8BCE5B1BA2A40AFBD9B2FDF /* AIBoundaryNavigationDecisionTests.swift */; };
 		275A9E842551836ECC9E6873 /* UnifiedToggleInputModelMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC9145E578E99B3052757F /* UnifiedToggleInputModelMenuTests.swift */; };
 		286810A915227B119AC60831 /* DefaultTogglePositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8AD06BCB81EA991F22DD66 /* DefaultTogglePositionTests.swift */; };
+		2916AAEC16AF4BDAA92C11EB /* UTIAttachmentPrivacyNoticeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B380F7B312BD42889613501F /* UTIAttachmentPrivacyNoticeTests.swift */; };
 		2A7D79B87FBB4C5C88A7611D /* PixelUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C1FD7423FDC4DE994AE2329 /* PixelUserAgent.swift */; };
 		2B5B218965D5E0474F9B4763 /* SubscriptionOnboardingVPNActivationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5AFF89CFA3BC33889AEAD0 /* SubscriptionOnboardingVPNActivationViewModelTests.swift */; };
 		2CCD716C578642B8BC760D55 /* NTPAfterIdleInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0742FD8DD5F46AB8243103F /* NTPAfterIdleInstrumentation.swift */; };
@@ -4161,6 +4162,7 @@
 		AEC7FF2261884003814DB9D0 /* OnboardingSearchAIToggle_dark.lottie */ = {isa = PBXFileReference; lastKnownFileType = file; path = OnboardingSearchAIToggle_dark.lottie; sourceTree = "<group>"; };
 		AF81E0C6EDC46254CF28AFCB /* OnboardingView+SearchExperienceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "OnboardingView+SearchExperienceContent.swift"; sourceTree = "<group>"; };
 		AFD7A450A1D2385D44C640F0 /* LaunchMetricsModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LaunchMetricsModel.swift; sourceTree = "<group>"; };
+		B380F7B312BD42889613501F /* UTIAttachmentPrivacyNoticeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIAttachmentPrivacyNoticeTests.swift; sourceTree = "<group>"; };
 		B4E5D6C7A8F9012345678901 /* AIChatTabChatHeaderViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabChatHeaderViewTests.swift; sourceTree = "<group>"; };
 		B50DAF4E2FBE4FD3007BFA26 /* EscapeHatchModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeHatchModelTests.swift; sourceTree = "<group>"; };
 		B54C59B62FA91DF30072ECCE /* DuckAIToggleDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIToggleDebugView.swift; sourceTree = "<group>"; };
@@ -10810,6 +10812,7 @@
 				FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */,
 				FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */,
 				FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */,
+				B380F7B312BD42889613501F /* UTIAttachmentPrivacyNoticeTests.swift */,
 				FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */,
 				FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */,
 			);
@@ -13389,6 +13392,7 @@
 				FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */,
 				FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */,
 				FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */,
+				2916AAEC16AF4BDAA92C11EB /* UTIAttachmentPrivacyNoticeTests.swift in Sources */,
 				FC7EF0040000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift in Sources */,
 				FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */,
 				AABB00010001000100010101 /* UnifiedToggleInputViewTests.swift in Sources */,

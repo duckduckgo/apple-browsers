@@ -419,13 +419,15 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Brings back a message dismissed with its close button, one whose CTA has been run, and the
-    /// high-usage notice, which is otherwise dismissed once per model for good.
+    /// Brings back a message dismissed with its close button, one whose CTA has been run, the
+    /// high-usage notice, which is otherwise dismissed once per model for good, and the attachment
+    /// privacy disclosure, which is otherwise suppressed for three weeks.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
         store.setDismissal(nil)
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
+        UTIAttachmentPrivacyNoticeDismissalStore().clearDismissal()
         status = "Dismissals cleared."
     }
 

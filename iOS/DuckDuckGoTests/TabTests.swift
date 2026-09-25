@@ -34,6 +34,16 @@ class TabTests: XCTestCase {
         static let differentUrl = URL(string: "https://aDifferentUrl.com")!
     }
 
+    func testFireTabAttachmentPrivacyDismissalIsNotArchived() throws {
+        let tab = Tab(fireTab: true)
+        tab.hasDismissedAttachmentPrivacyNotice = true
+        let data = try NSKeyedArchiver.archivedData(withRootObject: tab, requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+
+        XCTAssertTrue(restored.fireTab)
+        XCTAssertFalse(restored.hasDismissedAttachmentPrivacyNotice)
+    }
+
     func testWhenDesktopPropertyChangesThenObserversNotified() {
         let observer = MockTabObserver()
 

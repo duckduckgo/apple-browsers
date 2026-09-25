@@ -25,6 +25,21 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputAttachmentPrivacy)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testAddressBarRecentChatsUsesItsOwnRemoteKillSwitchAndIsEnabledByDefault() {
         let flag = FeatureFlag.aiChatAddressBarRecentChats
         guard case let .remoteReleasable(subfeature) = flag.source else {

@@ -341,6 +341,37 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testLearnMoreLeavingFloatingInputDoesNotReportAbandonment() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        firedPixelEvents = []
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"))
+
+        sut.openInNewTabLeavingCurrentSurface(url)
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+        XCTAssertFalse(firedPixelEvents.contains(.aiChatContextualFloatingInputDismissedWithoutSubmission))
+    }
+
+    @MainActor
+    func testVoiceChatLeavingFloatingInputDoesNotReportAbandonment() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        firedPixelEvents = []
+
+        sut.requestNewVoiceChatLeavingCurrentSurface()
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.newVoiceChatCallCount, 1)
+        XCTAssertFalse(firedPixelEvents.contains(.aiChatContextualFloatingInputDismissedWithoutSubmission))
+    }
+
+    @MainActor
     func testAttachSelectionPresentsFloatingInputAfterInactiveSheetWasDismissed() async throws {
         await sut.presentSheet(from: mockPresentingVC)
         let retainedSheet = try XCTUnwrap(sut.sheetViewController)

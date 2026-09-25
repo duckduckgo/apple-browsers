@@ -19,100 +19,108 @@
 
 import AIChat
 import Foundation
-import os.log
 import UIKit
+import os.log
 
 @MainActor
 protocol UTIFooterPresenting: AnyObject {
-    func applyFooterMessage(_ message: UTIFooterMessage?)
-    /// State-only drop of a stored-but-unapplied message; must not touch layout or animate.
+    func applyFooterMessages(_ messages: [UTIFooterItem])
     func clearPendingFooterMessage()
 }
 
-/// Presents the shared usage-limit view model on the Duck.ai input's footer slot. The view model
-/// decides what to say; this decides when the card can be on screen, and animates it.
 @MainActor
 final class UTIFooterController {
-
     typealias Animator = (_ changes: @escaping () -> Void) -> Void
 
-    private enum Constants {
-        static let duration: TimeInterval = 0.4
-        static let damping: CGFloat = 0.85
-    }
-
     weak var presenter: UTIFooterPresenting?
-
-    /// Reported when the spent-allowance state changes, so the input goes inert alongside the card.
     var onInputBlockChanged: ((Bool) -> Void)?
+    var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, AttachmentPrivacyPixel.Kind) -> Void)?
 
-    private let viewModel: DuckAiUsageWarningViewModel
+    private let viewModel: DuckAiUsageWarningViewModel?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
+    private let attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
+    private let highUsageMeasurement: DuckAiUsageWarningMeasurement
     private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
-
     private var isSuppressed = false
-    /// The message the user acted on, held so the CTA can retire one that carries no close button.
-    private var actedOnMessage: UTIFooterMessage?
-    /// What the current message is about, for the pixels. Kept in step with `currentMessage`.
-    private var currentExposure: DuckAiUsageWarningExposure?
-
-    private var modelSwitchNotice: CreateImageModelSwitchNotice?
-
+    private var isEditing = false
     private var isInputBlocked = false
+    private var actedOnMessage: UTIFooterMessage?
+    private var modelSwitchNotice: CreateImageModelSwitchNotice?
+    private var visibleIDs: Set<UTIFooterItem.ID> = []
+    private var retainedMessageIDs: Set<UTIFooterItem.ID>?
+    private var applicableIDs: Set<UTIFooterItem.ID> = []
+    private var applicableHighUsageModelID: String?
+    private var applicableWarning: DuckAiUsageWarning?
+    private var isDismissing = false
+    private var currentPrivacyKind: AttachmentPrivacyPixel.Kind?
+    private(set) var currentMessages: [UTIFooterItem] = []
+    var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
 
-    private(set) var currentMessage: UTIFooterMessage?
-
-    init(viewModel: DuckAiUsageWarningViewModel,
+    init(viewModel: DuckAiUsageWarningViewModel?,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
+         attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
+         highUsageMeasurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          createImagePixelFiring: CreateImagePixelFiring,
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
+        self.attachmentPrivacyNotice = attachmentPrivacyNotice
         self.mapper = mapper
         self.measurement = measurement
+        self.highUsageMeasurement = highUsageMeasurement
         self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
     }
 
-    /// Synchronous: a lookup in the already-loaded entries blob.
     func refresh() {
-        viewModel.refresh()
+        viewModel?.refresh()
         highUsageNotice?.refresh()
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller refresh → warning=\(self.viewModel.warning == nil ? "none" : "present", privacy: .public) suppressed=\(self.isSuppressed, privacy: .public)")
+        attachmentPrivacyNotice?.refresh()
         applyCurrentState()
     }
 
     func resetForPoseChange() {
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller reset for pose change")
-        // Not a dismissal: the next refresh re-reads the snapshot and the message comes back.
+        releaseWaitingMessages()
         measurement.inputSessionEnded()
-        viewModel.clear()
+        highUsageMeasurement.inputSessionEnded()
+        viewModel?.clear()
         highUsageNotice?.clear()
-        currentMessage = nil
-        currentExposure = nil
+        attachmentPrivacyNotice?.clear()
+        currentMessages = []
+        applicableIDs = []
+        applicableHighUsageModelID = nil
+        applicableWarning = nil
+        visibleIDs = []
+        currentPrivacyKind = nil
         updateInputBlock()
-        // Keeps the view's copy in lockstep — otherwise a later refresh that resolves to no
-        // warning no-ops (nil == nil) and the view resurrects the stale card on the next expand.
         presenter?.clearPendingFooterMessage()
     }
 
     func setSuppressed(_ suppressed: Bool) {
         guard isSuppressed != suppressed else { return }
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller suppressed=\(suppressed, privacy: .public)")
+        releaseWaitingMessages()
         isSuppressed = suppressed
-        // Editing a previous prompt, or leaving Duck.ai mode, settles what the user did about the message.
         if suppressed {
             measurement.inputSessionEnded()
+            highUsageMeasurement.inputSessionEnded()
         }
         applyCurrentState()
     }
 
+    func setEditing(_ editing: Bool) {
+        guard isEditing != editing else { return }
+        releaseWaitingMessages()
+        isEditing = editing
+        applyCurrentState()
+    }
+
     func showModelSwitchNotice(_ notice: CreateImageModelSwitchNotice) {
+        releaseWaitingMessages()
         modelSwitchNotice = notice
         applyCurrentState()
     }
@@ -123,63 +131,82 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    /// The user closing the card. A model switch is not a usage warning. It spends neither the
-    /// warning's dismissal record nor its pixel.
-    func dismissCurrent() {
-        if modelSwitchNotice != nil {
+
+    func dismiss(_ id: UTIFooterItem.ID) {
+        guard visibleIDs.contains(id), currentMessages.first(where: { $0.id == id })?.message.isDismissible == true else { return }
+        beginDismissal()
+        defer { finishDismissal() }
+        switch id {
+        case .outOfUsage: return
+        case .attachmentPrivacy:
+            if let currentPrivacyKind { onAttachmentPrivacyEvent?(.dismissed, currentPrivacyKind) }
+            attachmentPrivacyNotice?.dismissCurrent()
+        case .modelSwitch:
             modelSwitchNotice = nil
             createImagePixelFiring.modelSwitchNoticeDismissed()
-            applyCurrentState()
-            return
+        case .usageWarning:
+            measurement.warningDismissed()
+            viewModel?.dismiss()
+        case .highUsage:
+            highUsageMeasurement.warningDismissed()
+            highUsageNotice?.dismissCurrent()
         }
-        measurement.warningDismissed()
-        retireCurrent()
     }
 
-    /// The card entering or leaving the footer slot. Only entering is an impression: the exposure
-    /// outlives the card, so a prompt sent after a dismissal still belongs to the message.
-    func footerVisibilityChanged(isVisible: Bool) {
-        guard isVisible, let exposure = currentExposure else { return }
-        measurement.cardBecameVisible(exposure)
+
+    func footerVisibilityChanged(visible ids: [UTIFooterItem.ID]) {
+        let next = Set(ids).intersection(currentMessages.map(\.id))
+        let entered = next.subtracting(visibleIDs)
+        visibleIDs = next
+        if !next.contains(.attachmentPrivacy) { currentPrivacyKind = nil }
+        if entered.contains(.attachmentPrivacy) {
+            currentPrivacyKind = attachmentPrivacyNotice?.kind
+            if let currentPrivacyKind { onAttachmentPrivacyEvent?(.shown, currentPrivacyKind) }
+        }
+        if !next.isDisjoint(with: [.usageWarning, .outOfUsage]), let warning = viewModel?.warning {
+            measurement.cardBecameVisible(DuckAiUsageWarningExposure(warning: warning))
+        }
+        if next.contains(.highUsage), let notice = highUsageNotice?.notice {
+            highUsageMeasurement.cardBecameVisible(DuckAiUsageWarningExposure(notice: notice))
+        }
+    }
+
+    func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
+        guard id == .attachmentPrivacy, visibleIDs.contains(id), let currentPrivacyKind else { return }
+        onAttachmentPrivacyEvent?(.learnMoreTapped, currentPrivacyKind)
     }
 
     func recordPromptSubmitted() {
         measurement.promptSubmitted()
+        highUsageMeasurement.promptSubmitted()
+        modelSwitchNotice = nil
+        applyCurrentState()
     }
 
-    /// A switch from the bar's picker: always reported, but it only retires the message when it is the
-    /// step down the message asked for. The card's own CTA reports and retires itself.
     func userSwitchedModel(from previousModelId: String?, to modelId: String) {
         measurement.modelSwitched()
-        viewModel.userSwitchedModel(from: previousModelId, to: modelId)
+        highUsageMeasurement.modelSwitched()
+        viewModel?.userSwitchedModel(from: previousModelId, to: modelId)
+        highUsageNotice?.refresh()
         applyCurrentState()
     }
 
-    func performPrimaryAction() {
-        guard let message = currentMessage, message.primaryAction != nil else { return }
 
-        if let cta = Self.cta(for: viewModel.warning?.action) {
-            measurement.ctaTapped(cta)
+    func performPrimaryAction(_ id: UTIFooterItem.ID) {
+        guard id == .usageWarning || id == .outOfUsage, visibleIDs.contains(id),
+              let message = currentMessages.first(where: { $0.id == id })?.message,
+              message.primaryAction != nil else { return }
+        if id == .usageWarning { beginDismissal() }
+        defer {
+            if id == .usageWarning {
+                finishDismissal()
+            } else {
+                applyCurrentState()
+            }
         }
-        let switchesModel = currentActionSwitchesModel
-        viewModel.performAction()
-        // The upsell leaves the user just as blocked, so only a switch retires its message.
-        guard switchesModel else { return applyCurrentState() }
-
-        actedOnMessage = message
-        retireCurrent()
-    }
-
-    /// Spends the message's own dismissal record without reporting a close: also how a taken CTA
-    /// retires a card that carries no close button.
-    private func retireCurrent() {
-        // The two dismissals are recorded separately, so each message spends only its own.
-        if viewModel.warning != nil {
-            viewModel.dismiss()
-        } else {
-            highUsageNotice?.dismissCurrent()
-        }
-        applyCurrentState()
+        if let cta = Self.cta(for: viewModel?.warning?.action) { measurement.ctaTapped(cta) }
+        viewModel?.performAction()
+        if viewModel?.hasActedOnCurrentNotice == true { actedOnMessage = message }
     }
 
     private static func cta(for action: DuckAiUsageAction?) -> DuckAiUsageWarningMeasurement.CTA? {
@@ -190,87 +217,137 @@ final class UTIFooterController {
         }
     }
 
-    private var currentActionSwitchesModel: Bool {
-        switch viewModel.warning?.action {
-        case .switchToModel, .switchToFreeModel: return true
-        default: return false
-        }
+    private func beginDismissal() {
+        retainedMessageIDs = Set(currentMessages.map(\.id))
+        isDismissing = true
+    }
+
+    private func finishDismissal() {
+        applyCurrentState()
+        isDismissing = false
+    }
+
+    private func releaseWaitingMessages() {
+        guard !isDismissing else { return }
+        retainedMessageIDs = nil
     }
 
     private func applyCurrentState() {
         updateInputBlock()
-        let card = resolveCard()
-        let message = card?.message
-        guard message != currentMessage else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller no-op: message unchanged (\(message == nil ? "nil" : "visible", privacy: .public))")
-            return
+        let applicable = applicableMessages()
+        let nextIDs = Set(applicable.map(\.id))
+        let endedVisibleMessage = !applicableIDs.subtracting(nextIDs).isDisjoint(with: currentMessages.map(\.id))
+        let highUsageModelID = highUsageNotice?.notice?.modelId
+        let warning = nextIDs.isDisjoint(with: [.usageWarning, .outOfUsage]) ? nil : viewModel?.warning
+        let newWarning = warning != nil && (warning?.message != applicableWarning?.message || warning?.window != applicableWarning?.window)
+        if !nextIDs.subtracting(applicableIDs).isEmpty || endedVisibleMessage || newWarning ||
+            (highUsageModelID != nil && highUsageModelID != applicableHighUsageModelID) {
+            releaseWaitingMessages()
         }
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] controller applying: \(message?.title ?? "nil", privacy: .public)")
-        currentMessage = message
-        // Set before the presenter runs: applying can reveal the card synchronously, and the
-        // impression that reports needs the exposure it belongs to.
-        currentExposure = card.flatMap(\.exposure)
-        animator { [weak self] in
-            self?.presenter?.applyFooterMessage(message)
-        }
+        applicableIDs = nextIDs
+        applicableHighUsageModelID = highUsageModelID
+        applicableWarning = warning
+        let eligible = retainedMessageIDs.map { retained in applicable.filter { retained.contains($0.id) } } ?? applicable
+        let messages = isSuppressed ? [] : UTIFooterItem.visible(from: eligible, isEditing: isEditing)
+        guard messages != currentMessages else { return }
+        currentMessages = messages
+        visibleIDs.formIntersection(messages.map(\.id))
+        if !visibleIDs.contains(.attachmentPrivacy) { currentPrivacyKind = nil }
+        animator { [weak self] in self?.presenter?.applyFooterMessages(messages) }
     }
 
     private func updateInputBlock() {
-        let blocked = !isSuppressed && viewModel.warning?.blocksInput == true
+        let blocked = !isSuppressed && !isEditing && viewModel?.warning?.blocksInput == true
         guard blocked != isInputBlocked else { return }
         isInputBlocked = blocked
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] input blocked=\(blocked, privacy: .public)")
         onInputBlockChanged?(blocked)
     }
 
-    private struct ResolvedCard {
-        let message: UTIFooterMessage
-        /// `nil` for a card that is not a usage warning, so it reports no usage-warning pixel.
-        let exposure: DuckAiUsageWarningExposure?
-    }
-
-    /// One slot: the model switch outranks an actionable warning, which outranks the informational
-    /// notice.
-    private func resolveCard() -> ResolvedCard? {
-        guard !isSuppressed else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] nothing to show: suppressed (editing or Search mode)")
-            return nil
+    private func applicableMessages() -> [UTIFooterItem] {
+        var items: [UTIFooterItem] = []
+        if attachmentPrivacyNotice?.isPresented == true {
+            items.append(.init(id: .attachmentPrivacy, message: mapper.attachmentPrivacyMessage()))
         }
-        // The model switch is something the app just did to the user's selection, so it outranks a
-        // usage warning, which stays available once the notice is gone. It carries no CTA, so the
-        // acted-on check never applies to it.
-        if let modelSwitchNotice {
-            return ResolvedCard(message: mapper.message(for: modelSwitchNotice), exposure: nil)
+        if let modelSwitchNotice { items.append(.init(id: .modelSwitch, message: mapper.message(for: modelSwitchNotice))) }
+        if let warning = viewModel?.warning {
+            let message = mapper.message(for: warning)
+            if viewModel?.hasActedOnCurrentNotice != true || message != actedOnMessage {
+                items.append(.init(id: warning.blocksInput ? .outOfUsage : .usageWarning, message: message))
+            }
         }
-        if let warning = viewModel.warning {
-            guard let message = unlessActedOn(mapper.message(for: warning)) else { return nil }
-            return ResolvedCard(message: message, exposure: DuckAiUsageWarningExposure(warning: warning))
-        }
-        if let notice = highUsageNotice?.notice {
-            guard let message = unlessActedOn(mapper.message(for: notice)) else { return nil }
-            return ResolvedCard(message: message, exposure: DuckAiUsageWarningExposure(notice: notice))
-        }
-        return nil
-    }
-
-    /// Releases as soon as the resolver produces a different message, so the next rung still shows,
-    /// and once the acted-on record is gone, so clearing it is not undone by this copy.
-    private func unlessActedOn(_ message: UTIFooterMessage) -> UTIFooterMessage? {
-        guard viewModel.hasActedOnCurrentNotice, message == actedOnMessage else { return message }
-        return nil
+        if let notice = highUsageNotice?.notice { items.append(.init(id: .highUsage, message: mapper.message(for: notice))) }
+        return items
     }
 
     static let springAnimator: Animator = { changes in
-        guard !UIAccessibility.isReduceMotionEnabled else {
-            changes()
-            return
+        guard !UIAccessibility.isReduceMotionEnabled else { return changes() }
+        UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85,
+                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: changes)
+    }
+}
+
+// MARK: - Attachment privacy notice
+
+/// Resolves the disclosure from valid attachments and the expiring dismissal record.
+@MainActor
+final class UTIFooterAttachmentPrivacyNoticeSource {
+
+    enum DismissalScope {
+        case normal
+        case fireTab(Tab?)
+    }
+
+    private let dismissalScope: () -> DismissalScope
+    private let attachmentKind: () -> AttachmentPrivacyPixel.Kind?
+    private let isEnabled: () -> Bool
+    private let dismissalStore: UTIAttachmentPrivacyNoticeDismissalStoring
+    private let dateProvider: () -> Date
+
+    private(set) var isPresented = false
+    private(set) var kind: AttachmentPrivacyPixel.Kind?
+
+    init(attachmentKind: @escaping () -> AttachmentPrivacyPixel.Kind?,
+         isEnabled: @escaping () -> Bool,
+         dismissalScope: @escaping () -> DismissalScope = { .normal },
+         dismissalStore: UTIAttachmentPrivacyNoticeDismissalStoring = UTIAttachmentPrivacyNoticeDismissalStore(),
+         dateProvider: @escaping () -> Date = Date.init) {
+        self.dismissalScope = dismissalScope
+        self.attachmentKind = attachmentKind
+        self.isEnabled = isEnabled
+        self.dismissalStore = dismissalStore
+        self.dateProvider = dateProvider
+    }
+
+    func refresh() {
+        kind = attachmentKind()
+        isPresented = isEnabled() && kind != nil && !isDismissed
+        Logger.duckAIUsageWarnings.debug("[AttachPrivacy] presented=\(self.isPresented, privacy: .public) suppressed=\(self.isDismissed, privacy: .public)")
+    }
+
+    func dismissCurrent() {
+        switch dismissalScope() {
+        case .normal:
+            dismissalStore.recordDismissal(at: dateProvider())
+        case .fireTab(let tab):
+            tab?.hasDismissedAttachmentPrivacyNotice = true
         }
-        UIView.animate(withDuration: Constants.duration,
-                       delay: 0,
-                       usingSpringWithDamping: Constants.damping,
-                       initialSpringVelocity: 0,
-                       options: [.beginFromCurrentState, .allowUserInteraction],
-                       animations: changes)
+        isPresented = false
+        Logger.duckAIUsageWarnings.debug("[AttachPrivacy] dismissed by user")
+    }
+
+    /// Teardown: drops the card without recording a dismissal.
+    func clear() {
+        isPresented = false
+    }
+
+    private var isDismissed: Bool {
+        switch dismissalScope() {
+        case .normal:
+            guard let dismissedAt = dismissalStore.dismissedAt else { return false }
+            return dateProvider().timeIntervalSince(dismissedAt) < UTIAttachmentPrivacyNoticeDismissalStore.suppressionWindow
+        case .fireTab(let tab):
+            return tab?.hasDismissedAttachmentPrivacyNotice == true
+        }
     }
 }
 

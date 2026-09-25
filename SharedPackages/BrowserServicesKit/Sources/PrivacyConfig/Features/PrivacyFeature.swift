@@ -388,6 +388,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
 
+    /// Kill switch for the native input attachment privacy disclosure.
+    case unifiedToggleInputAttachmentPrivacy
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 

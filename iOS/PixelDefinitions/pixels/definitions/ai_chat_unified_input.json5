@@ -597,5 +597,47 @@
         "triggers": ["other"],
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_attachment_privacy_image_shown": {
+        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input. The first valid attachment was an image when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_image_dismissed": {
+        "description": "Fires when the user dismisses the attachment privacy card in the Unified Toggle Input. The first valid attachment was an image when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_image_learn_more_tapped": {
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment was an image when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_file_shown": {
+        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input. The first valid attachment was a file when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_file_dismissed": {
+        "description": "Fires when the user dismisses the attachment privacy card in the Unified Toggle Input. The first valid attachment was a file when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_file_learn_more_tapped": {
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment was a file when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
     }
 }

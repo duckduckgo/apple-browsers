@@ -117,6 +117,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Session state - single source of truth for frontend and chip state
     let sessionState: AIChatContextualChatSessionState
+    var tabProvider: () -> Tab? = { nil }
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -536,17 +537,27 @@ final class AIChatContextualSheetCoordinator {
 
     /// Voice chat replaces whatever is on screen, and the sheet may not be the surface showing it.
     func requestNewVoiceChatLeavingCurrentSurface() {
-        let requestVoiceChat = { [weak self] in
+        leaveCurrentSurface { [weak self] in
             guard let self else { return }
-            self.delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
+            delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
         }
+    }
+
+    func openInNewTabLeavingCurrentSurface(_ url: URL) {
+        leaveCurrentSurface { [weak self] in
+            guard let self else { return }
+            delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+        }
+    }
+
+    private func leaveCurrentSurface(perform action: @escaping () -> Void) {
         if floatingInputViewController != nil {
-            dismissFloatingInput()
-            requestVoiceChat()
+            dismissFloatingInput(.systemTeardown)
+            action()
         } else if let sheetViewController {
-            sheetViewController.dismiss(animated: true, completion: requestVoiceChat)
+            sheetViewController.dismiss(animated: true, completion: action)
         } else {
-            requestVoiceChat()
+            action()
         }
     }
 
@@ -838,7 +849,8 @@ private extension AIChatContextualSheetCoordinator {
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
             start: start,
-            usageLimitsStore: duckAiUsageLimitsStore
+            usageLimitsStore: duckAiUsageLimitsStore,
+            tabProvider: { [weak self] in self?.tabProvider() }
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
@@ -882,6 +894,9 @@ private extension AIChatContextualSheetCoordinator {
         host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
+        }
+        host.onOpenInNewTabRequested = { [weak self] url in
+            self?.openInNewTabLeavingCurrentSurface(url)
         }
         self.persistentUTIHost = host
         return host

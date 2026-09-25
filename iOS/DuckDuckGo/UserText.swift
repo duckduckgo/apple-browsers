@@ -2542,6 +2542,11 @@ public struct UserText {
     public static let utiDuckAIWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
     public static let utiDuckAIWarningsHighUsageModel = NSLocalizedString("aichat.usageWarnings.highUsageModel", value: "%@ uses limits up to 2-5x faster than basic models.", comment: "Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8'")
 
+    // MARK: - Duck.ai Terms of Service (unified toggle input footer)
+
+    public static let duckAITermsOfServiceDisclaimer = NSLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By sending a message, you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; sending a message accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimerLink = NSLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
+
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 
     public static let utiCreateImageModelSwitchTitle = NSLocalizedString("aichat.createImage.modelSwitch.title", value: "Now using %@", comment: "Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna'")

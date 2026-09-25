@@ -522,6 +522,10 @@ public enum FeatureFlag: String {
     /// snapshot the web app writes into the reserved `usageLimits` native-storage entry.
     case utiDuckAIWarnings
 
+    /// Shows the Duck.ai Terms of Service disclaimer in the unified toggle input, where sending a
+    /// prompt accepts them, and tells the web app it can trust prompts accepted that way.
+    case duckAINativeTermsOfService
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
     case floatingUIAugust2026
 
@@ -780,6 +784,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .utiDuckAIWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
+        case .duckAINativeTermsOfService:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .onboardingDuckAIFlow:

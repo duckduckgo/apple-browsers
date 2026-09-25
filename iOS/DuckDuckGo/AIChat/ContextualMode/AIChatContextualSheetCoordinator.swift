@@ -883,6 +883,12 @@ private extension AIChatContextualSheetCoordinator {
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
         }
+        // Leaves the sheet the way the chat's own links do.
+        host.onOpenURLRequested = { [weak self] url in
+            guard let self else { return }
+            self.sheetViewController?.dismiss(animated: true)
+            self.delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+        }
         self.persistentUTIHost = host
         return host
     }

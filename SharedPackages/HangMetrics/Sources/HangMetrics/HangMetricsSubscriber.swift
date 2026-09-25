@@ -133,11 +133,18 @@ public enum HangMetricsPixelParameters {
 
 public enum HangMetricsPixel: PixelKit.Event {
 
+    public var namePrefix: PixelKitNamePrefix { .none }
+
     case hangBucket(minMs: Int, maxMs: Int, count: Int)
 
     public var name: String {
         switch self {
-        case .hangBucket: return "app-hangs_metrickit_hang-bucket"
+        case .hangBucket:
+#if os(macOS)
+            return "app-hangs_metrickit_hang-bucket_macos"
+#else
+            return "app-hangs_metrickit_hang-bucket"
+#endif
         }
     }
 

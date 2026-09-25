@@ -1654,7 +1654,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private struct Metrics {
-        static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
         /// Height of the address field when it is hosted inside the floating bottom toolbar, matching
         /// the 48pt search pill in the chrome spec.
@@ -1809,7 +1808,7 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
 extension DefaultOmniBarView {
     static func activateItemSizeConstraints(for item: UIView) {
         item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
-        item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
+        item.widthAnchor.constraint(equalToConstant: OmniBarMetrics.itemSize).isActive = true
     }
 
     static func setUpCommonProperties(for button: UIButton) {

@@ -110,6 +110,7 @@ class AutoClearHandlerTests: XCTestCase {
         fireViewModel = nil
         mockAlertPresenter = nil
         mockStateRestoration = nil
+        burnOnExitCalls = []
         super.tearDown()
     }
 

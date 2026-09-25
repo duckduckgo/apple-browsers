@@ -92,6 +92,9 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         viewModel = nil
         windowControllersManager = nil
         fireCoordinator = nil
+        onGotItPressed = nil
+        onDismiss = nil
+        onFireButtonPressed = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -124,7 +127,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         window.isVisible = true
 
         viewModel.tryFireButton()
-
         await fulfillment(of: [sheetPresented], timeout: 5)
 
         XCTAssertTrue(onFireButtonPressedCalled)

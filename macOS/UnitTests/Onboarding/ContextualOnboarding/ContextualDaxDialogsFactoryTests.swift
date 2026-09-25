@@ -360,7 +360,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // WHEN
         window.isVisible = true
         view.viewModel.tryFireButton()
-
         await fulfillment(of: [sheetPresented], timeout: 5)
 
         // THEN

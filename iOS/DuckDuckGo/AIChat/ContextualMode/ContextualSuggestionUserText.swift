@@ -22,11 +22,6 @@ import FoundationExtensions
 
 extension UserText {
 
-    public static func aiChatSuggestionAskAboutSearchLabel(_ query: String) -> String {
-        let message = NotLocalizedString("duckai.suggestion.ask-about-search.label", value: "\"%@\"", comment: "Suggested prompt chip offered in a Duck.ai chat while search results are on screen, showing the search in quotes. Tapping sends it to the chat as a prompt. %@ is what the user searched for. A string rather than quotes in code because quotation marks differ by locale. Not localized while the copy is in review.")
-        return message.format(arguments: query)
-    }
-
     public static let aiChatSuggestionSummarizePageLabel = NSLocalizedString("duckai.suggestion.summarize-page.label", value: "Summarize this page", comment: "Suggested prompt chip: summarize the current page")
     public static let aiChatSuggestionSummarizePagePrompt = NSLocalizedString("duckai.suggestion.summarize-page.prompt", value: "Summarize this page.", comment: "Suggested prompt submitted text: summarize the current page")
 

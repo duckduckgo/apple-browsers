@@ -20,6 +20,14 @@ import Foundation
 import Subscription
 
 /// Represents the origin point from which the user enters the subscription funnel in the macOS app.
+///
+/// Every case's raw value must also appear in the `subscriptionFunnelOrigin` entry of
+/// `macOS/PixelDefinitions/pixels/params_dictionary.json5` — keep the two lists in sync when adding,
+/// renaming, or removing a case here.
+///
+/// Privacy note: this is a product funnel-step identifier, not an ad-attribution channel — never add
+/// an ad-campaign or marketing-attribution origin as a case here (those are a distinct concept,
+/// handled by AttributedMetric's install-origin parsing).
 enum SubscriptionFunnelOrigin: String {
     /// User entered the funnel via the App Settings screen.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1210468753388392

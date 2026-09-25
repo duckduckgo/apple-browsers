@@ -28,7 +28,9 @@ final class SitePermissionSecurityOriginTests: XCTestCase {
             ("http://example.com", "http://example.com:80", true),
             ("https://example.com", "http://example.com", false),
             ("https://example.com", "https://example.com:444", false),
-            ("https://example.com", "https://www.example.com", false)
+            ("https://example.com", "https://www.example.com", false),
+            ("https://a.example.com", "https://b.example.com", false),
+            ("https://example.com/path?query=one#first", "https://example.com/other?query=two#second", true)
         ]
 
         for (first, second, expectedEquality) in scenarios {
@@ -50,6 +52,8 @@ final class SitePermissionSecurityOriginTests: XCTestCase {
             ("http://128.0.0.1", false),
             ("http://[::2]", false),
             ("http://localhost.example.com", false),
+            ("http://notlocalhost", false),
+            ("http://127.0.0.1.example.com", false),
             ("ftp://localhost", false)
         ]
 
@@ -63,7 +67,7 @@ final class SitePermissionSecurityOriginTests: XCTestCase {
     }
 
     func testWhenURLHasNoHostThenNoOriginIsProduced() throws {
-        for urlString in ["about:blank", "file:///example", "relative/path"] {
+        for urlString in ["about:blank", "file:///example", "relative/path", "data:text/html,example", "blob:https://example.com/id"] {
             XCTAssertNil(SitePermissionSecurityOrigin(try XCTUnwrap(URL(string: urlString))))
         }
     }

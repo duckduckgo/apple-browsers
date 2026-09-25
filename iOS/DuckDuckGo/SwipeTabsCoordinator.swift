@@ -95,6 +95,7 @@ class SwipeTabsCoordinator: NSObject {
     private let liveTabControllerProvider: (Tab) -> TabViewController?
     private let inputStateProvider: (Tab) -> TabInputState
     private let isPaidAIChatEnabledProvider: () -> Bool
+    private let allowsSubscriptionUpsellProvider: () -> Bool
     private let hasInlineSearchInput: (Tab?) -> Bool
 
     let selectTab: (Tab) -> Void
@@ -129,6 +130,7 @@ class SwipeTabsCoordinator: NSObject {
          liveTabControllerProvider: @escaping (Tab) -> TabViewController?,
          inputStateProvider: @escaping (Tab) -> TabInputState,
          isPaidAIChatEnabledProvider: @escaping () -> Bool,
+         allowsSubscriptionUpsellProvider: @escaping () -> Bool,
          hasInlineSearchInput: @escaping (Tab?) -> Bool = { _ in false },
          selectTab: @escaping (Tab) -> Void,
          newTab: @escaping () -> Void,
@@ -142,6 +144,7 @@ class SwipeTabsCoordinator: NSObject {
         self.liveTabControllerProvider = liveTabControllerProvider
         self.inputStateProvider = inputStateProvider
         self.isPaidAIChatEnabledProvider = isPaidAIChatEnabledProvider
+        self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.hasInlineSearchInput = hasInlineSearchInput
         self.selectTab = selectTab
         self.newTab = newTab
@@ -663,7 +666,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             height: headerHeight
         )
         container.addSubview(header)
-        header.configure(isSubscriptionActive: isPaidAIChatEnabledProvider())
+        header.configure(isSubscriptionActive: isPaidAIChatEnabledProvider(),
+                         allowsSubscriptionUpsell: allowsSubscriptionUpsellProvider())
         header.setTabIconState(
             count: tabsModel.count,
             hasUnread: tabsModel.hasUnread,

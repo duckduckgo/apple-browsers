@@ -101,6 +101,7 @@ struct PreferencesWebsitePermissionDomainGroupView: View {
                 onDecisionChanged: { onDecisionChanged(row.id, $0) },
                 onRemove: { onRemove(row.id) }
             )
+            .layoutPriority(1)
         }
         .frame(height: Constants.permissionHeight)
         .accessibilityIdentifier(row.accessibilityIdentifier)

@@ -20,7 +20,7 @@ import Foundation
 import ObjectiveC
 import WebKit
 #if _FRAME_HANDLE_ENABLED
-import Navigation
+import DDGNavigation
 #endif
 
 /// Mock implementation for creating WKFrameInfo instances in tests.

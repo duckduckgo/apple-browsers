@@ -95,11 +95,12 @@ enum FloatingGlassAppearancePolicy {
     static func interfaceStyle(isFireMode: Bool,
                                traitCollection: UITraitCollection,
                                pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
-        if isFireMode || traitCollection.userInterfaceStyle == .dark {
+        if isFireMode {
             return .dark
         }
+        // Follow the page in both themes: forcing dark glass over a light page leaves its white icons washed out.
         guard let pageBackgroundColor else {
-            return .light
+            return traitCollection.userInterfaceStyle == .dark ? .dark : .light
         }
         let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
         return resolvedColor.brightnessPercentage < 50 ? .dark : .light
@@ -1869,19 +1870,16 @@ class MainViewController: UIViewController {
 
     private func chromeAlpha(for percent: CGFloat) -> CGFloat {
         guard isFloatingCapsuleActive, !UIAccessibility.isReduceMotionEnabled else { return percent }
-        let handoffStart = FloatingDomainCapsuleController.handoffStart
-        let halfWidth = FloatingDomainCapsuleController.handoffBandHalfWidth
-        return rampedProgress(percent, from: handoffStart - halfWidth, to: handoffStart + halfWidth)
+        return FloatingUILayoutPolicy.rampedProgress(
+            percent,
+            from: FloatingDomainCapsuleController.handoffStart,
+            to: FloatingDomainCapsuleController.alphaHandoffEnd(for: appSettings.currentAddressBarPosition)
+        )
     }
 
     private func toolbarAlpha(for percent: CGFloat) -> CGFloat {
         guard viewCoordinator.isOmnibarInToolbar else { return percent }
         return chromeAlpha(for: percent)
-    }
-
-    private func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
-        guard end > start else { return percent < end ? 0 : 1 }
-        return ((percent - start) / (end - start)).clamped(to: 0...1)
     }
 
     private func currentTabSelectionAlpha(for chromeAlpha: CGFloat) -> CGFloat {
@@ -4697,14 +4695,11 @@ extension MainViewController: BrowserChromeDelegate {
         static let duration = 0.1
 
         /// Longer than `duration` so the floating capsule morph is legible; the pill grows/moves into
-        static let morphCollapseDuration = 0.25
+        /// `smoothstep` rather than `easeOutCubic`: cubic front-loads its motion into the first frames,
+        /// which used to compress almost all of the (now much wider) bar<->pill crossfade into 2-3
+        /// frames; smoothstep spreads it evenly so a fast scroll still renders several blended frames.
+        static let morphCollapseDuration = 0.30
         static let morphExpandDuration = 0.34
-
-        static let morphCollapseCurve = ChromeMorphAnimator.Curve.easeOutCubic
-
-        static let morphExpandCurve = ChromeMorphAnimator.Curve.spring(dampingRatio: 0.82, naturalFrequency: 8.84)
-
-        static let minMorphDurationScale: CGFloat = 0.55
 
         /// The top address bar collapses into the pill a little slower than the bottom one, so the
         /// transformation reads as deliberate rather than a snap.
@@ -4741,12 +4736,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
-        // Start any morph scrub from where the chrome visually is (a scrub already in flight, or the
-        // last committed fraction) so an interruption resumes smoothly rather than snapping.
-        let fromPercent = chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
         lastChromeVisibilityPercent = percent
-        // Any prior scrub is superseded by this command; the new state is applied below.
-        chromeMorphAnimator.cancel()
 
         if percent < 1 {
             if isAddressBarFocused {
@@ -4762,31 +4752,15 @@ extension MainViewController: BrowserChromeDelegate {
 
         // The floating capsule morph geometry and its chrome-alpha handoff are non-linear in
         // `percent`, so a single `UIView.animate` (which only interpolates the endpoints) skips the
-        // morph and the bars pop/slide in. Replay the exact per-frame state the scroll path applies
-        // by scrubbing `percent` with a display link instead.
+        // morph and the bars pop/slide in. Drive `percent` frame by frame instead.
         let useMorphScrub = animated
             && isFloatingCapsuleActive
             && !UIAccessibility.isReduceMotionEnabled
-            && abs(fromPercent - percent) > 0.001
 
         if useMorphScrub {
-            let isExpanding = percent > fromPercent
-            let durationScale = max(ChromeAnimationConstants.minMorphDurationScale, abs(percent - fromPercent))
-            let isTopAddressBar = appSettings.currentAddressBarPosition == .top
-            let collapseDuration = isTopAddressBar
-                ? ChromeAnimationConstants.morphCollapseDuration * ChromeAnimationConstants.topMorphCollapseDurationMultiplier
-                : ChromeAnimationConstants.morphCollapseDuration
-            let baseDuration = isExpanding
-                ? ChromeAnimationConstants.morphExpandDuration
-                : collapseDuration
-
-            chromeMorphAnimator.animate(
-                from: fromPercent,
-                to: percent,
-                duration: animationDuration ?? baseDuration * Double(durationScale),
-                curve: isExpanding
-                    ? ChromeAnimationConstants.morphExpandCurve
-                    : ChromeAnimationConstants.morphCollapseCurve,
+            chromeMorphAnimator.setTarget(
+                percent,
+                fullTraversalDuration: animationDuration.map(Double.init),
                 onProgress: { [weak self] progress in
                     guard let self else { return }
                     self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
@@ -4794,16 +4768,19 @@ extension MainViewController: BrowserChromeDelegate {
                 },
                 onComplete: { [weak self] in
                     guard let self else { return }
-                    self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
+                    let settled = self.lastChromeVisibilityPercent
+                    self.applyBarsVisibilityState(settled, postChromeVisibilityNotification: settled == 0 || settled == 1)
                     self.view.layoutIfNeeded()
                 })
         } else if animated {
+            chromeMorphAnimator.jump(to: percent)
             self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
                 self.view.layoutIfNeeded()
             }
         } else {
+            chromeMorphAnimator.jump(to: percent)
             applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
 
             if isFloatingUIEnabled, percent > 0, percent < 1 {
@@ -4829,7 +4806,10 @@ extension MainViewController: BrowserChromeDelegate {
         }
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
-            ? ((1 - percent) / (1 - FloatingDomainCapsuleController.handoffStart)).clamped(to: 0...1)
+            ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
+                barsVisibilityPercent: percent,
+                collapseStart: FloatingDomainCapsuleController.handoffStart
+              )
             : 0
         let panelHeight = viewCoordinator.toolbar.setButtonRowCollapseProgress(
             buttonCollapseProgress,
@@ -5021,17 +5001,18 @@ extension MainViewController: BrowserChromeDelegate {
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
-    private var floatingTopCapsuleObscuredHeight: CGFloat {
+    private func floatingTopCapsuleObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
         guard appSettings.currentAddressBarPosition == .top,
               isFloatingCapsuleActive,
               let domain = currentFloatingDomainText(),
               !domain.isEmpty else {
             return 0
         }
-        return floatingDomainCapsuleController.restObscuredHeightFromScreenEdge(
-            for: .top,
+        return floatingDomainCapsuleController.obscuredHeightFromTop(
+            barsVisibilityPercent: barsVisibilityPercent,
             safeAreaInsets: view.safeAreaInsets,
-            expandedFrame: floatingBarExpandedFrame())
+            expandedFrame: floatingBarExpandedFrame(),
+            reduceMotion: UIAccessibility.isReduceMotionEnabled)
             + FloatingDomainCapsuleController.fixedElementClearance
     }
 
@@ -5087,7 +5068,7 @@ extension MainViewController: BrowserChromeDelegate {
             barsVisibilityPercent: barsVisibilityPercent,
             expandedChromeHeight: expandedChromeHeight,
             visibleChromeHeight: expandedChromeHeight * floatingTopChromeOnScreenFraction(for: barsVisibilityPercent),
-            topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight,
+            topCapsuleObscuredHeight: floatingTopCapsuleObscuredHeight(for: barsVisibilityPercent),
             safeAreaTop: safeAreaTop
         )
     }
@@ -5099,8 +5080,9 @@ extension MainViewController: BrowserChromeDelegate {
     /// Current visibility fraction of the chrome bars (1.0 = fully visible, 0.0 = hidden).
     /// We track the driven fraction directly rather than reading a container's alpha: with the
     /// floating capsule morph, `chromeAlpha(for:)` keeps the chrome alpha at 0 through the resize
-    /// band and only fades it in over `[handoffStart, 1]`, so container alpha no longer reflects the
-    /// real fraction mid-transition. Call sites that reapply visibility need the true fraction.
+    /// band and only fades it in over `[handoffStart, alphaHandoffEnd]`, so container alpha no longer
+    /// reflects the real fraction mid-transition. Call sites that reapply visibility need the true
+    /// fraction.
     var currentBarsVisibility: CGFloat {
         chromeMorphAnimator.isAnimating ? chromeMorphAnimator.currentValue : lastChromeVisibilityPercent
     }

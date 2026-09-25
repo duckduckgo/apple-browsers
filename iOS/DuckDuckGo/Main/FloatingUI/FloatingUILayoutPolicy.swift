@@ -51,6 +51,20 @@ enum FloatingUILayoutPolicy {
         return min(1, clampedPercent / handoffStart)
     }
 
+    /// Linear ramp of `percent` from 0 at `start` to 1 at `end`, clamped outside that range. Shared by
+    /// every bar<->pill crossfade (`chromeAlpha`, `pillAlpha`) so both halves of the fade always sum to 1.
+    static func rampedProgress(_ percent: CGFloat, from start: CGFloat, to end: CGFloat) -> CGFloat {
+        guard end > start else { return percent < end ? 0 : 1 }
+        return ((percent - start) / (end - start)).clamped(to: 0...1)
+    }
+
+    /// The bottom toolbar's button-row collapse progress, ramped over `[collapseStart, 1]`. The band
+    /// must stay wide: it carries a ~56pt height change, so a narrow one turns an ordinary unanimated
+    /// scroll frame into a visible jolt before the morph even starts.
+    static func toolbarButtonRowCollapseProgress(barsVisibilityPercent: CGFloat, collapseStart: CGFloat) -> CGFloat {
+        1 - rampedProgress(barsVisibilityPercent, from: collapseStart, to: 1)
+    }
+
     /// Height obscured by the visible bottom chrome, measured from the web view container's bottom edge
     /// (the screen bottom). The floating web view is resized up by this amount so a page `position: fixed`
     /// footer pins to the top of whatever is on screen at the bottom:

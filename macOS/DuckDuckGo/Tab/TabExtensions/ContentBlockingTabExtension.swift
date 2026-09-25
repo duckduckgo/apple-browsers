@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import ContentBlocking
 import Foundation
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import Subscription
 import TrackerRadarKit
@@ -102,7 +102,7 @@ final class ContentBlockingTabExtension: NSObject {
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
-    /// used by BSK: Navigation.DistributedNavigationDelegate
+    /// used by BSK: DDGNavigation.DistributedNavigationDelegate
     var shouldDisableLongDecisionMakingChecks: Bool = false
     func disableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = true }
     func enableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = false }

@@ -21,7 +21,7 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
-@testable import Navigation
+@testable import DDGNavigation
 
 @testable import DuckDuckGo_Privacy_Browser
 

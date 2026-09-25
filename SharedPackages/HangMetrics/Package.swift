@@ -44,7 +44,8 @@ let package = Package(
             name: "HangMetricsTests",
             dependencies: [
                 "HangMetrics",
-                .product(name: "Persistence", package: "Persistence")
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PixelKit", package: "PixelKit")
             ])
     ]
 )

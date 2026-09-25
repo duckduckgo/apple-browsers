@@ -18,6 +18,7 @@
 
 import XCTest
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 @testable import HangMetrics
 
 final class HangMetricsSubscriberTests: XCTestCase {
@@ -26,11 +27,11 @@ final class HangMetricsSubscriberTests: XCTestCase {
     private let version = "7.100.0"
 
     private func makeSubscriber(store: KeyValueStoring,
-                                fired: @escaping (HangMetricsPixel) -> Void) -> HangMetricsSubscriber {
+                                pixelFiring: PixelKitMock) -> HangMetricsSubscriber {
         HangMetricsSubscriber(store: store,
                               currentAppVersion: version,
                               dateProvider: { self.now },
-                              fire: fired)
+                              pixelFiring: pixelFiring)
     }
 
     private func report(buckets: [HangHistogramBucket], endOffset: TimeInterval = -60) -> HangMetricsReport {
@@ -41,44 +42,47 @@ final class HangMetricsSubscriberTests: XCTestCase {
     }
 
     func testFiresOnePixelPerBucketWithRoundedParamsAndExactCount() {
-        var fired: [HangMetricsPixel] = []
-        let subscriber = makeSubscriber(store: MockKeyValueStore()) { fired.append($0) }
+        let pixelKit = PixelKitMock()
+        let subscriber = makeSubscriber(store: MockKeyValueStore(), pixelFiring: pixelKit)
 
         subscriber.process(reports: [report(buckets: [HangHistogramBucket(startMs: 123.4, endMs: 456.6, count: 17)])])
 
-        XCTAssertEqual(fired.count, 1)
-        XCTAssertEqual(fired.first?.name, "app-hangs_metrickit_hang-bucket")
-        XCTAssertEqual(fired.first?.parameters?[HangMetricsPixelParameters.minMs], "123")
-        XCTAssertEqual(fired.first?.parameters?[HangMetricsPixelParameters.maxMs], "457")
-        XCTAssertEqual(fired.first?.parameters?[HangMetricsPixelParameters.count], "17")
+        XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
+        let call = pixelKit.actualFireCalls.first
+        XCTAssertEqual(call?.pixel.name, "app-hangs_metrickit_hang-bucket")
+        XCTAssertEqual(call?.frequency, .standard)
+        XCTAssertEqual(call?.pixel.parameters?[HangMetricsPixelParameters.minMs], "123")
+        XCTAssertEqual(call?.pixel.parameters?[HangMetricsPixelParameters.maxMs], "457")
+        XCTAssertEqual(call?.pixel.parameters?[HangMetricsPixelParameters.count], "17")
     }
 
     func testFiresOncePerBucketRatherThanOncePerHang() {
-        var fired: [HangMetricsPixel] = []
-        let subscriber = makeSubscriber(store: MockKeyValueStore()) { fired.append($0) }
+        let pixelKit = PixelKitMock()
+        let subscriber = makeSubscriber(store: MockKeyValueStore(), pixelFiring: pixelKit)
 
         subscriber.process(reports: [report(buckets: [
             HangHistogramBucket(startMs: 0, endMs: 100, count: 40),
             HangHistogramBucket(startMs: 100, endMs: 500, count: 9)
         ])])
 
-        XCTAssertEqual(fired.count, 2)
-        XCTAssertEqual(fired.compactMap { $0.parameters?[HangMetricsPixelParameters.count] }, ["40", "9"])
+        XCTAssertEqual(pixelKit.actualFireCalls.count, 2)
+        XCTAssertEqual(pixelKit.actualFireCalls.compactMap { $0.pixel.parameters?[HangMetricsPixelParameters.count] },
+                       ["40", "9"])
     }
 
     func testPersistsMarkerAndSuppressesDuplicateDelivery() {
         let store = MockKeyValueStore()
-        var fired: [HangMetricsPixel] = []
-        let subscriber = makeSubscriber(store: store) { fired.append($0) }
+        let pixelKit = PixelKitMock()
+        let subscriber = makeSubscriber(store: store, pixelFiring: pixelKit)
 
         let r = report(buckets: [HangHistogramBucket(startMs: 1, endMs: 2, count: 3)])
         subscriber.process(reports: [r])
-        XCTAssertEqual(fired.count, 1)
+        XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
 
         // A fresh subscriber sharing the same store must not re-fire the same report.
-        fired.removeAll()
-        let subscriber2 = makeSubscriber(store: store) { fired.append($0) }
+        let pixelKit2 = PixelKitMock()
+        let subscriber2 = makeSubscriber(store: store, pixelFiring: pixelKit2)
         subscriber2.process(reports: [r])
-        XCTAssertTrue(fired.isEmpty)
+        XCTAssertTrue(pixelKit2.actualFireCalls.isEmpty)
     }
 }

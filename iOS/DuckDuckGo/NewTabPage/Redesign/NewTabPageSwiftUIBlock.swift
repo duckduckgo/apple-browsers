@@ -65,6 +65,9 @@ private struct NewTabPageBlockContent<Content: View>: View {
             .onPreferenceChange(NewTabPageBlockHeightKey.self) { _ in
                 onHeightChanged?()
             }
+            // UIKit can resize the host before SwiftUI finishes animating its content.
+            // Keep the block's top edge fixed throughout that height change.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
 

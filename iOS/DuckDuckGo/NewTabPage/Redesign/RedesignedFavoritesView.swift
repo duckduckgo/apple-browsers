@@ -78,7 +78,7 @@ struct RedesignedFavoritesView: View {
                     .buttonStyle(.plain)
                 }
             }
-
+            .clipped()
         }
     }
 }

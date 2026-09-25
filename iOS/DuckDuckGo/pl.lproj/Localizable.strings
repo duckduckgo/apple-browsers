@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Wypróbuj bezpłatnie";
+"action.title.vpn.free-trial-badge" = "Wypróbuj gratis";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blokuje inwazyjne mechanizmy śledzące przed ich załadowaniem, skutecznie eliminując reklamy, które opierają się na śledzeniu.";

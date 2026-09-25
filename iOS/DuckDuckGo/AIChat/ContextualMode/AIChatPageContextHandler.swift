@@ -349,7 +349,7 @@ private extension AIChatPageContextHandler {
             case .tooLarge:
                 Logger.aiChat.debug("[PageContext] Document over size ceiling - not attaching")
                 self.contextSubject.send(nil)
-                self.fireExtractionPixel(.prevented(PageContextExtractionOutcome.documentTooLargeCategory), trigger: trigger, latency: latency, contextType: .pdf)
+                self.fireExtractionPixel(.prevented(PageContextExtractionOutcome.documentTooLargeCategory), trigger: trigger, latency: latency)
             case .unavailable:
                 Logger.aiChat.debug("[PageContext] Document bytes unavailable")
                 self.contextSubject.send(nil)
@@ -386,6 +386,7 @@ private extension AIChatPageContextHandler {
     }
 
     /// `contextType` defaults to markdown: every page that isn't a document tab goes over as markdown.
+    /// Prevented outcomes ignore it - their `category` already names the page kind.
     func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
                              trigger: PageContextExtractionTrigger,
                              latency: PageContextExtractionLatencyBucket?,

@@ -731,10 +731,51 @@ final class PairingV2StateMachineTests: XCTestCase {
         _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .thirdParty)))
         _ = stateMachine.handle(.hostConfirmationAccepted)
         _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
-        let commands = stateMachine.handle(.recoveryCodeSent)
+        let commands = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: false))
 
         XCTAssertEqual(commands, [.stopPolling])
         XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .thirdParty)))
+    }
+
+    func testWhenV21HostSendsRecoveryCodeThenWaitsForJoinStatus() {
+        var stateMachine = PairingV2StateMachine()
+        let localClient = makeLocalClient(kind: .ddg, hasAccount: true, isPresenter: false)
+
+        _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+        _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .thirdParty)))
+        _ = stateMachine.handle(.hostConfirmationAccepted)
+        _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
+        let commands = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: true))
+
+        XCTAssertEqual(commands, [])
+        XCTAssertEqual(
+            stateMachine.state,
+            .hostWaitingForJoinStatus(
+                .init(localClient: localClient,
+                      peerChannelID: "channel-1",
+                      localChannelID: "local-channel",
+                      peerStatus: .recoveryCodeRequest(kind: .thirdParty)),
+                credentialKind: .thirdParty
+            )
+        )
+    }
+
+    func testWhenV21HostReceivesAnyValidJoinStatusThenCompletes() {
+        for reason in [PairingV2RecoveryCodeDoneReason.success, .loginFailed, .scopeRejected, .unknown("future_reason")] {
+            var stateMachine = PairingV2StateMachine()
+            let localClient = makeLocalClient(kind: .ddg, hasAccount: true, isPresenter: false)
+
+            _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
+            _ = stateMachine.handle(.receivedPeerStatus(.recoveryCodeRequest(kind: .ddg)))
+            _ = stateMachine.handle(.hostConfirmationAccepted)
+            _ = stateMachine.handle(.recoveryCodePrepared("recovery-code"))
+            _ = stateMachine.handle(.recoveryCodeSent(shouldWaitForJoinStatus: true))
+            let commands = stateMachine.handle(.receivedRecoveryCodeDone(reason))
+
+            XCTAssertEqual(commands, [.stopPolling])
+            XCTAssertEqual(stateMachine.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+            XCTAssertEqual(stateMachine.handle(.receivedRecoveryCodeDone(reason)), [])
+        }
     }
 
     func testWhenRecoveryCodeIsPreparedThenHostSendsConfirmedBeforeResponse() {

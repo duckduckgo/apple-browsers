@@ -27,6 +27,7 @@ enum PairingV2ApplicationMessage: Equatable {
     case recoveryCodeDenied(PairingV2RecoveryCodeTerminalMessage)
     case recoveryCodeUnavailable(PairingV2RecoveryCodeTerminalMessage)
     case recoveryCodeResponse(PairingV2RecoveryCodeResponseMessage)
+    case recoveryCodeDone(PairingV2RecoveryCodeDoneMessage)
 }
 
 /// A major-2 capability version, separate from the minimum version required by each message.
@@ -229,6 +230,57 @@ struct PairingV2RecoveryCodeResponseMessage: Codable, Equatable {
     }
 }
 
+struct PairingV2RecoveryCodeDoneMessage: Codable, Equatable {
+    static let messageType = "recovery_code_done"
+
+    let type: String
+    let reason: PairingV2RecoveryCodeDoneReason
+
+    init(reason: PairingV2RecoveryCodeDoneReason) {
+        self.type = Self.messageType
+        self.reason = reason
+    }
+}
+
+enum PairingV2RecoveryCodeDoneReason: Codable, Equatable {
+    case success
+    case loginFailed
+    case scopeRejected
+    case unknown(String)
+
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        switch rawValue {
+        case "success":
+            self = .success
+        case "login_failed":
+            self = .loginFailed
+        case "scope_rejected":
+            self = .scopeRejected
+        default:
+            self = .unknown(rawValue)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    private var rawValue: String {
+        switch self {
+        case .success:
+            return "success"
+        case .loginFailed:
+            return "login_failed"
+        case .scopeRejected:
+            return "scope_rejected"
+        case .unknown(let rawValue):
+            return rawValue
+        }
+    }
+}
+
 extension PairingV2ApplicationMessage {
 
     /// The envelope describes the message's requirements, not the sender's advertised capability.
@@ -237,6 +289,8 @@ extension PairingV2ApplicationMessage {
         case .hello, .recoveryCodeAvailable, .recoveryCodeRequest, .recoveryCodeAwaitingConfirmation,
                 .recoveryCodeConfirmed, .recoveryCodeDenied, .recoveryCodeUnavailable, .recoveryCodeResponse:
             return .v2
+        case .recoveryCodeDone:
+            return .v2Point1
         }
     }
 
@@ -263,6 +317,8 @@ extension PairingV2ApplicationMessage {
                 .recoveryCodeUnavailable(let message):
             return message.type
         case .recoveryCodeResponse(let message):
+            return message.type
+        case .recoveryCodeDone(let message):
             return message.type
         }
     }

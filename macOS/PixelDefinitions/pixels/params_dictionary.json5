@@ -650,7 +650,7 @@
         "key": "reload_trigger",
         "type": "string",
         "description": "Operation that initiated the failed web extension reload.",
-        "enum": ["data_clearing", "scriptlet_update", "explicit"]
+        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung"]
     },
     "web_extension_reload_phase": {
         "key": "reload_phase",

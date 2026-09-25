@@ -101,6 +101,9 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
+            isCPMMessagingHangRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,

@@ -17,20 +17,18 @@
 //
 
 import Combine
-import FeatureFlags_macOS
 import PrivacyConfig
 import UserScript
 import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-@testable import Navigation
+@testable import DDGNavigation
 
 @MainActor
 final class AutoplayPolicyTabExtensionTests: XCTestCase {
 
     private var mockPermissionManager: PermissionManagerMock!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPrivacyConfigManager: MockPrivacyConfigurationManaging!
     private var autoplayPreferences: AutoplayPreferences!
     private var persistor: AutoplayPreferencesPersistorMock!
@@ -40,7 +38,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockPermissionManager = PermissionManagerMock()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockPrivacyConfigManager = MockPrivacyConfigurationManaging()
         mockPrivacyConfigManager.mockConfig.identifier = UUID().uuidString
         persistor = AutoplayPreferencesPersistorMock(autoplayBlockingModeRawValue: AutoplayBlockingMode.blockAudio.rawValue)
@@ -53,7 +50,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
 
     override func tearDown() {
         mockPermissionManager = nil
-        mockFeatureFlagger = nil
         mockPrivacyConfigManager = nil
         autoplayPreferences = nil
         persistor = nil
@@ -67,7 +63,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     private func makeExtension() -> AutoplayPolicyTabExtension {
         AutoplayPolicyTabExtension(
             autoplayPreferences: autoplayPreferences,
-            featureFlagger: mockFeatureFlagger,
             permissionManager: mockPermissionManager,
             privacyConfigurationManager: mockPrivacyConfigManager,
             telemetryScriptPublisher: telemetryScriptSubject
@@ -95,24 +90,9 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
         )
     }
 
-    // MARK: - Feature flag off
-
-    func testWhenFeatureFlagOffThenDecidePolicyReturnsNextWithoutModifyingPreferences() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = false
-        let ext = makeExtension()
-        var prefs = NavigationPreferences.default
-
-        let policy = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
-
-        XCTAssertNil(policy, "Policy should be .next (nil) to pass to the next responder")
-        XCTAssertNil(prefs.autoplayPolicy, "Preferences should not be modified when feature flag is off")
-        XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "mustApplyAutoplayPolicy should be false when feature flag is off")
-    }
-
     // MARK: - No per-site override (falls back to global preferences)
 
     func testWhenNoPerSiteOverrideAndGlobalAllowAllThenPolicyIsAllow() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.allowAll.rawValue
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
         let ext = makeExtension()
@@ -124,7 +104,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenNoPerSiteOverrideAndGlobalBlockAudioThenPolicyIsAllowWithoutSound() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAudio.rawValue
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
         let ext = makeExtension()
@@ -136,7 +115,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenNoPerSiteOverrideAndGlobalBlockAllThenPolicyIsDeny() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAll.rawValue
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
         let ext = makeExtension()
@@ -150,7 +128,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Per-site override stored
 
     func testWhenPerSiteAllowStoredThenPolicyIsAllow() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
@@ -161,7 +138,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenPerSiteAskStoredThenPolicyIsAllowWithoutSound() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
@@ -172,7 +148,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenPerSiteDenyStoredThenPolicyIsDeny() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
@@ -185,7 +160,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Per-site override takes precedence over global
 
     func testWhenPerSiteDenyStoredAndGlobalAllowAllThenPolicyIsDeny() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.allowAll.rawValue
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
         mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
@@ -199,8 +173,7 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
 
     // MARK: - mustApplyAutoplayPolicy
 
-    func testWhenFeatureFlagOnThenMustApplyAutoplayPolicyIsTrue() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
+    func testWhenURLIsHttpsThenMustApplyAutoplayPolicyIsTrue() async {
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
 
@@ -212,7 +185,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Non-HTTP URLs fall back to global default
 
     func testWhenURLIsFileThenAutoplayPolicyIsNotApplied() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
@@ -224,7 +196,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenURLIsAboutBlankThenAutoplayPolicyIsNotApplied() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
 
@@ -237,7 +208,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Per-site isolation (override for domain A does not leak to domain B)
 
     func testWhenPerSiteOverrideExistsForDifferentDomainThenFallsBackToGlobalDefault() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAudio.rawValue
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
         mockPermissionManager.setPermission(.allow, forDomain: "other.com", permissionType: .autoplayPolicy)
@@ -252,7 +222,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Return value
 
     func testDecidePolicyAlwaysReturnsNext() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
 
@@ -264,7 +233,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Video playback detection
 
     func testWhenVideoPlaybackDetectedThenPublishedPropertyIsTrue() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
 
@@ -274,7 +242,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenNavigationOccursThenVideoPlaybackDetectedResets() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
 
@@ -288,7 +255,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testVideoPlaybackAndAutoplayAreTrackedIndependently() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
 
@@ -305,7 +271,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Video autoplay detection
 
     func testWhenVideoAutoplayDetectedThenPublishedPropertyIsTrue() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
 
@@ -315,7 +280,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenNavigationOccursThenVideoAutoplayDetectedResets() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         let ext = makeExtension()
         let script = WebTelemetryUserScript()
 
@@ -331,7 +295,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     // MARK: - Default permission seeding
 
     func testWhenNavigatingToConfigDomainThenDefaultPermissionIsSeeded() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"example.com\"]}"
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
@@ -344,7 +307,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenNavigatingToNonConfigDomainThenNoPermissionIsSeeded() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"other.com\"]}"
         let ext = makeExtension()
         var prefs = NavigationPreferences.default
@@ -356,7 +318,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenDomainAlreadySeededThenPermissionIsNotReSeeded() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"example.com\"]}"
         persistor.seededDomains = ["example.com"]
         autoplayPreferences = AutoplayPreferences(persistor: persistor)
@@ -369,7 +330,6 @@ final class AutoplayPolicyTabExtensionTests: XCTestCase {
     }
 
     func testWhenNoRemoteConfigThenYouTubeIsSeededByDefault() async {
-        mockFeatureFlagger.featuresStub[FeatureFlag.autoplayPolicy.rawValue] = true
         // No subfeatureSettings configured — remote config returns nil
         let ext = makeExtension()
         var prefs = NavigationPreferences.default

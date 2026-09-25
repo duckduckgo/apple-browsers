@@ -89,6 +89,10 @@ struct CPMMessagingMeasurement: Equatable, Sendable {
 @MainActor
 public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
+    /// Called once when a failure episode is confirmed as a CPM messaging hang. The first
+    /// initialization failure only begins the episode; the next qualifying failure confirms it.
+    var onConfirmedHang: (() -> Void)?
+
     private enum TimeoutOutcome: Sendable {
         case reportFailure
         case cancelMeasurement
@@ -654,6 +658,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             fireWithDiagnostics(tabIdentifier: measurement.tabIdentifier) { diagnostics in
                 .cpmMessagingStuck(reason: stuckReason, diagnostics: diagnostics)
             }
+            onConfirmedHang?()
         }
 
         if isPostExtensionReload {

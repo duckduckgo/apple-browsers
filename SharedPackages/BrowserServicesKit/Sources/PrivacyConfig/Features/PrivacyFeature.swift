@@ -68,7 +68,6 @@ public enum PrivacyFeature: String {
     case experimentalTheming
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
-    case extendedOnboarding
     case macOSBrowserConfig
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
@@ -692,6 +691,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
+
+    /// Gates the Subscriber Offers settings entry point; its settings carry the Partnerships Hub URL
+    /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
+    /// change covers every platform.
+    case partnershipsHub
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -772,12 +776,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     case scamProtection
 }
 
-public enum OnboardingSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .extendedOnboarding }
-
-    case showSettingsCompleteSetupSection
-}
-
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalTheming }
 
@@ -840,6 +838,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Cohort assignment for the CPM background-view graveyard experiment.
     case cpmBackgroundGraveyardExperiment
+    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    case cpmMessagingHangRecovery
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -876,8 +876,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
-
-    case featureEnabled
 
     /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
     case bookmarkToolbarPromo

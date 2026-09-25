@@ -24,21 +24,26 @@ import UserScript
 import WebKit
 
 /// DEBUG-only stand-in for the Duck.ai front end, driving the same dispatch and handlers a page
-/// message would. A page cannot do this yet — the `aiChat` bridge is granted only to duck.ai.
+/// message would. It also receives the permission prompts a page would, and answers them.
 @MainActor
 final class BrowserToolsDebugPanel: NSWindowController {
 
     private let userScript: AIChatUserScript
     private let chatHandler: AIChatUserScriptHandler
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let service: AIChatBrowserToolsService
 
     private let targetLabel = NSTextField(labelWithString: "")
-    private let toolNameField = NSTextField(string: "switchToTab")
+    private let toolNameField = NSTextField(string: "listOpenTabs")
     private let argumentsField = NSTextField(string: "{}")
+    private let promptsStack = NSStackView()
     private let logView = NSTextView()
+    private var promptRows: [String: NSView] = [:]
 
-    init(windowControllersManager: WindowControllersManagerProtocol) {
+    init(windowControllersManager: WindowControllersManagerProtocol,
+         service: AIChatBrowserToolsService = NSApp.delegateTyped.aiChatBrowserToolsService) {
         self.windowControllersManager = windowControllersManager
+        self.service = service
         let chatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: windowControllersManager,
@@ -46,12 +51,13 @@ final class BrowserToolsDebugPanel: NSWindowController {
             statisticsLoader: nil,
             syncServiceProvider: { nil },
             syncErrorHandler: NSApp.delegateTyped.syncErrorHandler,
-            featureFlagger: NSApp.delegateTyped.featureFlagger
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            browserTools: service
         )
         self.chatHandler = chatHandler
         self.userScript = AIChatUserScript(handler: chatHandler, urlSettings: UserDefaults.standard.keyedStoring())
 
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
                               styleMask: [.titled, .closable, .resizable],
                               backing: .buffered,
                               defer: false)
@@ -127,13 +133,66 @@ final class BrowserToolsDebugPanel: NSWindowController {
             return
         }
         let burner = tab.burnerMode.isBurner ? "  ·  Fire Window" : ""
-        let session = NSApp.delegateTyped.aiChatBrowserToolsService.sessions.session(forOwnerTabID: tab.uuid)
+        let session = service.sessions.session(forOwnerTabID: tab.uuid)
         let state = switch session {
         case .none: "no session — run initialize"
         case .some(let session) where !session.isInitialized: "awaiting notifications/initialized"
         case .some: "initialized"
         }
         targetLabel.stringValue = "Owner tab: \(tab.uuid)\(burner)  ·  \(state)"
+    }
+
+    // MARK: - Prompts
+
+    private static let answers: [(title: String, result: MCPElicitationResult)] = [
+        ("Allow once", MCPElicitationResult(action: .accept, content: ["choice": "allowOnce"])),
+        ("Always", MCPElicitationResult(action: .accept, content: ["choice": "alwaysAllow"])),
+        ("Never", MCPElicitationResult(action: .accept, content: ["choice": "neverAllow"])),
+        ("Decline", MCPElicitationResult(action: .decline)),
+        ("Cancel", MCPElicitationResult(action: .cancel))
+    ]
+
+    private func addPromptRow(for params: MCPElicitationCreateParams) {
+        let label = NSTextField(labelWithString: "\(params.message)  [\(params.id.prefix(8))]")
+        label.lineBreakMode = .byTruncatingTail
+        var views: [NSView] = [label]
+        for answer in Self.answers {
+            let button = PromptButton(title: answer.title, target: self, action: #selector(answerPrompt(_:)))
+            button.bezelStyle = .rounded
+            button.promptID = params.id
+            button.result = answer.result
+            views.append(button)
+        }
+        let row = NSStackView(views: views)
+        row.orientation = .horizontal
+        row.spacing = 6
+        promptsStack.addArrangedSubview(row)
+        promptRows[params.id] = row
+    }
+
+    /// Goes through `elicitation/response` exactly as the page would, so the answer exercises the
+    /// same decode, correlation and persistence.
+    @objc private func answerPrompt(_ sender: PromptButton) {
+        removePromptRow(id: sender.promptID)
+        var result: [String: Any] = ["action": sender.result.action]
+        if let choice = sender.result.content?["choice"]?.stringValue {
+            result["content"] = ["choice": choice]
+        }
+        run("elicitation/response", params: ["id": sender.promptID, "result": result])
+    }
+
+    private func removePromptRow(id: String) {
+        guard let row = promptRows.removeValue(forKey: id) else { return }
+        promptsStack.removeArrangedSubview(row)
+        row.removeFromSuperview()
+    }
+
+    /// Drops rows whose prompt already resolved — timed out, or answered from elsewhere.
+    private func pruneStalePromptRows() {
+        let pending = Set(service.elicitations.pendingPrompts.map(\.id))
+        for id in promptRows.keys where !pending.contains(id) {
+            removePromptRow(id: id)
+        }
     }
 
     // MARK: -
@@ -159,7 +218,8 @@ final class BrowserToolsDebugPanel: NSWindowController {
         appendToLog("→ \(method) \(prettyPrinted(params))")
         Task { @MainActor in
             let response = await invoke(params, SyntheticUserScriptMessage(name: method, body: params, webView: webView))
-            appendToLog("← \(response.map(prettyPrinted) ?? "(no reply)")\n")
+            appendToLog("← \(method) \(response.map(prettyPrinted) ?? "(no reply)")\n")
+            pruneStalePromptRows()
             refreshTarget()
         }
     }
@@ -169,7 +229,10 @@ final class BrowserToolsDebugPanel: NSWindowController {
         case .initialize: chatHandler.mcpInitialize
         case .notificationsInitialized: chatHandler.mcpNotificationsInitialized
         case .toolsList: chatHandler.mcpToolsList
-        case .toolsCall: chatHandler.mcpToolsCall
+        case .toolsCall: { [chatHandler, weak self] params, message in
+            await chatHandler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
+        }
+        case .elicitationResponse: chatHandler.mcpElicitationResponse
         default: nil
         }
     }
@@ -213,7 +276,7 @@ final class BrowserToolsDebugPanel: NSWindowController {
         buttons.spacing = 8
 
         toolNameField.placeholderString = "tool name"
-        argumentsField.placeholderString = "{\"tabId\": \"…\"}"
+        argumentsField.placeholderString = "{\"limit\": 10}"
         let call = NSStackView(views: [
             NSTextField(labelWithString: "tools/call  name:"),
             toolNameField,
@@ -228,6 +291,10 @@ final class BrowserToolsDebugPanel: NSWindowController {
             argumentsField.widthAnchor.constraint(greaterThanOrEqualToConstant: 280)
         ])
 
+        promptsStack.orientation = .vertical
+        promptsStack.alignment = .leading
+        promptsStack.spacing = 6
+
         logView.isEditable = false
         logView.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         let scroll = NSScrollView()
@@ -237,7 +304,7 @@ final class BrowserToolsDebugPanel: NSWindowController {
         targetLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         targetLabel.lineBreakMode = .byTruncatingMiddle
 
-        let stack = NSStackView(views: [targetLabel, buttons, call, scroll])
+        let stack = NSStackView(views: [targetLabel, buttons, call, promptsStack, scroll])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 10
@@ -256,6 +323,21 @@ final class BrowserToolsDebugPanel: NSWindowController {
         button.bezelStyle = .rounded
         return button
     }
+}
+
+/// Receives the prompt a page would, since no page is listening.
+extension BrowserToolsDebugPanel: AIChatElicitationPushing {
+
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        appendToLog("⇠ elicitation/create \(prettyPrinted(params))\n")
+        addPromptRow(for: params)
+        return true
+    }
+}
+
+private final class PromptButton: NSButton {
+    var promptID = ""
+    var result = MCPElicitationResult.cancel
 }
 
 /// Stands in for the `WKScriptMessage` a real page would send. Only `messageWebView` matters to the

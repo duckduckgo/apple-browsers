@@ -86,8 +86,7 @@ struct SyncedDevicesViewV2_Previews: PreviewProvider {
             .init(name: "Loading devices", state: .enabledLoadingDevices)
         ],
         configure: { model in
-            DesignSystemRebrand.isAppRebranded = { true }
-            return SyncedDevicesViewV2<PreviewManagementViewModel>()
+            SyncedDevicesViewV2<PreviewManagementViewModel>()
                 .environmentObject(model)
                 .frame(width: 512)
                 .padding()

@@ -440,7 +440,6 @@ struct SyncWithAnotherDeviceViewV2_Previews: PreviewProvider {
             let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
             let tab: PairingTabV2 = state == .scanCode ? .scanCode : .enterCode
 
-            DesignSystemRebrand.isAppRebranded = { true }
             return SyncWithAnotherDeviceViewV2(
                 codeForDisplayOrPasting: sampleCode,
                 stringForQRCode: sampleCode,

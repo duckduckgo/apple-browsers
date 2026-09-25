@@ -17,7 +17,7 @@
 //
 
 import Combine
-import Navigation
+import DDGNavigation
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest

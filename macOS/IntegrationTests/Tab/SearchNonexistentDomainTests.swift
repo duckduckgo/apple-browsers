@@ -21,7 +21,7 @@ import Combine
 import Common
 import FoundationExtensions
 import History
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities

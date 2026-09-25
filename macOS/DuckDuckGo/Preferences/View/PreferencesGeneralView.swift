@@ -37,7 +37,10 @@ extension Preferences {
         @ObservedObject var maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences
         @ObservedObject var autoplayModel: AutoplayPreferences
         @ObservedObject var dockModel: DockPreferencesModel
+        /// Opens the Website Permissions pane, where the all-sites autoplay setting now lives.
+        let showWebsitePermissions: () -> Void
         @State private var showingCustomHomePageSheet = false
+        @Environment(\.designSystemPalette) private var palette
         let featureFlagger = NSApp.delegateTyped.featureFlagger
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -56,6 +59,38 @@ extension Preferences {
             guard tabsModel.pinnedTabsMode != newMode else { return }
             tabsModel.pinnedTabsMode = newMode
             firePinnedTabsPixel(newMode)
+        }
+
+        /// The all-sites autoplay setting has moved to Website Permissions, so General points at it
+        /// rather than editing it. Kept behind the flag so a rollback restores the picker here.
+        ///
+        /// The pane's name within the sentence is the link. `TextMenuItemCaption` renders through a
+        /// `LocalizedStringKey`, which parses the markdown; the URL is only what makes it a link, since
+        /// `openURL` is intercepted to switch panes in place rather than route through the OS.
+        private var autoplayMovedNotice: some View {
+            TextMenuItemCaption(
+                String(format: UserText.autoplayMovedCaption,
+                       "[\(UserText.websitePermissions)](\(URL.settingsPane(.websitePermissions)))")
+            )
+            .tint(Color.rebrandableLink(palette: palette))
+            .environment(\.openURL, OpenURLAction { _ in
+                showWebsitePermissions()
+                return .handled
+            })
+            .accessibilityIdentifier("PreferencesGeneralView.showWebsitePermissions")
+        }
+
+        private var autoplayPicker: some View {
+            VStack(alignment: .leading, spacing: 1) {
+                HStack {
+                    Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
+                        ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
+                            Text(mode.description).tag(mode)
+                        }
+                    }
+                }
+                TextMenuItemCaption(UserText.autoplayCaption)
+            }
         }
 
         private var isPresentingAddToDockDemoVideo: Binding<Bool> {
@@ -335,21 +370,16 @@ extension Preferences {
                 }
 
                 // SECTION: Permissions
-                if featureFlagger.isFeatureOn(.autoplayPolicy) {
-                    PreferencePaneSection(UserText.permissionsSection) {
-                        PreferencePaneSubSection {
-                            HStack {
-                                Picker(UserText.autoplayLabel, selection: $autoplayModel.autoplayBlockingMode) {
-                                    ForEach(AutoplayBlockingMode.allCases, id: \.self) { mode in
-                                        Text(mode.description).tag(mode)
-                                    }
-                                }
-                            }
-                            TextMenuItemCaption(UserText.autoplayCaption)
+                PreferencePaneSection(UserText.permissionsSection) {
+                    PreferencePaneSubSection {
+                        if featureFlagger.isFeatureOn(.websitePermissionsSettings) {
+                            autoplayMovedNotice
+                        } else {
+                            autoplayPicker
                         }
                     }
-                    .id(PreferencesScrollAnchor.permissions)
                 }
+                .id(PreferencesScrollAnchor.permissions)
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
                 PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,

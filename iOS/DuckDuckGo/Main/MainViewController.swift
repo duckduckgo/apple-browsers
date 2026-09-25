@@ -2471,6 +2471,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
         restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
@@ -2479,6 +2480,10 @@ class MainViewController: UIViewController {
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
         remoteMessageImpressionReporter.reset()
+        // Restore the destination's chrome only when leaving a page that overrode it.
+        if hadInlineSearchInput, isInMinimalChromeLayout != isMinimalChromeMode() {
+            applyWidth()
+        }
     }
 
     @IBAction func onFirePressed() {
@@ -3062,6 +3067,10 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
 
         guard let tab = currentTab, tab.link != nil else {
+            // An inline NTP can have no URL, so it needs its toolbar reconciled on this path too.
+            if newTabPageViewController?.hasInlineSearchInput == true, isInMinimalChromeLayout != isMinimalChromeMode() {
+                applyWidth()
+            }
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
@@ -3340,6 +3349,9 @@ class MainViewController: UIViewController {
     }
 
     private func isMinimalChromeMode(for size: CGSize? = nil) -> Bool {
+        // The redesigned NTP hides the resting address bar. Keep the normal toolbar rather than
+        // moving its controls into the hidden minimal-chrome bar, for either floating UI setting.
+        guard newTabPageViewController?.hasInlineSearchInput != true else { return false }
         let size = size ?? view.bounds.size
         return MinimalChromeModeDecision.isActive(
             minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),

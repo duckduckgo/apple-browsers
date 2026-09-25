@@ -230,6 +230,8 @@ enum UserText {
                 return alwaysAllow
             case .neverAllow:
                 return neverAllow
+            case .deny:
+                return PermissionDialog.deny
             }
         }
 

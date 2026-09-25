@@ -497,6 +497,55 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         XCTAssertEqual(SitePermissionType.allCases.map { store.globalDefault(for: $0) }, originalDefaults)
     }
 
+    func testWhenFireSheetRemovesDurablePermissionsThenOpeningSettingsReflectsRemovalAndUndo() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.resetDecision(for: .location, at: site)
+        store.setPersistentDecision(.deny, for: .microphone, at: otherSite)
+        store.setGlobalDefault(.deny, for: .camera)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
+        let settings = makeSUT(store: store, isEnabled: { isEnabled })
+        var removal: SitePermissionsRemoval?
+        let sheet = SitePermissionsSheetViewModel(
+            snapshot: SitePermissionsManagementSnapshot(
+                site: site,
+                isFireMode: true,
+                storedPermissions: [.camera: .deny, .microphone: .deny, .location: .ask],
+                ephemeralPermissionTypes: [],
+                siteAllowedPermissionTypesThisVisit: [],
+                requestedPermissionTypesThisVisit: [],
+                captureStates: [:],
+                systemAuthorizationStates: [:],
+                systemBlockedPermissionTypes: []
+            ),
+            store: store,
+            onRemovePermissions: { removal = $0 }
+        )
+        XCTAssertEqual(Set(settings.storedSites), [site, otherSite])
+        XCTAssertEqual(settings.siteDecision(for: .camera, at: site), .allow)
+
+        sheet.removePermissions()
+        settings.didOpen()
+
+        XCTAssertEqual(settings.storedSites, [otherSite])
+        XCTAssertEqual(settings.siteDecision(for: .camera, at: site), .ask)
+        XCTAssertEqual(settings.siteDecision(for: .microphone, at: otherSite), .deny)
+        XCTAssertEqual(settings.globalDefault(for: .camera), .deny)
+        XCTAssertTrue(store.permissions(for: site).isEmpty)
+
+        store.restore(try XCTUnwrap(removal).snapshot)
+        settings.didOpen()
+
+        XCTAssertEqual(Set(settings.storedSites), [site, otherSite])
+        XCTAssertEqual(settings.siteDecision(for: .camera, at: site), .allow)
+        XCTAssertEqual(settings.siteDecision(for: .location, at: site), .ask)
+        XCTAssertEqual(store.permissions(for: site), [.camera: .allow, .location: .ask])
+        XCTAssertEqual(settings.globalDefault(for: .camera), .deny)
+    }
+
     func testOpenAndSystemSettingsActionsUseInjectedCallbacks() {
         var openCount = 0
         var settingsCount = 0

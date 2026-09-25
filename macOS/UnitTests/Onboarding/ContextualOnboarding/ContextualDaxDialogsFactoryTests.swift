@@ -362,8 +362,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         view.viewModel.tryFireButton()
         await fulfillment(of: [sheetPresented], timeout: 5)
 
-        await fulfillment(of: [sheetPresented], timeout: 5)
-
         // THEN
         XCTAssertTrue(onFireButtonRun)
         XCTAssertTrue(onDismissRun)

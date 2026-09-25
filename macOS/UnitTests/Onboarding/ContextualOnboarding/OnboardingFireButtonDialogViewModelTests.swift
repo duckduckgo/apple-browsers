@@ -129,8 +129,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         viewModel.tryFireButton()
         await fulfillment(of: [sheetPresented], timeout: 5)
 
-        await fulfillment(of: [sheetPresented], timeout: 5)
-
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)
 

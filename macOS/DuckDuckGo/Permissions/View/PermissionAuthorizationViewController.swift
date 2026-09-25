@@ -64,18 +64,10 @@ extension Array where Element == PermissionType {
 
 final class PermissionAuthorizationViewController: NSViewController {
 
-    enum Action {
-        case allow
-        case deny
-        case decision(PermissionPromptDecision)
-        case dismiss
-        case learnMore
-    }
-
     let systemPermissionManager = SystemPermissionManager()
     private let featureFlagger: FeatureFlagger
 
-    private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
+    private var swiftUIHostingView: NSView?
 
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
@@ -87,7 +79,7 @@ final class PermissionAuthorizationViewController: NSViewController {
         }
     }
 
-    init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+    init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
@@ -118,25 +110,32 @@ final class PermissionAuthorizationViewController: NSViewController {
         let permissionType = PermissionAuthorizationType(from: query.permissions)
         let showsTwoStepUI = permissionType.requiresSystemPermission
             && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
-        // The System Settings step isn't part of the decision dialog yet, so the existing
-        // two-step and system-disabled views keep handling those cases.
-        let showsDecisionDialog = featureFlagger.isFeatureOn(.websitePermissionsPrompts)
-            && !showsTwoStepUI
-            && !query.isSystemPermissionDisabled
 
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
             showsTwoStepUI: showsTwoStepUI,
             isSystemPermissionDisabled: query.isSystemPermissionDisabled,
-            showsDecisionDialog: showsDecisionDialog,
-            onAction: { [weak self] action in
-                self?.handleAction(action)
+            onDeny: { [weak self] in
+                self?.handleDeny()
             },
+            onAllow: { [weak self] in
+                self?.handleAllow()
+            },
+            onDismiss: { [weak self] in
+                self?.handleDismiss()
+            },
+            onLearnMore: permissionType.learnMoreURL != nil ? {
+                if let url = permissionType.learnMoreURL {
+                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+                }
+            } : nil,
             systemPermissionManager: systemPermissionManager
         )
 
-        let hostingView = NSHostingView(rootView: swiftUIView)
+        let hostingView: NSView = featureFlagger.isFeatureOn(.websitePermissionsPrompts)
+            ? NSHostingView(rootView: NewPermissionAuthorizationSwiftUIView(viewModel: makeNewPermissionViewModel(for: query)))
+            : NSHostingView(rootView: swiftUIView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(hostingView)
 
@@ -151,19 +150,17 @@ final class PermissionAuthorizationViewController: NSViewController {
         isAuthorizationInProgress = true
     }
 
-    private func handleAction(_ action: Action) {
-        switch action {
-        case .allow:
-            handleAllow()
-        case .deny:
-            handleDeny()
-        case .decision(let decision):
-            handle(decision)
-        case .dismiss:
-            handleDismiss()
-        case .learnMore:
-            handleLearnMore()
-        }
+    private func makeNewPermissionViewModel(for query: PermissionAuthorizationQuery) -> NewPermissionAuthorizationViewModel {
+        NewPermissionAuthorizationViewModel(
+            query: query,
+            openURL: { url in
+                Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+            },
+            finish: { [weak self] in
+                self?.isAuthorizationInProgress = false
+                self?.dismiss()
+            }
+        )
     }
 
     private func handleDeny() {
@@ -185,28 +182,9 @@ final class PermissionAuthorizationViewController: NSViewController {
         guard let query else { return }
 
         fireAuthorizationPixel(decision: .allow)
-        // Preserve the legacy Duck.ai microphone behavior for the Allow / Deny prompt.
+        // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
         let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
         query.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
-    }
-
-    private func handle(_ decision: PermissionPromptDecision) {
-        defer {
-            isAuthorizationInProgress = false
-            dismiss()
-        }
-        guard let query else { return }
-
-        let output = decision.output
-        fireAuthorizationPixel(decision: output.granted ? .allow : .deny)
-        query.handleDecision(grant: output.granted, remember: output.remember)
-    }
-
-    private func handleLearnMore() {
-        guard let query,
-              let url = PermissionAuthorizationType(from: query.permissions).learnMoreURL else { return }
-
-        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     private func handleDismiss() {

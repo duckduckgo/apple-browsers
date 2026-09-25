@@ -216,8 +216,10 @@ struct PermissionAuthorizationSwiftUIView: View {
     let permissionType: PermissionAuthorizationType
     let showsTwoStepUI: Bool
     let isSystemPermissionDisabled: Bool
-    let showsDecisionDialog: Bool
-    let onAction: (PermissionAuthorizationViewController.Action) -> Void
+    let onDeny: () -> Void
+    let onAllow: () -> Void
+    let onDismiss: () -> Void
+    let onLearnMore: (() -> Void)?
     let systemPermissionManager: SystemPermissionManagerProtocol
 
     /// State for the system permission step in two-step flow
@@ -245,12 +247,6 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     private let stepIndicatorSize: CGFloat = 32
 
-    private enum DecisionDialogConstants {
-        static let width: CGFloat = 252
-        static let buttonHeight: CGFloat = 32
-        static let closeButtonSize: CGFloat = 20
-    }
-
     private var promptText: String {
         switch permissionType {
         case .geolocation:
@@ -270,19 +266,6 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
     }
 
-    private var decisionDialogTitle: String {
-        switch permissionType {
-        case .geolocation:
-            return String(format: UserText.websitePermissionsPromptLocationFormat, domain)
-        case .camera, .microphone, .cameraAndMicrophone:
-            return String(format: UserText.websitePermissionsPromptDeviceFormat, domain, permissionType.localizedDescription.lowercased())
-        case .notification:
-            return String(format: UserText.websitePermissionsPromptNotificationsFormat, domain)
-        case .popups, .externalScheme:
-            return promptText
-        }
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -290,71 +273,9 @@ struct PermissionAuthorizationSwiftUIView: View {
             systemDisabledPermissionView
         } else if showsTwoStepUI {
             twoStepPermissionView
-        } else if showsDecisionDialog {
-            decisionDialogView
         } else {
             standardPermissionView
         }
-    }
-
-    // MARK: - Decision Dialog View
-
-    private var decisionDialogView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .top, spacing: 20) {
-                Text(decisionDialogTitle)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button(action: { onAction(.dismiss) }) {
-                    Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
-                        .frame(width: DecisionDialogConstants.closeButtonSize, height: DecisionDialogConstants.closeButtonSize)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(HoverHighlightButtonStyle(cornerRadius: 4))
-                .padding(2)
-                .accessibilityLabel(UserText.close)
-                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.closeButton")
-            }
-
-            VStack(spacing: 8) {
-                decisionButton(UserText.websitePermissionsPromptAllowThisVisit,
-                               accessibilityIdentifier: "PermissionAuthorizationSwiftUIView.allowThisVisitButton",
-                               action: { onAction(.decision(.allowThisVisit)) })
-                decisionButton(UserText.permissionCenterAlwaysAllow,
-                               accessibilityIdentifier: "PermissionAuthorizationSwiftUIView.alwaysAllowButton",
-                               action: { onAction(.decision(.alwaysAllow)) })
-                decisionButton(UserText.permissionCenterNeverAllow,
-                               accessibilityIdentifier: "PermissionAuthorizationSwiftUIView.neverAllowButton",
-                               action: { onAction(.decision(.neverAllow)) })
-            }
-
-            if permissionType.learnMoreURL != nil {
-                learnMoreView
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(20)
-        .frame(width: DecisionDialogConstants.width)
-        .background(Color(designSystemColor: .surfaceSecondary))
-    }
-
-    private func decisionButton(_ title: String, accessibilityIdentifier: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(maxWidth: .infinity)
-                .frame(height: DecisionDialogConstants.buttonHeight)
-                .background(Color(designSystemColor: .controlsFillPrimary))
-                .clipShape(Capsule())
-                .contentShape(Capsule())
-        }
-        .buttonStyle(PlainButtonStyle())
-        .accessibilityIdentifier(accessibilityIdentifier)
     }
 
     // MARK: - Two-Step Permission View
@@ -464,16 +385,16 @@ struct PermissionAuthorizationSwiftUIView: View {
     private func subscribeToAppActiveNotificationForDismissal() {
         appActiveCancellable = NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification)
-            .sink { [systemPermissionManager, permissionType, onAction] _ in
+            .sink { [systemPermissionManager, permissionType, onAllow, onDismiss] _ in
                 Task { @MainActor in
                     let authState = await systemPermissionManager.authorizationState(for: permissionType.asPermissionType)
                     switch authState {
                     case .denied, .restricted, .systemDisabled:
                         break
                     case .authorized:
-                        onAction(.allow)
+                        onAllow()
                     case .notDetermined:
-                        onAction(.dismiss)
+                        onDismiss()
                     }
                 }
             }
@@ -545,7 +466,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             stepIndicator(step: 2, isActive: true)
 
             HStack(spacing: 8) {
-                Button(action: { onAction(.deny) }) {
+                Button(action: onDeny) {
                     Text(UserText.permissionPopupDenyButton)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -557,7 +478,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .buttonStyle(PlainButtonStyle())
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
-                Button(action: { onAction(.allow) }) {
+                Button(action: onAllow) {
                     Text(UserText.permissionPopupAllowButton)
                         .font(.system(size: 13))
                         .foregroundColor(isAllowButtonEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
@@ -610,7 +531,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     @ViewBuilder
     private var learnMoreView: some View {
         Button(action: {
-            onAction(.learnMore)
+            onLearnMore?()
         }) {
             Text(UserText.permissionPopupLearnMoreLink)
                 .font(.system(size: 13))
@@ -687,7 +608,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.top, 16)
 
             HStack(spacing: 8) {
-                Button(action: { onAction(.deny) }) {
+                Button(action: onDeny) {
                     Text(UserText.permissionPopupDenyButton)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -699,7 +620,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .buttonStyle(PlainButtonStyle())
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
-                Button(action: { onAction(.allow) }) {
+                Button(action: onAllow) {
                     Text(UserText.permissionPopupAllowButton)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -733,15 +654,19 @@ extension PermissionAuthorizationSwiftUIView {
         permissionType: PermissionAuthorizationType,
         showsTwoStepUI: Bool = false,
         isSystemPermissionDisabled: Bool = false,
-        showsDecisionDialog: Bool = false,
-        onAction: @escaping (PermissionAuthorizationViewController.Action) -> Void
+        onDeny: @escaping () -> Void,
+        onAllow: @escaping () -> Void,
+        onDismiss: @escaping () -> Void,
+        onLearnMore: (() -> Void)? = nil
     ) {
         self.domain = domain
         self.permissionType = permissionType
         self.showsTwoStepUI = showsTwoStepUI
         self.isSystemPermissionDisabled = isSystemPermissionDisabled
-        self.showsDecisionDialog = showsDecisionDialog
-        self.onAction = onAction
+        self.onDeny = onDeny
+        self.onAllow = onAllow
+        self.onDismiss = onDismiss
+        self.onLearnMore = onLearnMore
         self.systemPermissionManager = SystemPermissionManager()
     }
 }
@@ -800,39 +725,29 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             domain: "apple.com",
             permissionType: .geolocation,
             showsTwoStepUI: true,
-            onAction: { _ in }
+            onDeny: {},
+            onAllow: {},
+            onDismiss: {}
         )
         .previewDisplayName("Geolocation - Two Step")
 
         PermissionAuthorizationSwiftUIView(
             domain: "apple.com",
             permissionType: .camera,
-            onAction: { _ in }
+            onDeny: {},
+            onAllow: {},
+            onDismiss: {}
         )
         .previewDisplayName("Camera")
 
         PermissionAuthorizationSwiftUIView(
             domain: "apple.com",
             permissionType: .cameraAndMicrophone,
-            onAction: { _ in }
+            onDeny: {},
+            onAllow: {},
+            onDismiss: {}
         )
         .previewDisplayName("Camera and Microphone")
-
-        PermissionAuthorizationSwiftUIView(
-            domain: "microsoft.ai",
-            permissionType: .notification,
-            showsDecisionDialog: true,
-            onAction: { _ in }
-        )
-        .previewDisplayName("Notifications - Decision Dialog")
-
-        PermissionAuthorizationSwiftUIView(
-            domain: "apple.com",
-            permissionType: .geolocation,
-            showsDecisionDialog: true,
-            onAction: { _ in }
-        )
-        .previewDisplayName("Geolocation - Decision Dialog")
     }
 }
 #endif

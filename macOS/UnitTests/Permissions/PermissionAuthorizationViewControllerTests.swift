@@ -24,40 +24,17 @@ import XCTest
 
 final class PermissionAuthorizationViewControllerTests: XCTestCase {
 
-    func testDecisionDialogIsShownOnlyWhenFeatureFlagIsOn() throws {
+    func testNewViewIsShownOnlyWhenFeatureFlagIsOn() {
         let featureFlagger = MockFeatureFlagger()
         let viewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
-        let query = makeQuery(permissions: [.camera])
+        let query = PermissionAuthorizationQuery(domain: "example.com", url: URL(string: "https://example.com"), permissions: [.camera]) { _ in }
 
         featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = false
         viewController.query = query
-        XCTAssertFalse(try showsDecisionDialog(viewController))
+        XCTAssertTrue(viewController.view.subviews.first is NSHostingView<PermissionAuthorizationSwiftUIView>)
 
         featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
         viewController.query = query
-        XCTAssertTrue(try showsDecisionDialog(viewController))
-    }
-
-    func testDecisionsMapToQueryOutput() {
-        let allowThisVisit = PermissionPromptDecision.allowThisVisit.output
-        XCTAssertTrue(allowThisVisit.granted)
-        XCTAssertEqual(allowThisVisit.remember, false)
-
-        let alwaysAllow = PermissionPromptDecision.alwaysAllow.output
-        XCTAssertTrue(alwaysAllow.granted)
-        XCTAssertEqual(alwaysAllow.remember, true)
-
-        let neverAllow = PermissionPromptDecision.neverAllow.output
-        XCTAssertFalse(neverAllow.granted)
-        XCTAssertEqual(neverAllow.remember, true)
-    }
-
-    private func makeQuery(permissions: [PermissionType]) -> PermissionAuthorizationQuery {
-        PermissionAuthorizationQuery(domain: "example.com", url: URL(string: "https://example.com"), permissions: permissions) { _ in }
-    }
-
-    private func showsDecisionDialog(_ viewController: PermissionAuthorizationViewController) throws -> Bool {
-        let hostingView = try XCTUnwrap(viewController.view.subviews.first as? NSHostingView<PermissionAuthorizationSwiftUIView>)
-        return hostingView.rootView.showsDecisionDialog
+        XCTAssertTrue(viewController.view.subviews.first is NSHostingView<NewPermissionAuthorizationSwiftUIView>)
     }
 }

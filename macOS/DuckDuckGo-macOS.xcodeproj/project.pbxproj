@@ -1965,8 +1965,6 @@
 		561D29C32BDA745B007B91D0 /* MockSyncPausedStateManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C02BDA7430007B91D0 /* MockSyncPausedStateManaging.swift */; };
 		561D29C62BDA74ED007B91D0 /* MockDDGSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */; };
 		561D29C72BDA74F4007B91D0 /* MockDDGSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */; };
-		561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 561D66692B95C45A008ACC5C /* Suggestion.storyboard */; };
-		561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 561D66692B95C45A008ACC5C /* Suggestion.storyboard */; };
 		562532A02BC069180034D316 /* ZoomPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */; };
 		562532A12BC069190034D316 /* ZoomPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */; };
 		562802C72DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */; };
@@ -5949,7 +5947,6 @@
 		56189B782DF8DBEF004A19CC /* RootViewV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootViewV2Tests.swift; sourceTree = "<group>"; };
 		561D29C02BDA7430007B91D0 /* MockSyncPausedStateManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSyncPausedStateManaging.swift; sourceTree = "<group>"; };
 		561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDDGSyncing.swift; sourceTree = "<group>"; };
-		561D66692B95C45A008ACC5C /* Suggestion.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Suggestion.storyboard; sourceTree = "<group>"; };
 		5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomPopoverViewModelTests.swift; sourceTree = "<group>"; };
 		562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDialogsManager.swift; sourceTree = "<group>"; };
 		5629846E2AC4610100AC20EB /* SyncPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPreferencesTests.swift; sourceTree = "<group>"; };
@@ -12104,7 +12101,6 @@
 		AABEE6A124A9F3C90043105B /* View */ = {
 			isa = PBXGroup;
 			children = (
-				561D66692B95C45A008ACC5C /* Suggestion.storyboard */,
 				AABEE6A424AA0A7F0043105B /* SuggestionViewController.swift */,
 				310E83F62ED79B1E006F80D2 /* KeyboardShortcutView.swift */,
 				AABEE6A824AB4B910043105B /* SuggestionTableCellView.swift */,
@@ -15011,7 +15007,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
-				561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29952E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				BBBED48B2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
@@ -15267,7 +15262,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
-				561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29942E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
 				BBBED48E2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,

@@ -1,5 +1,5 @@
 //
-//  NewTabPageBlock.swift
+//  RedesignedFocusedSearchModulesView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,17 +17,18 @@
 //  limitations under the License.
 //
 
-import UIKit
+import DesignResourcesKit
+import SwiftUI
 
-enum NewTabPageBlockID: String {
-    case welcome
-    case searchInput
-    case favorites
-}
+/// Favorites shown while the redesigned search input is focused and empty.
+struct RedesignedFocusedSearchModulesView: View {
+    let favoritesModel: FavoritesViewModel?
 
-/// One unit of New Tab Page content. Blocks are stacked vertically in the order given.
-protocol NewTabPageBlock: AnyObject, Identifiable where ID == NewTabPageBlockID {
-
-    /// The block's content, installed as a child view controller of the page.
-    var viewController: UIViewController { get }
+    var body: some View {
+        ScrollView {
+            RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+        }
+        .background(Color(designSystemColor: .background))
+        .scrollDismissesKeyboardIfAvailable()
+    }
 }

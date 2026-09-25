@@ -56,10 +56,6 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     }
 
     private static func makeDatabase(location: URL) -> CoreDataDatabase {
-        let bundle = PrivacyStats.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "PrivacyStats") else {
-            fatalError("Failed to load PrivacyStats model")
-        }
-        return CoreDataDatabase(name: "PrivacyStats", containerLocation: location, model: model)
+        CoreDataDatabase(name: "PrivacyStats", containerLocation: location, model: .privacyStats)
     }
 }

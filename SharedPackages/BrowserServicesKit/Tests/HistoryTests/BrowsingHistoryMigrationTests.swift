@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BookmarksTestsUtils
-import XCTest
-import Persistence
 import CoreData
-@testable import History
 import Foundation
+import Persistence
+import XCTest
+
+@testable import History
 
 class BrowsingHistoryMigrationTests: XCTestCase {
 
@@ -30,8 +30,6 @@ class BrowsingHistoryMigrationTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-
-        ModelAccessHelper.compileModel(from: Bundle(for: BrowsingHistoryMigrationTests.self), named: "BrowsingHistory")
 
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
@@ -66,11 +64,7 @@ class BrowsingHistoryMigrationTests: XCTestCase {
     }
 
     func loadDatabase(name: String) -> CoreDataDatabase? {
-        let bundle = History.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory") else {
-            return nil
-        }
-        let historyDatabase = CoreDataDatabase(name: name, containerLocation: location, model: model)
+        let historyDatabase = CoreDataDatabase(name: name, containerLocation: location, model: .browsingHistory)
         historyDatabase.loadStore()
         return historyDatabase
     }

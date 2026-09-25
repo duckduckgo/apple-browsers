@@ -41,8 +41,7 @@ final class TestPrivacyStatsDatabaseProvider: PrivacyStatsDatabaseProviding {
         if location == nil {
             location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         }
-        let model = CoreDataDatabase.loadModel(from: PrivacyStats.bundle, named: "PrivacyStats")!
-        database = CoreDataDatabase(name: databaseName, containerLocation: location, model: model)
+        database = CoreDataDatabase(name: databaseName, containerLocation: location, model: .privacyStats)
         database.loadStore()
         return database
     }

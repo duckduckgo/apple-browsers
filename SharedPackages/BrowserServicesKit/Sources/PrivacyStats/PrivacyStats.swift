@@ -18,9 +18,9 @@
 
 import Combine
 import Common
-import FoundationExtensions
 import CoreData
 import Foundation
+import FoundationExtensions
 import os.log
 import Persistence
 import TrackerRadarKit
@@ -121,8 +121,6 @@ public protocol PrivacyStatsCollecting {
 }
 
 public final class PrivacyStats: PrivacyStatsCollecting {
-
-    public static let bundle = Bundle.module
 
     public let statsUpdatePublisher: AnyPublisher<Void, Never>
 

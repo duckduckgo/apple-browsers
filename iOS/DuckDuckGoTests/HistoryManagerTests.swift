@@ -31,8 +31,7 @@ final class HistoryManagerTests: XCTestCase {
     @MainActor
     func testWhenURLIsDeletedThenSiteIsRemovedFromHistory() async throws {
 
-        let model = CoreDataDatabase.loadModel(from: History.bundle, named: "BrowsingHistory")!
-        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
+        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: .browsingHistory)
         let loadStoreExpectation = expectation(description: "loadStore")
         db.loadStore { _, _ in
             loadStoreExpectation.fulfill()

@@ -255,15 +255,9 @@ public class HistoryDatabase {
 
     public static func make(location: URL = defaultDBLocation, readOnly: Bool = false) -> CoreDataDatabase {
         Logger.general.debug("HistoryDatabase.make - IN - \(location.absoluteString)")
-        let bundle = History.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory") else {
-            Logger.general.debug("HistoryDatabase.make - OUT, failed to loadModel")
-            fatalError("Failed to load model")
-        }
-
         let db = CoreDataDatabase(name: "History",
                                   containerLocation: location,
-                                  model: model,
+                                  model: .browsingHistory,
                                   readOnly: readOnly)
         Logger.general.debug("HistoryDatabase.make - OUT")
         return db

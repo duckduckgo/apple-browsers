@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
-import CoreData
 import Common
+import CoreData
+import Foundation
 import FoundationExtensions
 
 public protocol CoreDataStoring {
@@ -47,6 +47,7 @@ public class CoreDataDatabase: CoreDataStoring {
 
     private let containerLocation: URL
     private let container: NSPersistentContainer
+    private var versionedModel: VersionedManagedObjectModel?
     private let storeLoadedCondition = RunLoop.ResumeCondition()
 
     public var isDatabaseFileInitialized: Bool {
@@ -107,6 +108,16 @@ public class CoreDataDatabase: CoreDataStoring {
         self.container.persistentStoreDescriptions = [description]
     }
 
+    /// Uses a code-defined model, migrating stores created by any of its earlier versions on `loadStore`.
+    public convenience init(name: String,
+                            containerLocation: URL,
+                            model: VersionedManagedObjectModel,
+                            readOnly: Bool = false,
+                            options: [String: NSObject] = [:]) {
+        self.init(name: name, containerLocation: containerLocation, model: model.current, readOnly: readOnly, options: options)
+        self.versionedModel = model
+    }
+
     public func loadStore(completion: @escaping (NSManagedObjectContext?, Swift.Error?) -> Void = { _, _ in }) {
 
         do {
@@ -114,6 +125,18 @@ public class CoreDataDatabase: CoreDataStoring {
         } catch {
             completion(nil, Error.containerLocationCouldNotBePrepared(underlyingError: error))
             return
+        }
+
+        if let versionedModel,
+           let description = container.persistentStoreDescriptions.first,
+           !description.isReadOnly,
+           let storeURL = description.url {
+            do {
+                try versionedModel.migrateStoreIfNeeded(at: storeURL)
+            } catch {
+                completion(nil, error)
+                return
+            }
         }
 
         container.loadPersistentStores { _, error in

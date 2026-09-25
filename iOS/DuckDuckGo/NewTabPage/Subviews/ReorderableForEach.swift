@@ -177,7 +177,6 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
 
     final class Coordinator: NSObject, UIDragInteractionDelegate {
         var source: ReorderDragSource
-        private var previewController: UIHostingController<Preview>?
         private var activeSessionID: ObjectIdentifier?
 
         init(source: ReorderDragSource) {
@@ -196,25 +195,26 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
 
         func dragInteraction(_ interaction: UIDragInteraction, previewForLifting item: UIDragItem,
                              session: UIDragSession) -> UITargetedDragPreview? {
-            guard let view = interaction.view, let window = view.window else { return nil }
+            guard let view = interaction.view, view.window != nil else { return nil }
             let controller = UIHostingController(rootView: source.preview)
-            controller.view.backgroundColor = .clear
-            controller.view.bounds.size = controller.sizeThatFits(in: UIView.layoutFittingExpandedSize)
-            controller.view.layoutIfNeeded()
-            previewController = controller
+            let previewSize = controller.sizeThatFits(in: view.bounds.size)
+            let previewFrame = CGRect(x: view.bounds.midX - previewSize.width / 2,
+                                      y: view.bounds.minY,
+                                      width: previewSize.width,
+                                      height: previewSize.height)
 
+            // Use the rendered tile, including its loaded favicon. A newly created,
+            // detached SwiftUI host can be empty when UIKit captures the lift preview.
             let parameters = UIDragPreviewParameters()
             parameters.backgroundColor = .clear
-            let center = CGPoint(x: view.bounds.midX, y: controller.view.bounds.height / 2)
-            let target = UIDragPreviewTarget(container: window, center: view.convert(center, to: window))
-            return UITargetedDragPreview(view: controller.view, parameters: parameters, target: target)
+            parameters.visiblePath = UIBezierPath(rect: previewFrame)
+            return UITargetedDragPreview(view: view, parameters: parameters)
         }
 
         func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {
             let sessionID = ObjectIdentifier(session)
             guard activeSessionID == sessionID else { return }
             activeSessionID = nil
-            previewController = nil
             source.onEnd(sessionID)
         }
     }

@@ -908,7 +908,6 @@
 		3706FCD6293F65D500E42796 /* httpsMobileV2FalsePositives.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B67742A255DBEB800025BD8 /* httpsMobileV2FalsePositives.json */; };
 		3706FCD8293F65D500E42796 /* BookmarksBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4BD18F04283F151F00058124 /* BookmarksBar.storyboard */; };
 		3706FCDB293F65D500E42796 /* Feedback.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA3863C427A1E28F00749AB5 /* Feedback.storyboard */; };
-		3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85625993269C8F9600EE44BC /* PasswordManager.storyboard */; };
 		3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */ = {isa = PBXBuildFile; fileRef = 4B677428255DBEB800025BD8 /* httpsMobileV2Bloom.bin */; };
 		3706FCEF293F65D500E42796 /* macos-config.json in Resources */ = {isa = PBXBuildFile; fileRef = 026ADE1326C3010C002518EE /* macos-config.json */; };
 		3706FCF0293F65D500E42796 /* httpsMobileV2BloomSpec.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B677427255DBEB800025BD8 /* httpsMobileV2BloomSpec.json */; };
@@ -2718,7 +2717,6 @@
 		854DAAAE2A72B613001E2E24 /* BookmarksBarPromptAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 859F30662A72B38500C20372 /* BookmarksBarPromptAssets.xcassets */; };
 		85589E8327BBB8630038AD11 /* BurnerHomePageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85589E7D27BBB8630038AD11 /* BurnerHomePageViewController.swift */; };
 		85589E9A27BFE3C30038AD11 /* FaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85589E9927BFE3C30038AD11 /* FaviconView.swift */; };
-		85625994269C8F9600EE44BC /* PasswordManager.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85625993269C8F9600EE44BC /* PasswordManager.storyboard */; };
 		85625996269C953C00EE44BC /* PasswordManagementViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85625995269C953C00EE44BC /* PasswordManagementViewController.swift */; };
 		85625998269C9C5F00EE44BC /* PasswordManagementPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85625997269C9C5F00EE44BC /* PasswordManagementPopover.swift */; };
 		8562599A269CA0A600EE44BC /* NSRectExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85625999269CA0A600EE44BC /* NSRectExtension.swift */; };
@@ -6324,7 +6322,6 @@
 		85589E7D27BBB8630038AD11 /* BurnerHomePageViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BurnerHomePageViewController.swift; sourceTree = "<group>"; };
 		85589E9227BFBBD60038AD11 /* History 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "History 4.xcdatamodel"; sourceTree = "<group>"; };
 		85589E9927BFE3C30038AD11 /* FaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconView.swift; sourceTree = "<group>"; };
-		85625993269C8F9600EE44BC /* PasswordManager.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = PasswordManager.storyboard; sourceTree = "<group>"; };
 		85625995269C953C00EE44BC /* PasswordManagementViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagementViewController.swift; sourceTree = "<group>"; };
 		85625997269C9C5F00EE44BC /* PasswordManagementPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagementPopover.swift; sourceTree = "<group>"; };
 		85625999269CA0A600EE44BC /* NSRectExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSRectExtension.swift; sourceTree = "<group>"; };
@@ -10879,7 +10876,6 @@
 				4BE65472271FCD40008D1D63 /* PasswordManagementNoteItemView.swift */,
 				85625997269C9C5F00EE44BC /* PasswordManagementPopover.swift */,
 				85625995269C953C00EE44BC /* PasswordManagementViewController.swift */,
-				85625993269C8F9600EE44BC /* PasswordManager.storyboard */,
 				4BBE0AA627B9B027003B37A8 /* PopUpButton.swift */,
 				85890639267BCD8E00D23B0D /* SaveCredentialsPopover.swift */,
 				8589063B267BCDC000D23B0D /* SaveCredentialsViewController.swift */,
@@ -15107,7 +15103,6 @@
 				BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */,
 				BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				B531B7FA30112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
-				3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */,
 				7B0A6DFB2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACC2BBC821B00EF3735 /* vpn-light-mode.json in Resources */,
 				3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */,
@@ -15368,7 +15363,6 @@
 				BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */,
 				BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */,
 				BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
-				85625994269C8F9600EE44BC /* PasswordManager.storyboard in Resources */,
 				B531B7F930112DB60087A2DE /* Shield-Off-Gray.json in Resources */,
 				7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACA2BBC821A00EF3735 /* vpn-light-mode.json in Resources */,

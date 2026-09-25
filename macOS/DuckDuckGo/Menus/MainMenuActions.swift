@@ -556,12 +556,7 @@ extension AppDelegate {
 
     @objc func navigateToPrivateEmail(_ sender: Any?) {
         DispatchQueue.main.async {
-            guard let window = NSApplication.shared.keyWindow,
-                  let windowController = window.windowController as? MainWindowController else {
-                assertionFailure("No reference to main window controller")
-                return
-            }
-            windowController.mainViewController.browserTabViewController.openNewTab(with: .url(URL.duckDuckGoEmailLogin, source: .ui))
+            Application.appDelegate.windowControllersManager.show(url: .duckDuckGoEmailLogin, source: .ui, newTab: true)
         }
     }
 

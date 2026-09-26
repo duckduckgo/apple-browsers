@@ -94,6 +94,36 @@ final class NewPermissionAuthorizationViewModelTests: XCTestCase {
         withExtendedLifetime(query) {}
     }
 
+    func testWhenDismissedPermissionIsRequestedAgainThenPendingQueryIsReplacedWithoutSavingDecision() throws {
+        let manager = PermissionManagerMock()
+        let model = PermissionModel(permissionManager: manager,
+                                    geolocationService: GeolocationServiceMock(),
+                                    systemPermissionManager: SystemPermissionManagerMock())
+        let permission = PermissionType.externalScheme(scheme: "mailto")
+        var decisions: [Bool] = []
+        model.permissions([permission], requestedForDomain: "example.com") { (granted: Bool) in
+            decisions.append(granted)
+        }
+        let query = try XCTUnwrap(model.authorizationQuery)
+        let viewModel = makeViewModel(query: query)
+
+        viewModel.send(action: .dismiss)
+
+        XCTAssertEqual(decisions, [false])
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: permission))
+
+        model.permissions([permission], requestedForDomain: "example.com") { (granted: Bool) in
+            decisions.append(granted)
+        }
+        let retryQuery = try XCTUnwrap(model.authorizationQuery)
+        XCTAssertFalse(retryQuery === query)
+        XCTAssertEqual(model.permissions[permission], .requested(retryQuery))
+        XCTAssertEqual(decisions, [false])
+        XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: permission))
+        retryQuery.cancel()
+    }
+
     // MARK: - Learn more
 
     func testLearnMoreOpensHelpPageWithoutFinishing() {

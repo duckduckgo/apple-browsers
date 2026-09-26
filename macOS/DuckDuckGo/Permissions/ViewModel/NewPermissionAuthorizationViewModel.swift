@@ -70,6 +70,7 @@ final class NewPermissionAuthorizationViewModel: ObservableObject {
             submit(.neverAllow)
 
         case .dismiss:
+            query?.wasDismissed = true
             query?.cancel()
             finish()
 

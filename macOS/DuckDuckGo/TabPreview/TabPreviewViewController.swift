@@ -164,7 +164,8 @@ final class TabPreviewViewController: NSViewController {
         }
     }
 
-    private func getHeight(for image: NSImage?) -> CGFloat {
+    // Not private so the zero-dimension guard can be exercised directly by unit tests (#4615).
+    func getHeight(for image: NSImage?) -> CGFloat {
         guard let image, image.size.width > 0, image.size.height > 0 else { return 0 }
 
         let aspectRatio = image.size.width / image.size.height

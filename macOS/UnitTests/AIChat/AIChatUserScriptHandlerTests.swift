@@ -20,6 +20,7 @@
 import BrowserServicesKitTestsUtils
 import Combine
 import Common
+import Foundation
 import FoundationExtensions
 @testable import DDGSync
 @_spi(Testing) import PixelKit
@@ -84,6 +85,18 @@ final class MockAIChatMessageHandler: AIChatMessageHandling {
     }
 }
 
+private struct MainThreadCheckingUserScriptMessage: UserScriptMessage {
+    let messageName = ""
+    let messageBody: Any = [String: Any]()
+    let messageHost = ""
+    let isMainFrame = true
+
+    var messageWebView: WKWebView? {
+        #expect(Thread.isMainThread, "The script message's WebView must be read on the main thread")
+        return nil
+    }
+}
+
 // swiftlint:disable inclusive_language
 struct AIChatUserScriptHandlerTests {
     private var storage = MockAIChatPreferencesStorage()
@@ -129,6 +142,15 @@ struct AIChatUserScriptHandlerTests {
     func testThatGetAIChatNativeConfigValuesCallsMessageHandler() async {
         _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
         #expect(messageHandler.getNativeConfigValuesCalls == [false])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativeConfigValues reads the WebView on the main thread", .timeLimit(.minutes(1)))
+    func testThatGetAIChatNativeConfigValuesReadsWebViewOnMainThread() async {
+        let testHandler = handler
+        await Task.detached {
+            _ = await testHandler.getAIChatNativeConfigValues(params: [], message: MainThreadCheckingUserScriptMessage())
+        }.value
     }
 
     @available(iOS 16, macOS 13, *)

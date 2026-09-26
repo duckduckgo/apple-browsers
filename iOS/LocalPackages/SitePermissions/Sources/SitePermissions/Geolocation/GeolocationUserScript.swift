@@ -434,8 +434,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
               frameRegistrations.register(nonce: nonce,
                                           frame: GeolocationNativeFrameIdentity(frame: frame, webView: webView),
                                           documentID: policy.documentID,
-                                          pageDocumentID: pageDocumentID,
-                                          constraints: policy.constraints) else {
+                                          pageDocumentID: pageDocumentID) else {
             return Self.errorPayload(.permissionDenied, message: "Unable to register geolocation frame")
         }
         return ["status": "registered", "enabled": true, "constraints": [
@@ -686,11 +685,9 @@ final class GeolocationWatchRegistry {
 final class GeolocationFrameRegistrationStore {
 
     struct Registration: Equatable {
-        let nonce: String
         let frame: GeolocationNativeFrameIdentity
         let documentID: String
         let pageDocumentID: String
-        let constraints: GeolocationRequestConstraints
     }
 
     private var registrations = [String: Registration]()
@@ -700,14 +697,11 @@ final class GeolocationFrameRegistrationStore {
     func register(nonce: String,
                   frame: GeolocationNativeFrameIdentity,
                   documentID: String,
-                  pageDocumentID: String,
-                  constraints: GeolocationRequestConstraints) -> Bool {
-        // Repeated requests may reuse registration, but cannot overwrite its constraints.
+                  pageDocumentID: String) -> Bool {
         if let registration = registrations[nonce] {
             return registration.frame == frame && registration.documentID == documentID && registration.pageDocumentID == pageDocumentID
         }
-        registrations[nonce] = Registration(nonce: nonce, frame: frame, documentID: documentID,
-                                            pageDocumentID: pageDocumentID, constraints: constraints)
+        registrations[nonce] = Registration(frame: frame, documentID: documentID, pageDocumentID: pageDocumentID)
         return true
     }
 

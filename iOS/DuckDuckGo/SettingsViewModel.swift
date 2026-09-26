@@ -187,6 +187,7 @@ final class SettingsViewModel: ObservableObject {
     /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    let isSitePermissionsEnabled: Bool
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
     @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
@@ -194,7 +195,7 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
-        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sitePermissions) },
+        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
         callbacks: makeSitePermissionsCallbacks()
     )
 
@@ -1066,9 +1067,11 @@ final class SettingsViewModel: ObservableObject {
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled
     ) {
 
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
@@ -1241,7 +1244,7 @@ extension SettingsViewModel {
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            sitePermissionsEnabled: isSitePermissionsEnabled,
             networkProtectionConnected: false,
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
@@ -1291,7 +1294,6 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                self.state.sitePermissionsEnabled = self.featureFlagger.isFeatureOn(.sitePermissions)
                 // Refresh the UI for every flag flip so the contingency notice
                 // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
                 // re-renders even for users with explicit storage who skip the

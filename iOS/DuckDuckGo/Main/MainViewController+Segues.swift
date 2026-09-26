@@ -549,7 +549,8 @@ extension MainViewController {
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   whatsNewCoordinator: whatsNewCoordinator,
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                  adBlockingAvailability: adBlockingAvailability)
+                                                  adBlockingAvailability: adBlockingAvailability,
+                                                  sitePermissionsEnabled: tabManager.isSitePermissionsEnabled)
 
         settingsViewModel.configureSitePermissions(
             store: tabManager.sitePermissionsStore,

@@ -553,6 +553,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasContent = hasText || omnibarController.hasSendableAttachments
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
         let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
@@ -562,7 +563,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
         // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
-        if !hasText && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
+        if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
             submitButtonMode = .voice
             submitButton.image = DesignSystemImages.Glyphs.Size16.voice
             submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
@@ -577,7 +578,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
             // Enter on the textarea handles submit; skip the button in tab order.
             submitButton.refusesFirstResponder = true
-            applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
+            applySubmitButtonAppearance(enabled: hasContent && !hasBlockingExcess)
         }
     }
 

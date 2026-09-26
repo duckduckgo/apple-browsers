@@ -927,6 +927,51 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "File data is sent as base64")
     }
 
+    func testWhenSubmitWithOnlyFileAttachmentAndNoText_ThenPromptIsSubmittedWithFiles() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "pdf-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.addFileAttachmentToActiveTab(makeFileAttachment(fileName: "spec.pdf"))
+        controller.updateText("")
+
+        XCTAssertTrue(controller.hasSendableAttachments)
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case let .query(query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.prompt, "")
+        XCTAssertEqual(query.files?.first?.fileName, "spec.pdf")
+    }
+
+    func testWhenSubmitWithOnlyFileAttachmentUnsupportedByModel_ThenNothingHappens() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "text-model", supportedFileTypes: [], entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "text-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.addFileAttachmentToActiveTab(makeFileAttachment(fileName: "spec.pdf"))
+        controller.updateText("   ")
+
+        XCTAssertFalse(controller.hasSendableAttachments)
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+    }
+
     func testWhenSubmitWithFileAttachments_ThenSharedStateClearsFileAttachments() async {
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)

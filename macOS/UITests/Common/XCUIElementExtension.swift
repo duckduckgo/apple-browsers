@@ -244,8 +244,20 @@ extension XCUIElement {
         // Hover the tab to reveal its close ("x") button
         self.hover()
         let closeButton = buttons["TabBarViewItem.closeButton"]
-        XCTAssertTrue(closeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tab close button should appear on hover")
-        closeButton.click()
+        if closeButton.waitForExistence(timeout: 1) {
+            closeButton.click()
+            return
+        }
+
+        // Some background tabs show a preview on hover without exposing the close button to accessibility.
+        // The close button still responds to a click at its trailing edge.
+        guard exists, frame.width > 0 else {
+            XCTFail("Tab should exist and have a nonzero width before closing")
+            return
+        }
+
+        let normalizedX = (frame.width - 12) / frame.width
+        coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: 0.5)).click()
     }
 
     /// Performs a middle mouse click on the element

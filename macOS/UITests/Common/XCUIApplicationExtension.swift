@@ -660,16 +660,13 @@ extension XCUIApplication {
     }
 
     func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
-        let startupWindowMenu = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker].popUpButtons.firstMatch
-        if startupWindowMenu.exists {
-            switch state {
-            case .newWindow, .fireWindow:
-                startupWindowMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)).click()
+        if state != .restoreLastSession {
+            let startupWindowTypePicker = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker].popUpButtons.firstMatch
+            if startupWindowTypePicker.exists {
+                startupWindowTypePicker.click()
                 typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
                 typeKey(.enter, modifierFlags: [])
                 return
-            case .restoreLastSession:
-                break
             }
         }
 

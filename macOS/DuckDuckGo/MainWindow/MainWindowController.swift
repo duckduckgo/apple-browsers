@@ -338,11 +338,9 @@ final class MainWindowController: NSWindowController {
                     // The titlebar has an opaque background (see applyThemeStyle) and sits above the
                     // full-window fire animation. Clear it so the animation shows through.
                     setTitlebarBackgroundColor(.clear)
-                } else if burningData == nil, tabBarAlphaBeforeFireAnimation != nil {
-                    if let tabBarAlphaBeforeFireAnimation {
-                        mainViewController.tabBarViewController.view.alphaValue = tabBarAlphaBeforeFireAnimation
-                        self.tabBarAlphaBeforeFireAnimation = nil
-                    }
+                } else if burningData == nil, let tabBarAlphaBeforeFireAnimation {
+                    mainViewController.tabBarViewController.view.alphaValue = tabBarAlphaBeforeFireAnimation
+                    self.tabBarAlphaBeforeFireAnimation = nil
                     setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
                 }
             }

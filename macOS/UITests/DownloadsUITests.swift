@@ -735,7 +735,7 @@ class DownloadsUITests: UITestCase {
             .firstMatch
         XCTAssertTrue(startedIndicator.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
-        // Close the popup tab with the "x" button
+        // Close the popup tab
         let tabGroup = app.windows.firstMatch
             .tabGroups["Tabs"]
         let popupTab = tabGroup

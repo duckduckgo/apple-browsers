@@ -43,9 +43,23 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
         }
     }
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpUpdateInfo()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpUpdateInfo()
+    }
+
+    private func setUpUpdateInfo() {
         if AppVersion.runType != .uiTests {
             updateController = Application.appDelegate.updateController
             dockCustomization = Application.appDelegate.dockCustomization

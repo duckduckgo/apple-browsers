@@ -211,8 +211,17 @@ internal class MouseOverButton: NSButton, Hoverable {
 
     override func mouseDown(with event: NSEvent) {
         isMouseDown = true
-        super.mouseDown(with: event)
-        isMouseDown = false
+        defer { isMouseDown = false }
+
+        guard isEnabled, let action else { return }
+
+        if eventTypeMask.contains(.leftMouseDown) {
+            // Deliberately not calling `super`: its cell tracking would fire the action a second
+            // time on mouse-up. `isMouseDown` stays set while the menu runs its own modal loop.
+            NSApp.sendAction(action, to: target, from: self)
+        } else {
+            super.mouseDown(with: event)
+        }
     }
 
     override func otherMouseDown(with event: NSEvent) {

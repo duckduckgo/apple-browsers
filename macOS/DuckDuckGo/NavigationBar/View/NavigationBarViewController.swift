@@ -50,63 +50,63 @@ final class NavigationBarViewController: NSViewController {
     private static var forceShowButtonsInPopup = false
 #endif
 
-    @IBOutlet private var goBackButton: MouseOverButton!
-    @IBOutlet private var goForwardButton: MouseOverButton!
-    @IBOutlet private var refreshOrStopButton: MouseOverButton!
-    @IBOutlet private(set) var optionsButton: MoreOptionsMenuButton!
-    @IBOutlet private var overflowButton: MouseOverButton!
-    @IBOutlet private var bookmarkListButton: MouseOverButton!
-    @IBOutlet private var passwordManagementButton: MouseOverButton!
-    @IBOutlet private var homeButton: MouseOverButton!
-    @IBOutlet private var homeButtonSeparator: NSView!
-    @IBOutlet private var downloadsButton: MouseOverButton!
-    @IBOutlet private var shareButton: MouseOverButton!
-    @IBOutlet private var networkProtectionButton: NetworkProtectionButton!
-    @IBOutlet private var navigationButtons: NSStackView!
-    @IBOutlet private var addressBarContainer: NSView!
-    @IBOutlet private var daxLogo: NSImageView!
-    @IBOutlet var addressBarStack: NSStackView!
+    private(set) var goBackButton: MouseOverButton!
+    private(set) var goForwardButton: MouseOverButton!
+    private(set) var refreshOrStopButton: MouseOverButton!
+    private(set) var optionsButton: MoreOptionsMenuButton!
+    private(set) var overflowButton: MouseOverButton!
+    private(set) var bookmarkListButton: MouseOverButton!
+    private(set) var passwordManagementButton: MouseOverButton!
+    private(set) var homeButton: MouseOverButton!
+    private(set) var homeButtonSeparator: NSView!
+    private(set) var downloadsButton: MouseOverButton!
+    private(set) var shareButton: MouseOverButton!
+    private(set) var networkProtectionButton: NetworkProtectionButton!
+    private(set) var navigationButtons: NSStackView!
+    private(set) var addressBarContainer: NSView!
+    private(set) var daxLogo: NSImageView!
+    private(set) var addressBarStack: NSStackView!
 
-    @IBOutlet private(set) var menuButtons: NSStackView!
-    @IBOutlet private var addressBarLeftToNavButtonsConstraint: NSLayoutConstraint!
-    @IBOutlet private var addressBarProportionalWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var navigationBarRightToMenuButtonsConstraint: NSLayoutConstraint!
-    @IBOutlet private var addressBarTopConstraint: NSLayoutConstraint!
-    @IBOutlet private var addressBarBottomConstraint: NSLayoutConstraint!
-    @IBOutlet private var navigationBarHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var buttonsTopConstraint: NSLayoutConstraint!
-    @IBOutlet private weak var addressBarMinWidthConstraint: NSLayoutConstraint?
-    @IBOutlet private var logoWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var backgroundColorView: MouseOverView!
-    @IBOutlet private var backgroundBaseColorView: ColorView!
+    private(set) var menuButtons: NSStackView!
+    private(set) var addressBarLeftToNavButtonsConstraint: NSLayoutConstraint!
+    private(set) var addressBarProportionalWidthConstraint: NSLayoutConstraint!
+    private(set) var navigationBarRightToMenuButtonsConstraint: NSLayoutConstraint!
+    private(set) var addressBarTopConstraint: NSLayoutConstraint!
+    private(set) var addressBarBottomConstraint: NSLayoutConstraint!
+    private(set) var navigationBarHeightConstraint: NSLayoutConstraint!
+    private(set) var buttonsTopConstraint: NSLayoutConstraint!
+    private(set) var addressBarMinWidthConstraint: NSLayoutConstraint?
+    private(set) var logoWidthConstraint: NSLayoutConstraint!
+    private(set) var backgroundColorView: MouseOverView!
+    private(set) var backgroundBaseColorView: ColorView!
 
     private var feedbackButton: MouseOverButton?
     private var feedbackButtonSpacer: NSView?
     private var feedbackTipController: QuickFeedbackTipController?
     private var internalUserCancellable: AnyCancellable?
     private var fireWindowBackgroundView: NSImageView?
-    @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var goForwardButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var goForwardButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var refreshButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var refreshButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var homeButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var homeButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var downloadsButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var downloadsButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var shareButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var shareButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var passwordsButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var passwordsButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var bookmarksButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var bookmarksButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var vpnButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var vpnButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var overflowButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var overflowButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet private var optionsButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet private var optionsButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var goBackButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var goBackButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var goForwardButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var goForwardButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var refreshButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var refreshButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var homeButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var homeButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var downloadsButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var downloadsButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var shareButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var shareButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var passwordsButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var passwordsButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var bookmarksButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var bookmarksButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var vpnButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var vpnButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var overflowButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var overflowButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var optionsButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var optionsButtonHeightConstraint: NSLayoutConstraint!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -263,9 +263,7 @@ final class NavigationBarViewController: NSViewController {
                            }
                        }
     ) -> NavigationBarViewController {
-        NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
-            self.init(
-                coder: coder,
+        self.init(
                 tabCollectionViewModel: tabCollectionViewModel,
                 downloadListCoordinator: downloadListCoordinator,
                 bookmarkManager: bookmarkManager,
@@ -299,11 +297,9 @@ final class NavigationBarViewController: NSViewController {
                 pixelFiring: pixelFiring,
                 showTab: showTab
             )
-        }!
     }
 
-    init?(
-        coder: NSCoder,
+    init(
         tabCollectionViewModel: TabCollectionViewModel,
         downloadListCoordinator: DownloadListCoordinator,
         bookmarkManager: BookmarkManager,
@@ -404,7 +400,7 @@ final class NavigationBarViewController: NSViewController {
             historyCoordinator: historyCoordinator,
             tabsPreferences: tabsPreferences
         )
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
 
         memoryUsageDisplayer.presenter = self
     }
@@ -448,10 +444,9 @@ final class NavigationBarViewController: NSViewController {
 #endif
     }
 
-    @IBSegueAction func createAddressBarViewController(_ coder: NSCoder) -> AddressBarViewController? {
+    private func makeAddressBarViewController() -> AddressBarViewController {
         let onboardingPixelReporter = OnboardingPixelReporter()
-        guard let addressBarViewController = AddressBarViewController(coder: coder,
-                                                                      tabCollectionViewModel: tabCollectionViewModel,
+        let addressBarViewController = AddressBarViewController(tabCollectionViewModel: tabCollectionViewModel,
                                                                       bookmarkManager: bookmarkManager,
                                                                       historyCoordinator: historyCoordinator,
                                                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
@@ -465,13 +460,258 @@ final class NavigationBarViewController: NSViewController {
                                                                       aiChatMenuConfig: aiChatMenuConfig,
                                                                       aiChatCoordinator: aiChatCoordinator,
                                                                       featureFlagger: featureFlagger,
-                                                                      adBlockingAvailability: adBlockingAvailability) else {
-            fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
-        }
+                                                                      adBlockingAvailability: adBlockingAvailability)
 
         self.addressBarViewController = addressBarViewController
         self.addressBarViewController?.delegate = self
         return addressBarViewController
+    }
+
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 1675, height: 68)
+        static let barHeight: CGFloat = 68
+        static let buttonSide: CGFloat = 32
+        static let buttonCornerRadius: CGFloat = 4
+        static let navigationButtonsLeading: CGFloat = 14
+        static let menuButtonsTrailing: CGFloat = 12
+        static let addressBarStackSpacing: CGFloat = 16
+        static let addressBarVerticalInset: CGFloat = 6
+        static let addressBarMinWidth: CGFloat = 212
+        static let addressBarSideSpacing: CGFloat = 12
+        /// The address bar wants to take this share of the window width; it is a low-priority
+        /// constraint so the bar keeps contracting with the window while the side gaps stay open,
+        /// until `addressBarMinWidth` takes over and the gaps close instead.
+        static let addressBarProportionalWidth: CGFloat = 0.6
+        static let logoWidth: CGFloat = 44
+        static let homeSeparatorWidth: CGFloat = 23
+        static let homeSeparatorHeight: CGFloat = 20
+    }
+
+    /// Square, image-only toolbar button with no bezel: `MouseOverButton` draws the hover and pressed fills.
+    private func configureToolbarButton(_ button: MouseOverButton, image: NSImage?, action: Selector?) {
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setButtonType(.momentaryPushIn)
+        button.isBordered = false
+        button.bezelStyle = .shadowlessSquare
+        button.image = image
+        button.imagePosition = .imageOnly
+        button.title = ""
+        button.imageScaling = .scaleProportionallyDown
+        button.alignment = .center
+        button.contentTintColor = .button
+        button.normalTintColor = button.contentTintColor
+        button.mouseOverColor = .buttonMouseOver
+        button.mouseDownColor = .buttonMouseDown
+        button.cornerRadius = LayoutConstants.buttonCornerRadius
+        button.target = self
+        button.action = action
+    }
+
+    private func sizeConstraints(for view: NSView) -> (width: NSLayoutConstraint, height: NSLayoutConstraint) {
+        (view.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide),
+         view.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide))
+    }
+
+    // swiftlint:disable:next function_body_length
+    override func loadView() {
+        backgroundBaseColorView = ColorView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+        let view = backgroundBaseColorView!
+
+        backgroundColorView = MouseOverView(frame: .zero)
+        backgroundColorView.translatesAutoresizingMaskIntoConstraints = false
+
+        let windowDraggingView = WindowDraggingView()
+        windowDraggingView.translatesAutoresizingMaskIntoConstraints = false
+
+        // MARK: Navigation buttons
+        let homeSeparatorBox = NSBox()
+        homeSeparatorBox.translatesAutoresizingMaskIntoConstraints = false
+        homeSeparatorBox.boxType = .separator
+        homeSeparatorBox.setContentHuggingPriority(.init(750), for: .horizontal)
+
+        homeButtonSeparator = NSView()
+        homeButtonSeparator.translatesAutoresizingMaskIntoConstraints = false
+        homeButtonSeparator.isHidden = true
+        homeButtonSeparator.addSubview(homeSeparatorBox)
+
+        goBackButton = LongPressButton(frame: .zero)
+        configureToolbarButton(goBackButton, image: .back, action: #selector(goBackAction(_:)))
+        goForwardButton = LongPressButton(frame: .zero)
+        configureToolbarButton(goForwardButton, image: .forward, action: #selector(goForwardAction(_:)))
+        goForwardButton.tag = 1
+        refreshOrStopButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(refreshOrStopButton, image: .refresh, action: #selector(refreshOrStopAction(_:)))
+        refreshOrStopButton.tag = 2
+        homeButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(homeButton, image: .home16, action: #selector(homeButtonAction(_:)))
+        homeButton.tag = 3
+
+        navigationButtons = NSStackView(views: [homeButtonSeparator, goBackButton, goForwardButton, refreshOrStopButton, homeButton])
+        navigationButtons.translatesAutoresizingMaskIntoConstraints = false
+        navigationButtons.orientation = .horizontal
+        navigationButtons.distribution = .fill
+        navigationButtons.alignment = .centerY
+        navigationButtons.spacing = 0
+        navigationButtons.detachesHiddenViews = true
+
+        // MARK: Address bar stack
+        daxLogo = NSImageView()
+        daxLogo.translatesAutoresizingMaskIntoConstraints = false
+        daxLogo.image = .homePageLogo
+        daxLogo.imageScaling = .scaleProportionallyDown
+        daxLogo.imageAlignment = .alignLeft
+        daxLogo.refusesFirstResponder = true
+        daxLogo.setContentHuggingPriority(.init(251), for: .horizontal)
+        daxLogo.setContentHuggingPriority(.init(251), for: .vertical)
+
+        addressBarContainer = NSView()
+        addressBarContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        addressBarStack = NSStackView(views: [daxLogo, addressBarContainer])
+        addressBarStack.translatesAutoresizingMaskIntoConstraints = false
+        addressBarStack.orientation = .horizontal
+        addressBarStack.distribution = .fill
+        addressBarStack.alignment = .centerY
+        addressBarStack.spacing = LayoutConstants.addressBarStackSpacing
+        addressBarStack.detachesHiddenViews = true
+        addressBarStack.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+        addressBarStack.setContentCompressionResistancePriority(.init(250), for: .vertical)
+
+        // MARK: Menu buttons
+        shareButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(shareButton, image: nil, action: #selector(shareButtonAction(_:)))
+        shareButton.isHidden = true
+        downloadsButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(downloadsButton, image: .downloads, action: #selector(downloadsButtonAction(_:)))
+        downloadsButton.isHidden = true
+        passwordManagementButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(passwordManagementButton, image: .passwordManagement,
+                               action: #selector(passwordManagementButtonAction(_:)))
+        bookmarkListButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(bookmarkListButton, image: .bookmarks, action: #selector(bookmarksButtonAction(_:)))
+        networkProtectionButton = NetworkProtectionButton(frame: .zero)
+        configureToolbarButton(networkProtectionButton, image: nil,
+                               action: #selector(networkProtectionButtonAction(_:)))
+        networkProtectionButton.isHidden = true
+        overflowButton = MouseOverButton(frame: .zero)
+        configureToolbarButton(overflowButton, image: .chevronDoubleRight16, action: #selector(overflowButtonAction(_:)))
+        optionsButton = MoreOptionsMenuButton(frame: .zero)
+        configureToolbarButton(optionsButton, image: .settings, action: #selector(optionsButtonAction(_:)))
+
+        menuButtons = NSStackView(views: [shareButton, downloadsButton, passwordManagementButton, bookmarkListButton,
+                                          networkProtectionButton, overflowButton, optionsButton])
+        menuButtons.translatesAutoresizingMaskIntoConstraints = false
+        menuButtons.orientation = .horizontal
+        menuButtons.distribution = .fill
+        menuButtons.alignment = .centerY
+        menuButtons.spacing = 0
+        menuButtons.detachesHiddenViews = true
+        menuButtons.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+        menuButtons.setContentCompressionResistancePriority(.init(250), for: .vertical)
+
+        view.addSubview(backgroundColorView)
+        view.addSubview(windowDraggingView)
+        view.addSubview(navigationButtons)
+        view.addSubview(addressBarStack)
+        view.addSubview(menuButtons)
+
+        (goBackButtonWidthConstraint, goBackButtonHeightConstraint) = sizeConstraints(for: goBackButton)
+        (goForwardButtonWidthConstraint, goForwardButtonHeightConstraint) = sizeConstraints(for: goForwardButton)
+        (refreshButtonWidthConstraint, refreshButtonHeightConstraint) = sizeConstraints(for: refreshOrStopButton)
+        (homeButtonWidthConstraint, homeButtonHeightConstraint) = sizeConstraints(for: homeButton)
+        (shareButtonWidthConstraint, shareButtonHeightConstraint) = sizeConstraints(for: shareButton)
+        (downloadsButtonWidthConstraint, downloadsButtonHeightConstraint) = sizeConstraints(for: downloadsButton)
+        (passwordsButtonWidthConstraint, passwordsButtonHeightConstraint) = sizeConstraints(for: passwordManagementButton)
+        (bookmarksButtonWidthConstraint, bookmarksButtonHeightConstraint) = sizeConstraints(for: bookmarkListButton)
+        (vpnButtonWidthConstraint, vpnButtonHeightConstraint) = sizeConstraints(for: networkProtectionButton)
+        (overflowButtonWidthConstraint, overflowButtonHeightConstraint) = sizeConstraints(for: overflowButton)
+        (optionsButtonWidthConstraint, optionsButtonHeightConstraint) = sizeConstraints(for: optionsButton)
+
+        navigationBarHeightConstraint = view.heightAnchor.constraint(equalToConstant: LayoutConstants.barHeight)
+        logoWidthConstraint = daxLogo.widthAnchor.constraint(equalToConstant: LayoutConstants.logoWidth)
+        addressBarMinWidthConstraint = addressBarStack.widthAnchor
+            .constraint(greaterThanOrEqualToConstant: LayoutConstants.addressBarMinWidth)
+        addressBarTopConstraint = addressBarStack.topAnchor
+            .constraint(equalTo: view.topAnchor, constant: LayoutConstants.addressBarVerticalInset)
+        addressBarBottomConstraint = view.bottomAnchor
+            .constraint(equalTo: addressBarStack.bottomAnchor, constant: LayoutConstants.addressBarVerticalInset)
+        addressBarLeftToNavButtonsConstraint = addressBarStack.leadingAnchor
+            .constraint(greaterThanOrEqualTo: navigationButtons.trailingAnchor, constant: LayoutConstants.addressBarSideSpacing)
+        navigationBarRightToMenuButtonsConstraint = menuButtons.leadingAnchor
+            .constraint(greaterThanOrEqualTo: addressBarStack.trailingAnchor, constant: LayoutConstants.addressBarSideSpacing)
+        addressBarProportionalWidthConstraint = addressBarStack.widthAnchor
+            .constraint(equalTo: view.widthAnchor, multiplier: LayoutConstants.addressBarProportionalWidth)
+        addressBarProportionalWidthConstraint.priority = .init(250)
+
+        let addressBarCenterX = addressBarStack.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        addressBarCenterX.priority = .init(100)
+
+        NSLayoutConstraint.activate([
+            navigationBarHeightConstraint,
+
+            backgroundColorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: backgroundColorView.trailingAnchor),
+            backgroundColorView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: backgroundColorView.bottomAnchor),
+
+            windowDraggingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: windowDraggingView.trailingAnchor),
+            windowDraggingView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: windowDraggingView.bottomAnchor),
+
+            homeButtonSeparator.widthAnchor.constraint(equalToConstant: LayoutConstants.homeSeparatorWidth),
+            homeButtonSeparator.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide),
+            homeSeparatorBox.heightAnchor.constraint(equalToConstant: LayoutConstants.homeSeparatorHeight),
+            homeSeparatorBox.centerXAnchor.constraint(equalTo: homeButtonSeparator.centerXAnchor),
+            homeSeparatorBox.centerYAnchor.constraint(equalTo: homeButtonSeparator.centerYAnchor),
+
+            goBackButtonWidthConstraint, goBackButtonHeightConstraint,
+            goForwardButtonWidthConstraint, goForwardButtonHeightConstraint,
+            refreshButtonWidthConstraint, refreshButtonHeightConstraint,
+            homeButtonWidthConstraint, homeButtonHeightConstraint,
+            shareButtonWidthConstraint, shareButtonHeightConstraint,
+            downloadsButtonWidthConstraint, downloadsButtonHeightConstraint,
+            passwordsButtonWidthConstraint, passwordsButtonHeightConstraint,
+            bookmarksButtonWidthConstraint, bookmarksButtonHeightConstraint,
+            vpnButtonWidthConstraint, vpnButtonHeightConstraint,
+            overflowButtonWidthConstraint, overflowButtonHeightConstraint,
+            optionsButtonWidthConstraint, optionsButtonHeightConstraint,
+
+            navigationButtons.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                                       constant: LayoutConstants.navigationButtonsLeading),
+            navigationButtons.centerYAnchor.constraint(equalTo: addressBarContainer.centerYAnchor),
+
+            logoWidthConstraint,
+            addressBarMinWidthConstraint!,
+            addressBarTopConstraint,
+            addressBarBottomConstraint,
+            addressBarLeftToNavButtonsConstraint,
+            addressBarProportionalWidthConstraint,
+            addressBarCenterX,
+
+            menuButtons.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            view.trailingAnchor.constraint(equalTo: menuButtons.trailingAnchor,
+                                           constant: LayoutConstants.menuButtonsTrailing),
+            navigationBarRightToMenuButtonsConstraint,
+        ])
+
+        // The address bar is its own controller so it keeps its own state and lifecycle;
+        // embed it as a child rather than reaching into its views from here.
+        let addressBarViewController = makeAddressBarViewController()
+        addChild(addressBarViewController)
+        // Pinned with constraints rather than `addAndLayout`: the container has no size yet at
+        // `loadView()` time, so autoresizing would have to grow the child from a zero frame.
+        let addressBarView = addressBarViewController.view
+        addressBarView.translatesAutoresizingMaskIntoConstraints = false
+        addressBarContainer.addSubview(addressBarView)
+        NSLayoutConstraint.activate([
+            addressBarView.leadingAnchor.constraint(equalTo: addressBarContainer.leadingAnchor),
+            addressBarContainer.trailingAnchor.constraint(equalTo: addressBarView.trailingAnchor),
+            addressBarView.topAnchor.constraint(equalTo: addressBarContainer.topAnchor),
+            addressBarContainer.bottomAnchor.constraint(equalTo: addressBarView.bottomAnchor),
+        ])
+
+        self.view = view
     }
 
     override func viewDidLoad() {
@@ -1364,7 +1604,7 @@ final class NavigationBarViewController: NSViewController {
         super.mouseDown(with: event)
     }
 
-    @IBAction func goBackAction(_ sender: NSButton) {
+    @objc func goBackAction(_ sender: NSButton) {
         guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else {
             Logger.navigation.error("Selected tab view model is nil")
             return
@@ -1374,7 +1614,7 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    @IBAction func goForwardAction(_ sender: NSButton) {
+    @objc func goForwardAction(_ sender: NSButton) {
         guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else {
             Logger.navigation.error("Selected tab view model is nil")
             return
@@ -1411,7 +1651,7 @@ final class NavigationBarViewController: NSViewController {
         return true
     }
 
-    @IBAction func refreshOrStopAction(_ sender: NSButton) {
+    @objc func refreshOrStopAction(_ sender: NSButton) {
         guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else {
             Logger.navigation.error("Selected tab view model is nil")
             return
@@ -1424,7 +1664,7 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    @IBAction func homeButtonAction(_ sender: NSButton) {
+    @objc func homeButtonAction(_ sender: NSButton) {
         guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else {
             Logger.navigation.error("Selected tab view model is nil")
             return
@@ -1458,7 +1698,7 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    @IBAction func overflowButtonAction(_ sender: NSButton) {
+    @objc func overflowButtonAction(_ sender: NSButton) {
         guard let menu = overflowButton.menu else {
             return
         }
@@ -1466,7 +1706,7 @@ final class NavigationBarViewController: NSViewController {
         menu.popUp(positioning: nil, at: location, in: sender)
     }
 
-    @IBAction func optionsButtonAction(_ sender: NSButton) {
+    @objc func optionsButtonAction(_ sender: NSButton) {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
         let dockCustomization = Application.appDelegate.dockCustomization
@@ -1488,17 +1728,17 @@ final class NavigationBarViewController: NSViewController {
         menu.popUp(positioning: nil, at: location, in: sender)
     }
 
-    @IBAction func bookmarksButtonAction(_ sender: NSButton) {
+    @objc func bookmarksButtonAction(_ sender: NSButton) {
         popovers.bookmarksButtonPressed(bookmarkListButton, popoverDelegate: self, tab: tabCollectionViewModel.selectedTabViewModel?.tab)
         PixelKit.fire(NavigationBarPixel.bookmarksButtonClicked, frequency: .daily)
     }
 
-    @IBAction func passwordManagementButtonAction(_ sender: NSButton) {
+    @objc func passwordManagementButtonAction(_ sender: NSButton) {
         popovers.passwordManagementButtonPressed(passwordManagementButton, withDelegate: self)
         PixelKit.fire(NavigationBarPixel.passwordsButtonClicked, frequency: .daily)
     }
 
-    @IBAction func networkProtectionButtonAction(_ sender: NSButton) {
+    @objc func networkProtectionButtonAction(_ sender: NSButton) {
         toggleNetworkProtectionPopover()
     }
 
@@ -1514,12 +1754,12 @@ final class NavigationBarViewController: NSViewController {
         popovers.toggleNetworkProtectionPopover(from: networkProtectionButton, withDelegate: networkProtectionButtonModel)
     }
 
-    @IBAction func downloadsButtonAction(_ sender: NSButton) {
+    @objc func downloadsButtonAction(_ sender: NSButton) {
         toggleDownloadsPopover(keepButtonVisible: false)
         PixelKit.fire(NavigationBarPixel.downloadsButtonClicked, frequency: .daily)
     }
 
-    @IBAction func shareButtonAction(_ sender: NSButton) {
+    @objc func shareButtonAction(_ sender: NSButton) {
         let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar, delegate: self)
         let location = NSPoint(x: -sharingMenu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
         sharingMenu.popUp(positioning: nil, at: location, in: sender)

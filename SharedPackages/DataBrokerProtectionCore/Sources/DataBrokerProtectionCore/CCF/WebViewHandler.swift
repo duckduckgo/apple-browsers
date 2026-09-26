@@ -408,7 +408,7 @@ private extension DataBrokerProtectionWebViewHandler {
         var nextSnapshotAttempt = Date.distantPast
         var didClick = false
 
-        try? await Task.sleep(nanoseconds: 2_200_000_000)
+        try? await Task.sleep(nanoseconds: 5_000_000_000)
         while isAwaitingChallengeDestination, Date() < deadline, !Task.isCancelled {
             guard isChallengeResponse else {
                 try? await Task.sleep(nanoseconds: 250_000_000)

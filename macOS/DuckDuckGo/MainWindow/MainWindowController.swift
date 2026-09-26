@@ -317,7 +317,6 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
-    private var didMoveTabBarForFireAnimation = false
     private var tabBarAlphaBeforeFireAnimation: CGFloat?
     private var isClosingAndBurning = false
 
@@ -330,25 +329,16 @@ final class MainWindowController: NSWindowController {
                 // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation.
                 // Only change the tab bar for burns whose animation needs to cover it.
                 if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
-                    if #available(macOS 27, *) {
-                        // Reparenting the collection view on macOS 27 can leave its tabs unrendered.
-                        // Keep it attached and make it transparent while the Fire animation plays.
-                        let tabBarView = mainViewController.tabBarViewController.view
-                        tabBarAlphaBeforeFireAnimation = tabBarAlphaBeforeFireAnimation ?? tabBarView.alphaValue
-                        tabBarView.alphaValue = 0
-                    } else {
-                        moveTabBarView(toTitlebarView: false)
-                        didMoveTabBarForFireAnimation = true
-                    }
+                    // Reparenting the collection view during Fire can leave the tabs unrendered.
+                    // Keep it attached and make it transparent while the animation plays.
+                    let tabBarView = mainViewController.tabBarViewController.view
+                    tabBarAlphaBeforeFireAnimation = tabBarAlphaBeforeFireAnimation ?? tabBarView.alphaValue
+                    tabBarView.alphaValue = 0
 
                     // The titlebar has an opaque background (see applyThemeStyle) and sits above the
                     // full-window fire animation. Clear it so the animation shows through.
                     setTitlebarBackgroundColor(.clear)
-                } else if burningData == nil, didMoveTabBarForFireAnimation || tabBarAlphaBeforeFireAnimation != nil {
-                    if didMoveTabBarForFireAnimation {
-                        moveTabBarView(toTitlebarView: true)
-                        didMoveTabBarForFireAnimation = false
-                    }
+                } else if burningData == nil, tabBarAlphaBeforeFireAnimation != nil {
                     if let tabBarAlphaBeforeFireAnimation {
                         mainViewController.tabBarViewController.view.alphaValue = tabBarAlphaBeforeFireAnimation
                         self.tabBarAlphaBeforeFireAnimation = nil

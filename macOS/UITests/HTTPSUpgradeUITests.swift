@@ -79,7 +79,10 @@ class HTTPSUpgradeUITests: UITestCase {
         let expectedWebsocket = "…"
 
         let iframeGroup = webView.groups.containing(\.value, containing: "upgrade-iframe - ").firstMatch
-        if iframeGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+        // Older WebKit also exposes the header as a group, but keeps the result in static text.
+        let hasResultInGroupValue = iframeGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+            && (iframeGroup.value as? String)?.contains("upgrade-iframe - \"") == true
+        if hasResultInGroupValue {
             // Newer WebKit exposes each result in a group value.
             XCTAssertTrue(webView.groups.containing(\.value, containing: "upgrade-iframe - \(expectedIframe)").firstMatch.exists)
             XCTAssertTrue(webView.groups.containing(\.value, containing: "upgrade-subrequest - \(expectedSub)").firstMatch.exists)

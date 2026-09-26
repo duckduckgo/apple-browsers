@@ -836,6 +836,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
+    /// Cohort assignment for the CPM background-view graveyard experiment.
+    case cpmBackgroundGraveyardExperiment
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
 }

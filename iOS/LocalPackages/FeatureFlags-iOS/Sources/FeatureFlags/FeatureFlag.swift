@@ -421,6 +421,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444896174
     case cpmDiagnosticsRecorder
 
+    /// Control/treatment experiment for the graveyard mitigation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343?focus=true
+    case cpmBackgroundGraveyardExperiment
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     /// https://app.asana.com/0/0/1218855001659655
     case cpmMessagingHangRecovery
@@ -577,6 +580,11 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Search-token experiment cohorts. Treatment devices signal the SERP to serve the faster combined response.
     public enum SearchTokenExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum CPMBackgroundGraveyardExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -890,6 +898,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy))
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
+        case .cpmBackgroundGraveyardExperiment:
+            Config(source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardExperiment),
+                   cohortType: CPMBackgroundGraveyardExperimentCohort.self)
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .webExtensionProtectedDataLoadGate:

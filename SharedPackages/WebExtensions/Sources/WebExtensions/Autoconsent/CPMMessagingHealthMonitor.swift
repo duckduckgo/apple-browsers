@@ -435,12 +435,16 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         closeEpisodeForCurrentGeneration()
     }
 
-    /// Closes an episode on proof that the extension is answering, without attributing it to a tab.
+    /// Records healthy CPM evidence and closes an episode without attributing the response to a tab.
     ///
     /// After a reload only a measurement begun against the new generation may validate it, so a
     /// response that cannot be tied to one is not allowed to claim that recovery.
     private func closeEpisodeForCurrentGeneration() {
-        guard let episode, episode.reloadGeneration == nil else { return }
+        if let episode, episode.reloadGeneration != nil {
+            return
+        }
+        diagnosticsProvider?.recordCPMOutcome(.healthy)
+        guard let episode else { return }
         if episode.isStuck {
             pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck))
         }
@@ -609,6 +613,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
         record.state = .failed
         measurements[measurement.identifier] = record
+        diagnosticsProvider?.recordCPMOutcome(.initializationFailed)
         // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
         // race to become "first" merely by returning their result sooner.
         let isPostExtensionReload = postReloadMeasurementIdentifier == measurement.identifier
@@ -677,6 +682,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         discardExpiredState()
         guard let record = measurements[measurement.identifier], record.measurement == measurement else { return }
         measurements[measurement.identifier] = nil
+        diagnosticsProvider?.recordCPMOutcome(.healthy)
         if postReloadMeasurementIdentifier == measurement.identifier {
             postReloadMeasurementIdentifier = nil
         }

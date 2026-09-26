@@ -19,6 +19,17 @@
 import Combine
 import Foundation
 
+public enum CPMBackgroundGraveyardCohort: String, Sendable, Equatable {
+    case control
+    case treatment
+}
+
+public enum CPMBackgroundGraveyardOutcome: String, Sendable, Equatable {
+    case healthy
+    case initializationFailed = "initialization_failed"
+    case notMeasured = "not_measured"
+}
+
 /// Runtime switches for the CPM diagnostics layer. Implemented by the app on top of its `FeatureFlagger`; the
 /// recorder re-reads the values on every `updatesPublisher` emission.
 @MainActor
@@ -26,7 +37,9 @@ public protocol CPMDiagnosticsFeatureFlagsProviding: AnyObject {
     /// Whether `CPMBackgroundWebViewDelegateProxy` may be installed on the background web view. Turning it off at
     /// runtime hands WebKit's original navigation delegate back.
     var isBackgroundDelegateProxyEnabled: Bool { get }
-    /// Emits whenever the value above may have changed (remote config update, local override).
+    /// Assigns a stable cohort on the first eligible process termination. Returns nil when the experiment is inactive.
+    func enrollInBackgroundGraveyardExperiment() -> CPMBackgroundGraveyardCohort?
+    /// Emits whenever a value above may have changed (remote config update, local override).
     var updatesPublisher: AnyPublisher<Void, Never> { get }
 }
 
@@ -36,10 +49,19 @@ public final class CPMDiagnosticsStaticFeatureFlags: CPMDiagnosticsFeatureFlagsP
     public var isBackgroundDelegateProxyEnabled: Bool {
         didSet { subject.send() }
     }
+    public var backgroundGraveyardCohort: CPMBackgroundGraveyardCohort? {
+        didSet { subject.send() }
+    }
     private let subject = PassthroughSubject<Void, Never>()
     public var updatesPublisher: AnyPublisher<Void, Never> { subject.eraseToAnyPublisher() }
 
-    public init(isBackgroundDelegateProxyEnabled: Bool = true) {
+    public init(isBackgroundDelegateProxyEnabled: Bool = true,
+                backgroundGraveyardCohort: CPMBackgroundGraveyardCohort? = nil) {
         self.isBackgroundDelegateProxyEnabled = isBackgroundDelegateProxyEnabled
+        self.backgroundGraveyardCohort = backgroundGraveyardCohort
+    }
+
+    public func enrollInBackgroundGraveyardExperiment() -> CPMBackgroundGraveyardCohort? {
+        backgroundGraveyardCohort
     }
 }

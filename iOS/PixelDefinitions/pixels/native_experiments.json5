@@ -2,6 +2,15 @@
     // This file defines pixels sent by the native experiments framework
     "defaultSuffixes": [],
     "activeExperiments": {
+        "cpmBackgroundGraveyardExperiment": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {
+                "cpmBackgroundGraveyardOutcome": {
+                    "description": "User-level CPM outcome recorded after an enrolled background WebContent-process termination during the D0-D1 conversion window",
+                    "enum": ["healthy", "initialization_failed", "not_measured"]
+                }
+            }
+        },
         "onboardingFlowByDownloadReasonExperiment": {
             "cohorts": ["control", "treatment"],
             "metrics": {

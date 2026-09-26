@@ -38,6 +38,12 @@ private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsPro
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
+    func enrollInBackgroundGraveyardExperiment() -> CPMBackgroundGraveyardCohort? {
+        guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.cpmBackgroundGraveyardExperiment)
+            as? FeatureFlag.CPMBackgroundGraveyardExperimentCohort else { return nil }
+        return CPMBackgroundGraveyardCohort(rawValue: cohort.rawValue)
+    }
+
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -93,6 +99,7 @@ public enum WebExtensionManagerFactory {
                 return (webView: controller.webView, extensionTab: controller)
             },
             featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger),
+            pixelFiring: pixelFiring,
             appSession: appSession.map { session in
                 let change: CPMAppSessionDiagnostics.VersionChange?
                 switch session.appVersionChange {

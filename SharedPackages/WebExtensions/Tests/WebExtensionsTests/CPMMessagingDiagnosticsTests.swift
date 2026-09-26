@@ -61,13 +61,13 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
             Name.extensionContextErrors, Name.backgroundViewCreateCount, Name.backgroundViewAlive,
             Name.backgroundViewLeakedCount, Name.backgroundWebProcessAlive, Name.tabKnownToWebKit,
             Name.nativeMessageHandlerRegistered, Name.tabControllerMatchesContext, Name.tabHasExtensionUserScripts,
-            Name.backgroundWebProcessResponsive, Name.backgroundEvents
+            Name.backgroundWebProcessResponsive, Name.backgroundGraveyardCohort, Name.backgroundEvents
         ], [
             "context_loaded", "critical_memory_age", "network_restarted",
             "context_errors", "bg_view_creations", "bg_view_alive",
             "bg_view_leaked_count", "bg_process_alive", "tab_in_context",
             "handler_registered", "tab_controller_match", "tab_has_ext_scripts",
-            "bg_process_responsive", "bg_events"
+            "bg_process_responsive", "background_graveyard_cohort", "bg_events"
         ])
     }
 
@@ -147,6 +147,7 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         diagnostics.tabControllerMatchesContext = false
         diagnostics.tabHasExtensionUserScripts = false
         diagnostics.backgroundWebProcessResponsive = false
+        diagnostics.backgroundGraveyardCohort = "treatment"
         diagnostics.backgroundEvents = [
             .init(token: "load", secondsBeforeSnapshot: 600.4),
             .init(token: "view", secondsBeforeSnapshot: 599),
@@ -156,6 +157,7 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
         XCTAssertEqual(diagnostics.pixelParameters, [
             Name.backgroundWebProcessResponsive: "false",
+            Name.backgroundGraveyardCohort: "treatment",
             Name.backgroundEvents: "load@15m,view@15m,died_crash@1m,error_background_failed_to_load:nsurlerrordomain:-1100@1m",
             Name.extensionContextLoaded: "true",
             Name.memoryPressureCritical: "1m",

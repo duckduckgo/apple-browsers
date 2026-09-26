@@ -28,6 +28,13 @@ import WebKit
 public protocol CPMMessagingDiagnosticsProviding: AnyObject {
     /// Captures native state synchronously at the failed handshake, before the context or tab can change.
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics
+    /// Completes any enrolled background-process termination with the first provable CPM result that follows it.
+    func recordCPMOutcome(_ outcome: CPMBackgroundGraveyardOutcome)
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension CPMMessagingDiagnosticsProviding {
+    func recordCPMOutcome(_ outcome: CPMBackgroundGraveyardOutcome) {}
 }
 
 /// Collects CPM lifecycle events and WebKit state for initialization-failure and stuck-messaging pixels.
@@ -65,6 +72,8 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             case contextError(String)
             case contextUnloadFailed(String)
             case extensionFilesRemoveFailed(String)
+            case graveyardHold
+            case graveyardRelease
             case proxyInstalled
             case proxyRemoved
         }
@@ -84,6 +93,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     private(set) var backgroundProcessIsUnresponsive = false
 
     private let featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)?
+    let backgroundWebViewGraveyard: CPMBackgroundWebViewGraveyard
     private var featureFlagsCancellable: AnyCancellable?
 
     private let tabResolver: TabResolver
@@ -114,16 +124,26 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     /// - Parameters:
     ///   - tabResolver: Maps the health monitor's tab identifier to the tab's web view. Platform-specific.
     ///   - observesMemoryPressure: Disable in tests to avoid installing a dispatch source.
-    ///   - featureFlags: Delegate-proxy runtime switch; `nil` means observation is enabled.
+    ///   - featureFlags: Delegate-proxy switch and graveyard experiment enrollment; `nil` means observation is enabled and graveyard is disabled.
     public init(tabResolver: @escaping TabResolver,
                 observesMemoryPressure: Bool = true,
                 featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)? = nil,
+                pixelFiring: any WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 now: @escaping () -> Date = Date.init,
                 appSession: CPMAppSessionDiagnostics? = nil) {
         self.appSession = appSession
         self.tabResolver = tabResolver
         self.featureFlags = featureFlags
+        self.backgroundWebViewGraveyard = CPMBackgroundWebViewGraveyard(featureFlags: featureFlags, pixelFiring: pixelFiring)
         self.now = now
+        self.backgroundWebViewGraveyard.lifecycleEventHandler = { [weak self] event in
+            switch event {
+            case .held:
+                self?.record(.graveyardHold)
+            case .released:
+                self?.record(.graveyardRelease)
+            }
+        }
         if observesMemoryPressure {
             installMemoryPressureSource()
         }
@@ -199,6 +219,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         // Preserve the latest update across context reloads, without carrying over old-context callbacks.
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
         backgroundProcessIsUnresponsive = false
+        backgroundWebViewGraveyard.resetForNewContext()
         record(.contextLoad)
         if let previousContextBaseURL,
            previousContextBaseURL.identifier == context.uniqueIdentifier,
@@ -245,6 +266,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         }
         context = nil
         currentBackgroundWebView = nil
+        backgroundWebViewGraveyard.handleContextUnload()
         pruneDeallocatedBackgroundWebViews()
         if !liveBackgroundWebViews.isEmpty {
             Logger.webExtensions.error("[CPM Diagnostics] \(self.liveBackgroundWebViews.count, privacy: .public) background web view(s) still alive after context unload")
@@ -395,6 +417,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         diagnostics.backgroundEvents = backgroundEvents.suffix(Self.maximumEventsInPixel).map {
             CPMMessagingDiagnostics.BackgroundEvent(token: $0.kind.description, secondsBeforeSnapshot: snapshotTime.timeIntervalSince($0.at))
         }
+        diagnostics.backgroundGraveyardCohort = backgroundWebViewGraveyard.lastCohort?.rawValue
         return diagnostics
     }
 
@@ -408,6 +431,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             [CPM Diagnostics] Background WebContent process #\(self.backgroundWebViewCreateCount, privacy: .public) died: \
             reason=\(reason?.description ?? "unknown", privacy: .public) pid=\(self.previousBackgroundWebProcessIdentifier.map(String.init) ?? "unknown", privacy: .public)
             """)
+        backgroundWebViewGraveyard.handleProcessTermination(of: webView, reason: reason)
     }
 
     public func backgroundWebViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
@@ -420,6 +444,10 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         guard webView === currentBackgroundWebView else { return }
         backgroundProcessIsUnresponsive = false
         record(.responsive)
+    }
+
+    public func recordCPMOutcome(_ outcome: CPMBackgroundGraveyardOutcome) {
+        backgroundWebViewGraveyard.recordCPMOutcome(outcome)
     }
 
     /// Name of the isolated world WebKit injects the context's content scripts into (`WebExtensionContext::load`).
@@ -517,6 +545,8 @@ extension CPMMessagingDiagnosticsRecorder.BackgroundEvent.Kind: CustomStringConv
         case .contextError(let descriptor): return "error_\(descriptor)"
         case .contextUnloadFailed(let descriptor): return "context_unload_failed_\(descriptor)"
         case .extensionFilesRemoveFailed(let descriptor): return "extension_files_remove_failed_\(descriptor)"
+        case .graveyardHold: return "hold"
+        case .graveyardRelease: return "release"
         case .proxyInstalled: return "proxy_on"
         case .proxyRemoved: return "proxy_off"
         }

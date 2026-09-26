@@ -28,13 +28,15 @@ public struct SitePermissionDialogView: View {
     private enum Constants {
         static let cardWidth: CGFloat = 300
         static let contentHorizontalPadding: CGFloat = 8
+        static let contentTopPadding: CGFloat = 8
+        static let contentBottomPadding: CGFloat = 24
+        static let contentSpacing: CGFloat = 10
         static let iconSize: CGFloat = 24
         static let iconSpacing: CGFloat = 8
         static let iconContainerSize: CGFloat = 48
-        static let iconContainerCornerRadius: CGFloat = 12
-        static let headerSpacing: CGFloat = 16
-        static let actionsTopPadding: CGFloat = 24
-        static let buttonSpacing: CGFloat = 8
+        static let iconContainerCornerRadius: CGFloat = 16
+        static let bodySpacing: CGFloat = 8
+        static let buttonSpacing: CGFloat = 10
         static let cardHorizontalPadding: CGFloat = 14
     }
 
@@ -51,14 +53,16 @@ public struct SitePermissionDialogView: View {
 
     public var body: some View {
         PermissionDialogCard(width: Constants.cardWidth,
-                             accessibilityIdentifier: "SitePermissions.Dialog") {
-            VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: Constants.headerSpacing) {
-                    HStack(spacing: Constants.iconSpacing) {
-                        ForEach(viewModel.icons, id: \.self) { icon in
-                            iconView(for: icon)
-                        }
+                             accessibilityIdentifier: "SitePermissions.Dialog",
+                             onDismiss: { onAction(.dismissed) }) {
+            VStack(alignment: .leading, spacing: Constants.contentSpacing) {
+                HStack(spacing: Constants.iconSpacing) {
+                    ForEach(viewModel.icons, id: \.self) { icon in
+                        iconView(for: icon)
                     }
+                }
+
+                VStack(alignment: .leading, spacing: Constants.bodySpacing) {
                     title
                     if let body = viewModel.body {
                         Text(body)
@@ -66,28 +70,32 @@ public struct SitePermissionDialogView: View {
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("SitePermissions.Dialog.Body")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Constants.contentHorizontalPadding)
+                .padding(.top, Constants.contentTopPadding)
+                .padding(.bottom, Constants.contentBottomPadding)
 
                 VStack(spacing: Constants.buttonSpacing) {
                     ForEach(viewModel.actions) { item in
-                        Button(item.title) {
+                        Button {
                             onAction(item.action)
+                        } label: {
+                            PermissionDialogButtonLabel(title: item.title)
                         }
-                        .buttonStyle(SecondaryFillButtonStyle())
+                        .buttonStyle(SecondaryFillButtonStyle(isFreeform: true))
                         .accessibilityIdentifier(accessibilityIdentifier(for: item.action))
                     }
                 }
-                .padding(.top, Constants.actionsTopPadding)
             }
         }
     }
 
     private var title: some View {
         Text(viewModel.title(domain: truncatedDomain))
-            .daxBodyBold()
+            .font(.headline)
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -104,7 +112,7 @@ public struct SitePermissionDialogView: View {
         let availableWidth = Constants.cardWidth
             - 2 * Constants.cardHorizontalPadding
             - 2 * Constants.contentHorizontalPadding
-        let font = UIFont.daxBodyBold()
+        let font = UIFont.preferredFont(forTextStyle: .headline)
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
 
         func fits(_ value: String) -> Bool {
@@ -161,6 +169,8 @@ public struct SitePermissionDialogView: View {
             return "SitePermissions.Dialog.AllowWhileUsingSite"
         case .neverAllow:
             return "SitePermissions.Dialog.NeverAllow"
+        case .dismissed:
+            return "SitePermissions.Dialog.Dismissed"
         }
     }
 }

@@ -252,6 +252,7 @@ extension BrowsingMenuModel {
             case favorite
             case fire
             case openBookmarks
+            case sitePermissions
         }
 
         enum Detail {
@@ -329,6 +330,9 @@ private struct MenuRowButton: View {
             }
         }
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
+        .if(entryData.tag == .sitePermissions) { view in
+            view.accessibilityIdentifier("BrowsingMenu.SitePermissions")
+        }
     }
 
     struct DetailView: View {

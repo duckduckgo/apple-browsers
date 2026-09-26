@@ -159,6 +159,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
                                         appSettings: AppSettingsMock(),
+                                        sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: MockAIChatSyncCleaning())
         makeHost = { homePageConfiguration in
             MainViewController(

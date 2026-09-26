@@ -184,6 +184,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
 
     @MainActor
+    lazy var sitePermissionsFavicons = SitePermissionsFaviconStore(
+        store: sitePermissionsStore,
+        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled }
+    )
+
+    @MainActor
     private lazy var sitePermissionsDependencies = SitePermissionsDependencies(
         store: sitePermissionsStore,
         systemPermissionClient: SystemPermissionClient(),

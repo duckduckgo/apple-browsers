@@ -28,9 +28,8 @@ public enum SitePermissionsSheetState: Equatable, Sendable {
     case reminderOnly
 }
 
-public enum SitePermissionPickerOption: Hashable, Sendable {
+public enum SitePermissionPickerOption: String, Hashable, Sendable {
     case askEachTime
-    case allowThisTime
     case alwaysAllow
     case neverAllow
 
@@ -38,7 +37,7 @@ public enum SitePermissionPickerOption: Hashable, Sendable {
         switch self {
         case .askEachTime:
             return .ask
-        case .allowThisTime, .alwaysAllow:
+        case .alwaysAllow:
             return .allow
         case .neverAllow:
             return .deny
@@ -92,14 +91,14 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         public let permissionType: SitePermissionType
         public let decision: SitePermissionDecision
         public let captureState: SitePermissionCaptureState
-        public let options: [SitePermissionPickerOption]
-        public let selectedOption: SitePermissionPickerOption
         public let iconState: IconState
         public let title: String
         public let stateText: String
         public let accessibilityValue: String
 
         public var id: SitePermissionType { permissionType }
+        public var options: [SitePermissionPickerOption] { [.askEachTime, .alwaysAllow, .neverAllow] }
+        public var selectedOption: SitePermissionPickerOption { decision.pickerOption }
     }
 
     public typealias DecisionChangedHandler = (SitePermissionDecisionChange) -> Void
@@ -110,6 +109,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
 
     @Published public private(set) var rows = [Row]()
     @Published public private(set) var state = SitePermissionsSheetState.permissionsOnly
+    @Published public private(set) var hasCommittedChanges = false
 
     public let site: SitePermissionKey
 
@@ -209,34 +209,33 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
                 store.setPersistentDecision(.allow, for: permissionType, at: site)
             case .neverAllow:
                 store.setPersistentDecision(.deny, for: permissionType, at: site)
-            case .allowThisTime:
-                return
             }
         }
 
         storedPermissions[permissionType] = option.decision
         ephemeralPermissionTypes.remove(permissionType)
-        if option == .alwaysAllow || option == .allowThisTime {
+        if option == .alwaysAllow {
             siteAllowedPermissionTypesThisVisit.insert(permissionType)
         } else {
             siteAllowedPermissionTypesThisVisit.remove(permissionType)
         }
         updateSystemBlock(for: permissionType)
         rebuild()
+        hasCommittedChanges = true
 
+        onDecisionChanged(change)
         if option == .neverAllow {
             revokePermissions([permissionType])
         }
-        onDecisionChanged(change)
     }
 
     public func removePermissions() {
         let permissionTypes = relevantPermissionTypes
         let snapshot = isFireMode ? SitePermissionsSnapshot.empty : store.removePermissions(for: site)
 
-        revokePermissions(SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes)
         onRemovePermissions(SitePermissionsRemoval(snapshot: snapshot,
                                                     permissionTypes: permissionTypes))
+        revokePermissions(SitePermissionsManagementSnapshot.managedPermissionTypes)
         dismiss()
     }
 
@@ -260,11 +259,11 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
             .union(siteAllowedPermissionTypesThisVisit)
             .union(requestedPermissionTypesThisVisit)
             .union(activeCaptureTypes)
-            .intersection(SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes)
+            .intersection(SitePermissionsManagementSnapshot.managedPermissionTypes)
     }
 
     private func rebuild() {
-        rows = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes
+        rows = SitePermissionsManagementSnapshot.managedPermissionTypes
             .filter(relevantPermissionTypes.contains)
             .sorted { $0.managementOrder < $1.managementOrder }
             .map(makeRow)
@@ -281,12 +280,7 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
     private func makeRow(for permissionType: SitePermissionType) -> Row {
         let decision = storedPermissions[permissionType] ?? .ask
         let captureState = captureStates[permissionType] ?? .inactive
-        let hasEphemeralGrant = ephemeralPermissionTypes.contains(permissionType) && decision == .ask
-        let options: [SitePermissionPickerOption] = hasEphemeralGrant
-            ? [.allowThisTime, .alwaysAllow, .neverAllow]
-            : [.askEachTime, .alwaysAllow, .neverAllow]
-        let selectedOption = hasEphemeralGrant ? SitePermissionPickerOption.allowThisTime : decision.pickerOption
-        let stateText = UserText.PermissionManagement.title(for: selectedOption)
+        let stateText = UserText.PermissionManagement.title(for: decision.pickerOption)
         let accessibilityValue: String
         switch captureState {
         case .active:
@@ -300,8 +294,6 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         return Row(permissionType: permissionType,
                    decision: decision,
                    captureState: captureState,
-                   options: options,
-                   selectedOption: selectedOption,
                    iconState: iconState(decision: decision, captureState: captureState),
                    title: UserText.PermissionManagement.title(for: permissionType),
                    stateText: stateText,
@@ -356,11 +348,11 @@ private extension SitePermissionDecision {
 private extension SitePermissionType {
     var managementOrder: Int {
         switch self {
-        case .camera:
-            return 0
-        case .microphone:
-            return 1
         case .location:
+            return 0
+        case .camera:
+            return 1
+        case .microphone:
             return 2
         }
     }

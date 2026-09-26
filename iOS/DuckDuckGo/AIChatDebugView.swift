@@ -37,6 +37,7 @@ struct AIChatDebugView: View {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
 #if DEBUG || ALPHA
+            AIChatFooterPreviewSection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 #endif
 
@@ -347,7 +348,7 @@ private struct AIChatUsageWarningsSection: View {
             Button {
                 clearDismissals()
             } label: {
-                Text(verbatim: "Clear dismissals")
+                Text(verbatim: "Reset footer messages")
             }
             .foregroundColor(.primary)
 
@@ -419,14 +420,14 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Brings back a message dismissed with its close button, one whose CTA has been run, and the
-    /// high-usage notice, which is otherwise dismissed once per model for good.
+    /// Resets usage dismissals and the normal-browsing attachment disclosure display cap.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
         DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
-        status = "Dismissals cleared."
+        UTIAttachmentPrivacyNoticeDisplayStore().reset()
+        status = "Dismissals and attachment disclosure display count reset. Fire Tabs keep their own counts."
     }
 
     private func clear() {
@@ -539,3 +540,31 @@ private final class StorageServerState: ObservableObject {
 #Preview {
     AIChatDebugView()
 }
+
+#if DEBUG || ALPHA
+private struct AIChatFooterPreviewSection: View {
+    @State private var status = ""
+
+    var body: some View {
+        Section {
+            Button("Show ToS preview until next submit") {
+                UTIFooterDebugOverrides.showTermsPreview()
+                status = "Open the real Duck.ai input and attach a file to see both cards."
+            }
+            Button("Clear ToS preview") {
+                UTIFooterDebugOverrides.clearTermsPreview()
+                status = "ToS preview cleared."
+            }
+            Button("Reset attachment disclosure display count") {
+                UTIAttachmentPrivacyNoticeDisplayStore().reset()
+                status = "Normal browsing count reset. Open a new Fire Tab to test a fresh Fire count."
+            }
+            if !status.isEmpty { Text(verbatim: status) }
+        } header: {
+            Text("Unified input footer")
+        } footer: {
+            Text("Uses the real input drawer. ToS is placeholder copy for layout testing only. Preview state ends on submit or app restart.")
+        }
+    }
+}
+#endif

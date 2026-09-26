@@ -36,11 +36,20 @@ final class UTIFooterControllerTests: XCTestCase {
     private var animationCount = 0
     private var reportedBlocks: [Bool] = []
     private var sut: UTIFooterController!
+    private var privacyKind: AttachmentPrivacyPixel.Kind?
+    private var privacyEnabled = true
+    private var privacyDisplayStore: PrivacyDisplayStore!
+    private var privacyEvents: [AttachmentPrivacyPixel.Action] = []
+    private var privacyEventKinds: [AttachmentPrivacyPixel.Kind] = []
 
-    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+    private var now = Date(timeIntervalSince1970: 1_800_000_000)
 
     override func setUp() {
         super.setUp()
+#if DEBUG || ALPHA
+        UTIFooterDebugOverrides.clearTermsPreview()
+#endif
+        now = Date(timeIntervalSince1970: 1_800_000_000)
         limitsProvider = StubUsageLimitsProvider()
         dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
         presenter = SpyUTIFooterPresenter()
@@ -52,20 +61,38 @@ final class UTIFooterControllerTests: XCTestCase {
         animationCount = 0
         reportedBlocks = []
         viewModel = makeViewModel()
+        privacyKind = nil
+        privacyEnabled = true
+        privacyEvents = []
+        privacyEventKinds = []
+        privacyDisplayStore = PrivacyDisplayStore()
+        let privacySource = UTIFooterAttachmentPrivacyNoticeSource(
+            attachmentKind: { [unowned self] in privacyKind },
+            isEnabled: { [unowned self] in privacyEnabled },
+            displayStore: privacyDisplayStore)
         sut = UTIFooterController(viewModel: viewModel,
                                   highUsageNotice: makeNoticeSource(),
+                                  attachmentPrivacyNotice: privacySource,
                                   measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
+                                  highUsageMeasurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
                                   createImagePixelFiring: createImagePixelFiring,
                                   allowsSubscriptionUpsell: { [unowned self] in allowsSubscriptionUpsell },
                                   animator: { [unowned self] changes in
                                       animationCount += 1
                                       changes()
                                   })
+        sut.onAttachmentPrivacyEvent = { [unowned self] action, kind in
+            privacyEvents.append(action)
+            privacyEventKinds.append(kind)
+        }
         sut.presenter = presenter
         sut.onInputBlockChanged = { [unowned self] blocked in reportedBlocks.append(blocked) }
     }
 
     override func tearDown() {
+#if DEBUG || ALPHA
+        UTIFooterDebugOverrides.clearTermsPreview()
+#endif
         sut = nil
         viewModel = nil
         presenter = nil
@@ -75,6 +102,477 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider = nil
         super.tearDown()
     }
+
+    func testPriorityResolverOrdersRequiredActionAndInformational() {
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        let ids: [UTIFooterItem.ID] = [.highUsage, .usageWarning, .modelSwitch, .attachmentPrivacy]
+        let all = ids.map { UTIFooterItem(id: $0, message: message) }
+        XCTAssertEqual(UTIFooterItem.visible(from: all, isEditing: false).map(\.id), [.attachmentPrivacy])
+        let ordinary = all.filter { $0.type != .required }
+        XCTAssertEqual(UTIFooterItem.visible(from: ordinary, isEditing: false).map(\.id), [.modelSwitch])
+        XCTAssertTrue(UTIFooterItem.visible(from: all, isEditing: true).isEmpty)
+    }
+
+    func testHiddenHighUsageCannotBeDismissedOrReportAnImpression() {
+        limitsProvider.limits = weeklyUsage(75)
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.highUsage)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
+        XCTAssertEqual(measurementFiring.events, [.shown(approachingExposure(percentBucket: 75))])
+
+        limitsProvider.limits = .noData
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.highUsage])
+        XCTAssertEqual(measurementFiring.events.last, .shown(DuckAiUsageWarningExposure(kind: .highUsageModelNotice,
+                                                                                     modelId: "claude-opus-4-8")))
+    }
+
+
+    func testDismissalDoesNotFillVacancyUntilNewOccurrenceEvenWithIdenticalCopy() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        let notice = modelSwitchNotice()
+        sut.showModelSwitchNotice(notice)
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertTrue(measurementFiring.events.isEmpty)
+
+        sut.showModelSwitchNotice(notice)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.modelSwitch])
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
+    func testAttachmentRemovalImmediatelyFillsVacancyWithoutDismissal() {
+        limitsProvider.limits = weeklyUsage(75)
+        privacyKind = .image
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        privacyKind = nil
+        sut.refresh()
+
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.modelSwitch])
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+    }
+
+    func testEndingVisibleMessageImmediatelyFillsItsSlot() {
+        limitsProvider.limits = weeklyUsage(75)
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.clearModelSwitchNotice()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
+    }
+
+    func testAttachmentChangeAtDisplayCapDoesNotReleaseVacancy() {
+        privacyDisplayStore.displayCount = 3
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        privacyKind = .file
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+    }
+
+    func testCountdownChangesDoNotReleaseDismissalVacancy() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        let previousReset = viewModel.warning?.resetsIn
+
+        now = now.addingTimeInterval(86_400)
+        sut.refresh()
+
+        XCTAssertNotEqual(viewModel.warning?.resetsIn, previousReset)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
+    func testPercentageChangesDoNotReleaseVacancyButNewRequiredMessageDoes() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        limitsProvider.limits = weeklyUsage(90)
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+
+        limitsProvider.limits = weeklyReached()
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+    }
+
+    func testCTADoesNotRevealWaitingHighUsageEvenDuringReentrantRefresh() {
+        limitsProvider.limits = weeklyUsage(75)
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        viewModel.onAction = { [unowned self] _ in
+            limitsProvider.limits = .noData
+            sut.refresh()
+            XCTAssertTrue(sut.currentMessages.isEmpty)
+        }
+        sut.performPrimaryAction(.usageWarning)
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+
+        selectedModel = (nil, nil)
+        sut.refresh()
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.highUsage])
+    }
+
+    func testExitingEditReevaluatesMessagesWaitingAfterDismissal() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+
+        sut.setEditing(true)
+        sut.clearModelSwitchNotice()
+        sut.setEditing(false)
+
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
+    }
+
+    func testBlockingLimitOutranksCreateImageAndResolvingItRefillsImmediately() {
+        limitsProvider.limits = dailyReachedWithWeeklyHandOff()
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+        XCTAssertFalse(sut.currentMessage?.isDismissible ?? true)
+        viewModel.onAction = { [unowned self] _ in
+            limitsProvider.limits = .noData
+            sut.refresh()
+        }
+
+        sut.performPrimaryAction(.outOfUsage)
+
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.modelSwitch])
+        XCTAssertEqual(reportedBlocks.last, false)
+    }
+
+    func testOpeningSubscriptionDoesNotDismissBlockingLimit() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.performPrimaryAction(.outOfUsage)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+        XCTAssertTrue(viewModel.warning?.blocksInput == true)
+    }
+
+    func testHiddenActionEndingDoesNotReleaseDismissalVacancy() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        sut.clearModelSwitchNotice()
+        sut.recordPromptSubmitted()
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
+    func testNewlyApplicableMessageReleasesVacancyEvenWhenDiscoveredByRefresh() {
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.modelSwitch)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+
+        privacyKind = .file
+        sut.refresh()
+
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+    }
+
+    func testPrivacyWorksWithoutUsageWarningsModel() {
+        let source = UTIFooterAttachmentPrivacyNoticeSource(attachmentKind: { .image },
+                                                           isEnabled: { true },
+                                                           displayStore: privacyDisplayStore)
+        let controller = UTIFooterController(viewModel: nil,
+                                             attachmentPrivacyNotice: source,
+                                             createImagePixelFiring: createImagePixelFiring,
+                                             animator: { $0() })
+        controller.presenter = presenter
+        controller.refresh()
+
+        XCTAssertEqual(controller.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
+        controller.footerVisibilityChanged(isVisible: true)
+        controller.dismissCurrent()
+        XCTAssertEqual(controller.currentMessages.map(\.id), [.attachmentPrivacy])
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+    }
+
+    func testPrivacyOutranksUsageWarningAndRemovalRestoresWarning() {
+        limitsProvider.limits = weeklyUsage(75)
+        privacyKind = .image
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
+
+        privacyKind = nil
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessage?.title.contains("75%") == true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+    }
+
+    func testPrivacyCannotBeDismissedAndDoesNotSpendUsageWarningDismissal() {
+        limitsProvider.limits = weeklyUsage(75)
+        privacyKind = .file
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.attachmentPrivacy)
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        XCTAssertNil(dismissalStore.dismissal(for: .weekly))
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertEqual(privacyEvents, [.shown])
+        XCTAssertTrue(measurementFiring.events.isEmpty)
+        privacyKind = nil
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
+    }
+
+    func testPrivacyShownOncePerAppearanceAndNotPerAttachmentChange() {
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.footerVisibilityChanged(isVisible: true)
+        privacyKind = .file
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.recordLinkTapped()
+        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
+        XCTAssertEqual(privacyEventKinds, [.image, .image])
+
+        sut.footerVisibilityChanged(isVisible: false)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped, .shown])
+        XCTAssertEqual(privacyEventKinds, [.image, .image, .file])
+    }
+
+    func testPrivacyFlagOffDoesNotResolveOrReport() {
+        privacyKind = .image
+        privacyEnabled = false
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.recordLinkTapped()
+        XCTAssertNil(sut.currentMessage)
+        XCTAssertTrue(privacyEvents.isEmpty)
+    }
+
+    func testPrivacyWaitsForVisibilityBeforeReporting() {
+        privacyKind = .image
+        sut.refresh()
+        XCTAssertTrue(privacyEvents.isEmpty)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyEvents, [.shown])
+    }
+
+    func testPrivacyHidesModelSwitchWithoutDismissingItOrRepeatingImpression() {
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        sut.dismiss(.modelSwitch)
+        XCTAssertTrue(createImagePixelFiring.isEmpty)
+        privacyKind = nil
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.modelSwitch])
+        XCTAssertEqual(privacyEvents, [.shown])
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+    }
+
+    func testSwitchingToSuggestedModelRetiresHiddenWarningWithoutDismissal() {
+        limitsProvider.limits = weeklyUsage(75)
+        privacyKind = .image
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
+        privacyKind = nil
+        sut.refresh()
+
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.highUsage])
+        XCTAssertNotNil(dismissalStore.actedSnapshot())
+        XCTAssertNil(dismissalStore.dismissal(for: .weekly))
+        XCTAssertTrue(measurementFiring.events.isEmpty)
+    }
+
+    func testHiddenMessagesCannotBeDismissedOrActedOn() {
+        limitsProvider.limits = weeklyUsage(75)
+        privacyKind = .image
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        var actions: [DuckAiUsageAction] = []
+        viewModel.onAction = { actions.append($0) }
+
+        sut.dismiss(.usageWarning)
+        sut.dismiss(.highUsage)
+        sut.performPrimaryAction(.usageWarning)
+        XCTAssertTrue(actions.isEmpty)
+        XCTAssertTrue(measurementFiring.events.isEmpty)
+
+        sut.recordPromptSubmitted()
+        privacyKind = nil
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
+    }
+
+    func testEditPromptHidesRequiredAndOrdinaryMessagesAndReevaluatesOnExit() {
+        limitsProvider.limits = weeklyReached()
+        privacyKind = .image
+        sut.refresh()
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+        sut.setEditing(true)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        privacyKind = nil
+        sut.clearModelSwitchNotice()
+        sut.refresh()
+        sut.setEditing(false)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+    }
+
+    func testBlockedSubmissionPreventsDisclosureWithoutCountingIt() {
+        limitsProvider.limits = weeklyReached()
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.attachmentPrivacy)
+        sut.dismiss(.outOfUsage)
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertTrue(privacyEvents.isEmpty)
+        XCTAssertTrue(viewModel.warning?.blocksInput == true)
+        limitsProvider.limits = .noData
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+    }
+
+    func testUnseenResolvedMessageCannotBeDismissed() {
+        privacyKind = .image
+        sut.refresh()
+        sut.dismiss(.attachmentPrivacy)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+    }
+
+    func testPrivacySuppressionAndPoseChangeDoNotCountUnseenCards() {
+        privacyKind = .image
+        sut.refresh()
+        sut.setSuppressed(true)
+        XCTAssertNil(sut.currentMessage)
+        sut.setSuppressed(false)
+        XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
+        sut.resetForPoseChange()
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+    }
+
+    func testPrivacySubmissionAndAttachmentRemovalClearDisplayWithoutIncrementing() {
+        privacyKind = .image
+        sut.refresh()
+        sut.recordPromptSubmitted()
+        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        privacyKind = nil
+        sut.refresh()
+        XCTAssertNil(sut.currentMessage)
+        privacyKind = .file
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
+    }
+
+    func testThirdAppearanceSurvivesRefreshAndLinkThenStopsAfterRemoval() {
+        privacyDisplayStore.displayCount = 2
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.recordLinkTapped()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
+        privacyKind = nil
+        sut.refresh()
+        privacyKind = .file
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+    }
+
+    func testThirdAppearanceDoesNotReturnAfterVisibilityEnds() {
+        privacyDisplayStore.displayCount = 2
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.footerVisibilityChanged(isVisible: false)
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(privacyEvents, [.shown])
+    }
+
+#if DEBUG || ALPHA
+    func testTermsPreviewStacksFirstAndClearsOnSubmit() {
+        UTIFooterDebugOverrides.showTermsPreview()
+        privacyKind = .image
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent, .attachmentPrivacy])
+        XCTAssertTrue(sut.currentMessages.allSatisfy { !$0.message.isDismissible })
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.dismiss(.termsConsent)
+        sut.dismiss(.attachmentPrivacy)
+        XCTAssertEqual(sut.currentMessages.count, 2)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        privacyKind = nil
+        sut.recordPromptSubmitted()
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertNil(UTIFooterDebugOverrides.termsMessage)
+    }
+
+    func testTermsPreviewAloneAtPrivacyCapAndHiddenWhileEditing() {
+        privacyDisplayStore.displayCount = 3
+        privacyKind = .image
+        UTIFooterDebugOverrides.showTermsPreview()
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent])
+        sut.setEditing(true)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        UTIFooterDebugOverrides.clearTermsPreview()
+        sut.setEditing(false)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+#endif
 
     // MARK: - Refresh
 
@@ -160,6 +658,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         XCTAssertEqual(reportedBlocks, [true])
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertEqual(reportedBlocks, [true, false])
@@ -171,6 +670,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
@@ -179,6 +679,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_dismissCurrent_keepsTheSameWarningHiddenOnTheNextRefresh() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         sut.refresh()
@@ -191,6 +692,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_dismissCurrent_doesNotHideTheNextThreshold() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         limitsProvider.limits = weeklyUsage(90)
@@ -203,6 +705,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_dismissCurrent_doesNotHideADifferentNotice() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         limitsProvider.limits = weeklyReached()
@@ -218,6 +721,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
 
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
@@ -226,6 +730,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_userSwitchedModel_keepsTheMessageHiddenUntilWebPublishesAgain() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.userSwitchedModel(from: "gpt-5.4", to: "gpt-5.4-mini")
 
         sut.refresh()
@@ -344,6 +849,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertEqual(received, [.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini", modelShortName: "5.4 mini"))])
@@ -354,6 +860,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
@@ -362,6 +869,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_performPrimaryAction_keepsTheMessageHiddenOnTheNextRefresh() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         sut.refresh()
@@ -375,6 +883,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_performPrimaryAction_showsTheMessageAgainWhenWebRepublishes() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
 
@@ -389,6 +898,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_performPrimaryAction_keepsAnIdenticalRepublishedMessageHidden() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         limitsProvider.limits = weeklyUsage(50, signature: "snapshot-50-republished")
@@ -401,6 +911,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_performPrimaryAction_showsTheMessageAgainOnceTheActedRecordIsCleared() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
         XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
 
@@ -424,6 +935,7 @@ final class UTIFooterControllerTests: XCTestCase {
         )
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertEqual(presenter.appliedMessages.last??.primaryAction?.title, "Subscribe")
@@ -433,6 +945,7 @@ final class UTIFooterControllerTests: XCTestCase {
         var received: [DuckAiUsageAction] = []
         viewModel.onAction = { received.append($0) }
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertTrue(received.isEmpty)
@@ -449,7 +962,6 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
     }
 
-    /// One slot: an actionable warning outranks the informational notice.
     func test_refresh_prefersTheUsageWarningOverTheNotice() {
         selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
         limitsProvider.limits = weeklyUsage(50)
@@ -468,9 +980,7 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(presenter.appliedMessages.last??.title, "Now using 5.6 Luna")
     }
 
-    /// One slot, two sources. The switch is something the app just did to the user's selection, so it
-    /// outranks a usage warning that will still be there afterwards.
-    func test_showModelSwitchNotice_takesTheSlotFromAVisibleUsageWarning() {
+    func test_showModelSwitchNotice_replacesUsageWarning() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
@@ -514,6 +1024,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = .noData
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
         sut.refresh()
 
@@ -546,13 +1057,20 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         sut.showModelSwitchNotice(modelSwitchNotice())
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
-        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+        XCTAssertNil(sut.currentMessage)
+        limitsProvider.limits = .noData
+        sut.refresh()
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessage?.title.contains("50%") == true)
     }
 
     func test_dismissCurrent_whileTheNoticeIsVisible_dropsTheNoticeForGood() {
         sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         sut.refresh()
@@ -566,10 +1084,16 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
         sut.refresh()
 
-        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Opus 4.8") ?? false)
+        XCTAssertNil(sut.currentMessage)
+        selectedModel = (nil, nil)
+        sut.refresh()
+        selectedModel = (id: "claude-opus-4-8", shortName: "Opus 4.8")
+        sut.refresh()
+        XCTAssertTrue(sut.currentMessage?.title.contains("Opus 4.8") == true)
     }
 
     // MARK: - Measurement
@@ -697,6 +1221,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         sut.showModelSwitchNotice(modelSwitchNotice())
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertTrue(received.isEmpty)
@@ -725,7 +1250,7 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     /// The switch card is not one of the three usage-warning states, so it carries no exposure.
-    func test_footerVisibilityChanged_reportsNoImpressionForTheModelSwitchNotice() {
+    func test_footerVisibilityChanged_doesNotReportHiddenUsageImpression() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
         sut.showModelSwitchNotice(modelSwitchNotice())
@@ -743,6 +1268,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.footerVisibilityChanged(isVisible: true)
         sut.showModelSwitchNotice(modelSwitchNotice())
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         XCTAssertEqual(measurementFiring.events, [.shown(approachingExposure(percentBucket: 75))])
@@ -753,6 +1279,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_createImagePixels_whenTheUserClosesTheNotice_reportsTheDismissal() {
         sut.showModelSwitchNotice(modelSwitchNotice())
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
@@ -786,6 +1313,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         XCTAssertTrue(createImagePixelFiring.isEmpty)
@@ -796,7 +1324,13 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         sut.showModelSwitchNotice(modelSwitchNotice())
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
+        limitsProvider.limits = .noData
+        sut.refresh()
+        limitsProvider.limits = weeklyUsage(50)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         sut.dismissCurrent()
 
         XCTAssertEqual(createImagePixelFiring.noticeDismissedCount, 1)
@@ -805,6 +1339,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func test_createImagePixels_whenThePrimaryActionRunsWhileTheNoticeIsVisible_reportsNothing() {
         sut.showModelSwitchNotice(modelSwitchNotice())
 
+        sut.footerVisibilityChanged(isVisible: true)
         sut.performPrimaryAction()
 
         XCTAssertTrue(createImagePixelFiring.isEmpty)
@@ -875,12 +1410,14 @@ final class UTIFooterControllerTests: XCTestCase {
         viewModel.onAction = { actions.append($0) }
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         XCTAssertNotNil(sut.currentMessage?.primaryAction)
         sut.performPrimaryAction()
         XCTAssertEqual(actions.count, 1)
 
         limitsProvider.limits = dailyReachedWithWeeklyHandOff()
         sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(sut.currentMessage?.primaryAction?.title, UserText.utiDuckAIWarningsStartUsingWeeklyLimit)
         sut.performPrimaryAction()
         XCTAssertEqual(actions.count, 2)
@@ -1014,11 +1551,37 @@ private final class SpyUTIFooterPresenter: UTIFooterPresenting {
     private(set) var appliedMessages: [UTIFooterMessage?] = []
     private(set) var pendingClearCount = 0
 
-    func applyFooterMessage(_ message: UTIFooterMessage?) {
-        appliedMessages.append(message)
+    private(set) var appliedStacks: [[UTIFooterItem]] = []
+
+    func applyFooterMessages(_ messages: [UTIFooterItem]) {
+        appliedStacks.append(messages)
+        appliedMessages.append(messages.first?.message)
     }
 
     func clearPendingFooterMessage() {
         pendingClearCount += 1
+    }
+}
+
+private final class PrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring {
+    var displayCount = 0
+    func recordDisplay() { displayCount += 1 }
+    func reset() { displayCount = 0 }
+}
+
+@MainActor
+private extension UTIFooterController {
+    func dismissCurrent() {
+        guard let id = currentMessages.first?.id else { return }
+        dismiss(id)
+    }
+
+    func footerVisibilityChanged(isVisible: Bool) {
+        footerVisibilityChanged(visible: isVisible ? currentMessages.map(\.id) : [])
+    }
+
+    func performPrimaryAction() {
+        guard let id = currentMessages.first?.id else { return }
+        performPrimaryAction(id)
     }
 }

@@ -32,6 +32,46 @@ struct CreateImageModelSwitchNotice: Equatable {
     }
 }
 
+struct UTIFooterItem: Equatable, Identifiable {
+    enum ID: Int, CaseIterable {
+#if DEBUG || ALPHA
+        case termsConsent
+#endif
+        case outOfUsage
+        case attachmentPrivacy
+        case modelSwitch
+        case usageWarning
+        case highUsage
+    }
+
+    enum MessageType {
+        case required
+        case action
+        case informational
+    }
+
+    var type: MessageType {
+        switch id {
+#if DEBUG || ALPHA
+        case .termsConsent: return .required
+#endif
+        case .outOfUsage, .attachmentPrivacy: return .required
+        case .modelSwitch: return .action
+        case .usageWarning, .highUsage: return .informational
+        }
+    }
+
+    let id: ID
+    let message: UTIFooterMessage
+
+    static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        guard !isEditing else { return [] }
+        let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
+        let required = ordered.filter { $0.type == .required }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
@@ -46,11 +86,18 @@ struct UTIFooterMessage: Equatable {
         let title: String
     }
 
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
+    struct Link: Equatable {
+        let text: String
+        let url: URL
+    }
+
     let icon: Icon
     let title: String
     let subtitle: String?
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
+    let link: Link?
 }
 
 /// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as
@@ -86,3 +133,23 @@ struct UTIFooterResetDescriber {
         static let secondsPerDay: TimeInterval = 24 * 60 * 60
     }
 }
+
+#if DEBUG || ALPHA
+@MainActor
+enum UTIFooterDebugOverrides {
+    private(set) static var termsMessage: UTIFooterMessage?
+
+    static func showTermsPreview() {
+        termsMessage = UTIFooterMessage(icon: .info,
+                                       title: "Terms of Service (debug preview)",
+                                       subtitle: "First-prompt layout preview. Clears on submit; no consent is recorded.",
+                                       primaryAction: nil,
+                                       isDismissible: false,
+                                       link: nil)
+    }
+
+    static func clearTermsPreview() {
+        termsMessage = nil
+    }
+}
+#endif

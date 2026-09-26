@@ -27,6 +27,33 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     private let sut = UTIFooterMessageMapper(resetDescriber: UTIFooterResetDescriber(locale: Locale(identifier: "en_US")))
 
+    func test_attachmentPrivacyMessage_usesApprovedCopyAndInlineLink() {
+        let message = sut.attachmentPrivacyMessage()
+
+        XCTAssertEqual(message.title,
+                       "Files are automatically scanned for illegal content. Flagged chats have limited data retention. Learn more")
+        XCTAssertNil(message.subtitle)
+        XCTAssertNil(message.primaryAction)
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertEqual(message.link?.text, "Learn more")
+        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
+    }
+
+    func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {
+        let cases = [
+            ("Dateien werden geprüft. %@", "Weitere Informationen"),
+            ("%@：添付ファイルの取り扱い", "詳しく見る"),
+            ("تُفحص الملفات. %@", "معرفة المزيد")
+        ]
+        for (format, label) in cases {
+            let message = sut.attachmentPrivacyMessage(format: format, learnMoreText: label)
+            XCTAssertEqual(message.title, String(format: format, label))
+            XCTAssertEqual(message.link?.text, label)
+            XCTAssertTrue(message.title.contains(label))
+            XCTAssertFalse(message.isDismissible)
+        }
+    }
+
     // MARK: - Headlines
 
     func test_message_approachingNamesTheWindowAndThePercentage() {
@@ -140,9 +167,10 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Dismissal
 
-    func test_message_dismissibilityComesFromTheWarning() {
+    func test_message_onlyBelowLimitWarningsCanBeDismissed() {
         XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
         XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
+        XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: true)).isDismissible)
     }
 
     // MARK: - High-usage model notice

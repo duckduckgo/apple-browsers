@@ -336,9 +336,6 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { _ in
             Task {
-#if os(macOS)
-                guard !self.isChallengeResponse else { return }
-#endif
                 try await self.webView?.evaluateJavaScript("1+1") as Void?
             }
         }

@@ -19,6 +19,11 @@
 
 import CoreLocation
 import Foundation
+import os.log
+
+extension Logger {
+    static let sitePermissions = Logger(subsystem: "SitePermissions", category: "Geolocation")
+}
 
 /// Handles a tab's location requests and ongoing location updates after checking site and system permissions.
 /// It shares the system location service while keeping each page's requests, timeouts, and permission subscriptions separate.
@@ -195,6 +200,7 @@ public final class GeolocationProvider {
     /// Watches and permission decisions survive; resuming requires a new location reading.
     public func setIsActive(_ isActive: Bool) {
         guard !isClosed, self.isActive != isActive else { return }
+        Logger.sitePermissions.debug("Location provider active: \(isActive, privacy: .public)")
         self.isActive = isActive
         if isActive {
             resumedAt = Date()
@@ -224,6 +230,7 @@ public final class GeolocationProvider {
 
     /// Cancels work belonging to the current page without permanently closing the provider.
     public func cancelPageActivity() {
+        Logger.sitePermissions.debug("Cancel page location activity: one-shots=\(self.oneShotRequests.count), watches=\(self.watches.count)")
         var scripts = [ObjectIdentifier: GeolocationUserScript]()
         (watches.values.compactMap(\.userScript) + permissionStatuses.values.compactMap(\.userScript)).forEach {
             scripts[ObjectIdentifier($0)] = $0
@@ -265,6 +272,7 @@ public final class GeolocationProvider {
     /// Stops page activity after an explicit permission denial or removal, then refreshes query state.
     public func revokeActivePermission() {
         guard !isClosed else { return }
+        Logger.sitePermissions.debug("Revoke active location permission")
         let wasLocationActive = isLocationActive
         let denied = GeolocationPositionResult.failure(
             .init(code: .permissionDenied, message: Message.denied)
@@ -302,6 +310,9 @@ public final class GeolocationProvider {
                                         options: GeolocationRequestOptions) async -> GeolocationPositionResult {
         await withCheckedContinuation { continuation in
             let identifier = UUID()
+            Logger.sitePermissions.debug("getCurrentPosition received: request=\(identifier.uuidString, privacy: .public)")
+            Logger.sitePermissions.debug("Location frame=\(String(retainedFrame.context.requestingFrameID), privacy: .private(mask: .hash)), navigation=\(retainedFrame.context.navigationGeneration)")
+            Logger.sitePermissions.debug("Location options: highAccuracy=\(options.enableHighAccuracy), timeout=\(options.timeout ?? .infinity), maximumAge=\(options.maximumAge)")
             let request = OneShotRequest(retainedFrame: retainedFrame, options: options) { result in
                 continuation.resume(returning: result)
             }
@@ -314,7 +325,9 @@ public final class GeolocationProvider {
         guard isActive, let request = oneShotRequests[identifier] else { return }
         if !request.hasRequestedPermission {
             request.hasRequestedPermission = true
+            Logger.sitePermissions.debug("getCurrentPosition checking permission: request=\(identifier.uuidString, privacy: .public)")
             requestPermission(request.retainedFrame.context) { [weak self, weak request] resolution in
+                Logger.sitePermissions.debug("getCurrentPosition permission: request=\(identifier.uuidString, privacy: .public), granted=\(resolution == .grant)")
                 request?.resolution = resolution
                 self?.refreshPermissionStatuses()
                 self?.resumeOneShot(identifier)
@@ -332,8 +345,7 @@ public final class GeolocationProvider {
 
         request.acquisitionStartedAt = Date()
         if let location = reusableLocation(for: request.options) {
-            // Returning a cached location still starts and ends a request. Report both transitions so
-            // Allow Once expires after delivery just as it does for a new location reading.
+            // Report location use even when a cached position avoids starting Core Location.
             updateLocationActivity(.active)
             finishOneShot(identifier, with: .success(.init(location: location)))
         } else {
@@ -344,6 +356,10 @@ public final class GeolocationProvider {
 
     private func finishOneShot(_ identifier: UUID, with result: GeolocationPositionResult) {
         guard let request = oneShotRequests.removeValue(forKey: identifier) else { return }
+        Logger.sitePermissions.debug("getCurrentPosition completed: request=\(identifier.uuidString, privacy: .public)")
+        if case .failure(let error) = result {
+            Logger.sitePermissions.debug("getCurrentPosition error: request=\(identifier.uuidString, privacy: .public), code=\(error.code.rawValue)")
+        }
         request.timeoutTask?.cancel()
         request.completion(result)
         updateLocationSubscription()
@@ -361,7 +377,9 @@ public final class GeolocationProvider {
         guard isActive, let watch = watches[requestID] else { return }
         if !watch.hasRequestedPermission {
             watch.hasRequestedPermission = true
+            Logger.sitePermissions.debug("watchPosition checking permission: request=\(requestID, privacy: .private(mask: .hash))")
             requestPermission(watch.retainedFrame.context) { [weak self, weak watch] resolution in
+                Logger.sitePermissions.debug("watchPosition permission: request=\(requestID, privacy: .private(mask: .hash)), granted=\(resolution == .grant)")
                 watch?.resolution = resolution
                 self?.refreshPermissionStatuses()
                 self?.resumeWatch(requestID)
@@ -398,11 +416,17 @@ public final class GeolocationProvider {
 
     private func send(_ result: GeolocationPositionResult, toWatch requestID: String, thenRemove: Bool = false) {
         guard let watch = watches[requestID] else { return }
+        if case .failure(let error) = result {
+            Logger.sitePermissions.debug("watchPosition error: request=\(requestID, privacy: .private(mask: .hash)), code=\(error.code.rawValue)")
+        } else if !watch.hasDeliveredPosition {
+            Logger.sitePermissions.debug("watchPosition first position: request=\(requestID, privacy: .private(mask: .hash))")
+        }
         watch.timeoutTask?.cancel()
         watch.timeoutStartedAt = nil
         watch.remainingTimeout = nil
         let wasDelivered = thenRemove ? watch.deliverTerminal(result) : watch.deliver(result)
         if thenRemove || !wasDelivered {
+            Logger.sitePermissions.debug("watchPosition ended: request=\(requestID, privacy: .private(mask: .hash)), delivered=\(wasDelivered)")
             watches.removeValue(forKey: requestID)
             updateLocationSubscription()
         }
@@ -439,11 +463,11 @@ public final class GeolocationProvider {
 
     private func updateLocationActivity(_ state: SitePermissionCaptureState) {
         guard locationCaptureState != state else { return }
+        Logger.sitePermissions.debug("Location activity: \(String(describing: self.locationCaptureState), privacy: .public) -> \(String(describing: state), privacy: .public)")
         locationCaptureState = state
         locationActivityHandler?(state)
         if state == .inactive {
-            // Capture ending lets the next request prompt again. Re-query after the activity callback
-            // so existing PermissionStatus objects observe the new state.
+            // Re-query after the activity callback so PermissionStatus also reflects any authorization change.
             refreshPermissionStatuses()
         }
     }
@@ -570,6 +594,7 @@ public final class GeolocationProvider {
 
     func cancelWatch(withID requestID: String) {
         guard let watch = watches.removeValue(forKey: requestID) else { return }
+        Logger.sitePermissions.debug("watchPosition cancelled: request=\(requestID, privacy: .private(mask: .hash))")
         watch.timeoutTask?.cancel()
         updateLocationSubscription()
     }
@@ -598,6 +623,7 @@ extension GeolocationProvider: GeolocationUserScriptDelegate {
                                       constraints: GeolocationRequestConstraints,
                                       in frame: GeolocationFrame) async -> GeolocationPositionResult {
         guard let retainedFrame = retainedFrame(for: frame, constraints: constraints) else {
+            Logger.sitePermissions.debug("getCurrentPosition rejected: inactive or disallowed frame")
             return .failure(.init(code: .permissionDenied, message: Message.denied))
         }
         return await requestCurrentPosition(in: retainedFrame, options: options)
@@ -625,11 +651,14 @@ extension GeolocationProvider: GeolocationUserScriptDelegate {
                                       constraints: GeolocationRequestConstraints,
                                       in frame: GeolocationFrame) {
         guard watches[requestID] == nil else { return }
+        Logger.sitePermissions.debug("watchPosition received: request=\(requestID, privacy: .private(mask: .hash))")
         guard let retainedFrame = retainedFrame(for: frame, constraints: constraints) else {
+            Logger.sitePermissions.debug("watchPosition rejected: inactive or disallowed frame")
             _ = userScript.sendTerminal(.failure(.init(code: .permissionDenied, message: Message.denied)), toWatchWithID: requestID)
             return
         }
 
+        Logger.sitePermissions.debug("Location frame=\(String(retainedFrame.context.requestingFrameID), privacy: .private(mask: .hash)), navigation=\(retainedFrame.context.navigationGeneration)")
         watches[requestID] = LocationSubscription(userScript: userScript, requestID: requestID, retainedFrame: retainedFrame, options: options)
         resumeWatch(requestID)
     }

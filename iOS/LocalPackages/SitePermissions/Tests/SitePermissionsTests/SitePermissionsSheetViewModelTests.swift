@@ -54,6 +54,21 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertTrue(harness.makeViewModel(snapshot: globallyDeniedWithoutRequest).rows.isEmpty)
     }
 
+    func testWhenUndoReopensTransientPermissionsThenRowsAskAgainWithoutRestoringGrants() throws {
+        let harness = try Harness()
+        let snapshot = harness.snapshot()
+        let sut = SitePermissionsSheetViewModel(snapshot: snapshot,
+                                                 store: harness.store,
+                                                 displayedPermissionTypes: [.camera, .microphone, .location])
+
+        sut.refresh(with: snapshot)
+
+        XCTAssertEqual(sut.rows.map(\.permissionType), [.location, .camera, .microphone])
+        XCTAssertTrue(sut.rows.allSatisfy { $0.selectedOption == .askEachTime && $0.captureState == .inactive })
+        XCTAssertTrue(harness.store.permissions(for: harness.site).isEmpty)
+        XCTAssertFalse(snapshot.showsMenuEntry)
+    }
+
     func testAllThreeSheetStatesAreRepresentable() throws {
         let harness = try Harness()
 
@@ -223,6 +238,176 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
         XCTAssertEqual(sut.rows.first?.selectedOption, .neverAllow)
         XCTAssertEqual(change, SitePermissionDecisionChange(permissionType: .camera, from: .allow, to: .deny))
+    }
+
+    func testWhenFireRowsHaveMixedDurableDecisionsThenEachMenuUsesItsOwnSiteAndPermission() throws {
+        let harness = try Harness()
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+        harness.store.resetDecision(for: .camera, at: harness.site)
+        harness.store.setPersistentDecision(.allow, for: .microphone, at: otherSite)
+        let sut = harness.makeViewModel(snapshot: harness.snapshot(
+            isFireMode: true,
+            stored: [.camera: .deny, .microphone: .deny],
+            requested: [.location]
+        ))
+
+        let camera = try XCTUnwrap(sut.rows.first { $0.permissionType == .camera })
+        XCTAssertEqual(camera.options, [.askEachTime, .alwaysAllow, .neverAllow])
+        XCTAssertEqual(camera.selectedOption, .neverAllow)
+        XCTAssertEqual(camera.stateText, "Never Allow")
+        let microphone = try XCTUnwrap(sut.rows.first { $0.permissionType == .microphone })
+        XCTAssertEqual(microphone.options, [.askEachTime, .deny])
+        XCTAssertEqual(microphone.selectedOption, .deny)
+        XCTAssertEqual(microphone.stateText, "Deny")
+        XCTAssertEqual(microphone.accessibilityValue, "Deny")
+        let location = try XCTUnwrap(sut.rows.first { $0.permissionType == .location })
+        XCTAssertEqual(location.options, [.askEachTime, .deny])
+        XCTAssertEqual(location.selectedOption, .askEachTime)
+        XCTAssertEqual(location.stateText, "Ask Each Time")
+    }
+
+    func testWhenFireMenuRefreshesThenDurablePresenceControlsOptionsForEveryPermissionType() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness()
+            let snapshot = harness.snapshot(isFireMode: true, stored: [permissionType: .deny])
+            let sut = harness.makeViewModel(snapshot: snapshot)
+            XCTAssertEqual(sut.rows.first?.options, [.askEachTime, .deny])
+            XCTAssertEqual(sut.rows.first?.selectedOption, .deny)
+
+            for decision in [SitePermissionDecision.ask, .allow, .deny] {
+                if decision == .ask {
+                    harness.store.resetDecision(for: permissionType, at: harness.site)
+                } else {
+                    harness.store.setPersistentDecision(decision, for: permissionType, at: harness.site)
+                }
+                sut.refresh(with: snapshot)
+                XCTAssertEqual(sut.rows.first?.options, [.askEachTime, .alwaysAllow, .neverAllow])
+                XCTAssertEqual(sut.rows.first?.selectedOption, .neverAllow)
+            }
+
+            harness.store.removePermissions(for: harness.site)
+            sut.refresh(with: snapshot)
+            XCTAssertEqual(sut.rows.first?.options, [.askEachTime, .deny])
+            XCTAssertEqual(sut.rows.first?.selectedOption, .deny)
+            let ordinary = harness.makeViewModel(snapshot: harness.snapshot(isFireMode: false, stored: [permissionType: .deny]))
+            XCTAssertEqual(ordinary.rows.first?.options, [.askEachTime, .alwaysAllow, .neverAllow])
+            XCTAssertEqual(ordinary.rows.first?.selectedOption, .neverAllow)
+        }
+    }
+
+    func testWhenFireOnlyMenuActionsAreSelectedThenOnlyAskAndDenyChangeSessionAndDenyRevokes() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness()
+            var changes = [SitePermissionDecisionChange]()
+            var revoked = [Set<SitePermissionType>]()
+            let sut = harness.makeViewModel(
+                snapshot: harness.snapshot(isFireMode: true, ephemeral: [permissionType]),
+                onDecisionChanged: { changes.append($0) },
+                revokePermissions: { revoked.append($0) }
+            )
+
+            sut.select(.alwaysAllow, for: permissionType)
+            sut.select(.neverAllow, for: permissionType)
+            XCTAssertTrue(changes.isEmpty)
+            XCTAssertFalse(sut.hasCommittedChanges)
+
+            sut.select(.deny, for: permissionType)
+            XCTAssertEqual(sut.rows.first?.selectedOption, .deny)
+            XCTAssertEqual(sut.rows.first?.options, [.askEachTime, .deny])
+            XCTAssertEqual(sut.rows.first?.stateText, "Deny")
+            XCTAssertEqual(revoked, [[permissionType]])
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+
+            sut.select(.askEachTime, for: permissionType)
+            XCTAssertEqual(sut.rows.first?.selectedOption, .askEachTime)
+            XCTAssertEqual(sut.rows.first?.options, [.askEachTime, .deny])
+            XCTAssertEqual(changes, [
+                SitePermissionDecisionChange(permissionType: permissionType, from: .ask, to: .deny),
+                SitePermissionDecisionChange(permissionType: permissionType, from: .deny, to: .ask)
+            ])
+            XCTAssertEqual(revoked, [[permissionType]])
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenFireAllowOverrideHasNoDurableDecisionThenSelectionRemainsInAvailableMenu() throws {
+        let harness = try Harness()
+        var change: SitePermissionDecisionChange?
+        let sut = harness.makeViewModel(
+            snapshot: harness.snapshot(isFireMode: true, stored: [.camera: .allow], captureStates: [.camera: .active]),
+            onDecisionChanged: { change = $0 }
+        )
+
+        let row = try XCTUnwrap(sut.rows.first)
+        XCTAssertEqual(row.decision, .allow)
+        XCTAssertEqual(row.options, [.askEachTime, .deny])
+        XCTAssertEqual(row.selectedOption, .askEachTime)
+        XCTAssertEqual(row.stateText, "Ask Each Time")
+        XCTAssertEqual(row.accessibilityValue, "Ask Each Time, in use")
+        XCTAssertEqual(row.iconState, .inUse)
+        XCTAssertTrue(harness.store.storedSites.isEmpty)
+
+        sut.select(.askEachTime, for: .camera)
+
+        XCTAssertEqual(change, SitePermissionDecisionChange(permissionType: .camera, from: .allow, to: .ask))
+        XCTAssertEqual(sut.rows.first?.decision, .ask)
+        XCTAssertTrue(harness.store.storedSites.isEmpty)
+    }
+
+    func testWhenFireSavedMenuActionsAreSelectedThenDurableAskRemainsUnchanged() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness()
+            harness.store.resetDecision(for: permissionType, at: harness.site)
+            var decisions = [SitePermissionDecision]()
+            let sut = harness.makeViewModel(
+                snapshot: harness.snapshot(isFireMode: true),
+                onDecisionChanged: { decisions.append($0.to) }
+            )
+
+            for option in [SitePermissionPickerOption.alwaysAllow, .neverAllow, .askEachTime] {
+                sut.select(option, for: permissionType)
+                XCTAssertEqual(sut.rows.first?.selectedOption, option)
+                XCTAssertEqual(sut.rows.first?.options, [.askEachTime, .alwaysAllow, .neverAllow])
+                XCTAssertEqual(harness.store.permissions(for: harness.site), [permissionType: .ask])
+            }
+            XCTAssertEqual(decisions, [.allow, .deny, .ask])
+        }
+    }
+
+    func testWhenFireSheetRemovesPermissionsThenDurableSnapshotExcludesFireOverridesAndUndoPreservesOtherSites() throws {
+        let harness = try Harness()
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.store.resetDecision(for: .location, at: harness.site)
+        harness.store.setPersistentDecision(.deny, for: .microphone, at: otherSite)
+        harness.store.setGlobalDefault(.deny, for: .camera)
+        var removal: SitePermissionsRemoval?
+        var order = [String]()
+        let sut = harness.makeViewModel(
+            snapshot: harness.snapshot(isFireMode: true, stored: [.camera: .deny, .microphone: .deny, .location: .ask]),
+            onRemovePermissions: {
+                XCTAssertTrue(harness.store.permissions(for: harness.site).isEmpty)
+                removal = $0
+                order.append("remove")
+            },
+            onDismiss: { _ in order.append("dismiss") },
+            revokePermissions: {
+                XCTAssertEqual($0, [.camera, .microphone, .location])
+                order.append("revoke")
+            }
+        )
+
+        sut.removePermissions()
+
+        XCTAssertEqual(order, ["remove", "revoke", "dismiss"])
+        XCTAssertEqual(removal?.permissionTypes, [.camera, .microphone, .location])
+        XCTAssertFalse(try XCTUnwrap(removal).snapshot.isEmpty)
+        XCTAssertEqual(harness.store.permissions(for: otherSite), [.microphone: .deny])
+        XCTAssertEqual(harness.store.globalDefault(for: .camera), .deny)
+        harness.store.restore(try XCTUnwrap(removal).snapshot)
+        XCTAssertEqual(harness.store.permissions(for: harness.site), [.camera: .allow, .location: .ask])
+        XCTAssertEqual(harness.store.permissions(for: otherSite), [.microphone: .deny])
+        XCTAssertEqual(harness.store.globalDefault(for: .camera), .deny)
     }
 
     func testRemoveWritesStoreAndReportsSnapshotBeforeRevokingManagedTypesAndDismissingCleanly() throws {

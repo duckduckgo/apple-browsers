@@ -75,6 +75,9 @@ enum UserText {
         static let neverAllow = NotLocalizedString("sitePermissions.dialog.never-allow", bundle: Bundle.module,
                                                    value: "Never Allow",
                                                    comment: "Button that permanently denies a website permission.")
+        static let deny = NotLocalizedString("sitePermissions.dialog.deny", bundle: Bundle.module,
+                                             value: "Deny",
+                                             comment: "Fire-tab website permission prompt; denial lasts this tab session, never persisted.")
     }
 
     enum PermissionRecovery {
@@ -148,6 +151,9 @@ enum UserText {
         static let hideVoiceSearch = NotLocalizedString("sitePermissions.voice-search.reminder.hide", bundle: Bundle.module,
                                                         value: "Hide Voice Search",
                                                         comment: "Button that turns off Voice Search in DuckDuckGo.")
+        static let settingsBody = NotLocalizedString("sitePermissions.voice-search.settings-reminder.body", bundle: Bundle.module,
+                                                     value: "Microphone permissions are needed if you want to use our private voice features.",
+                                                     comment: "Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked.")
     }
 
     enum VoiceChatPermissionRecovery {
@@ -157,6 +163,10 @@ enum UserText {
     }
 
     enum PermissionManagement {
+        static let titlePrefix = NotLocalizedString("sitePermissions.management.title-prefix", bundle: Bundle.module,
+                                                   value: "Permissions for",
+                                                   comment: "Title before the website domain in the on-site permission sheet.")
+
         static func title(domain: String) -> String {
             let format = NotLocalizedString("sitePermissions.management.title", bundle: Bundle.module,
                                            value: "Permissions for “%@”",
@@ -220,6 +230,8 @@ enum UserText {
                 return alwaysAllow
             case .neverAllow:
                 return neverAllow
+            case .deny:
+                return PermissionDialog.deny
             }
         }
 

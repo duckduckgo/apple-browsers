@@ -398,31 +398,48 @@ extension UIButton {
 
         let mask = CAShapeLayer()
         mask.frame = menuImageView.bounds
+        mask.contentsScale = menuImageView.layer.contentsScale
         menuImageView.layer.mask = mask
         state.permissionMask = mask
-        setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : 0.15)
+        let duration: TimeInterval = 0.2
+        let barDuration: TimeInterval = 0.1
+        let barHeadStart: TimeInterval = reduceMotion ? 0 : 0.001
+        setPermissionMenuBars(shortened: true, duration: reduceMotion ? 0 : barDuration)
 
+        let hiddenTransform = CGAffineTransform(scaleX: 0.01, y: 0.01)
         badge.alpha = 0
-        badge.transform = reduceMotion ? .identity : CGAffineTransform(scaleX: 0.01, y: 0.01)
-        let entrance = UIViewPropertyAnimator(duration: reduceMotion ? 0.15 : 0.45, dampingRatio: 0.35) {
+        badge.transform = reduceMotion ? .identity : hiddenTransform
+        let entrance = UIViewPropertyAnimator(duration: duration, curve: .easeOut) {
             badge.alpha = 1
             badge.transform = .identity
         }
         state.permissionAnimator = entrance
-        entrance.startAnimation()
+        // Give the bars a head start so the badge can grow from its center without overlapping them.
+        entrance.startAnimation(afterDelay: barHeadStart)
 
         let dismissal = DispatchWorkItem { [weak self, weak badge] in
             guard let self, let badge else { return }
-            self.setPermissionMenuBars(shortened: false, duration: reduceMotion ? 0 : 0.15)
-            let exit = UIViewPropertyAnimator(duration: 0.15, curve: .easeOut) {
+            if !reduceMotion {
+                // Mirror the entrance timing, finishing the bars after the badge disappears.
+                self.setPermissionMenuBars(shortened: false, duration: barDuration, delay: duration + barHeadStart - barDuration)
+            }
+            let exit = UIViewPropertyAnimator(duration: duration, curve: .easeOut) {
                 badge.alpha = 0
+                if !reduceMotion {
+                    badge.transform = hiddenTransform
+                }
             }
             exit.addCompletion { [weak self] position in
                 guard let self, position == .end else { return }
-                self.cancelSitePermissionAnimation()
-                if permissionTypes.count > 1 {
-                    self.animateSitePermissionGranted(Array(permissionTypes.dropFirst()), reduceMotion: reduceMotion)
+                let completion = DispatchWorkItem { [weak self] in
+                    guard let self else { return }
+                    self.cancelSitePermissionAnimation()
+                    if permissionTypes.count > 1 {
+                        self.animateSitePermissionGranted(Array(permissionTypes.dropFirst()), reduceMotion: reduceMotion)
+                    }
                 }
+                self.menuAlertState.permissionDismissal = completion
+                DispatchQueue.main.asyncAfter(deadline: .now() + barHeadStart, execute: completion)
             }
             self.menuAlertState.permissionAnimator = exit
             exit.startAnimation()
@@ -446,13 +463,15 @@ extension UIButton {
         setMenuAlertDotHidden(!state.isVisible)
     }
 
-    private func setPermissionMenuBars(shortened: Bool, duration: TimeInterval) {
+    private func setPermissionMenuBars(shortened: Bool, duration: TimeInterval, delay: TimeInterval = 0) {
         guard let mask = menuAlertState.permissionMask else { return }
-        // Mask the existing 24 pt glyph so its top bar and left edges stay fixed.
+        // Keep the mask clear of the glyph's stroke edges to avoid multiplying their antialiasing.
         func path(shortened: Bool) -> CGPath {
             let path = UIBezierPath(rect: CGRect(x: 0, y: 0, width: 24, height: 8))
+            let rightEdge: CGFloat = shortened ? 11 : 24
             for y: CGFloat in [11, 17.5] {
-                path.append(UIBezierPath(roundedRect: CGRect(x: 3, y: y, width: shortened ? 8 : 18, height: 1.5), cornerRadius: 0.75))
+                path.append(UIBezierPath(rect: CGRect(x: 0, y: y - 1, width: rightEdge - 0.75, height: 3.5)))
+                path.append(UIBezierPath(ovalIn: CGRect(x: rightEdge - 1.5, y: y, width: 1.5, height: 1.5)))
             }
             return path.cgPath
         }
@@ -461,7 +480,9 @@ extension UIButton {
         animation.fromValue = mask.presentation()?.path ?? mask.path ?? path(shortened: false)
         animation.toValue = newPath
         animation.duration = duration
-        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        animation.beginTime = mask.convertTime(CACurrentMediaTime(), from: nil) + delay
+        animation.fillMode = .backwards
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         mask.path = newPath

@@ -65,6 +65,7 @@ final class SitePermissionsState {
     fileprivate var managementViewModel: SitePermissionsSheetViewModel?
     fileprivate var managementPresentationDelegate: SitePermissionsManagementPresentationDelegate?
     fileprivate var managementCancellables = Set<AnyCancellable>()
+    fileprivate var managementDismissalCompletion: (() -> Void)?
     fileprivate var recoveryMessageView: ActionMessageView?
     fileprivate var recoveryCompletion: (() -> Void)?
     fileprivate var recoveryToken: UInt?
@@ -177,6 +178,7 @@ final class SitePermissionsState {
     }
 
     fileprivate func dismissManagement() {
+        managementDismissalCompletion = nil
         if let managementViewModel {
             managementViewModel.dismiss()
         } else if let managementHostingController {
@@ -190,6 +192,9 @@ final class SitePermissionsState {
         managementHostingController = nil
         managementViewModel = nil
         managementPresentationDelegate = nil
+        let completion = managementDismissalCompletion
+        managementDismissalCompletion = nil
+        completion?()
     }
 
     fileprivate func retireGeolocation() {
@@ -471,7 +476,7 @@ extension TabViewController {
             return false
         }
 
-        // Fire-mode removals hide saved permissions for the visit without changing the store.
+        // Include Fire-session overrides and page-scoped permissions in the menu's visibility.
         if let coordinator = sitePermissionsState.coordinator {
             return coordinator.managementSnapshot(for: site).showsMenuEntry
         }
@@ -480,8 +485,12 @@ extension TabViewController {
     }
 
     func presentSitePermissionsManagement() {
+        presentSitePermissionsManagement(displayedPermissionTypes: [])
+    }
+
+    private func presentSitePermissionsManagement(displayedPermissionTypes: Set<SitePermissionType>) {
         guard sitePermissionsState.managementHostingController == nil,
-              isSitePermissionsManagementAvailable,
+              isSitePermissionsEnabled,
               let site = currentSitePermissionKey(),
               let dependencies = sitePermissionsDependenciesProvider(),
               let coordinator = makeSitePermissionsCoordinatorIfNeeded(dependencies: dependencies) else {
@@ -489,11 +498,12 @@ extension TabViewController {
         }
 
         let snapshot = coordinator.managementSnapshot(for: site)
-        guard snapshot.showsMenuEntry else { return }
+        guard snapshot.showsMenuEntry || !displayedPermissionTypes.isEmpty else { return }
 
         let viewModel = SitePermissionsSheetViewModel(
             snapshot: snapshot,
             store: dependencies.store,
+            displayedPermissionTypes: displayedPermissionTypes,
             onDecisionChanged: { [weak self, weak coordinator] change in
                 guard let self else { return }
                 if self.tabModel.fireTab {
@@ -507,18 +517,21 @@ extension TabViewController {
             onRemovePermissions: { [weak self, weak coordinator] removal in
                 guard let self else { return }
                 coordinator?.removeManagementSessionState(for: removal.permissionTypes, at: site)
-                let restore: () -> Void
-                if self.tabModel.fireTab {
-                    restore = { [weak self, weak coordinator] in
+                if self.tabModel.fireTab, !removal.snapshot.isEmpty {
+                    dependencies.revokePermissionsInOtherTabs(site, Set(SitePermissionType.allCases), self.tabModel.uid)
+                }
+                self.presentSitePermissionsRemovalUndo(
+                    site: site,
+                    permissionTypes: removal.permissionTypes,
+                    restore: { [store = dependencies.store] in
+                        store.restore(removal.snapshot)
+                    },
+                    restoreSessionState: { [weak self, weak coordinator, store = dependencies.store] in
+                        guard self?.tabModel.fireTab == true, store.permissions(for: site).isEmpty else { return }
                         coordinator?.restoreFireModeManagementState(for: removal.permissionTypes, at: site)
                         self?.sitePermissionsState.geolocationProvider?.refreshPermissionStatuses()
                     }
-                } else {
-                    restore = { [store = dependencies.store] in
-                        store.restore(removal.snapshot)
-                    }
-                }
-                self.presentSitePermissionsRemovalUndo(domain: site.host, restore: restore)
+                )
                 self.fireSitePermissionsEvent(.permissionRemoveSite)
             },
             onOpenSystemSettings: { [weak self] permissionTypes in
@@ -652,23 +665,73 @@ extension TabViewController {
         return sizingController.sizeThatFits(in: CGSize(width: width, height: .infinity)).height
     }
 
-    private func presentSitePermissionsRemovalUndo(domain: String, restore: @escaping () -> Void) {
+    private func presentSitePermissionsRemovalUndo(site: SitePermissionKey,
+                                                   permissionTypes: Set<SitePermissionType>,
+                                                   restore: @escaping () -> Void,
+                                                   restoreSessionState: @escaping () -> Void) {
         let messageView = ActionMessageView.presentTracked(
-            message: String(format: UserText.settingsSitePermissionsRemovedSiteFormat, domain),
+            message: String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host),
             actionTitle: UserText.actionGenericUndo,
             presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
-            onAction: { [weak self] in
-                restore()
-                self?.fireSitePermissionsEvent(.permissionRemoveUndo)
-            }
+            onAction: makeSitePermissionsRemovalUndoAction(site: site,
+                                                           permissionTypes: permissionTypes,
+                                                           restore: restore,
+                                                           restoreSessionState: restoreSessionState)
         )
         messageView?.accessibilityIdentifier = "SitePermissions.Toast"
         messageView?.actionButton.accessibilityIdentifier = "SitePermissions.Toast.Undo"
     }
 
+    func makeSitePermissionsRemovalUndoAction(site: SitePermissionKey,
+                                              permissionTypes: Set<SitePermissionType>,
+                                              restore: @escaping () -> Void,
+                                              restoreSessionState: @escaping () -> Void = {}) -> () -> Void {
+        let navigationGeneration = sitePermissionsState.navigationGeneration
+        let processGeneration = sitePermissionsState.webContentProcessGeneration
+        let isCurrentPage = { [weak self] in
+            guard let self else { return false }
+            return !self.sitePermissionsState.isClosed
+                && self.currentSitePermissionKey() == site
+                && self.sitePermissionsState.navigationGeneration == navigationGeneration
+                && self.sitePermissionsState.webContentProcessGeneration == processGeneration
+        }
+
+        return { [weak self] in
+            // Check session conflicts before restoring the durable record it previously overlaid.
+            if isCurrentPage() {
+                restoreSessionState()
+            }
+            restore()
+            self?.fireSitePermissionsEvent(.permissionRemoveUndo)
+            guard let self, isCurrentPage() else { return }
+
+            let reopen = { [weak self] in
+                guard let self, isCurrentPage(),
+                      self.sitePermissionsState.isGeolocationActive,
+                      UIApplication.shared.applicationState == .active,
+                      self.viewIfLoaded?.window != nil,
+                      self.presentedViewController == nil,
+                      self.sitePermissionsState.dialogHostingController == nil,
+                      self.sitePermissionsState.recoveryHostingController == nil else {
+                    return
+                }
+                self.presentSitePermissionsManagement(displayedPermissionTypes: permissionTypes)
+            }
+            if let hostingController = self.sitePermissionsState.managementHostingController {
+                guard hostingController.isBeingDismissed else { return }
+                self.sitePermissionsState.managementDismissalCompletion = reopen
+            } else {
+                reopen()
+            }
+        }
+    }
+
     func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>,
                                for site: SitePermissionKey,
                                clearingManagementSessionState: Bool = true) {
+        if clearingManagementSessionState {
+            sitePermissionsState.coordinator?.revokeManagementSessionState(for: permissionTypes, at: site)
+        }
         let committedSite = sitePermissionsState.committedMainFrameURL.flatMap(SitePermissionKey.init(committedURL:))
         guard committedSite == site else { return }
 
@@ -678,9 +741,6 @@ extension TabViewController {
         sitePermissionsState.handledBridgeRequestIDs.subtract(revokedRequestIDs)
         sitePermissionsState.mediaCapturePreapprovals.removeAll { revokedRequestIDs.contains($0.requestID) }
         webView.revokeSitePermissions(permissionTypes)
-        if clearingManagementSessionState {
-            sitePermissionsState.coordinator?.revokeManagementSessionState(for: permissionTypes, at: site)
-        }
         if permissionTypes.contains(.location) {
             sitePermissionsState.geolocationProvider?.revokeActivePermission()
         }

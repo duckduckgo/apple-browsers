@@ -28,13 +28,15 @@ public struct SitePermissionsSheetView: View {
 
     private enum Constants {
         static let horizontalPadding: CGFloat = 16
+        // 17pt grabber area + 20pt title gap, minus the 12pt inset from centering the title beside the 44pt close button.
+        static let topPadding: CGFloat = 25
         static let headerSpacing: CGFloat = 12
         static let bottomPadding: CGFloat = 12
-        static let closeButtonSize: CGFloat = 24
         static let closeButtonTapTarget: CGFloat = 44
         static let rowHorizontalInset: CGFloat = 16
+        static let rowTrailingInset: CGFloat = 22
         static let rowVerticalInset: CGFloat = 14
-        static let iconSpacing: CGFloat = 16
+        static let iconSpacing: CGFloat = 8
         static let copySpacing: CGFloat = 8
     }
 
@@ -78,7 +80,7 @@ public struct SitePermissionsSheetView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, Constants.horizontalPadding)
-        .padding(.top, SheetMetrics.contentSpacing)
+        .padding(.top, Constants.topPadding)
         .padding(.bottom, Constants.bottomPadding)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("SitePermissions.Sheet")
@@ -113,22 +115,31 @@ public struct SitePermissionsSheetView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
-            Text(viewModel.title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityIdentifier("SitePermissions.Sheet.Title")
+        HStack(spacing: 8) {
+            HStack(spacing: 0) {
+                Text(UserText.PermissionManagement.titlePrefix + " ")
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("“\(viewModel.site.host)”")
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .daxHeadline()
+            .padding(.leading, Constants.horizontalPadding)
+            .padding(.trailing, Constants.horizontalPadding / 2)
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(viewModel.title)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("SitePermissions.Sheet.Title")
 
             Button(action: viewModel.dismiss) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
             }
             .buttonStyle(SheetCloseButtonStyle())
-            // Align the visible circle with the card edge while keeping the larger tap target.
-            .padding(.trailing, -(Constants.closeButtonTapTarget - Constants.closeButtonSize) / 2)
+            // Align the 32pt circle with the card edge while preserving its 44pt tap target.
+            .padding(.trailing, -6)
             .accessibilityLabel(UserText.PermissionManagement.close)
             .accessibilityIdentifier("SitePermissions.Sheet.Close")
         }
@@ -164,18 +175,17 @@ public struct SitePermissionsSheetView: View {
             .accessibilityHidden(true)
 
             Menu {
-                ForEach(row.options, id: \.self) { option in
-                    Button {
-                        viewModel.select(option, for: row.permissionType)
-                    } label: {
-                        if option == row.selectedOption {
-                            Label(UserText.PermissionManagement.title(for: option), systemImage: "checkmark")
-                        } else {
-                            Text(UserText.PermissionManagement.title(for: option))
-                        }
+                Picker(row.title, selection: Binding(
+                    get: { row.selectedOption },
+                    set: { viewModel.select($0, for: row.permissionType) })) {
+                    ForEach(row.options, id: \.self) { option in
+                        Text(UserText.PermissionManagement.title(for: option))
+                            .tag(option)
+                            .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized).\(option.rawValue)")
                     }
-                    .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized).\(option.rawValue)")
                 }
+                .pickerStyle(.inline)
+                .labelsHidden()
             } label: {
                 HStack(spacing: 8) {
                     ZStack(alignment: .trailing) {
@@ -187,6 +197,7 @@ public struct SitePermissionsSheetView: View {
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .iconsTertiary))
                         .accessibilityHidden(true)
                 }
@@ -199,7 +210,8 @@ public struct SitePermissionsSheetView: View {
             .accessibilityValue(row.accessibilityValue)
             .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized)")
         }
-        .padding(.horizontal, Constants.rowHorizontalInset)
+        .padding(.leading, Constants.rowHorizontalInset)
+        .padding(.trailing, Constants.rowTrailingInset)
     }
 
     private var reloadCaption: some View {

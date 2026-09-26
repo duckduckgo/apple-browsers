@@ -30,8 +30,8 @@ import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
-import SitePermissions
 import MaliciousSiteProtection
+import SitePermissions
 @testable import DuckDuckGo
 import Combine
 @testable import Core

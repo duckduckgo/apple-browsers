@@ -122,9 +122,15 @@ final class WebViewHandlerTests: XCTestCase {
             "dbp_challenge_clearance_observed_macos_daily",
             "dbp_challenge_clearance_observed_macos_count"
         ])
-        for parameters in firedPixelParameters {
+        for parameters in firedPixelParameters.prefix(2) {
             XCTAssertEqual(parameters["data_broker"], "example.com")
             XCTAssertEqual(parameters["broker_version"], "1.2.3")
+            XCTAssertNil(parameters["resolution"])
+        }
+        for parameters in firedPixelParameters.suffix(2) {
+            XCTAssertEqual(parameters["data_broker"], "example.com")
+            XCTAssertEqual(parameters["broker_version"], "1.2.3")
+            XCTAssertEqual(parameters["resolution"], "unassisted")
         }
     }
 #endif

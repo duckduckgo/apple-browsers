@@ -42,9 +42,15 @@ public enum ErrorCategory: Equatable {
 
 public enum DataBrokerProtectionSharedPixels {
 
+    public enum ChallengeResolution: String {
+        case unassisted
+        case assisted
+    }
+
     public struct Consts {
         public static let dataBrokerParamKey = "data_broker"
         public static let dataBrokerVersionKey = "broker_version"
+        public static let challengeResolutionKey = "resolution"
         public static let appVersionParamKey = "app_version"
         public static let attemptIdParamKey = "attempt_id"
         public static let durationParamKey = "duration"
@@ -173,7 +179,7 @@ public enum DataBrokerProtectionSharedPixels {
 
     // Challenge baseline pixels
     case mainFrameChallengeDetected(dataBroker: String, brokerVersion: String)
-    case challengeClearanceObserved(dataBroker: String, brokerVersion: String)
+    case challengeClearanceObserved(dataBroker: String, brokerVersion: String, resolution: ChallengeResolution)
 
     // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -553,11 +559,16 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
         case .freemiumUpsell,
                 .freemiumPIRMaintenanceScanSkipped:
             return [:]
-        case .mainFrameChallengeDetected(let dataBroker, let brokerVersion),
-                .challengeClearanceObserved(let dataBroker, let brokerVersion):
+        case .mainFrameChallengeDetected(let dataBroker, let brokerVersion):
             return [
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion
+            ]
+        case .challengeClearanceObserved(let dataBroker, let brokerVersion, let resolution):
+            return [
+                Consts.dataBrokerParamKey: dataBroker,
+                Consts.dataBrokerVersionKey: brokerVersion,
+                Consts.challengeResolutionKey: resolution.rawValue
             ]
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):

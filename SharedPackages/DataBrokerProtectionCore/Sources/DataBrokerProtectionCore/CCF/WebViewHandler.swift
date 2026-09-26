@@ -533,7 +533,8 @@ extension DataBrokerProtectionWebViewHandler {
         guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
         pixelHandler?.fire(.challengeClearanceObserved(
             dataBroker: challengePixelDataBroker,
-            brokerVersion: challengePixelBrokerVersion))
+            brokerVersion: challengePixelBrokerVersion,
+            resolution: .unassisted))
     }
 
     private func observeChallengeClearance(in webView: WKWebView) {

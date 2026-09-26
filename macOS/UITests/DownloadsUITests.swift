@@ -532,7 +532,7 @@ class DownloadsUITests: UITestCase {
 
         let link = webView.links["Download via Data URL"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
-        link.tap()
+        link.click()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let cancel = saveSheet.buttons["Cancel"].firstMatch
@@ -572,7 +572,7 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(url, pressingEnter: true)
         let link = webView.links["Download via Blob"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
-        link.tap()
+        link.click()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let cancel = saveSheet.buttons["Cancel"].firstMatch
@@ -897,8 +897,8 @@ class DownloadsUITests: UITestCase {
         let linkB = webView.links["File B"].firstMatch
         XCTAssertTrue(linkA.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(linkB.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        linkA.tap()
-        linkB.tap()
+        linkA.click()
+        linkB.click()
 
         // Verify both files appear with correct sizes
         assertDownloadListed(filename: fileNameA, sizeLabelRegex: "1.0 MB")

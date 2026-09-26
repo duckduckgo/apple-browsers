@@ -318,6 +318,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
+    private var tabBarAlphaBeforeFireAnimation: CGFloat?
     private var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
@@ -326,20 +327,33 @@ final class MainWindowController: NSWindowController {
             .removeDuplicates()
             .sink { [weak self] burningData in
                 guard let self else { return }
-                // The tab bar is only moved out of the titlebar so the fire animation can cover it.
-                // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
-                // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
+                // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation.
+                // Only change the tab bar for burns whose animation needs to cover it.
                 if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
-                    moveTabBarView(toTitlebarView: false)
+                    if #available(macOS 27, *) {
+                        // Reparenting the collection view on macOS 27 can leave its tabs unrendered.
+                        // Keep it attached and make it transparent while the Fire animation plays.
+                        let tabBarView = mainViewController.tabBarViewController.view
+                        tabBarAlphaBeforeFireAnimation = tabBarAlphaBeforeFireAnimation ?? tabBarView.alphaValue
+                        tabBarView.alphaValue = 0
+                    } else {
+                        moveTabBarView(toTitlebarView: false)
+                        didMoveTabBarForFireAnimation = true
+                    }
+
                     // The titlebar has an opaque background (see applyThemeStyle) and sits above the
-                    // full-window fire animation. With the tab bar moved out, that leaves a blank bar
-                    // over the animation — clear it so the animation shows through, and restore it after.
+                    // full-window fire animation. Clear it so the animation shows through.
                     setTitlebarBackgroundColor(.clear)
-                    didMoveTabBarForFireAnimation = true
-                } else if burningData == nil, didMoveTabBarForFireAnimation {
-                    moveTabBarView(toTitlebarView: true)
+                } else if burningData == nil, didMoveTabBarForFireAnimation || tabBarAlphaBeforeFireAnimation != nil {
+                    if didMoveTabBarForFireAnimation {
+                        moveTabBarView(toTitlebarView: true)
+                        didMoveTabBarForFireAnimation = false
+                    }
+                    if let tabBarAlphaBeforeFireAnimation {
+                        mainViewController.tabBarViewController.view.alphaValue = tabBarAlphaBeforeFireAnimation
+                        self.tabBarAlphaBeforeFireAnimation = nil
+                    }
                     setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
-                    didMoveTabBarForFireAnimation = false
                 }
             }
     }

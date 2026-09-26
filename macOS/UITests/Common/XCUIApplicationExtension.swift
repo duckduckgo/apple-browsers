@@ -92,6 +92,7 @@ extension XCUIApplication {
 
         static let addBookmarkFolderDropdown = "bookmark.add.folder.dropdown"
 
+        static let stateRestorePicker = "PreferencesGeneralView.stateRestorePicker"
         static let reopenAllWindowsFromLastSession = "PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"
         static let startupTypeOpenANewWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow"
         static let startupWindowTypeRegularWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
@@ -150,7 +151,7 @@ extension XCUIApplication {
         if forceTerminate {
             terminate()
         } else {
-            menuItems[AccessibilityIdentifiers.quitMenuItem].tap()
+            typeKey("q", modifierFlags: .command)
         }
         launch()
     }
@@ -516,9 +517,9 @@ extension XCUIApplication {
 
             if let folderName = folderName {
                 let folderLocationButton = popUpButtons["bookmark.add.folder.dropdown"]
-                folderLocationButton.tap()
+                folderLocationButton.clickAfterExistenceTestSucceeds()
                 let folderOneLocation = folderLocationButton.menuItems[folderName]
-                folderOneLocation.tap()
+                folderOneLocation.clickAfterExistenceTestSucceeds()
             }
 
             if escapingDialog {
@@ -659,6 +660,19 @@ extension XCUIApplication {
     }
 
     func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
+        let startupWindowMenu = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker].popUpButtons.firstMatch
+        if startupWindowMenu.exists {
+            switch state {
+            case .newWindow, .fireWindow:
+                startupWindowMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)).click()
+                typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
+                typeKey(.enter, modifierFlags: [])
+                return
+            case .restoreLastSession:
+                break
+            }
+        }
+
         var radioButton: XCUIElement
         var picker: XCUIElement?
         var switchKey: XCUIKeyboardKey?

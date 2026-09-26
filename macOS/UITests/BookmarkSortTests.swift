@@ -53,12 +53,13 @@ class BookmarkSortTests: UITestCase {
         app.dismissBookmarksBarPopover()
         app.openBookmarksPanel()
         selectSortByName(mode: .panel)
-        app.openBookmarksPanel() // Here we do not open the panel, we close it by tapping the shortcut button again.
+        app.closeBookmarksPanel()
         app.openBookmarksManager()
 
-        app.buttons[AccessibilityIdentifiers.sortBookmarksButtonManager].tap()
+        app.buttons[AccessibilityIdentifiers.sortBookmarksButtonManager].clickAfterExistenceTestSucceeds()
 
         /// If the ascending and descending sort options are enabled, means that the sort in the panel was reflected here.
+        XCTAssertTrue(app.menuItems["Ascending"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(app.menuItems["Ascending"].isEnabled)
         XCTAssertTrue(app.menuItems["Descending"].isEnabled)
     }
@@ -68,11 +69,13 @@ class BookmarkSortTests: UITestCase {
         app.dismissBookmarksBarPopover()
         app.openBookmarksManager()
         selectSortByName(mode: .manager)
+        app.closeCurrentTab()
         app.openBookmarksPanel()
 
         let bookmarksPanelPopover = app.popovers.firstMatch
-        bookmarksPanelPopover.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel].tap()
+        bookmarksPanelPopover.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel].clickAfterExistenceTestSucceeds()
 
+        XCTAssertTrue(bookmarksPanelPopover.menuItems["Ascending"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(bookmarksPanelPopover.menuItems["Ascending"].isEnabled)
         XCTAssertTrue(bookmarksPanelPopover.menuItems["Descending"].isEnabled)
     }
@@ -153,16 +156,18 @@ class BookmarkSortTests: UITestCase {
         // Wait for new application to start
         XCTAssertTrue(app.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
+        app.dismissBookmarksBarPopover()
         app.openBookmarksPanel()
 
-        let sortBookmarksPanelButton = app.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel]
-        sortBookmarksPanelButton.tap()
+        let sortBookmarksPanelButton = app.popovers.firstMatch.buttons[AccessibilityIdentifiers.sortBookmarksButtonPanel]
+        sortBookmarksPanelButton.clickAfterExistenceTestSucceeds()
 
         let sortByNameManual = app.menuItems["Manual"]
         let sortByNameMenuItem = app.menuItems["Name"]
         let sortByNameAscendingMenuItem = app.menuItems["Ascending"]
         let sortByNameDescendingMenuItem = app.menuItems["Descending"]
 
+        XCTAssertTrue(sortByNameManual.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(sortByNameManual.isEnabled)
         XCTAssertTrue(sortByNameMenuItem.isEnabled)
         XCTAssertTrue(sortByNameAscendingMenuItem.isEnabled)

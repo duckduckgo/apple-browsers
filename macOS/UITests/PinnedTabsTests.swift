@@ -170,11 +170,13 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func pinCurrentPage() {
-        app.menuItems["Pin Tab"].tap()
+        app.menuBarItems["Window"].click()
+        app.menuItems["Pin Tab"].clickAfterExistenceTestSucceeds()
     }
 
     private func unpinCurrentPage() {
-        app.menuItems["Unpin Tab"].tap()
+        app.menuBarItems["Window"].click()
+        app.menuItems["Unpin Tab"].clickAfterExistenceTestSucceeds()
     }
 
     private func assertsPageTwoIsPinned(file: StaticString = #file, line: UInt = #line) {
@@ -316,6 +318,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertCurrentPageCanBeUnpinned(file: StaticString = #file, line: UInt = #line) {
+        app.menuBarItems["Window"].click()
         XCTAssertTrue(
             app.menuItems["Unpin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Unpin Tab menu item should be available (line \(#line))",
@@ -325,6 +328,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertCurrentPageCanBePinned(file: StaticString = #file, line: UInt = #line) {
+        app.menuBarItems["Window"].click()
         XCTAssertTrue(
             app.menuItems["Pin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Pin Tab menu item should be available (line \(#line))",
@@ -423,6 +427,6 @@ class PinnedTabsTests: UITestCase {
 
         let aboveWindow = tabCenterCoordinate.withOffset(CGVector(dx: 0, dy: -100))
 
-        tabCenterCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
+        tabCenterCoordinate.click(forDuration: 0.5, thenDragTo: aboveWindow)
     }
 }

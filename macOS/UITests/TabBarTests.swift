@@ -34,11 +34,11 @@ class TabBarTests: UITestCase {
         /// Opens the first link with CMD pressed so we open it on a new tab
         let tab1Link = app.webViews.firstMatch.links["Downloads"]
         tab1Link.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         let tab2Link = app.webViews.firstMatch.links["Print"]
         tab2Link.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         /// Move to the next tab and closes it
         app.typeKey("]", modifierFlags: [.command, .shift])
@@ -54,21 +54,24 @@ class TabBarTests: UITestCase {
         app.openNewTab()
         app.openNewTab()
         openPrivacyTestPagesSite()
+        let tabCountBeforeChildren = app.tabs.count
 
         /// Opens two child sites (downloads and print)
         let downloadsChildSiteLink = app.webViews.firstMatch.links["Downloads"]
         downloadsChildSiteLink.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         let printChildSiteLink = app.webViews.firstMatch.links["Print"]
         printChildSiteLink.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(app.wait(for: .keyPath(\.tabs.count, equalTo: tabCountBeforeChildren + 2), timeout: UITests.Timeouts.elementExistence),
+                      "Both child tabs should open before closing their parent")
 
         /// We pin the privacy site and we close it. We do this to position the parent child first in the tab collection
         /// The reason why we unpin it, is because we do not want for it to be pinned for other tests.
-        app.menuItems["Pin Tab"].tap()
-        app.menuItems["Unpin Tab"].tap()
-        app.menuItems["Close Tab"].tap()
+        pinCurrentTab()
+        unpinCurrentTab()
+        app.closeCurrentTab()
 
         /// Asserts that the first child next to the closed parent tab is shown. In this case si the Downloads site
         XCTAssertTrue(app.staticTexts["Download PDF"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -84,12 +87,12 @@ class TabBarTests: UITestCase {
         /// Opens one child sites (downloads and print)
         let downloadsChildSiteLink = app.webViews.firstMatch.links["Downloads"]
         downloadsChildSiteLink.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         /// We pin the privacy site and we close it. We do this to position the parent child first in the tab collection
         /// The reason why we unpin it, is because we do not want for it to be pinned for other tests.
-        app.menuItems["Pin Tab"].tap()
-        app.menuItems["Unpin Tab"].tap()
+        pinCurrentTab()
+        unpinCurrentTab()
 
         /// We move through tabs until we are in the child position tab and we close it
         app.typeKey("]", modifierFlags: [.command, .shift])
@@ -97,7 +100,7 @@ class TabBarTests: UITestCase {
         app.typeKey("]", modifierFlags: [.command, .shift])
         app.typeKey("]", modifierFlags: [.command, .shift])
 
-        app.menuItems["Close Tab"].tap()
+        app.closeCurrentTab()
 
         /// Asserts that the first child next to the closed parent tab is shown. In this case si the Downloads site
         XCTAssertTrue(app.staticTexts["Privacy Test Pages"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -110,7 +113,7 @@ class TabBarTests: UITestCase {
 
         /// We open a new tab and we close it
         app.openNewTab()
-        app.menuItems["Close Tab"].tap()
+        app.closeCurrentTab()
 
         /// Asserts that the recently active tab is visible
         XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
@@ -127,7 +130,7 @@ class TabBarTests: UITestCase {
         app.typeKey("3", modifierFlags: [.command])
         /// We move to the last tab and we close it
         app.typeKey("5", modifierFlags: [.command])
-        app.menuItems["Close Tab"].tap()
+        app.closeCurrentTab()
 
         /// Asserts that the tab to the right is shown
         XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
@@ -156,7 +159,19 @@ class TabBarTests: UITestCase {
     // MARK: - Utilities
 
     private func resetPinnedTabs() {
-        app.menuItems["Reset Pinned Tabs"].tap()
+        app.debugMenu.click()
+        app.menuItems["MainMenu.resetData"].hover()
+        app.menuItems["Reset Pinned Tabs"].clickAfterExistenceTestSucceeds()
+    }
+
+    private func pinCurrentTab() {
+        app.menuBarItems["Window"].click()
+        app.menuItems["Pin Tab"].clickAfterExistenceTestSucceeds()
+    }
+
+    private func unpinCurrentTab() {
+        app.menuBarItems["Window"].click()
+        app.menuItems["Unpin Tab"].clickAfterExistenceTestSucceeds()
     }
 
     private func moveToRightEndTab() {

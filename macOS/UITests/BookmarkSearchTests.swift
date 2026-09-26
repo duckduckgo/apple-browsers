@@ -194,16 +194,17 @@ class BookmarkSearchTests: UITestCase {
             searchInBookmarksManager(for: "Bookmark #1")
         }
 
-        let query = app.staticTexts.matching(identifier: "Bookmark #1")
-        guard let result = query.allElementsBoundByIndex.last else {
-            XCTFail("Failed to find Bookmark #1")
-            return
+        let results = mode == .panel ? app.popovers.firstMatch.outlines.firstMatch : app.tables.firstMatch
+        let result = results.staticTexts["Bookmark #1"]
+        XCTAssertTrue(result.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Failed to find Bookmark #1 in search results")
+        if mode == .manager {
+            result.hover()
+            results.cells.firstMatch.buttons["BookmarkTableCellView.menuButton"].clickAfterExistenceTestSucceeds()
+        } else {
+            result.rightClick()
         }
-
-        result.rightClick()
         let showInFolderMenuItem = app.menuItems["Show in Folder"]
-        XCTAssertTrue(showInFolderMenuItem.exists)
-        showInFolderMenuItem.tap()
+        showInFolderMenuItem.clickAfterExistenceTestSucceeds()
 
         assertSearchBarVisibilityAfterShowInFolder(mode: mode)
         assertFolderStructure(mode: mode)
@@ -305,17 +306,19 @@ class BookmarkSearchTests: UITestCase {
     private func createFolderWithSubFolder() {
         app.openBookmarksPanel()
         let bookmarksPanel = app.popovers.firstMatch
-        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].tap()
+        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].clickAfterExistenceTestSucceeds()
 
         let folderTitleTextField = app.textFields["bookmark.add.name.textfield"]
+        folderTitleTextField.clickAfterExistenceTestSucceeds()
         folderTitleTextField.typeText("Folder #1")
-        app.buttons["Add Folder"].tap()
+        app.buttons["Add Folder"].clickAfterExistenceTestSucceeds()
 
-        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].tap()
+        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].clickAfterExistenceTestSucceeds()
+        folderTitleTextField.clickAfterExistenceTestSucceeds()
         folderTitleTextField.typeText("Folder #2")
         let folderLocationButton = app.popUpButtons["bookmark.folder.folder.dropdown"]
-        folderLocationButton.tap()
-        folderLocationButton.menuItems["Folder #1"].tap()
-        app.buttons["Add Folder"].tap()
+        folderLocationButton.clickAfterExistenceTestSucceeds()
+        folderLocationButton.menuItems["Folder #1"].clickAfterExistenceTestSucceeds()
+        app.buttons["Add Folder"].clickAfterExistenceTestSucceeds()
     }
 }

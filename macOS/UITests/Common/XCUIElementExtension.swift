@@ -29,6 +29,10 @@ extension XCUIElementSnapshot {
 }
 extension XCUIElement {
 
+    private var bookmarksPanel: XCUIElement {
+        popovers.containing(.button, identifier: "BookmarkListViewController.sortBookmarksButton").firstMatch
+    }
+
     @nonobjc var application: XCUIApplication {
         return self.value(forKey: "application") as! XCUIApplication
     }
@@ -150,7 +154,6 @@ extension XCUIElement {
 
     /// Opens the bookmarks panel if it is not already visible.
     func openBookmarksPanel() {
-        let bookmarksPanel = popovers.firstMatch
         if bookmarksPanel.exists { return }
 
         let bookmarksPanelShortcutButton = buttons[XCUIApplication.AccessibilityIdentifiers.bookmarksPanelShortcutButton]
@@ -160,6 +163,14 @@ extension XCUIElement {
 
         bookmarksPanelShortcutButton.clickAfterExistenceTestSucceeds()
         XCTAssertTrue(bookmarksPanel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Bookmarks panel should open")
+    }
+
+    func closeBookmarksPanel() {
+        guard bookmarksPanel.exists else { return }
+
+        let bookmarksPanelShortcutButton = buttons[XCUIApplication.AccessibilityIdentifiers.bookmarksPanelShortcutButton]
+        bookmarksPanelShortcutButton.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(bookmarksPanel.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Bookmarks panel should close")
     }
 
     func clickAfterExistenceTestSucceeds() {

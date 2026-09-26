@@ -37,6 +37,10 @@ protocol AIChatContextualFloatingInputHosting: AnyObject {
     func unmount(from parent: UIViewController)
     var isInputFirstResponder: Bool { get }
 
+    func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style)
+    func detachSuggestions(from parent: UIViewController)
+    var suggestionsContainerView: UIView { get }
+
     func deactivateInput()
     func freezeInputPosition()
     func applyDictatedQuery(_ query: String)
@@ -65,7 +69,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         static let assumedKeyboardSlideDuration: TimeInterval = 0.25
         /// Longer than this and the finger was resting or scrolling, not tapping.
         static let maximumTapDuration: CFTimeInterval = 0.4
-        static let chipsFadeDuration: TimeInterval = 0.2
     }
 
     /// The keyboard's own animation, taken from its notifications: moving with the keyboard means running
@@ -97,7 +100,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     /// Stays true for the rest of this surface's life — it is presented once and dismissed once.
     private var isDismissing = false
     private var hasResignedInput = false
-    private var hasShownChips = false
 
     /// The view the page-tap recognizer is installed on, so it can be detached even if this controller
     /// has already lost its parent.
@@ -111,7 +113,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
     private let utiHost: AIChatContextualFloatingInputHosting
     private var isTransitioningSize = false
-    let chipsViewController: AIChatContextualInputViewController
 
     /// Lets touches outside the input reach the page underneath, so it stays scrollable while the
     /// contextual chat is up. Only the chips, the bar and the close button claim anything.
@@ -161,27 +162,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         return recognizer
     }()
 
-    /// Spans the full width, so it must not swallow taps in the gaps around the chips — those belong
-    /// to the dim behind it.
-    private final class ChipHitTestingView: UIView {
-        var containsChip: ((CGPoint) -> Bool)?
-
-        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            containsChip?(point) ?? false
-        }
-    }
-
-    private lazy var chipsContainerView: ChipHitTestingView = {
-        let view = ChipHitTestingView()
-        view.backgroundColor = .clear
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.containsChip = { [weak self] point in
-            guard let self else { return false }
-            return self.chipsViewController.containsStartAction(at: point, from: self.chipsContainerView)
-        }
-        return view
-    }()
-
     /// Only reaches us where the surface claims touches — the chips, the bar and the close button — so
     /// a drag on the page scrolls the page instead.
     private lazy var dragToDismissRecognizer: UIPanGestureRecognizer = {
@@ -190,9 +170,8 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         return recognizer
     }()
 
-    init(utiHost: AIChatContextualFloatingInputHosting, chipsViewController: AIChatContextualInputViewController) {
+    init(utiHost: AIChatContextualFloatingInputHosting) {
         self.utiHost = utiHost
-        self.chipsViewController = chipsViewController
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -209,7 +188,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         view.backgroundColor = .clear
         view.addGestureRecognizer(dragToDismissRecognizer)
         addDimView()
-        addChipsContainer()
         observeKeyboardAnimation()
     }
 
@@ -239,7 +217,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
         let inputView = utiHost.mount(in: self)
         mountedInputView = inputView
-        embedChips(above: utiHost.inputCardTopAnchor)
+        utiHost.embedSuggestions(in: self, style: .floating)
         presenterView = parent.view
         parent.view.addGestureRecognizer(dismissOnPageTapRecognizer)
         // Settles at the pre-keyboard resting position, which the entrance then animates away from.
@@ -258,42 +236,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
                        animations: {
             self.view.alpha = 1
             self.view.layoutIfNeeded()
-        })
-    }
-
-    /// Chips arrive asynchronously with the page context, so this waits for the first batch with content
-    /// rather than showing at install time. They sit above the input card, which is pinned to the keyboard
-    /// guide, so they ride up with it rather than landing once it has stopped.
-    func showChipsIfNeeded() {
-        guard chipsViewController.startActionCount > 0 else { return }
-        // Content returning after `clearChipsFadingOut`, so fade back rather than re-enter.
-        guard !hasShownChips else {
-            fadeChipsContainer(to: 1)
-            return
-        }
-        hasShownChips = true
-        chipsContainerView.alpha = 1
-        chipsViewController.showStartActions()
-    }
-
-    /// Clears only once invisible: removing them collapses the stack into the input's own animation.
-    func clearChipsFadingOut() {
-        fadeChipsContainer(to: 0) { [weak self] in
-            self?.chipsViewController.updateStartActions(suggestions: [], quickActions: [])
-        }
-    }
-
-    private func fadeChipsContainer(to alpha: CGFloat, completion: (() -> Void)? = nil) {
-        guard chipsContainerView.alpha != alpha else {
-            completion?()
-            return
-        }
-        UIView.animate(withDuration: Constants.chipsFadeDuration,
-                       animations: { self.chipsContainerView.alpha = alpha },
-                       // An interrupted fade was overtaken; its clear would empty the row coming back.
-                       completion: { finished in
-            guard finished else { return }
-            completion?()
         })
     }
 
@@ -343,7 +285,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         // must leave it alone. Clearing the slide's transform is the host's own business on the way out.
         utiHost.unmount(from: self)
         mountedInputView = nil
-        removeChips()
+        utiHost.detachSuggestions(from: self)
         willMove(toParent: nil)
         view.removeFromSuperview()
         removeFromParent()
@@ -360,10 +302,6 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     func simulatePageTapForTesting() {
         handlePageTap()
     }
-
-    var hasShownChipsForTesting: Bool {
-        hasShownChips
-    }
 #endif
 }
 
@@ -377,45 +315,6 @@ private extension AIChatContextualFloatingInputViewController {
             dimView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             dimView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-    }
-
-
-    /// Horizontal alignment waits for `embedChips`, since the card's anchors only share an ancestor
-    /// with us once the input is mounted.
-    func addChipsContainer() {
-        // Hidden until dealt: the suggestions are configured as soon as they load, which is before the surface
-        // has settled, and without this they simply appear at full strength wherever they land.
-        chipsContainerView.alpha = 0
-        view.addSubview(chipsContainerView)
-        chipsContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-    }
-
-    /// Aligned to the input card rather than the bar's outer view, which carries its own padding.
-    func embedChips(above inputCardTop: NSLayoutYAxisAnchor) {
-        addChild(chipsViewController)
-        chipsViewController.view.translatesAutoresizingMaskIntoConstraints = false
-        // After the view loads: the inset constraints don't exist until `viewDidLoad` builds them.
-        chipsViewController.clearStartActionsHorizontalInset()
-        chipsContainerView.addSubview(chipsViewController.view)
-        NSLayoutConstraint.activate([
-            chipsContainerView.leadingAnchor.constraint(equalTo: utiHost.inputCardLeadingAnchor),
-            chipsContainerView.trailingAnchor.constraint(equalTo: utiHost.inputCardTrailingAnchor),
-            // Flush to the card: the chips controller already carries the design's 12pt gap in its
-            // own bottom padding.
-            chipsContainerView.bottomAnchor.constraint(equalTo: inputCardTop),
-            chipsViewController.view.topAnchor.constraint(equalTo: chipsContainerView.topAnchor),
-            chipsViewController.view.leadingAnchor.constraint(equalTo: chipsContainerView.leadingAnchor),
-            chipsViewController.view.trailingAnchor.constraint(equalTo: chipsContainerView.trailingAnchor),
-            chipsViewController.view.bottomAnchor.constraint(equalTo: chipsContainerView.bottomAnchor),
-        ])
-        chipsViewController.didMove(toParent: self)
-    }
-
-    func removeChips() {
-        guard chipsViewController.parent != nil else { return }
-        chipsViewController.willMove(toParent: nil)
-        chipsViewController.view.removeFromSuperview()
-        chipsViewController.removeFromParent()
     }
 
 
@@ -451,17 +350,18 @@ private extension AIChatContextualFloatingInputViewController {
         }
     }
 
-    /// The chips and the bar move as one, so every slide — entrance, dismissal and drag — goes through
-    /// here rather than transforming each of them in turn.
+    /// The suggestions strip and the bar move as one, so every slide — entrance, dismissal and drag — goes
+    /// through here rather than transforming each of them in turn. The strip is the host's, borrowed while
+    /// this surface is up, the same way the bar is.
     func translateContent(by distance: CGFloat) {
         let offset = CGAffineTransform(translationX: 0, y: distance)
-        chipsContainerView.transform = offset
+        utiHost.suggestionsContainerView.transform = offset
         mountedInputView?.transform = offset
     }
 
     /// Both content views always carry the same slide offset.
     var contentTranslation: CGFloat {
-        chipsContainerView.transform.ty
+        utiHost.suggestionsContainerView.transform.ty
     }
 
     /// How far the surface rose from the bottom on the way in, and so how far it settles back down on the way

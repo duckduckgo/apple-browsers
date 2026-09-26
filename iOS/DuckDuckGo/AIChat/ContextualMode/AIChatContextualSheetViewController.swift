@@ -1509,6 +1509,9 @@ private extension AIChatContextualSheetViewController {
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
+        if featureFlagger.isFeatureOn(.contextualActiveChatSuggestions) {
+            persistentUTIHost.embedSuggestions(in: self, style: .activeChat)
+        }
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {
@@ -1592,6 +1595,7 @@ private extension AIChatContextualSheetViewController {
             expandToLargeDetent()
         }
     }
+
 }
 
 // MARK: - UISheetPresentationControllerDelegate

@@ -327,6 +327,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
     case contextualPagePlaceholder
 
+    /// Shows page suggestions in an active contextual chat when a newly navigated page is attached
+    case contextualActiveChatSuggestions
+
     /// Enables updated AI features settings screen
     case aiFeaturesSettingsUpdate
 

@@ -129,6 +129,9 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.isExpanded
     }
 
+    /// Fires when the input expands or collapses (the card layout's real state).
+    var onExpansionChange: ((Bool) -> Void)?
+
     var isInputFirstResponder: Bool {
         inputBarView.isFirstResponder
     }
@@ -521,6 +524,10 @@ extension UnifiedToggleInputViewController: UTIFooterPresenting {
 // MARK: - UnifiedToggleInputViewDelegate
 
 extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
+
+    func unifiedToggleInputView(_ view: UnifiedToggleInputView, didChangeExpansion isExpanded: Bool) {
+        onExpansionChange?(isExpanded)
+    }
 
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapWhileCollapsed(self)

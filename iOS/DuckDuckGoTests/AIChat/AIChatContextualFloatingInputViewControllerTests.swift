@@ -63,6 +63,18 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
             inputView.removeFromSuperview()
         }
 
+        let suggestionsView = UIView()
+        var suggestionsContainerView: UIView { suggestionsView }
+        func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style) {
+            suggestionsView.translatesAutoresizingMaskIntoConstraints = false
+            parent.view.addSubview(suggestionsView)
+        }
+        func detachSuggestions(from parent: UIViewController) {
+            guard suggestionsView.superview === parent.view else { return }
+            suggestionsView.transform = .identity
+            suggestionsView.removeFromSuperview()
+        }
+
         func deactivateInput() { deactivateInputCount += 1 }
         func freezeInputPosition() { freezeInputPositionCount += 1 }
 
@@ -93,7 +105,8 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
             initialAttachmentDeliveryState: .delivered,
             hasActiveChat: { false },
             isAutoAttachEnabled: { false },
-            isFireTab: false
+            isFireTab: false,
+            suggestionsController: makeChips()
         )
     }
 
@@ -112,7 +125,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
 
     private func makeSubjectWithHostSpy() -> (AIChatContextualFloatingInputViewController, HostSpy, DelegateSpy, UIViewController) {
         let host = HostSpy()
-        let subject = AIChatContextualFloatingInputViewController(utiHost: host, chipsViewController: makeChips())
+        let subject = AIChatContextualFloatingInputViewController(utiHost: host)
         let spy = DelegateSpy()
         subject.delegate = spy
 
@@ -125,7 +138,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     }
 
     private func makeSubject() -> (AIChatContextualFloatingInputViewController, DelegateSpy, UIViewController) {
-        let subject = AIChatContextualFloatingInputViewController(utiHost: makeHost(), chipsViewController: makeChips())
+        let subject = AIChatContextualFloatingInputViewController(utiHost: makeHost())
         let spy = DelegateSpy()
         subject.delegate = spy
 
@@ -146,11 +159,11 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertTrue(subject.view.isDescendant(of: parent.view))
     }
 
-    func testInstallMountsBothTheChipsAndTheInput() {
+    func testInstallMountsBothTheSuggestionsStripAndTheInput() {
         let (subject, _, _) = makeSubject()
 
+        // The host's input and its suggestions strip, both added as children of the surface.
         XCTAssertEqual(subject.children.count, 2)
-        XCTAssertTrue(subject.children.contains(subject.chipsViewController))
     }
 
     func testInstallingTwiceInTheSameParentDoesNotDuplicate() {
@@ -218,7 +231,7 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
     /// The host reuses its input view, so a dismissal must hand it back untouched.
     func testRemoveRestoresTheInputViewItBorrowed() {
         let host = makeHost()
-        let subject = AIChatContextualFloatingInputViewController(utiHost: host, chipsViewController: makeChips())
+        let subject = AIChatContextualFloatingInputViewController(utiHost: host)
         let parent = UIViewController()
         parent.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         subject.install(in: parent)
@@ -321,43 +334,4 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(spy.dismissRequestCount, 0)
     }
 
-    // MARK: - Chips entrance
-
-    /// An empty batch must not consume the entrance: page context attaches before suggestions
-    /// resolve, so the first batches legitimately carry nothing to animate.
-    func testAnEmptyBatchDoesNotConsumeTheEntrance() {
-        let (subject, _, _) = makeSubject()
-
-        subject.showChipsIfNeeded()
-        XCTAssertFalse(subject.hasShownChipsForTesting)
-
-        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
-        subject.showChipsIfNeeded()
-        XCTAssertTrue(subject.hasShownChipsForTesting)
-    }
-
-    func testEntranceIsConsumedByTheFirstBatchWithChips() {
-        let (subject, _, _) = makeSubject()
-        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
-
-        subject.showChipsIfNeeded()
-        XCTAssertTrue(subject.hasShownChipsForTesting)
-
-        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize, .askAboutPage])
-        subject.showChipsIfNeeded()
-
-        XCTAssertTrue(subject.hasShownChipsForTesting)
-        XCTAssertEqual(subject.chipsViewController.startActionCount, 2)
-    }
-
-    /// Suggestions can resolve while the keyboard is still coming up. They show straight away and ride it
-    /// up, rather than waiting for it to stop and landing afterwards.
-    func testABatchArrivingBeforeTheKeyboardSettlesShowsImmediately() {
-        let (subject, _, _) = makeSubject()
-        subject.chipsViewController.updateStartActions(suggestions: [], quickActions: [.summarize])
-
-        subject.showChipsIfNeeded()
-
-        XCTAssertTrue(subject.hasShownChipsForTesting)
-    }
 }

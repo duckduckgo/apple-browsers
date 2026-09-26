@@ -2266,6 +2266,101 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
     }
 
+    // MARK: - Active Chat Suggestions
+
+    private func makeActiveChatSessionState(activeChatSuggestionsEnabled: Bool,
+                                            provider: ContextualSuggestedPromptsProviding) -> AIChatContextualChatSessionState {
+        mockFeatureFlagger.enabledFeatureFlags = activeChatSuggestionsEnabled
+            ? [.contextualSuggestedPrompts, .contextualActiveChatSuggestions]
+            : [.contextualSuggestedPrompts]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        return AIChatContextualChatSessionState(
+            aiChatSettings: mockSettings,
+            pixelHandler: mockPixelHandler,
+            featureFlagger: mockFeatureFlagger,
+            suggestedPromptsProvider: provider
+        )
+    }
+
+    func testActiveChatSuggestionsShowForAPageAttachedAfterNavigation() {
+        let expected = [ContextualSuggestedPrompt(id: "s1", label: "Key points", prompt: "Key points.", icon: nil)]
+        let provider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        sessionState = makeActiveChatSessionState(activeChatSuggestionsEnabled: true, provider: provider)
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        let loaded = expectation(description: "active chat suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(url: "https://new.example"))
+
+        wait(for: [loaded], timeout: 1.0)
+    }
+
+    func testActiveChatSuggestionsHiddenWhenFlagOff() {
+        let expected = [ContextualSuggestedPrompt(id: "s1", label: "Key points", prompt: "Key points.", icon: nil)]
+        let provider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        sessionState = makeActiveChatSessionState(activeChatSuggestionsEnabled: false, provider: provider)
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(url: "https://new.example"))
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    func testActiveChatSuggestionsHideOnceContextIsUsedInAPrompt() {
+        let expected = [ContextualSuggestedPrompt(id: "s1", label: "Key points", prompt: "Key points.", icon: nil)]
+        let provider = MockContextualSuggestedPromptsProvider(suggestions: expected)
+        sessionState = makeActiveChatSessionState(activeChatSuggestionsEnabled: true, provider: provider)
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        let loaded = expectation(description: "active chat suggestions loaded")
+        sessionState.$viewState
+            .dropFirst()
+            .sink { state in
+                if state.suggestionsLoadState == .loaded, state.suggestions == expected {
+                    loaded.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(url: "https://new.example"))
+        wait(for: [loaded], timeout: 1.0)
+
+        sessionState.markUTIContextDelivered()
+
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
+    /// A resolve still in flight when the context is used never lands, so the state must stop reporting
+    /// `.loading` — the surfaces would sit on a loader that nothing clears.
+    func testActiveChatSuggestionsStopLoadingOnceContextIsUsedInAPrompt() {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        sessionState = makeActiveChatSessionState(activeChatSuggestionsEnabled: true, provider: provider)
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+
+        sessionState.notifyPageChanged()
+        sessionState.updateContext(makeTestContext(url: "https://new.example"))
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
+
+        sessionState.markUTIContextDelivered()
+
+        XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loaded)
+        XCTAssertTrue(sessionState.viewState.suggestions.isEmpty)
+    }
+
     // MARK: - Helpers
 
     /// Yields the main actor until `condition` holds (or the timeout elapses), letting

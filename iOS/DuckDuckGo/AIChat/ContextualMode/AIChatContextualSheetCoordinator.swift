@@ -382,13 +382,7 @@ final class AIChatContextualSheetCoordinator {
 
         guard let host = makePersistentUTIHostIfNeeded(start: .expandedPreSubmit) else { return }
 
-        let chips = makeChipsViewController()
-        chips.delegate = self
-        chips.useGlassStartActionBackgrounds()
-        let controller = AIChatContextualFloatingInputViewController(
-            utiHost: host,
-            chipsViewController: chips
-        )
+        let controller = AIChatContextualFloatingInputViewController(utiHost: host)
         controller.delegate = self
         floatingInputViewController = controller
         controller.install(in: presentingViewController)
@@ -419,54 +413,33 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    /// The sheet feeds its chips from `apply(viewState)`; the floating input has no sheet, so the
-    /// coordinator drives them for as long as it is the current surface.
+    /// The strip itself follows the view state; this reports what the floating surface showed.
     private func observeViewStateForFloatingChips() {
         floatingChipsCancellable = sessionState.$viewState
-            // `rebuildViewState` fires on many changes that leave the chips alone; without this, each
-            // one rebuilds every chip's `UIVisualEffectView` and the one-shot entrance skips them.
             .map { StartActionsContent(viewState: $0) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] content in
-                guard let floatingInput = self?.floatingInputViewController else { return }
-                let chips = floatingInput.chipsViewController
+                guard let self, self.floatingInputViewController != nil else { return }
 
-                guard content.isLoaded else {
-                    // Loader alone while suggestions resolve. Passing the actions through here would
-                    // flash the placeholder "Ask about page" chip beside it, then replace it.
-                    chips.updateStartActions(suggestions: [], quickActions: [])
-                    chips.updateSuggestionsLoading(true)
-                    self?.areFloatingSuggestionsVisible = false
+                guard content.isLoaded, !content.isEmpty else {
+                    self.areFloatingSuggestionsVisible = false
                     return
                 }
-
-                // Fade out and clear once invisible: a layout collapse would read as a slide.
-                guard !content.isEmpty else {
-                    chips.updateSuggestionsLoading(false)
-                    floatingInput.clearChipsFadingOut()
-                    return
-                }
-
-                chips.updateStartActions(suggestions: content.suggestions, quickActions: content.quickActions)
-                // Cleared on every resolve, not just the first: removing the page context starts a new
-                // loading cycle, and the one-shot entrance can't be relied on to end it.
-                chips.updateSuggestionsLoading(false)
-                floatingInput.showChipsIfNeeded()
 
                 let suggestionsAreVisible = !content.suggestions.isEmpty
-                if suggestionsAreVisible, self?.areFloatingSuggestionsVisible != true {
-                    self?.pixelHandler.fireSuggestionsViewed(
+                if suggestionsAreVisible, self.areFloatingSuggestionsVisible != true {
+                    self.pixelHandler.fireSuggestionsViewed(
                         isSmart: content.suggestionsAreSmart,
                         pageType: content.suggestionsPageType,
                         scope: content.suggestionsScope,
                         surface: .floatingInput
                     )
                     if content.suggestionsScope == .selection {
-                        self?.selectionJourneyInstrumentation.selectionSuggestionsViewed()
+                        self.selectionJourneyInstrumentation.selectionSuggestionsViewed()
                     }
                 }
-                self?.areFloatingSuggestionsVisible = suggestionsAreVisible
+                self.areFloatingSuggestionsVisible = suggestionsAreVisible
             }
     }
 
@@ -826,8 +799,20 @@ private extension AIChatContextualSheetCoordinator {
         guard isWebUTIEnabled else { return nil }
         if let persistentUTIHost { return persistentUTIHost }
 
+        let host = makeUTIHost(start: start)
+        bindSuggestionsStrip(on: host)
+        bindAttachmentHandlers(on: host)
+        bindPromptHandlers(on: host)
+        bindVoiceHandlers(on: host)
+        self.persistentUTIHost = host
+        return host
+    }
+
+    private func makeUTIHost(start: ContextualInputStart) -> AIChatContextualUTIHost {
         let initialUTIAttachment = self.initialUTIAttachment
-        let host = AIChatContextualUTIHost(
+        let suggestionsChips = makeChipsViewController()
+        suggestionsChips.useGlassStartActionBackgrounds()
+        return AIChatContextualUTIHost(
             originatingURLPublisher: originatingURLPublisher,
             initialAttachedContext: initialUTIAttachment.context,
             initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
@@ -838,14 +823,17 @@ private extension AIChatContextualSheetCoordinator {
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
             start: start,
-            usageLimitsStore: duckAiUsageLimitsStore
+            usageLimitsStore: duckAiUsageLimitsStore,
+            suggestionsController: suggestionsChips
         )
+    }
+
+    private func bindAttachmentHandlers(on host: AIChatContextualUTIHost) {
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()
         }
         host.onRemoveRequested = { [weak self] in
-            guard let self else { return }
-            self.removeAttachedContext()
+            self?.removeAttachedContext()
         }
         host.onSuggestionAccepted = { [weak self] in
             self?.sessionState.acceptSuggestedContext()
@@ -853,10 +841,16 @@ private extension AIChatContextualSheetCoordinator {
         host.onSuggestionDismissed = { [weak self] in
             self?.sessionState.dismissSuggestedContext()
         }
+        host.onAttachmentsChanged = { [weak self] in
+            self?.sessionState.refreshForAttachmentChange()
+        }
         // A host built mid-session (collapse, expand) inherits the offer already on screen.
         if let suggestion = sessionState.suggestedContext {
             host.setSuggestedContext(suggestion)
         }
+    }
+
+    private func bindPromptHandlers(on host: AIChatContextualUTIHost) {
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
             self.selectionJourneyInstrumentation.promptSubmitted()
@@ -873,9 +867,9 @@ private extension AIChatContextualSheetCoordinator {
             guard let self else { return }
             self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
-        host.onAttachmentsChanged = { [weak self] in
-            self?.sessionState.refreshForAttachmentChange()
-        }
+    }
+
+    private func bindVoiceHandlers(on host: AIChatContextualUTIHost) {
         host.onAIVoiceChatRequested = { [weak self] in
             self?.requestNewVoiceChatLeavingCurrentSurface()
         }
@@ -883,8 +877,31 @@ private extension AIChatContextualSheetCoordinator {
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
         }
-        self.persistentUTIHost = host
-        return host
+    }
+
+    private func bindSuggestionsStrip(on host: AIChatContextualUTIHost) {
+        host.suggestionsStrip.bind(to: sessionState.$viewState.eraseToAnyPublisher())
+        host.onSuggestionSelected = { [weak self] suggestion in
+            guard let self else { return }
+            if self.isFloatingInputPresented {
+                self.promoteFloatingInputToSheet()
+            }
+            self.sheetViewController?.submitSuggestion(suggestion)
+        }
+        host.onQuickActionSelected = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .askAboutPage:
+                // Only offered before an explicit removal, so it never competes with the attachment menu.
+                self.requestManualPageContextAttach()
+            case .summarize, .summarizePage:
+                self.pixelHandler.fireQuickActionSummarizeSelected()
+                if self.isFloatingInputPresented {
+                    self.promoteFloatingInputToSheet()
+                }
+                self.persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+            }
+        }
     }
 
     /// Re-renders one chip per attached selection.
@@ -1159,32 +1176,6 @@ extension AIChatContextualSheetCoordinator: AIChatContextualFloatingInputViewCon
     func aiChatContextualFloatingInputViewControllerDidRequestDismiss(_ viewController: AIChatContextualFloatingInputViewController) {
         dismissFloatingInput()
     }
-}
-
-// MARK: - Floating input chip taps
-
-extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerDelegate {
-
-    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
-        switch action {
-        case .askAboutPage:
-            // Only offered before an explicit removal, so it never competes with the attachment menu.
-            requestManualPageContextAttach()
-        case .summarize, .summarizePage:
-            pixelHandler.fireQuickActionSummarizeSelected()
-            promoteFloatingInputToSheet()
-            persistentUTIHost?.submitQuickActionPrompt(action.prompt)
-        }
-    }
-
-    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
-        promoteFloatingInputToSheet()
-        sheetViewController?.submitSuggestion(suggestion)
-    }
-
-    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
-    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
-    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
 }
 
 // MARK: - AIChatContextualSheetViewControllerDelegate

@@ -24,7 +24,7 @@ import os.log
 
 /// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface.
 @MainActor
-final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting {
+final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting, AIChatContextualSuggestionsStripAnchoring {
 
     private let coordinator: UnifiedToggleInputCoordinator
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
@@ -57,6 +57,17 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
+    var isInputExpanded: Bool {
+        coordinator.viewController.isInputExpanded
+    }
+
+    // MARK: - Suggestions strip (owned by the host, shown above the input card)
+
+    private let suggestionsController: AIChatContextualInputViewController
+    /// Built after `init` so it can hold the host as its anchor.
+    private(set) var suggestionsStrip: AIChatContextualSuggestionsStrip!
+    var onSuggestionSelected: ((ContextualSuggestedPrompt) -> Void)?
+    var onQuickActionSelected: ((AIChatContextualQuickAction) -> Void)?
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
@@ -77,8 +88,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
-        usageLimitsStore: DuckAiUsageLimitsStore? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        suggestionsController: AIChatContextualInputViewController
     ) {
+        self.suggestionsController = suggestionsController
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
         self.startsPreSubmit = start.isPreSubmit
@@ -116,6 +129,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
         coordinator.updateImageButtonVisibility()
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
+        suggestionsStrip = AIChatContextualSuggestionsStrip(controller: suggestionsController, input: self)
+        coordinator.viewController.onExpansionChange = { [weak self] expanded in
+            self?.suggestionsStrip.setInputExpanded(expanded)
+        }
+        suggestionsController.delegate = self
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()
         }
@@ -348,6 +366,20 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardLeadingAnchor }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardTrailingAnchor }
 
+    // MARK: - Suggestions strip
+
+    func embedSuggestions(in parent: UIViewController, style: AIChatContextualSuggestionsStrip.Style) {
+        suggestionsStrip.embed(in: parent, style: style)
+    }
+
+    func detachSuggestions(from parent: UIViewController) {
+        suggestionsStrip.detach(from: parent)
+    }
+
+    var suggestionsContainerView: UIView { suggestionsStrip.containerView }
+
+    var mountedInputView: UIView? { coordinator.viewController.viewIfLoaded }
+
     /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
     /// drag it. For a surface animating itself out: its own motion is then the only thing moving it.
     func freezeInputPosition() {
@@ -565,4 +597,19 @@ extension AIChatContextualUTIHost {
             hasPageContext: hasPageContext
         )
     }
+}
+
+// MARK: - AIChatContextualInputViewControllerDelegate (suggestions strip)
+
+extension AIChatContextualUTIHost: AIChatContextualInputViewControllerDelegate {
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        onSuggestionSelected?(suggestion)
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
+        onQuickActionSelected?(action)
+    }
+    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
 }

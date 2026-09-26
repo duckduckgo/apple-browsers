@@ -735,6 +735,10 @@ extension TabViewController {
                 sitePermissionsState?.dismissDialog()
                 sitePermissionsState?.dismissRecovery()
             },
+            revocationHandler: { [weak self] permissionTypes, site in
+                // The coordinator has already recorded the decision; only stop capture and outstanding approvals.
+                self?.revokeSitePermissions(permissionTypes, for: site, clearingManagementSessionState: false)
+            },
             eventHandler: { [weak self] event in
                 self?.fireSitePermissionsEvent(event)
             }

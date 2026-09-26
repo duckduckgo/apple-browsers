@@ -216,7 +216,6 @@ private extension UTIFooterCardView {
         contentView.addSubview(dismissButton)
 
         let contentTop = contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.overlap + Constants.contentTopGap)
-        contentTop.priority = .defaultHigh
 
         let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
         actionCollapsedWidthConstraint = actionCollapsedWidth

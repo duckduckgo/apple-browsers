@@ -103,6 +103,46 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(applyFittingHeight(to: sut), oneCardHeight, accuracy: 1)
     }
 
+    func testPrivacyCopyStaysBelowInputOverlapAfterReopeningAtDifferentWidths() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 402, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        let privacy = UTIFooterItem(id: .attachmentPrivacy, message: message)
+        let preceding = UTIFooterItem(id: .termsConsent, message: message)
+        sut.setInputMode(.aiChat, animated: false)
+        sut.addAttachment(makeFileAttachment())
+
+        for messages in [[privacy], [preceding, privacy]] {
+            for width: CGFloat in [402, 280, 390] {
+                sut.applyCardLayout(.collapsed, animated: false)
+                container.frame.size.width = width
+                container.layoutIfNeeded()
+                sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: true), animated: false)
+                sut.setFooterMessages(messages)
+                container.layoutIfNeeded()
+
+                let stack = try XCTUnwrap(sut.subviews.compactMap { $0 as? UIStackView }.first {
+                    $0.arrangedSubviews.contains { $0 is UTIFooterCardView }
+                })
+                for card in stack.arrangedSubviews.compactMap({ $0 as? UTIFooterCardView }) {
+                    let text = try XCTUnwrap(firstDescendant(of: UTIFooterLinkTextView.self, in: card))
+                    let textFrame = card.convert(text.bounds, from: text)
+                    XCTAssertGreaterThanOrEqual(textFrame.minY, UTIFooterCardView.overlap + 12 - 0.5)
+                    XCTAssertGreaterThanOrEqual(text.bounds.height + 0.5,
+                                               text.sizeThatFits(CGSize(width: text.bounds.width, height: CGFloat.greatestFiniteMagnitude)).height)
+                    XCTAssertLessThanOrEqual(textFrame.maxY, card.bounds.height - 12 + 0.5)
+                }
+            }
+        }
+    }
+
     func testEditDisclaimerUsesMessagesSelectedByController() {
         let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))

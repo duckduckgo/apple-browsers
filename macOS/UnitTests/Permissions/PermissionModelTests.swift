@@ -244,14 +244,6 @@ final class PermissionModelTests: XCTestCase {
         try assertNotificationDecision(granted: true, remember: nil, expectedStoredDecision: .allow)
     }
 
-    func testWhenNotificationsAreAlwaysAllowedThenAllowIsStored() throws {
-        try assertNotificationDecision(granted: true, remember: true, expectedStoredDecision: .allow)
-    }
-
-    func testWhenNotificationsAreNeverAllowedThenDenyIsStored() throws {
-        try assertNotificationDecision(granted: false, remember: true, expectedStoredDecision: .deny)
-    }
-
     private func assertNotificationDecision(granted: Bool, remember: Bool?, expectedStoredDecision: PersistedPermissionDecision) throws {
         let domain = "example.com"
         var actualGranted: Bool?

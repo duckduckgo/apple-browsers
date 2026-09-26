@@ -133,9 +133,11 @@ final class PermissionAuthorizationViewController: NSViewController {
             systemPermissionManager: systemPermissionManager
         )
 
-        let hostingView: NSView = featureFlagger.isFeatureOn(.websitePermissionsPrompts)
-            ? NSHostingView(rootView: NewPermissionAuthorizationSwiftUIView(viewModel: makeNewPermissionViewModel(for: query)))
-            : NSHostingView(rootView: swiftUIView)
+        let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            NSHostingView(rootView: NewPermissionAuthorizationSwiftUIView(viewModel: makeNewPermissionViewModel(for: query)))
+        } else {
+            NSHostingView(rootView: swiftUIView)
+        }
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(hostingView)
 

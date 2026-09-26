@@ -1,0 +1,66 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_uti_native_terms_of_service
+
+---
+
+# The Terms of Service disclaimer behind `duckAINativeTermsOfService`: a fresh install sees it in
+# the Duck.ai input, it has no ✕, and Search mode suppresses it. Acceptance on send is covered by
+# unit tests: sending from the NTP depends on duck.ai loading.
+#
+# `ff.utiDuckAIWarnings` is pinned off so no usage card can take the footer slot.
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        # Keep quoted — LaunchOptionsHandler silently ignores unquoted YAML booleans.
+        ff.duckAINativeTermsOfService: "true"
+        ff.utiDuckAIWarnings: "false"
+        ff.browsingMenuSheetEnabledByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- tapOn:
+    id: "searchEntry"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- assertVisible:
+    id: "AIChat.Footer.Card"
+- assertVisible:
+    id: "AIChat.Footer.Label.Link"
+    text: ".*DuckDuckGo anonymizes your chats.*"
+- assertVisible:
+    id: "AIChat.Footer.Icon.Shield"
+- assertNotVisible:
+    id: "AIChat.Footer.Button.Dismiss"
+- assertNotVisible:
+    id: "AIChat.Footer.Button.Primary"
+
+# Search mode sends nothing to Duck.ai, so there is nothing to agree to.
+- tapOn:
+    id: "AddressBar.Button.Search"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "AIChat.Footer.Card"
+
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "AIChat.Footer.Card"

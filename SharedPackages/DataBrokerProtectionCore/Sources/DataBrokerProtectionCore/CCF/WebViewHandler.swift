@@ -369,6 +369,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
 #if os(macOS)
 private extension DataBrokerProtectionWebViewHandler {
+    var challengeResolution: DataBrokerProtectionSharedPixels.ChallengeResolution {
+        if didClickChallenge { return .assisted }
+        return isAwaitingChallengeDestination ? .unknown : .unassisted
+    }
+
     func updateChallengeState(isChallenge: Bool, responseURL: URL?, statusCode: Int) {
         isChallengeResponse = isChallenge
         if isChallenge {
@@ -389,8 +394,7 @@ private extension DataBrokerProtectionWebViewHandler {
         challengeTask?.cancel()
         challengeTask = nil
         closeChallengePanel()
-        let outcome = didClickChallenge ? "after click" : "by auto-pass, no click"
-        reportChallengeEvent("Solved challenge \(outcome); expected broker destination reached")
+        reportChallengeEvent("Solved challenge \(challengeResolution.rawValue); expected broker destination reached")
         logChallengeClearanceCookie()
     }
 
@@ -782,10 +786,12 @@ extension DataBrokerProtectionWebViewHandler {
 
         guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
         didReportChallengeClearance = true
-        Logger.action.log("Challenge: pixel clearance fired for \(challengePixelDataBroker, privacy: .public)")
+        let resolution = challengeResolution
+        Logger.action.log("Challenge: pixel clearance fired for \(challengePixelDataBroker, privacy: .public) resolution=\(resolution.rawValue, privacy: .public)")
         pixelHandler?.fire(.challengeClearanceObserved(
             dataBroker: challengePixelDataBroker,
-            brokerVersion: challengePixelBrokerVersion))
+            brokerVersion: challengePixelBrokerVersion,
+            resolution: resolution))
     }
 
     private func observeChallengeClearance(in webView: WKWebView) {

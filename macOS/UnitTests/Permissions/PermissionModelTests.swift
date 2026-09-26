@@ -866,6 +866,20 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
+    func testWhenMicrophoneDefaultChangesFromNeverAllowToAskThenNextCombinedMediaRequestPromptsWithoutReload() {
+        permissionManagerMock.defaultDecisions = [.microphone: .deny]
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera, .microphone], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        XCTAssertEqual(model.permissions.camera, .denied)
+        XCTAssertEqual(model.permissions.microphone, .denied)
+        XCTAssertNil(model.authorizationQuery)
+
+        permissionManagerMock.defaultDecisions = [.microphone: .ask]
+        model.permissions([.camera, .microphone], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+
+        XCTAssertNotNil(model.authorizationQuery)
+    }
+
     func testWhenDefaultIsNeverAllowThenCameraIsDeniedWithoutAQueryAndNothingIsPersisted() {
         permissionManagerMock.defaultDecisions = [.camera: .deny]
         webView.urlValue = URL.duckDuckGo

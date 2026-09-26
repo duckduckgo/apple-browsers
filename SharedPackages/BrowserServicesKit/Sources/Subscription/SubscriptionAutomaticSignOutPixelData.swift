@@ -141,7 +141,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         }
     }
 
-    public enum CachedSubscriptionStatus: String {
+    public enum CachedSubscriptionStatus: String, Codable {
         case autoRenewable = "auto_renewable"
         case notAutoRenewable = "not_auto_renewable"
         case gracePeriod = "grace_period"
@@ -151,12 +151,16 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         case unavailable
 
         public init(_ subscription: DuckDuckGoSubscription?) {
-            guard let subscription else {
+            self.init(status: subscription?.status)
+        }
+
+        public init(status: DuckDuckGoSubscription.Status?) {
+            guard let status else {
                 self = .unavailable
                 return
             }
 
-            switch subscription.status {
+            switch status {
             case .autoRenewable:
                 self = .autoRenewable
             case .notAutoRenewable:

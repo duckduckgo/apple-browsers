@@ -38,18 +38,15 @@ final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeInstrumentation(entryPoint: SubscriptionOnboardingEntryPoint = .postCheckout,
-                                     isDuckAIEnabled: Bool = true) -> SubscriptionOnboardingInstrumentation {
-        SubscriptionOnboardingInstrumentation(entryPoint: entryPoint,
-                                             isDuckAIEnabled: { isDuckAIEnabled },
-                                             pixelFiring: pixelFiring)
+    private func makeInstrumentation(entryPoint: SubscriptionOnboardingEntryPoint = .postCheckout) -> SubscriptionOnboardingInstrumentation {
+        SubscriptionOnboardingInstrumentation(entryPoint: entryPoint, pixelFiring: pixelFiring)
     }
 
     // MARK: - Step names
 
     func testWhenEverySectionIsNamedThenTheNamesAreTheAgreedVocabulary() {
         XCTAssertEqual(SubscriptionOnboardingSection.allCases.map(\.pixelStepName),
-                       ["intro", "features_summary", "vpn", "vpn_widget", "vpn_widget", "idtr", "duck_ai", "completion", "pir"])
+                       ["intro", "features_summary", "vpn", "vpn", "vpn", "idtr", "duck_ai", "completion", "pir"])
     }
 
     func testWhenEntryPointsAreNamedThenTheyMatchThePixelValues() {
@@ -70,33 +67,6 @@ final class SubscriptionOnboardingInstrumentationTests: XCTestCase {
         XCTAssertEqual(fired.map(\.name), ["subscription_onboarding_step_shown_vpn",
                                            "subscription_onboarding_step_completed_duck_ai",
                                            "subscription_onboarding_step_skipped_vpn"])
-    }
-
-    func testWhenTheFlowStartsThenTheDenominatorIsReported() {
-        let sut = makeInstrumentation()
-
-        sut.flowStarted()
-
-        XCTAssertEqual(fired.map(\.name), ["subscription_onboarding_flow_started"])
-    }
-
-    // MARK: - Parameters
-
-    func testWhenTheFlowStartsThenTheEntryPointAndDuckAIStateAreParameters() {
-        let sut = makeInstrumentation(entryPoint: .subscriptionSettings, isDuckAIEnabled: false)
-
-        sut.flowStarted()
-
-        XCTAssertEqual(fired.first?.parameters?["entry_point"], "subscription_settings")
-        XCTAssertEqual(fired.first?.parameters?["duck_ai_enabled"], "false")
-    }
-
-    func testWhenDuckAIIsEnabledThenTheFlowStartReportsItAsSuch() {
-        let sut = makeInstrumentation(isDuckAIEnabled: true)
-
-        sut.flowStarted()
-
-        XCTAssertEqual(fired.first?.parameters?["duck_ai_enabled"], "true")
     }
 
     /// Without this the two entry points share every step pixel, and neither population can be read.

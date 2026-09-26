@@ -31,6 +31,7 @@ struct SubscriptionOnboardingProgressCardView: View {
     private enum Metrics {
         static let headerPadding: CGFloat = 24
         static let percentageFontSize: CGFloat = 34
+        static let percentageLabelSpacing: CGFloat = 8
         static let progressBarTopSpacing: CGFloat = 8
         static let contentInsetHorizontal: CGFloat = 24
         static let contentInsetVertical: CGFloat = 16
@@ -69,14 +70,16 @@ struct SubscriptionOnboardingProgressCardView: View {
 private extension SubscriptionOnboardingProgressCardView {
     var progressHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: "\(percentage)%")
-                // No dax token at this display size
-                .font(.system(size: Metrics.percentageFontSize, weight: .bold))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+            HStack(alignment: .lastTextBaseline, spacing: Metrics.percentageLabelSpacing) {
+                Text(verbatim: "\(percentage)%")
+                    // No dax token at this display size
+                    .font(.system(size: Metrics.percentageFontSize, weight: .bold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
 
-            Text(verbatim: UserText.subscriptionOnboardingProgressCompletedLabel)
-                .daxHeadline()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+                Text(verbatim: UserText.subscriptionOnboardingProgressCompletedLabel)
+                    .daxHeadline()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            }
 
             SubscriptionOnboardingProgressBar(percentage: percentage)
                 .id(percentage)
@@ -173,7 +176,7 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
         ScrollView {
             VStack(spacing: 24) {
                 SubscriptionOnboardingProgressCardView(
-                    percentage: 80,
+                    percentage: 75,
                     items: Self.items,
                     completedItems: pirComplete ? Set(Self.items) : Self.completedExceptPIR,
                     onSelect: { _ in })
@@ -182,7 +185,7 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
                     items: Self.items,
                     completedItems: Set(Self.items))
                 SubscriptionOnboardingProgressCardView(
-                    percentage: 80,
+                    percentage: 75,
                     items: Self.items,
                     completedItems: Self.completedExceptVPN)
             }
@@ -193,8 +196,8 @@ private struct SubscriptionOnboardingProgressCardViewPreview: View {
     }
 
     private static let items = SubscriptionOnboardingChecklistItem.allCases
-    private static let completedExceptPIR: Set<SubscriptionOnboardingChecklistItem> = [.vpn, .vpnWidget, .vpnTips, .idtr, .duckAI]
-    private static let completedExceptVPN: Set<SubscriptionOnboardingChecklistItem> = [.vpnWidget, .vpnTips, .idtr, .duckAI, .pir]
+    private static let completedExceptPIR: Set<SubscriptionOnboardingChecklistItem> = [.vpn, .idtr, .duckAI]
+    private static let completedExceptVPN: Set<SubscriptionOnboardingChecklistItem> = [.idtr, .duckAI, .pir]
 }
 
 #Preview("Light") {

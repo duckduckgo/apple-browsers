@@ -93,7 +93,7 @@ final class WebViewHandlerTests: XCTestCase {
 
 #if os(macOS)
     @MainActor
-    func testWhenChallengeSignalsAreObserved_thenFiresDailyAndCountPixels() throws {
+    func testWhenChallengeSignalsAreObservedMultipleTimes_thenFiresDailyAndCountPixelsOnce() throws {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)"))
         var firedPixelNames: [String] = []
         var firedPixelParameters: [[String: String]] = []
@@ -115,7 +115,10 @@ final class WebViewHandlerTests: XCTestCase {
 
         sut.recordChallengeDetectionIfPresent(in: response, isForMainFrame: true)
         sut.recordChallengeClearanceIfPresent(in: [cookie])
+        let pixelCountAfterFirstClearance = firedPixelNames.count
+        sut.recordChallengeClearanceIfPresent(in: [cookie])
 
+        XCTAssertEqual(firedPixelNames.count, pixelCountAfterFirstClearance)
         XCTAssertEqual(firedPixelNames, [
             "dbp_challenge_main-frame_detected_macos_daily",
             "dbp_challenge_main-frame_detected_macos_count",

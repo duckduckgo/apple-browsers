@@ -55,6 +55,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var window: NSWindow?
     private var addressBarTextField: NSTextField?
     private var toolbar: NSToolbar?
+    private var didDetectChallenge = false
+    private var didReportChallengeClearance = false
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
@@ -159,6 +161,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func load(url: URL) async throws {
+#if os(macOS)
+        didDetectChallenge = false
+        didReportChallengeClearance = false
+#endif
         webView?.load(url)
         Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
@@ -519,6 +525,8 @@ extension DataBrokerProtectionWebViewHandler {
             return
         }
 
+        didDetectChallenge = true
+
         guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
         pixelHandler?.fire(.mainFrameChallengeDetected(
             dataBroker: challengePixelDataBroker,
@@ -526,11 +534,14 @@ extension DataBrokerProtectionWebViewHandler {
     }
 
     func recordChallengeClearanceIfPresent(in cookies: [HTTPCookie]) {
-        guard cookies.contains(where: { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }) else {
+        guard didDetectChallenge,
+              !didReportChallengeClearance,
+              cookies.contains(where: { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }) else {
             return
         }
 
         guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
+        didReportChallengeClearance = true
         pixelHandler?.fire(.challengeClearanceObserved(
             dataBroker: challengePixelDataBroker,
             brokerVersion: challengePixelBrokerVersion,

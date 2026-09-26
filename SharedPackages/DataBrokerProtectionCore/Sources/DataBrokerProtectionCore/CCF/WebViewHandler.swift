@@ -767,6 +767,7 @@ extension DataBrokerProtectionWebViewHandler {
         didDetectChallenge = true
 
         guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
+        Logger.action.log("Challenge: pixel detected fired for \(challengePixelDataBroker, privacy: .public)")
         pixelHandler?.fire(.mainFrameChallengeDetected(
             dataBroker: challengePixelDataBroker,
             brokerVersion: challengePixelBrokerVersion))
@@ -781,6 +782,7 @@ extension DataBrokerProtectionWebViewHandler {
 
         guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
         didReportChallengeClearance = true
+        Logger.action.log("Challenge: pixel clearance fired for \(challengePixelDataBroker, privacy: .public)")
         pixelHandler?.fire(.challengeClearanceObserved(
             dataBroker: challengePixelDataBroker,
             brokerVersion: challengePixelBrokerVersion))

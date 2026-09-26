@@ -276,6 +276,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the Website Permissions entry point in Settings.
     case websitePermissionsSettings
 
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1218095845454218?focus=true
+    case websitePermissionsPrompts
+
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
@@ -795,6 +799,10 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .websitePermissionsSettings:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
+                   supportsLocalOverriding: true)
+        case .websitePermissionsPrompts:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsPrompts),
                    supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))

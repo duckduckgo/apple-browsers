@@ -74,6 +74,8 @@
 		1D1A33492A6FEB170080ACED /* BurnerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A33482A6FEB170080ACED /* BurnerMode.swift */; };
 		1D1A334A2A6FEB170080ACED /* BurnerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A33482A6FEB170080ACED /* BurnerMode.swift */; };
 		1D1B4A462EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */; };
+		A5B00101000000000000002F /* PermissionAuthorizationViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */; };
+		A5B001010000000000000030 /* PermissionAuthorizationViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */; };
 		1D1B4A472EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */; };
 		1D1B4A722EE20B9900FE43C9 /* WarnBeforeQuitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A6F2EE20B9900FE43C9 /* WarnBeforeQuitManager.swift */; };
 		1D1B4A732EE20B9900FE43C9 /* WarnBeforeQuitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B4A702EE20B9900FE43C9 /* WarnBeforeQuitView.swift */; };
@@ -132,13 +134,19 @@
 		1D532BC92EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */; };
 		1D532BCA2EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */; };
 		1D532BDE2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */; };
+		A5B001010000000000000038 /* NewPermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000037 /* NewPermissionAuthorizationSwiftUIView.swift */; };
 		1D532BDF2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */; };
+		A5B001010000000000000039 /* NewPermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000037 /* NewPermissionAuthorizationSwiftUIView.swift */; };
 		A5B00101000000000000002C /* PermissionRemoveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002B /* PermissionRemoveButton.swift */; };
 		A5B00101000000000000002D /* PermissionRemoveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000002B /* PermissionRemoveButton.swift */; };
 		1D532BE12EDC3E5500D219FA /* PermissionCenterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */; };
 		1D532BE22EDC3E5500D219FA /* PermissionCenterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */; };
 		1D532BE52EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE32EDC3E6100D219FA /* PermissionCenterViewModel.swift */; };
+		A5B001010000000000000035 /* NewPermissionAuthorizationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000034 /* NewPermissionAuthorizationViewModel.swift */; };
+		A5B00101000000000000003E /* NewPermissionAuthorizationViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000003D /* NewPermissionAuthorizationViewState.swift */; };
 		1D532BE62EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BE32EDC3E6100D219FA /* PermissionCenterViewModel.swift */; };
+		A5B001010000000000000036 /* NewPermissionAuthorizationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000034 /* NewPermissionAuthorizationViewModel.swift */; };
+		A5B00101000000000000003F /* NewPermissionAuthorizationViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000003D /* NewPermissionAuthorizationViewState.swift */; };
 		1D5C23292F150A680055046E /* AIChatSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C23282F150A630055046E /* AIChatSuggestionsView.swift */; };
 		1D5C232A2F150A680055046E /* AIChatSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C23282F150A630055046E /* AIChatSuggestionsView.swift */; };
 		1D5C232C2F150A750055046E /* AIChatSuggestionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C232B2F150A6E0055046E /* AIChatSuggestionRowView.swift */; };
@@ -699,6 +707,7 @@
 		3706FB85293F65D500E42796 /* AddBookmarkPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC5E4C425D6A6E8007F5990 /* AddBookmarkPopover.swift */; };
 		3706FB87293F65D500E42796 /* ProcessExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68C2FB127706E6A00BF2C7D /* ProcessExtension.swift */; };
 		3706FB88293F65D500E42796 /* PermissionAuthorizationQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BA526A7BEC80013B453 /* PermissionAuthorizationQuery.swift */; };
+		A5B001010000000000000032 /* PermissionPromptDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000031 /* PermissionPromptDecision.swift */; };
 		3706FB8A293F65D500E42796 /* BrowserTabSelectionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9292C62667123700AD2C21 /* BrowserTabSelectionDelegate.swift */; };
 		3706FB8B293F65D500E42796 /* PasswordManagementListSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E6EEC27AB5E5100F51793 /* PasswordManagementListSection.swift */; };
 		3706FB8C293F65D500E42796 /* FaviconReferenceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222CB82760F74E00321475 /* FaviconReferenceCache.swift */; };
@@ -3243,7 +3252,9 @@
 		B5165049300FACD7007AE203 /* upsell_devices_reveal.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165042300FACD7007AE203 /* upsell_devices_reveal.json */; };
 		B516504A300FACD7007AE203 /* upsell_devices_loop.json in Resources */ = {isa = PBXBuildFile; fileRef = B5165041300FACD7007AE203 /* upsell_devices_loop.json */; };
 		B51792B12F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */; };
+		A5B00101000000000000003B /* NewPermissionAuthorizationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000003A /* NewPermissionAuthorizationViewModelTests.swift */; };
 		B51792B22F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */; };
+		A5B00101000000000000003C /* NewPermissionAuthorizationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B00101000000000000003A /* NewPermissionAuthorizationViewModelTests.swift */; };
 		B51A90DA2F044C3E00FB9C0C /* ScriptStyleProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51A90D92F044C3E00FB9C0C /* ScriptStyleProviderTests.swift */; };
 		B51A90DB2F044C3E00FB9C0C /* ScriptStyleProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51A90D92F044C3E00FB9C0C /* ScriptStyleProviderTests.swift */; };
 		B520EBE22EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */; };
@@ -3381,6 +3392,7 @@
 		B6104E9C2BA9C173008636B2 /* DownloadResumeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6104E9A2BA9C173008636B2 /* DownloadResumeData.swift */; };
 		B6106BA026A7BE0B0013B453 /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */; };
 		B6106BA726A7BECC0013B453 /* PermissionAuthorizationQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BA526A7BEC80013B453 /* PermissionAuthorizationQuery.swift */; };
+		A5B001010000000000000033 /* PermissionPromptDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B001010000000000000031 /* PermissionPromptDecision.swift */; };
 		B6106BAB26A7BF1D0013B453 /* PermissionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BAA26A7BF1D0013B453 /* PermissionType.swift */; };
 		B6106BAD26A7BF390013B453 /* PermissionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BAC26A7BF390013B453 /* PermissionState.swift */; };
 		B6106BAF26A7C6180013B453 /* PermissionStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BAE26A7C6180013B453 /* PermissionStoreMock.swift */; };
@@ -5167,6 +5179,7 @@
 		1D074B262909A433006E4AC3 /* PasswordManagerCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordManagerCoordinator.swift; sourceTree = "<group>"; };
 		1D1A33482A6FEB170080ACED /* BurnerMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerMode.swift; sourceTree = "<group>"; };
 		1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationTypeTests.swift; sourceTree = "<group>"; };
+		A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationViewControllerTests.swift; sourceTree = "<group>"; };
 		1D1B4A6F2EE20B9900FE43C9 /* WarnBeforeQuitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitManager.swift; sourceTree = "<group>"; };
 		1D1B4A702EE20B9900FE43C9 /* WarnBeforeQuitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitView.swift; sourceTree = "<group>"; };
 		1D1B4A712EE20B9900FE43C9 /* WarnBeforeQuitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitViewModel.swift; sourceTree = "<group>"; };
@@ -5200,9 +5213,12 @@
 		1D532BB32ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationSwiftUIView.swift; sourceTree = "<group>"; };
 		1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionManager.swift; sourceTree = "<group>"; };
 		1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterView.swift; sourceTree = "<group>"; };
+		A5B001010000000000000037 /* NewPermissionAuthorizationSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionAuthorizationSwiftUIView.swift; sourceTree = "<group>"; };
 		A5B00101000000000000002B /* PermissionRemoveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRemoveButton.swift; sourceTree = "<group>"; };
 		1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterViewController.swift; sourceTree = "<group>"; };
 		1D532BE32EDC3E6100D219FA /* PermissionCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterViewModel.swift; sourceTree = "<group>"; };
+		A5B001010000000000000034 /* NewPermissionAuthorizationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionAuthorizationViewModel.swift; sourceTree = "<group>"; };
+		A5B00101000000000000003D /* NewPermissionAuthorizationViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionAuthorizationViewState.swift; sourceTree = "<group>"; };
 		1D5C23282F150A630055046E /* AIChatSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionsView.swift; sourceTree = "<group>"; };
 		1D5C232B2F150A6E0055046E /* AIChatSuggestionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSuggestionRowView.swift; sourceTree = "<group>"; };
 		1D5C233F2F16CE000055046E /* PassthroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassthroughView.swift; sourceTree = "<group>"; };
@@ -6645,6 +6661,7 @@
 		B5165041300FACD7007AE203 /* upsell_devices_loop.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = upsell_devices_loop.json; sourceTree = "<group>"; };
 		B5165042300FACD7007AE203 /* upsell_devices_reveal.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = upsell_devices_reveal.json; sourceTree = "<group>"; };
 		B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterViewModelTests.swift; sourceTree = "<group>"; };
+		A5B00101000000000000003A /* NewPermissionAuthorizationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPermissionAuthorizationViewModelTests.swift; sourceTree = "<group>"; };
 		B51A90D92F044C3E00FB9C0C /* ScriptStyleProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptStyleProviderTests.swift; sourceTree = "<group>"; };
 		B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingIndicatorPolicy.swift; sourceTree = "<group>"; };
 		B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListening.swift; sourceTree = "<group>"; };
@@ -6719,6 +6736,7 @@
 		B6104E9A2BA9C173008636B2 /* DownloadResumeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadResumeData.swift; sourceTree = "<group>"; };
 		B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManagerTests.swift; sourceTree = "<group>"; };
 		B6106BA526A7BEC80013B453 /* PermissionAuthorizationQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationQuery.swift; sourceTree = "<group>"; };
+		A5B001010000000000000031 /* PermissionPromptDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionPromptDecision.swift; sourceTree = "<group>"; };
 		B6106BAA26A7BF1D0013B453 /* PermissionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionType.swift; sourceTree = "<group>"; };
 		B6106BAC26A7BF390013B453 /* PermissionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionState.swift; sourceTree = "<group>"; };
 		B6106BAE26A7C6180013B453 /* PermissionStoreMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionStoreMock.swift; sourceTree = "<group>"; };
@@ -8123,6 +8141,8 @@
 			isa = PBXGroup;
 			children = (
 				1D532BE32EDC3E6100D219FA /* PermissionCenterViewModel.swift */,
+				A5B001010000000000000034 /* NewPermissionAuthorizationViewModel.swift */,
+				A5B00101000000000000003D /* NewPermissionAuthorizationViewState.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -12572,8 +12592,10 @@
 				B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */,
 				A5B001010000000000000025 /* WebsitePermissionDefaultsTests.swift */,
 				1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */,
+				A5B00101000000000000002E /* PermissionAuthorizationViewControllerTests.swift */,
 				9ACF016763024CDAB7439781 /* PermissionTypeTests.swift */,
 				B51792B02F7C4F790018ED80 /* PermissionCenterViewModelTests.swift */,
+				A5B00101000000000000003A /* NewPermissionAuthorizationViewModelTests.swift */,
 				B6106BB026A7D8720013B453 /* PermissionStoreTests.swift */,
 				B63ED0D726AE729600A9DAD1 /* PermissionModelTests.swift */,
 				B6106BAE26A7C6180013B453 /* PermissionStoreMock.swift */,
@@ -12673,6 +12695,7 @@
 				B64C84EA2692DD650048FEBE /* PermissionAuthorizationPopover.swift */,
 				B6BBF17327475B15004F850E /* PopupBlockedPopover.swift */,
 				1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */,
+				A5B001010000000000000037 /* NewPermissionAuthorizationSwiftUIView.swift */,
 				A5B00101000000000000002B /* PermissionRemoveButton.swift */,
 				1D532BE02EDC3E4D00D219FA /* PermissionCenterViewController.swift */,
 				7B6879222EF07ECA00F9964B /* SystemPermissionWarningView.swift */,
@@ -12689,6 +12712,7 @@
 				B6106BAC26A7BF390013B453 /* PermissionState.swift */,
 				B65536A52685B82B00085A79 /* Permissions.swift */,
 				B6106BA526A7BEC80013B453 /* PermissionAuthorizationQuery.swift */,
+				A5B001010000000000000031 /* PermissionPromptDecision.swift */,
 				B6DB3CFA26A17CB800D459B7 /* PermissionModel.swift */,
 				B64C84F0269310120048FEBE /* PermissionManager.swift */,
 				845F57282E97FCC900C7F78A /* PermissionManagerMock.swift */,
@@ -16407,6 +16431,7 @@
 				31521AC42CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
 				1A77VST00000000000000004 /* VoiceSessionTracker.swift in Sources */,
 				3706FB88293F65D500E42796 /* PermissionAuthorizationQuery.swift in Sources */,
+				A5B001010000000000000032 /* PermissionPromptDecision.swift in Sources */,
 				4B4D60C32A0C849100BCD287 /* EventMapping+NetworkProtectionError.swift in Sources */,
 				3706FB8A293F65D500E42796 /* BrowserTabSelectionDelegate.swift in Sources */,
 				3706FB8B293F65D500E42796 /* PasswordManagementListSection.swift in Sources */,
@@ -16557,6 +16582,7 @@
 				2BB44A0F9B88E349EA5F5D37 /* CookiePopupsBlockedPromoDelegate.swift in Sources */,
 				56D145EC29E6C99B00E3488A /* DataImportStatusProviding.swift in Sources */,
 				1D532BDF2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */,
+				A5B001010000000000000039 /* NewPermissionAuthorizationSwiftUIView.swift in Sources */,
 				A5B00101000000000000002C /* PermissionRemoveButton.swift in Sources */,
 				85774B002A713D3B00DE0561 /* BookmarksBarMenuFactory.swift in Sources */,
 				B602E81E2A1E25B1006D261F /* NEOnDemandRuleExtension.swift in Sources */,
@@ -16792,6 +16818,8 @@
 				7B11B3072EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */,
 				3706FC18293F65D500E42796 /* TabDragAndDropManager.swift in Sources */,
 				1D532BE52EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */,
+				A5B001010000000000000035 /* NewPermissionAuthorizationViewModel.swift in Sources */,
+				A5B00101000000000000003E /* NewPermissionAuthorizationViewState.swift in Sources */,
 				1DC669712B6CF0D700AA0645 /* TabSnapshotStore.swift in Sources */,
 				3706FC19293F65D500E42796 /* NSNotificationName+Favicons.swift in Sources */,
 				3706FC1A293F65D500E42796 /* PinningManager.swift in Sources */,
@@ -17185,6 +17213,7 @@
 				BB9851932E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
 				3785F6EE2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */,
 				1D1B4A462EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */,
+				A5B00101000000000000002F /* PermissionAuthorizationViewControllerTests.swift in Sources */,
 				9ACF016763024CDAB7439782 /* PermissionTypeTests.swift in Sources */,
 				3706FDE6293F661700E42796 /* BookmarkOutlineViewDataSourceTests.swift in Sources */,
 				BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */,
@@ -17436,6 +17465,7 @@
 				C1D3C5722E89D9280086A2BD /* SyncIdentitiesAdapterTests.swift in Sources */,
 				36E8D3792F86EFFD00861037 /* SubscriptionPromoViewModelTests.swift in Sources */,
 				B51792B12F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */,
+				A5B00101000000000000003B /* NewPermissionAuthorizationViewModelTests.swift in Sources */,
 				3706FE38293F661700E42796 /* SuggestionContainerTests.swift in Sources */,
 				9F5E48192D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */,
 				84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */,
@@ -18826,6 +18856,7 @@
 				ED4B3F452F1A9557006C5FE4 /* SecureVaultModels+CreditCardIcon.swift in Sources */,
 				37E307B22D075B6500599500 /* NewTabPagePrivacyStatsEventHandler.swift in Sources */,
 				B6106BA726A7BECC0013B453 /* PermissionAuthorizationQuery.swift in Sources */,
+				A5B001010000000000000033 /* PermissionPromptDecision.swift in Sources */,
 				CD2AB5C32C8222F70019EB49 /* MaliciousSiteProtectionState.swift in Sources */,
 				1DB67F292B6FE4A6003DF243 /* WebViewSnapshotRenderer.swift in Sources */,
 				BBDAA9212DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */,
@@ -18962,6 +18993,8 @@
 				4B9292D52667123700AD2C21 /* BookmarkManagementDetailViewController.swift in Sources */,
 				F188267C2BBEB3AA00D9AC4F /* GeneralPixel.swift in Sources */,
 				1D532BE62EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */,
+				A5B001010000000000000036 /* NewPermissionAuthorizationViewModel.swift in Sources */,
+				A5B00101000000000000003F /* NewPermissionAuthorizationViewState.swift in Sources */,
 				37A4CEBA282E992F00D75B89 /* StartupPreferences.swift in Sources */,
 				C1CE84692C887CF60068913B /* FreemiumDBPScanResultPolling.swift in Sources */,
 				37C9F78C2CF1C776004D73A1 /* PrivacyStatsTabExtension.swift in Sources */,
@@ -19506,6 +19539,7 @@
 				A71D000330EEA00100A11A01 /* UnifiedDeviceListPixelHandler.swift in Sources */,
 				3767318B2C7F32C500EB097B /* GradientBackground.swift in Sources */,
 				1D532BDE2EDC3E4800D219FA /* PermissionCenterView.swift in Sources */,
+				A5B001010000000000000038 /* NewPermissionAuthorizationSwiftUIView.swift in Sources */,
 				A5B00101000000000000002D /* PermissionRemoveButton.swift in Sources */,
 				BBF17D1A2F7B1309004AFCF4 /* AIChatMenu.swift in Sources */,
 				6994C93E8D134666A5772C83 /* AIChatDeleteChatsDialog.swift in Sources */,
@@ -19712,6 +19746,7 @@
 				6A06A7E014E04F60B399531F /* AIChatTabOpenerTests.swift in Sources */,
 				F1AFDBD42C231B9700710F2C /* SubscriptionErrorReporterTests.swift in Sources */,
 				1D1B4A472EDF97F400FE43C9 /* PermissionAuthorizationTypeTests.swift in Sources */,
+				A5B001010000000000000030 /* PermissionAuthorizationViewControllerTests.swift in Sources */,
 				CCD235FA3052BE170046906B /* MockPromoHistoryProvider.swift in Sources */,
 				9ACF016763024CDAB7439783 /* PermissionTypeTests.swift in Sources */,
 				1D8C2FEA2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
@@ -20073,6 +20108,7 @@
 				BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */,
 				D52D5FB82FA16151006B1067 /* AppVersionModelDistributionLabelTests.swift in Sources */,
 				B51792B22F7C4F790018ED80 /* PermissionCenterViewModelTests.swift in Sources */,
+				A5B00101000000000000003C /* NewPermissionAuthorizationViewModelTests.swift in Sources */,
 				1DD0DBBE2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */,
 				CC5B3D022E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */,
 				CCBCF38B2F606C3900F0F2B9 /* SessionRestorePromoDelegateTests.swift in Sources */,

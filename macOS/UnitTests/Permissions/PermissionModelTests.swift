@@ -236,6 +236,28 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(permissionManagerMock.permission(forDomain: URL.duckDuckGo.host!, permissionType: .microphone), .allow)
     }
 
+    func testWhenNotificationsAreAllowedThisVisitThenOnlyAskIsStored() throws {
+        try assertNotificationDecision(granted: true, remember: false, expectedStoredDecision: .ask)
+    }
+
+    func testWhenNotificationsAreAllowedWithLegacyDecisionThenAllowIsStored() throws {
+        try assertNotificationDecision(granted: true, remember: nil, expectedStoredDecision: .allow)
+    }
+
+    private func assertNotificationDecision(granted: Bool, remember: Bool?, expectedStoredDecision: PersistedPermissionDecision) throws {
+        let domain = "example.com"
+        var actualGranted: Bool?
+        model.permissions([.notification], requestedForDomain: domain) { (isGranted: Bool) in
+            actualGranted = isGranted
+        }
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        query.handleDecision(grant: granted, remember: remember)
+
+        XCTAssertEqual(actualGranted, granted)
+        XCTAssertEqual(permissionManagerMock.persistedDecision(forDomain: domain, permissionType: .notification), expectedStoredDecision)
+    }
+
     func testWhenPermissionIsDeniedAndStoredThenItIsStored() {
         let c = model.$authorizationQuery.sink {
             guard let query = $0 else { return }

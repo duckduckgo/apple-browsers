@@ -112,7 +112,7 @@ extension Optional where Wrapped == PermissionState {
         case .disabled:
             // stay in disabled state if the App is disabled to use the permission
             return
-        case .requested where !updateQueryIfAlreadyRequested:
+        case .requested(let pendingQuery) where !updateQueryIfAlreadyRequested && !pendingQuery.wasDismissed:
             return
         case .requested where updateQueryIfAlreadyRequested:
             self = .requested(query)

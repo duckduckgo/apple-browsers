@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import AIChat
 import Combine
+import PrivacyConfig
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -79,6 +80,7 @@ final class AIChatViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let burnerMode: BurnerMode
+    private let featureFlagger: FeatureFlagger
 
     private var openInNewTabButton: MouseOverButton!
     private var detachButton: MouseOverButton!
@@ -99,10 +101,12 @@ final class AIChatViewController: NSViewController {
 
     init(currentAIChatURL: URL,
          burnerMode: BurnerMode,
-         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.currentAIChatURL = currentAIChatURL
         self.burnerMode = burnerMode
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -501,7 +505,7 @@ final class AIChatViewController: NSViewController {
 
     private func showPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
         let popover = permissionAuthorizationPopover ?? {
-            let popover = PermissionAuthorizationPopover()
+            let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
             self.permissionAuthorizationPopover = popover
             return popover
         }()

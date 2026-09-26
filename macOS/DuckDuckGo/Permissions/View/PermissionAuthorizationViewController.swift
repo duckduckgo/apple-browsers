@@ -18,7 +18,9 @@
 
 import AIChat
 import Cocoa
+import FeatureFlags_macOS
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 
 extension PermissionType {
@@ -63,8 +65,9 @@ extension Array where Element == PermissionType {
 final class PermissionAuthorizationViewController: NSViewController {
 
     let systemPermissionManager = SystemPermissionManager()
+    private let featureFlagger: FeatureFlagger
 
-    private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
+    private var swiftUIHostingView: NSView?
 
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
@@ -76,7 +79,8 @@ final class PermissionAuthorizationViewController: NSViewController {
         }
     }
 
-    init() {
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -129,7 +133,11 @@ final class PermissionAuthorizationViewController: NSViewController {
             systemPermissionManager: systemPermissionManager
         )
 
-        let hostingView = NSHostingView(rootView: swiftUIView)
+        let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            NSHostingView(rootView: NewPermissionAuthorizationSwiftUIView(viewModel: makeNewPermissionViewModel(for: query)))
+        } else {
+            NSHostingView(rootView: swiftUIView)
+        }
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(hostingView)
 
@@ -142,6 +150,19 @@ final class PermissionAuthorizationViewController: NSViewController {
 
         swiftUIHostingView = hostingView
         isAuthorizationInProgress = true
+    }
+
+    private func makeNewPermissionViewModel(for query: PermissionAuthorizationQuery) -> NewPermissionAuthorizationViewModel {
+        NewPermissionAuthorizationViewModel(
+            query: query,
+            openURL: { url in
+                Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+            },
+            finish: { [weak self] in
+                self?.isAuthorizationInProgress = false
+                self?.dismiss()
+            }
+        )
     }
 
     private func handleDeny() {

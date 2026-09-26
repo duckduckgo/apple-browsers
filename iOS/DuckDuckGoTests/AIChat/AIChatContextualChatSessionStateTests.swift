@@ -629,6 +629,30 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.latestContext)
     }
 
+    func testRemovingPendingCurrentPagePreventsLateAutomaticAttachment() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
+        sessionState.beginAutomaticAttach()
+        sessionState.removePendingPageAttachment()
+        sessionState.updateContext(makeTestContext())
+
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+    }
+
+    func testRemovingPendingManualCurrentPagePreventsLateAttachmentWithAutoAttachEnabled() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
+        sessionState.beginManualAttach()
+        sessionState.removePendingPageAttachment()
+        sessionState.updateContext(makeTestContext())
+
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+        XCTAssertTrue(mockPixelHandler.manualAttachEnded)
+    }
+
     func testCancelManualAttach() {
         // Given
         sessionState.beginManualAttach()

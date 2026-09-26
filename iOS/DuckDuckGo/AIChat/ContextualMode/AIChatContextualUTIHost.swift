@@ -29,6 +29,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private let coordinator: UnifiedToggleInputCoordinator
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
     private let hasActiveChat: () -> Bool
+    private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private weak var contextualChatViewController: AIChatContextualWebViewController?
     private weak var currentUserScript: AIChatUserScript?
     private weak var pendingUserScriptToBind: AIChatUserScript?
@@ -58,6 +59,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onAIVoiceChatRequested: (() -> Void)?
     var onEditModeChange: ((Bool) -> Void)?
 
+    var attachedTabContextsProvider: (() -> MultiTabAttachmentRequest?)?
+
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
 
@@ -76,11 +79,15 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+        attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
-        usageLimitsStore: DuckAiUsageLimitsStore? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
+        self.attachMoreTabsFeature = attachMoreTabsFeature
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
         self.hasDeliveredFirstPrompt = !start.isPreSubmit
@@ -114,13 +121,23 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.hasPendingPageContextProvider = { [weak chipViewModel] in
             chipViewModel?.pendingAttachedContextData != nil
         }
-        coordinator.updateImageButtonVisibility()
+        coordinator.isCurrentPageSelected = { [weak chipViewModel] in
+            chipViewModel?.pendingAttachedContextData != nil || isCurrentPageAttachInProgress()
+        }
+        coordinator.onPageContextRemoveRequested = { [weak chipViewModel] in
+            chipViewModel?.tapToRemove()
+        }
+        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature)
+        coordinator.didPressStopGeneratingButton
+            .sink { [weak self] in self?.contextualChatViewController?.cancelPendingTabAttachmentPrompt() }
+            .store(in: &cancellables)
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in
             self?.onAttachRequested?()
         }
         chipViewModel.onRemoveActionRequested = { [weak self] in
             self?.onRemoveRequested?()
+            self?.refreshTabAttachmentMenuIfNeeded()
         }
         chipViewModel.onSuggestionAccepted = { [weak self] in
             self?.onSuggestionAccepted?()
@@ -167,12 +184,19 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.updateImageButtonVisibility()
     }
 
+    func refreshTabAttachmentMenuIfNeeded() {
+        guard case .available = attachMoreTabsFeature.state else { return }
+        coordinator.updateImageButtonVisibility()
+    }
+
     func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
         chipViewModel.setAttached(context, deliveryState: deliveryState)
+        refreshTabAttachmentMenuIfNeeded()
     }
 
     func clearAttachedContext() {
         chipViewModel.clearAttached()
+        refreshTabAttachmentMenuIfNeeded()
     }
 
     func setSuggestedContext(_ context: AIChatPageContext) {
@@ -188,7 +212,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
     }
 
-    /// Images and files currently in the input.
+    /// Uploads and explicit tab attachments currently in the input; the current-page chip is counted by the session.
     var attachmentCount: Int {
         coordinator.attachmentCount
     }
@@ -207,6 +231,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.clearRejectionBanner()
     }
 
+    private func takeTabAttachmentRequest() -> MultiTabAttachmentRequest? {
+        if let attachedTabContextsProvider {
+            return MultiTabAttachmentContext(feature: attachMoreTabsFeature).makeRequest(using: attachedTabContextsProvider)
+        }
+        return coordinator.takeTabAttachmentRequest()
+    }
+
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
     /// Also wires the user script's page-context provider so every prompt payload carries whatever
     /// the chip says is currently attached — no duplicate state, single source of truth.
@@ -215,6 +246,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         currentUserScript = userScript
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.pendingAttachedContextData
+        }
+        userScript.attachedTabContextsProvider = { [weak self] in
+            guard let self else { return nil }
+            return self.takeTabAttachmentRequest()
         }
         userScript.onPromptSubmitted = { [weak self] in
             self?.handlePromptSubmittedFromUserScript()
@@ -438,7 +473,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.submitProgrammatic(text: prompt)
     }
 
+    func discardTabAttachments() {
+        coordinator.discardTabAttachments()
+        contextualChatViewController?.cancelPendingTabAttachmentPrompt()
+    }
+
     func prepareForNewChat() {
+        contextualChatViewController?.cancelPendingTabAttachmentPrompt()
+
         // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
@@ -512,7 +554,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                                    modelId: modelId,
                                                    tools: tools,
                                                    pageContext: chipViewModel.pendingAttachedContextData,
-                                                   reasoningEffort: reasoningEffort)
+                                                   reasoningEffort: reasoningEffort,
+                                                   tabAttachmentRequest: takeTabAttachmentRequest())
         commitDeferredBindIfNeeded()
         onPromptDelivered?()
     }

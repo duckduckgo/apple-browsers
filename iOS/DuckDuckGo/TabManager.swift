@@ -130,6 +130,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     private var tabControllerCache = [TabViewController]()
+    private var tabAttachmentReservations: [ObjectIdentifier: Set<UUID>] = [:]
+    private let tabAttachmentControllerChanges = PassthroughSubject<Void, Never>()
 
     weak var cacheDelegate: (any TabControllerCacheDelegate)?
 
@@ -347,6 +349,51 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
+    private func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
+        let mode = tab.mode
+        return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
+            self?.tabsModel(for: mode).tabs ?? []
+        }, tabsPublisher: tabsModel(for: mode).tabsPublisher, pageProvider: { [weak self] tab in
+            self?.tabAttachmentPage(for: tab)
+        }, acquirePage: { [weak self] tab in
+            self?.acquireTabAttachmentPage(for: tab, mode: mode)
+        })
+    }
+
+    @MainActor
+    private func tabAttachmentPage(for tab: Tab) -> MultiTabAttachmentPage? {
+        guard let controller = controller(for: tab), let page = controller.makeMultiTabAttachmentPage() else { return nil }
+        return MultiTabAttachmentPage(state: { [weak self, weak controller] in
+            guard let controller, self?.controller(for: tab) === controller else { return nil }
+            return page.state()
+        }, changes: page.changes.merge(with: tabAttachmentControllerChanges).eraseToAnyPublisher(),
+        collect: page.collect, loadIfNeeded: page.loadIfNeeded, processTerminations: page.processTerminations)
+    }
+
+    @MainActor
+    private func acquireTabAttachmentPage(for tab: Tab, mode: BrowsingMode) -> MultiTabAttachmentPage.Reservation? {
+        guard tab.mode == mode, tabsModel(for: mode).tabs.contains(where: { $0 === tab }),
+              let url = tab.link?.url, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
+        let identity = ObjectIdentifier(tab)
+        let reservationID = UUID()
+        // Reserve before creation, since inserting the controller enforces cache capacity.
+        tabAttachmentReservations[identity, default: []].insert(reservationID)
+        let reservation = MultiTabAttachmentPage.Reservation { [weak self] in
+            guard let self, self.tabAttachmentReservations[identity]?.remove(reservationID) != nil else { return }
+            if self.tabAttachmentReservations[identity]?.isEmpty == true {
+                self.tabAttachmentReservations[identity] = nil
+            }
+            self.enforceCacheCapacityIfNeeded()
+        }
+        guard controller(for: tab, createIfNeeded: true) != nil,
+              tabsModel(for: mode).tabs.contains(where: { $0 === tab }) else {
+            reservation.release()
+            return nil
+        }
+        return reservation
+    }
+
+    @MainActor
     private func buildController(forTab tab: Tab, inheritedAttribution: AdClickAttributionLogic.State?, interactionState: Data?) -> TabViewController {
         let url = tab.link?.url
         return buildController(forTab: tab, url: url, inheritedAttribution: inheritedAttribution, interactionState: interactionState)
@@ -417,6 +464,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        controller.tabAttachmentSource = makeTabAttachmentSource(for: tab)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -559,6 +607,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
+        controller.tabAttachmentSource = makeTabAttachmentSource(for: controller.tabModel)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -709,6 +758,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
+            tabAttachmentReservations[ObjectIdentifier(controller.tabModel)] = nil
+            tabAttachmentControllerChanges.send()
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
         controller.closeSitePermissions()
@@ -741,7 +792,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let currentControllerIsNewTabPage = currentController.map { $0.tabModel.link == nil } ?? false
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
-            let evictionCandidates = tabControllerCache.filter { $0 !== currentController }
+            let evictionCandidates = tabControllerCache.filter {
+                $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+            }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
         }

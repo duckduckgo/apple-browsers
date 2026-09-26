@@ -459,6 +459,40 @@ final class AIChatContentHandlerTests: XCTestCase {
     
     // MARK: - Submit Actions
 
+    func testReplacingUserScriptCancelsPreviousPendingTabSubmission() {
+        let previous = MockAIChatUserScript()
+        let webView = WKWebView()
+        handler.setup(with: previous, webView: webView, displayMode: .contextual)
+
+        handler.setup(with: MockAIChatUserScript(), webView: webView, displayMode: .contextual)
+
+        XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 1)
+    }
+
+    @MainActor
+    func testNewChatCancelsPendingTabSubmissionBeforeRequestingCurrentPage() async {
+        let script = MockAIChatUserScript()
+        let contentHandler = AIChatContentHandler(
+            aiChatSettings: MockAIChatSettingsProvider(isAutomaticContextAttachmentEnabled: true),
+            payloadHandler: mockPayloadHandler,
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery(),
+            productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
+            getPageContext: { _ in
+                XCTAssertEqual(script.cancelPendingTabContextSubmissionCallCount, 1)
+                XCTAssertEqual(script.submitStartChatActionCallCount, 0)
+                return nil
+            })
+        contentHandler.setup(with: script, webView: WKWebView(), displayMode: .contextual)
+
+        await contentHandler.submitStartChatAction()
+
+        XCTAssertEqual(script.submitStartChatActionCallCount, 1)
+    }
+
     func testSubmitStartChatActionCallsUserScript() async throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
@@ -805,6 +839,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var lastSubmittedPrompt: String?
     var lastSubmittedPageContext: AIChatPageContextData?
     var submitStartChatActionCallCount = 0
+    var cancelPendingTabContextSubmissionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
     var submitOpenChatProtectionActionCallCount = 0
@@ -859,7 +894,8 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
-                      reasoningEffort: AIChatReasoningEffort?) {
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
@@ -867,6 +903,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func submitStartChatAction() {
         submitStartChatActionCallCount += 1
+    }
+
+    func cancelPendingTabContextSubmission() {
+        cancelPendingTabContextSubmissionCallCount += 1
     }
 
     func submitOpenSettingsAction() {

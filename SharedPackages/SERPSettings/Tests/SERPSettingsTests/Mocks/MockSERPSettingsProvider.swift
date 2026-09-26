@@ -81,6 +81,7 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var aiChatURL: URL = URL(string: "https://duckduckgo.com/ai")!
     var isAIChatEnabled: Bool = false
     var sessionTimerInMinutes: Int = 30
+    var aiChatAttachMoreTabsLimit: Int = 3
     var isAIChatAddressBarUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool = false

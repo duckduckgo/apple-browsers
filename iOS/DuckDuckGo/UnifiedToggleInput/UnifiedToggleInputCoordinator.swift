@@ -995,7 +995,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isEnabled: { [weak self] in
                 self?.featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy) == true
             },
-            dismissalScope: { [weak self] in
+            displayScope: { [weak self] in
                 guard let self else { return .fireTab(nil) }
                 if let tab = tabProvider() {
                     return tab.fireTab ? .fireTab(tab) : .normal

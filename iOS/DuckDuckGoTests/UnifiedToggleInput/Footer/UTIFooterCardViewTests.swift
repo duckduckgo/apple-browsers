@@ -75,6 +75,55 @@ final class UTIFooterCardViewTests: XCTestCase {
         XCTAssertEqual(openedURLs, [url])
     }
 
+    func testLocalizedLinkTapTargetsFollowWrappedAndRightToLeftText() throws {
+        let cases: [(String, String, UISemanticContentAttribute)] = [
+            ("Dateien werden automatisch geprüft. %@", "Weitere Informationen zu diesen Dateien", .forceLeftToRight),
+            ("📎 %@：添付ファイルの取り扱いについて", "詳しく見る", .forceLeftToRight),
+            ("تُفحص الملفات تلقائيًا. %@", "معرفة المزيد", .forceRightToLeft)
+        ]
+        for (format, linkText, direction) in cases {
+            let sut = UTIFooterCardView()
+            sut.semanticContentAttribute = direction
+            let message = UTIFooterMessageMapper().attachmentPrivacyMessage(format: format, learnMoreText: linkText)
+            sut.configure(with: message, animateIcon: false)
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            label.semanticContentAttribute = direction
+            label.bounds = CGRect(x: 0, y: 0, width: 140, height: 180)
+            let attributed = try XCTUnwrap(label.attributedText)
+            let linkRange = (attributed.string as NSString).range(of: linkText)
+            XCTAssertNotEqual(linkRange.location, NSNotFound)
+            XCTAssertEqual(label.accessibilityCustomActions?.first?.name, linkText)
+
+            let storage = NSTextStorage(attributedString: attributed)
+            let layout = NSLayoutManager()
+            let container = NSTextContainer(size: label.bounds.size)
+            container.lineFragmentPadding = 0
+            container.lineBreakMode = label.lineBreakMode
+            storage.addLayoutManager(layout)
+            layout.addTextContainer(container)
+            layout.ensureLayout(for: container)
+            let glyphRange = layout.glyphRange(forCharacterRange: linkRange, actualCharacterRange: nil)
+            let textRect = label.textRect(forBounds: label.bounds, limitedToNumberOfLines: 0)
+            let gesture = PositionedFooterTapGestureRecognizer()
+            label.addGestureRecognizer(gesture)
+            var taps = 0
+            sut.onLinkTap = { url in
+                XCTAssertEqual(url, message.link?.url)
+                taps += 1
+            }
+            var expectedTaps = 0
+            for glyph in glyphRange.location..<NSMaxRange(glyphRange) {
+                let rect = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+                guard rect.width > 0, rect.height > 0 else { continue }
+                gesture.point = CGPoint(x: rect.midX, y: rect.midY + textRect.minY)
+                sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
+                expectedTaps += 1
+            }
+            XCTAssertGreaterThan(expectedTaps, 0)
+            XCTAssertEqual(taps, expectedTaps, "Every rendered link glyph must be tappable: \(linkText)")
+        }
+    }
+
     func test_cardHeight_growsWithAWrappedTitle() {
         let sut = UTIFooterCardView()
 

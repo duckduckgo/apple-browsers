@@ -132,7 +132,7 @@ final class UTIFooterCardView: UIView {
         actionTrailingConstraint?.constant = message.isDismissible ? -Constants.dismissTrailingFootprint : 0
     }
 
-    /// Styles the message's trailing link run, if it has one, and remembers the range so a tap can
+    /// Styles the message's localized link run, if it has one, and remembers the range so a tap can
     /// be tested against it. Plain text otherwise.
     private func applyTitle(_ message: UTIFooterMessage) {
         currentMessage = message
@@ -151,9 +151,14 @@ final class UTIFooterCardView: UIView {
 
         let nsRange = NSRange(range, in: message.title)
         linkRange = nsRange
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = titleLabel.textAlignment
+        paragraphStyle.lineBreakMode = titleLabel.lineBreakMode
         let attributed = NSMutableAttributedString(
             string: message.title,
-            attributes: [.font: titleLabel.font as Any, .foregroundColor: UIColor(designSystemColor: .textPrimary)]
+            attributes: [.font: titleLabel.font as Any,
+                         .foregroundColor: UIColor(designSystemColor: .textPrimary),
+                         .paragraphStyle: paragraphStyle]
         )
         attributed.addAttribute(.foregroundColor, value: UIColor(designSystemColor: .accentTextPrimary), range: nsRange)
         titleLabel.attributedText = attributed
@@ -185,7 +190,7 @@ final class UTIFooterCardView: UIView {
 
         let textRect = titleLabel.textRect(forBounds: titleLabel.bounds, limitedToNumberOfLines: titleLabel.numberOfLines)
         let location = gesture.location(in: titleLabel)
-        let point = CGPoint(x: location.x - textRect.minX, y: location.y - textRect.minY)
+        let point = CGPoint(x: location.x, y: location.y - textRect.minY)
         let glyphIndex = layoutManager.glyphIndex(for: point, in: textContainer)
         guard glyphIndex < layoutManager.numberOfGlyphs,
               layoutManager.boundingRect(forGlyphRange: NSRange(location: glyphIndex, length: 1), in: textContainer).contains(point) else {

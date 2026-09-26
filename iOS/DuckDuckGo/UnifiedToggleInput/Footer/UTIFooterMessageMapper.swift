@@ -45,17 +45,16 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    /// Body copy with a trailing "Learn more" link, no CTA pill — the copy is approved verbatim and
-    /// carries the link inside the sentence.
-    func attachmentPrivacyMessage() -> UTIFooterMessage {
+    func attachmentPrivacyMessage(format: String = UserText.aiChatAttachmentPrivacyNoticeFormat,
+                                  learnMoreText: String = UserText.aiChatAttachmentPrivacyNoticeLearnMore) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: .info,
-            title: UserText.aiChatAttachmentPrivacyNotice,
+            title: String(format: format, learnMoreText),
             subtitle: nil,
             primaryAction: nil,
-            isDismissible: true,
+            isDismissible: false,
             link: URL(string: Self.attachmentPrivacyLearnMoreURL).map {
-                .init(text: UserText.aiChatAttachmentPrivacyNoticeLearnMore, url: $0)
+                .init(text: learnMoreText, url: $0)
             }
         )
     }

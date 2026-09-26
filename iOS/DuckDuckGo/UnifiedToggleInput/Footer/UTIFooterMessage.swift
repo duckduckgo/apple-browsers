@@ -34,6 +34,9 @@ struct CreateImageModelSwitchNotice: Equatable {
 
 struct UTIFooterItem: Equatable, Identifiable {
     enum ID: Int, CaseIterable {
+#if DEBUG || ALPHA
+        case termsConsent
+#endif
         case outOfUsage
         case attachmentPrivacy
         case modelSwitch
@@ -44,14 +47,17 @@ struct UTIFooterItem: Equatable, Identifiable {
     enum MessageType {
         case required
         case action
-        case state
+        case informational
     }
 
     var type: MessageType {
         switch id {
+#if DEBUG || ALPHA
+        case .termsConsent: return .required
+#endif
         case .outOfUsage, .attachmentPrivacy: return .required
         case .modelSwitch: return .action
-        case .usageWarning, .highUsage: return .state
+        case .usageWarning, .highUsage: return .informational
         }
     }
 
@@ -80,7 +86,7 @@ struct UTIFooterMessage: Equatable {
         let title: String
     }
 
-    /// A tappable run at the end of `title`. The card styles this substring and reports taps on it.
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
     struct Link: Equatable {
         let text: String
         let url: URL
@@ -127,3 +133,23 @@ struct UTIFooterResetDescriber {
         static let secondsPerDay: TimeInterval = 24 * 60 * 60
     }
 }
+
+#if DEBUG || ALPHA
+@MainActor
+enum UTIFooterDebugOverrides {
+    private(set) static var termsMessage: UTIFooterMessage?
+
+    static func showTermsPreview() {
+        termsMessage = UTIFooterMessage(icon: .info,
+                                       title: "Terms of Service (debug preview)",
+                                       subtitle: "First-prompt layout preview. Clears on submit; no consent is recorded.",
+                                       primaryAction: nil,
+                                       isDismissible: false,
+                                       link: nil)
+    }
+
+    static func clearTermsPreview() {
+        termsMessage = nil
+    }
+}
+#endif

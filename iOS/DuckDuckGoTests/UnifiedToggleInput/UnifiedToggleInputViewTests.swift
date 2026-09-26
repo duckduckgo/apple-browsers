@@ -44,7 +44,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(visibility, [[.usageWarning], [.attachmentPrivacy]])
     }
 
-    func testTwoRequiredCardsAddHeightAndRouteSecondCardDismissalByIdentity() throws {
+    func testTwoCardsAddHeightAndRouteSecondCardLinkByIdentity() throws {
         let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
         sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
         let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
@@ -61,10 +61,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
             $0.arrangedSubviews.contains { $0 is UTIFooterCardView }
         })
         let secondCard = try XCTUnwrap(stack.arrangedSubviews.last as? UTIFooterCardView)
-        var dismissed: UTIFooterItem.ID?
-        sut.onFooterDismissTapped = { dismissed = $0 }
-        secondCard.onDismissTap?()
-        XCTAssertEqual(dismissed, .attachmentPrivacy)
+        var linked: UTIFooterItem.ID?
+        sut.onFooterLinkTapped = { id, _ in linked = id }
+        secondCard.onLinkTap?(try XCTUnwrap(message.link?.url))
+        XCTAssertEqual(linked, .attachmentPrivacy)
 
         sut.setFooterMessages([first])
         XCTAssertEqual(applyFittingHeight(to: sut), oneCardHeight, accuracy: 1)

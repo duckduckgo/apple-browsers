@@ -34,9 +34,24 @@ final class UTIFooterMessageMapperTests: XCTestCase {
                        "Files are automatically scanned for illegal content. Flagged chats have limited data retention. Learn more")
         XCTAssertNil(message.subtitle)
         XCTAssertNil(message.primaryAction)
-        XCTAssertTrue(message.isDismissible)
+        XCTAssertFalse(message.isDismissible)
         XCTAssertEqual(message.link?.text, "Learn more")
         XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
+    }
+
+    func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {
+        let cases = [
+            ("Dateien werden geprüft. %@", "Weitere Informationen"),
+            ("%@：添付ファイルの取り扱い", "詳しく見る"),
+            ("تُفحص الملفات. %@", "معرفة المزيد")
+        ]
+        for (format, label) in cases {
+            let message = sut.attachmentPrivacyMessage(format: format, learnMoreText: label)
+            XCTAssertEqual(message.title, String(format: format, label))
+            XCTAssertEqual(message.link?.text, label)
+            XCTAssertTrue(message.title.contains(label))
+            XCTAssertFalse(message.isDismissible)
+        }
     }
 
     // MARK: - Headlines

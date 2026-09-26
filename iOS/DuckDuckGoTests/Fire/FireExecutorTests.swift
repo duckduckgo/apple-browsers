@@ -245,16 +245,15 @@ final class FireExecutorTests: XCTestCase {
         sitePermissionsStore.resetGlobalDefaults()
     }
     
-    func testTabBurnPreservesGlobalAttachmentPrivacyDismissal() async {
+    func testTabBurnPreservesGlobalAttachmentPrivacyDisplayCount() async {
         let storage = InMemoryKeyValueStore()
-        let store = UTIAttachmentPrivacyNoticeDismissalStore(keyValueStore: storage)
-        let date = Date(timeIntervalSince1970: 1_800_000_000)
-        store.recordDismissal(at: date)
-        let worker = AttachmentPrivacyNoticeFireWorker(dismissalStore: store)
+        let store = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
+        store.recordDisplay()
+        let worker = AttachmentPrivacyNoticeFireWorker(displayStore: store)
 
         await worker.burnTabData(tabViewModel: makeTabViewModel(), domains: ["example.com"])
 
-        XCTAssertEqual(store.dismissedAt, date)
+        XCTAssertEqual(store.displayCount, 1)
     }
 
     private func makeTabViewModel() -> TabViewModel {

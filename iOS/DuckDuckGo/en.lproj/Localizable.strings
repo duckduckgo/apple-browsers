@@ -271,10 +271,10 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take Photo";
 
-/* Message shown below the Duck.ai input after the user attaches a file or image, explaining that attachments are scanned. Ends with the 'Learn more' link text. */
-"aichat.attachment.privacy.notice" = "Files are automatically scanned for illegal content. Flagged chats have limited data retention. Learn more";
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@";
 
-/* The link text at the end of the attachment privacy message. Must match the trailing words of aichat.attachment.privacy.notice exactly. */
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
 "aichat.attachment.privacy.notice.learnMore" = "Learn more";
 
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */

@@ -80,7 +80,6 @@ final class UTIFooterController {
     func refresh() {
         viewModel?.refresh()
         highUsageNotice?.refresh()
-        attachmentPrivacyNotice?.refresh()
         applyCurrentState()
     }
 
@@ -137,10 +136,10 @@ final class UTIFooterController {
         beginDismissal()
         defer { finishDismissal() }
         switch id {
-        case .outOfUsage: return
-        case .attachmentPrivacy:
-            if let currentPrivacyKind { onAttachmentPrivacyEvent?(.dismissed, currentPrivacyKind) }
-            attachmentPrivacyNotice?.dismissCurrent()
+#if DEBUG || ALPHA
+        case .termsConsent: return
+#endif
+        case .outOfUsage, .attachmentPrivacy: return
         case .modelSwitch:
             modelSwitchNotice = nil
             createImagePixelFiring.modelSwitchNoticeDismissed()
@@ -158,8 +157,11 @@ final class UTIFooterController {
         let next = Set(ids).intersection(currentMessages.map(\.id))
         let entered = next.subtracting(visibleIDs)
         visibleIDs = next
-        if !next.contains(.attachmentPrivacy) { currentPrivacyKind = nil }
-        if entered.contains(.attachmentPrivacy) {
+        if !next.contains(.attachmentPrivacy) {
+            currentPrivacyKind = nil
+            attachmentPrivacyNotice?.endDisplay()
+        }
+        if entered.contains(.attachmentPrivacy), attachmentPrivacyNotice?.recordDisplay() == true {
             currentPrivacyKind = attachmentPrivacyNotice?.kind
             if let currentPrivacyKind { onAttachmentPrivacyEvent?(.shown, currentPrivacyKind) }
         }
@@ -169,6 +171,7 @@ final class UTIFooterController {
         if next.contains(.highUsage), let notice = highUsageNotice?.notice {
             highUsageMeasurement.cardBecameVisible(DuckAiUsageWarningExposure(notice: notice))
         }
+        applyCurrentState()
     }
 
     func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
@@ -177,6 +180,9 @@ final class UTIFooterController {
     }
 
     func recordPromptSubmitted() {
+#if DEBUG || ALPHA
+        UTIFooterDebugOverrides.clearTermsPreview()
+#endif
         measurement.promptSubmitted()
         highUsageMeasurement.promptSubmitted()
         modelSwitchNotice = nil
@@ -233,6 +239,7 @@ final class UTIFooterController {
     }
 
     private func applyCurrentState() {
+        attachmentPrivacyNotice?.refresh()
         updateInputBlock()
         let applicable = applicableMessages()
         let nextIDs = Set(applicable.map(\.id))
@@ -252,7 +259,10 @@ final class UTIFooterController {
         guard messages != currentMessages else { return }
         currentMessages = messages
         visibleIDs.formIntersection(messages.map(\.id))
-        if !visibleIDs.contains(.attachmentPrivacy) { currentPrivacyKind = nil }
+        if !visibleIDs.contains(.attachmentPrivacy) {
+            currentPrivacyKind = nil
+            attachmentPrivacyNotice?.endDisplay()
+        }
         animator { [weak self] in self?.presenter?.applyFooterMessages(messages) }
     }
 
@@ -265,7 +275,12 @@ final class UTIFooterController {
 
     private func applicableMessages() -> [UTIFooterItem] {
         var items: [UTIFooterItem] = []
-        if attachmentPrivacyNotice?.isPresented == true {
+#if DEBUG || ALPHA
+        if let terms = UTIFooterDebugOverrides.termsMessage, viewModel?.warning?.blocksInput != true {
+            items.append(.init(id: .termsConsent, message: terms))
+        }
+#endif
+        if attachmentPrivacyNotice?.isPresented == true, viewModel?.warning?.blocksInput != true {
             items.append(.init(id: .attachmentPrivacy, message: mapper.attachmentPrivacyMessage()))
         }
         if let modelSwitchNotice { items.append(.init(id: .modelSwitch, message: mapper.message(for: modelSwitchNotice))) }
@@ -288,65 +303,77 @@ final class UTIFooterController {
 
 // MARK: - Attachment privacy notice
 
-/// Resolves the disclosure from valid attachments and the expiring dismissal record.
+/// Resolves the disclosure from valid attachments and the display cap for the current browsing scope.
 @MainActor
 final class UTIFooterAttachmentPrivacyNoticeSource {
 
-    enum DismissalScope {
+    enum DisplayScope: Equatable {
         case normal
         case fireTab(Tab?)
+
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            switch (lhs, rhs) {
+            case (.normal, .normal): return true
+            case (.fireTab(let lhs), .fireTab(let rhs)): return lhs === rhs
+            default: return false
+            }
+        }
     }
 
-    private let dismissalScope: () -> DismissalScope
+    private let displayScope: () -> DisplayScope
     private let attachmentKind: () -> AttachmentPrivacyPixel.Kind?
     private let isEnabled: () -> Bool
-    private let dismissalStore: UTIAttachmentPrivacyNoticeDismissalStoring
-    private let dateProvider: () -> Date
+    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private var displayedScope: DisplayScope?
 
     private(set) var isPresented = false
     private(set) var kind: AttachmentPrivacyPixel.Kind?
 
     init(attachmentKind: @escaping () -> AttachmentPrivacyPixel.Kind?,
          isEnabled: @escaping () -> Bool,
-         dismissalScope: @escaping () -> DismissalScope = { .normal },
-         dismissalStore: UTIAttachmentPrivacyNoticeDismissalStoring = UTIAttachmentPrivacyNoticeDismissalStore(),
-         dateProvider: @escaping () -> Date = Date.init) {
-        self.dismissalScope = dismissalScope
+         displayScope: @escaping () -> DisplayScope = { .normal },
+         displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
+        self.displayScope = displayScope
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled
-        self.dismissalStore = dismissalStore
-        self.dateProvider = dateProvider
+        self.displayStore = displayStore
     }
 
     func refresh() {
         kind = attachmentKind()
-        isPresented = isEnabled() && kind != nil && !isDismissed
-        Logger.duckAIUsageWarnings.debug("[AttachPrivacy] presented=\(self.isPresented, privacy: .public) suppressed=\(self.isDismissed, privacy: .public)")
+        let enabled = isEnabled()
+        let scope = displayScope()
+        if !enabled || kind == nil || displayedScope != scope { endDisplay() }
+        isPresented = enabled && kind != nil && (displayedScope != nil || count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit)
     }
 
-    func dismissCurrent() {
-        switch dismissalScope() {
+    func recordDisplay() -> Bool {
+        let scope = displayScope()
+        guard isPresented, displayedScope == nil,
+              count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit else { return false }
+        switch scope {
         case .normal:
-            dismissalStore.recordDismissal(at: dateProvider())
+            displayStore.recordDisplay()
         case .fireTab(let tab):
-            tab?.hasDismissedAttachmentPrivacyNotice = true
+            tab?.attachmentPrivacyNoticeDisplayCount += 1
         }
-        isPresented = false
-        Logger.duckAIUsageWarnings.debug("[AttachPrivacy] dismissed by user")
+        displayedScope = scope
+        return true
     }
 
-    /// Teardown: drops the card without recording a dismissal.
+    func endDisplay() {
+        displayedScope = nil
+    }
+
     func clear() {
+        endDisplay()
         isPresented = false
     }
 
-    private var isDismissed: Bool {
-        switch dismissalScope() {
-        case .normal:
-            guard let dismissedAt = dismissalStore.dismissedAt else { return false }
-            return dateProvider().timeIntervalSince(dismissedAt) < UTIAttachmentPrivacyNoticeDismissalStore.suppressionWindow
-        case .fireTab(let tab):
-            return tab?.hasDismissedAttachmentPrivacyNotice == true
+    private func count(in scope: DisplayScope) -> Int {
+        switch scope {
+        case .normal: return displayStore.displayCount
+        case .fireTab(let tab): return tab?.attachmentPrivacyNoticeDisplayCount ?? 0
         }
     }
 }

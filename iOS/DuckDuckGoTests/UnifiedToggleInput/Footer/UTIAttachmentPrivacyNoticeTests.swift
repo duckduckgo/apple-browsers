@@ -23,29 +23,21 @@ import XCTest
 
 @MainActor
 final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
-
     private var storage: AttachmentPrivacyTestStore!
-    private var store: UTIAttachmentPrivacyNoticeDismissalStore!
+    private var store: UTIAttachmentPrivacyNoticeDisplayStore!
     private var source: UTIFooterAttachmentPrivacyNoticeSource!
-    private var now = Date(timeIntervalSince1970: 1_800_000_000)
     private var kind: AttachmentPrivacyPixel.Kind? = .image
     private var enabled = true
-    private var scope: UTIFooterAttachmentPrivacyNoticeSource.DismissalScope = .normal
+    private var scope: UTIFooterAttachmentPrivacyNoticeSource.DisplayScope = .normal
 
     override func setUp() {
         super.setUp()
         storage = AttachmentPrivacyTestStore()
-        store = UTIAttachmentPrivacyNoticeDismissalStore(keyValueStore: storage)
-        now = Date(timeIntervalSince1970: 1_800_000_000)
+        store = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
         kind = .image
         enabled = true
         scope = .normal
-        source = UTIFooterAttachmentPrivacyNoticeSource(
-            attachmentKind: { [unowned self] in kind },
-            isEnabled: { [unowned self] in enabled },
-            dismissalScope: { [unowned self] in scope },
-            dismissalStore: store,
-            dateProvider: { [unowned self] in now })
+        source = makeSource()
     }
 
     override func tearDown() {
@@ -55,195 +47,188 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
         super.tearDown()
     }
 
-    func testNeverDismissedShowsValidAttachment() {
+    private func makeSource() -> UTIFooterAttachmentPrivacyNoticeSource {
+        UTIFooterAttachmentPrivacyNoticeSource(attachmentKind: { [unowned self] in kind },
+                                              isEnabled: { [unowned self] in enabled },
+                                              displayScope: { [unowned self] in scope },
+                                              displayStore: store)
+    }
+
+    private func displayAndEnd() {
         source.refresh()
-        XCTAssertNil(store.dismissedAt)
+        XCTAssertTrue(source.recordDisplay())
+        source.endDisplay()
+    }
+
+    func testResolvingWithoutDisplayingDoesNotCount() {
+        source.refresh()
+        source.refresh()
         XCTAssertTrue(source.isPresented)
+        XCTAssertEqual(store.displayCount, 0)
     }
 
-    func testDismissalRoundTripsAcrossStoreInstances() {
-        store.recordDismissal(at: now)
-        let reloaded = UTIAttachmentPrivacyNoticeDismissalStore(keyValueStore: storage)
-        XCTAssertEqual(reloaded.dismissedAt, now)
+    func testCountRoundTripsAcrossStoreInstances() {
+        store.recordDisplay()
+        let reloaded = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
+        XCTAssertEqual(reloaded.displayCount, 1)
     }
 
-    func testDismissalSuppressesUntilExactlyTwentyOneDays() {
-        source.dismissCurrent()
-        now += 21 * 24 * 60 * 60 - 1
+    func testThirdDisplayStaysVisibleUntilItEndsThenCapApplies() {
+        for _ in 0..<2 { displayAndEnd() }
+        source.refresh()
+        XCTAssertTrue(source.recordDisplay())
+        XCTAssertEqual(store.displayCount, 3)
+        source.refresh()
+        XCTAssertTrue(source.isPresented)
+        XCTAssertFalse(source.recordDisplay())
+        source.endDisplay()
         source.refresh()
         XCTAssertFalse(source.isPresented)
-
-        now += 1
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
+        XCTAssertFalse(source.recordDisplay())
     }
 
-    func testExpiredDismissalShowsAgain() {
-        store.recordDismissal(at: now.addingTimeInterval(-22 * 24 * 60 * 60))
+    func testAttachmentRemovalEndsThirdDisplay() {
+        for _ in 0..<2 { displayAndEnd() }
         source.refresh()
-        XCTAssertTrue(source.isPresented)
+        XCTAssertTrue(source.recordDisplay())
+        kind = nil
+        source.refresh()
+        kind = .file
+        source.refresh()
+        XCTAssertFalse(source.isPresented)
+        XCTAssertEqual(store.displayCount, 3)
     }
 
-    func testClearingDismissalShowsAgain() {
-        source.dismissCurrent()
-        store.clearDismissal()
-        source.refresh()
-        XCTAssertNil(store.dismissedAt)
-        XCTAssertTrue(source.isPresented)
+    func testRecreatedSourceHonoursCap() {
+        for _ in 0..<3 { displayAndEnd() }
+        let reopened = makeSource()
+        reopened.refresh()
+        XCTAssertFalse(reopened.isPresented)
     }
 
-    func testUnreadableStorageShowsAgain() {
-        store.recordDismissal(at: now)
-        storage.overrideRead = "not a date"
+    func testRepeatedDisplayCallbackAndRefreshDoNotIncrementAgain() {
         source.refresh()
-        XCTAssertNil(store.dismissedAt)
-        XCTAssertTrue(source.isPresented)
+        XCTAssertTrue(source.recordDisplay())
+        source.refresh()
+        XCTAssertFalse(source.recordDisplay())
+        XCTAssertEqual(store.displayCount, 1)
     }
 
-    func testStorageReadFailureShowsAgain() {
-        store.recordDismissal(at: now)
+    func testResetAllowsAnotherDisplay() {
+        for _ in 0..<3 { displayAndEnd() }
+        store.reset()
+        source.refresh()
+        XCTAssertTrue(source.isPresented)
+        XCTAssertEqual(store.displayCount, 0)
+    }
+
+    func testInvalidAndNegativeStorageDefaultsToZero() {
+        storage.overrideRead = "not a count"
+        XCTAssertEqual(store.displayCount, 0)
+        storage.overrideRead = -1
+        XCTAssertEqual(store.displayCount, 0)
         storage.failReads = true
         source.refresh()
-        XCTAssertNil(store.dismissedAt)
         XCTAssertTrue(source.isPresented)
     }
 
-    func testFlagChangesAreReadOnRefresh() {
+    func testStoreDoesNotOverflowOrIncrementBeyondCap() {
+        storage.overrideRead = Int.max
+        store.recordDisplay()
+        XCTAssertEqual(storage.writeCount, 0)
         source.refresh()
-        XCTAssertTrue(source.isPresented)
+        XCTAssertFalse(source.isPresented)
+    }
+
+    func testFlagOffAndMissingAttachmentDoNotCount() {
         enabled = false
         source.refresh()
         XCTAssertFalse(source.isPresented)
+        XCTAssertFalse(source.recordDisplay())
         enabled = true
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-    }
-
-    func testNoValidAttachmentDoesNotShow() {
         kind = nil
         source.refresh()
         XCTAssertFalse(source.isPresented)
-    }
-
-    func testTeardownDoesNotRecordDismissal() {
-        source.refresh()
-        source.clear()
-        XCTAssertFalse(source.isPresented)
-        XCTAssertNil(store.dismissedAt)
+        XCTAssertFalse(source.recordDisplay())
+        kind = .file
         source.refresh()
         XCTAssertTrue(source.isPresented)
+        XCTAssertEqual(store.displayCount, 0)
     }
 
-    func testFireTabIgnoresNormalDismissalWithoutReadingPersistentStore() {
-        store.recordDismissal(at: now)
+    func testFireTabIgnoresPersistentCapWithoutReadingIt() {
+        for _ in 0..<3 { store.recordDisplay() }
+        storage.readCount = 0
         scope = .fireTab(Tab(fireTab: true))
         source.refresh()
-
-        XCTAssertTrue(source.isPresented)
+        XCTAssertTrue(source.recordDisplay())
         XCTAssertEqual(storage.readCount, 0)
+        XCTAssertEqual(storage.writeCount, 3)
     }
 
-    func testFireDismissalNeverWritesToPersistentStoreOrSuppressesNormalTabs() {
+    func testFireDisplaysNeverReadOrWritePersistentStorage() {
         let tab = Tab(fireTab: true)
         scope = .fireTab(tab)
+        for _ in 0..<3 { displayAndEnd() }
         source.refresh()
-        source.dismissCurrent()
-        source.refresh()
-
         XCTAssertFalse(source.isPresented)
+        XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 3)
         XCTAssertEqual(storage.readCount, 0)
         XCTAssertEqual(storage.writeCount, 0)
-        XCTAssertTrue(storage.values.isEmpty)
         scope = .normal
         source.refresh()
         XCTAssertTrue(source.isPresented)
+        XCTAssertEqual(store.displayCount, 0)
     }
 
-    func testFireDismissalPreservesExistingNormalDismissal() {
-        store.recordDismissal(at: now)
+    func testFireCountSurvivesSourceRecreationButNewTabStartsFresh() {
+        let tab = Tab(fireTab: true)
+        scope = .fireTab(tab)
+        for _ in 0..<3 { displayAndEnd() }
+        source = makeSource()
+        source.refresh()
+        XCTAssertFalse(source.isPresented)
         scope = .fireTab(Tab(fireTab: true))
-        source.dismissCurrent()
+        source.refresh()
+        XCTAssertTrue(source.isPresented)
+        scope = .fireTab(tab)
+        source.refresh()
+        XCTAssertFalse(source.isPresented)
+    }
 
-        XCTAssertEqual(storage.writeCount, 1)
-        XCTAssertEqual(storage.readCount, 0)
-        XCTAssertEqual(store.dismissedAt, now)
+    func testScopeChangeCannotReuseVisibleThirdDisplay() {
+        scope = .fireTab(Tab(fireTab: true))
+        source.refresh()
+        XCTAssertTrue(source.recordDisplay())
+        for _ in 0..<3 { store.recordDisplay() }
         scope = .normal
         source.refresh()
         XCTAssertFalse(source.isPresented)
     }
 
-    func testFireDismissalSurvivesReopeningAndDoesNotExpireWithinSameTab() {
-        let tab = Tab(fireTab: true)
-        scope = .fireTab(tab)
-        source.dismissCurrent()
-        source.clear()
-        now += 22 * 24 * 60 * 60
-        let reopened = UTIFooterAttachmentPrivacyNoticeSource(
-            attachmentKind: { .file },
-            isEnabled: { true },
-            dismissalScope: { .fireTab(tab) },
-            dismissalStore: store,
-            dateProvider: { [unowned self] in now })
-        reopened.refresh()
-
-        XCTAssertFalse(reopened.isPresented)
-        XCTAssertEqual(storage.readCount, 0)
-        XCTAssertEqual(storage.writeCount, 0)
-    }
-
-    func testNewFireTabShowsNoticeAndReturningToDismissedTabKeepsItHidden() {
-        let first = Tab(fireTab: true)
-        scope = .fireTab(first)
-        source.dismissCurrent()
-        scope = .fireTab(Tab(fireTab: true))
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        scope = .fireTab(first)
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-    }
-
-    func testMissingFireTabNeverFallsBackToPersistentStore() {
+    func testMissingFireTabNeverFallsBackToPersistentStorage() {
         scope = .fireTab(nil)
-        source.refresh()
-        source.dismissCurrent()
-        source.refresh()
-
-        XCTAssertTrue(source.isPresented)
+        displayAndEnd()
         XCTAssertEqual(storage.readCount, 0)
         XCTAssertEqual(storage.writeCount, 0)
     }
 
-    func testBurnClearsNormalDismissalWithoutResettingSurvivingFireTabSession() async {
-        store.recordDismissal(at: now)
+    func testNormalBurnClearsPersistentCount() async {
+        for _ in 0..<3 { store.recordDisplay() }
+        await AttachmentPrivacyNoticeFireWorker(displayStore: store).burnNormalModeData()
+        XCTAssertEqual(store.displayCount, 0)
+        source.refresh()
+        XCTAssertTrue(source.isPresented)
+    }
+
+    func testFireModeBurnClearsPersistentCountWithoutChangingSurvivingTab() async {
+        store.recordDisplay()
         let tab = Tab(fireTab: true)
         scope = .fireTab(tab)
-        source.dismissCurrent()
-
-        await AttachmentPrivacyNoticeFireWorker(dismissalStore: store).burnFireModeData()
-
-        XCTAssertNil(store.dismissedAt)
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-        scope = .fireTab(Tab(fireTab: true))
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-    }
-
-    func testNormalBurnClearsPersistedDismissal() async {
-        store.recordDismissal(at: now)
-        let worker = AttachmentPrivacyNoticeFireWorker(dismissalStore: store)
-        await worker.burnNormalModeData()
-        XCTAssertNil(store.dismissedAt)
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-    }
-
-    func testFireModeBurnClearsPersistedDismissal() async {
-        store.recordDismissal(at: now)
-        let worker = AttachmentPrivacyNoticeFireWorker(dismissalStore: store)
-        await worker.burnFireModeData()
-        XCTAssertNil(store.dismissedAt)
+        displayAndEnd()
+        await AttachmentPrivacyNoticeFireWorker(displayStore: store).burnFireModeData()
+        XCTAssertEqual(store.displayCount, 0)
+        XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
     }
 }
 

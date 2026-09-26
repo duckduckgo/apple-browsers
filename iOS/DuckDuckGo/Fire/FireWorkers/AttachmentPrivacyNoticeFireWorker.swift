@@ -19,20 +19,20 @@
 
 struct AttachmentPrivacyNoticeFireWorker: FireExecutorWorker {
 
-    private let dismissalStore: UTIAttachmentPrivacyNoticeDismissalStoring
+    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
 
-    init(dismissalStore: UTIAttachmentPrivacyNoticeDismissalStoring) {
-        self.dismissalStore = dismissalStore
+    init(displayStore: UTIAttachmentPrivacyNoticeDisplayStoring) {
+        self.displayStore = displayStore
     }
 
     @MainActor
     func burnNormalModeData() async {
-        dismissalStore.clearDismissal()
+        displayStore.reset()
     }
 
     @MainActor
     func burnFireModeData() async {
-        dismissalStore.clearDismissal()
+        displayStore.reset()
     }
 
     @MainActor

@@ -22,7 +22,6 @@ import PixelKit
 struct AttachmentPrivacyPixel: PixelKit.Event {
     enum Action: String {
         case shown
-        case dismissed
         case learnMoreTapped = "learn_more_tapped"
     }
 

@@ -62,6 +62,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var expectedBrokerURL: URL?
     private var isChallengeResponse = false
     private var isAwaitingChallengeDestination = false
+    private var didClickChallenge = false
     private let actionLogContext: PIRActionLogContext?
     private let challengeEventHandler: ((String) -> Void)?
 #elseif os(iOS)
@@ -388,7 +389,8 @@ private extension DataBrokerProtectionWebViewHandler {
         challengeTask?.cancel()
         challengeTask = nil
         closeChallengePanel()
-        reportChallengeEvent("Solved challenge; expected broker destination reached")
+        let outcome = didClickChallenge ? "after click" : "by auto-pass, no click"
+        reportChallengeEvent("Solved challenge \(outcome); expected broker destination reached")
         logChallengeClearanceCookie()
     }
 
@@ -406,7 +408,7 @@ private extension DataBrokerProtectionWebViewHandler {
         defer { closeChallengePanel() }
         let deadline = Date().addingTimeInterval(45)
         var nextSnapshotAttempt = Date.distantPast
-        var didClick = false
+        didClickChallenge = false
 
         try? await Task.sleep(nanoseconds: 5_000_000_000)
         while isAwaitingChallengeDestination, Date() < deadline, !Task.isCancelled {
@@ -415,13 +417,13 @@ private extension DataBrokerProtectionWebViewHandler {
                 continue
             }
 
-            if !didClick, Date() >= nextSnapshotAttempt {
+            if !didClickChallenge, Date() >= nextSnapshotAttempt {
                 nextSnapshotAttempt = Date().addingTimeInterval(2)
                 if let point = await stableSnapshotCheckboxPoint(in: webView) {
                     _ = webView.window?.makeFirstResponder(webView)
                     let result = await ChallengeClick.checkbox(at: point, in: webView)
                     reportChallengeEvent("Sent snapshot checkbox click; \(result)")
-                    didClick = true
+                    didClickChallenge = true
                 }
             }
 
@@ -431,8 +433,9 @@ private extension DataBrokerProtectionWebViewHandler {
         guard isAwaitingChallengeDestination, !Task.isCancelled else { return }
         isChallengeResponse = false
         isAwaitingChallengeDestination = false
+        let failureStage = didClickChallenge ? "after click" : "with no click delivered"
         reportChallengeEvent(
-            "Failed challenge; expected broker destination did not arrive before the 45-second deadline",
+            "Failed challenge \(failureStage); expected broker destination did not arrive before the 45-second deadline",
             isError: true)
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.unknown("Challenge did not reach the broker destination")))
     }
@@ -521,6 +524,7 @@ private extension DataBrokerProtectionWebViewHandler {
     }
 
     func resetChallengeState() {
+        didClickChallenge = false
         challengeTask?.cancel()
         challengeTask = nil
         closeChallengePanel()

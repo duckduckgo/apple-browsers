@@ -33,94 +33,55 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
-    /// The card grows to fit the message instead of cutting it off.
-    func testPrivacyLinkHasAnAccessibilityActionAndClearsItOnReuse() throws {
+    func testPrivacyUsesNativeLinkAndHidesItOnReuse() throws {
         let sut = UTIFooterCardView()
         let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
-        var openedURL: URL?
-        sut.onLinkTap = { openedURL = $0 }
         sut.configure(with: message, animateIcon: false)
-        let label = try XCTUnwrap(titleLabel(in: sut))
-        let action = try XCTUnwrap(label.accessibilityCustomActions?.first)
-        XCTAssertEqual(action.name, "Learn more")
-        XCTAssertEqual(action.actionHandler?(action), true)
-        XCTAssertEqual(openedURL, message.link?.url)
+        let textView = try XCTUnwrap((textStack(in: sut)?.arrangedSubviews ?? []).compactMap { $0 as? UTIFooterLinkTextView }.first)
+        let range = (message.title as NSString).range(of: "Learn more")
+        XCTAssertEqual(textView.attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL, message.link?.url)
+        XCTAssertFalse(textView.isHidden)
+        XCTAssertFalse(textView.canBecomeFirstResponder)
 
         sut.configure(with: makeMessage(), animateIcon: false)
-        XCTAssertNil(label.accessibilityCustomActions)
-        XCTAssertFalse(label.accessibilityTraits.contains(.link))
+        XCTAssertTrue(textView.isHidden)
+        XCTAssertFalse(try XCTUnwrap(titleLabel(in: sut)).isHidden)
     }
 
     func testPrivacyLinkRejectsTrailingAndBelowTextWhitespace() throws {
-        let sut = UTIFooterCardView()
+        let sut = UTIFooterLinkTextView()
         let url = try XCTUnwrap(URL(string: "https://duckduckgo.com"))
-        sut.configure(with: UTIFooterMessage(icon: .none, title: "Learn more", subtitle: nil,
-                                            primaryAction: nil, isDismissible: true,
-                                            link: .init(text: "Learn more", url: url)), animateIcon: false)
-        let label = try XCTUnwrap(titleLabel(in: sut))
-        label.bounds = CGRect(x: 0, y: 0, width: 300, height: 80)
-        var openedURLs: [URL] = []
-        sut.onLinkTap = { openedURLs.append($0) }
-        let gesture = PositionedFooterTapGestureRecognizer()
-        label.addGestureRecognizer(gesture)
-
-        gesture.point = CGPoint(x: 299, y: label.bounds.midY)
-        sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
-        gesture.point = CGPoint(x: 3, y: 79)
-        sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
-        XCTAssertTrue(openedURLs.isEmpty)
-
-        gesture.point = CGPoint(x: 3, y: label.bounds.midY)
-        sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
-        XCTAssertEqual(openedURLs, [url])
+        sut.configure(text: "Learn more", link: .init(text: "Learn more", url: url))
+        sut.frame = CGRect(x: 0, y: 0, width: 300, height: 80)
+        sut.layoutIfNeeded()
+        XCTAssertFalse(sut.point(inside: CGPoint(x: 299, y: 10), with: nil))
+        XCTAssertFalse(sut.point(inside: CGPoint(x: 3, y: 79), with: nil))
+        XCTAssertTrue(sut.point(inside: CGPoint(x: 3, y: 8), with: nil))
     }
 
-    func testLocalizedLinkTapTargetsFollowWrappedAndRightToLeftText() throws {
+    func testLocalizedLinksUseRenderedWrappedAndRightToLeftRanges() throws {
         let cases: [(String, String, UISemanticContentAttribute)] = [
             ("Dateien werden automatisch geprüft. %@", "Weitere Informationen zu diesen Dateien", .forceLeftToRight),
             ("📎 %@：添付ファイルの取り扱いについて", "詳しく見る", .forceLeftToRight),
             ("تُفحص الملفات تلقائيًا. %@", "معرفة المزيد", .forceRightToLeft)
         ]
         for (format, linkText, direction) in cases {
-            let sut = UTIFooterCardView()
+            let sut = UTIFooterLinkTextView()
             sut.semanticContentAttribute = direction
             let message = UTIFooterMessageMapper().attachmentPrivacyMessage(format: format, learnMoreText: linkText)
-            sut.configure(with: message, animateIcon: false)
-            let label = try XCTUnwrap(titleLabel(in: sut))
-            label.semanticContentAttribute = direction
-            label.bounds = CGRect(x: 0, y: 0, width: 140, height: 180)
-            let attributed = try XCTUnwrap(label.attributedText)
-            let linkRange = (attributed.string as NSString).range(of: linkText)
-            XCTAssertNotEqual(linkRange.location, NSNotFound)
-            XCTAssertEqual(label.accessibilityCustomActions?.first?.name, linkText)
-
-            let storage = NSTextStorage(attributedString: attributed)
-            let layout = NSLayoutManager()
-            let container = NSTextContainer(size: label.bounds.size)
-            container.lineFragmentPadding = 0
-            container.lineBreakMode = label.lineBreakMode
-            storage.addLayoutManager(layout)
-            layout.addTextContainer(container)
-            layout.ensureLayout(for: container)
-            let glyphRange = layout.glyphRange(forCharacterRange: linkRange, actualCharacterRange: nil)
-            let textRect = label.textRect(forBounds: label.bounds, limitedToNumberOfLines: 0)
-            let gesture = PositionedFooterTapGestureRecognizer()
-            label.addGestureRecognizer(gesture)
-            var taps = 0
-            sut.onLinkTap = { url in
-                XCTAssertEqual(url, message.link?.url)
-                taps += 1
+            sut.configure(text: message.title, link: try XCTUnwrap(message.link))
+            sut.frame = CGRect(x: 0, y: 0, width: 140, height: 180)
+            sut.layoutIfNeeded()
+            let range = (message.title as NSString).range(of: linkText)
+            XCTAssertEqual(sut.attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL, message.link?.url)
+            let start = try XCTUnwrap(sut.position(from: sut.beginningOfDocument, offset: range.location))
+            let end = try XCTUnwrap(sut.position(from: start, offset: range.length))
+            let textRange = try XCTUnwrap(sut.textRange(from: start, to: end))
+            let rects = sut.selectionRects(for: textRange).map(\.rect).filter { !$0.isEmpty }
+            XCTAssertFalse(rects.isEmpty, linkText)
+            for rect in rects {
+                XCTAssertTrue(sut.point(inside: CGPoint(x: rect.midX, y: rect.midY), with: nil), linkText)
             }
-            var expectedTaps = 0
-            for glyph in glyphRange.location..<NSMaxRange(glyphRange) {
-                let rect = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
-                guard rect.width > 0, rect.height > 0 else { continue }
-                gesture.point = CGPoint(x: rect.midX, y: rect.midY + textRect.minY)
-                sut.perform(NSSelectorFromString("titleTapped:"), with: gesture)
-                expectedTaps += 1
-            }
-            XCTAssertGreaterThan(expectedTaps, 0)
-            XCTAssertEqual(taps, expectedTaps, "Every rendered link glyph must be tappable: \(linkText)")
         }
     }
 
@@ -489,13 +450,5 @@ final class UTIFooterCardViewTests: XCTestCase {
                          primaryAction: .init(title: "Switch Model"),
                          isDismissible: true,
                          link: nil)
-    }
-}
-
-private final class PositionedFooterTapGestureRecognizer: UITapGestureRecognizer {
-    var point: CGPoint = .zero
-
-    override func location(in view: UIView?) -> CGPoint {
-        point
     }
 }

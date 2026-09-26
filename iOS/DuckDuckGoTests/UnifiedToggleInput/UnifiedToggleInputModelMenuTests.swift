@@ -107,6 +107,7 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertTrue(actions(in: menu).allSatisfy { !$0.attributes.contains(.disabled) })
     }
 
+    @available(iOS 16.0, *)
     func testWhenFactoryBuildsLegacyMenuThenUpdatedMenuPresentationIsNotApplied() {
         let menu = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: false).makeMenu(
             models: [
@@ -143,6 +144,7 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertEqual(gatedSections[0].children.compactMap { $0 as? UIAction }.map(\.title), ["gated-1…", "gated-2…"])
     }
 
+    @available(iOS 16.0, *)
     func testWhenUpdatedMenuAvailableModelsHaveRecommendationLabelsThenOrdersThemFirstInBackendOrder() {
         let menu = makeUpdatedMenu(models: [
             makeFakeModel(id: "without-1", accessTier: ["free"], hasAccess: true),
@@ -157,6 +159,7 @@ final class UnifiedToggleInputModelMenuTests: XCTestCase {
         XCTAssertNil(actions[1].subtitle)
     }
 
+    @available(iOS 16.0, *)
     func testWhenUpdatedMenuGatedModelsHaveLabelsThenKeepsBackendOrderAndOmitsSubtitles() {
         let menu = makeUpdatedMenu(models: [
             makeFakeModel(id: "gated-without", accessTier: ["plus"], hasAccess: false),

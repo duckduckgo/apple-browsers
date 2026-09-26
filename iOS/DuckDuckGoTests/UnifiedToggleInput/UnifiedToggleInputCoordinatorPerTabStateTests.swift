@@ -40,6 +40,51 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         )
     }
 
+    func testEndingEditDoesNotCountReloadedAttachmentsAsANewDisclosure() {
+        for submits in [false, true] {
+            let tab = Tab(fireTab: true)
+            let store = FakeInputStateStore()
+            let sut = UnifiedToggleInputCoordinator(
+                host: .omnibar,
+                isToggleEnabled: true,
+                isFireTab: true,
+                preferences: MockAIChatPreferencesForPerTab(),
+                toggleModeStorage: MockToggleModeStorageForPerTab(),
+                stateStore: store,
+                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputAttachmentPrivacy]),
+                tabProvider: { tab }
+            )
+            sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
+            sut.modelStore.attachmentLimits = makeLimits()
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+            window.rootViewController = sut.viewController
+            window.makeKeyAndVisible()
+            sut.viewController.viewDidAppear(false)
+            let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "edited.jpg"))
+            sut.beginEditMode(prompt: "Edited prompt", attachments: [attachment])
+            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 0)
+
+            if submits {
+                sut.submitProgrammatic(text: "Edited prompt")
+            } else {
+                sut.cancelEdit()
+            }
+            XCTAssertFalse(sut.isEditing)
+            XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 0)
+
+            store.states["fresh-draft"] = TabInputState(attachments: [attachment])
+            sut.activateForTab("fresh-draft")
+            sut.showExpanded(inputMode: .aiChat, activatesInput: false)
+            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1, "A newly composed attachment must still count")
+            sut.viewController.viewWillDisappear(false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+    }
+
     func test_activateForTab_appliesStoredText() {
         let store = FakeInputStateStore()
         store.states["tab-A"] = TabInputState(text: "remembered")

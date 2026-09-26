@@ -113,6 +113,16 @@ final class UnifiedToggleInputViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        inputBarView.setFooterPresentationActive(true)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        inputBarView.setFooterPresentationActive(false)
+        super.viewWillDisappear(animated)
+    }
+
     var text: String {
         get { inputBarView.text }
         set { inputBarView.text = newValue }

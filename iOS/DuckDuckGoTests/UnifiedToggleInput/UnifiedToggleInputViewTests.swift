@@ -32,6 +32,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     func testReplacingVisibleFooterReportsNewCardAppearance() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        sut.setFooterPresentationActive(true)
+        defer { sut.removeFromSuperview() }
         sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
         var visibility: [[UTIFooterItem.ID]] = []
         sut.onFooterVisibilityChanged = { visibility.append($0) }
@@ -42,6 +46,35 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertTrue(sut.setFooterMessages([.init(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())]))
 
         XCTAssertEqual(visibility, [[.usageWarning], [.attachmentPrivacy]])
+    }
+
+    func testRetainedOffscreenFooterDoesNotReportDisplaysUntilPresentedAgain() {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let item = UTIFooterItem(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())
+        var visibility: [[UTIFooterItem.ID]] = []
+        sut.onFooterVisibilityChanged = { visibility.append($0) }
+        sut.setFooterMessages([item])
+        XCTAssertTrue(visibility.isEmpty)
+
+        sut.setFooterPresentationActive(true)
+        sut.setFooterMessages([item])
+        XCTAssertEqual(visibility, [[.attachmentPrivacy]])
+        sut.setFooterPresentationActive(false)
+        sut.setFooterMessages([])
+        sut.setFooterMessages([item])
+        XCTAssertEqual(visibility, [[.attachmentPrivacy], []])
+
+        sut.setFooterPresentationActive(true)
+        XCTAssertEqual(visibility, [[.attachmentPrivacy], [], [.attachmentPrivacy]])
+        sut.removeFromSuperview()
+        XCTAssertEqual(visibility.last, [])
+        sut.setFooterMessages([])
+        sut.setFooterMessages([item])
+        XCTAssertEqual(visibility.count, 4)
     }
 
     func testTwoCardsAddHeightAndRouteSecondCardLinkByIdentity() throws {
@@ -72,6 +105,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
     func testEditDisclaimerUsesMessagesSelectedByController() {
         let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        sut.setFooterPresentationActive(true)
+        defer { sut.removeFromSuperview() }
         sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
         let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
         var visible: [UTIFooterItem.ID] = []

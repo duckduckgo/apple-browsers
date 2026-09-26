@@ -404,6 +404,25 @@ final class UnifiedToggleInputView: UIView {
     private var bottomCardSlot: BottomCardSlot = .none
     private var pendingFooterMessages: [UTIFooterItem] = []
     private var renderedFooterMessages: [UTIFooterItem] = []
+    private var reportedFooterIDs: [UTIFooterItem.ID] = []
+    private var isFooterPresentationActive = false
+
+    func setFooterPresentationActive(_ active: Bool) {
+        isFooterPresentationActive = active
+        reportFooterVisibility()
+    }
+
+    private func reportFooterVisibility() {
+        let ids = isFooterPresentationActive && window != nil && bottomCardSlot == .footer ? renderedFooterMessages.map(\.id) : []
+        guard ids != reportedFooterIDs else { return }
+        reportedFooterIDs = ids
+        onFooterVisibilityChanged?(ids)
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        reportFooterVisibility()
+    }
 
     @discardableResult
     func setFooterMessages(_ messages: [UTIFooterItem]) -> Bool {
@@ -459,7 +478,7 @@ final class UnifiedToggleInputView: UIView {
         }
         let slot: BottomCardSlot = messages.isEmpty ? (editReplaceDisclaimerCard.isHidden ? .none : .editDisclaimer) : .footer
         applyBottomSlot(slot)
-        onFooterVisibilityChanged?(messages.map(\.id))
+        reportFooterVisibility()
         footerCard.layoutIfNeeded()
         return wasVisible || !messages.isEmpty
     }

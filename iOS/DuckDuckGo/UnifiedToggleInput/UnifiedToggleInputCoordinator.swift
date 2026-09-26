@@ -931,10 +931,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
     private func exitEditMode(reply: EditPromptReply) {
         guard isEditing else { return }
+        clearAttachments()
         isEditing = false
         resolveEdit(reply)
         resetToolsSelection()
-        clearAttachments()
         setText("")
         showCollapsed()
     }

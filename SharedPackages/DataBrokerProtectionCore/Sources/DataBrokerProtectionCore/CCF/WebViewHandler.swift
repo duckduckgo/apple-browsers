@@ -42,6 +42,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     private let isFakeBroker: Bool
     private let executionConfig: BrokerJobExecutionConfig
+    private let challengePixelDataBroker: String?
+    private let challengePixelBrokerVersion: String?
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
@@ -63,11 +66,17 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 delegate: CCFCommunicationDelegate,
                 isFakeBroker: Bool = false,
                 executionConfig: BrokerJobExecutionConfig,
+                challengePixelDataBroker: String? = nil,
+                challengePixelBrokerVersion: String? = nil,
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
-                contentBlocking: DBPWebViewContentBlocking? = nil) throws {
+                contentBlocking: DBPWebViewContentBlocking? = nil,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) throws {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
+        self.challengePixelDataBroker = challengePixelDataBroker
+        self.challengePixelBrokerVersion = challengePixelBrokerVersion
+        self.pixelHandler = pixelHandler
         let configuration = WKWebViewConfiguration()
         try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
                                                        prefs: prefs,
@@ -443,7 +452,15 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     }
 
     public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
-        guard let statusCode = (navigationResponse.response as? HTTPURLResponse)?.statusCode else {
+        let response = navigationResponse.response
+#if os(macOS)
+        recordChallengeDetectionIfPresent(in: response, isForMainFrame: navigationResponse.isForMainFrame)
+        if navigationResponse.isForMainFrame {
+            observeChallengeClearance(in: webView)
+        }
+#endif
+
+        guard let statusCode = (response as? HTTPURLResponse)?.statusCode else {
             // if there's no http status code to act on, exit and allow navigation
             return .allow
         }
@@ -491,6 +508,43 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         }
     }
 }
+
+#if os(macOS)
+extension DataBrokerProtectionWebViewHandler {
+
+    func recordChallengeDetectionIfPresent(in response: URLResponse, isForMainFrame: Bool) {
+        guard isForMainFrame,
+              let response = response as? HTTPURLResponse,
+              response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame else {
+            return
+        }
+
+        guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
+        pixelHandler?.fire(.mainFrameChallengeDetected(
+            dataBroker: challengePixelDataBroker,
+            brokerVersion: challengePixelBrokerVersion))
+    }
+
+    func recordChallengeClearanceIfPresent(in cookies: [HTTPCookie]) {
+        guard cookies.contains(where: { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }) else {
+            return
+        }
+
+        guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
+        pixelHandler?.fire(.challengeClearanceObserved(
+            dataBroker: challengePixelDataBroker,
+            brokerVersion: challengePixelBrokerVersion))
+    }
+
+    private func observeChallengeClearance(in webView: WKWebView) {
+        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
+            Task { @MainActor in
+                self?.recordChallengeClearanceIfPresent(in: cookies)
+            }
+        }
+    }
+}
+#endif
 
 private class WebView: WKWebView {
 

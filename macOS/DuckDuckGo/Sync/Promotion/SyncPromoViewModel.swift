@@ -21,7 +21,6 @@ import AppKit
 
 struct SyncPromoViewModel {
 
-    var isAppRebranded: Bool
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
 
     var primaryButtonAction: (() -> Void)?
@@ -47,11 +46,7 @@ struct SyncPromoViewModel {
     }
 
     var image: NSImage {
-        if isAppRebranded {
-            return .syncStart96
-        }
-
-        return .syncOK96X96
+        .syncStart96
     }
 
     var primaryButtonTitle: String {

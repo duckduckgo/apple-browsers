@@ -488,7 +488,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupAppRebrand() {
-        let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        let isAppRebranded = true
         DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
     }
 

@@ -114,7 +114,7 @@ struct BadgeAnimationView: View {
     }
 
     private func backgroundRoundedCornersRadius(containerSize: CGSize) -> CGFloat {
-        themeManager.isAppRebranded ? containerSize.height * 0.5 : Consts.View.cornerRadius
+        containerSize.height * 0.5
     }
 
     private var textWidth: CGFloat {

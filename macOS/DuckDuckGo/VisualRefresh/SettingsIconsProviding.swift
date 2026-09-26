@@ -47,34 +47,6 @@ protocol SettingsIconsProviding {
     var subscriberOffersIcon: NSImage { get }
 }
 
-final class LegacySettingsIconProvider: SettingsIconsProviding {
-    var aiGeneralIcon: NSImage = .aiGeneralColor16
-    var defaultBrowserIcon: NSImage = .defaultBrowser
-    var privateSearchIcon: NSImage = .privateSearchIcon
-    var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
-    var threatProtectionIcon: NSImage = .radarColor16
-    var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
-    var emailProtectionIcon: NSImage = .emailProtectionIconLegacy
-    var subscriptionIcon: NSImage = .privacyProLegacy
-    var vpnIcon: NSImage = .VPN
-    var personalInformationRemovalIcon: NSImage = .personalInformationRemovalMulticolor16
-    var identityTheftRestorationIcon: NSImage = .identityTheftRestorationMulticolor16
-    var generalIcon: NSImage = .generalIcon
-    var syncAndBackupIcon: NSImage = .sync
-    var appearanceIcon: NSImage = .appearance
-    var passwordsAndAutoFillIcon: NSImage = .autofill
-    var accessibilityIcon: NSImage = .accessibility
-    var dataClearingIcon: NSImage = .fireSettings
-    var duckPlayerIcon: NSImage = .duckPlayerSettings
-    var youTubeAdBlockingIcon: NSImage = .duckPlayerSettings
-    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
-    var duckAIIcon: NSImage = .aiChatPreferencesLegacy
-    var paidAIChatIcon: NSImage = .duckAiPaidColor16
-    var aboutIcon: NSImage = .about
-    var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
-    var subscriberOffersIcon: NSImage = .subscriptionGift
-}
-
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var aiGeneralIcon: NSImage = DesignSystemImages.Color.Size16.aiGeneral
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser

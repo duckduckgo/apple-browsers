@@ -399,6 +399,8 @@ private struct WebsiteView: View {
 
     @EnvironmentObject var model: PasswordManagementLoginModel
 
+    @State private var isHovering = false
+
     var body: some View {
 
         Text(UserText.pmWebsite)
@@ -413,14 +415,35 @@ private struct WebsiteView: View {
                 .accessibility(identifier: "Website TextField")
 
         } else {
-            if let domainURL = model.domain.url {
-                TextButton(model.domain) {
-                    model.openURL(domainURL)
+
+            HStack(alignment: .center, spacing: 6) {
+
+                if let domainURL = model.domain.url {
+                    TextButton(model.domain) {
+                        model.openURL(domainURL)
+                    }
+                } else {
+                    Text(model.domain)
                 }
-                .padding(.bottom, interItemSpacing)
-            } else {
-                Text(model.domain)
-                    .padding(.bottom, interItemSpacing)
+
+                if !model.domain.isEmpty {
+                    CopyButton {
+                        model.copy(model.domain)
+                    }
+                    .tooltip(UserText.copy)
+                    .opacity(isHovering ? 1 : 0)
+                    .disabled(!isHovering)
+                    .allowsHitTesting(isHovering)
+                    .accessibilityHidden(!isHovering)
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, interItemSpacing)
+            // Covers the copy button too, so moving onto it from the URL keeps it visible.
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
             }
         }
 

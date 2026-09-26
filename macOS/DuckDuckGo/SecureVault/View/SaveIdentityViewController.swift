@@ -32,23 +32,26 @@ protocol SaveIdentityDelegate: AnyObject {
 
 final class SaveIdentityViewController: NSViewController {
 
-    enum Constants {
-        static let storyboardName = "PasswordManager"
-        static let identifier = "SaveIdentity"
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 340, height: 177)
+        static let inset: CGFloat = 16
+        static let settingsButtonSide: CGFloat = 20
+        static let identityIconTop: CGFloat = 16
+        static let stackMinHeight: CGFloat = 50
     }
 
     static func create() -> SaveIdentityViewController {
-        let storyboard = NSStoryboard(name: Constants.storyboardName, bundle: nil)
-        let controller: SaveIdentityViewController = storyboard.instantiateController(identifier: Constants.identifier)
-        controller.loadView()
+        let controller = SaveIdentityViewController(nibName: nil, bundle: nil)
+        // Calling loadView() directly won't send viewDidLoad()
+        _ = controller.view
 
         return controller
     }
 
-    @IBOutlet private var identityStackView: NSStackView!
-    @IBOutlet weak var titleLabel: NSTextField!
-    @IBOutlet weak var notNowButton: NSButton!
-    @IBOutlet weak var saveButton: NSButton!
+    private var identityStackView: NSStackView!
+    var titleLabel: NSTextField!
+    var notNowButton: NSButton!
+    var saveButton: NSButton!
 
     weak var delegate: SaveIdentityDelegate?
 
@@ -56,11 +59,11 @@ final class SaveIdentityViewController: NSViewController {
 
     // MARK: - Actions
 
-    @IBAction func onNotNowClicked(sender: NSButton) {
+    @objc func onNotNowClicked(sender: NSButton) {
         self.delegate?.shouldCloseSaveIdentityViewController(self)
     }
 
-    @IBAction func onSaveClicked(sender: NSButton) {
+    @objc func onSaveClicked(sender: NSButton) {
         defer {
             self.delegate?.shouldCloseSaveIdentityViewController(self)
         }
@@ -85,9 +88,109 @@ final class SaveIdentityViewController: NSViewController {
         }
     }
 
-    @IBAction func onOpenPreferencesClicked(sender: NSButton) {
+    @objc func onOpenPreferencesClicked(sender: NSButton) {
         Application.appDelegate.windowControllersManager.showPreferencesTab()
         self.delegate?.shouldCloseSaveIdentityViewController(self)
+    }
+
+    override func loadView() {
+        let view = NSView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+
+        titleLabel = NSTextField(labelWithString: "")
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        titleLabel.lineBreakMode = .byClipping
+
+        let openPreferencesButton = MouseOverButton(frame: .zero)
+        openPreferencesButton.translatesAutoresizingMaskIntoConstraints = false
+        openPreferencesButton.setButtonType(.momentaryChange)
+        openPreferencesButton.isBordered = false
+        openPreferencesButton.bezelStyle = .rounded
+        openPreferencesButton.image = .settings16
+        openPreferencesButton.imagePosition = .imageOnly
+        openPreferencesButton.title = ""
+        openPreferencesButton.imageScaling = .scaleProportionallyDown
+        openPreferencesButton.alignment = .center
+        openPreferencesButton.target = self
+        openPreferencesButton.action = #selector(onOpenPreferencesClicked(sender:))
+
+        let topSeparator = NSBox()
+        topSeparator.translatesAutoresizingMaskIntoConstraints = false
+        topSeparator.boxType = .separator
+        topSeparator.setContentHuggingPriority(.init(750), for: .vertical)
+
+        let identityIcon = NSImageView()
+        identityIcon.translatesAutoresizingMaskIntoConstraints = false
+        identityIcon.image = .identity
+        identityIcon.imageScaling = .scaleProportionallyDown
+        identityIcon.imageAlignment = .alignLeft
+        identityIcon.refusesFirstResponder = true
+
+        identityStackView = NSStackView()
+        identityStackView.translatesAutoresizingMaskIntoConstraints = false
+        identityStackView.orientation = .vertical
+        identityStackView.distribution = .fill
+        identityStackView.alignment = .leading
+        identityStackView.spacing = 4
+        identityStackView.detachesHiddenViews = true
+
+        let bottomSeparator = NSBox()
+        bottomSeparator.translatesAutoresizingMaskIntoConstraints = false
+        bottomSeparator.boxType = .separator
+        bottomSeparator.setContentHuggingPriority(.init(750), for: .vertical)
+
+        saveButton = NSButton(title: "", target: self, action: #selector(onSaveClicked(sender:)))
+        saveButton.translatesAutoresizingMaskIntoConstraints = false
+        saveButton.bezelStyle = .rounded
+
+        notNowButton = NSButton(title: "", target: self, action: #selector(onNotNowClicked(sender:)))
+        notNowButton.translatesAutoresizingMaskIntoConstraints = false
+        notNowButton.bezelStyle = .rounded
+
+        view.addSubview(titleLabel)
+        view.addSubview(topSeparator)
+        view.addSubview(openPreferencesButton)
+        view.addSubview(identityIcon)
+        view.addSubview(bottomSeparator)
+        view.addSubview(saveButton)
+        view.addSubview(notNowButton)
+        view.addSubview(identityStackView)
+
+        NSLayoutConstraint.activate([
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.inset),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+
+            openPreferencesButton.widthAnchor.constraint(equalToConstant: LayoutConstants.settingsButtonSide),
+            openPreferencesButton.heightAnchor.constraint(equalToConstant: LayoutConstants.settingsButtonSide),
+            openPreferencesButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            openPreferencesButton.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
+            view.trailingAnchor.constraint(equalTo: openPreferencesButton.trailingAnchor, constant: LayoutConstants.inset),
+
+            topSeparator.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            topSeparator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: topSeparator.trailingAnchor),
+
+            identityIcon.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.inset),
+            identityIcon.topAnchor.constraint(equalTo: topSeparator.bottomAnchor, constant: LayoutConstants.identityIconTop),
+
+            identityStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: LayoutConstants.stackMinHeight),
+            identityStackView.leadingAnchor.constraint(equalTo: identityIcon.trailingAnchor, constant: LayoutConstants.inset),
+            identityStackView.topAnchor.constraint(equalTo: topSeparator.bottomAnchor, constant: LayoutConstants.inset),
+            view.trailingAnchor.constraint(equalTo: identityStackView.trailingAnchor, constant: LayoutConstants.inset),
+
+            bottomSeparator.topAnchor.constraint(equalTo: identityStackView.bottomAnchor, constant: 18),
+            bottomSeparator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: bottomSeparator.trailingAnchor),
+
+            saveButton.topAnchor.constraint(equalTo: bottomSeparator.bottomAnchor, constant: 12),
+            view.trailingAnchor.constraint(equalTo: saveButton.trailingAnchor, constant: LayoutConstants.inset),
+            view.bottomAnchor.constraint(equalTo: saveButton.bottomAnchor, constant: 12),
+
+            saveButton.leadingAnchor.constraint(equalTo: notNowButton.trailingAnchor, constant: 8),
+            notNowButton.centerYAnchor.constraint(equalTo: saveButton.centerYAnchor),
+        ])
+
+        self.view = view
     }
 
     // MARK: - Public
@@ -107,7 +210,7 @@ final class SaveIdentityViewController: NSViewController {
 
     private func buildStackView(from identity: SecureVaultModels.Identity) {
 
-        // Placeholder views are used in the Storyboard, which need to be removed before laying out the correct views.
+        // Rebuilt from scratch on every call, so clear whatever the previous identity left behind.
         identityStackView.arrangedSubviews.forEach { view in
             view.removeFromSuperview()
         }

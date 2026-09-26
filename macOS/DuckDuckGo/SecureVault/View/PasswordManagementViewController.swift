@@ -17,16 +17,19 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Carbon.HIToolbox
 import BrowserServicesKit
 import Combine
 import Common
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import DDGSync
 import Foundation
 import FoundationExtensions
 import SecureStorage
 import SwiftUI
+import SwiftUIExtensions
 import PixelKit
 import PrivacyConfig
 import os.log
@@ -41,84 +44,65 @@ protocol PasswordManagementDelegate: AnyObject {
 final class PasswordManagementViewController: NSViewController {
 
     static func create(pinningManager: PinningManager) -> Self {
-        let storyboard = NSStoryboard(name: "PasswordManager", bundle: nil)
-        // swiftlint:disable force_cast
-        let controller: Self = storyboard.instantiateController(withIdentifier: "PasswordManagement") as! Self
+        let controller = Self(nibName: nil, bundle: nil)
         controller.pinningManager = pinningManager
-        controller.loadView()
-        // swiftlint:enable force_cast
+        // Calling loadView() directly won't send viewDidLoad()
+        _ = controller.view
+
         return controller
+    }
+
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 603, height: 510)
+        static let innerSize = CGSize(width: 600, height: 510)
+        static let headerHeight: CGFloat = 44
+        static let inset: CGFloat = 16
+        static let toolbarButtonSide: CGFloat = 28
+        static let searchFieldWidth: CGFloat = 156
+        static let listWidth: CGFloat = 250
+        static let panelHeight: CGFloat = 466
+        static let emptyStateSize = CGSize(width: 342, height: 464)
+        static let emptyStateImageSize = CGSize(width: 128, height: 96)
+        static let emptyStateTextWidth: CGFloat = 280
+        static let emptyStateMessageHeight: CGFloat = 32
+        static let emptyStateButtonWidth: CGFloat = 232
+        static let emptyStateButtonHeight: CGFloat = 28
+        static let unlockButtonSize = CGSize(width: 170, height: 28)
+        static let cornerRadius: CGFloat = 4
     }
 
     var pinningManager: PinningManager!
 
     weak var delegate: PasswordManagementDelegate?
 
-    @IBOutlet weak var boxView: NSBox!
-    @IBOutlet weak var backgroundView: ColorView!
-    @IBOutlet weak var lockMenuItem: NSMenuItem!
-    @IBOutlet weak var importPasswordMenuItem: NSMenuItem!
-    @IBOutlet weak var exportLoginItem: NSMenuItem!
-    @IBOutlet weak var deleteAllPasswordsMenuItem: NSMenuItem!
-    @IBOutlet weak var settingsMenuItem: NSMenuItem!
-    @IBOutlet weak var unlockYourAutofillLabel: FlatButton!
-    @IBOutlet weak var autofillTitleLabel: NSTextField!
-    @IBOutlet weak var unlockYourAutofillInfo: NSButtonCell!
-    @IBOutlet var listContainer: NSView!
-    @IBOutlet var itemContainer: NSView!
-    @IBOutlet var addVaultItemButton: NSButton!
-    @IBOutlet var moreButton: NSButton!
-    @IBOutlet var searchField: SearchField!
-    @IBOutlet var divider: NSView!
-    @IBOutlet var emptyState: NSView!
-    @IBOutlet var emptyStateImageView: NSImageView!
-    @IBOutlet var emptyStateTitle: NSTextField!
-    @IBOutlet var emptyStateMessageHeight: NSLayoutConstraint!
-    @IBOutlet var emptyStateMessageContainer: NSView!
-    @IBOutlet var emptyStateImportButton: NSButton!
-    @IBOutlet var emptyStateSyncButton: NSButton!
-    @IBOutlet var lockScreen: NSView!
-    @IBOutlet var lockScreenIconImageView: NSImageView! {
-        didSet {
-            if DeviceAuthenticator.deviceSupportsBiometrics {
-                lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockTouchID128 : .loginsLockTouchIDLegacy
-            } else {
-                lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockLocked128 : .loginsLockPasswordLegacy
-            }
-        }
-    }
+    var boxView: NSBox!
+    var backgroundView: ColorView!
+    var lockMenuItem: NSMenuItem!
+    var importPasswordMenuItem: NSMenuItem!
+    var exportLoginItem: NSMenuItem!
+    var deleteAllPasswordsMenuItem: NSMenuItem!
+    var settingsMenuItem: NSMenuItem!
+    var unlockYourAutofillLabel: FlatButton!
+    var autofillTitleLabel: NSTextField!
+    var unlockYourAutofillInfo: NSButtonCell!
+    var listContainer: NSView!
+    var itemContainer: NSView!
+    var addVaultItemButton: NSButton!
+    var moreButton: NSButton!
+    var searchField: SearchField!
+    var divider: NSView!
+    var emptyState: NSView!
+    var emptyStateImageView: NSImageView!
+    var emptyStateTitle: NSTextField!
+    var emptyStateMessageHeight: NSLayoutConstraint!
+    var emptyStateMessageContainer: NSView!
+    var emptyStateImportButton: NSButton!
+    var emptyStateSyncButton: NSButton!
+    var lockScreen: NSView!
+    var lockScreenIconImageView: NSImageView!
 
-    @IBOutlet var lockScreenDurationLabel: NSTextField!
-    @IBOutlet var lockScreenOpenInPreferencesTextView: NSTextView! {
-        didSet {
-            lockScreenOpenInPreferencesTextView.delegate = self
-
-            let linkAttributes: [NSAttributedString.Key: Any] = [
-                .foregroundColor: NSColor.linkBlue,
-                .cursor: NSCursor.pointingHand
-            ]
-
-            lockScreenOpenInPreferencesTextView.linkTextAttributes = linkAttributes
-
-            let string = NSMutableAttributedString(string: UserText.pmLockScreenPreferencesLabel + " ")
-            let linkString = NSMutableAttributedString(string: UserText.pmLockScreenPreferencesLink, attributes: [
-                .link: URL.settingsPane(.autofill)
-            ])
-
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.alignment = .center
-
-            string.append(linkString)
-            string.addAttributes([
-                .cursor: NSCursor.arrow,
-                .paragraphStyle: paragraphStyle,
-                .font: NSFont.systemFont(ofSize: 13, weight: .regular),
-                .foregroundColor: NSColor.blackWhite60
-            ], range: NSRange(location: 0, length: string.length))
-
-            lockScreenOpenInPreferencesTextView.textStorage?.setAttributedString(string)
-        }
-    }
+    var lockScreenDurationLabel: NSTextField!
+    var lockScreenOpenInPreferencesButton: LinkButton!
 
     var emptyStateCancellable: AnyCancellable?
     var editingCancellable: AnyCancellable?
@@ -201,8 +185,346 @@ final class PasswordManagementViewController: NSViewController {
         themeManagerModel
     }
 
+    private func makeMoreButtonMenu() -> NSMenu {
+        let glyphs = DesignSystemImages.Glyphs.Size12.self
+        lockMenuItem = NSMenuItem(title: UserText.passwordManagementLock, action: #selector(toggleLock(_:)), target: self)
+            .withImage(glyphs.lock, visibleOnMacOS27: true)
+        importPasswordMenuItem = NSMenuItem(title: UserText.importPasswords, action: #selector(openImportBrowserDataWindow(_:)), target: self)
+            .withImage(glyphs.import, visibleOnMacOS27: true)
+        exportLoginItem = NSMenuItem(title: UserText.exportLogins, action: #selector(openExportLogins(_:)), target: self)
+            .withImage(glyphs.export, visibleOnMacOS27: true)
+        deleteAllPasswordsMenuItem = NSMenuItem(title: UserText.deleteAllPasswords, action: #selector(onDeleteAllPasswordsClicked(_:)), target: self)
+            .withImage(glyphs.trash, visibleOnMacOS27: true)
+        settingsMenuItem = NSMenuItem(title: UserText.settingsSuspended, action: #selector(openAutofillPreferences(_:)), target: self, keyEquivalent: ",")
+            .withImage(glyphs.settings, visibleOnMacOS27: true)
+
+        let menu = NSMenu {
+            lockMenuItem
+            importPasswordMenuItem
+            exportLoginItem
+            NSMenuItem.separator()
+            deleteAllPasswordsMenuItem
+            NSMenuItem.separator()
+            settingsMenuItem
+        }
+        // menuNeedsUpdate(_:) swaps the Lock item between Lock and Unlock.
+        menu.delegate = self
+        return menu
+    }
+
+    private func makeToolbarButton(image: NSImage, action: Selector) -> MouseOverButton {
+        let button = MouseOverButton(frame: .zero)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setButtonType(.momentaryPushIn)
+        button.isBordered = false
+        button.bezelStyle = .shadowlessSquare
+        button.image = image
+        button.imagePosition = .imageOnly
+        button.title = ""
+        button.imageScaling = .scaleProportionallyDown
+        button.alignment = .center
+        button.mouseOverColor = .buttonMouseOver
+        button.mouseDownColor = .buttonMouseDown
+        button.cornerRadius = LayoutConstants.cornerRadius
+        button.target = self
+        button.action = action
+        return button
+    }
+
+    private func makeEmptyStateButton(action: Selector) -> NSButton {
+        let button = NSButton(title: "", target: self, action: action)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setButtonType(.momentaryPushIn)
+        button.bezelStyle = .roundRect
+        // applyThemeStyle() fills these through the layer; the non-rebranded path re-enables the bezel.
+        button.isBordered = false
+        return button
+    }
+
+    override func loadView() {
+        let view = NSView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+        view.translatesAutoresizingMaskIntoConstraints = false
+
+        boxView = NSBox()
+        boxView.translatesAutoresizingMaskIntoConstraints = false
+        boxView.boxType = .custom
+        boxView.borderWidth = 0
+        boxView.cornerRadius = LayoutConstants.cornerRadius
+
+        let contentView = NSView(frame: NSRect(origin: .zero, size: LayoutConstants.innerSize))
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        autofillTitleLabel = NSTextField(labelWithString: "")
+        autofillTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        autofillTitleLabel.font = .systemFont(ofSize: 17)
+        autofillTitleLabel.lineBreakMode = .byClipping
+
+        addVaultItemButton = makeToolbarButton(image: .add, action: #selector(onNewClicked(_:)))
+        moreButton = makeToolbarButton(image: .settings, action: #selector(moreButtonAction(_:)))
+        moreButton.menu = makeMoreButtonMenu()
+
+        searchField = SearchField()
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        searchField.wantsLayer = true
+        searchField.focusRingType = .none
+        searchField.lineBreakMode = .byClipping
+        searchField.isEditable = true
+        searchField.isSelectable = true
+        searchField.isBezeled = true
+        searchField.bezelStyle = .roundedBezel
+        searchField.isAutomaticTextCompletionEnabled = false
+        searchField.usesSingleLineMode = true
+        (searchField.cell as? NSSearchFieldCell)?.isScrollable = true
+        searchField.setContentHuggingPriority(.init(750), for: .vertical)
+        searchField.delegate = self
+
+        let headerSeparator = NSBox()
+        headerSeparator.translatesAutoresizingMaskIntoConstraints = false
+        headerSeparator.boxType = .separator
+
+        // These two are sized by frame rather than constraints: the list and detail views are swapped
+        // in at runtime and set their own frame from the container's bounds.
+        listContainer = NSView(frame: NSRect(x: 0, y: 0, width: LayoutConstants.listWidth, height: 467))
+        listContainer.translatesAutoresizingMaskIntoConstraints = false
+        itemContainer = NSView(frame: NSRect(x: 249, y: 0, width: 351, height: LayoutConstants.panelHeight))
+        itemContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let dividerBox = NSBox(frame: NSRect(x: 248, y: 0, width: 5, height: LayoutConstants.panelHeight))
+        dividerBox.translatesAutoresizingMaskIntoConstraints = false
+        dividerBox.boxType = .separator
+        dividerBox.setContentHuggingPriority(.init(750), for: .horizontal)
+        divider = dividerBox
+
+        // MARK: Empty state
+        emptyStateImageView = NSImageView()
+        emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateImageView.setContentHuggingPriority(.init(251), for: .horizontal)
+        emptyStateImageView.setContentHuggingPriority(.init(251), for: .vertical)
+
+        emptyStateTitle = NSTextField(labelWithString: "")
+        emptyStateTitle.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateTitle.alignment = .center
+        emptyStateTitle.font = .systemFont(ofSize: 15, weight: .semibold)
+
+        // The hosting view added in setUpEmptyStateMessageView() is frame-positioned against this
+        // container, so it starts at the size the nib gave it rather than at zero.
+        emptyStateMessageContainer = NSView(frame: NSRect(origin: .zero,
+                                                          size: CGSize(width: LayoutConstants.emptyStateTextWidth,
+                                                                       height: LayoutConstants.emptyStateMessageHeight)))
+        emptyStateMessageContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        emptyStateImportButton = makeEmptyStateButton(action: #selector(onImportClicked(_:)))
+        emptyStateSyncButton = makeEmptyStateButton(action: #selector(onSyncClicked(_:)))
+
+        let emptyStateButtonsStack = NSStackView(views: [emptyStateImportButton, emptyStateSyncButton])
+        emptyStateButtonsStack.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateButtonsStack.orientation = .vertical
+        emptyStateButtonsStack.distribution = .fill
+        emptyStateButtonsStack.alignment = .centerX
+        emptyStateButtonsStack.spacing = 10
+        emptyStateButtonsStack.detachesHiddenViews = true
+
+        let emptyStateStack = NSStackView(views: [emptyStateImageView, emptyStateTitle,
+                                                  emptyStateMessageContainer, emptyStateButtonsStack])
+        emptyStateStack.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateStack.orientation = .vertical
+        emptyStateStack.distribution = .fill
+        emptyStateStack.alignment = .centerX
+        emptyStateStack.spacing = 16
+        emptyStateStack.detachesHiddenViews = true
+
+        emptyState = NSView()
+        emptyState.translatesAutoresizingMaskIntoConstraints = false
+        emptyState.addSubview(emptyStateStack)
+
+        // MARK: Lock screen
+        lockScreenIconImageView = NSImageView()
+        lockScreenIconImageView.translatesAutoresizingMaskIntoConstraints = false
+        lockScreenIconImageView.setContentHuggingPriority(.init(251), for: .horizontal)
+        lockScreenIconImageView.setContentHuggingPriority(.init(251), for: .vertical)
+        if DeviceAuthenticator.deviceSupportsBiometrics {
+            lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockTouchID128 : .loginsLockTouchIDLegacy
+        } else {
+            lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockLocked128 : .loginsLockPasswordLegacy
+        }
+
+        unlockYourAutofillLabel = FlatButton(frame: .zero)
+        unlockYourAutofillLabel.target = self
+        unlockYourAutofillLabel.action = #selector(deviceAuthenticationRequested(_:))
+        unlockYourAutofillLabel.translatesAutoresizingMaskIntoConstraints = false
+        unlockYourAutofillLabel.setButtonType(.momentaryPushIn)
+        unlockYourAutofillLabel.bezelStyle = .rounded
+        unlockYourAutofillLabel.isBordered = false
+        // It only holds first responder to keep the popover key; it should not look focused.
+        unlockYourAutofillLabel.focusRingType = .none
+        unlockYourAutofillLabel.alignment = .center
+        unlockYourAutofillLabel.imageScaling = .scaleProportionallyDown
+        unlockYourAutofillLabel.cornerRadius = 5
+        unlockYourAutofillLabel.backgroundColor = .blackWhite10
+        unlockYourAutofillLabel.horizontalPadding = 8
+        unlockYourAutofillLabel.verticalPadding = 5
+        unlockYourAutofillLabel.setContentHuggingPriority(.init(750), for: .vertical)
+        unlockYourAutofillInfo = unlockYourAutofillLabel.cell as? NSButtonCell
+
+        let lockScreenStack = NSStackView(views: [lockScreenIconImageView, unlockYourAutofillLabel])
+        lockScreenStack.translatesAutoresizingMaskIntoConstraints = false
+        lockScreenStack.orientation = .vertical
+        lockScreenStack.distribution = .fill
+        lockScreenStack.alignment = .centerX
+        lockScreenStack.spacing = 12
+        lockScreenStack.detachesHiddenViews = true
+
+        lockScreenDurationLabel = NSTextField(labelWithString: "")
+        lockScreenDurationLabel.translatesAutoresizingMaskIntoConstraints = false
+        lockScreenDurationLabel.alignment = .center
+
+        // Sized up front: a zero-width text view lays its text container out at a different width
+        // than it is drawn at, which desynchronises the link's cursor rect from its glyphs.
+        let preferencesLabel = NSTextField(labelWithString: UserText.pmLockScreenPreferencesLabel)
+        preferencesLabel.translatesAutoresizingMaskIntoConstraints = false
+        preferencesLabel.font = .systemFont(ofSize: 13)
+        preferencesLabel.textColor = .blackWhite60
+
+        lockScreenOpenInPreferencesButton = LinkButton(title: UserText.pmLockScreenPreferencesLink,
+                                                       target: self,
+                                                       action: #selector(openAutofillPreferences(_:)))
+        lockScreenOpenInPreferencesButton.translatesAutoresizingMaskIntoConstraints = false
+        lockScreenOpenInPreferencesButton.isBordered = false
+        lockScreenOpenInPreferencesButton.font = .systemFont(ofSize: 13)
+        lockScreenOpenInPreferencesButton.contentTintColor = NSColor(designSystemColor: .textLink,
+                                                                     palette: themeManagerModel.designColorPalette)
+
+        let preferencesStack = NSStackView(views: [preferencesLabel, lockScreenOpenInPreferencesButton])
+        preferencesStack.translatesAutoresizingMaskIntoConstraints = false
+        preferencesStack.orientation = .horizontal
+        preferencesStack.alignment = .firstBaseline
+        preferencesStack.spacing = 4
+
+        backgroundView = ColorView(frame: .zero, backgroundColor: .neutralBackground, interceptClickEvents: true)
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundView.addSubview(lockScreenStack)
+        backgroundView.addSubview(lockScreenDurationLabel)
+        backgroundView.addSubview(preferencesStack)
+
+        let lockScreenBox = NSBox()
+        lockScreenBox.translatesAutoresizingMaskIntoConstraints = false
+        lockScreenBox.boxType = .custom
+        lockScreenBox.borderWidth = 0
+        lockScreenBox.cornerRadius = LayoutConstants.cornerRadius
+        lockScreenBox.titlePosition = .noTitle
+        // NSBox sets its contentView's frame itself, so that has to be a frame-managed view;
+        // `backgroundView` is constrained inside it.
+        let lockScreenContentView = NSView()
+        lockScreenContentView.addSubview(backgroundView)
+        lockScreenBox.contentView = lockScreenContentView
+        lockScreen = lockScreenBox
+
+        contentView.addSubview(headerSeparator)
+        contentView.addSubview(autofillTitleLabel)
+        contentView.addSubview(listContainer)
+        contentView.addSubview(itemContainer)
+        contentView.addSubview(emptyState)
+        contentView.addSubview(addVaultItemButton)
+        contentView.addSubview(moreButton)
+        contentView.addSubview(searchField)
+        contentView.addSubview(divider)
+        contentView.addSubview(lockScreen)
+
+        view.addSubview(boxView)
+        view.addSubview(contentView)
+
+        emptyStateMessageHeight = emptyStateMessageContainer.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.emptyStateMessageHeight)
+
+        NSLayoutConstraint.activate([
+            boxView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            boxView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            boxView.widthAnchor.constraint(equalTo: view.widthAnchor),
+            boxView.heightAnchor.constraint(equalTo: view.heightAnchor),
+
+            contentView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            contentView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            contentView.widthAnchor.constraint(equalToConstant: LayoutConstants.innerSize.width),
+            contentView.heightAnchor.constraint(equalToConstant: LayoutConstants.innerSize.height),
+
+            searchField.widthAnchor.constraint(equalToConstant: LayoutConstants.searchFieldWidth),
+            searchField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 11),
+            searchField.leadingAnchor.constraint(equalTo: addVaultItemButton.trailingAnchor, constant: 10),
+
+            addVaultItemButton.widthAnchor.constraint(equalToConstant: LayoutConstants.toolbarButtonSide),
+            addVaultItemButton.heightAnchor.constraint(equalToConstant: LayoutConstants.toolbarButtonSide),
+            addVaultItemButton.centerYAnchor.constraint(equalTo: searchField.centerYAnchor),
+
+            moreButton.widthAnchor.constraint(equalToConstant: LayoutConstants.toolbarButtonSide),
+            moreButton.heightAnchor.constraint(equalToConstant: LayoutConstants.toolbarButtonSide),
+            moreButton.leadingAnchor.constraint(equalTo: searchField.trailingAnchor, constant: 10),
+            moreButton.centerYAnchor.constraint(equalTo: addVaultItemButton.centerYAnchor),
+            contentView.trailingAnchor.constraint(equalTo: moreButton.trailingAnchor, constant: LayoutConstants.inset),
+
+            autofillTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: LayoutConstants.inset),
+            autofillTitleLabel.centerYAnchor.constraint(equalTo: addVaultItemButton.centerYAnchor),
+
+            headerSeparator.topAnchor.constraint(equalTo: contentView.topAnchor, constant: LayoutConstants.headerHeight),
+            headerSeparator.widthAnchor.constraint(equalTo: contentView.widthAnchor),
+            headerSeparator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+
+            emptyState.widthAnchor.constraint(equalToConstant: LayoutConstants.emptyStateSize.width),
+            emptyState.heightAnchor.constraint(equalToConstant: LayoutConstants.emptyStateSize.height),
+            emptyState.topAnchor.constraint(equalTo: headerSeparator.topAnchor),
+            contentView.trailingAnchor.constraint(equalTo: emptyState.trailingAnchor),
+
+            emptyStateStack.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
+            emptyStateStack.centerYAnchor.constraint(equalTo: emptyState.centerYAnchor, constant: -20),
+            emptyStateImageView.widthAnchor.constraint(equalToConstant: LayoutConstants.emptyStateImageSize.width),
+            emptyStateImageView.heightAnchor.constraint(equalToConstant: LayoutConstants.emptyStateImageSize.height),
+            emptyStateTitle.widthAnchor.constraint(equalToConstant: LayoutConstants.emptyStateTextWidth),
+            emptyStateMessageContainer.widthAnchor.constraint(equalToConstant: LayoutConstants.emptyStateTextWidth),
+            emptyStateMessageHeight,
+            emptyStateImportButton.heightAnchor.constraint(equalToConstant: LayoutConstants.emptyStateButtonHeight),
+            emptyStateImportButton.widthAnchor
+                .constraint(greaterThanOrEqualToConstant: LayoutConstants.emptyStateButtonWidth),
+            emptyStateSyncButton.heightAnchor.constraint(equalToConstant: LayoutConstants.emptyStateButtonHeight),
+            emptyStateSyncButton.widthAnchor.constraint(equalTo: emptyStateImportButton.widthAnchor),
+            emptyStateImportButton.leadingAnchor.constraint(equalTo: emptyStateButtonsStack.leadingAnchor),
+            emptyStateButtonsStack.trailingAnchor.constraint(equalTo: emptyStateImportButton.trailingAnchor),
+
+            lockScreen.topAnchor.constraint(equalTo: headerSeparator.bottomAnchor),
+            lockScreen.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: lockScreen.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: lockScreen.bottomAnchor),
+
+            backgroundView.leadingAnchor.constraint(equalTo: lockScreenContentView.leadingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: lockScreenContentView.topAnchor),
+            lockScreenContentView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            lockScreenContentView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
+
+            lockScreenStack.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor),
+            lockScreenStack.centerYAnchor.constraint(equalTo: backgroundView.centerYAnchor, constant: -25),
+            unlockYourAutofillLabel.widthAnchor.constraint(equalToConstant: LayoutConstants.unlockButtonSize.width),
+            unlockYourAutofillLabel.heightAnchor.constraint(equalToConstant: LayoutConstants.unlockButtonSize.height),
+
+            lockScreenDurationLabel.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: 20),
+            backgroundView.trailingAnchor.constraint(equalTo: lockScreenDurationLabel.trailingAnchor, constant: 20),
+
+            preferencesStack.topAnchor.constraint(equalTo: lockScreenDurationLabel.bottomAnchor, constant: 2),
+            preferencesStack.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: preferencesStack.bottomAnchor, constant: 20),
+        ])
+
+        self.view = view
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        // Esc closes the popover. Handled as a key equivalent rather than through the responder
+        // chain because displayLockScreen() clears the first responder, so nothing in the view
+        // hierarchy is left to receive cancelOperation(_:).
+        addKeyEquivalent(.escape, modifierFlags: []) { [weak self] _ in
+            guard let self else { return false }
+            dismiss()
+            return true
+        }
 
         createListView()
         createLoginItemView()
@@ -242,27 +564,17 @@ final class PasswordManagementViewController: NSViewController {
         subscribeToThemeChanges()
         applyThemeStyle()
 
-        lockMenuItem.withImage(DesignSystemImages.Glyphs.Size12.lock, visibleOnMacOS27: true)
-        importPasswordMenuItem.withImage(DesignSystemImages.Glyphs.Size12.import, visibleOnMacOS27: true)
-        exportLoginItem.withImage(DesignSystemImages.Glyphs.Size12.export, visibleOnMacOS27: true)
-        deleteAllPasswordsMenuItem.withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: true)
-        settingsMenuItem.withImage(DesignSystemImages.Glyphs.Size12.settings, visibleOnMacOS27: true)
     }
 
     private func setUpEmptyStateMessageView() {
         guard let listModel else { return }
 
-        let message: String
-        if listModel.emptyStateHideLearnMoreLink {
-            message = listModel.emptyStateMessageDescription
-        } else {
-            message = " \(listModel.emptyStateMessageDescription) [\(listModel.emptyStateMessageLinkText)](\(listModel.emptyStateMessageLinkURL))"
-        }
-
         let hostingView = NSHostingView(rootView: PasswordManagementEmptyStateMessage(
-            message: message,
-            image: listModel.emptyStateHideLockIcon ? nil : .lockSolid16
-        ).fixedSize())
+            message: listModel.emptyStateMessageDescription,
+            image: listModel.emptyStateHideLockIcon ? nil : .lockSolid16,
+            linkText: listModel.emptyStateHideLearnMoreLink ? nil : listModel.emptyStateMessageLinkText,
+            linkAction: { [weak self] in self?.openEmptyStateLink() }
+        ).fixedSize().environmentObject(themeManagerModel))
 
         hostingView.frame = CGRect(origin: .zero, size: hostingView.intrinsicContentSize)
         for subview in emptyStateMessageContainer.subviews {
@@ -279,10 +591,6 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func setupStrings() {
-        importPasswordMenuItem.title = UserText.importPasswords
-        exportLoginItem.title = UserText.exportLogins
-        deleteAllPasswordsMenuItem.title = UserText.deleteAllPasswords
-        settingsMenuItem.title = UserText.settingsSuspended
         unlockYourAutofillLabel.title = UserText.passwordManagerUnlockAutofill
         autofillTitleLabel.stringValue = UserText.passwordManagementTitle
         emptyStateTitle.stringValue = UserText.pmEmptyStateDefaultTitle
@@ -344,14 +652,25 @@ final class PasswordManagementViewController: NSViewController {
         lockScreen.isHidden = false
         searchField.isEnabled = false
         addVaultItemButton.isEnabled = false
+        setContentHidden(true)
 
-        view.window?.makeFirstResponder(nil)
+        moveFocusIntoPopover()
+    }
+
+    /// The popover's window is only key while something inside it holds first responder. With no
+    /// first responder AppKit hands it back to the parent main window, which re-targets the WebView.
+    private func moveFocusIntoPopover() {
+        guard let window = view.window else { return }
+        window.makeFirstResponder(lockScreen.isHidden ? searchField : unlockYourAutofillLabel)
     }
 
     private func hideLockScreen() {
         lockScreen.isHidden = true
         searchField.isEnabled = true
         addVaultItemButton.isEnabled = true
+        setContentHidden(false)
+
+        moveFocusIntoPopover()
     }
 
     override func viewWillAppear() {
@@ -370,6 +689,8 @@ final class PasswordManagementViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
 
+        moveFocusIntoPopover()
+
         if !isDirty {
             itemModel?.clearSecureVaultModel()
         }
@@ -383,6 +704,19 @@ final class PasswordManagementViewController: NSViewController {
 
     deinit {
         removeEscapeKeyMonitor()
+    }
+
+    private func setContentHidden(_ hidden: Bool) {
+        listContainer.isHidden = hidden
+        itemContainer.isHidden = hidden
+
+        if hidden {
+            divider.isHidden = true
+            emptyState.isHidden = true
+        } else {
+            divider.isHidden = isEditing
+            updateEmptyState(state: listModel?.emptyState)
+        }
     }
 
     private func refetchAndPromptForAuthentication(text: String, selectItemMatchingDomain: String?, clearWhenNoMatches: Bool) {
@@ -412,49 +746,55 @@ final class PasswordManagementViewController: NSViewController {
         }
     }
 
-    @IBAction func onNewClicked(_ sender: NSButton) {
+    @objc func onNewClicked(_ sender: NSButton) {
         let menu = createNewSecureVaultItemMenu()
         let location = NSPoint(x: sender.frame.origin.x, y: sender.frame.origin.y - (sender.frame.height / 2) + 6)
 
         menu.popUp(positioning: nil, at: location, in: sender.superview)
     }
 
-    @IBAction func moreButtonAction(_ sender: NSButton) {
+    @objc func moreButtonAction(_ sender: NSButton) {
         let location = NSPoint(x: sender.frame.origin.x, y: sender.frame.origin.y - (sender.frame.height / 2) + 6)
         sender.menu?.popUp(positioning: nil, at: location, in: sender.superview)
     }
 
-    @IBAction func openAutofillPreferences(_ sender: Any) {
+    @objc func openAutofillPreferences(_ sender: Any) {
         Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
         self.dismiss()
     }
 
-    @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
+    private func openEmptyStateLink() {
+        guard let url = listModel?.emptyStateMessageLinkURL else { return }
+        Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .link))
+        dismiss()
+    }
+
+    @objc func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
         ensureMainWindowExists()
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
-    @IBAction func openExportLogins(_ sender: Any) {
+    @objc func openExportLogins(_ sender: Any) {
         self.dismiss()
         ensureMainWindowExists()
         NSApp.sendAction(#selector(AppDelegate.openExportLogins(_:)), to: nil, from: sender)
     }
 
-    @IBAction func onImportClicked(_ sender: NSButton) {
+    @objc func onImportClicked(_ sender: NSButton) {
         self.dismiss()
         ensureMainWindowExists()
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
-    @IBAction func onSyncClicked(_ sender: Any) {
+    @objc func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
         PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
     }
 
-    @IBAction func onDeleteAllPasswordsClicked(_ sender: Any) {
+    @objc func onDeleteAllPasswordsClicked(_ sender: Any) {
         let builder = AutofillDeleteAllPasswordsBuilder()
         guard let autofillDeleteAllPasswordsExecutor = builder.buildExecutor() else { return }
         let presenter = builder.buildPresenter()
@@ -482,11 +822,11 @@ final class PasswordManagementViewController: NSViewController {
         }
     }
 
-    @IBAction func deviceAuthenticationRequested(_ sender: NSButton) {
+    @objc func deviceAuthenticationRequested(_ sender: NSButton) {
         promptForAuthentication()
     }
 
-    @IBAction func toggleLock(_ sender: Any) {
+    @objc func toggleLock(_ sender: Any) {
         if DeviceAuthenticator.shared.requiresAuthentication {
             promptForAuthentication()
         } else {
@@ -1367,34 +1707,11 @@ extension PasswordManagementViewController: NSMenuDelegate {
 
 }
 
-extension PasswordManagementViewController: NSTextFieldDelegate {
+extension PasswordManagementViewController: NSSearchFieldDelegate {
 
     func controlTextDidChange(_ obj: Notification) {
         updateFilter()
     }
-}
-
-extension PasswordManagementViewController: NSTextViewDelegate {
-
-    func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
-        if let link = link as? URL {
-            if let pane = PreferencePaneIdentifier(url: link) {
-                Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: pane)
-            } else {
-                Application.appDelegate.windowControllersManager.showTab(with: .url(link, source: .link))
-            }
-            self.dismiss()
-        }
-
-        return true
-    }
-
-    func textView(_ textView: NSTextView,
-                  willChangeSelectionFromCharacterRange oldSelectedCharRange: NSRange,
-                  toCharacterRange newSelectedCharRange: NSRange) -> NSRange {
-        return NSRange(location: 0, length: 0)
-    }
-
 }
 
 extension PasswordManagementViewController: NSMenuItemValidation {
@@ -1417,27 +1734,40 @@ extension PasswordManagementViewController: NSMenuItemValidation {
 }
 
 struct PasswordManagementEmptyStateMessage: View {
+    @EnvironmentObject var themeManager: ThemeManager
+
     let message: String
     let image: ImageResource?
 
+    /// `nil` hides the link.
+    let linkText: String?
+    let linkAction: () -> Void
+
     var body: some View {
+        VStack(spacing: 2) {
+            description
+                .multilineTextAlignment(.center)
+                .frame(width: 280)
+
+            if let linkText {
+                TextButton(linkText,
+                           textColor: Color(designSystemColor: .textLink,
+                                            palette: themeManager.designColorPalette),
+                           action: linkAction)
+            }
+        }
+    }
+
+    private var description: Text {
         let text = Text(.init(message))
             .foregroundColor(.textSecondary)
 
-        if let image = image {
-            (
-                Text(Image(image))
-                    .baselineOffset(-1.0)
-                    .foregroundColor(.textSecondary)
-                +
-                text
-            )
-            .multilineTextAlignment(.center)
-            .frame(width: 280)
-        } else {
-            text
-                .multilineTextAlignment(.center)
-                .frame(width: 280)
-        }
+        guard let image else { return text }
+
+        return Text(Image(image))
+            .baselineOffset(-1.0)
+            .foregroundColor(.textSecondary)
+        + Text(verbatim: " ")
+        + text
     }
 }

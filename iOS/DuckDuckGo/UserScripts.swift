@@ -68,6 +68,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
+    private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
@@ -76,9 +77,11 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         sitePermissionsEnabled: Bool = false,
          mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
+         geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
@@ -86,6 +89,7 @@ final class UserScripts: UserScriptsProvider {
 
         selectionFrameScript = SelectionFrameUserScript()
         self.mediaCaptureUserScript = mediaCaptureUserScript
+        self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -202,6 +206,8 @@ final class UserScripts: UserScriptsProvider {
             findInPageScript,
             fullScreenVideoScript,
             mediaCaptureUserScript,
+            geolocationUserScript?.policyScript,
+            geolocationUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,
@@ -234,18 +240,23 @@ final class UserScripts: UserScriptsProvider {
     
     @MainActor
     func loadWKUserScripts() async -> [WKUserScript] {
-        return await withTaskGroup(of: WKUserScriptBox.self) { @MainActor group in
-            var wkUserScripts = [WKUserScript]()
-            userScripts.forEach { userScript in
+        return await withTaskGroup(of: (Int, WKUserScriptBox).self) { @MainActor group in
+            var indexedScripts = [(Int, WKUserScriptBox)]()
+            for (index, userScript) in userScripts.enumerated() {
                 group.addTask { @MainActor in
-                    await userScript.makeWKUserScript()
+                    (index, await userScript.makeWKUserScript())
                 }
             }
             for await result in group {
-                wkUserScripts.append(result.wkUserScript)
+                indexedScripts.append(result)
             }
 
-            return wkUserScripts
+            guard geolocationUserScript != nil else {
+                return indexedScripts.map { $0.1.wkUserScript }
+            }
+            // Keep concurrent preparation, then restore this small list's installation order:
+            // geolocation policy must precede its page adapter, which registers its frame immediately.
+            return indexedScripts.sorted { $0.0 < $1.0 }.map { $0.1.wkUserScript }
         }
     }
 

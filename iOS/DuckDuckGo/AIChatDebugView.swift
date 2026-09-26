@@ -423,7 +423,7 @@ private struct AIChatUsageWarningsSection: View {
     /// Resets usage dismissals and the normal-browsing attachment disclosure display cap.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
-        store.setDismissal(nil)
+        DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
         UTIAttachmentPrivacyNoticeDisplayStore().reset()

@@ -475,6 +475,13 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "sync_computer_name_unavailable_mac": {
+        "description": "Fired when macOS cannot read the user-assigned computer name and Sync falls back to ProcessInfo.hostName.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "sync_settings_other_device_details_remove_device_tapped_mac": {
         "description": "Fired when the user taps 'Remove Device' on the details screen of another synced device, opening the confirmation dialog.",
         "owners": ["pballart"],

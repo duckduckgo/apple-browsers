@@ -344,8 +344,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     func testLearnMoreLeavingFloatingInputDoesNotReportAbandonment() async throws {
         mockFloatingInputFeature.isAvailable = true
         mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
         await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
         XCTAssertTrue(sut.isFloatingInputPresented)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        let input = try XCTUnwrap(sut.floatingInputViewController?.children.compactMap { $0 as? UnifiedToggleInputViewController }.first)
+        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "retained.jpg"))
+        input.addAttachment(attachment)
+        host.setText("Keep this draft")
         firedPixelEvents = []
         let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"))
 
@@ -354,6 +360,13 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isFloatingInputPresented)
         XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
         XCTAssertFalse(firedPixelEvents.contains(.aiChatContextualFloatingInputDismissedWithoutSubmission))
+        XCTAssertEqual(host.attachmentCount, 1)
+
+        await sut.presentFloatingInput(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.persistentUTIHost === host)
+        XCTAssertEqual(input.currentAttachments.map(\.id), [attachment.id])
+        XCTAssertEqual(input.text, "Keep this draft")
     }
 
     @MainActor

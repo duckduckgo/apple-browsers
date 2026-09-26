@@ -81,7 +81,7 @@ struct FeatureFlagsMenuView: View {
                     Text(verbatim: "Default: \(viewModel.defaultValue(for: flag))")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    if flag == .promoPresentationCoordination {
+                    if flag == .promoPresentationCoordination || flag == .sitePermissions {
                         Text(verbatim: "Relaunch required for changes to take effect.")
                             .font(.caption)
                             .foregroundColor(.gray)

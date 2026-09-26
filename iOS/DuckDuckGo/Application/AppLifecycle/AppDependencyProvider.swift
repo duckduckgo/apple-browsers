@@ -1,0 +1,379 @@
+//
+//  AppDependencyProvider.swift
+//  DuckDuckGo
+//
+//  Copyright © 2018 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Core
+import BrowserServicesKit
+import DDGSync
+import Bookmarks
+import Subscription
+import Common
+import FoundationExtensions
+import VPN
+import DataBrokerProtectionCore
+import DataBrokerProtection_iOS
+import RemoteMessaging
+import PageRefreshMonitor
+import PixelKit
+import WideEvent
+import PixelExperimentKit
+import PrivacyConfig
+import Networking
+import Configuration
+import Network
+import FeatureFlags_iOS
+import Persistence
+
+protocol DependencyProvider {
+    var appSessionInfo: AppSessionInfo? { get }
+
+    var appSettings: AppSettings { get }
+    var variantManager: VariantManager { get }
+    var internalUserDecider: InternalUserDecider { get }
+    var featureFlagger: FeatureFlagger { get }
+    var isSitePermissionsEnabled: Bool { get }
+    var configurationURLProvider: CustomConfigurationURLProviding { get }
+    var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
+    var storageCache: StorageCache { get }
+    var downloadManager: DownloadManager { get }
+    var autofillLoginSession: AutofillLoginSession { get }
+    var autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager { get }
+    var configurationManager: ConfigurationManager { get }
+    var configurationStore: ConfigurationStore { get }
+    var pageRefreshMonitor: PageRefreshMonitor { get }
+    var vpnFeatureVisibility: DefaultNetworkProtectionVisibility { get }
+    var networkProtectionTunnelController: NetworkProtectionTunnelController { get }
+    var connectionObserver: ConnectionStatusObserver { get }
+    var serverInfoObserver: ConnectionServerInfoObserver { get }
+    var connectionErrorObserver: ConnectionErrorObserver { get }
+    var vpnSettings: VPNSettings { get }
+    var wideEvent: WideEventManaging { get }
+    var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
+    var subscriptionManager: any SubscriptionManager { get }
+    var tokenHandlerProvider: any SubscriptionTokenHandling { get }
+    var subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling { get }
+    var dbpSettings: DataBrokerProtectionSettings { get }
+    var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging { get }
+    var internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProvider { get }
+    var internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider { get }
+    var subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging { get }
+}
+
+/// Captures launch time and version change once per app session.
+struct AppSessionInfo {
+    enum VersionChange {
+        case updated
+        case downgraded
+    }
+
+    let appVersionChange: VersionChange?
+    let launchDate: Date
+
+    private enum Key: String {
+        case previousVersion = "app-session.previous-app-version"
+    }
+
+    init(keyValueStore: any KeyValueStoring, version: String, launchDate: Date = Date()) {
+        let previousVersion = try? keyValueStore.object(forKey: Key.previousVersion.rawValue) as? String
+        let change: VersionChange?
+        if let previousVersion, !previousVersion.isEmpty, !version.isEmpty {
+            switch version.compare(previousVersion, options: .numeric) {
+            case .orderedDescending: change = .updated
+            case .orderedAscending: change = .downgraded
+            case .orderedSame: change = nil
+            }
+        } else {
+            change = nil
+        }
+        if !version.isEmpty {
+            try? keyValueStore.set(version, forKey: Key.previousVersion.rawValue)
+        }
+        self.appVersionChange = change
+        self.launchDate = launchDate
+    }
+}
+
+extension DependencyProvider {
+    var appSessionInfo: AppSessionInfo? { nil }
+}
+
+/// Provides dependencies for objects that are not directly instantiated
+/// through `init` call (e.g. ViewControllers created from Storyboards).
+final class AppDependencyProvider: DependencyProvider {
+    let appSessionInfo: AppSessionInfo? = AppSessionInfo(
+        keyValueStore: UserDefaults.standard, version: AppVersion().versionAndBuildNumber)
+
+    static var shared: DependencyProvider = AppDependencyProvider()
+    let appSettings: AppSettings = AppUserDefaults()
+    let variantManager: VariantManager = DefaultVariantManager()
+    let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
+    let featureFlagger: FeatureFlagger
+    let isSitePermissionsEnabled: Bool
+    let configurationURLProvider: CustomConfigurationURLProviding
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+
+    let storageCache = StorageCache()
+    let downloadManager = DownloadManager()
+    let autofillLoginSession = AutofillLoginSession()
+    lazy var autofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager()
+
+    let configurationManager: ConfigurationManager
+    let configurationStore = ConfigurationStore()
+
+    let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
+
+    // Subscription
+    var subscriptionManager: any SubscriptionManager
+    var tokenHandlerProvider: any SubscriptionTokenHandling
+    let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
+    let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
+    static let deadTokenRecoverer = DeadTokenRecoverer()
+
+    let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
+    let networkProtectionTunnelController: NetworkProtectionTunnelController
+
+    let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+
+    let connectionObserver: ConnectionStatusObserver = ConnectionStatusObserverThroughSession()
+    let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
+    lazy var connectionErrorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession()
+    let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
+    let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+    let wideEvent: WideEventManaging
+    let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
+    let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
+    lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
+
+    private init() {
+
+        // Configuring PixelKit
+        let isTablet = UIDevice.current.userInterfaceIdiom == .pad
+        let source = isTablet ? PixelKit.Source.iPadOS : PixelKit.Source.iOS
+        let pixelKitDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
+        PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
+                       appVersion: AppVersion.shared.versionNumber,
+                       source: source.rawValue,
+                       session: "ios-browser",
+                       defaultHeaders: [:],
+                       defaults: pixelKitDefaults,
+                       parameterProvider: IOSPixelKitParameterProvider()) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
+
+            let url = URL.pixelUrl(forPixelNamed: pixelName)
+            // `PixelKit.Options.userAgent` arrives under this key, and overrides the pixel one.
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: headers[PixelKit.Header.userAgent] ?? PixelUserAgent.default,
+                                                    additionalHeaders: headers)
+            guard let request = APIRequestV2(url: url, method: .get, queryItems: parameters.toQueryItems(), headers: apiHeaders) else {
+                assertionFailure("Invalid Pixel request")
+                onComplete(false, nil)
+                return
+            }
+            Task {
+                do {
+                    _ = try await DefaultAPIService().fetch(request: request)
+                    onComplete(true, nil)
+                } catch {
+                    onComplete(false, error)
+                }
+            }
+        }
+
+        // Carries legacy pixel last-fire dates into PixelKit's throttle store; must run after `setUp`.
+        LegacyPixelStateMigration(
+            destination: pixelKitDefaults,
+            dailyStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.daily),
+            uniqueStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.unique),
+            debounceStore: UserDefaultsLegacyPixelStore(suiteName: LegacyPixelStateMigration.LegacySuiteName.debounce),
+            completionFlagStore: pixelKitDefaults
+        ).run()
+
+        let featureFlagOverrideStore = UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!
+        let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: featureFlagOverrideStore,
+                                                                actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+        )
+        let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
+
+        var featureFlagger: FeatureFlagger
+
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
+            let mockFeatureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+            self.featureFlagger = mockFeatureFlagger
+            featureFlagger = mockFeatureFlagger
+        } else {
+            let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
+                                                              privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+                                                              localOverrides: featureFlaggerOverrides,
+                                                              allowOverrides: { [internalUserDecider, isUITesting=LaunchOptionsHandler().isUITesting] in
+                                                                  internalUserDecider.isInternalUser || isUITesting
+                                                              },
+                                                              experimentManager: experimentManager,
+                                                              for: FeatureFlag.self)
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+
+            // Applied after DefaultFeatureFlagger.init, which clears local overrides for non-internal users.
+            // Writing overrides afterwards keeps them intact for UI test mode where allowOverrides also returns true.
+            LaunchOptionsHandler().applyUITestOverrides(
+                featureFlagOverrideStore: featureFlagOverrideStore,
+                configRolloutStore: .standard
+            )
+            self.featureFlagger = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
+        }
+
+        // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
+        isSitePermissionsEnabled = featureFlagger.isFeatureOn(.sitePermissions)
+
+        // Configure PixelKit Experiments
+        PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
+                                        eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
+
+        self.wideEvent = WideEvent(
+            useMockRequests: {
+#if DEBUG || REVIEW || ALPHA
+                true
+#else
+                false
+#endif
+            }(),
+            featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
+        )
+        configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
+        configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
+
+        // Configure Subscription
+        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+        var tokenHandler: any SubscriptionTokenHandling
+        var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
+
+        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorageV2 = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                                userDefaults: subscriptionUserDefaults) { accessType, error in
+
+            let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                              PixelParameters.subscriptionKeychainError: error.localizedDescription,
+                              PixelParameters.source: KeychainErrorSource.browser.rawValue,
+                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+            PixelKit.fire(Pixel.Event.subscriptionKeychainAccessError,
+                          frequency: .legacyDailyAndCount,
+                          options: .parameters(parameters))
+        }
+
+        // Init V2 classes for migration
+        let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
+        let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
+        let isAuthV2WideEventEnabled = {
+#if DEBUG
+            return true
+#else
+            return authEnvironment == .production
+#endif
+        }
+        let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
+                                                                                    isFeatureEnabled: isAuthV2WideEventEnabled)
+
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
+                                            authService: authService,
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
+        vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+        dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+
+        Logger.subscription.debug("Configuring Subscription")
+
+        var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
+                                                                               baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        apiServiceForSubscription.authorizationRefresherCallback = { _ in
+
+            guard let tokenContainer = try? tokenStorageV2.getTokenContainer() else {
+                throw OAuthClientError.internalError("Missing refresh token")
+            }
+
+            if tokenContainer.decodedAccessToken.isExpired() {
+                Logger.OAuth.debug("Refreshing tokens")
+                let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
+                return tokens.accessToken
+            } else {
+                Logger.general.debug("Trying to refresh valid token, using the old one")
+                return tokenContainer.accessToken
+            }
+        }
+
+        let internalUserDecider = featureFlagger.internalUserDecider
+        let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                        subscriptionEnvironment: subscriptionEnvironment,
+                                                                        subscriptionUserDefaults: subscriptionUserDefaults)
+
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: pixelHandler)
+        let monthlyFreeTrialDecider = IOSMonthlyFreeTrialDecider(featureFlagger: featureFlagger)
+        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                               subscriptionFeatureFlagger: subscriptionFeatureFlagger,
+                                                               pendingTransactionHandler: pendingTransactionHandler,
+                                                               monthlyFreeTrialDecider: monthlyFreeTrialDecider)
+        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                               oAuthClient: authClient,
+                                                               userDefaults: subscriptionUserDefaults,
+                                                               subscriptionEndpointService: subscriptionEndpointService,
+                                                               subscriptionEnvironment: subscriptionEnvironment,
+                                                               pixelHandler: pixelHandler,
+                                                               isInternalUserEnabled: {
+            ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
+                                                               },
+                                                               wideEvent: wideEvent,
+                                                               isAuthV2WideEventEnabled: isAuthV2WideEventEnabled,
+                                                               authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
+        self.tokenHandlerProvider = subscriptionManager
+        let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                     storePurchaseManager: storePurchaseManager,
+                                                     pendingTransactionHandler: pendingTransactionHandler)
+        subscriptionManager.tokenRecoveryHandler = {
+            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+        }
+
+        self.subscriptionManager = subscriptionManager
+        tokenHandler = subscriptionManager
+        authenticationStateProvider = subscriptionManager
+        self.subscriptionExpirationReminderScheduler = DefaultSubscriptionExpirationReminderScheduler(
+            subscriptionManager: subscriptionManager,
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }
+        )
+        self.freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
+            wideEvent: wideEvent,
+            pixelHandler: FreeTrialPixelHandler(),
+            subscriptionFetcher: { try? await subscriptionManager.getSubscription() },
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.freeTrialConversionWideEvent) }
+        )
+        self.freeTrialConversionService.startObservingSubscriptionChanges()
+
+        vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
+        networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
+                                                                              featureFlagger: featureFlagger,
+                                                                              settings: vpnSettings,
+                                                                              wideEvent: wideEvent,
+                                                                              freeTrialConversionService: freeTrialConversionService
+        )
+
+    }
+
+}

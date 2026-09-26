@@ -600,6 +600,11 @@ private extension MainViewController {
     }
 
     func subscribeToSystemEvents() {
+        unifiedToggleInputCoordinator?.onSubscriptionUpsellAvailabilityChanged = { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.aiChatTabChatHeaderView?.setAllowsSubscriptionUpsell(coordinator.modelStore.shouldShowHeaderUpsell)
+        }
+
         NotificationCenter.default.publisher(for: .speechRecognizerDidChangeAvailability)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -939,7 +944,10 @@ private extension MainViewController {
         Task { @MainActor [weak self] in
             let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
             self?.isPaidAIChatEnabledForSwipe = isActive
-            self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.aiChatTabChatHeaderView?.configure(
+                isSubscriptionActive: isActive,
+                allowsSubscriptionUpsell: coordinator.modelStore.shouldShowHeaderUpsell)
         }
     }
 }
@@ -964,6 +972,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: isOnAITab)
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -1035,6 +1044,13 @@ extension MainViewController {
             contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         contentVC.didMove(toParent: self)
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: currentTab?.isAITab == true)
+    }
+
+    /// Selects presentation only. The content controller and its view stay installed for the session.
+    func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
+        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
+            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
     }
 
     func installFloatingReturnKeyViewController() {
@@ -1532,11 +1548,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
+        guard let policy = unifiedToggleInputCoordinator?.subscriptionUpsellPolicy, policy.isPurchaseEligible else { return }
         if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
             PixelKit.fire(Pixel.Event.unifiedToggleInputChatHeaderUpgradeTapped,
                           options: .parameters([AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue]))
         }
-        DuckAISubscriptionUpsellPresenter().presentPurchaseFlow(origin: .duckAIFreeLabel)
+        DuckAISubscriptionUpsellPresenter(policy: policy).presentPurchaseFlow(origin: .duckAIFreeLabel)
     }
 
     /// Close the chat tab. Selection follows the tab-switcher rule; chat is recoverable via Duck.ai → Recent chats.

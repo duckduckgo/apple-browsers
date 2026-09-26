@@ -322,6 +322,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private let usageLimitsStore: DuckAiUsageLimitsStore?
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
+    var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
+
+    var subscriptionUpsellPolicy: DuckAISubscriptionUpsellPolicy { modelStore.upsellPolicy }
     private var footerController: UTIFooterController?
     private let tabProvider: () -> Tab?
     private var attachmentPrivacyNoticeSource: UTIFooterAttachmentPrivacyNoticeSource?
@@ -358,10 +361,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-        subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
+        subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         tabProvider: @escaping () -> Tab? = { nil }
     ) {
+        let upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
         self.host = host
@@ -399,7 +403,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
-        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpUsageWarnings`.
         self.usageLimitsStore = usageLimitsStore
@@ -487,7 +491,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
-            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled,
+            subscriptionUpsellPresenter: self.subscriptionUpsellPresenter
         )
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
@@ -1008,7 +1013,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                               attachmentPrivacyNotice: attachmentPrivacyNoticeSource,
                                               measurement: makeUsageWarningMeasurement(),
                                               highUsageMeasurement: makeUsageWarningMeasurement(),
-                                              createImagePixelFiring: createImagePixelFiring)
+                                              createImagePixelFiring: createImagePixelFiring,
+                                              allowsSubscriptionUpsell: { [weak self] in
+                                                  self?.modelStore.allowsSubscriptionUpsell ?? false
+                                              })
         footerController?.onAttachmentPrivacyEvent = { [weak self] action, kind in
             self?.pixelReporter.reportAttachmentPrivacy(action, kind: kind)
         }
@@ -2243,6 +2251,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Tools
 
     func handleModelsUpdated() {
+        onSubscriptionUpsellAvailabilityChanged?()
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         // The model-switch CTA needs the fetched list, so the card is resolved again once it lands.

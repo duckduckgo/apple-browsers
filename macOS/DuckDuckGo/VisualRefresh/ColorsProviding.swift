@@ -82,68 +82,12 @@ protocol ColorsProviding {
 
 struct ColorsProvidingFactory {
 
-    static func buildColorsProvider(featureFlagger: FeatureFlagger, palette: ThemeColors) -> ColorsProviding {
-        if featureFlagger.isFeatureOn(.appRebranding) {
-            return CurrentColorsProviding(palette: palette)
-        }
-
-        return LegacyColorsProviding(palette: palette)
+    static func buildColorsProvider(palette: ThemeColors) -> ColorsProviding {
+        ColorsProvider(palette: palette)
     }
 }
 
-final class LegacyColorsProviding: ColorsProviding {
-
-    private let palette: ThemeColors
-
-    var navigationBackgroundColor: NSColor { palette.surfacePrimary }
-    var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
-    var textPrimaryColor: NSColor { palette.textPrimary }
-    var textSecondaryColor: NSColor { palette.textSecondary }
-    var textTertiaryColor: NSColor { palette.textTertiary }
-    var accentPrimaryColor: NSColor { palette.accentPrimary }
-    var addressBarOutlineShadow: NSColor { palette.accentAltGlowPrimary }
-    var addressBarShadowColor: NSColor { palette.shadowTertiary }
-    var addressBarSuffixTextColor: NSColor { palette.textSecondary }
-    var addressBarTextFieldColor: NSColor { palette.textPrimary }
-    var activeSwitchToTabBackgroundColor: NSColor { navigationBackgroundColor.blended(with: .addressBarBackground) }
-    var inactiveSwitchToTabBackgroundColor: NSColor { navigationBackgroundColor.blended(with: .inactiveSearchBarBackground) }
-
-    var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
-    var iconsColor: NSColor { palette.iconsPrimary }
-    var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
-    var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
-    var buttonMouseDownPressedColor: NSColor { palette.controlsFillTertiary }
-    var separatorColor: NSColor { palette.surfaceDecorationPrimary }
-    var separatorActiveColor: NSColor { palette.surfaceDecorationSecondary }
-    var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
-    var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
-    var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
-    var bookmarksPanelBackgroundColor: NSColor { palette.surfaceSecondary }
-    var downloadsPanelBackgroundColor: NSColor { palette.surfaceSecondary }
-    var passwordManagerBackgroundColor: NSColor { palette.surfaceSecondary }
-    var passwordManagerLockScreenBackgroundColor: NSColor { palette.surfaceSecondary }
-    var suggestionsTextColor: NSColor { addressBarTextFieldColor }
-    var suggestionsHighlightBackgroundColor: NSColor { palette.accentPrimary }
-    var suggestionsHighlightTextColor: NSColor { palette.accentContentPrimary }
-    var bannerBackgroundColor: NSColor { palette.surfacePrimary }
-    var popoverBackgroundColor: NSColor { palette.surfaceSecondary }
-
-    func addressBarActiveBorderColor(isBurner: Bool) -> NSColor { isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : palette.accentPrimary }
-    func activeAddressBarBackgroundColor(isBurner: Bool) -> NSColor { palette.surfaceTertiary }
-    func inactiveAddressBarBackgroundColor(isBurner: Bool) -> NSColor { palette.surfaceTertiary }
-    func suggestionsBackgroundColor(isBurner: Bool) -> NSColor { palette.surfaceTertiary }
-    func suggestionsSuffixColor(isBurner: Bool) -> NSColor { palette.accentPrimary }
-    func suggestionsHighlightSuffixColor(isBurner: Bool) -> NSColor { palette.accentContentSecondary }
-    func unifiedInputToggleBackground(isBurner: Bool) -> NSColor { palette.controlsRaisedBackdrop }
-    func unifiedInputToggleSelectionBackground(isBurner: Bool) -> NSColor { palette.controlsRaisedFillPrimary }
-    func unifiedInputToggleSelectionBorder(isBurner: Bool) -> NSColor { palette.shadowSecondary }
-
-    init(palette: ThemeColors) {
-        self.palette = palette
-    }
-}
-
-final class CurrentColorsProviding: ColorsProviding {
+final class ColorsProvider: ColorsProviding {
 
     private let palette: ThemeColors
 

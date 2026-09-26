@@ -44,6 +44,8 @@ final class UTIFooterController {
     private let highUsageMeasurement: DuckAiUsageWarningMeasurement
     private let createImagePixelFiring: CreateImagePixelFiring
     private let animator: Animator
+    private let allowsSubscriptionUpsell: () -> Bool
+
     private var isSuppressed = false
     private var isEditing = false
     private var isInputBlocked = false
@@ -66,6 +68,7 @@ final class UTIFooterController {
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          highUsageMeasurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          createImagePixelFiring: CreateImagePixelFiring,
+         allowsSubscriptionUpsell: @escaping () -> Bool = { true },
          animator: Animator? = nil) {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
@@ -75,6 +78,7 @@ final class UTIFooterController {
         self.highUsageMeasurement = highUsageMeasurement
         self.createImagePixelFiring = createImagePixelFiring
         self.animator = animator ?? Self.springAnimator
+        self.allowsSubscriptionUpsell = allowsSubscriptionUpsell
     }
 
     func refresh() {
@@ -199,6 +203,10 @@ final class UTIFooterController {
 
 
     func performPrimaryAction(_ id: UTIFooterItem.ID) {
+        if case .tryForFree = viewModel?.warning?.action, !allowsSubscriptionUpsell() {
+            applyCurrentState()
+            return
+        }
         guard id == .usageWarning || id == .outOfUsage, visibleIDs.contains(id),
               let message = currentMessages.first(where: { $0.id == id })?.message,
               message.primaryAction != nil else { return }
@@ -285,7 +293,7 @@ final class UTIFooterController {
         }
         if let modelSwitchNotice { items.append(.init(id: .modelSwitch, message: mapper.message(for: modelSwitchNotice))) }
         if let warning = viewModel?.warning {
-            let message = mapper.message(for: warning)
+            let message = mapper.message(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell())
             if viewModel?.hasActedOnCurrentNotice != true || message != actedOnMessage {
                 items.append(.init(id: warning.blocksInput ? .outOfUsage : .usageWarning, message: message))
             }

@@ -209,6 +209,7 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
 
     func testLeavingInlinePageInterruptsDismissWithoutRunningItsCompletion() {
         let coordinator = makeCoordinator()
+        XCTAssertFalse(coordinator.isOmnibarDismissInProgress)
         coordinator.unifiedToggleInputContainer = UIView()
         coordinator.setNewTabPageInputPresentation(.editing(usesUnifiedInput: true))
         var interrupted = false
@@ -218,12 +219,31 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
             interruptCleanup: { interrupted = true },
             completion: { completed = true })
         XCTAssertTrue(coordinator.isInlineInputDismissInProgress)
+        XCTAssertTrue(coordinator.isOmnibarDismissInProgress)
         coordinator.setNewTabPageInputPresentation(.browser)
         XCTAssertFalse(coordinator.isInlineInputDismissInProgress)
+        XCTAssertFalse(coordinator.isOmnibarDismissInProgress)
         XCTAssertTrue(interrupted)
         XCTAssertFalse(completed)
         XCTAssertFalse(coordinator.navigationBarCollectionView.isHidden)
         XCTAssertTrue(coordinator.constraints.contentContainerTop.isActive)
+    }
+
+    func testWhenDismissIsReplacedThenOnlyTheCurrentTransitionRemainsInProgress() {
+        let coordinator = makeCoordinator()
+        coordinator.unifiedToggleInputContainer = UIView()
+        var oldCompletionCalled = false
+        coordinator.hideUnifiedToggleInputOmnibar(
+            transition: .inlineInput,
+            completion: { oldCompletionCalled = true })
+        coordinator.hideUnifiedToggleInputOmnibar(transition: .inlineInput)
+
+        XCTAssertTrue(coordinator.isOmnibarDismissInProgress)
+        XCTAssertFalse(oldCompletionCalled)
+
+        coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+        XCTAssertFalse(coordinator.isOmnibarDismissInProgress)
+        XCTAssertFalse(oldCompletionCalled)
     }
 
     private func makeCoordinator(position: AddressBarPosition = .top) -> MainViewCoordinator {

@@ -18,6 +18,7 @@
 
 import Combine
 import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -26,16 +27,22 @@ import XCTest
 final class WebsitePermissionDetailViewModelTests: XCTestCase {
     private var permissionManager: PermissionManagerMock!
     private var featureFlagger: MockFeatureFlagger!
+    private var defaults: WebsitePermissionDefaultsMock!
+    private var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
         permissionManager = PermissionManagerMock()
         featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatNativeVoicePermissionFlow.rawValue: false])
+        defaults = WebsitePermissionDefaultsMock()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
         permissionManager = nil
         featureFlagger = nil
+        defaults = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
@@ -43,7 +50,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         let model = WebsitePermissionDetailViewModel(
             initialState: WebsitePermissionDetailViewState(category: .camera),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
 
         XCTAssertEqual(model.viewState.category, .camera)
@@ -60,7 +68,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
                 featureFlagger: featureFlagger
             ),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
 
         XCTAssertEqual(model.viewState.sites.map(\.domain), ["example.com"])
@@ -239,6 +248,142 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState.sites.map(\.domain), ["duck.ai"])
     }
 
+    // MARK: - Default control
+
+    func testWhenDetailIsCreatedThenStateCarriesTheCategoryDefaultBeforeTheFirstUpdate() {
+        defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+
+        let model = WebsitePermissionDetailViewModel(
+            initialState: WebsitePermissionDetailViewState(category: .camera),
+            permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
+            defaults: defaults
+        )
+
+        XCTAssertEqual(model.viewState.defaultDecision, .deny, "The radio group should not flicker before the first update")
+        XCTAssertEqual(model.viewState.availableDefaultDecisions, [.ask, .deny])
+    }
+
+    func testWhenDefaultsOfferADifferentOptionSetThenItIsUsedAndEnforced() {
+        defaults.availableDecisions = [.ask]
+
+        let sut = makeSUT(category: .camera, entries: [])
+
+        XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.ask])
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty, "A decision outside the offered set should be rejected")
+    }
+
+    func testWhenEveryCategoryButAutoplayIsOpenedThenTheSameTwoDefaultsAreOffered() {
+        for category in WebsitePermissionCategory.allCases where category != .autoplay {
+            let sut = makeSUT(category: category, entries: [])
+            XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.ask, .deny], "\(category) should offer both options")
+        }
+    }
+
+    // MARK: - Autoplay
+
+    func testWhenAutoplayIsOpenedThenItsThreeStatesAreOfferedMostPermissiveFirst() {
+        let sut = makeSUT(category: .autoplay, entries: [])
+
+        XCTAssertEqual(sut.viewState.availableDefaultDecisions, [.allow, .ask, .deny])
+    }
+
+    func testWhenAutoplayDefaultIsSetToAllowThenItIsPersisted() {
+        let sut = makeSUT(category: .autoplay, entries: [])
+
+        sut.send(action: .setDefaultDecision(.allow))
+
+        XCTAssertEqual(defaults.defaultDecision(for: .autoplay), .allow)
+        XCTAssertEqual(sut.viewState.defaultDecision, .allow)
+    }
+
+    func testWhenAutoplayRowIsShownThenItOffersItsThreeStates() {
+        let sut = makeSUT(
+            category: .autoplay,
+            entries: [
+                WebsitePermissionEntry(domain: "youtube.com", permissionType: .autoplayPolicy, decision: .allow, lastModified: nil),
+            ]
+        )
+
+        XCTAssertEqual(sut.viewState.sites.map(\.domain), ["youtube.com"])
+        XCTAssertEqual(sut.viewState.sites.first?.availableDecisions, [.allow, .ask, .deny])
+    }
+
+    func testWhenAutoplayDecisionsAreDisplayedThenTheyUseTheBlockingModeCopy() {
+        XCTAssertEqual(PersistedPermissionDecision.allow.autoplayTitle, UserText.autoplayModeAllowAll)
+        XCTAssertEqual(PersistedPermissionDecision.ask.autoplayTitle, UserText.autoplayModeBlockAudio)
+        XCTAssertEqual(PersistedPermissionDecision.deny.autoplayTitle, UserText.autoplayModeBlockAll)
+        XCTAssertEqual(WebsitePermissionCategory.autoplay.decisionTitle(for: .ask), UserText.autoplayModeBlockAudio)
+        XCTAssertEqual(WebsitePermissionCategory.camera.decisionTitle(for: .ask), UserText.websitePermissionsAskEachTime)
+        XCTAssertEqual(PersistedPermissionDecision.ask.websitePermissionsTitle(for: .autoplayPolicy), UserText.autoplayModeBlockAudio)
+        XCTAssertEqual(PersistedPermissionDecision.ask.websitePermissionsTitle(for: .camera), UserText.websitePermissionsAskEachTime)
+    }
+
+    func testWhenDefaultIsChangedThenItIsPersisted() {
+        let sut = makeSUT(category: .notifications, entries: [])
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertEqual(defaults.defaultDecision(for: .notifications), .deny)
+        XCTAssertEqual(sut.viewState.defaultDecision, .deny)
+    }
+
+    func testWhenDefaultIsSetToItsCurrentValueThenNothingIsWritten() {
+        let sut = makeSUT(category: .camera, entries: [])
+
+        sut.send(action: .setDefaultDecision(.ask))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty)
+    }
+
+    func testWhenAlwaysAllowIsSentAsDefaultThenItIsIgnored() {
+        let sut = makeSUT(category: .camera, entries: [])
+
+        sut.send(action: .setDefaultDecision(.allow))
+
+        XCTAssertTrue(defaults.setDefaultDecisionCalls.isEmpty)
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+    }
+
+    func testWhenTheWriteIsRejectedThenStateKeepsTheStoredValue() {
+        // Mirrors the feature flag being off: the provider ignores writes.
+        let sut = makeSUT(category: .camera, entries: [])
+        defaults.isFeatureEnabled = false
+
+        sut.send(action: .setDefaultDecision(.deny))
+
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+    }
+
+    func testWhenDefaultChangesElsewhereThenStateIsUpdated() {
+        let sut = makeSUT(category: .location, entries: [])
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+
+        waitForDetailStateUpdate(sut) {
+            defaults.setDefaultDecision(.deny, for: .location)
+        }
+
+        XCTAssertEqual(sut.viewState.defaultDecision, .deny)
+    }
+
+    func testWhenADifferentCategoryDefaultChangesThenThisCategoryIsUnaffected() {
+        let sut = makeSUT(category: .camera, entries: [])
+
+        defaults.setDefaultDecision(.deny, for: .microphone)
+
+        XCTAssertEqual(sut.viewState.defaultDecision, .ask)
+    }
+
+    func testWhenAskEachTimeIsDisplayedThenItUsesTheSettingsCopy() {
+        XCTAssertEqual(PersistedPermissionDecision.ask.websitePermissionsTitle, UserText.websitePermissionsAskEachTime)
+        XCTAssertEqual(PersistedPermissionDecision.deny.websitePermissionsTitle, UserText.permissionCenterNeverAllow)
+    }
+
+    // MARK: - Domain grouping
+
     func testWhenExternalAppsShareADomainThenTheyAreGroupedUnderASingleDomainHeader() {
         let sut = makeSUT(
             category: .externalApps,
@@ -307,6 +452,34 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         XCTAssertEqual(sut.viewState.visibleGroups.first?.rows.count, 2)
     }
 
+    // MARK: - Pixels
+
+    func testWhenDetailDecisionChangesAndIsRemovedThenEachFiresItsPixelOnce() throws {
+        let sut = makeSUT(
+            category: .camera,
+            entries: [
+                WebsitePermissionEntry(domain: "example.com", permissionType: .camera, decision: .ask, lastModified: nil),
+            ]
+        )
+        let row = try XCTUnwrap(sut.viewState.sites.first)
+
+        waitForDetailStateUpdate(sut) {
+            sut.send(action: .changeDecision(rowID: row.id, decision: .deny))
+        }
+        sut.send(action: .changeDecision(rowID: row.id, decision: .deny))
+        sut.send(action: .remove(rowID: row.id))
+
+        XCTAssertEqual(firedPixelNames, [
+            "permission_settings_site_changed_camera_to_deny_macos",
+            "permission_settings_removed_camera_macos",
+        ])
+        XCTAssertTrue(pixelFiring.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
+    }
+
+    private var firedPixelNames: [String] {
+        pixelFiring.actualFireCalls.map(\.pixel.name)
+    }
+
     private func makeExternalAppsSUT(searchQuery: String = "") -> WebsitePermissionDetailViewModel {
         let sites = [
             ("example.com", "asanadesktop", "Tâsk Manager"),
@@ -325,7 +498,8 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
         return WebsitePermissionDetailViewModel(
             initialState: .init(category: .externalApps, searchQuery: searchQuery, sites: sites),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults
         )
     }
 
@@ -341,7 +515,9 @@ final class WebsitePermissionDetailViewModelTests: XCTestCase {
                 featureFlagger: featureFlagger
             ),
             permissionManager: permissionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            defaults: defaults,
+            pixelFiring: pixelFiring
         )
         waitForDetailStateUpdate(model) {
             model.send(action: .onAppear)

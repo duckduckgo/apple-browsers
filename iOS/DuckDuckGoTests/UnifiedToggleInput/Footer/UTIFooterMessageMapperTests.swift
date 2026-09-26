@@ -235,6 +235,23 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         }
     }
 
+    func testUnavailablePurchaseOmitsBothUpsellLabelsAndPreservesLimitInformation() {
+        for isTrialEligible in [true, false] {
+            let warning = warning(.freeReached, window: .daily, isDismissible: false,
+                                  action: .tryForFree(isTrialEligible: isTrialEligible))
+            let available = sut.message(for: warning)
+            let unavailable = sut.message(for: warning, allowsSubscriptionUpsell: false)
+
+            XCTAssertNotNil(available.primaryAction)
+            XCTAssertNil(unavailable.primaryAction)
+            XCTAssertEqual(unavailable.title, available.title)
+            XCTAssertEqual(unavailable.subtitle, available.subtitle)
+            XCTAssertEqual(unavailable.icon, available.icon)
+            XCTAssertFalse(unavailable.isDismissible)
+            XCTAssertTrue(warning.blocksInput)
+        }
+    }
+
     // MARK: - Helpers
 
     private func createImageSwitchNotice(previousShortName: String = "Mistral",

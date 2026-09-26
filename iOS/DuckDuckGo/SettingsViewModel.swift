@@ -89,6 +89,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
+    private let pixelFiring: (any PixelKitFiring)?
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     private let freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking
@@ -142,6 +143,17 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    /// Backs the Subscriber Offers entry point. The fallback URL is resolved on each read so it
+    /// follows the current subscription environment.
+    private(set) lazy var partnershipsHubProvider: PartnershipsHubProviding = {
+        let subscriptionManager = self.subscriptionManager
+        return DefaultPartnershipsHubProvider(
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: featureFlagger,
+            fallbackURL: { subscriptionManager.url(for: .partnershipsHub) }
+        )
+    }()
+
     private enum UserDefaultsCacheKey: String, UserDefaultsCacheKeyStore {
         case subscriptionState = "com.duckduckgo.ios.subscription.state"
     }
@@ -175,6 +187,7 @@ final class SettingsViewModel: ObservableObject {
     /// `nil` unless a real `MainViewController` is available; the onboarding flow falls back to `SubscriptionOnboardingDuckAIChatLauncher` when unset.
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    let isSitePermissionsEnabled: Bool
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
     @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
@@ -182,7 +195,7 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
-        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sitePermissions) },
+        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
         callbacks: makeSitePermissionsCallbacks()
     )
 
@@ -1033,6 +1046,7 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          urlOpener: URLOpener = UIApplication.shared,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
@@ -1053,9 +1067,11 @@ final class SettingsViewModel: ObservableObject {
          tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings(),
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
-         adBlockingAvailability: AdBlockingAvailabilityProviding
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled
     ) {
 
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.darkReaderFeatureSettings = darkReaderFeatureSettings
         self.state = SettingsState.defaults
         self.tabSwitcherSettings = tabSwitcherSettings
@@ -1077,6 +1093,7 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
         self.urlOpener = urlOpener
+        self.pixelFiring = pixelFiring
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -1227,7 +1244,7 @@ extension SettingsViewModel {
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            sitePermissionsEnabled: isSitePermissionsEnabled,
             networkProtectionConnected: false,
             subscription: SettingsState.defaults.subscription,
             sync: getSyncState(),
@@ -1277,7 +1294,6 @@ extension SettingsViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                self.state.sitePermissionsEnabled = self.featureFlagger.isFeatureOn(.sitePermissions)
                 // Refresh the UI for every flag flip so the contingency notice
                 // (which reads `adBlockingAvailability.isRemotelyDisabled` live)
                 // re-renders even for users with explicit storage who skip the
@@ -1378,10 +1394,6 @@ extension SettingsViewModel {
 
     @available(iOS 18.2, *)
     private func updateCompleteSetupSectionVisiblity() {
-        guard featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) else {
-            return
-        }
-
         if let didDismissBrowserPrompt = try? keyValueStore.object(forKey: Constants.didDismissSetAsDefaultBrowserKey) as? Bool {
             shouldShowSetAsDefaultBrowser = !didDismissBrowserPrompt
         } else {
@@ -1645,6 +1657,32 @@ extension SettingsViewModel {
 
     func openOtherPlatforms() {
         urlOpener.open(URL.otherDevices)
+    }
+
+    /// Whether the Subscriber Offers entry point is enabled in remote config. The caller must also
+    /// require an active subscription.
+    var isSubscriberOffersEnabled: Bool {
+        partnershipsHubProvider.isEntryPointEnabled
+    }
+
+    var shouldShowSubscriberOffersNewBadge: Bool {
+        partnershipsHubProvider.showsNewBadge
+    }
+
+    func openSubscriberOffers() {
+        // The hub is a regular web page, so it opens in a new browser tab rather than inside
+        // Settings. A quick link keeps that navigation in DuckDuckGo instead of handing the https
+        // URL to the system default browser.
+        let hubURL = partnershipsHubProvider.hubURL
+        guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(hubURL.absoluteString)) else {
+            // Fired below rather than above, so a click the user never gets a page from is not
+            // counted as one that opened the hub.
+            assertionFailure("Could not build a quick link for \(hubURL)")
+            return
+        }
+
+        pixelFiring?.fire(SubscriptionPartnershipsHubPixel.subscriberOffersSettingsClick, frequency: .dailyAndCount)
+        urlOpener.open(quickLinkURL)
     }
 
     func openMoreSearchSettings() {

@@ -79,22 +79,22 @@ struct ThemeStyle: ThemeStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
+    static func buildThemeStyle(themeName: ThemeName) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
+        return buildThemeStyle(name: themeName, palette: palette)
     }
 
-    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger) -> ThemeStyle {
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors) -> ThemeStyle {
         ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
-            addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger),
+            addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(),
             navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
-            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(featureFlagger: featureFlagger, palette: palette),
-            colorsProvider: ColorsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger, palette: palette),
-            iconsProvider: IconsProvidingFactory.buildColorsProvider(featureFlagger: featureFlagger),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
+            colorsProvider: ColorsProvidingFactory.buildColorsProvider(palette: palette),
+            iconsProvider: IconsProvidingFactory.buildIconsProvider(),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,
             tabBarButtonSize: 30,

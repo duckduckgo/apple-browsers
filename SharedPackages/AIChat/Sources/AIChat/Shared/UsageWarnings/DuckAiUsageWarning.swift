@@ -124,7 +124,7 @@ public enum DuckAiUsageAction: Equatable {
     }
 
     /// The model the message is offering, for spotting the user picking it somewhere else.
-    var suggestedModelId: String? {
+    public var suggestedModelId: String? {
         switch self {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion): return suggestion.modelId
         case .tryForFree, .startUsingWeeklyLimit: return nil

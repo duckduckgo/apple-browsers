@@ -268,11 +268,11 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer {
-        let localTokenContainer = try tokenStorage.getTokenContainer()
-
         switch policy {
         case .local:
+            let localTokenContainer = try tokenStorage.getTokenContainer()
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
                 throw OAuthClientError.missingTokenContainer
@@ -281,6 +281,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             return localTokenContainer
 
         case .localValid:
+            let localTokenContainer = try tokenStorage.getTokenContainer()
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
                 throw OAuthClientError.missingTokenContainer
@@ -306,6 +307,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
             let refreshID = UUID().uuidString
             refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID, trigger: trigger))
+
+            let localTokenContainer: TokenContainer?
+            do {
+                localTokenContainer = try tokenStorage.getTokenContainer()
+            } catch {
+                refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
+                throw error
+            }
 
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
@@ -358,6 +367,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             return try await task.value
 
         case .createIfNeeded:
+            // A keychain read failure must surface as an error, not as a missing token that triggers account creation.
+            // Trigger the read here to ensure that the keychain is accessible before proceeding with the creation.
+            _ = try tokenStorage.getTokenContainer()
+
             do {
                 return try await getTokens(policy: .localValid, trigger: .createIfNeeded)
             } catch {

@@ -62,6 +62,13 @@ public protocol KeychainManaging {
     /// - Parameter key: The unique identifier for the keychain item to delete
     /// - Throws: `AccountKeychainAccessError` if deletion fails
     func deleteItem(forKey key: String) throws
+
+    /// Retries any writes that are queued in the writing backlog because the keychain was
+    /// unavailable when they were made. Call this from any lifecycle signal that plausibly means
+    /// the keychain has become available again (e.g. a Network Extension starting up or receiving
+    /// a message from its containing app), since such contexts cannot rely on the OS availability
+    /// notifications `KeychainManager` otherwise depends on.
+    func retryPendingWrites()
 }
 
 /// A thread-safe keychain manager that handles secure storage operations with automatic retry capabilities.
@@ -74,7 +81,7 @@ public final class KeychainManager: KeychainManaging {
 
     // MARK: - Types
 
-    public enum Pixel {
+    public enum Pixel: Equatable {
         case deallocatedWithBacklog
         case dataAddedToTheBacklog
         case dataWroteFromBacklog
@@ -190,6 +197,12 @@ public final class KeychainManager: KeychainManaging {
         }
     }
 
+    public func retryPendingWrites() {
+        accessQueue.async { [weak self] in
+            self?.processWritingBacklog()
+        }
+    }
+
     // MARK: - Private Helpers
 
     private var isKeychainAvailable: Bool {
@@ -204,16 +217,26 @@ public final class KeychainManager: KeychainManaging {
     }
 
     private func addToWritingBacklog(_ data: Data, forKey key: String) {
+        // A key already in the backlog is being re-queued after a failed drain attempt, not added for the first time - only count genuinely new entries.
+        let isNewEntry = writingBacklog[key] == nil
         writingBacklog[key] = data
-        pixelHandler.handle(pixel: .dataAddedToTheBacklog)
+        if isNewEntry {
+            pixelHandler.handle(pixel: .dataAddedToTheBacklog)
+        }
     }
 
     private func removeFromWritingBacklog(forKey key: String) {
         writingBacklog[key] = nil
     }
 
+    /// Whether a store attempt actually landed in the keychain or merely got (re-)queued because the keychain is still unavailable.
+    private enum StoreOutcome {
+        case written
+        case requeued
+    }
+
     @discardableResult
-    private func internalStore(data: Data, forKey key: String) throws -> OSStatus {
+    private func internalStore(data: Data, forKey key: String) throws -> StoreOutcome {
         var query = attributes
         query[kSecAttrService] = key
         query[kSecAttrAccessible] = Constants.keychainAccessibilityLevel
@@ -225,28 +248,30 @@ public final class KeychainManager: KeychainManaging {
         case errSecSuccess:
             removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.log("Successfully added keychain item for \(key, privacy: .public)")
+            return .written
         case errSecDuplicateItem:
             Logger.keychainManager.log("Keychain item exists, updating for \(key, privacy: .public)")
-            try updateData(data, forKey: key)
+            return try updateData(data, forKey: key)
         case errSecNotAvailable,
         errSecInteractionNotAllowed:
             Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription, privacy: .public), adding data to writing queue")
             addToWritingBacklog(data, forKey: key)
+            return .requeued
         default:
             removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription, privacy: .public)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
-        return status
     }
 
     /// Updates existing keychain data for the specified key.
-    /// 
+    ///
     /// - Parameters:
     ///   - data: The new data to store
     ///   - key: The unique identifier for the keychain item
-    /// - Returns: OSStatus indicating success or failure
-    private func updateData(_ data: Data, forKey key: String) throws {
+    /// - Returns: Whether the update actually landed or was queued for retry
+    @discardableResult
+    private func updateData(_ data: Data, forKey key: String) throws -> StoreOutcome {
         var query = attributes
         query[kSecAttrService] = key
 
@@ -261,10 +286,12 @@ public final class KeychainManager: KeychainManaging {
         case errSecSuccess:
             removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.log("Successfully updated keychain item for \(key, privacy: .public)")
+            return .written
         case errSecNotAvailable,
         errSecInteractionNotAllowed:
             Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription, privacy: .public), adding data to writing queue")
             addToWritingBacklog(data, forKey: key)
+            return .requeued
         default:
             removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.error("SecItemUpdate failed with status: \(status.humanReadableDescription, privacy: .public) for field: \(key)")
@@ -324,17 +351,29 @@ public final class KeychainManager: KeychainManaging {
 
         let backlogCopy = writingBacklog
         var processedSuccessfully = 0
+        var stillPending = 0
         var failed = 0
 
         for (key, data) in backlogCopy {
             do {
-                try internalStore(data: data, forKey: key)
-                processedSuccessfully += 1
-                Logger.keychainManager.log("Successfully processed backlog item for key: \(key, privacy: .public)")
+                switch try internalStore(data: data, forKey: key) {
+                case .written:
+                    processedSuccessfully += 1
+                    Logger.keychainManager.log("Successfully processed backlog item for key: \(key, privacy: .public)")
+                case .requeued:
+                    // Still unavailable: internalStore already re-added it to the backlog. Not a
+                    // success (nothing was written) and not a failure (no permanent error) - just
+                    // still waiting, so it must not count toward either pixel.
+                    stillPending += 1
+                }
             } catch {
                 failed += 1
                 Logger.keychainManager.error("Failed to process backlog item for key \(key, privacy: .public): \(error, privacy: .public)")
             }
+        }
+
+        if stillPending > 0 {
+            Logger.keychainManager.log("\(stillPending, privacy: .public) backlog items still unavailable, left queued")
         }
 
         if processedSuccessfully > 0 {

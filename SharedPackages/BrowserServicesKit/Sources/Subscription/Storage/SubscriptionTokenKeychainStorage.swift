@@ -120,6 +120,10 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
         }
     }
 
+    public func retryPendingWrites() {
+        keychainManager.retryPendingWrites()
+    }
+
     private func verifyTokenNotFoundExpectation() {
         if tokenExpected {
             Logger.subscriptionKeychain.fault("Expected token not found")

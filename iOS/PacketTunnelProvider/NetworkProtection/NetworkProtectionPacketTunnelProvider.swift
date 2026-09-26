@@ -42,6 +42,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private var cancellables = Set<AnyCancellable>()
     private let subscriptionManager: (any SubscriptionManager)?
+    private let tokenStorage: (any AuthTokenStoring)?
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
     private let wideEvent: WideEventManaging
@@ -462,6 +463,19 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     }
 
     @MainActor
+    public override func startTunnel(options: [String: NSObject]? = nil) async throws {
+        // Retry to write any backlogged keychain write when the tunnel starts. Note: the main app listens to UIApplication notifications for this, but the VPN process has no suitable API for that.
+        tokenStorage?.retryPendingWrites()
+        try await super.startTunnel(options: options)
+    }
+
+    @MainActor
+    public override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)? = nil) {
+        tokenStorage?.retryPendingWrites()
+        super.handleAppMessage(messageData, completionHandler: completionHandler)
+    }
+
+    @MainActor
     @objc init() {
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
         Self.configurePixelStorage()
@@ -581,6 +595,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         }
         tokenHandler = subscriptionManager
         self.subscriptionManager = subscriptionManager
+        self.tokenStorage = tokenStorage
 
         // MARK: -
 

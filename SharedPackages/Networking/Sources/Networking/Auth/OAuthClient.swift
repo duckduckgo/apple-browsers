@@ -75,6 +75,14 @@ public enum OAuthClientError: DDGError {
 public protocol AuthTokenStoring {
     func getTokenContainer() throws -> TokenContainer?
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
+
+    /// Retries any writes queued because the backing storage was unavailable when they were made.
+    /// No-op unless the backing storage actually queues writes.
+    func retryPendingWrites()
+}
+
+public extension AuthTokenStoring {
+    func retryPendingWrites() {}
 }
 
 public enum AuthTokensCachePolicy: CustomStringConvertible, Equatable {

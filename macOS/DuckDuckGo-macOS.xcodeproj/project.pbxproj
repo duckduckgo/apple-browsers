@@ -898,7 +898,6 @@
 		3706FCA9293F65D500E42796 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = 3706FA76293F65D500E42796 /* ContentBlocking */; };
 		3706FCAA293F65D500E42796 /* UserScript in Frameworks */ = {isa = PBXBuildFile; productRef = 3706FA78293F65D500E42796 /* UserScript */; };
 		3706FCAF293F65D500E42796 /* PrivacyDashboard in Frameworks */ = {isa = PBXBuildFile; productRef = 3706FA77293F65D500E42796 /* PrivacyDashboard */; };
-		3706FCB4293F65D500E42796 /* CrashReports.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA693E5D2696E5B90007BB78 /* CrashReports.storyboard */; };
 		3706FCB5293F65D500E42796 /* trackerData.json in Resources */ = {isa = PBXBuildFile; fileRef = 9833913027AAA4B500DAF119 /* trackerData.json */; };
 		3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */ = {isa = PBXBuildFile; fileRef = 8511E18325F82B34002F516B /* 01_Fire_really_small.json */; };
 		3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */; };
@@ -1966,8 +1965,6 @@
 		561D29C32BDA745B007B91D0 /* MockSyncPausedStateManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C02BDA7430007B91D0 /* MockSyncPausedStateManaging.swift */; };
 		561D29C62BDA74ED007B91D0 /* MockDDGSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */; };
 		561D29C72BDA74F4007B91D0 /* MockDDGSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */; };
-		561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 561D66692B95C45A008ACC5C /* Suggestion.storyboard */; };
-		561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 561D66692B95C45A008ACC5C /* Suggestion.storyboard */; };
 		562532A02BC069180034D316 /* ZoomPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */; };
 		562532A12BC069190034D316 /* ZoomPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */; };
 		562802C72DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */; };
@@ -2542,7 +2539,6 @@
 		843D73BC2C786E5400E4F9DC /* BookmarkListPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DA2C774CA900716446 /* BookmarkListPopover.swift */; };
 		8440B2B72EF136D200E32722 /* QuitSurveyPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8440B2B62EF136D200E32722 /* QuitSurveyPresenter.swift */; };
 		8440B2B82EF136D200E32722 /* QuitSurveyPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8440B2B62EF136D200E32722 /* QuitSurveyPresenter.swift */; };
-		844178682EE9799B009BDC3A /* TabBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84DD63E32E9788960043A25E /* TabBar.storyboard */; };
 		8443DC6D2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
 		8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
 		8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 844801692E3BA41A00E8A2C1 /* Clocks */; };
@@ -2687,7 +2683,6 @@
 		84DBC84F2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
 		84DD63DA2E9662700043A25E /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F5003282E8D1B73002F98D1 /* FoundationExtensions */; };
 		84DD63DB2E9662700043A25E /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */; };
-		84DD63E52E9788960043A25E /* TabBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84DD63E32E9788960043A25E /* TabBar.storyboard */; };
 		84DDB90A2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */; };
 		84DDB90B2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */; };
 		84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC452E0DB041000874F7 /* XCUIElementSnapshotExtension.swift */; };
@@ -3155,7 +3150,6 @@
 		AA6820E425502F19005ED0D5 /* WebsiteDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6820E325502F19005ED0D5 /* WebsiteDataStore.swift */; };
 		AA6820EB25503D6A005ED0D5 /* Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6820EA25503D6A005ED0D5 /* Fire.swift */; };
 		AA6820F125503DA9005ED0D5 /* FireViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6820F025503DA9005ED0D5 /* FireViewModel.swift */; };
-		AA693E5E2696E5B90007BB78 /* CrashReports.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA693E5D2696E5B90007BB78 /* CrashReports.storyboard */; };
 		AA6AD95B2704B6DB00159F8A /* FirePopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6AD95A2704B6DB00159F8A /* FirePopoverViewController.swift */; };
 		AA6EF9AD25066F42004754E6 /* WindowsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6EF9AC25066F42004754E6 /* WindowsManager.swift */; };
 		AA6EF9B525081B4C004754E6 /* MainMenuActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6EF9B425081B4C004754E6 /* MainMenuActions.swift */; };
@@ -3697,10 +3691,6 @@
 		BB0CB0C12F50956600D9DD93 /* WebViewMemoryUsagePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0CB0BD2F50956600D9DD93 /* WebViewMemoryUsagePixel.swift */; };
 		BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
 		BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
-		BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
-		BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
-		BB0DA4D42DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */; };
-		BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */; };
 		BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
 		BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
 		BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */; };
@@ -3919,8 +3909,6 @@
 		BBDA795D2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */; };
 		BBDAA91A2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
 		BBDAA91B2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
-		BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */; };
-		BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */; };
 		BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDAA9212DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDE001C2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
@@ -5953,7 +5941,6 @@
 		56189B782DF8DBEF004A19CC /* RootViewV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootViewV2Tests.swift; sourceTree = "<group>"; };
 		561D29C02BDA7430007B91D0 /* MockSyncPausedStateManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSyncPausedStateManaging.swift; sourceTree = "<group>"; };
 		561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDDGSyncing.swift; sourceTree = "<group>"; };
-		561D66692B95C45A008ACC5C /* Suggestion.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Suggestion.storyboard; sourceTree = "<group>"; };
 		5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomPopoverViewModelTests.swift; sourceTree = "<group>"; };
 		562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDialogsManager.swift; sourceTree = "<group>"; };
 		5629846E2AC4610100AC20EB /* SyncPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPreferencesTests.swift; sourceTree = "<group>"; };
@@ -6282,7 +6269,6 @@
 		84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureFlagger.swift; sourceTree = "<group>"; };
 		84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehaviorTests.swift; sourceTree = "<group>"; };
 		84DD05892E9793B70043A25E /* TestUtilities */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = TestUtilities; sourceTree = "<group>"; };
-		84DD63E32E9788960043A25E /* TabBar.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = TabBar.storyboard; sourceTree = "<group>"; };
 		84DD892A2E9793B70043A25E /* Punycode.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Punycode.xcodeproj; sourceTree = "<group>"; };
 		84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKVisitedLinkStoreWrapper.swift; sourceTree = "<group>"; };
 		84DDBF682E9793B70043A25E /* OCTest.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OCTest.xcodeproj; sourceTree = "<group>"; };
@@ -6574,7 +6560,6 @@
 		AA6820E325502F19005ED0D5 /* WebsiteDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteDataStore.swift; sourceTree = "<group>"; };
 		AA6820EA25503D6A005ED0D5 /* Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fire.swift; sourceTree = "<group>"; };
 		AA6820F025503DA9005ED0D5 /* FireViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireViewModel.swift; sourceTree = "<group>"; };
-		AA693E5D2696E5B90007BB78 /* CrashReports.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = CrashReports.storyboard; sourceTree = "<group>"; };
 		AA6AD95A2704B6DB00159F8A /* FirePopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirePopoverViewController.swift; sourceTree = "<group>"; };
 		AA6EF9AC25066F42004754E6 /* WindowsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsManager.swift; sourceTree = "<group>"; };
 		AA6EF9B425081B4C004754E6 /* MainMenuActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuActions.swift; sourceTree = "<group>"; };
@@ -6965,8 +6950,6 @@
 		BB0B4EA92E7B5084005A2F57 /* SparkleUpdateMenuItemFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateMenuItemFactoryTests.swift; sourceTree = "<group>"; };
 		BB0CB0BD2F50956600D9DD93 /* WebViewMemoryUsagePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewMemoryUsagePixel.swift; sourceTree = "<group>"; };
 		BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldAddressBarStyleProviding.swift; sourceTree = "<group>"; };
-		BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-green-hover.json"; sourceTree = "<group>"; };
-		BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-gray-dot-hover.json"; sourceTree = "<group>"; };
 		BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
 		BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-new.json"; sourceTree = "<group>"; };
 		BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
@@ -7078,7 +7061,6 @@
 		BBD9C3952E9D72050060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionDebugMenu.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
-		BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-button-mouse-over-legacy.json"; sourceTree = "<group>"; };
 		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
 		BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPopover.swift; sourceTree = "<group>"; };
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
@@ -10564,9 +10546,6 @@
 				BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */,
 				BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */,
 				BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */,
-				BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */,
-				BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */,
-				BBDAA91C2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json */,
 				37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */,
 				37EE55B52D5F197300D53C7C /* dark-shield.json */,
 				37EE55B62D5F197300D53C7C /* dark-shield-dot.json */,
@@ -11823,7 +11802,6 @@
 		AA86491224D831A1001BABEE /* View */ = {
 			isa = PBXGroup;
 			children = (
-				84DD63E32E9788960043A25E /* TabBar.storyboard */,
 				1456D6E024EFCBC300775049 /* TabBarCollectionView.swift */,
 				AA2CB1342587C29500AA6FBE /* TabBarFooter.swift */,
 				BB7BA64B2D11FC150020B47E /* TabBarRemoteMessagePresenting.swift */,
@@ -12111,7 +12089,6 @@
 		AABEE6A124A9F3C90043105B /* View */ = {
 			isa = PBXGroup;
 			children = (
-				561D66692B95C45A008ACC5C /* Suggestion.storyboard */,
 				AABEE6A424AA0A7F0043105B /* SuggestionViewController.swift */,
 				310E83F62ED79B1E006F80D2 /* KeyboardShortcutView.swift */,
 				AABEE6A824AB4B910043105B /* SuggestionTableCellView.swift */,
@@ -12312,7 +12289,6 @@
 		AAD6D8852696DF2A002393B3 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				AA693E5D2696E5B90007BB78 /* CrashReports.storyboard */,
 				AAD6D8862696DF6D002393B3 /* CrashReportPromptViewController.swift */,
 			);
 			path = View;
@@ -15018,14 +14994,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBDAA91E2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
-				561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29952E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
-				3706FCB4293F65D500E42796 /* CrashReports.storyboard in Resources */,
 				BBBED48B2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				3706FCB5293F65D500E42796 /* trackerData.json in Resources */,
-				BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */,
 				BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				854DAAAE2A72B613001E2E24 /* BookmarksBarPromptAssets.xcassets in Resources */,
@@ -15044,7 +15016,6 @@
 				7B307A752DCCE19100A07FB0 /* AppStore.xcstrings in Resources */,
 				5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
-				BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
 				37EE56052D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE56062D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE56072D5F197300D53C7C /* dark-trackers-2.json in Resources */,
@@ -15065,7 +15036,6 @@
 				B5165048300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */,
 				9FBB0C012CB94FC10006B6A6 /* view_highlight.json in Resources */,
-				84DD63E52E9788960043A25E /* TabBar.storyboard in Resources */,
 				371C3DF02FE40ADF003D31C1 /* permissions-inspector.html in Resources */,
 				371C3DF32FE40ADF003D31C1 /* permissions-inspector.js in Resources */,
 				3706FCD0293F65D500E42796 /* BookmarksBarCollectionViewItem.xib in Resources */,
@@ -15276,14 +15246,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-legacy.json in Resources */,
-				561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				BBBD29942E2EB70A005E7664 /* pictogramDaxHeart.json in Resources */,
-				AA693E5E2696E5B90007BB78 /* CrashReports.storyboard in Resources */,
 				BBBED48E2E3B60D2003A9AA6 /* privacypro_devices_legacy.json in Resources */,
 				9833913127AAA4B500DAF119 /* trackerData.json in Resources */,
-				BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				8511E18425F82B34002F516B /* 01_Fire_really_small.json in Resources */,
 				BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				859F30672A72B38500C20372 /* BookmarksBarPromptAssets.xcassets in Resources */,
@@ -15293,7 +15259,6 @@
 				ED314EC2301CC10E00D1A0A0 /* AppIcon-Debug.icon in Resources */,
 				ED314EC9301CC10E00D1A0A0 /* AppIcon-Alpha.icon in Resources */,
 				ED314ECB301CC10E00D1A0A0 /* AppIcon-Review.icon in Resources */,
-				844178682EE9799B009BDC3A /* TabBar.storyboard in Resources */,
 				B5EA14AA2FFFDB8000FC2512 /* Shield-Color-24.json in Resources */,
 				BB1F8E142E3CC5C40043648F /* sparkleloop_wide_legacy.json in Resources */,
 				37EE55D82D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
@@ -15302,7 +15267,6 @@
 				567311272D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
 				567311282D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE55DB2D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
-				BB0DA4D42DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
 				37EE55DC2D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE55DD2D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE55DE2D5F197300D53C7C /* dark-trackers-2.json in Resources */,

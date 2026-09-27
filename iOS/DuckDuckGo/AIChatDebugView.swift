@@ -423,7 +423,7 @@ private struct AIChatUsageWarningsSection: View {
     /// high-usage notice, which is otherwise dismissed once per model for good.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
-        store.setDismissal(nil)
+        DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
         status = "Dismissals cleared."

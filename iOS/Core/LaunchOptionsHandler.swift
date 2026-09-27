@@ -225,7 +225,11 @@ extension LaunchOptionsHandler {
         }
 
 #if DEBUG
-        // Seed only UI-test setup. A separate argument avoids shadowing persisted records when Fire clears them.
+        // UI tests can start the app with saved site permission decisions, for example
+        // "always allow the camera on 127.0.0.1". They pass them in the -sitePermissionsTestSeed
+        // launch argument, and this copies them into the key SitePermissionsStore reads.
+        // Tests can't pass that key directly: a launch argument overrides the stored value for
+        // the whole run, so decisions deleted by the Fire button would still appear to exist.
         if isUITesting,
            let permissions = userDefaults.dictionary(forKey: "sitePermissionsTestSeed") as? [String: [String: String]] {
             userDefaults.set(permissions, forKey: "site-permissions-per-site")

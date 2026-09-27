@@ -295,13 +295,20 @@ final class SitePermissionsSheetViewModelTests: XCTestCase {
         XCTAssertFalse(harness.makeViewModel(snapshot: harness.snapshot()).hasCommittedChanges)
     }
 
+    func testMixedPermissionReminderUsesTheCopyLanguage() {
+        XCTAssertEqual(UserText.PermissionManagement.reminder(permissionTypes: [.camera, .location]),
+                       "DuckDuckGo needs to access your camera and location, if you want to use related features on this site.")
+        XCTAssertEqual(UserText.PermissionManagement.reminder(permissionTypes: [.camera, .location, .microphone]),
+                       "DuckDuckGo needs to access your camera, location, and microphone, if you want to use related features on this site.")
+    }
+
     func testSystemSettingsActionCarriesOnlyBlockedTypes() throws {
         let harness = try Harness()
         var openedTypes = Set<SitePermissionType>()
         let sut = harness.makeViewModel(
             snapshot: harness.snapshot(
-                stored: [.location: .allow],
-                systemStates: [.location: .denied],
+                stored: [.location: .allow, .camera: .allow],
+                systemStates: [.location: .denied, .camera: .authorized],
                 systemBlocked: [.location]
             ),
             onOpenSystemSettings: { openedTypes = $0 }

@@ -89,8 +89,10 @@ public struct SitePermissionsSheetView: View {
             if !viewModel.rows.isEmpty {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     permissionRows
-                    if viewModel.state == .permissionsOnly, viewModel.hasCommittedChanges {
+                    if viewModel.state == .permissionsOnly {
                         reloadCaption
+                            .opacity(viewModel.hasCommittedChanges ? 1 : 0)
+                            .accessibilityHidden(!viewModel.hasCommittedChanges)
                     }
                 }
             }

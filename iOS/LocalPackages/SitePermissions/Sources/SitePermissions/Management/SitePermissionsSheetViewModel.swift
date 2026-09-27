@@ -213,7 +213,6 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
         }
 
         storedPermissions[permissionType] = option.decision
-        ephemeralPermissionTypes.remove(permissionType)
         if option == .alwaysAllow {
             siteAllowedPermissionTypesThisVisit.insert(permissionType)
         } else {
@@ -259,12 +258,10 @@ public final class SitePermissionsSheetViewModel: ObservableObject {
             .union(siteAllowedPermissionTypesThisVisit)
             .union(requestedPermissionTypesThisVisit)
             .union(activeCaptureTypes)
-            .intersection(SitePermissionsManagementSnapshot.managedPermissionTypes)
     }
 
     private func rebuild() {
-        rows = SitePermissionsManagementSnapshot.managedPermissionTypes
-            .filter(relevantPermissionTypes.contains)
+        rows = relevantPermissionTypes
             .sorted { $0.managementOrder < $1.managementOrder }
             .map(makeRow)
 

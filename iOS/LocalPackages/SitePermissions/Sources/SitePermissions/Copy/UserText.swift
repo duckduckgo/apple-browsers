@@ -255,7 +255,9 @@ enum UserText {
                     }
                 }
             guard !names.isEmpty else { return nil }
-            let list = ListFormatter.localizedString(byJoining: names)
+            let formatter = ListFormatter()
+            formatter.locale = Locale(identifier: Bundle.module.preferredLocalizations.first ?? "en")
+            let list = formatter.string(from: names) ?? names.joined(separator: ", ")
             return String(format: format, list)
         }
     }

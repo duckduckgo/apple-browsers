@@ -1855,13 +1855,13 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let combinedDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
 
             XCTAssertEqual(combinedDecision, .deny)
-            XCTAssertEqual(promptCount, 2)
             XCTAssertEqual(webView.requestedCameraCaptureStates, [.none])
             // Revoking the camera also discards its outstanding Allow Once approval, so WebKit can no longer use it.
             var nativeDecision: WKPermissionDecision?
             requestPermission(on: sut, originHost: site.host, captureType: .camera,
                               decisionHandler: { nativeDecision = $0 })
             XCTAssertEqual(nativeDecision, .deny)
+            XCTAssertEqual(promptCount, 2)
             XCTAssertEqual(revocations.map(\.site), fireTab ? [] : [site])
             XCTAssertEqual(revocations.map(\.permissionTypes), fireTab ? [] : [[.camera, .microphone]])
             XCTAssertEqual(revocations.map(\.sourceTabID), fireTab ? [] : [sut.tabModel.uid])

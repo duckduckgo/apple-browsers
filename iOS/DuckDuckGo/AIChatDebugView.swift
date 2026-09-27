@@ -547,17 +547,23 @@ private struct AIChatFooterPreviewSection: View {
 
     var body: some View {
         Section {
-            Button("Show ToS preview until next submit") {
+            Button {
                 UTIFooterDebugOverrides.showTermsPreview()
                 status = "Open the real Duck.ai input and attach a file to see both cards."
+            } label: {
+                Text(verbatim: "Show ToS preview until next submit")
             }
-            Button("Clear ToS preview") {
+            Button {
                 UTIFooterDebugOverrides.clearTermsPreview()
                 status = "ToS preview cleared."
+            } label: {
+                Text(verbatim: "Clear ToS preview")
             }
-            Button("Reset attachment disclosure display count") {
+            Button {
                 UTIAttachmentPrivacyNoticeDisplayStore().reset()
                 status = "Normal browsing count reset. Open a new Fire Tab to test a fresh Fire count."
+            } label: {
+                Text(verbatim: "Reset attachment disclosure display count")
             }
             if !status.isEmpty { Text(verbatim: status) }
         } header: {

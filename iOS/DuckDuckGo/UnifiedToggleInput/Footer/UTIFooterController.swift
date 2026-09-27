@@ -159,9 +159,6 @@ final class UTIFooterController {
         let next = Set(ids).intersection(currentMessages.map(\.id))
         let entered = next.subtracting(visibleIDs)
         visibleIDs = next
-        if !next.contains(.attachmentPrivacy) {
-            attachmentPrivacyNotice?.endDisplay()
-        }
         if entered.contains(.attachmentPrivacy), attachmentPrivacyNotice?.recordDisplay() == true {
             if let kind = attachmentPrivacyNotice?.kind { onAttachmentPrivacyEvent?(.shown, kind) }
         }
@@ -263,7 +260,7 @@ final class UTIFooterController {
         guard messages != currentMessages else { return }
         currentMessages = messages
         visibleIDs.formIntersection(messages.map(\.id))
-        if !visibleIDs.contains(.attachmentPrivacy) {
+        if !messages.contains(where: { $0.id == .attachmentPrivacy }) {
             attachmentPrivacyNotice?.endDisplay()
         }
         animator { [weak self] in self?.presenter?.applyFooterMessages(messages) }

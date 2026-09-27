@@ -366,6 +366,11 @@ final class UTIFooterControllerTests: XCTestCase {
 
         sut.footerVisibilityChanged(isVisible: false)
         sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        sut.resetForPoseChange()
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped, .shown])
         XCTAssertEqual(privacyEventKinds, [.image, .file, .file])
     }
@@ -512,12 +517,34 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
     }
 
+    func testTemporaryOcclusionPreservesDisplayButPoseAndModeChangesEndIt() {
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.footerVisibilityChanged(isVisible: false)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        sut.resetForPoseChange()
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 2)
+        sut.setSuppressed(true)
+        sut.setSuppressed(false)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        sut.setEditing(true)
+        sut.setEditing(false)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
     func testThirdAppearanceSurvivesRefreshAndLinkThenStopsAfterRemoval() {
         privacyDisplayStore.displayCount = 2
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        sut.footerVisibilityChanged(isVisible: false)
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
         sut.recordLinkTapped()
@@ -531,12 +558,12 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(privacyDisplayStore.displayCount, 3)
     }
 
-    func testThirdAppearanceDoesNotReturnAfterVisibilityEnds() {
+    func testThirdAppearanceDoesNotReturnAfterPoseReset() {
         privacyDisplayStore.displayCount = 2
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        sut.footerVisibilityChanged(isVisible: false)
+        sut.resetForPoseChange()
         sut.refresh()
         XCTAssertTrue(sut.currentMessages.isEmpty)
         XCTAssertEqual(privacyEvents, [.shown])

@@ -606,7 +606,7 @@
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "aichat_unified_input_attachment_privacy_image_learn_more_tapped": {
-        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment was an image when this appearance began.",
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment staged at the time of the tap is an image.",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -620,7 +620,7 @@
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "aichat_unified_input_attachment_privacy_file_learn_more_tapped": {
-        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment was a file when this appearance began.",
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment staged at the time of the tap is a file.",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

@@ -324,7 +324,9 @@ class NavigationProtectionUITests: UITestCase {
         }
 
         func assertResult(_ header: String, equals expectedValue: String, legacyAlternativeHeader: String? = nil) {
-            let foundInGroup = webView.groups.matching(.keyPath(\.value, equalTo: "\(header) \(expectedValue)")).firstMatch.exists
+            let foundInGroup = ([header] + [legacyAlternativeHeader].compactMap { $0 }).contains { candidate in
+                webView.groups.matching(.keyPath(\.value, equalTo: "\(candidate) \(expectedValue)")).firstMatch.exists
+            }
             if foundInGroup { return }
 
             let foundInLegacy = legacyValue(afterHeaderWithPrefix: header)

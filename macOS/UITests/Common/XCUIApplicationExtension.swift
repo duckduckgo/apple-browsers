@@ -152,6 +152,8 @@ extension XCUIApplication {
             terminate()
         } else {
             typeKey("q", modifierFlags: .command)
+            XCTAssertTrue(wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence),
+                          "App should quit on Cmd+Q; disable Warn Before Quitting before calling restart()")
         }
         launch()
     }
@@ -203,7 +205,14 @@ extension XCUIApplication {
 
     /// Pins current tab using the main menu
     func pinCurrentTab() {
-        mainMenuPinTabMenuItem.tap()
+        menuBarItems["Window"].click()
+        mainMenuPinTabMenuItem.clickAfterExistenceTestSucceeds()
+    }
+
+    /// Unpins current tab using the main menu
+    func unpinCurrentTab() {
+        menuBarItems["Window"].click()
+        mainMenuUnpinTabMenuItem.clickAfterExistenceTestSucceeds()
     }
 
     /// Checks if the current tab can be pinned (i.e., is not already pinned)
@@ -235,7 +244,9 @@ extension XCUIApplication {
     /// Enables the "Warn Before Closing Pinned Tabs" setting in General preferences
     func enableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
         openGeneralPreferences()
-        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        let checkbox = warnBeforeClosingPinnedTabsCheckbox
+        scrollIntoViewInPreferences(checkbox)
+        checkbox.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: ensureHittable)
         if closeSettings {
             typeKey("w", modifierFlags: [.command])
         }
@@ -245,11 +256,7 @@ extension XCUIApplication {
     func disableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
         openGeneralPreferences()
         let checkbox = warnBeforeClosingPinnedTabsCheckbox
-        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
-        let scrollDistance = checkbox.frame.maxY - scrollView.frame.maxY + 20
-        if scrollDistance > 0 {
-            scrollView.scroll(byDeltaX: 0, deltaY: -scrollDistance)
-        }
+        scrollIntoViewInPreferences(checkbox)
         checkbox.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: ensureHittable)
         if closeSettings {
             typeKey("w", modifierFlags: [.command])
@@ -652,11 +659,29 @@ extension XCUIApplication {
 
     func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
         if state != .restoreLastSession {
-            let startupWindowTypePicker = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker].popUpButtons.firstMatch
+            let startupTypePicker = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker]
+            let startupWindowTypePicker = startupTypePicker.popUpButtons.firstMatch
             if startupWindowTypePicker.exists {
+                let reopenAllWindowsRadioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+                if reopenAllWindowsRadioButton.isSelected {
+                    // Newer macOS merges the "Open a new" radio button into the window type popup
+                    let openANewRadioButton = startupTypePicker.radioButtons
+                        .matching(NSPredicate(format: "identifier != %@", AccessibilityIdentifiers.reopenAllWindowsFromLastSession))
+                        .firstMatch
+                    let openANewOption = openANewRadioButton.exists ? openANewRadioButton : startupWindowTypePicker
+                    ensureHittable(openANewOption)
+                    // Click the radio circle on the leading edge, not the center, which opens the popup
+                    openANewOption.coordinate(withNormalizedOffset: .zero)
+                        .withOffset(CGVector(dx: 8, dy: openANewOption.frame.height / 2))
+                        .click()
+                    XCTAssertTrue(reopenAllWindowsRadioButton.wait(for: \.isSelected, equals: false, timeout: UITests.Timeouts.elementExistence),
+                                  "\"Open a new\" should be selected instead of \"Reopen all windows from last session\"")
+                }
+
                 startupWindowTypePicker.click()
                 typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
                 typeKey(.enter, modifierFlags: [])
+                XCTAssertFalse(reopenAllWindowsRadioButton.isSelected, "Startup should not reopen all windows from last session")
                 return
             }
         }
@@ -720,6 +745,17 @@ extension XCUIApplication {
     func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.openPopupOnDownloadCompletionCheckbox]
         checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+    }
+
+    /// Scrolls Settings until the element is fully inside the visible area.
+    /// Unlike `ensureHittable`, this also scrolls elements that are hittable but partially clipped at the bottom edge.
+    func scrollIntoViewInPreferences(_ element: XCUIElement) {
+        XCTAssertTrue(element.waitForExistence(timeout: UITests.Timeouts.elementExistence), "\(element) should exist in Preferences")
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
+        let scrollDistance = element.frame.maxY - scrollView.frame.maxY + 20
+        if scrollDistance > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: -scrollDistance)
+        }
     }
 
     func ensureHittable(_ element: XCUIElement) {

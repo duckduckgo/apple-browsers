@@ -19,6 +19,7 @@
 #if os(macOS)
 import AppKit
 import Foundation
+import os
 import Vision
 import WebKit
 
@@ -27,8 +28,8 @@ final class ChallengeOffscreenPanel: NSPanel {
     private var isObservingSystemChanges = false
 
     func presentOffscreen() {
-        moveOffscreen()
         startObservingSystemChanges()
+        guard moveOffscreen() else { return }
         orderFrontRegardless()
     }
 
@@ -39,17 +40,26 @@ final class ChallengeOffscreenPanel: NSPanel {
         close()
     }
 
-    func moveOffscreen() {
+    @discardableResult
+    func moveOffscreen() -> Bool {
+        orderOut(nil)
         let size = frame.size
-        let leftScreenEdge = NSScreen.screens.map(\.frame.minX).min() ?? 0
+        let screens = NSScreen.screens
+        let union = screens.dropFirst().reduce(screens.first?.frame ?? .zero) { $0.union($1.frame) }
         let horizontalGap: CGFloat = 100
         setFrameOrigin(NSPoint(
-            x: leftScreenEdge - size.width - horizontalGap,
+            x: union.minX - size.width - horizontalGap,
             y: 120))
+        guard !NSScreen.screens.contains(where: { $0.frame.intersects(frame) }) else {
+            Logger.action.error("Challenge: panel frame intersects a screen; leaving it hidden")
+            return false
+        }
+        return true
     }
 
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
-        frameRect
+        let intersectsAScreen = NSScreen.screens.contains { $0.frame.intersects(frameRect) }
+        return intersectsAScreen ? super.constrainFrameRect(frameRect, to: screen) : frameRect
     }
 
     private func startObservingSystemChanges() {
@@ -83,7 +93,8 @@ final class ChallengeOffscreenPanel: NSPanel {
     }
 
     @objc private func screenParametersDidChange() {
-        moveOffscreen()
+        guard moveOffscreen() else { return }
+        orderFrontRegardless()
     }
 
     @objc private func workspaceWillSleep() {
@@ -91,7 +102,7 @@ final class ChallengeOffscreenPanel: NSPanel {
     }
 
     @objc private func workspaceDidWake() {
-        moveOffscreen()
+        guard moveOffscreen() else { return }
         orderFrontRegardless()
     }
 }

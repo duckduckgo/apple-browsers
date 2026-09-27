@@ -57,7 +57,6 @@ final class UTIFooterController {
     private var applicableHighUsageModelID: String?
     private var applicableWarning: DuckAiUsageWarning?
     private var isDismissing = false
-    private var currentPrivacyKind: UTIAttachmentPrivacyKind?
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
 
@@ -99,7 +98,6 @@ final class UTIFooterController {
         applicableHighUsageModelID = nil
         applicableWarning = nil
         visibleIDs = []
-        currentPrivacyKind = nil
         updateInputBlock()
         presenter?.clearPendingFooterMessage()
     }
@@ -162,12 +160,10 @@ final class UTIFooterController {
         let entered = next.subtracting(visibleIDs)
         visibleIDs = next
         if !next.contains(.attachmentPrivacy) {
-            currentPrivacyKind = nil
             attachmentPrivacyNotice?.endDisplay()
         }
         if entered.contains(.attachmentPrivacy), attachmentPrivacyNotice?.recordDisplay() == true {
-            currentPrivacyKind = attachmentPrivacyNotice?.kind
-            if let currentPrivacyKind { onAttachmentPrivacyEvent?(.shown, currentPrivacyKind) }
+            if let kind = attachmentPrivacyNotice?.kind { onAttachmentPrivacyEvent?(.shown, kind) }
         }
         if !next.isDisjoint(with: [.usageWarning, .outOfUsage]), let warning = viewModel?.warning {
             measurement.cardBecameVisible(DuckAiUsageWarningExposure(warning: warning))
@@ -179,8 +175,8 @@ final class UTIFooterController {
     }
 
     func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
-        guard id == .attachmentPrivacy, visibleIDs.contains(id), let currentPrivacyKind else { return }
-        onAttachmentPrivacyEvent?(.learnMoreTapped, currentPrivacyKind)
+        guard id == .attachmentPrivacy, visibleIDs.contains(id), let kind = attachmentPrivacyNotice?.kind else { return }
+        onAttachmentPrivacyEvent?(.learnMoreTapped, kind)
     }
 
     func recordPromptSubmitted() {
@@ -268,7 +264,6 @@ final class UTIFooterController {
         currentMessages = messages
         visibleIDs.formIntersection(messages.map(\.id))
         if !visibleIDs.contains(.attachmentPrivacy) {
-            currentPrivacyKind = nil
             attachmentPrivacyNotice?.endDisplay()
         }
         animator { [weak self] in self?.presenter?.applyFooterMessages(messages) }

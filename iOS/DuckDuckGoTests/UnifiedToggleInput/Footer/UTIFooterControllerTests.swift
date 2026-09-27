@@ -352,7 +352,7 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
     }
 
-    func testPrivacyShownOncePerAppearanceAndNotPerAttachmentChange() {
+    func testPrivacyShownOncePerAppearanceAndLinkUsesCurrentAttachmentKind() {
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
@@ -362,12 +362,12 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.footerVisibilityChanged(isVisible: true)
         sut.recordLinkTapped()
         XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
-        XCTAssertEqual(privacyEventKinds, [.image, .image])
+        XCTAssertEqual(privacyEventKinds, [.image, .file])
 
         sut.footerVisibilityChanged(isVisible: false)
         sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped, .shown])
-        XCTAssertEqual(privacyEventKinds, [.image, .image, .file])
+        XCTAssertEqual(privacyEventKinds, [.image, .file, .file])
     }
 
     func testPrivacyFlagOffDoesNotResolveOrReport() {

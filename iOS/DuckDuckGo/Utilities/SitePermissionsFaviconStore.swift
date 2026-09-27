@@ -29,7 +29,7 @@ import UIKit
 final class SitePermissionsFaviconStore {
     private let store: SitePermissionsStore
     private let cache: ImageCache
-    private let isEnabled: () -> Bool
+    private let isEnabled: Bool
     private let cachedFavicon: @MainActor (String) -> UIImage?
     private var storedSites = Set<SitePermissionKey>()
     private var viewModels = [SitePermissionKey: FaviconViewModel]()
@@ -37,7 +37,7 @@ final class SitePermissionsFaviconStore {
 
     init(store: SitePermissionsStore,
          cache: ImageCache = Favicons.Constants.sitePermissionsCache,
-         isEnabled: @escaping () -> Bool,
+         isEnabled: Bool,
          cachedFavicon: @escaping @MainActor (String) -> UIImage? = SitePermissionsFaviconStore.cachedBrowsingFavicon) {
         self.store = store
         self.cache = cache
@@ -51,7 +51,7 @@ final class SitePermissionsFaviconStore {
     func viewModel(for site: SitePermissionKey) -> FaviconViewModel {
         if let viewModel = viewModels[site] { return viewModel }
         let viewModel = FaviconViewModel(domain: site.host)
-        if isEnabled(), store.storedSites.contains(site), let image = retainedImage(for: site) {
+        if isEnabled, storedSites.contains(site), let image = retainedImage(for: site) {
             viewModel.image = image
         }
         viewModels[site] = viewModel
@@ -60,8 +60,23 @@ final class SitePermissionsFaviconStore {
 
     /// Picks up a favicon that reached the browsing caches after the row was created.
     func loadFavicon(for site: SitePermissionKey) {
-        guard isEnabled(), store.storedSites.contains(site), let image = retainedImage(for: site) else { return }
+        guard isEnabled, storedSites.contains(site), let image = retainedImage(for: site) else { return }
         viewModel(for: site).image = image
+    }
+
+    func retainedImages(for sites: Set<SitePermissionKey>) -> [SitePermissionKey: UIImage] {
+        guard isEnabled else { return [:] }
+        return Dictionary(uniqueKeysWithValues: sites.intersection(storedSites).compactMap { site in
+            storedImage(for: site).map { (site, $0) }
+        })
+    }
+
+    func restoreImages(_ images: [SitePermissionKey: UIImage]) {
+        guard isEnabled else { return }
+        for (site, image) in images where storedSites.contains(site) {
+            retain(image, for: site)
+            viewModels[site]?.image = image
+        }
     }
 
     private func refresh() {
@@ -70,9 +85,9 @@ final class SitePermissionsFaviconStore {
             viewModels[site] = nil
             cache.removeImage(forKey: cacheKey(for: site))
         }
-        if isEnabled() {
+        if isEnabled {
             for site in sites.subtracting(storedSites) {
-                // Undo can re-add a site before its queued disk removal runs; storing again keeps the image.
+                // New records pick up an icon from the retained or browsing caches when one is still available.
                 if let image = storedImage(for: site) ?? browsingImage(for: site) {
                     retain(image, for: site)
                 }
@@ -115,7 +130,7 @@ final class SitePermissionsFaviconStore {
         for key in cachedKeys where sitesByKey[key] == nil {
             cache.removeImage(forKey: key)
         }
-        guard isEnabled() else { return }
+        guard isEnabled else { return }
         for (key, site) in sitesByKey where !cachedKeys.contains(key) {
             if let image = browsingImage(for: site) {
                 retain(image, for: site)

@@ -34,7 +34,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let cache = try makeCache()
         let image = makeImage(.red)
         var requestedHosts = [String]()
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { host in
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: true, cachedFavicon: { host in
             requestedHosts.append(host)
             return host == "www.cached.example" ? image : nil
         })
@@ -52,7 +52,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let store = makeStore(sites: [site])
         let cache = try makeCache()
         var browsingImage: UIImage?
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in browsingImage })
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: true, cachedFavicon: { _ in browsingImage })
         let row = sut.viewModel(for: site)
         let placeholder = row.image
         sut.loadFavicon(for: site)
@@ -68,30 +68,62 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         XCTAssertNotNil(retainedImage)
     }
 
-    func testWhenUndoReadsImageBeforeQueuedDeletionThenRestoresDiskCache() async throws {
-        let site = try makeSite("queued-undo.example")
+    func testWhenUndoRestoresAfterDiskDeletionThenRetainsCapturedImage() async throws {
+        let site = try makeSite("deleted-undo.example")
         let store = makeStore(sites: [site])
         let cache = try makeCache()
         let imageData = try XCTUnwrap(makeImage(.red).pngData())
         try cache.diskStorage.store(value: imageData, forKey: key(for: site), expiration: .never)
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in nil })
-        let queueBlocked = expectation(description: "Cache IO queue blocked")
-        let resumeIO = DispatchSemaphore(value: 0)
-        // The untouched callback runs on Kingfisher's serial disk queue.
-        cache.retrieveImageInDiskCache(forKey: key(for: site), callbackQueue: .untouch) { _ in
-            queueBlocked.fulfill()
-            XCTAssertEqual(resumeIO.wait(timeout: .now() + 5), .success)
-        }
-        await fulfillment(of: [queueBlocked], timeout: 2)
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: true, cachedFavicon: { _ in nil })
+        let images = sut.retainedImages(for: [site])
+        XCTAssertNotNil(images[site])
 
         let snapshot = store.removePermissions(for: site)
+        let deletedImage = try await diskImage(for: site, in: cache)
+        XCTAssertNil(deletedImage)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: cache.cachePath(forKey: key(for: site))))
+        sut.restoreImages(images)
         XCTAssertNil(cache.retrieveImageInMemoryCache(forKey: key(for: site)))
+
         store.restore(snapshot)
-        resumeIO.signal()
+        sut.restoreImages(images)
 
         let retainedImage = try await diskImage(for: site, in: cache)
-        XCTAssertNotNil(retainedImage)
-        sut.loadFavicon(for: site)
+        XCTAssertEqual(retainedImage?.pngData(), imageData)
+    }
+
+    func testWhenSettingsUndoFollowsDiskDeletionThenRestoresImagesForBothRemovalActions() async throws {
+        for removeAll in [false, true] {
+            let site = try makeSite("settings-undo.example")
+            let store = makeStore(sites: [site])
+            let cache = try makeCache()
+            let imageData = try XCTUnwrap(makeImage(.red).pngData())
+            try cache.diskStorage.store(value: imageData, forKey: key(for: site), expiration: .never)
+            let favicons = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: true, cachedFavicon: { _ in nil })
+            var undo: (() -> Void)?
+            var viewModel: SettingsSitePermissionsViewModel? = SettingsSitePermissionsViewModel(
+                store: store,
+                isEnabled: { true },
+                favicons: favicons,
+                openSystemSettings: {},
+                presentUndoToast: { _, action in undo = action },
+                callbacks: .init())
+
+            if removeAll {
+                viewModel?.removeAllSitePermissions()
+            } else {
+                viewModel?.removePermissions(for: site)
+            }
+            viewModel = nil
+            let deletedImage = try await diskImage(for: site, in: cache)
+            XCTAssertNil(deletedImage)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: cache.cachePath(forKey: key(for: site))))
+
+            try XCTUnwrap(undo)()
+
+            let restoredImage = try await diskImage(for: site, in: cache)
+            XCTAssertEqual(restoredImage?.pngData(), imageData)
+        }
     }
 
     func testWhenFeatureIsDisabledThenRetainsNothingButRemovedRecordsStillDeleteTheirImages() async throws {
@@ -102,9 +134,11 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let imageData = try XCTUnwrap(makeImage(.blue).pngData())
         try cache.diskStorage.store(value: imageData, forKey: key(for: removedSite), expiration: .never)
         let image = makeImage(.red)
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { false }, cachedFavicon: { _ in image })
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: false, cachedFavicon: { _ in image })
 
         sut.loadFavicon(for: site)
+        sut.restoreImages([site: image])
+        XCTAssertTrue(sut.retainedImages(for: [removedSite]).isEmpty)
         store.removePermissions(for: removedSite)
 
         XCTAssertFalse(sut.viewModel(for: site).image === image)
@@ -121,7 +155,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         let store = makeStore(sites: [removedSite, preservedSite])
         let cache = try makeCache()
         let image = makeImage(.red)
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { _ in image })
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: true, cachedFavicon: { _ in image })
         let fireproofing = MockFireproofing()
         fireproofing.isAllowedFireproofDomainHandler = { $0 == preservedSite.host }
         let worker = PermissionsFireWorker(store: store, fireproofing: fireproofing, dataClearingWideEventService: nil)
@@ -153,7 +187,7 @@ final class SitePermissionsFaviconStoreTests: XCTestCase {
         }
         let browsingImage = makeImage(.blue)
         var requestedHosts = [String]()
-        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: { true }, cachedFavicon: { host in
+        let sut = SitePermissionsFaviconStore(store: store, cache: cache, isEnabled: true, cachedFavicon: { host in
             requestedHosts.append(host)
             return host == missingSite.host ? browsingImage : nil
         })

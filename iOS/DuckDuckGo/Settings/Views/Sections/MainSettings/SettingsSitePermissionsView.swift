@@ -121,14 +121,16 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     func removePermissions(for site: SitePermissionKey) {
         guard isEnabled() else { return }
+        let images = favicons?.retainedImages(for: [site]) ?? [:]
         let snapshot = store.removePermissions(for: site)
         guard !snapshot.isEmpty else { return }
         refresh()
         callbacks.didRequestRevocation(site, Set(Self.supportedPermissionTypes))
         callbacks.didRemoveSite()
         presentUndoToast(
-            String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host)) { [weak self, store, callbacks, isEnabled] in
+            String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host)) { [weak self, store, favicons, callbacks, isEnabled] in
             store.restore(snapshot)
+            favicons?.restoreImages(images)
             self?.refresh()
             if isEnabled() {
                 callbacks.didUndoRemoval()
@@ -139,6 +141,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     func removeAllSitePermissions() {
         guard isEnabled() else { return }
         let sitesToRevoke = storedSites
+        let images = favicons?.retainedImages(for: store.storedSites) ?? [:]
         let snapshot = store.clearSitePermissions()
         guard !snapshot.isEmpty else { return }
         refresh()
@@ -146,8 +149,9 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
             callbacks.didRequestRevocation($0, Set(Self.supportedPermissionTypes))
         }
         callbacks.didRemoveAll()
-        presentUndoToast(UserText.settingsSitePermissionsRemovedAll) { [weak self, store, callbacks, isEnabled] in
+        presentUndoToast(UserText.settingsSitePermissionsRemovedAll) { [weak self, store, favicons, callbacks, isEnabled] in
             store.restore(snapshot)
+            favicons?.restoreImages(images)
             self?.refresh()
             if isEnabled() {
                 callbacks.didUndoRemoval()

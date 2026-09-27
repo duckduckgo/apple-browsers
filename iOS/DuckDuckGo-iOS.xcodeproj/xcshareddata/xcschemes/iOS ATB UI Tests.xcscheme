@@ -35,9 +35,6 @@
                   Identifier = "FloatingUITopBarTests">
                </Test>
                <Test
-                  Identifier = "SitePermissionsXCUITests">
-               </Test>
-               <Test
                   Identifier = "SubscriptionPromoUITests">
                </Test>
                <Test

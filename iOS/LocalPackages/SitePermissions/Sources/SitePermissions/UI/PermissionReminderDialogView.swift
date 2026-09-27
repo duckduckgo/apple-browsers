@@ -51,7 +51,7 @@ public struct PermissionReminderDialogView: View {
             VStack(spacing: Constants.contentSpacing) {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     Text(viewModel.title)
-                        .font(.headline)
+                        .daxHeadline()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -59,7 +59,7 @@ public struct PermissionReminderDialogView: View {
                         .accessibilityIdentifier("SitePermissions.Reminder.Title")
 
                     Text(viewModel.body)
-                        .font(.body)
+                        .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .fixedSize(horizontal: false, vertical: true)
                 }

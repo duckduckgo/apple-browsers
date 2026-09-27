@@ -115,7 +115,7 @@ public struct SitePermissionsSheetView: View {
     private var header: some View {
         HStack(spacing: 12) {
             Text(viewModel.title)
-                .font(.subheadline.weight(.semibold))
+                .daxSubheadSemibold()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -157,7 +157,7 @@ public struct SitePermissionsSheetView: View {
                                    visual: .image(permissionIcon(for: row).renderingMode(.template)),
                                    size: .size24,
                                    spacing: Constants.iconSpacing),
-                title: CardItemText(row.title, font: CardItemFont(.body))
+                title: CardItemText(row.title, font: .bodyRegular)
             )
             .foregroundColor(iconColor(for: row))
             .padding(.vertical, Constants.rowVerticalInset)
@@ -184,7 +184,7 @@ public struct SitePermissionsSheetView: View {
                         }
                         Text(row.stateText)
                     }
-                    .font(.body)
+                    .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .foregroundColor(Color(designSystemColor: .iconsTertiary))
@@ -204,7 +204,7 @@ public struct SitePermissionsSheetView: View {
 
     private var reloadCaption: some View {
         Text(UserText.PermissionManagement.reloadCaption)
-            .font(.footnote)
+            .daxFootnoteRegular()
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, Constants.rowHorizontalInset)
@@ -239,13 +239,13 @@ public struct SitePermissionsSheetView: View {
         if includesRemove {
             items.append(CardItem(
                 title: CardItemText(UserText.PermissionManagement.removePermissions,
-                                    font: CardItemFont(.body),
+                                    font: .bodyRegular,
                                     color: Color(designSystemColor: .accentPrimary))))
         }
         if includesSystemSettings {
             items.append(CardItem(
                 title: CardItemText(UserText.PermissionManagement.goToSystemSettings,
-                                    font: CardItemFont(.body),
+                                    font: .bodyRegular,
                                     color: Color(designSystemColor: .accentPrimary)),
                 trailing: .custom(Image(uiImage: DesignSystemImages.Glyphs.Size24.openIn)
                     .renderingMode(.template)
@@ -258,7 +258,7 @@ public struct SitePermissionsSheetView: View {
     private var reminder: some View {
         if let reminderText = viewModel.reminderText {
             Text(reminderText)
-                .font(.footnote)
+                .daxFootnoteRegular()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, Constants.rowHorizontalInset)

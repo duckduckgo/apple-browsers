@@ -95,7 +95,7 @@ public struct SitePermissionDialogView: View {
 
     private var title: some View {
         Text(viewModel.title(domain: truncatedDomain))
-            .font(.headline)
+            .daxHeadline()
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -112,7 +112,7 @@ public struct SitePermissionDialogView: View {
         let availableWidth = Constants.cardWidth
             - 2 * Constants.cardHorizontalPadding
             - 2 * Constants.contentHorizontalPadding
-        let font = UIFont.preferredFont(forTextStyle: .headline)
+        let font = UIFont.daxHeadline()
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
 
         func fits(_ value: String) -> Bool {

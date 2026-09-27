@@ -240,7 +240,7 @@ struct SettingsSitePermissionsView: View {
                 }
             } header: {
                 Text(UserText.sitePermissions)
-                    .font(.headline)
+                    .daxHeadline()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .textCase(nil)
             } footer: {
@@ -263,7 +263,7 @@ struct SettingsSitePermissionsView: View {
                                     .frame(width: 24, height: 24)
                                     .onAppear { viewModel.loadFavicon(for: site) }
                                 Text(site.host)
-                                    .font(.body)
+                                    .daxBodyRegular()
                                     .foregroundColor(Color(designSystemColor: .textPrimary))
                             }
                         }
@@ -280,7 +280,7 @@ struct SettingsSitePermissionsView: View {
                     }
                 } header: {
                     Text(UserText.settingsSitePermissionsManageSites)
-                        .font(.headline)
+                        .daxHeadline()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .textCase(nil)
                 }
@@ -346,7 +346,7 @@ private struct SettingsSitePermissionsSiteView: View {
                 }
             } header: {
                 Text(String(format: UserText.settingsSitePermissionsSiteHeaderFormat, site.host))
-                    .font(.headline)
+                    .daxHeadline()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .textCase(nil)
             }
@@ -383,7 +383,7 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
                 .frame(width: 24, height: 24)
                 .accessibilityHidden(true)
             Text(permissionType.settingsTitle)
-                .font(.body)
+                .daxBodyRegular()
                 .accessibilityHidden(true)
             Spacer(minLength: 16)
             Menu(content: menuContent) {
@@ -394,7 +394,7 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
                         }
                         Text(selection)
                     }
-                    .font(.body)
+                    .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.footnote.weight(.bold))

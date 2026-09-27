@@ -590,7 +590,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("SitePermissions.Sheet.\(row)"))
         tap(element("SitePermissions.Sheet.\(row).askEachTime"))
         assertSheetDecision(row, contains: "Ask Each Time")
-        XCTAssertTrue(caption.waitForExistence(timeout: timeout))
+        XCTAssertTrue(caption.waitForHittable(timeout: timeout))
         XCTAssertEqual(caption.label, "Reload the page for changes to take effect.")
         tap(element("SitePermissions.Sheet.Close"))
         // Changing the saved choice does not automatically retry the old request.

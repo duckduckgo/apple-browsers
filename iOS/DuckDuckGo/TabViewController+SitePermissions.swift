@@ -522,12 +522,7 @@ extension TabViewController {
                 self.fireSitePermissionsEvent(.permissionRemoveSite)
             },
             onOpenSystemSettings: { [weak self] permissionTypes in
-                guard let self,
-                      let pixelPermissionType = SitePermissionsEvent.PermissionType(permissionTypes) else {
-                    return
-                }
-                self.fireSitePermissionsEvent(.permissionSystemSettingsOpened(type: pixelPermissionType))
-                self.openSitePermissionsSystemSettings()
+                self?.openSitePermissionsSystemSettings(for: permissionTypes)
             },
             onDismiss: { [weak sitePermissionsState] dismissal in
                 sitePermissionsState?.handleManagementDismissal(dismissal)
@@ -1089,6 +1084,13 @@ extension TabViewController {
 
     private func fireSitePermissionsEvent(_ event: SitePermissionsEvent) {
         sitePermissionsState.eventHandler(event)
+    }
+
+    func openSitePermissionsSystemSettings(for permissionTypes: Set<SitePermissionType>) {
+        if let pixelPermissionType = SitePermissionsEvent.PermissionType(permissionTypes) {
+            fireSitePermissionsEvent(.permissionSystemSettingsOpened(type: pixelPermissionType))
+        }
+        openSitePermissionsSystemSettings()
     }
 
     private func openSitePermissionsSystemSettings() {

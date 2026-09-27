@@ -1582,6 +1582,34 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertFalse(sut.children.contains { $0 is UIHostingController<PermissionReminderDialogView> })
     }
 
+    func testWhenOpeningSystemSettingsForCameraAndLocationThenSettingsOpenWithoutPixel() {
+        var events: [SitePermissionsEvent] = []
+        var settingsOpenCount = 0
+        let sut = makeSUT(featureEnabled: true, eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.configureSitePermissionsGeolocation(with: GeolocationUserScript(installImmediately: true))
+        sut.sitePermissionsSystemSettingsOpenerOverride = { settingsOpenCount += 1 }
+
+        sut.openSitePermissionsSystemSettings(for: [.camera, .location])
+
+        XCTAssertEqual(settingsOpenCount, 1)
+        XCTAssertTrue(events.isEmpty)
+    }
+
+    func testWhenOpeningSystemSettingsForLocationThenSettingsOpenAndGeolocationPixelFires() {
+        var events: [SitePermissionsEvent] = []
+        var settingsOpenCount = 0
+        let sut = makeSUT(featureEnabled: true, eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.configureSitePermissionsGeolocation(with: GeolocationUserScript(installImmediately: true))
+        sut.sitePermissionsSystemSettingsOpenerOverride = { settingsOpenCount += 1 }
+
+        sut.openSitePermissionsSystemSettings(for: [.location])
+
+        XCTAssertEqual(settingsOpenCount, 1)
+        XCTAssertEqual(events, [.permissionSystemSettingsOpened(type: .geolocation)])
+    }
+
     func testWhenNavigationReplacesFadingToastWithReminderThenCancelDismissesReminder() async throws {
         let originalWindow = UIApplication.shared.firstKeyWindow
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)

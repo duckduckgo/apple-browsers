@@ -21,7 +21,7 @@ import Common
 import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import os.log
 import WebKit
 

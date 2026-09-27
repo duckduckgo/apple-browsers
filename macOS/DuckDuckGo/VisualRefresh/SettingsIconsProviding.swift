@@ -44,6 +44,7 @@ protocol SettingsIconsProviding {
     var paidAIChatIcon: NSImage { get }
     var aboutIcon: NSImage { get }
     var otherPlatformsIcon: NSImage { get }
+    var subscriberOffersIcon: NSImage { get }
 }
 
 final class LegacySettingsIconProvider: SettingsIconsProviding {
@@ -71,6 +72,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var paidAIChatIcon: NSImage = .duckAiPaidColor16
     var aboutIcon: NSImage = .about
     var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
+    var subscriberOffersIcon: NSImage = .subscriptionGift
 }
 
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
@@ -98,4 +100,5 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo
     var otherPlatformsIcon: NSImage = DesignSystemImages.Color.Size16.downloads
+    var subscriberOffersIcon: NSImage = .subscriptionGift
 }

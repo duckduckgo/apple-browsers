@@ -217,3 +217,26 @@ enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
         }
     }
 }
+
+// A separate definition so the name stays byte-identical to the other platforms': `SubscriptionPixel`
+// above omits the platform marker, which this pixel's siblings (`app-settings_vpn_click` and friends)
+// carry.
+enum SubscriptionPartnershipsHubPixel: PixelKit.Event {
+    /// Fired when the user taps Subscriber Offers in the DuckDuckGo Subscription section of Settings.
+    case subscriberOffersSettingsClick
+
+    /// The name is already fully qualified: it is shared verbatim with Android and Windows, which is
+    /// also why it keeps the `m_` prefix and the `partner-benefits` segment that predate the
+    /// "Subscriber Offers" rename.
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .subscriberOffersSettingsClick: return "m_privacy-pro_app-settings_partner-benefits_click"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}

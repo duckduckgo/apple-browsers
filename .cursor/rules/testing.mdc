@@ -858,7 +858,7 @@ func external_urls_are_valid() { }
 - `.timeLimit` only accepts minute granularity, so `.minutes(1)` is the tightest allowed cap — use it as the default.
 - The trait requires iOS 16 / macOS 13, hence the `@available` guard.
 - This is separate from the assertion timeouts below (`fulfillment`/`wait`, max 5s) — `.timeLimit` is the outer safety net against total hangs.
-- Cursor Bugbot flags new `@Test`s missing a timeout (see `.cursor/BUGBOT.md`).
+- Automated code review flags new `@Test`s missing a timeout (see `REVIEW.md`).
 
 #### @Test Naming Guidelines:
 - Use clear, descriptive text in `@Test("description")`

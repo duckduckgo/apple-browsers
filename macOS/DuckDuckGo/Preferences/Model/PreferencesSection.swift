@@ -106,6 +106,11 @@ struct PreferencesSection: Hashable, Identifiable {
             if subscriptionState.isIdentityTheftRestorationAvailable {
                 subscriptionPanes.append(.identityTheftRestoration)
             }
+            // Last of the feature entries and above Subscription Settings, mirroring the other
+            // platforms, which put it below Identity Theft Restoration.
+            if subscriptionState.isPartnershipsHubAvailable {
+                subscriptionPanes.append(.partnershipsHub)
+            }
 
             subscriptionPanes.append(.subscriptionSettings)
             return PreferencesSection(id: .subscription, panes: subscriptionPanes)
@@ -162,6 +167,10 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case paidAIChat
     case identityTheftRestoration
     case subscriptionSettings
+    /// Opens the Partnerships Hub in a new tab rather than selecting a pane; never becomes the
+    /// selected pane. Unlike `otherPlatforms` its URL comes from remote config, so the raw value
+    /// cannot be the URL itself — `PreferencesSidebarModel.openSubscriberOffers()` resolves it.
+    case partnershipsHub
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
@@ -232,6 +241,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.identityTheftRestoration
         case .subscriptionSettings:
             return UserText.subscriptionSettings
+        case .partnershipsHub:
+            return UserText.subscriberOffers
         case .autofill:
             return UserText.passwordManagementTitle
         case .accessibility:
@@ -285,6 +296,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:
             return settingsIconProvider.subscriptionIcon
+        case .partnershipsHub:
+            return settingsIconProvider.subscriberOffersIcon
         case .autofill:
             return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:
@@ -312,6 +325,7 @@ struct PreferencesDestination: Hashable {
 
     let pane: PreferencePaneIdentifier
     let scrollAnchor: PreferencesScrollAnchor?
+    var websitePermissionCategory: WebsitePermissionCategory?
 
     static var aiChat: PreferencesDestination {
         PreferencesDestination(pane: .aiChat, scrollAnchor: nil)
@@ -319,5 +333,9 @@ struct PreferencesDestination: Hashable {
 
     static var generalPermissions: PreferencesDestination {
         PreferencesDestination(pane: .general, scrollAnchor: .permissions)
+    }
+
+    static func websitePermission(_ category: WebsitePermissionCategory) -> PreferencesDestination {
+        PreferencesDestination(pane: .websitePermissions, scrollAnchor: nil, websitePermissionCategory: category)
     }
 }

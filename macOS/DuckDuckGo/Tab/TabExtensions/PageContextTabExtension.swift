@@ -19,7 +19,7 @@
 import AIChat
 import Combine
 import Foundation
-import Navigation
+import DDGNavigation
 import os.log
 import PrivacyConfig
 import WebKit

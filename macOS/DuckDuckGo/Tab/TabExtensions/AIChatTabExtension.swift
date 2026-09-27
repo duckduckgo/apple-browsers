@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import Foundation
 import Combine
 import FeatureFlags_macOS

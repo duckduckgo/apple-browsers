@@ -43,4 +43,11 @@ protocol TabSwitcherDelegate: AnyObject {
 
     /// Called when the tab switcher requests to open a new tab in AI Chat mode
     func tabSwitcherDidRequestAIChatTab(tabSwitcher: TabSwitcherViewController)
+
+    /// The overlay has finished dismissing and the selected browser surface is exposed.
+    func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController)
+}
+
+extension TabSwitcherDelegate {
+    func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) { }
 }

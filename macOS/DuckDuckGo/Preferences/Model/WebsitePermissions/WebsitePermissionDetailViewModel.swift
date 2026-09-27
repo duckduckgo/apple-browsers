@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 import PrivacyConfig
 import os.log
 
@@ -28,16 +29,24 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
+    private let defaults: WebsitePermissionDefaultsProtocol
+    private let pixelFiring: PixelFiring?
     private var permissionsCancellable: AnyCancellable?
 
     init(
         initialState: WebsitePermissionDetailViewState?,
         permissionManager: PermissionManagerProtocol,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        defaults: WebsitePermissionDefaultsProtocol,
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         viewState = initialState ?? .init()
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
+        self.defaults = defaults
+        self.pixelFiring = pixelFiring
+        viewState.availableDefaultDecisions = defaults.availableDecisions(for: viewState.category)
+        viewState.defaultDecision = defaults.defaultDecision(for: viewState.category)
         viewState.visibleSites = filteredSites(from: viewState.sites, matching: viewState.searchQuery)
     }
 
@@ -47,6 +56,9 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
         switch action {
         case .onAppear:
             setupObserver()
+
+        case .setDefaultDecision(let decision):
+            changeDefaultDecision(decision)
 
         case .setSearchQuery(let query):
             var state = viewState
@@ -64,6 +76,21 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 
     // MARK: - Private
 
+    private func changeDefaultDecision(_ decision: PersistedPermissionDecision) {
+        let category = viewState.category
+        guard defaults.availableDecisions(for: category).contains(decision),
+              decision != defaults.defaultDecision(for: category)
+        else {
+            Logger.general.debug("WebsitePermissionDetailViewModel: Ignored default change for \(String(describing: category))")
+            return
+        }
+
+        defaults.setDefaultDecision(decision, for: category)
+        pixelFiring?.fire(PermissionPixel.settingsDefaultChanged(category: category, to: decision), frequency: .dailyAndCount)
+
+        viewState.defaultDecision = defaults.defaultDecision(for: category)
+    }
+
     private func changeDecision(_ decision: PersistedPermissionDecision, for rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
         guard
             let siteRow = row(matchingID: rowID),
@@ -75,6 +102,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             return
         }
         permissionManager.setPermission(decision, forDomain: siteRow.domain, permissionType: siteRow.permissionType)
+        pixelFiring?.fire(PermissionPixel.settingsSiteChanged(permissionType: siteRow.permissionType, to: decision), frequency: .dailyAndCount)
     }
 
     private func remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID) {
@@ -86,26 +114,31 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
             return
         }
         permissionManager.removePermission(forDomain: siteRow.domain, permissionType: siteRow.permissionType)
+        pixelFiring?.fire(PermissionPixel.settingsSiteRemoved(permissionType: siteRow.permissionType), frequency: .dailyAndCount)
     }
 
     private func setupObserver() {
         guard permissionsCancellable == nil else { return }
 
         permissionsCancellable = permissionManager.persistedPermissionsPublisher
-            .combineLatest(featureFlagger.updatesPublisher.prepend(()))
+            .combineLatest(featureFlagger.updatesPublisher.prepend(()), defaults.defaultsPublisher)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] entries, _ in
-                self?.updateState(entries: entries)
+            .sink { [weak self] entries, _, defaultDecisions in
+                self?.updateState(entries: entries, defaultDecisions: defaultDecisions)
             }
     }
 
-    private func updateState(entries: [WebsitePermissionEntry]) {
+    private func updateState(entries: [WebsitePermissionEntry],
+                             defaultDecisions: [WebsitePermissionCategory: PersistedPermissionDecision]) {
+        let category = viewState.category
         var state = WebsitePermissionDetailViewState(
-            category: viewState.category,
+            category: category,
+            defaultDecision: defaultDecisions[category] ?? defaults.fallbackDecision,
             searchQuery: viewState.searchQuery,
             entries: entries,
             featureFlagger: featureFlagger
         )
+        state.availableDefaultDecisions = defaults.availableDecisions(for: category)
         state.visibleSites = filteredSites(from: state.sites, matching: state.searchQuery)
         viewState = state
     }
@@ -145,6 +178,7 @@ final class WebsitePermissionDetailViewModel: ObservableObject {
 extension WebsitePermissionDetailViewModel {
     enum Action {
         case onAppear
+        case setDefaultDecision(PersistedPermissionDecision)
         case setSearchQuery(String)
         case changeDecision(rowID: WebsitePermissionDetailViewState.SiteRow.ID, decision: PersistedPermissionDecision)
         case remove(rowID: WebsitePermissionDetailViewState.SiteRow.ID)

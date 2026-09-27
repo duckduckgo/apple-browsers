@@ -84,6 +84,7 @@ struct RemoteMessagingUIPreviewsDebugView: View {
             loadRemoteImage: nil,
             onDidClose: { _ in },
             onDidAppear: {},
+            onDidDisappear: {},
             onAttachAdditionalParameters: nil
         )
     }

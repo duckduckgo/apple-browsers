@@ -89,6 +89,31 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         refreshUsageLimitsCallCount += 1
     }
 
+    var usageLimitsResult: NewTabPageDataModel.OmnibarUsageLimits?
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? {
+        usageLimitsResult
+    }
+
+    private(set) var dismissUsageLimitsCallCount = 0
+    @MainActor
+    func dismissUsageLimits() {
+        dismissUsageLimitsCallCount += 1
+    }
+
+    var selectUsageLimitsCtaOutcome = NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome.handled
+    private(set) var selectUsageLimitsCtaModelIds: [String?] = []
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome {
+        selectUsageLimitsCtaModelIds.append(modelId)
+        return selectUsageLimitsCtaOutcome
+    }
+
+    let usageLimitsSubject = PassthroughSubject<Void, Never>()
+    var usageLimitsPublisher: AnyPublisher<Void, Never> {
+        usageLimitsSubject.eraseToAnyPublisher()
+    }
+
     @Published var isAttachTabsEnabled: Bool = false
 
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> {

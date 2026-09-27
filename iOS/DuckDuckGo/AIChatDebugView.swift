@@ -563,7 +563,7 @@ private struct AIChatFooterPreviewSection: View {
         } header: {
             Text(verbatim: "Unified input footer")
         } footer: {
-            Text("Uses the real input drawer. ToS is placeholder copy for layout testing only. Preview state ends on submit or app restart.")
+            Text(verbatim: "Uses the real input drawer. ToS is placeholder copy for layout testing only. Preview state ends on submit or app restart.")
         }
     }
 }

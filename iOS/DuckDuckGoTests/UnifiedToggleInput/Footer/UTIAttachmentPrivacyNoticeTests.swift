@@ -26,7 +26,7 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
     private var storage: AttachmentPrivacyTestStore!
     private var store: UTIAttachmentPrivacyNoticeDisplayStore!
     private var source: UTIFooterAttachmentPrivacyNoticeSource!
-    private var kind: AttachmentPrivacyPixel.Kind? = .image
+    private var kind: UTIAttachmentPrivacyKind? = .image
     private var enabled = true
     private var scope: UTIFooterAttachmentPrivacyNoticeSource.DisplayScope = .normal
 

@@ -54,3 +54,16 @@ struct UTIAttachmentPrivacyNoticeDisplayStore: UTIAttachmentPrivacyNoticeDisplay
         try? keyValueStore.removeObject(forKey: Key.displayCount.rawValue)
     }
 }
+
+enum UTIAttachmentPrivacyKind: String {
+    case image
+    case file
+
+    init?(attachment: UnifiedToggleInputAttachment) {
+        switch attachment {
+        case .image: self = .image
+        case .file: self = .file
+        case .invalidFile: return nil
+        }
+    }
+}

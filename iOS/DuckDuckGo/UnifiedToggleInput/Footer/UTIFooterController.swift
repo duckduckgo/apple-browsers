@@ -34,7 +34,7 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
-    var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, AttachmentPrivacyPixel.Kind) -> Void)?
+    var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
     private let viewModel: DuckAiUsageWarningViewModel?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
@@ -57,7 +57,7 @@ final class UTIFooterController {
     private var applicableHighUsageModelID: String?
     private var applicableWarning: DuckAiUsageWarning?
     private var isDismissing = false
-    private var currentPrivacyKind: AttachmentPrivacyPixel.Kind?
+    private var currentPrivacyKind: UTIAttachmentPrivacyKind?
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
 
@@ -329,15 +329,15 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     }
 
     private let displayScope: () -> DisplayScope
-    private let attachmentKind: () -> AttachmentPrivacyPixel.Kind?
+    private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
     private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
     private var displayedScope: DisplayScope?
 
     private(set) var isPresented = false
-    private(set) var kind: AttachmentPrivacyPixel.Kind?
+    private(set) var kind: UTIAttachmentPrivacyKind?
 
-    init(attachmentKind: @escaping () -> AttachmentPrivacyPixel.Kind?,
+    init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
          displayScope: @escaping () -> DisplayScope = { .normal },
          displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {

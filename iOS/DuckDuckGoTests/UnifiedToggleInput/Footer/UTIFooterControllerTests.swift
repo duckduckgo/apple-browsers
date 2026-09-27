@@ -36,11 +36,11 @@ final class UTIFooterControllerTests: XCTestCase {
     private var animationCount = 0
     private var reportedBlocks: [Bool] = []
     private var sut: UTIFooterController!
-    private var privacyKind: AttachmentPrivacyPixel.Kind?
+    private var privacyKind: UTIAttachmentPrivacyKind?
     private var privacyEnabled = true
     private var privacyDisplayStore: PrivacyDisplayStore!
     private var privacyEvents: [AttachmentPrivacyPixel.Action] = []
-    private var privacyEventKinds: [AttachmentPrivacyPixel.Kind] = []
+    private var privacyEventKinds: [UTIAttachmentPrivacyKind] = []
 
     private var now = Date(timeIntervalSince1970: 1_800_000_000)
 

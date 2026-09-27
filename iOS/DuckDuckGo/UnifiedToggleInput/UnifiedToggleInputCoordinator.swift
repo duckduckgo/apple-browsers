@@ -995,7 +995,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         attachmentPrivacyNoticeSource = UTIFooterAttachmentPrivacyNoticeSource(
             attachmentKind: { [weak self] in
-                self?.viewController.currentAttachments.lazy.compactMap { AttachmentPrivacyPixel.Kind(attachment: $0) }.first
+                self?.viewController.currentAttachments.lazy.compactMap { UTIAttachmentPrivacyKind(attachment: $0) }.first
             },
             isEnabled: { [weak self] in
                 self?.featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy) == true

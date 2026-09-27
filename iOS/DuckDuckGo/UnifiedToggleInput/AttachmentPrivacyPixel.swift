@@ -25,18 +25,7 @@ struct AttachmentPrivacyPixel: PixelKit.Event {
         case learnMoreTapped = "learn_more_tapped"
     }
 
-    enum Kind: String {
-        case image
-        case file
-
-        init?(attachment: UnifiedToggleInputAttachment) {
-            switch attachment {
-            case .image: self = .image
-            case .file: self = .file
-            case .invalidFile: return nil
-            }
-        }
-    }
+    typealias Kind = UTIAttachmentPrivacyKind
 
     let action: Action
     let kind: Kind

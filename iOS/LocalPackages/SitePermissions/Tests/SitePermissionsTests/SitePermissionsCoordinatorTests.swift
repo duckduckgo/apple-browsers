@@ -755,7 +755,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(microphonePromptCount, 1)
     }
 
-    func testWhenCombinedPromptIsNeverAllowedThenOnlyTheStillCapturingPermissionIsRevoked() async throws {
+    func testWhenCombinedPromptIsNeverAllowedThenEveryRequestedPermissionIsRevoked() async throws {
         let harness = try Harness()
         let grantCompletion = expectation(description: "Camera Allow Once becomes active")
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
@@ -782,7 +782,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         }, completion: { resolution = $0 })
 
         XCTAssertEqual(resolution, .deny(systemBlocks: []))
-        XCTAssertEqual(revokedPermissionTypes, [[.camera]])
+        XCTAssertEqual(revokedPermissionTypes, [[.camera, .microphone]])
         XCTAssertEqual(revokedSites, [harness.site])
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
         XCTAssertEqual(harness.store.decision(for: .microphone, at: harness.site), .deny)
@@ -808,9 +808,30 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             respond(.neverAllow)
         }, completion: { _ in })
 
-        XCTAssertEqual(revokedPermissionTypes, [[.camera]])
+        XCTAssertEqual(revokedPermissionTypes, [[.camera, .microphone]])
         XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
         XCTAssertNil(harness.store.decision(for: .microphone, at: harness.site))
+    }
+
+    func testWhenSinglePermissionIsNeverAllowedWithoutCaptureThenItIsRevoked() throws {
+        for permissionType: SitePermissionType in [.camera, .microphone, .location] {
+            let harness = try Harness()
+            var revokedPermissionTypes = [Set<SitePermissionType>]()
+            var revokedSites = [SitePermissionKey]()
+            harness.revocationHandler = { permissionTypes, site in
+                revokedPermissionTypes.append(permissionTypes)
+                revokedSites.append(site)
+            }
+            var resolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                respond(.neverAllow)
+            }, completion: { resolution = $0 })
+
+            XCTAssertEqual(resolution, .deny(systemBlocks: []))
+            XCTAssertEqual(revokedPermissionTypes, [[permissionType]])
+            XCTAssertEqual(revokedSites, [harness.site])
+            XCTAssertEqual(harness.store.decision(for: permissionType, at: harness.site), .deny)
+        }
     }
 
     func testWhenCombinedPromptIsDeniedOnceThenRunningCaptureIsKept() async throws {

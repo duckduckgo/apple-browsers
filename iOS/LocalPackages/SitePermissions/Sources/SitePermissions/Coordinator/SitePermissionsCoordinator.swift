@@ -130,7 +130,7 @@ public final class SitePermissionsCoordinator {
     public typealias PromptHandler = (SitePermissionPrompt, @escaping (SitePermissionPromptDecision) -> Void) -> Void
     /// The handler must call its completion after the recovery surface is dismissed so the FIFO can continue.
     public typealias RecoveryHandler = (SitePermissionRecovery, @escaping () -> Void) -> Void
-    /// Stops capture that is still running for permission types the user just chose Never Allow for.
+    /// Revokes every permission type the user chose Never Allow for, even if this tab is not using it.
     public typealias RevocationHandler = (Set<SitePermissionType>, SitePermissionKey) -> Void
     public typealias EventHandler = (SitePermissionsEvent) -> Void
     public typealias Completion = (SitePermissionResolution) -> Void
@@ -593,8 +593,6 @@ public final class SitePermissionsCoordinator {
             deniedForPage.formUnion(permissionTypes)
             finish(pendingRequest, with: .deny(systemBlocks: []))
         case .neverAllow:
-            // A combined prompt can include a type the page still captures through Allow Once or a stored Allow.
-            let capturingPermissionTypes = permissionTypes.filter { captureState(for: $0) != .inactive }
             allowOnce.subtract(permissionTypes)
             siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
             if isFireMode {
@@ -602,9 +600,7 @@ public final class SitePermissionsCoordinator {
             } else {
                 persist(.deny, for: pendingRequest.request)
             }
-            if !capturingPermissionTypes.isEmpty {
-                revocationHandler(capturingPermissionTypes, pendingRequest.request.context.topLevelSite)
-            }
+            revocationHandler(permissionTypes, pendingRequest.request.context.topLevelSite)
             finish(pendingRequest, with: .deny(systemBlocks: []))
         case .allowOnce, .allowWhileUsingSite:
             deniedForPage.subtract(permissionTypes)

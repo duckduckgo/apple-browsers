@@ -1836,28 +1836,52 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     }
 
     func testWhenCombinedPromptIsNeverAllowedThenRunningAllowOnceCameraIsRevoked() async throws {
-        let sut = makeSUT()
-        var promptCount = 0
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in
-            promptCount += 1
-            completion(promptCount == 1 ? .allowOnce : .neverAllow)
+        for fireTab in [false, true] {
+            var revocations = [(site: SitePermissionKey, permissionTypes: Set<SitePermissionType>, sourceTabID: String)]()
+            let sut = makeSUT(featureEnabled: true, fireTab: fireTab, revokePermissionsInOtherTabs: { site, permissionTypes, sourceTabID in
+                revocations.append((site, permissionTypes, sourceTabID))
+            })
+            var promptCount = 0
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                promptCount += 1
+                completion(promptCount == 1 ? .allowOnce : .neverAllow)
+            }
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+            let cameraDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .camera)
+            XCTAssertEqual(cameraDecision, .allow)
+            let webView = try XCTUnwrap(sut.webView as? SitePermissionURLWebView)
+            webView.setCameraCaptureStateForTesting(.active)
+
+            let combinedDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+
+            XCTAssertEqual(combinedDecision, .deny)
+            XCTAssertEqual(promptCount, 2)
+            XCTAssertEqual(webView.requestedCameraCaptureStates, [.none])
+            // Revoking the camera also discards its outstanding Allow Once approval, so WebKit can no longer use it.
+            var nativeDecision: WKPermissionDecision?
+            requestPermission(on: sut, originHost: site.host, captureType: .camera,
+                              decisionHandler: { nativeDecision = $0 })
+            XCTAssertEqual(nativeDecision, .deny)
+            XCTAssertEqual(revocations.map(\.site), fireTab ? [] : [site])
+            XCTAssertEqual(revocations.map(\.permissionTypes), fireTab ? [] : [[.camera, .microphone]])
+            XCTAssertEqual(revocations.map(\.sourceTabID), fireTab ? [] : [sut.tabModel.uid])
         }
+    }
+
+    func testWhenCombinedPromptIsNeverAllowedWithoutCaptureThenOtherTabsAreRevoked() async throws {
+        var revocations = [(site: SitePermissionKey, permissionTypes: Set<SitePermissionType>, sourceTabID: String)]()
+        let sut = makeSUT(featureEnabled: true, revokePermissionsInOtherTabs: { site, permissionTypes, sourceTabID in
+            revocations.append((site, permissionTypes, sourceTabID))
+        })
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.neverAllow) }
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
-        let cameraDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .camera)
-        XCTAssertEqual(cameraDecision, .allow)
-        let webView = try XCTUnwrap(sut.webView as? SitePermissionURLWebView)
-        webView.setCameraCaptureStateForTesting(.active)
 
-        let combinedDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+        let decision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
 
-        XCTAssertEqual(combinedDecision, .deny)
-        XCTAssertEqual(promptCount, 2)
-        XCTAssertEqual(webView.requestedCameraCaptureStates, [.none])
-        // Revoking the camera also discards its outstanding Allow Once approval, so WebKit can no longer use it.
-        var nativeDecision: WKPermissionDecision?
-        requestPermission(on: sut, originHost: site.host, captureType: .camera,
-                          decisionHandler: { nativeDecision = $0 })
-        XCTAssertEqual(nativeDecision, .deny)
+        XCTAssertEqual(decision, .deny)
+        XCTAssertEqual(revocations.map(\.site), [site])
+        XCTAssertEqual(revocations.map(\.permissionTypes), [[.camera, .microphone]])
+        XCTAssertEqual(revocations.map(\.sourceTabID), [sut.tabModel.uid])
     }
 
     func testMainFramePreapprovalCannotBeConsumedBySameOriginSubframe() async {
@@ -1914,6 +1938,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     }
 
     private func makeSUT(featureEnabled: Bool = true,
+                         fireTab: Bool = false,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
                          hasCommittedMainFrame: Bool = true,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
@@ -1922,13 +1947,16 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                          committedURL: URL = URL(string: "https://top-level.example/path")!,
                          avAuthorizationStatus: ((AVMediaType) -> AVAuthorizationStatus)? = nil,
                          avRequestAccess: ((AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void)? = nil,
-                         eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in }) -> TabViewController {
+                         eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in },
+                         revokePermissionsInOtherTabs: @escaping (SitePermissionKey, Set<SitePermissionType>, String) -> Void = { _, _, _ in }
+    ) -> TabViewController {
         let featureFlagger = providedFeatureFlagger
             ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions)
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            fireTab: fireTab
         )
         let dependencies = SitePermissionsDependencies(
             store: store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring()),
@@ -1939,7 +1967,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 avRequestAccess: avRequestAccess ?? { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
             ),
-            eventHandler: eventHandler
+            eventHandler: eventHandler,
+            revokePermissionsInOtherTabs: revokePermissionsInOtherTabs
         )
         sut.sitePermissionsDependenciesProvider = { dependencies }
         sut.setSitePermissionsGeolocationActive(true)

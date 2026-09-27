@@ -1884,6 +1884,35 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(revocations.map(\.sourceTabID), [sut.tabModel.uid])
     }
 
+    func testWhenLocationPromptIsNeverAllowedThenOtherTabsAreRevokedAndRequestCompletes() async throws {
+        var revocations = [(site: SitePermissionKey, permissionTypes: Set<SitePermissionType>, sourceTabID: String)]()
+        let sut = makeSUT(featureEnabled: true, revokePermissionsInOtherTabs: { site, permissionTypes, sourceTabID in
+            revocations.append((site, permissionTypes, sourceTabID))
+        })
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.neverAllow) }
+        let url = URL(string: "https://top-level.example")!
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: url))
+        let userScript = GeolocationUserScript(installImmediately: true)
+        sut.configureSitePermissionsGeolocation(with: userScript)
+        let delegate = try XCTUnwrap(userScript.delegate)
+        let frame = geolocationFrame(on: sut.webView, originURL: url)
+        let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+
+        let result = await delegate.geolocationUserScript(userScript,
+                                                          getCurrentPositionWith: .init(),
+                                                          constraints: constraints,
+                                                          in: frame)
+
+        guard case .failure(let error) = result else {
+            XCTFail("Expected a denied location request")
+            return
+        }
+        XCTAssertEqual(error.code, .permissionDenied)
+        XCTAssertEqual(revocations.map(\.site), [site])
+        XCTAssertEqual(revocations.map(\.permissionTypes), [[.location]])
+        XCTAssertEqual(revocations.map(\.sourceTabID), [sut.tabModel.uid])
+    }
+
     func testMainFramePreapprovalCannotBeConsumedBySameOriginSubframe() async {
         let sut = makeSUT()
         sut.sitePermissionsPromptHandlerOverride = { _, completion in

@@ -115,24 +115,10 @@ final class ChallengeSnapshotRequest {
 enum ChallengeClick {
     static func checkbox(at point: NSPoint, in webView: WKWebView) async -> String {
         let windowPoint = windowPoint(fromCSS: point, in: webView)
-        let didDeliverMove = deliverMove(at: windowPoint, in: webView)
         try? await Task.sleep(nanoseconds: 100_000_000)
         let clickResult = deliverClick(at: windowPoint, in: webView)
         try? await Task.sleep(nanoseconds: 100_000_000)
-        return "css=\(Int(point.x)),\(Int(point.y)) move=\(didDeliverMove) \(clickResult)"
-    }
-
-    private static func contentView(in view: NSView) -> NSView? {
-        let className = String(describing: type(of: view))
-        if className.contains("WKContentView") || className.contains("WKFlippedView") {
-            return view
-        }
-        for subview in view.subviews {
-            if let contentView = contentView(in: subview) {
-                return contentView
-            }
-        }
-        return nil
+        return "css=\(Int(point.x)),\(Int(point.y)) \(clickResult)"
     }
 
     private static func windowPoint(fromCSS point: NSPoint, in webView: WKWebView) -> NSPoint {
@@ -155,34 +141,15 @@ enum ChallengeClick {
             pressure: type == .leftMouseDown ? 1 : 0)
     }
 
-    private static func deliverMove(at point: NSPoint, in webView: WKWebView) -> Bool {
-        guard let event = mouseEvent(.mouseMoved, at: point, in: webView) else { return false }
-        let contentView = contentView(in: webView) ?? webView
-        contentView.mouseMoved(with: event)
-        webView.window?.sendEvent(event)
-        return true
-    }
-
     private static func deliverClick(at point: NSPoint, in webView: WKWebView) -> String {
         guard let downEvent = mouseEvent(.leftMouseDown, at: point, in: webView),
               let upEvent = mouseEvent(.leftMouseUp, at: point, in: webView) else {
             return "event=nil"
         }
-        let contentView = contentView(in: webView) ?? webView
-        let viewPoint = webView.convert(point, from: nil)
-        let hitView = webView.hitTest(viewPoint) ?? contentView
         webView.window?.sendEvent(downEvent)
-        hitView.mouseDown(with: downEvent)
-        if hitView !== contentView {
-            contentView.mouseDown(with: downEvent)
-        }
         RunLoop.current.run(until: Date().addingTimeInterval(0.08))
         webView.window?.sendEvent(upEvent)
-        hitView.mouseUp(with: upEvent)
-        if hitView !== contentView {
-            contentView.mouseUp(with: upEvent)
-        }
-        return "hit=\(type(of: hitView)) content=\(type(of: contentView)) window=\(webView.window != nil)"
+        return "window=\(webView.window != nil)"
     }
 }
 

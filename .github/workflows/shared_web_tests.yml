@@ -61,6 +61,12 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "26.5,26.6"
+
     - name: Checkout shared web tests
       uses: actions/checkout@v6
       with:
@@ -77,7 +83,11 @@ jobs:
         fi
 
     - name: Build and run tests
+      env:
+        IOS_VERSION: ${{ steps.select-simulator.outputs.ios-version }}
+        TARGET_DEVICE: iPhone-17
       run: |
+        export TARGET_OS="iOS-${IOS_VERSION//./-}"
         PROJECT_ROOT="$(pwd)"
         . iOS/scripts/shared_web_tests.sh
 

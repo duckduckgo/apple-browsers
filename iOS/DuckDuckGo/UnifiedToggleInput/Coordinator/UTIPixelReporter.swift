@@ -134,12 +134,6 @@ final class UTIPixelReporter {
 
     // MARK: - Attachments
 
-    func reportAttachmentPrivacy(_ action: AttachmentPrivacyPixel.Action, kind: AttachmentPrivacyPixel.Kind) {
-        withContext {
-            firing.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: $0.surface), frequency: .dailyAndCount)
-        }
-    }
-
     func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
         reportFileValidationFailed(reason: reason.rawValue, source: source)
     }

@@ -81,7 +81,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         answerSystemAlert(for: "camera", allow: true)
         assertResult("success 1")
         openPermissionsSheet()
-        XCTAssertTrue((element("SitePermissions.Sheet.Camera").value as? String)?.contains("Always Allow") == true)
+        assertSheetDecision("Camera", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
         openPermissionSettings()
         XCTAssertTrue(element("Settings.SitePermissions.Site.127.0.0.1").exists)
@@ -135,22 +135,10 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     func testWhenSystemCameraIsDeniedThenReminderAppearsAndSiteAllowIsKept() {
-        launchApp()
-        openPermissionPage()
-        request("camera")
-        tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemAlert(for: "camera", allow: false)
-        assertResult("NotAllowedError 1")
-        reloadPermissionPage()
-
-        request("camera")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        dismissReminder(for: "camera")
-        assertResult("NotAllowedError 1")
-        openPermissionsSheet()
+        openPermissionsSheetAfterSystemDenial(of: "camera", expectedError: "NotAllowedError 1")
         XCTAssertTrue(element("SitePermissions.Sheet.Reminder").exists)
         XCTAssertTrue(element("SitePermissions.Sheet.GoToSystemSettings").exists)
-        XCTAssertTrue((element("SitePermissions.Sheet.Camera").value as? String)?.contains("Always Allow") == true)
+        assertSheetDecision("Camera", contains: "Always Allow")
     }
 
     func testWhenMicrophoneIsAllowedThenSiteDialogPrecedesSystemPromptAndOnlyAudioIsGranted() {
@@ -181,19 +169,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     func testWhenSystemMicrophoneIsDeniedThenReminderKeepsSiteAllowAndCameraStillWorks() {
-        launchApp()
-        openPermissionPage()
-        request("microphone")
-        tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemAlert(for: "microphone", allow: false)
-        assertResult("NotAllowedError 1")
-        reloadPermissionPage()
-
-        request("microphone")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        dismissReminder(for: "microphone")
-        assertResult("NotAllowedError 1")
-        openPermissionsSheet()
+        openPermissionsSheetAfterSystemDenial(of: "microphone", expectedError: "NotAllowedError 1")
         assertSheetDecision("Microphone", contains: "Always Allow")
         XCTAssertFalse(element("SitePermissions.Sheet.Camera").exists)
         tap(element("SitePermissions.Sheet.Close"))
@@ -309,19 +285,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     func testWhenSystemLocationIsDeniedThenReminderKeepsSavedSiteAllow() {
-        launchApp()
-        openPermissionPage()
-        request("location")
-        tap(element("SitePermissions.Dialog.AllowOnce"))
-        answerSystemAlert(for: "location", allow: false)
-        assertResult("location error 1 1")
-        reloadPermissionPage()
-
-        request("location")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        dismissReminder(for: "location")
-        assertResult("location error 1 1")
-        openPermissionsSheet()
+        openPermissionsSheetAfterSystemDenial(of: "location", expectedError: "location error 1 1")
         assertSheetDecision("Geolocation", contains: "Always Allow")
         XCTAssertTrue(element("SitePermissions.Sheet.GoToSystemSettings").exists)
     }
@@ -584,6 +548,22 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func reloadPermissionPage() {
         tap(app.webViews.buttons["Reload fixture"])
         assertResult("ready")
+    }
+
+    private func openPermissionsSheetAfterSystemDenial(of permission: String, expectedError: String) {
+        launchApp()
+        openPermissionPage()
+        request(permission)
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: permission, allow: false)
+        assertResult(expectedError)
+        reloadPermissionPage()
+
+        request(permission)
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        dismissReminder(for: permission)
+        assertResult(expectedError)
+        openPermissionsSheet()
     }
 
     private func assertReloadCaptionAfterResettingPermission(_ permission: String, row: String) {

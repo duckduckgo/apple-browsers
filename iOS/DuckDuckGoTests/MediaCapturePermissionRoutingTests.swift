@@ -1837,8 +1837,11 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testWhenCombinedPromptIsNeverAllowedThenRunningAllowOnceCameraIsRevoked() async throws {
         let sut = makeSUT()
-        var promptDecisions: [SitePermissionPromptDecision] = [.allowOnce, .neverAllow]
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(promptDecisions.removeFirst()) }
+        var promptCount = 0
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            promptCount += 1
+            completion(promptCount == 1 ? .allowOnce : .neverAllow)
+        }
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         let cameraDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .camera)
         XCTAssertEqual(cameraDecision, .allow)
@@ -1848,7 +1851,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let combinedDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
 
         XCTAssertEqual(combinedDecision, .deny)
-        XCTAssertTrue(promptDecisions.isEmpty)
+        XCTAssertEqual(promptCount, 2)
         XCTAssertEqual(webView.requestedCameraCaptureStates, [.none])
         // Revoking the camera also discards its outstanding Allow Once approval, so WebKit can no longer use it.
         var nativeDecision: WKPermissionDecision?

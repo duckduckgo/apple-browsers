@@ -131,7 +131,6 @@ public struct SitePermissionsSheetView: View {
                     Text(domain)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     Text(String(title[domainRange.upperBound...]))
                         .fixedSize(horizontal: false, vertical: true)
                 } else {

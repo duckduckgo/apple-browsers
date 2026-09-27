@@ -408,7 +408,6 @@ private extension DataBrokerProtectionWebViewHandler {
 
     func solveChallenge() async {
         guard let webView else { return }
-        attachChallengePanelIfNeeded(to: webView)
         defer { closeChallengePanel() }
         let deadline = Date().addingTimeInterval(45)
         var nextSnapshotAttempt = Date.distantPast
@@ -424,8 +423,10 @@ private extension DataBrokerProtectionWebViewHandler {
             if !didClickChallenge, Date() >= nextSnapshotAttempt {
                 nextSnapshotAttempt = Date().addingTimeInterval(2)
                 if let point = await stableSnapshotCheckboxPoint(in: webView) {
-                    _ = webView.window?.makeFirstResponder(webView)
+                    attachChallengePanelIfNeeded(to: webView)
+                    try? await Task.sleep(nanoseconds: 100_000_000)
                     let result = await ChallengeClick.checkbox(at: point, in: webView)
+                    closeChallengePanel()
                     reportChallengeEvent("Sent snapshot checkbox click; \(result)")
                     didClickChallenge = true
                 }
@@ -445,7 +446,6 @@ private extension DataBrokerProtectionWebViewHandler {
     }
 
     func stableSnapshotCheckboxPoint(in webView: WKWebView) async -> NSPoint? {
-        challengePanel?.moveOffscreen()
         let snapshotRect = webView.bounds
         guard let firstImage = await challengeSnapshot(of: webView, rect: snapshotRect),
               let firstLabel = await ChallengeVision.findChallengeLabel(in: firstImage),

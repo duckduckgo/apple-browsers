@@ -294,7 +294,13 @@ extension XCUIApplication {
     func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
         if shouldActivate {
             activateAddressBar()
+            // Some web pages handle Cmd+L themselves, leaving the address bar in its passive, non-editable state
+            let passiveAddressBar = windows.firstMatch.staticTexts[AccessibilityIdentifiers.addressBarPassiveTextField]
+            if !addressBar.waitForExistence(timeout: 2), passiveAddressBar.exists {
+                passiveAddressBar.click()
+            }
         }
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Address bar should be editable")
         return addressBar.value as? String
     }
 

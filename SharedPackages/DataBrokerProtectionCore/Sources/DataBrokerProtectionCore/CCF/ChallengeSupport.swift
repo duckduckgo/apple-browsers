@@ -27,6 +27,9 @@ import WebKit
 final class ChallengeOffscreenPanel: NSPanel {
     private var isObservingSystemChanges = false
 
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
     func presentOffscreen() {
         startObservingSystemChanges()
         guard moveOffscreen() else { return }

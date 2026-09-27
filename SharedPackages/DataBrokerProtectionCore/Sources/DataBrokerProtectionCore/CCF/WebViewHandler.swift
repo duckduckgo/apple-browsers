@@ -547,10 +547,12 @@ private extension DataBrokerProtectionWebViewHandler {
         panel.hidesOnDeactivate = false
         panel.isFloatingPanel = false
         panel.isReleasedWhenClosed = false
-        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .stationary]
+        panel.collectionBehavior = [.stationary, .ignoresCycle]
+        panel.isExcludedFromWindowsMenu = true
         panel.backgroundColor = .white
-        panel.acceptsMouseMovedEvents = true
-        panel.ignoresMouseEvents = false
+        panel.acceptsMouseMovedEvents = false
+        panel.ignoresMouseEvents = true
+        panel.sharingType = .none
         panel.contentView = webView
         challengePanel = panel
         panel.presentOffscreen()

@@ -130,12 +130,34 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(privacyDisplayStore.displayCount, 1)
     }
 
+    func testTemporaryOcclusionPreservesDisplayButPoseAndModeChangesEndIt() {
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.footerVisibilityChanged(isVisible: false)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        sut.resetForPoseChange()
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 2)
+        sut.setSuppressed(true)
+        sut.setSuppressed(false)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        sut.setEditing(true)
+        sut.setEditing(false)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
     func testThirdAppearanceSurvivesRefreshThenStopsAfterRemoval() {
         privacyDisplayStore.displayCount = 2
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        sut.footerVisibilityChanged(isVisible: false)
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])

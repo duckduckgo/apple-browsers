@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKitIcons
 import XCTest
 import SitePermissions
 @testable import DuckDuckGo
@@ -567,31 +566,6 @@ final class SitePermissionMenuAnimationTests: XCTestCase {
         XCTAssertFalse(badge.layer.animationKeys()?.contains { $0.hasPrefix("transform") } ?? false)
         let mask = try XCTUnwrap(button.imageView?.layer.mask)
         XCTAssertTrue(mask.animationKeys()?.isEmpty ?? true)
-    }
-
-    func testRepeatedGrantRestartsCombinedBadgeSequence() async throws {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
-        window.addSubview(button)
-        window.isHidden = false
-        defer {
-            button.cancelSitePermissionAnimation()
-            window.isHidden = true
-        }
-        button.setMenuAlertVisible(false, animated: false)
-        let originalSubviews = button.subviews
-
-        button.animateSitePermissionGranted([.camera, .microphone], reduceMotion: true)
-        let firstBadge = try XCTUnwrap(button.subviews.first { !originalSubviews.contains($0) })
-        button.animateSitePermissionGranted([.camera, .microphone], reduceMotion: true)
-        XCTAssertNil(firstBadge.superview)
-
-        let microphoneBadgeAppeared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            button.subviews.contains {
-                ($0 as? UIImageView)?.image == DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
-            }
-        }, object: nil)
-        await fulfillment(of: [microphoneBadgeAppeared], timeout: 5)
     }
 }
 

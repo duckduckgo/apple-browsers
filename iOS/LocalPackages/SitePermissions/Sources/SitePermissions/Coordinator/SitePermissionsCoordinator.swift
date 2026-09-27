@@ -19,7 +19,6 @@
 
 import Combine
 import Foundation
-import os.log
 import WebKit
 
 /// Identifies the page and frame that originated a site permission request.
@@ -579,13 +578,6 @@ public final class SitePermissionsCoordinator {
             case .allow:
                 finish(pendingRequest, with: systemResolution(for: pendingRequest.request.permissionTypes))
             case .prompt:
-                if pendingRequest.request.permissionTypes.contains(.location) {
-                    let context = pendingRequest.request.context
-                    Logger.sitePermissions.debug("""
-                        Location prompt shown frame=\(String(context.requestingFrameID), privacy: .private(mask: .hash)) \
-                        navigation=\(context.navigationGeneration, privacy: .public)
-                        """)
-                }
                 let prompt = SitePermissionPrompt(site: pendingRequest.request.context.topLevelSite,
                                                   permissionTypes: pendingRequest.request.permissionTypes,
                                                   isFireMode: isFireMode)
@@ -612,14 +604,6 @@ public final class SitePermissionsCoordinator {
         }
 
         let permissionTypes = pendingRequest.request.permissionTypes
-        if permissionTypes.contains(.location) {
-            let context = pendingRequest.request.context
-            Logger.sitePermissions.debug("""
-                Location prompt decision=\(String(describing: decision), privacy: .public) \
-                frame=\(String(context.requestingFrameID), privacy: .private(mask: .hash)) \
-                navigation=\(context.navigationGeneration, privacy: .public)
-                """)
-        }
         switch decision {
         case .denyOnce:
             allowOnce.subtract(permissionTypes)

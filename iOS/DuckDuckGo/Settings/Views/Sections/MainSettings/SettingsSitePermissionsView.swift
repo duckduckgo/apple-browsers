@@ -256,6 +256,7 @@ struct SettingsSitePermissionsView: View {
                     .textCase(nil)
             } footer: {
                 Text(systemSettingsFooter)
+                    .daxFootnoteRegular()
                     .environment(\.openURL, OpenURLAction { url in
                         guard SettingsSitePermissionsFooterAction.from(url) == .systemSettings else { return .systemAction }
                         viewModel.openSystemSettings()
@@ -301,6 +302,7 @@ struct SettingsSitePermissionsView: View {
                     Button(UserText.settingsSitePermissionsRemoveAll) {
                         viewModel.removeAllSitePermissions()
                     }
+                    .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .accessibilityIdentifier("Settings.SitePermissions.RemoveAll")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
@@ -368,6 +370,7 @@ private struct SettingsSitePermissionsSiteView: View {
                     viewModel.removePermissions(for: site)
                     dismiss()
                 }
+                .daxBodyRegular()
                 .foregroundColor(Color(designSystemColor: .accentPrimary))
                 .accessibilityIdentifier("Settings.SitePermissions.RemoveSite")
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
@@ -395,7 +398,6 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             permissionType.settingsIcon
-                .font(.title3)
                 .frame(width: 24, height: 24)
                 .accessibilityHidden(true)
             Text(permissionType.settingsTitle)

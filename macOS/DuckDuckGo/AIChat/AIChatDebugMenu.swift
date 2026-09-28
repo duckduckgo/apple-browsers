@@ -31,6 +31,7 @@ final class AIChatDebugMenu: NSMenu {
     private var storageDebugServer: DuckAiStorageDebugServer?
     /// Resolved per read against the key window, so a Fire Window reports its own count rather
     /// than the persistent one.
+    @MainActor
     private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
         let burnerMode = NSApp.delegateTyped.windowControllersManager
             .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
@@ -41,6 +42,7 @@ final class AIChatDebugMenu: NSMenu {
         )
     }
 
+    @MainActor
     private var attachmentPrivacyScopeLabel: String {
         let isBurner = NSApp.delegateTyped.windowControllersManager
             .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.isBurner ?? false
@@ -170,12 +172,14 @@ final class AIChatDebugMenu: NSMenu {
 
     // MARK: - Attachment privacy disclosure
 
+    @MainActor
     @objc private func resetAttachmentPrivacyDisplayCount() {
         attachmentPrivacyCounter.reset()
         updateAttachmentPrivacyMenuItemTitle()
     }
 
     /// Re-read on every menu open: the count moves as the user attaches, not only when it is reset.
+    @MainActor
     private func updateAttachmentPrivacyMenuItemTitle() {
         attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
             + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown, "
@@ -287,7 +291,11 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
-        updateAttachmentPrivacyMenuItemTitle()
+        // AppKit only calls this on the main thread, and the title has to be right before the menu
+        // draws, so it cannot be deferred to a Task.
+        MainActor.assumeIsolated {
+            updateAttachmentPrivacyMenuItemTitle()
+        }
     }
 
     @objc func setCustomURL() {

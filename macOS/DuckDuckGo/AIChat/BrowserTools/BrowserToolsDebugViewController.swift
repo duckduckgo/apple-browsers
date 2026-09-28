@@ -177,7 +177,7 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     // MARK: - Permissions
 
-    /// Stored Always/Never decisions per tool, editable in place: the same store the debug menu manages.
+    /// Stored Always/Never decisions per tool, editable in place: the same store Duck.ai pages write to.
     private func refreshPermissions() {
         for row in permissionsStack.arrangedSubviews {
             permissionsStack.removeArrangedSubview(row)
@@ -188,9 +188,12 @@ final class BrowserToolsDebugViewController: NSViewController {
         permissionsStack.addArrangedSubview(header)
 
         let decisions = service.permissions.storedDecisions
-        for tool in service.catalog.enabledTools where tool.permissionMode == .ask {
-            let state = decisions[tool.name]
-            let label = NSTextField(labelWithString: "\(tool.name): \(state?.rawValue ?? "ask")")
+        let askTools = service.catalog.enabledTools.filter { $0.permissionMode == .ask }.map(\.name)
+        // A decision outlives its tool's flag, so it stays listed and resettable on its own.
+        let orphanedTools = decisions.keys.filter { !askTools.contains($0) }.sorted()
+        for toolName in askTools + orphanedTools {
+            let state = decisions[toolName]
+            let label = NSTextField(labelWithString: "\(toolName): \(state?.rawValue ?? "ask")")
             label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
             label.textColor = state == nil ? .secondaryLabelColor : .labelColor
             var views: [NSView] = [label]
@@ -198,7 +201,7 @@ final class BrowserToolsDebugViewController: NSViewController {
                 let reset = PermissionButton(title: "Reset", target: self, action: #selector(resetPermission(_:)))
                 reset.bezelStyle = .rounded
                 reset.controlSize = .mini
-                reset.toolName = tool.name
+                reset.toolName = toolName
                 views.append(reset)
             }
             let row = NSStackView(views: views)

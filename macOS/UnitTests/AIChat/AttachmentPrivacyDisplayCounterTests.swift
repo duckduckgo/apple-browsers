@@ -17,6 +17,8 @@
 //
 
 import AIChat
+import DuckAiDataStore
+import FeatureFlags_macOS
 import PrivacyConfig
 import WebKit
 import XCTest

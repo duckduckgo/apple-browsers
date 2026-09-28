@@ -158,6 +158,21 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testDisabledInitialLoadGateSkipsBackgroundLoadAndDoesNotExposeWaiter() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager,
+                                                   initialLoadGateEnabledProvider: { false },
+                                                   enabledTypesProvider: { [.embedded] })
+
+        let loadAndSync = sut.loadAndSync()
+
+        XCTAssertNil(sut.initialLoadWaiter)
+        await loadAndSync.value
+        XCTAssertEqual(manager.backgroundContentLoadCallCount, 0)
+        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+    }
+
+    @MainActor
     func testNavigationGateTimesOutWithoutCancellingInitialLoad() async throws {
         let manager = RecordingWebExtensionManager()
         manager.suspendLoad = true
@@ -392,6 +407,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var suspendBackgroundContentLoad = false
     private var backgroundContentLoadContinuation: CheckedContinuation<Void, Never>?
     var isBackgroundContentLoadSuspended: Bool { backgroundContentLoadContinuation != nil }
+    private(set) var backgroundContentLoadCallCount = 0
 
     /// Stubbed loaded embedded types, representing controller state after an op.
     var stubbedLoadedTypes: Set<DuckDuckGoWebExtensionType> = []
@@ -423,6 +439,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
         begin(.reload); try? await Task.sleep(for: opDelay); end(.reload)
     }
     func loadEmbeddedExtensionBackgroundContent() async {
+        backgroundContentLoadCallCount += 1
         guard suspendBackgroundContentLoad else { return }
         await withCheckedContinuation { backgroundContentLoadContinuation = $0 }
     }

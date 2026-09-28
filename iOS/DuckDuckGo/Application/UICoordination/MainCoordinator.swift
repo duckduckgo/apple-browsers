@@ -456,6 +456,9 @@ final class MainCoordinator {
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
+            initialLoadGateEnabledProvider: { [weak self] in
+                self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+            },
             pixelFiring: iOSWebExtensionPixelFiring()
         ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []

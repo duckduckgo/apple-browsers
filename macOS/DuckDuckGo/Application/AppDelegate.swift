@@ -2165,6 +2165,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             let coordinator = WebExtensionLifecycleCoordinator(
                 manager: webExtensionManager,
+                initialLoadGateEnabledProvider: { [weak self] in
+                    self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+                },
                 pixelFiring: MacOSWebExtensionPixelFiring()
             ) { [weak self] in
                 self?.enabledEmbeddedExtensionTypes() ?? []
@@ -2196,6 +2199,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
+            initialLoadGateEnabledProvider: { [weak self] in
+                self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+            },
             pixelFiring: MacOSWebExtensionPixelFiring()
         ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []

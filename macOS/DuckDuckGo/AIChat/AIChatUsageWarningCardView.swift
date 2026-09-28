@@ -99,6 +99,9 @@ final class AIChatUsageWarningCardView: NSView {
         static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
+        /// Leaves room for the disclosure's two lines inside the band. A text view lays out from
+        /// the top rather than centring, so this is what centres it.
+        static let disclosureVerticalInset: CGFloat = 6
     }
 
     // MARK: - UI Components
@@ -168,22 +171,27 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
-    /// Transparent hit target over the message, installed only for the attachment privacy
-    /// disclosure. The link is styled inline, so the row is the target rather than the glyph range.
-    private lazy var learnMoreHitButton: PointingHandButton = {
-        let button = PointingHandButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.isBordered = false
-        button.isTransparent = true
-        button.title = ""
-        button.isHidden = true
-        button.target = self
-        button.action = #selector(learnMoreClicked)
-        // The label's compression resistance is `.defaultLow`, so a button hugging at the default
-        // 750 would win the pair of equal-width constraints and squeeze the text to nothing.
-        button.setContentHuggingPriority(.init(1), for: .horizontal)
-        button.setContentHuggingPriority(.init(1), for: .vertical)
-        return button
+    /// The attachment privacy disclosure only. A text view rather than the label because its copy
+    /// carries an inline link, and AppKit does the hit testing and the cursor for a `.link`
+    /// attribute — the label would need the glyph range measured by hand.
+    private lazy var disclosureTextView: NSTextView = {
+        let view = NSTextView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.delegate = self
+        view.isEditable = false
+        // Required for link clicks to reach the delegate.
+        view.isSelectable = true
+        view.drawsBackground = false
+        view.textContainerInset = .zero
+        view.textContainer?.lineFragmentPadding = 0
+        view.isVerticallyResizable = false
+        view.isHorizontallyResizable = false
+        view.isHidden = true
+        view.linkTextAttributes = [
+            .foregroundColor: NSColor(designSystemColor: .textLink),
+            .cursor: NSCursor.pointingHand
+        ]
+        return view
     }()
 
     /// Content centres on the visible band, not the card, whose top runs up behind the panel.
@@ -263,6 +271,7 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(iconImageView)
         addSubview(ringView)
         addSubview(titleLabel)
+        addSubview(disclosureTextView)
         addSubview(actionButton)
         addSubview(closeButton)
 
@@ -309,6 +318,14 @@ final class AIChatUsageWarningCardView: NSView {
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
+
+            disclosureTextView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            disclosureTextView.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor,
+                                                         constant: -Constants.horizontalPadding),
+            disclosureTextView.topAnchor.constraint(equalTo: contentGuide.topAnchor,
+                                                    constant: Constants.disclosureVerticalInset),
+            disclosureTextView.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor,
+                                                       constant: -Constants.disclosureVerticalInset),
 
             actionButton.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor,
                                                   constant: Constants.titleActionSpacing),
@@ -362,22 +379,21 @@ final class AIChatUsageWarningCardView: NSView {
     /// not dismissible.
     func updateForAttachmentPrivacy() {
         applyInfoIcon()
-        titleLabel.maximumNumberOfLines = 2
-        titleLabel.attributedStringValue = Self.attributedDisclosure()
-        titleLabel.setAccessibilityLabel("\(UserText.aiChatAttachmentPrivacyDisclosure) \(UserText.aiChatAttachmentPrivacyLearnMore)")
+        titleLabel.isHidden = true
+        disclosureTextView.isHidden = false
+        disclosureTextView.textStorage?.setAttributedString(Self.attributedDisclosure())
+        disclosureTextView.setAccessibilityLabel("\(UserText.aiChatAttachmentPrivacyDisclosure) \(UserText.aiChatAttachmentPrivacyLearnMore)")
 
         actionButton.isHidden = true
         actionButton.collapse()
 
         applyCloseButton(isVisible: false)
-        installLearnMoreHitTargetIfNeeded()
-        learnMoreHitButton.isHidden = false
     }
 
     /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
     /// about which model is selected rather than about an allowance running out.
     func update(with notice: DuckAiHighUsageModelNotice) {
-        learnMoreHitButton.isHidden = true
+        showTitleLabel()
         let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
         applyInfoIcon()
         titleLabel.maximumNumberOfLines = 1
@@ -392,7 +408,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
-        learnMoreHitButton.isHidden = true
+        showTitleLabel()
         applyIcon(for: warning)
         titleLabel.maximumNumberOfLines = 1
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
@@ -435,7 +451,7 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     func update(with notice: AIChatCreateImageModelSwitchNotice) {
-        learnMoreHitButton.isHidden = true
+        showTitleLabel()
         let title = notice.localizedTitle
         let subtitle = notice.localizedSubtitle
 
@@ -496,29 +512,22 @@ final class AIChatUsageWarningCardView: NSView {
 
     /// The approved copy carries its link inline, so the card's pill CTA cannot serve it.
     private static func attributedDisclosure() -> NSAttributedString {
+        var bodyAttributes = textAttributes(weight: .regular)
+        bodyAttributes[.cursor] = NSCursor.arrow
         let result = NSMutableAttributedString(string: UserText.aiChatAttachmentPrivacyDisclosure + " ",
-                                               attributes: textAttributes(weight: .regular))
-        var linkAttributes = textAttributes(weight: .regular)
-        linkAttributes[.foregroundColor] = NSColor(designSystemColor: .textLink)
+                                               attributes: bodyAttributes)
+
+        var linkAttributes = bodyAttributes
+        // The value is only the delegate's signal — the host decides how to open it.
+        linkAttributes[.link] = URL.aiChatPrivacy
         result.append(NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore,
                                          attributes: linkAttributes))
         return result
     }
 
-    @objc private func learnMoreClicked() {
-        onLearnMore?()
-    }
-
-    private func installLearnMoreHitTargetIfNeeded() {
-        guard learnMoreHitButton.superview == nil else { return }
-
-        addSubview(learnMoreHitButton, positioned: .above, relativeTo: titleLabel)
-        NSLayoutConstraint.activate([
-            learnMoreHitButton.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            learnMoreHitButton.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-            learnMoreHitButton.topAnchor.constraint(equalTo: contentGuide.topAnchor),
-            learnMoreHitButton.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor)
-        ])
+    private func showTitleLabel() {
+        disclosureTextView.isHidden = true
+        titleLabel.isHidden = false
     }
 
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
@@ -876,5 +885,17 @@ final class AIChatUsageWarningActionButton: NSView {
 
     override func mouseExited(with event: NSEvent) {
         isHovered = false
+    }
+}
+
+// MARK: - Inline link
+
+extension AIChatUsageWarningCardView: NSTextViewDelegate {
+
+    /// Only the link's glyphs reach this, which is the point of using a text view: the rest of the
+    /// sentence is not a hit target.
+    func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+        onLearnMore?()
+        return true
     }
 }

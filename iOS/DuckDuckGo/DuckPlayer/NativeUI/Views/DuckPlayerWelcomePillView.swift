@@ -60,6 +60,7 @@ private struct Constants {
 /// The welcome pill view that appears when a user first encounters DuckPlayer
 struct DuckPlayerWelcomePillView: View {
     @ObservedObject var viewModel: DuckPlayerWelcomePillViewModel
+    var usesOpaqueBackground = false
     @State private var isAnimating: Bool = true
     @Environment(\.colorScheme) private var colorScheme
 
@@ -155,7 +156,7 @@ struct DuckPlayerWelcomePillView: View {
                      : Constants.horizontalPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
-                Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary  : .backgroundSheets)
+                Color(designSystemColor: usesOpaqueBackground || colorScheme == .light ? .backgroundSheets : .controlsFillPrimary)
             )
             .cornerRadius(AppRebrand.isAppRebranded() ?
                           ContainerMetrics.cornerRadius

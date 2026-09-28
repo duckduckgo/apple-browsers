@@ -270,6 +270,19 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
+    func testPresentPill_WhenFirstTimeUserAndFloatingUI_HidesSheetChrome() {
+        sut = makeFloatingUISUT()
+        mockHostViewController.floatingBottomChromeObscuredHeight = 170
+        mockDuckPlayerSettings.primingMessagePresented = false
+        mockDuckPlayerSettings.variant = .nativeOptIn
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertFalse(sut.containerViewController?.rootView.showsSheetChrome ?? true)
+        XCTAssertEqual(sut.bottomConstraint?.constant, -188)
+    }
+
+    @MainActor
     func testDismissPill_WhenWelcomePill_TransitionsToEntryPill() {
         // Given
         let videoID = "test123"

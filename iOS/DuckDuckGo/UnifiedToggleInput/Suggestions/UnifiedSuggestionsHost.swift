@@ -87,7 +87,7 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false)
-        let hosting = UIHostingController(rootView: view)
+        let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -240,5 +240,19 @@ final class UnifiedSuggestionsHost {
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false)
+        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
+    }
+}
+
+/// The redesigned modules use the favorites controller's models without mounting that controller.
+/// Report visibility from their actual host, so hierarchy and modal checks still apply.
+private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
+
+    func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
+        rootView.usesRedesignedNewTabPageLayout &&
+        rootView.showsRedesignedSearchModules &&
+        !rootView.viewModel.isFireTab &&
+        !rootView.viewModel.isFadingOut &&
+        rootView.favoritesPresentation.hasAppearedRemoteMessage(withID: messageID)
     }
 }

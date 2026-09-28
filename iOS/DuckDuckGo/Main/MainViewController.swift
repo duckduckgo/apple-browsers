@@ -1277,14 +1277,14 @@ class MainViewController: UIViewController {
                                                         searchDismissSurface: remoteMessageSearchDismissSurface)
     }
 
-    private var remoteMessageSearchDismissSurface: NewTabPageViewController? {
+    private var remoteMessageSearchDismissSurface: UIViewController? {
         guard tabManager.currentTabsModel.currentTab?.link == nil,
               viewCoordinator.isOmnibarDismissInProgress,
               let coordinator = unifiedToggleInputCoordinator,
               coordinator.isOmnibarSession,
               coordinator.inputMode == .search,
               coordinator.contentViewController.isShowingFavoritesContent,
-              let restingPage = newTabPageViewController as? NewTabPageViewController else { return nil }
+              let restingPage = newTabPageViewController else { return nil }
         return restingPage
     }
 
@@ -1301,8 +1301,7 @@ class MainViewController: UIViewController {
         }
         // Focused Search can show RMF over a loaded website. Only the resting surface requires an NTP tab.
         guard tabManager.currentTabsModel.currentTab?.link == nil else { return nil }
-        // The redesigned resting NTP has no RMF block. Only the legacy page renders a card.
-        return newTabPageViewController as? NewTabPageViewController
+        return newTabPageViewController
     }
 
     private func observeHomePageMessageChanges() {

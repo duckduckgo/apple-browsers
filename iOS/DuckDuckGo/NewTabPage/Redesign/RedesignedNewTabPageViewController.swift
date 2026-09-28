@@ -23,7 +23,7 @@ import DesignResourcesKitIcons
 import UIKit
 
 /// A New Tab Page built as a vertical stack of independent blocks.
-final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
+final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, RemoteMessagePresenting {
 
     private enum Metrics {
         static let customizeButtonTopMargin: CGFloat = 10
@@ -45,6 +45,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
     private let favoritesModel: FavoritesViewModel?
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
+    private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
@@ -96,6 +97,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
         self.pageModel = pageModel
         self.messagesModel = messagesModel
         super.init(nibName: nil, bundle: nil)
+        messagesModel?.onMessageVisibilityChanged = { [weak self] in
+            self?.notifyRemoteMessageSurfaceChanged()
+        }
     }
 
     @available(*, unavailable)
@@ -134,6 +138,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        isRemoteMessageSurfacePresented = true
+        notifyRemoteMessageSurfaceChanged()
 
         // The page is attached with alpha 0 ahead of a contextual dialog so content cannot flash
         // for a frame first, and is expected to restore it itself.
@@ -149,7 +155,17 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        isRemoteMessageSurfacePresented = false
+        notifyRemoteMessageSurfaceChanged()
         finishEntranceAnimation()
+    }
+
+    func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
+        isRemoteMessageSurfacePresented && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
+    }
+
+    private func notifyRemoteMessageSurfaceChanged() {
+        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: self)
     }
 
     func prepareForEntranceAnimation(if shouldAnimate: Bool) {

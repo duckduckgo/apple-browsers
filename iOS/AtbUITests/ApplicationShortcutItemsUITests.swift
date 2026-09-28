@@ -89,16 +89,12 @@ final class ApplicationShortcutItemsUITests: XCTestCase {
 
         for attempt in 1...quickActionsMenuAttemptCount {
             let iconExpectation = XCTNSPredicateExpectation(predicate: iconIsHittable, object: appIcon)
-            guard XCTWaiter.wait(for: [iconExpectation], timeout: timeout) == .completed else {
-                recordSpringboardDiagnostics()
-                XCTFail("DuckDuckGo app icon did not become hittable.", file: file, line: line)
-                return false
-            }
+            if XCTWaiter.wait(for: [iconExpectation], timeout: timeout) == .completed {
+                appIcon.press(forDuration: 1.2)
 
-            appIcon.press(forDuration: 1.2)
-
-            if springboard.buttons["Duck.ai"].waitForExistence(timeout: quickActionsMenuTimeout) {
-                return true
+                if springboard.buttons["Duck.ai"].waitForExistence(timeout: quickActionsMenuTimeout) {
+                    return true
+                }
             }
 
             guard attempt < quickActionsMenuAttemptCount else { break }
@@ -112,7 +108,7 @@ final class ApplicationShortcutItemsUITests: XCTestCase {
         }
 
         recordSpringboardDiagnostics()
-        XCTFail("Duck.ai Quick Action did not appear after \(quickActionsMenuAttemptCount) attempts.", file: file, line: line)
+        XCTFail("DuckDuckGo Quick Actions menu did not become available after \(quickActionsMenuAttemptCount) attempts.", file: file, line: line)
         return false
     }
 

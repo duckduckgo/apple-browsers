@@ -466,9 +466,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217683061875234?focus=true
     case appSwitcherSnapshotClearing
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217929175704444?focus=true
-    case tabPreviewPerformanceOptimization
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
     case screenTimeCleaning
 
@@ -928,8 +925,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
         case .appSwitcherSnapshotClearing:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appSwitcherSnapshotClearing))
-        case .tabPreviewPerformanceOptimization:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabPreviewPerformanceOptimization))
         case .screenTimeCleaning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
         case .bottomBarViewportFixedElementsWorkaround:

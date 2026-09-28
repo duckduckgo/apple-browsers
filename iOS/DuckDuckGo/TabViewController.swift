@@ -2916,9 +2916,7 @@ extension TabViewController: WKNavigationDelegate {
                                                   afterScreenUpdates: Bool) -> WKSnapshotConfiguration {
         let configuration = WKSnapshotConfiguration()
         configuration.rect = rect
-        if featureFlagger.isFeatureOn(.tabPreviewPerformanceOptimization) {
-            configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
-        }
+        configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
         configuration.afterScreenUpdates = afterScreenUpdates
         return configuration
     }

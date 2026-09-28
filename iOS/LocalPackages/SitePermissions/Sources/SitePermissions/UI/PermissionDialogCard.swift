@@ -20,6 +20,18 @@
 import DesignResourcesKit
 import SwiftUI
 
+struct PermissionDialogButtonLabel: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.body.weight(.medium))
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 48)
+    }
+}
+
 private enum PermissionDialogCardConstants {
     static let cornerRadius: CGFloat = 32
     static let padding: CGFloat = 14
@@ -33,13 +45,16 @@ struct PermissionDialogCard<Content: View>: View {
 
     private let width: CGFloat
     private let accessibilityIdentifier: String
+    private let onDismiss: () -> Void
     private let content: Content
 
     init(width: CGFloat,
          accessibilityIdentifier: String,
+         onDismiss: @escaping () -> Void,
          @ViewBuilder content: () -> Content) {
         self.width = width
         self.accessibilityIdentifier = accessibilityIdentifier
+        self.onDismiss = onDismiss
         self.content = content()
     }
 
@@ -48,20 +63,26 @@ struct PermissionDialogCard<Content: View>: View {
             Color.black
                 .opacity(0.2)
                 .ignoresSafeArea()
+                .onTapGesture(perform: onDismiss)
 
             GeometryReader { proxy in
                 ScrollView {
                     VStack {
                         Spacer(minLength: PermissionDialogCardConstants.verticalMargin)
                         card
+                            // Taps inside the card must not dismiss the dialog.
+                            .onTapGesture { }
                         Spacer(minLength: PermissionDialogCardConstants.verticalMargin)
                     }
                     .frame(minHeight: proxy.size.height)
                     .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: onDismiss)
                 }
             }
         }
         .accessibilityIdentifier(accessibilityIdentifier)
+        .accessibilityAction(.escape, onDismiss)
     }
 
     private var card: some View {

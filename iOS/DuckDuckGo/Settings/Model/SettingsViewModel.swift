@@ -189,6 +189,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
     let isSitePermissionsEnabled: Bool
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
+    @MainActor private var sitePermissionsFavicons: SitePermissionsFaviconStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
     @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
 
@@ -196,6 +197,7 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
         isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
+        favicons: sitePermissionsFavicons,
         callbacks: makeSitePermissionsCallbacks()
     )
 
@@ -1125,9 +1127,11 @@ final class SettingsViewModel: ObservableObject {
 
     @MainActor
     func configureSitePermissions(store: SitePermissionsStore,
+                                  favicons: SitePermissionsFaviconStore? = nil,
                                   eventHandler: @escaping (SitePermissionsEvent) -> Void,
                                   revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void) {
         sitePermissionsStore = store
+        sitePermissionsFavicons = favicons
         sitePermissionsEventHandler = eventHandler
         sitePermissionsRevocationHandler = revocationHandler
     }

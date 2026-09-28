@@ -71,6 +71,58 @@ class AutoconsentUITests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    func testAutoconsent_PrivacyTestPages_ManagesCookieConsentAfterInitialBackgroundLoadRace() throws {
+        guard #available(macOS 15.4, *) else {
+            throw XCTSkip("Autoconsent WebExtension requires macOS 15.4+")
+        }
+
+        let testURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/")!
+        let reproductionCount = 10
+        let webView = app.webViews.firstMatch
+        let autoconsentPageContent = webView.staticTexts.containing(\.value, containing: "automatic consent popup clicking").firstMatch
+        let clickedButton = webView.buttons.containing(\.title, containing: "I was clicked!").firstMatch
+
+        app.disableWarnBeforeQuitting()
+        app.openPreferencesWindow()
+        app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
+        app.closePreferencesWindow()
+        defer {
+            app.openPreferencesWindow()
+            app.preferencesSetRestorePreviousSession(to: .newWindow)
+            app.closePreferencesWindow()
+        }
+
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(testURL, pressingEnter: true)
+        XCTAssertTrue(autoconsentPageContent.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "Autoconsent test page should load before reproducing the initial background load race")
+        XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Autoconsent should manage cookie consent before reproducing the initial background load race")
+
+        for reproductionIndex in 1...reproductionCount {
+            XCTContext.runActivity(named: "Reproduce initial background load race \(reproductionIndex)") { _ in
+                app.menuItems[XCUIApplication.AccessibilityIdentifiers.quitMenuItem].tap()
+                XCTAssertTrue(app.wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence),
+                              "App should quit before reproduction \(reproductionIndex)")
+
+                do {
+                    try clearPersistedBackgroundListeners()
+                } catch {
+                    XCTFail("Failed to clear persisted background listeners before reproduction \(reproductionIndex): \(error)")
+                }
+
+                app.restart(forceTerminate: true)
+                XCTAssertTrue(app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence),
+                              "App should relaunch for reproduction \(reproductionIndex)")
+
+                XCTAssertTrue(autoconsentPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer),
+                              "Autoconsent test page should restore during reproduction \(reproductionIndex)")
+                XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                              "Autoconsent should manage cookie consent during initial background load race \(reproductionIndex)")
+            }
+        }
+    }
+
     // Re-enable when experiment is shipped to 100%
     func testAutoconsent_PrivacyTestPages_HeuristicModeWorks() throws {
         // Navigate to DuckDuckGo's privacy test pages for autoconsent
@@ -273,5 +325,59 @@ class AutoconsentUITests: UITestCase {
         // Verify exactly 3 page loads occurred: initial navigation + 2 reloads
         let pageLoadCount = webView.staticTexts.containing(\.value, containing: "Page load count: 3").firstMatch
         XCTAssertTrue(pageLoadCount.exists, "Page should have loaded exactly 3 times (initial + 2 reloads)")
+    }
+
+    private func clearPersistedBackgroundListeners(file: StaticString = #file, line: UInt = #line) throws {
+        let webKitDirectory = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/WebKit", isDirectory: true)
+        let bundleIdentifiers = [
+            "com.duckduckgo.macos.browser",
+            "com.duckduckgo.macos.browser.debug",
+            "com.duckduckgo.macos.browser.review"
+        ]
+        let stateFileURLs = bundleIdentifiers.flatMap { bundleIdentifier in
+            webExtensionStateFileURLs(in: webKitDirectory.appendingPathComponent(bundleIdentifier, isDirectory: true))
+        }
+        var updatedStateFileCount = 0
+
+        for stateFileURL in stateFileURLs {
+            let data = try Data(contentsOf: stateFileURL)
+            guard var state = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+                  state["LastSeenDisplayName"] as? String == "DuckDuckGo Embedded Extension",
+                  state["BackgroundContentEventListeners"] != nil else {
+                continue
+            }
+
+            state.removeValue(forKey: "BackgroundContentEventListeners")
+            state.removeValue(forKey: "BackgroundContentEventListenersVersion")
+            let updatedData = try PropertyListSerialization.data(fromPropertyList: state, format: .binary, options: 0)
+            try updatedData.write(to: stateFileURL, options: .atomic)
+            updatedStateFileCount += 1
+        }
+
+        XCTAssertGreaterThan(updatedStateFileCount,
+                             0,
+                             "Expected persisted WebExtension background listeners before relaunch",
+                             file: file,
+                             line: line)
+    }
+
+    private func webExtensionStateFileURLs(in webKitDirectory: URL) -> [URL] {
+        let extensionsDirectory = webKitDirectory
+            .appendingPathComponent("WebExtensions", isDirectory: true)
+            .appendingPathComponent("Default", isDirectory: true)
+
+        guard let extensionDirectories = try? FileManager.default.contentsOfDirectory(
+            at: extensionsDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey]
+        ) else {
+            return []
+        }
+
+        return extensionDirectories.compactMap { extensionDirectory in
+            let isDirectory = (try? extensionDirectory.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+            let stateFileURL = extensionDirectory.appendingPathComponent("State.plist", isDirectory: false)
+            return isDirectory && FileManager.default.fileExists(atPath: stateFileURL.path) ? stateFileURL : nil
+        }
     }
 }

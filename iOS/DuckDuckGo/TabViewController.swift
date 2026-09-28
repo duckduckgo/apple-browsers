@@ -631,6 +631,7 @@ class TabViewController: UIViewController {
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+                                   webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                                    sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
@@ -673,6 +674,7 @@ class TabViewController: UIViewController {
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
                                  sitePermissionsEnabled: sitePermissionsEnabled,
+                                 webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
@@ -686,6 +688,8 @@ class TabViewController: UIViewController {
 
     let eventHub: EventHubManaging
     let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
+    private let webExtensionNavigationGate = WebExtensionNavigationGate()
 
     /// This tab's EventHub identity. Derived from the tab model's UUID string, so it is stable for the
     /// tab's lifetime and unique per tab — which is what EventHub's per-tab web-event dedup keys off.
@@ -850,6 +854,7 @@ class TabViewController: UIViewController {
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
@@ -912,6 +917,7 @@ class TabViewController: UIViewController {
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
         self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
 
         // Captured by value so the handler's provider closure doesn't retain the controller.
         let eventHubTabID = EventHubTabID(rawValue: UUID(uuidString: tabModel.uid) ?? UUID())
@@ -3319,6 +3325,35 @@ extension TabViewController: WKNavigationDelegate {
             decisionHandler(policy)
         }
 
+        if #available(iOS 18.4, *),
+           navigationAction.isTargetingMainFrame,
+           let scheme = navigationAction.request.url?.scheme?.lowercased(),
+           scheme == "http" || scheme == "https",
+           let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
+            Task { @MainActor [weak self, webView] in
+                guard let self else {
+                    wrappedHandler(.cancel)
+                    return
+                }
+                await webExtensionNavigationGate.waitIfNeeded(isMainFrame: true,
+                                                              url: navigationAction.request.url,
+                                                              initialLoadWaiter: initialLoadWaiter)
+                decidePolicyAfterWebExtensionInitialLoad(webView,
+                                                         navigationAction: navigationAction,
+                                                         decisionHandler: wrappedHandler)
+            }
+            return
+        }
+
+        decidePolicyAfterWebExtensionInitialLoad(webView,
+                                                 navigationAction: navigationAction,
+                                                 decisionHandler: wrappedHandler)
+    }
+
+    private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
+                                                          navigationAction: WKNavigationAction,
+                                                          decisionHandler wrappedHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+
         // There is an `isUserInitiated` var on navigationAction that uses private API
         //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
         //  if the user visits the a domain where as a loop has already been detected
@@ -3349,7 +3384,9 @@ extension TabViewController: WKNavigationDelegate {
                    wrappedHandler(.cancel)
                    return
                }
-               self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
+               self.decidePolicyAfterWebExtensionInitialLoad(webView,
+                                                             navigationAction: navigationAction,
+                                                             decisionHandler: wrappedHandler)
            }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
             // will wait for Content Blocking to load and re-call on completion
             return

@@ -116,6 +116,28 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertEqual(second.displayCount, 1)
     }
 
+    /// The takeover runs whether or not there was anything to take, so a value written afterwards
+    /// belongs to a web app that is no longer the authority.
+    func testWebCountAppearingAfterTheTakeoverIsIgnored() {
+        _ = makeCounter()
+
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 3
+        let second = makeCounter()
+
+        XCTAssertEqual(second.displayCount, 0)
+        XCTAssertTrue(second.consumeDisplay())
+    }
+
+    /// Deliberate: the takeover is about state, not about showing anything, so deferring it until
+    /// the flag is on would risk missing it entirely.
+    func testTheTakeoverHappensEvenWithTheFlagOff() {
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 2
+
+        _ = makeCounter(isEnabled: false)
+
+        XCTAssertEqual(makeCounter().displayCount, 2)
+    }
+
     func testAbsentWebCountLeavesTheCountAtZero() {
         let counter = makeCounter()
 

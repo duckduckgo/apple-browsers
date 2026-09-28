@@ -37,10 +37,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // Keep both reporting packages resolved across Xcode 26 and 27 without linking them on iOS or macOS.
-        .package(url: "https://github.com/pointfreeco/swift-issue-reporting", exact: "2.1.1"),
+        // Keep the reporting graph consistent across Xcode 26 and 27.
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", exact: "1.7.0"),
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.4"),
-        .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.2.2"),
+        .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", exact: "1.11.0"),
     ],
     targets: [
         .target(name: "PreviewSnapshots"),
@@ -49,14 +49,16 @@ let package = Package(
             dependencies: [
                 "PreviewSnapshots",
                 .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
-                .product(name: "IssueReporting", package: "swift-issue-reporting", condition: .when(platforms: [.tvOS])),
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
-                .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay", condition: .when(platforms: [.tvOS])),
             ]
         ),
         .testTarget(
             name: "SnapshotTestingSupportTests",
-            dependencies: ["SnapshotTestingSupport"]
+            dependencies: [
+                "SnapshotTestingSupport",
+                .product(name: "CustomDump", package: "swift-custom-dump"),
+                .product(name: "XCTestDynamicOverlay", package: "xctest-dynamic-overlay"),
+            ]
         ),
     ],
     swiftLanguageVersions: [.v5]

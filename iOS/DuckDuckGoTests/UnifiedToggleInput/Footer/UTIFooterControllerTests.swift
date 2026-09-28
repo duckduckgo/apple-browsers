@@ -188,9 +188,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
     /// The dismissal is recorded against a rung of the redisplay ladder, so crossing the next one
     /// brings the card back.
-    /// Per the spec an approaching message is suppressed until `resetsAt`, so a higher percentage in
-    /// the same period is the same message and stays gone.
-    func test_dismissCurrent_keepsTheSameNoticeHiddenForThatResetPeriod() {
+    func test_dismissCurrent_doesNotHideTheNextThreshold() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.dismissCurrent()
@@ -198,7 +196,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
 
-        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
     }
 
     /// A dismissed approaching message must not take the reached one with it.

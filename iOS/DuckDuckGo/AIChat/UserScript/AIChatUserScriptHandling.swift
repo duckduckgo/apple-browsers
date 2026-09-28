@@ -430,6 +430,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsPromoCards: supportsNativeChatInput,
             supportsSuggestions: supportsSuggestions,
             supportsNativeUsageWarnings: supportsNativeUsageWarnings,
+            supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
         )

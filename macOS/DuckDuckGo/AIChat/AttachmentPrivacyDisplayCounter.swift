@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import FeatureFlags_macOS
 import Foundation
 import os.log

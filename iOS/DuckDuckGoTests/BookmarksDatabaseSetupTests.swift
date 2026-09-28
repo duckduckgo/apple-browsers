@@ -108,14 +108,9 @@ class BookmarksDatabaseSetupTests: XCTestCase {
     func setUpValidBookmarksDatabase() -> CoreDataDatabase? {
         let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            XCTFail("Failed to load model")
-            return nil
-        }
         return CoreDataDatabase(name: type(of: self).description(),
                                 containerLocation: location,
-                                model: model)
+                                model: .bookmarks)
     }
 
     func testWhenDatabaseLoadsCorrectlyThenValidationIsPerformed() {

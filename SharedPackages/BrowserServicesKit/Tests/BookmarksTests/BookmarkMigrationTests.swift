@@ -30,8 +30,6 @@ class BookmarkMigrationTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        ModelAccessHelper.compileModel(from: Bundle(for: BookmarkMigrationTests.self), named: "BookmarksModel")
-
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
         guard let location = Bundle(for: BookmarkMigrationTests.self).resourceURL else {
@@ -66,11 +64,7 @@ class BookmarkMigrationTests: XCTestCase {
     }
 
     func loadDatabase(name: String) -> CoreDataDatabase? {
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            return nil
-        }
-        let bookmarksDatabase = CoreDataDatabase(name: name, containerLocation: location, model: model)
+        let bookmarksDatabase = CoreDataDatabase(name: name, containerLocation: location, model: .bookmarks)
         bookmarksDatabase.loadStore()
         return bookmarksDatabase
     }

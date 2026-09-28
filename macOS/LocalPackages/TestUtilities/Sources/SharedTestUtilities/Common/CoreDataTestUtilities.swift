@@ -56,9 +56,13 @@ public final class CoreData {
             fatalError("Error initializing object model from: \(modelURL)")
         }
 
-        let transformers = (try? objectModel.registerValueTransformers(keyStore: keyStore))!
-        let container = TestPersistentContainer(name: modelName,
-                                                managedObjectModel: objectModel,
+        return createPersistentContainer(at: url, name: modelName, model: objectModel, keyStore: keyStore)
+    }
+
+    public static func createPersistentContainer(at url: URL, name: String, model: NSManagedObjectModel, keyStore: EncryptionKeyStoring) -> NSPersistentContainer {
+        let transformers = (try? model.registerValueTransformers(keyStore: keyStore))!
+        let container = TestPersistentContainer(name: name,
+                                                managedObjectModel: model,
                                                 registeredTransformers: transformers)
 
         let description = NSPersistentStoreDescription()
@@ -81,6 +85,10 @@ public final class CoreData {
         //
         // This approach is apparently the recommended choice: https://www.donnywals.com/setting-up-a-core-data-store-for-unit-tests/
         return createPersistentContainer(at: URL(fileURLWithPath: "/dev/null"), modelName: modelName, bundle: bundle, keyStore: keyStore)
+    }
+
+    public static func createInMemoryPersistentContainer(name: String, model: NSManagedObjectModel, keyStore: EncryptionKeyStoring = EncryptionKeyStoreMock()) -> NSPersistentContainer {
+        createPersistentContainer(at: URL(fileURLWithPath: "/dev/null"), name: name, model: model, keyStore: keyStore)
     }
 
 }

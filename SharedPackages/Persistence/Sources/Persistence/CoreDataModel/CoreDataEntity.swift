@@ -56,6 +56,23 @@ public struct CoreDataEntity {
     }
 }
 
+public extension CoreDataEntity {
+
+    mutating func modifyAttribute(_ name: String, _ change: (inout CoreDataAttribute) -> Void) {
+        guard let index = attributes.firstIndex(where: { $0.name == name }) else {
+            preconditionFailure("\(self.name) has no attribute named \(name)")
+        }
+        change(&attributes[index])
+    }
+
+    mutating func modifyRelationship(_ name: String, _ change: (inout CoreDataRelationship) -> Void) {
+        guard let index = relationships.firstIndex(where: { $0.name == name }) else {
+            preconditionFailure("\(self.name) has no relationship named \(name)")
+        }
+        change(&relationships[index])
+    }
+}
+
 public struct CoreDataAttribute {
 
     public var name: String
@@ -65,6 +82,7 @@ public struct CoreDataAttribute {
     public var valueTransformerName: String?
     public var valueClassName: String?
     public var renamingIdentifier: String?
+    public var versionHashModifier: String?
     public var allowsExternalBinaryDataStorage: Bool
 
     public init(_ name: String,
@@ -74,6 +92,7 @@ public struct CoreDataAttribute {
                 valueTransformerName: String? = nil,
                 valueClassName: String? = nil,
                 renamingIdentifier: String? = nil,
+                versionHashModifier: String? = nil,
                 allowsExternalBinaryDataStorage: Bool = false) {
         self.name = name
         self.type = type
@@ -82,6 +101,7 @@ public struct CoreDataAttribute {
         self.valueTransformerName = valueTransformerName
         self.valueClassName = valueClassName
         self.renamingIdentifier = renamingIdentifier
+        self.versionHashModifier = versionHashModifier
         self.allowsExternalBinaryDataStorage = allowsExternalBinaryDataStorage
     }
 
@@ -93,6 +113,7 @@ public struct CoreDataAttribute {
         attribute.defaultValue = defaultValue
         attribute.valueTransformerName = valueTransformerName
         attribute.renamingIdentifier = renamingIdentifier
+        attribute.versionHashModifier = versionHashModifier
         attribute.allowsExternalBinaryDataStorage = allowsExternalBinaryDataStorage
         if let valueClassName {
             attribute.attributeValueClassName = valueClassName
@@ -149,6 +170,8 @@ public struct CoreDataRelationship {
 }
 
 /// A fetch index of binary-collated, ascending elements.
+///
+/// Like `momc`, a single-element index also produces an index named after its property.
 public struct CoreDataIndex {
 
     public var name: String
@@ -215,7 +238,7 @@ public extension NSManagedObjectModel {
         for definition in definitions {
             guard let entity = entitiesByName[definition.name] else { continue }
             entity.uniquenessConstraints = definition.uniquenessConstraints
-            entity.indexes = definition.indexes.map { index in
+            let indexes = definition.indexes.map { index in
                 let elements = index.properties.map { name in
                     guard let property = entity.propertiesByName[name] else {
                         preconditionFailure("\(definition.name) index \(index.name): no property named \(name)")
@@ -224,6 +247,13 @@ public extension NSManagedObjectModel {
                 }
                 return NSFetchIndexDescription(name: index.name, elements: elements)
             }
+            // momc marks the property of every single-element fetch index as `isIndexed`,
+            // which Core Data turns into an extra index named after the property.
+            let propertyIndexes = indexes.compactMap { index -> NSFetchIndexDescription? in
+                guard index.elements.count == 1, let property = index.elements[0].property else { return nil }
+                return NSFetchIndexDescription(name: property.name, elements: [NSFetchIndexElementDescription(property: property, collationType: .binary)])
+            }
+            entity.indexes = propertyIndexes + indexes
         }
 
         entities = definitions.compactMap { entitiesByName[$0.name] }

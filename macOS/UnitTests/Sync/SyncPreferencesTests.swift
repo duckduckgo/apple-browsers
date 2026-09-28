@@ -156,12 +156,7 @@ final class SyncPreferencesTests: XCTestCase {
     private func setUpDatabase() {
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            XCTFail("Failed to load model")
-            return
-        }
-        bookmarksDatabase = CoreDataDatabase(name: className, containerLocation: location, model: model)
+        bookmarksDatabase = CoreDataDatabase(name: className, containerLocation: location, model: .bookmarks)
         bookmarksDatabase.loadStore()
     }
 

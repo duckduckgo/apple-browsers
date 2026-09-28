@@ -36,14 +36,9 @@ final class SyncBookmarksAdapterTests: XCTestCase {
 
     override func setUpWithError() throws {
         errorHandler = CapturingAdapterErrorHandler()
-        let bundle = DDGSync.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "SyncMetadata") else {
-            XCTFail("Failed to load model")
-            return
-        }
         database = CoreDataDatabase(name: "",
                                     containerLocation: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
-                                    model: model,
+                                    model: .syncMetadata,
                                     readOnly: true,
                                     options: [:])
         adapter = SyncBookmarksAdapter(database: database,

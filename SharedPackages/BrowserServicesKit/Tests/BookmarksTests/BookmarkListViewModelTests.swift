@@ -49,12 +49,7 @@ final class BookmarkListViewModelTests: XCTestCase {
 
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            XCTFail("Failed to load model")
-            return
-        }
-        bookmarksDatabase = CoreDataDatabase(name: type(of: self).description(), containerLocation: location, model: model)
+        bookmarksDatabase = CoreDataDatabase(name: type(of: self).description(), containerLocation: location, model: .bookmarks)
         bookmarksDatabase.loadStore()
         eventMapping = MockBookmarksModelErrorEventMapping { [weak self] event in
             self?.firedEvents.append(event)

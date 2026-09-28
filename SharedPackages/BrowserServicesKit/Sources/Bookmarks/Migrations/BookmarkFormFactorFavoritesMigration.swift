@@ -35,29 +35,14 @@ public class BookmarkFormFactorFavoritesMigration: BookmarkFormFactorFavoritesMi
     public func getFavoritesOrderFromPreV4Model(dbContainerLocation: URL,
                                                 dbFileURL: URL) throws -> [String]? {
 
+        let bookmarksModel = VersionedManagedObjectModel.bookmarks
         guard let metadata = try? NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: dbFileURL),
-              let latestModel = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel"),
-              !latestModel.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata)
+              !bookmarksModel.current.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata),
+              // Before migrating to latest scheme version, read order of favorites from DB
+              let oldBookmarksModel = bookmarksModel.model(compatibleWithStoreMetadata: metadata, bindsClasses: true)
         else {
             return nil
         }
-
-        // Before migrating to latest scheme version, read order of favorites from DB
-
-        let oldBookmarksModel: NSManagedObjectModel = {
-            var mergedModel = NSManagedObjectModel.mergedModel(from: [Bookmarks.bundle], forStoreMetadata: metadata)
-#if DEBUG && os(macOS)
-            if mergedModel == nil {
-                /// Look for individual model files in the bundle because if they have just
-                /// been added there by `ModelAccessHelper.compileModel(from:named:)` in the same run,
-                /// they wouldn't be visible to `NSManagedObjectModel.mergedModel(from:forStoreMetadata:)`.
-                let modelURLs = Bookmarks.bundle.urls(forResourcesWithExtension: "mom", subdirectory: "BookmarksModel.momd") ?? []
-                let models = modelURLs.compactMap(NSManagedObjectModel.init(contentsOf:))
-                mergedModel = NSManagedObjectModel(byMerging: models, forStoreMetadata: metadata)
-            }
-#endif
-            return mergedModel!
-        }()
 
         let oldDB = CoreDataDatabase(name: dbFileURL.deletingPathExtension().lastPathComponent,
                                      containerLocation: dbContainerLocation,

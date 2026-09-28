@@ -18,6 +18,7 @@
 
 import Bookmarks
 import Foundation
+import Persistence
 import SharedTestUtilities
 import XCTest
 
@@ -1830,6 +1831,6 @@ final class LocalBookmarkStoreTests: XCTestCase {
 
 extension CoreData {
     public static func bookmarkContainer() -> NSPersistentContainer {
-        return createInMemoryPersistentContainer(modelName: "BookmarksModel", bundle: Bookmarks.bundle)
+        return createInMemoryPersistentContainer(name: "BookmarksModel", model: VersionedManagedObjectModel.bookmarks.current)
     }
 }

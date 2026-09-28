@@ -144,8 +144,7 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
     )
 
     private func makeReorderEnvironment() throws -> ReorderEnvironment {
-        let managedObjectModel = try XCTUnwrap(CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel"))
-        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: managedObjectModel)
+        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: .bookmarks)
         db.loadStore()
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "TestContext")
         BasicBookmarksStructure.populateDB(context: context)

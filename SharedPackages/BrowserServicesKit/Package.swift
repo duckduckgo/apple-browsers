@@ -164,9 +164,6 @@ let package = Package(
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Persistence", package: "Persistence"),
             ],
-            resources: [
-                .process("BookmarksModel.xcdatamodeld")
-            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -255,7 +252,6 @@ let package = Package(
                 "PrivacyConfig",
             ],
             resources: [
-                .process("SyncMetadata.xcdatamodeld"),
                 .process("SyncPDFTemplate.png")
             ],
             swiftSettings: [
@@ -643,7 +639,6 @@ let package = Package(
             name: "DDGSyncTests",
             dependencies: [
                 "SharedObjCTestsUtils",
-                "BookmarksTestsUtils",
                 "DDGSync",
                 .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",

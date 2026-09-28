@@ -47,14 +47,9 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         try super.setUpWithError()
         cancellables = []
         errorHandler = CapturingSyncPausedStateManager()
-        let bundle = DDGSync.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "SyncMetadata") else {
-            XCTFail("Failed to load model")
-            return
-        }
         let database = CoreDataDatabase(name: "",
                                         containerLocation: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
-                                        model: model,
+                                        model: .syncMetadata,
                                         readOnly: true,
                                         options: [:])
         ddgSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)

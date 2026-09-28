@@ -97,8 +97,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         )
         
         // Set up the bookmarks database
-        let model = CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel")!
-        let bookmarksDB = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
+        let bookmarksDB = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: .bookmarks)
         bookmarksDB.loadStore()
         
         // Populate bookmarks database with test data

@@ -43,11 +43,9 @@ final class SyncSettingsViewControllerPixelTests {
     private let pixelKitMock = PixelKitMock()
 
     init() throws {
-        let bundle = DDGSync.bundle
-        let model = try #require(CoreDataDatabase.loadModel(from: bundle, named: "SyncMetadata"))
         let database = CoreDataDatabase(name: "",
                                         containerLocation: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
-                                        model: model,
+                                        model: .syncMetadata,
                                         readOnly: true,
                                         options: [:])
         ddgSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)

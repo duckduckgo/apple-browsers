@@ -39,15 +39,10 @@ public final class SyncMetadataDatabase {
 
     public static func make(location: URL = defaultDBLocation, readOnly: Bool = false) -> CoreDataDatabase {
         Logger.sync.debug("SyncMetadataDatabase.make - IN - \(location.absoluteString)")
-        let bundle = DDGSync.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "SyncMetadata") else {
-            Logger.sync.fault("SyncMetadataDatabase.make - OUT, failed to loadModel")
-            fatalError("Failed to load model")
-        }
 
         let db = CoreDataDatabase(name: "SyncMetadata",
                                   containerLocation: location,
-                                  model: model,
+                                  model: .syncMetadata,
                                   readOnly: readOnly)
         Logger.sync.debug("SyncMetadataDatabase.make - OUT")
         return db

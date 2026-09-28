@@ -31,22 +31,19 @@ struct SyncMetadataTestDBBuilder {
     }
 
     private static func generateDatabase(modelVersion: Int) {
-        let bundle = DDGSync.bundle
-        var momUrl: URL?
-        if modelVersion == 1 {
-            momUrl = bundle.url(forResource: "SyncMetadata.momd/SyncMetadata", withExtension: "mom")
-        } else {
-            momUrl = bundle.url(forResource: "SyncMetadata.momd/SyncMetadata \(modelVersion)", withExtension: "mom")
+        let versions = [SyncMetadataModel.v1, SyncMetadataModel.v2, SyncMetadataModel.v3, SyncMetadataModel.v4]
+        guard versions.indices.contains(modelVersion - 1) else {
+            fatalError("Unknown model version \(modelVersion)")
         }
 
         guard let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
             fatalError("Could not find directory")
         }
 
-        let model = NSManagedObjectModel(contentsOf: momUrl!)
+        let model = NSManagedObjectModel(entities: versions[modelVersion - 1]())
         let stack = CoreDataDatabase(name: "SyncMetadata_V\(modelVersion)",
                                      containerLocation: dir,
-                                     model: model!)
+                                     model: model)
         stack.loadStore()
 
         let context = stack.makeContext(concurrencyType: .privateQueueConcurrencyType)

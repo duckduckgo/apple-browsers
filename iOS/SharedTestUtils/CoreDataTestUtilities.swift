@@ -23,16 +23,8 @@ import CoreData
 
 final class CoreData {
 
-    static func createInMemoryPersistentContainer(modelName: String, bundle: Bundle) -> NSPersistentContainer {
-        guard let modelURL = bundle.url(forResource: modelName, withExtension: "momd") else {
-            fatalError("Error loading model from bundle")
-        }
-
-        guard let objectModel = NSManagedObjectModel(contentsOf: modelURL) else {
-            fatalError("Error initializing object model from: \(modelURL)")
-        }
-
-        let container = NSPersistentContainer(name: modelName, managedObjectModel: objectModel)
+    static func createInMemoryPersistentContainer(name: String, model: NSManagedObjectModel) -> NSPersistentContainer {
+        let container = NSPersistentContainer(name: name, managedObjectModel: model)
 
         // Creates a persistent store using the in-memory model, no state will be written to disk.
         // This was the approach recommended in a WWDC session, but there is also an `NSInMemoryStoreType` option.

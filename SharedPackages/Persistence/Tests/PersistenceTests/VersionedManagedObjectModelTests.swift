@@ -49,8 +49,9 @@ final class VersionedManagedObjectModelTests: XCTestCase {
         XCTAssertEqual(notes.inverseRelationship, noteFolder)
         XCTAssertTrue(notes.isToMany)
         XCTAssertEqual(noteFolder.maxCount, 1)
-        XCTAssertEqual(note.indexes.map(\.name), ["byCreated"])
-        XCTAssertEqual(note.indexes.first?.elements.first?.property, note.attributesByName["created"])
+        // Like momc, a single-element index also gets an index named after its property.
+        XCTAssertEqual(note.indexes.map(\.name), ["created", "byCreated"])
+        XCTAssertEqual(note.indexes.map { $0.elements.map(\.property) }, [[note.attributesByName["created"]], [note.attributesByName["created"]]])
         XCTAssertEqual(note.uniquenessConstraints as? [[String]], [["identifier"]])
         XCTAssertEqual(note.managedObjectClassName, "NSManagedObject")
         XCTAssertEqual(note.attributesByName["pinned"]?.defaultValue as? Bool, false)
@@ -141,6 +142,109 @@ final class VersionedManagedObjectModelTests: XCTestCase {
         XCTAssertTrue(model.current.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata))
     }
 
+    func testWhenAttributeHasVersionHashModifierThenEntityVersionHashChanges() {
+        var entities = Schema.v1()
+        let unmodified = NSManagedObjectModel(entities: entities)
+        entities.modify("Note") { $0.attributes[0].versionHashModifier = "2" }
+
+        let modified = NSManagedObjectModel(entities: entities)
+
+        XCTAssertNotEqual(modified.entityVersionHashesByName, unmodified.entityVersionHashesByName)
+    }
+
+    func testWhenLookingUpModelForStoreThenNewestCompatibleVersionIsReturned() throws {
+        try makeStore(entities: Schema.v1()) { _ in }
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: storeURL)
+        var v1 = Schema.v1()
+        v1.modify("Note") { $0.className = NSStringFromClass(NSManagedObject.self) + "Subclass" }
+
+        let model = VersionedManagedObjectModel(versions: [{ v1 }, Schema.v2])
+
+        let bound = try XCTUnwrap(model.model(compatibleWithStoreMetadata: metadata, bindsClasses: true))
+        let unbound = try XCTUnwrap(model.model(compatibleWithStoreMetadata: metadata))
+        XCTAssertEqual(bound.entityVersionHashesByName, NSManagedObjectModel(entities: Schema.v1()).entityVersionHashesByName)
+        XCTAssertEqual(bound.entitiesByName["Note"]?.managedObjectClassName, "NSManagedObjectSubclass")
+        XCTAssertEqual(unbound.entitiesByName["Note"]?.managedObjectClassName, "NSManagedObject")
+        XCTAssertNil(VersionedManagedObjectModel(versions: [Schema.v2]).model(compatibleWithStoreMetadata: metadata))
+    }
+
+    // MARK: - Merged models
+
+    func testWhenModelsAreMergedThenCurrentContainsLatestVersionOfEach() {
+        let merged = VersionedManagedObjectModel(merging: [
+            VersionedManagedObjectModel(versions: [Schema.v1, Schema.v2]),
+            VersionedManagedObjectModel(versions: [OtherSchema.v1, OtherSchema.v2]),
+        ])
+
+        let expected = NSManagedObjectModel(entities: Schema.v2() + OtherSchema.v2())
+        XCTAssertEqual(merged.current.entityVersionHashesByName, expected.entityVersionHashesByName)
+    }
+
+    func testWhenMergedStoreHasOlderVersionsOfEachModelThenLoadingMigratesIt() throws {
+        try makeStore(entities: Schema.v1() + OtherSchema.v1()) { context in
+            let note = NSEntityDescription.insertNewObject(forEntityName: "Note", into: context)
+            note.setValue("n1", forKey: "identifier")
+            note.setValue("Hello", forKey: "text")
+            note.setValue(Date(timeIntervalSince1970: 100), forKey: "created")
+            let tag = NSEntityDescription.insertNewObject(forEntityName: "Tag", into: context)
+            tag.setValue("work", forKey: "name")
+        }
+        let merged = VersionedManagedObjectModel(merging: [
+            VersionedManagedObjectModel(versions: [Schema.v1, Schema.v2]),
+            VersionedManagedObjectModel(versions: [OtherSchema.v1, OtherSchema.v2]),
+        ])
+
+        let context = try loadStore(model: merged)
+
+        try context.performAndWait {
+            let notes = try context.fetch(NSFetchRequest<NSManagedObject>(entityName: "Note"))
+            let tags = try context.fetch(NSFetchRequest<NSManagedObject>(entityName: "Tag"))
+            XCTAssertEqual(notes.first?.value(forKey: "body") as? String, "Hello")
+            XCTAssertEqual(tags.first?.value(forKey: "name") as? String, "work")
+            XCTAssertEqual(tags.first?.value(forKey: "color") as? String, "gray")
+        }
+    }
+
+    func testWhenMergedStoreMixesVersionsThenSourceModelUsesEachModelsMatchingVersion() throws {
+        try makeStore(entities: Schema.v2() + OtherSchema.v1()) { _ in }
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: storeURL)
+        let merged = VersionedManagedObjectModel(merging: [
+            VersionedManagedObjectModel(versions: [Schema.v1, Schema.v2]),
+            VersionedManagedObjectModel(versions: [OtherSchema.v1, OtherSchema.v2]),
+        ])
+
+        let source = try XCTUnwrap(merged.model(compatibleWithStoreMetadata: metadata))
+
+        let expected = NSManagedObjectModel(entities: Schema.v2() + OtherSchema.v1())
+        XCTAssertEqual(source.entityVersionHashesByName, expected.entityVersionHashesByName)
+    }
+
+    func testWhenStoreHasEntityOfNoMergedModelThenNoSourceModelIsFound() throws {
+        try makeStore(entities: Schema.v1() + OtherSchema.v1()) { _ in }
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: storeURL)
+
+        let model = VersionedManagedObjectModel(versions: [Schema.v1, Schema.v2])
+
+        XCTAssertNil(model.model(compatibleWithStoreMetadata: metadata))
+    }
+
+    func testWhenStoreIsOpenedWithOptionsThenItIsMigratedWithThem() throws {
+        try makeStore(entities: Schema.v1()) { context in
+            let note = NSEntityDescription.insertNewObject(forEntityName: "Note", into: context)
+            note.setValue("n1", forKey: "identifier")
+            note.setValue("Hello", forKey: "text")
+            note.setValue(Date(timeIntervalSince1970: 100), forKey: "created")
+        }
+        let options: [String: NSObject] = [NSSQLitePragmasOption: ["journal_mode": "DELETE"] as NSDictionary]
+
+        let context = try loadStore(model: VersionedManagedObjectModel(versions: [Schema.v1, Schema.v2]), options: options)
+
+        try context.performAndWait {
+            let notes = try context.fetch(NSFetchRequest<NSManagedObject>(entityName: "Note"))
+            XCTAssertEqual(notes.first?.value(forKey: "body") as? String, "Hello")
+        }
+    }
+
     // MARK: - Helpers
 
     private var storeURL: URL {
@@ -160,8 +264,8 @@ final class VersionedManagedObjectModelTests: XCTestCase {
         try coordinator.remove(store)
     }
 
-    private func loadStore(model: VersionedManagedObjectModel) throws -> NSManagedObjectContext {
-        let database = CoreDataDatabase(name: "Test", containerLocation: location, model: model)
+    private func loadStore(model: VersionedManagedObjectModel, options: [String: NSObject] = [:]) throws -> NSManagedObjectContext {
+        let database = CoreDataDatabase(name: "Test", containerLocation: location, model: model, options: options)
         var result: Result<NSManagedObjectContext, Error>?
         database.loadStore { context, error in
             if let context {
@@ -171,6 +275,24 @@ final class VersionedManagedObjectModelTests: XCTestCase {
             }
         }
         return try XCTUnwrap(result).get()
+    }
+}
+
+private enum OtherSchema {
+
+    static func v1() -> [CoreDataEntity] {
+        [
+            CoreDataEntity("Tag", className: nil, attributes: [
+                CoreDataAttribute("name", .stringAttributeType),
+            ]),
+        ]
+    }
+
+    /// Adds `color`.
+    static func v2() -> [CoreDataEntity] {
+        var entities = v1()
+        entities.modify("Tag") { $0.attributes.append(CoreDataAttribute("color", .stringAttributeType, defaultValue: "gray")) }
+        return entities
     }
 }
 

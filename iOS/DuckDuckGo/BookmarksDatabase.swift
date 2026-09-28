@@ -47,15 +47,10 @@ public class BookmarksDatabase {
 
     public static func make(location: URL = defaultDBLocation, readOnly: Bool = false) -> CoreDataDatabase {
         Logger.bookmarks.debug("BookmarksDatabase.make - IN - \(location.absoluteString, privacy: .public)")
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            Logger.bookmarks.error("BookmarksDatabase.make - OUT, failed to loadModel")
-            fatalError("Failed to load model")
-        }
 
         let db = CoreDataDatabase(name: "Bookmarks",
                                   containerLocation: location,
-                                  model: model,
+                                  model: .bookmarks,
                                   readOnly: readOnly)
         Logger.bookmarks.debug("BookmarksDatabase.make - OUT")
         return db

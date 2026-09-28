@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BookmarksTestsUtils
 import XCTest
 import Persistence
 @testable import DDGSync
@@ -29,8 +28,6 @@ class SyncMetadataMigrationTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-
-        ModelAccessHelper.compileModel(from: Bundle(for: SyncMetadataMigrationTests.self), named: "SyncMetadata")
 
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
@@ -65,11 +62,7 @@ class SyncMetadataMigrationTests: XCTestCase {
     }
 
     func loadDatabase(name: String) -> CoreDataDatabase? {
-        let bundle = DDGSync.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "SyncMetadata") else {
-            return nil
-        }
-        let syncMetadataDatabase = CoreDataDatabase(name: name, containerLocation: location, model: model)
+        let syncMetadataDatabase = CoreDataDatabase(name: name, containerLocation: location, model: .syncMetadata)
         syncMetadataDatabase.loadStore()
         return syncMetadataDatabase
     }

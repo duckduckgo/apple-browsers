@@ -29,10 +29,9 @@ class BookmarksExportPerformanceTests: XCTestCase {
     
     override func setUp() async throws {
         try await super.setUp()
-        let model = CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel")!
         
         let dir = tempDBDir()
-        db = CoreDataDatabase(name: "Test", containerLocation: dir, model: model)
+        db = CoreDataDatabase(name: "Test", containerLocation: dir, model: .bookmarks)
         db.loadStore()
         
         let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType)

@@ -98,12 +98,7 @@ final class RemoteMessagingClientTests: XCTestCase {
 
     private func setUpBookmarksDatabase() {
         bookmarksDatabaseLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            XCTFail("Failed to load model")
-            return
-        }
-        bookmarksDatabase = CoreDataDatabase(name: type(of: self).description(), containerLocation: bookmarksDatabaseLocation, model: model)
+        bookmarksDatabase = CoreDataDatabase(name: type(of: self).description(), containerLocation: bookmarksDatabaseLocation, model: .bookmarks)
         bookmarksDatabase.loadStore()
     }
 

@@ -20,6 +20,7 @@
 import Bookmarks
 import Combine
 import CoreData
+import Persistence
 import XCTest
 
 @testable import DuckDuckGo
@@ -73,8 +74,8 @@ class BookmarksCachingSearchTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        inMemoryStore = CoreData.createInMemoryPersistentContainer(modelName: "BookmarksModel",
-                                                                  bundle: Bookmarks.bundle)
+        inMemoryStore = CoreData.createInMemoryPersistentContainer(name: "BookmarksModel",
+                                                                  model: VersionedManagedObjectModel.bookmarks.current)
         BookmarkUtils.prepareFoldersStructure(in: inMemoryStore.viewContext)
         mockObjectID = BookmarkUtils.fetchRootFolder(inMemoryStore.viewContext)?.objectID
         XCTAssertNotNil(mockObjectID)

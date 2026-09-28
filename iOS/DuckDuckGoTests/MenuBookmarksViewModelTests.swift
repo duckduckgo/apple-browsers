@@ -41,9 +41,8 @@ class MenuBookmarksViewModelTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         
-        let model = CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel")!
         
-        db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
+        db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: .bookmarks)
         db.loadStore()
         
         let mainContext = db.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "TestContext")

@@ -28,12 +28,10 @@ extension CoreDataDatabase {
     }
 
     static func mock(
-        bundle: Bundle,
-        modelName: String,
+        model: VersionedManagedObjectModel,
         dbName: String = "Test",
         containerLocation: URL = MockBookmarksDatabase.tempDBDir()
     ) -> CoreDataDatabase {
-        let model = CoreDataDatabase.loadModel(from: bundle, named: modelName)!
         let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
         db.loadStore()
         return db
@@ -46,7 +44,7 @@ extension CoreDataDatabase {
 extension CoreDataDatabase {
 
     static var bookmarksMock: CoreDataDatabase {
-        mock(bundle: Bookmarks.bundle, modelName: "BookmarksModel")
+        mock(model: .bookmarks)
     }
 
 }

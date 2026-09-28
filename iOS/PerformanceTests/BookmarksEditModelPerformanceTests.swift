@@ -29,10 +29,9 @@ class BookmarksEditModelPerformanceTests: XCTestCase {
     
     override func setUpWithError() throws {
         try super.setUpWithError()
-        let model = CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel")!
         
         let dir = tempDBDir()
-        db = CoreDataDatabase(name: "Test", containerLocation: dir, model: model)
+        db = CoreDataDatabase(name: "Test", containerLocation: dir, model: .bookmarks)
         db.loadStore()
         try populateData()
     }

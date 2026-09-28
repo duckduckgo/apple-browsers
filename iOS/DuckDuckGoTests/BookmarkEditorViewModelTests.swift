@@ -32,9 +32,8 @@ class BookmarkEditorViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        let model = CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel")!
         
-        db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
+        db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: .bookmarks)
         db.loadStore()
         
         let mainContext = db.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "TestContext")

@@ -31,13 +31,8 @@ public final class SyncMetadataDatabase {
     }
 
     public static func make(location: URL) -> CoreDataDatabase {
-        let bundle = DDGSync.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "SyncMetadata") else {
-            fatalError("Failed to load model")
-        }
-
         return CoreDataDatabase(name: "SyncMetadata",
                                 containerLocation: location,
-                                model: model)
+                                model: .syncMetadata)
     }
 }

@@ -37,13 +37,8 @@ public final class BookmarkDatabase {
     }
 
     public static func make(location: URL) -> CoreDataDatabase {
-        let bundle = Bookmarks.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BookmarksModel") else {
-            fatalError("Failed to load model")
-        }
-
         return CoreDataDatabase(name: "Bookmarks",
                                 containerLocation: location,
-                                model: model)
+                                model: .bookmarks)
     }
 }

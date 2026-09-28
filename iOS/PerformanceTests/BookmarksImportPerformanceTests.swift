@@ -31,7 +31,7 @@ class BookmarksImportPerformanceTests: XCTestCase {
     
     override func setUpWithError() throws {
         try super.setUpWithError()
-        model = CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel")!
+        model = VersionedManagedObjectModel.bookmarks.current
     }
     
     override func tearDownWithError() throws {

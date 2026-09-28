@@ -31,22 +31,19 @@ struct BookmarksTestDBBuilder {
     }
 
     private static func generateDatabase(modelVersion: Int) {
-        let bundle = Bookmarks.bundle
-        var momUrl: URL?
-        if modelVersion == 1 {
-            momUrl = bundle.url(forResource: "BookmarksModel.momd/BookmarksModel", withExtension: "mom")
-        } else {
-            momUrl = bundle.url(forResource: "BookmarksModel.momd/BookmarksModel \(modelVersion)", withExtension: "mom")
+        let versions = [BookmarksModel.v1, BookmarksModel.v2, BookmarksModel.v3, BookmarksModel.v4, BookmarksModel.v5, BookmarksModel.v6]
+        guard versions.indices.contains(modelVersion - 1) else {
+            fatalError("Unknown model version \(modelVersion)")
         }
 
         guard let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
            fatalError("Could not find directory")
         }
 
-        let model = NSManagedObjectModel(contentsOf: momUrl!)
+        let model = NSManagedObjectModel(entities: versions[modelVersion - 1]())
         let stack = CoreDataDatabase(name: "Bookmarks_V\(modelVersion)",
                                      containerLocation: dir,
-                                     model: model!)
+                                     model: model)
         stack.loadStore()
 
         let context = stack.makeContext(concurrencyType: .privateQueueConcurrencyType)

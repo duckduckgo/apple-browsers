@@ -179,6 +179,10 @@ final class AIChatUsageWarningCardView: NSView {
         button.isHidden = true
         button.target = self
         button.action = #selector(learnMoreClicked)
+        // The label's compression resistance is `.defaultLow`, so a button hugging at the default
+        // 750 would win the pair of equal-width constraints and squeeze the text to nothing.
+        button.setContentHuggingPriority(.init(1), for: .horizontal)
+        button.setContentHuggingPriority(.init(1), for: .vertical)
         return button
     }()
 

@@ -3324,6 +3324,30 @@
         }
       }
     },
+    "aichat.attachment-privacy.disclosure" : {
+      "comment" : "Privacy disclosure shown in the Duck.ai input drawer while a file or image is attached",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Files are automatically scanned for illegal content. Flagged chats have limited data retention."
+          }
+        }
+      }
+    },
+    "aichat.attachment-privacy.learn-more" : {
+      "comment" : "Inline link at the end of the Duck.ai attachment privacy disclosure. Opens the Duck.ai privacy help page.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn more"
+          }
+        }
+      }
+    },
     "aichat.attachment.file.count.limit" : {
       "comment" : "Error message displayed when the user has attached more files than are allowed in a conversation. Parameter is the backend-provided maximum number of files.",
       "extractionState" : "extracted_with_value",

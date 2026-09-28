@@ -31,7 +31,7 @@ jobs:
   report_failure:
     name: Report Failure
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-26, general-purpose]
 
     steps:
 
@@ -56,6 +56,9 @@ jobs:
         with:
           submodules: recursive
           ref: ${{ inputs.branch }}
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

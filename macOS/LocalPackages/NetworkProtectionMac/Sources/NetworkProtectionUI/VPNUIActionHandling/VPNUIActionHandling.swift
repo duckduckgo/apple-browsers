@@ -25,6 +25,7 @@ public protocol VPNUIActionHandling {
     func shareFeedback() async
     func showSubscription(origin: String?) async
     func showVPNLocations() async
+    func showVPNSettings() async
 
     /// Called when the user clicks on the toggle to stop the VPN.
     ///

@@ -23,20 +23,13 @@ import WebKit
 
 public protocol WebTelemetryUserScriptDelegate: AnyObject {
     @MainActor
-    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript,
-                                didDetectVideoPlayback payload: WebTelemetryUserScript.VideoPlaybackPayload,
-                                in webView: WKWebView?)
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoPlaybackIn webView: WKWebView?)
+
+    @MainActor
+    func webTelemetryUserScript(_ webTelemetryUserScript: WebTelemetryUserScript, didDetectVideoAutoplayIn webView: WKWebView?)
 }
 
 public final class WebTelemetryUserScript: NSObject, Subfeature {
-
-    public struct VideoPlaybackPayload: Codable, Equatable {
-        public let userInteraction: Bool
-
-        public init(userInteraction: Bool) {
-            self.userInteraction = userInteraction
-        }
-    }
 
     public let messageOriginPolicy: MessageOriginPolicy = .all
 
@@ -54,6 +47,7 @@ public final class WebTelemetryUserScript: NSObject, Subfeature {
 
     public enum MessageNames: String, CaseIterable {
         case videoPlayback = "video-playback"
+        case videoAutoplay = "video-autoplay"
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -62,6 +56,10 @@ public final class WebTelemetryUserScript: NSObject, Subfeature {
             return { [weak self] in
                 try await self?.videoPlayback(params: $0, original: $1)
             }
+        case .videoAutoplay:
+            return { [weak self] in
+                try await self?.videoAutoplay(params: $0, original: $1)
+            }
         default:
             return nil
         }
@@ -69,11 +67,13 @@ public final class WebTelemetryUserScript: NSObject, Subfeature {
 
     @MainActor
     private func videoPlayback(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let payload: VideoPlaybackPayload = DecodableHelper.decode(from: params) else {
-            return nil
-        }
+        delegate?.webTelemetryUserScript(self, didDetectVideoPlaybackIn: original.webView)
+        return nil
+    }
 
-        delegate?.webTelemetryUserScript(self, didDetectVideoPlayback: payload, in: original.webView)
+    @MainActor
+    private func videoAutoplay(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        delegate?.webTelemetryUserScript(self, didDetectVideoAutoplayIn: original.webView)
         return nil
     }
 }

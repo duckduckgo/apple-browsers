@@ -515,10 +515,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
 
     // MARK: - Single Tab "Delete All" Only Tests
 
-    func testWhenSingleTabAndFlagEnabledThenOnlyDeleteAllShown() {
+    func testWhenSingleTabThenOnlyDeleteAllShown() {
         // Given
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = true
 
         // When
         let sut = makeSUT(tabViewModel: createTabViewModel(), isSingleTab: true)
@@ -529,10 +528,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.buttons[0].style, .primary)
     }
 
-    func testWhenSingleTabAndFlagEnabledWithRefinementsDisabledThenOnlyDeleteAllShown() {
+    func testWhenSingleTabWithRefinementsDisabledThenOnlyDeleteAllShown() {
         // Given
         mockDataClearingCapability.isFireButtonRefinementsEnabled = false
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = true
 
         // When
         let sut = makeSUT(tabViewModel: createTabViewModel(), isSingleTab: true)
@@ -543,24 +541,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.buttons[0].style, .primary)
     }
 
-    func testWhenSingleTabButFlagDisabledThenNormalButtons() {
+    func testWhenMultipleTabsThenNormalButtons() {
         // Given
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = false
-
-        // When
-        let sut = makeSUT(tabViewModel: createTabViewModel(), isSingleTab: true)
-
-        // Then
-        XCTAssertEqual(sut.buttons.count, 2)
-        XCTAssertEqual(sut.buttons[0].title, UserText.scopedFireConfirmationDeleteThisTabButton)
-        XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteAllButton)
-    }
-
-    func testWhenMultipleTabsAndFlagEnabledThenNormalButtons() {
-        // Given
-        mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = true
 
         // When
         let sut = makeSUT(tabViewModel: createTabViewModel(), isSingleTab: false)
@@ -571,10 +554,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(sut.buttons[1].title, UserText.scopedFireConfirmationDeleteAllButton)
     }
 
-    func testWhenSingleAITabAndFlagEnabledThenChatConfirmationUnaffected() {
+    func testWhenSingleAITabThenChatConfirmationUnaffected() {
         // Given
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = true
 
         // When
         let sut = makeSUT(tabViewModel: createAITabViewModel(), isSingleTab: true)
@@ -587,7 +569,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     func testWhenSingleTabDeleteAllShownThenTitleIsSingular() {
         // Given
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = true
 
         // When
         let sut = makeSUT(tabViewModel: createTabViewModel(), isSingleTab: true)
@@ -600,7 +581,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         // Given
         var capturedRequest: FireRequest?
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        mockDataClearingCapability.isSingleTabDeleteAllEnabled = true
         let sut = makeSUT(tabViewModel: createTabViewModel(),
                           isSingleTab: true,
                           onConfirm: { capturedRequest = $0 })

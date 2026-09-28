@@ -19,7 +19,7 @@
 import Common
 import FoundationExtensions
 import Crashes
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Persistence
 import PrivacyConfig

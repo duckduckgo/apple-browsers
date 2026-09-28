@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
 import Combine
@@ -866,5 +867,9 @@ private class WKVisitedLinkStoreMock: NSObject {
 
 }
 
-extension FileStoreMock: FileStore {}
-extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}
+extension FileStoreMock: @retroactive FileStore {}
+extension MockAIChatHistoryCleaner: @retroactive AIChatHistoryCleaning {
+    public func allChats() -> [DuckAiChat] {
+        allChatsStub.map { DuckAiChat(chatId: $0.chatId, title: $0.title, model: "", lastEdit: "", pinned: false) }
+    }
+}

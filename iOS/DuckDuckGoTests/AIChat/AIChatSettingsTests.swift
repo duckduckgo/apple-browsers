@@ -23,8 +23,7 @@ import XCTest
 import PrivacyConfig
 import Combine
 import AIChat
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 class AIChatSettingsTests: XCTestCase {
 

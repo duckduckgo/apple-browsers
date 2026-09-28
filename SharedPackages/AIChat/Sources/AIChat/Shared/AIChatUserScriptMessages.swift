@@ -57,6 +57,12 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case voiceSessionStarted
     case voiceSessionEnded
 
+    /// Posted by the FE when the voice-mode background is shown / removed. Unlike
+    /// `voiceSessionStarted`/`Ended` (mic lifecycle), these bracket the visible surface so native
+    /// chrome can sync to it. `voiceModeOpened` includes `{ backgroundColor: "#RRGGBB" }`.
+    case voiceModeOpened
+    case voiceModeClosed
+
     /// Posted by the FE when the user creates a new chat — e.g. taps "Start new chat" in the
     /// duck.ai sidebar, or any other FE entry point. Native uses this as the single source of
     /// truth to reset host UI state (unified input, attachments) for the new chat.
@@ -81,6 +87,10 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// (expands the input, reveals the model chip).
     case showModelPicker
 
+    case showReasoningPicker
+
+    case openFilePicker
+
     /// Posted by the FE while the subscription recovery card is showing for the active chat.
     case disableChatInput
 
@@ -90,6 +100,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Posted by the FE to request focus on the native address bar (UTI).
     /// Native honors this only when the Unified Toggle Input feature is enabled.
     case focusChatInput
+
+    case editPrompt
+    case cancelEdit
 
     // Sync
     case getSyncStatus
@@ -104,7 +117,33 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
     case submitOpenSettingsAction
 
+    /// Pushed to the duck.ai page when the user opts to spend their weekly allowance after the
+    /// daily one is gone. Web owns what that means; native only reports the choice.
+    case submitStartUsingWeeklyLimitAction
+
     /// Posted by the Customize Responses card placement when the user dismisses it.
     case customizeResponsesModalClosed
+
+    // MARK: - Browser tools
+
+    /// MCP `initialize` — negotiates protocol version and capabilities for browser tools.
+    /// Opens the session that `toolsList` and `toolsCall` require.
+    case initialize
+
+    /// MCP `notifications/initialized` — the FE is ready for tools traffic. Sent without an
+    /// envelope `id`, so it is answered only when the FE asks for a reply.
+    case notificationsInitialized = "notifications/initialized"
+
+    /// MCP `tools/list` — the browser tools this FE may discover, after remote-config gating.
+    case toolsList = "tools/list"
+
+    /// MCP `tools/call` — invoke a registered browser tool.
+    case toolsCall = "tools/call"
+
+    /// MCP `elicitation/create` — pushed (native→FE) to ask the user for tool permission mid-call.
+    case elicitationCreate = "elicitation/create"
+
+    /// MCP `elicitation/response` — the FE's answer to a pending `elicitationCreate`.
+    case elicitationResponse = "elicitation/response"
 }
 // swiftlint:enable inclusive_language

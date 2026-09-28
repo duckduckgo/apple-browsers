@@ -55,4 +55,11 @@ public extension AIChatModel {
             providerPossessive: provider.possessive
         )
     }
+
+    /// The display name split into a bold family part and a regular remainder, e.g.
+    /// "GPT-5.4 mini" → ("GPT-5.4", "mini"). Best-effort first-token split for menu rows.
+    var titleComponents: (bold: String, regular: String) {
+        guard let spaceIndex = name.firstIndex(of: " ") else { return (name, "") }
+        return (String(name[..<spaceIndex]), String(name[name.index(after: spaceIndex)...]))
+    }
 }

@@ -1,0 +1,29 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - privacy
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+- assertVisible:
+    id: "searchEntry"
+
+# Navigate to a site whose certificate does not match its host
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://wrong.host.badssl.com"
+- pressKey: Enter
+
+# Verify the SSL warning page and the wrong-host specific messaging
+- assertVisible: "Warning: This site may be insecure"
+- assertVisible:
+    id: "Globe-24"
+- tapOn: "Advanced"
+- scrollUntilVisible:
+    element:
+      text: ".*does not match.*"
+    direction: DOWN

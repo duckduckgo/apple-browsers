@@ -51,6 +51,7 @@ public enum EmbeddedWebExtensionRegistry {
         EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip"),
         EmbeddedWebExtensionDescriptor(type: .darkReader, resourceFilename: "darkreader.zip"),
         EmbeddedWebExtensionDescriptor(type: .adBlockingExtension, resourceFilename: "content-blocker-extension-apple.zip"),
+        EmbeddedWebExtensionDescriptor(type: .searchToken, resourceFilename: "search-token-extension.zip"),
     ]
 
     /// Find descriptor for a given extension type.

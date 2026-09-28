@@ -19,6 +19,7 @@
 
 import Core
 import SwiftUI
+import PixelKit
 
 struct SettingsAutoplayView: View {
 
@@ -61,7 +62,7 @@ struct SettingsAutoplayView: View {
         }
         .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsAutoplayOpen)
+            PixelKit.fire(Pixel.Event.settingsAutoplayOpen)
         }
     }
 }

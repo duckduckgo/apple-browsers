@@ -33,7 +33,7 @@ enum AppStateRestorationTrigger {
     case appUpdate
 }
 
-enum GeneralPixel: PixelKitEvent {
+enum GeneralPixel: PixelKit.Event {
 
     case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
@@ -147,17 +147,6 @@ enum GeneralPixel: PixelKitEvent {
     case fireButtonFirstBurn
     case fireButton(option: FireButtonOption)
     case fireAnimationSetting(enabled: Bool)
-
-    /**
-     * Event Trigger: User opens the fire popover (fire button details view).
-     *
-     * > Note: This is a daily pixel.
-     *
-     * Anomaly Investigation:
-     * - May indicate changes in user awareness of privacy clearing features.
-     * - Increase could suggest browser cache is causing issues.
-     */
-    case fireButtonDetailsViewed
 
     // Duck Player
     case duckPlayerDailyUniqueView
@@ -303,7 +292,6 @@ enum GeneralPixel: PixelKitEvent {
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError
-    case hideAIGeneratedImagesButtonClicked
     case openDuckAIButtonClick
 
     case duckAiNativeStorageMigrationDoneUnique(key: String)
@@ -359,6 +347,9 @@ enum GeneralPixel: PixelKitEvent {
     case onboardingStepCompleteSystemSettings
     case onboardingStepCompleteCustomize
     case onboardingFinalStepComplete
+    case onboardingSkipped
+    case onboardingBrowsingBeforeCompletion
+    case onboardingContextualDismissed
 
     // MARK: - Advanced Usage
 
@@ -459,6 +450,7 @@ enum GeneralPixel: PixelKitEvent {
     case feedbackReportingFailed
 
     case blankNavigationOnBurnFailed
+    case blankNavigationOnBurnTimedOut
 
     case historyRemoveFailed
     case historyReloadFailed
@@ -616,6 +608,52 @@ enum GeneralPixel: PixelKitEvent {
     /// Fires every time a Fire Window is opened, sliced by how the open happened (manual vs.
     /// automatic). Used to measure per-trigger DAU and per-trigger counts.
     case fireWindowOpened(trigger: FireWindowOpenTrigger)
+
+    /// Which of these names already stand on their own.
+    ///
+    /// This used to be `doNotEnforcePrefix: true` repeated at every call site, and for `.jsPixel`
+    /// the call sites branched on `isEmailPixel` / `isCredentialsImportPromotionPixel` — the very
+    /// conditions `name` below already switches on. Keeping the decision next to the name means the
+    /// two cannot drift apart.
+    ///
+    /// `.jsPixel` is `.none` for all three of its shapes: the email and credentials-import names
+    /// deliberately avoid `m_mac_`, and the remaining one already starts with it, so the platform
+    /// correction was a no-op there anyway.
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .autoplaySettingAllowAll,
+             .autoplaySettingBlockAll,
+             .autoplaySettingBlockAudio,
+             .dailyActiveUser,
+             .dailyAddedToDock,
+             .dailyAutoClearOnExitEnabled,
+             .dailyDefaultBrowser,
+             .dailyFireWindowConfigurationFireAnimationEnabled,
+             .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled,
+             .dailyFireWindowConfigurationStartupFireWindowEnabled,
+             .dashboardProtectionAllowlistAdd,
+             .dashboardProtectionAllowlistRemove,
+             .duckPlayerAutoplaySettingsOff,
+             .duckPlayerAutoplaySettingsOn,
+             .duckPlayerContingencyLearnMoreClicked,
+             .duckPlayerContingencySettingsDisplayed,
+             .duckPlayerNewTabSettingsOff,
+             .duckPlayerNewTabSettingsOn,
+             .duckPlayerYouTubeAgeRestrictedErrorDaily,
+             .duckPlayerYouTubeAgeRestrictedErrorImpression,
+             .duckPlayerYouTubeNoEmbedErrorDaily,
+             .duckPlayerYouTubeNoEmbedErrorImpression,
+             .duckPlayerYouTubeSignInErrorDaily,
+             .duckPlayerYouTubeSignInErrorImpression,
+             .duckPlayerYouTubeUnknownErrorDaily,
+             .duckPlayerYouTubeUnknownErrorImpression,
+             .jsPixel,
+             .launch:
+            return .none
+        default:
+            return .platformDefault
+        }
+    }
 
     var name: String {
         switch self {
@@ -842,8 +880,6 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_fire_button_\(option)"
         case .fireAnimationSetting(let enabled):
             return "m_mac_fire_animation_\(enabled ? "on" : "off")"
-        case .fireButtonDetailsViewed:
-            return "m_mac_fire_button_details_viewed"
 
         case .duckPlayerWeeklyUniqueView:
             return "duckplayer_weekly-unique-view"
@@ -1048,7 +1084,6 @@ enum GeneralPixel: PixelKitEvent {
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
         case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
-        case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
         case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
 
         case .duckAiNativeStorageMigrationDoneUnique(let key): return "m_mac_duck-ai_native-storage_migration_done_\(key)_u"
@@ -1099,6 +1134,9 @@ enum GeneralPixel: PixelKitEvent {
         case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
         case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
         case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
+        case .onboardingSkipped: return "m_mac_onboarding_skipped"
+        case .onboardingBrowsingBeforeCompletion: return "onboarding_browsing-before-completion_u"
+        case .onboardingContextualDismissed: return "onboarding_contextual-dismissed_u"
 
         // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
@@ -1213,6 +1251,8 @@ enum GeneralPixel: PixelKitEvent {
 
         case .blankNavigationOnBurnFailed:
             return "blank_navigation_on_burn_failed"
+        case .blankNavigationOnBurnTimedOut:
+            return "blank_navigation_on_burn_timed_out"
 
         case .historyRemoveFailed:
             return "history_remove_failed"
@@ -1660,7 +1700,6 @@ enum GeneralPixel: PixelKitEvent {
                 .fireButtonFirstBurn,
                 .fireButton,
                 .fireAnimationSetting,
-                .fireButtonDetailsViewed,
                 .duckPlayerDailyUniqueView,
                 .duckPlayerWeeklyUniqueView,
                 .duckPlayerViewFromYoutubeViaMainOverlay,
@@ -1781,7 +1820,6 @@ enum GeneralPixel: PixelKitEvent {
                 .serpSettingsSerializationFailed,
                 .serpSettingsKeyValueStoreReadError,
                 .serpSettingsKeyValueStoreWriteError,
-                .hideAIGeneratedImagesButtonClicked,
                 .openDuckAIButtonClick,
                 .duckAiNativeStorageMigrationDoneUnique,
                 .duckAiNativeStorageMigrationDoneCount,
@@ -1823,6 +1861,9 @@ enum GeneralPixel: PixelKitEvent {
                 .onboardingStepCompleteSystemSettings,
                 .onboardingStepCompleteCustomize,
                 .onboardingFinalStepComplete,
+                .onboardingSkipped,
+                .onboardingBrowsingBeforeCompletion,
+                .onboardingContextualDismissed,
                 .windowFullscreen,
                 .windowSplitScreen,
                 .pictureInPictureVideoPlayback,
@@ -1864,6 +1905,7 @@ enum GeneralPixel: PixelKitEvent {
                 .secureVaultError,
                 .feedbackReportingFailed,
                 .blankNavigationOnBurnFailed,
+                .blankNavigationOnBurnTimedOut,
                 .historyRemoveFailed,
                 .historyReloadFailed,
                 .historyCleanEntriesFailed,
@@ -1981,7 +2023,6 @@ enum GeneralPixel: PixelKitEvent {
         public var description: String { rawValue }
 
         case tds = "tracker_data"
-        case clickToLoad = "click_to_load"
         case blockingAttribution = "blocking_attribution"
         case attributed = "attributed"
         case unknown = "unknown"

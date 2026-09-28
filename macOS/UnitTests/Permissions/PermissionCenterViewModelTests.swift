@@ -17,7 +17,8 @@
 //
 
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import XCTest
 
@@ -30,6 +31,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
     var mockSystemPermissionManager: MockSystemPermissionManager!
     var mockFeatureFlagger: MockFeatureFlagger!
     var autoplayPreferences: AutoplayPreferences!
+    var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
@@ -37,6 +39,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         mockSystemPermissionManager = MockSystemPermissionManager()
         mockFeatureFlagger = MockFeatureFlagger()
         autoplayPreferences = AutoplayPreferences()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
@@ -44,6 +47,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
         mockSystemPermissionManager = nil
         mockFeatureFlagger = nil
         autoplayPreferences = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
@@ -186,6 +190,281 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         let types = viewModel.permissionItems.map { $0.permissionType }
         XCTAssertFalse(types.contains(.autoplayPolicy), "Autoplay row should not appear when feature flag is off")
+    }
+
+    // MARK: - Autoplay Settings Tests
+
+    func testWhenOpenAutoplaySettingsThenPermissionsSectionIsOpenedAndPopoverDismissed() {
+        var destinations: [PreferencesDestination] = []
+        var dismissCallCount = 0
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { dismissCallCount += 1 },
+            openSettings: { destinations.append($0) },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertEqual(destinations, [.generalPermissions])
+        XCTAssertEqual(dismissCallCount, 1)
+    }
+
+    func testWhenWebsitePermissionsIsEnabledThenOpenAutoplaySettingsTargetsAutoplayDetail() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
+        var destinations: [PreferencesDestination] = []
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettings: { destinations.append($0) },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertEqual(destinations, [.websitePermission(.autoplay)])
+        XCTAssertEqual(viewModel.autoplaySettingsLinkTitle, UserText.permissionCenterAutoplayDisclaimerWebsitePermissionsLink)
+    }
+
+    func testWhenWebsitePermissionsIsDisabledThenTheDisclaimerStillNamesGeneralPreferences() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettings: { _ in },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertEqual(viewModel.autoplaySettingsLinkTitle, UserText.permissionCenterAutoplayDisclaimerSettingsLink)
+    }
+
+    // MARK: - Autoplay Disclaimer Tests
+
+    func testWhenDisplaysAutoplayDiscoveryAndAutoplayRowIsPresentThenDisclaimerIsShown() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
+    }
+
+    /// The disclaimer explains the autoplay row, so the promo presentation always carries that row — even when the
+    /// page isn't displaying the autoplay policy itself, as with a debug force-show.
+    func testWhenDisplaysAutoplayDiscoveryWithoutAutoplayPolicyThenAutoplayRowIsInserted() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: false,
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertTrue(viewModel.permissionItems.contains { $0.permissionType == .autoplayPolicy })
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
+    }
+
+    /// The disclaimer belongs to the Autoplay Discoverability Promo: opening the Permission Center from the shield must not show it.
+    func testWhenAutoplayRowIsPresentOutsideThePromoThenDisclaimerIsHidden() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertFalse(viewModel.showAutoplayDisclaimer)
+    }
+
+    /// Reaching the popover stops it from closing by itself, but must never take the disclaimer away mid-read.
+    func testWhenAutodismissIsDisabledThenDisclaimerRemainsShown() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.disableAutodismiss()
+
+        XCTAssertTrue(viewModel.showAutoplayDisclaimer)
+    }
+
+    // MARK: - Autodismiss Tests
+
+    /// Only the Autoplay Discoverability Promo opts into autodismissal: a popover the user opened must never close by itself.
+    func testWhenAutodismissIsNotRequestedThenItIsNotAllowed() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    /// Once the user reaches the UI, the promo must not close it from under them, and it must stay open for good.
+    func testWhenAutodismissIsDisabledThenItIsNoLongerAllowed() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayDiscovery: true,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+        XCTAssertTrue(viewModel.allowsAutodismiss)
+
+        viewModel.disableAutodismiss()
+
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    // MARK: - Autoplay Promo Pixel Tests
+
+    // Hover events can arrive repeatedly; the promo must only report engagement once.
+    func testWhenDisableAutodismissIsCalledRepeatedlyThenEngagedPixelFiresOnce() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.disableAutodismiss()
+        viewModel.disableAutodismiss()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.engaged.name])
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    /// Outside the promo there is nothing to autodismiss, so there is no engagement to report.
+    func testWhenDisableAutodismissIsCalledOutsideThePromoThenNoPixelIsFired() {
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: false,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.disableAutodismiss()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertFalse(viewModel.allowsAutodismiss)
+    }
+
+    func testWhenOpenAutoplaySettingsWithinThePromoThenSettingsLinkClickedPixelIsFired() {
+        var openedPanes: [PreferencesDestination] = []
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettings: { openedPanes.append($0) },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: true,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [AutoplayPromoPixel.settingsLinkClicked.name])
+        XCTAssertEqual(openedPanes, [.generalPermissions])
+    }
+
+    /// The disclaimer link only exists within the promo: a settings jump from anywhere else isn't promo attribution.
+    func testWhenOpenAutoplaySettingsOutsideThePromoThenNoPixelIsFired() {
+        var openedPanes: [PreferencesDestination] = []
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: Permissions(),
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            openSettings: { openedPanes.append($0) },
+            displaysAutoplayPolicy: true,
+            displaysAutoplayDiscovery: false,
+            pixelFiring: pixelFiring,
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.openAutoplaySettings()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(openedPanes, [.generalPermissions])
     }
 
     // MARK: - currentAutoplayDecision Tests
@@ -608,6 +887,61 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
         XCTAssertTrue(viewModel.permissionItems.contains(where: { $0.permissionType == .microphone }))
     }
+
+    // MARK: - Pop-ups and the category default
+
+    func testWhenPopupsDefaultIsNeverAllowAndNothingIsSavedThenDecisionIsNeverAllow() {
+        mockPermissionManager.defaultDecisions = [.popups: .deny]
+        let viewModel = makePopupsViewModel()
+
+        XCTAssertEqual(viewModel.currentPopupDecision(), .neverAllow)
+        XCTAssertTrue(viewModel.showPopupsNeverAllowOption)
+    }
+
+    func testWhenPopupsDefaultIsAskEachTimeThenNeverAllowIsNotOffered() {
+        let viewModel = makePopupsViewModel()
+
+        XCTAssertEqual(viewModel.currentPopupDecision(), .notify)
+        XCTAssertFalse(viewModel.showPopupsNeverAllowOption)
+    }
+
+    func testWhenNotifyIsSelectedUnderANeverAllowDefaultThenAPerSiteAskIsStored() {
+        mockPermissionManager.defaultDecisions = [.popups: .deny]
+        let viewModel = makePopupsViewModel()
+
+        viewModel.setPopupDecision(.notify)
+
+        XCTAssertEqual(mockPermissionManager.persistedDecision(forDomain: "example.com", permissionType: .popups), .ask)
+        XCTAssertEqual(viewModel.currentPopupDecision(), .notify)
+    }
+
+    func testWhenNeverAllowIsSelectedThenThePerSiteOverrideIsRemoved() {
+        mockPermissionManager.defaultDecisions = [.popups: .deny]
+        mockPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .popups)
+        let viewModel = makePopupsViewModel()
+
+        viewModel.setPopupDecision(.neverAllow)
+
+        XCTAssertNil(mockPermissionManager.persistedDecision(forDomain: "example.com", permissionType: .popups))
+        XCTAssertEqual(viewModel.currentPopupDecision(), .neverAllow)
+    }
+
+    private func makePopupsViewModel() -> PermissionCenterViewModel {
+        var usedPermissions = Permissions()
+        usedPermissions[.popups] = .denied
+
+        return PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            autoplayPreferences: autoplayPreferences,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+    }
+
 }
 
 // MARK: - Mock System Permission Manager

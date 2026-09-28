@@ -20,13 +20,19 @@ import Foundation
 import NetworkExtension
 import VPN
 
-public final class MockTunnelController: TunnelController, TunnelSessionProvider {
+public final class MockTunnelController: VPNConnectionContextProvidingTunnelController, TunnelSessionProvider {
 
     public init() {}
 
     public var didCallStart = false
     public func start() async {
         didCallStart = true
+    }
+
+    public private(set) var startEntryContexts: [VPNConnectionWideEventData.EntryContext] = []
+    public func start(entryContext: VPNConnectionWideEventData.EntryContext) async {
+        didCallStart = true
+        startEntryContexts.append(entryContext)
     }
 
     public var didCallStop = false

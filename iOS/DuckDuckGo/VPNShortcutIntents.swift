@@ -23,6 +23,7 @@ import VPN
 import WidgetKit
 import Core
 import VPNWidgetSupport
+import PixelKit
 
 // MARK: - Enable & Disable
 
@@ -48,7 +49,7 @@ struct DisableVPNIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         do {
-            DailyPixel.fireDailyAndCount(pixel: .vpnShortcutDisconnectAttempt)
+            PixelKit.fire(Pixel.Event.vpnShortcutDisconnectAttempt, frequency: .dailyAndCount)
 
             let controller = VPNWidgetTunnelController()
             try await controller.stop()
@@ -56,13 +57,13 @@ struct DisableVPNIntent: AppIntent {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()
 
-            DailyPixel.fireDailyAndCount(pixel: .vpnShortcutDisconnectSuccess)
+            PixelKit.fire(Pixel.Event.vpnShortcutDisconnectSuccess, frequency: .dailyAndCount)
             return .result(dialog: IntentDialog(stringLiteral: UserText.vpnControlWidgetDisableVPNIntentSuccess))
         } catch VPNWidgetTunnelController.StopFailure.vpnNotConfigured {
-            DailyPixel.fireDailyAndCount(pixel: .vpnShortcutDisconnectCancelled)
+            PixelKit.fire(Pixel.Event.vpnShortcutDisconnectCancelled, frequency: .dailyAndCount)
             throw VPNWidgetTunnelController.StopFailure.vpnNotConfigured
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .vpnShortcutDisconnectFailure, error: error)
+            PixelKit.fire(Pixel.Event.vpnShortcutDisconnectFailure.withError(error), frequency: .dailyAndCount)
             throw error
         }
     }
@@ -85,7 +86,7 @@ struct EnableVPNIntent: ForegroundContinuableIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         do {
-            DailyPixel.fireDailyAndCount(pixel: .vpnShortcutConnectAttempt)
+            PixelKit.fire(Pixel.Event.vpnShortcutConnectAttempt, frequency: .dailyAndCount)
 
             let controller = VPNWidgetTunnelController()
             try await controller.start(settings: VPNSettings(defaults: .networkProtectionGroupDefaults))
@@ -93,7 +94,7 @@ struct EnableVPNIntent: ForegroundContinuableIntent {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()
 
-            DailyPixel.fireDailyAndCount(pixel: .vpnShortcutConnectSuccess)
+            PixelKit.fire(Pixel.Event.vpnShortcutConnectSuccess, frequency: .dailyAndCount)
             return .result(dialog: IntentDialog(stringLiteral: UserText.vpnControlWidgetEnableVPNIntentSuccess))
         } catch {
             switch error {
@@ -102,14 +103,14 @@ struct EnableVPNIntent: ForegroundContinuableIntent {
                 // the app.
                 NEVPNError.configurationDisabled:
 
-                DailyPixel.fireDailyAndCount(pixel: .vpnShortcutConnectCancelled)
+                PixelKit.fire(Pixel.Event.vpnShortcutConnectCancelled, frequency: .dailyAndCount)
 
                 let dialog = IntentDialog(stringLiteral: UserText.vpnNeedsToBeEnabledFromApp)
                 throw needsToContinueInForegroundError(dialog) {
                     await UIApplication.shared.open(AppDeepLinkSchemes.openVPN.url)
                 }
             default:
-                DailyPixel.fireDailyAndCount(pixel: .vpnShortcutConnectFailure, error: error)
+                PixelKit.fire(Pixel.Event.vpnShortcutConnectFailure.withError(error), frequency: .dailyAndCount)
 
                 throw error
             }

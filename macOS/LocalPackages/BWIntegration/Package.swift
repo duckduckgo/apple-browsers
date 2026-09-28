@@ -14,7 +14,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../AppKitExtensions"),
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.3.2000")
     ],
@@ -44,11 +45,11 @@ let package = Package(
                 "BWManagementShared",
                 "BWIntegration",
                 "AppKitExtensions",
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "PixelKit", package: "BrowserServicesKit")
+                .product(name: "PixelKit", package: "PixelKit")
             ]
         ),
         .testTarget(
@@ -61,7 +62,8 @@ let package = Package(
             name: "BWManagementSharedTests",
             dependencies: [
                 "BWManagementShared",
-                .product(name: "Common", package: "BrowserServicesKit")
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions")
             ]
         ),
         .testTarget(

@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check-and-update:
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-26, general-purpose]
     env:
       # Feature owners (GitHub handles, space-separated). Used for PR reviewers and Asana assignee.
       SPARKLE_OWNERS: "diegoreymendez jotaemepereira"
@@ -20,6 +20,9 @@ jobs:
         # Pinned to v5: v6 duplicates the git Authorization header and breaks
         # peter-evans/create-pull-request (Duplicate header: "Authorization", HTTP 400).
         uses: actions/checkout@v5
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Assign SSH keys
         uses: webfactory/ssh-agent@v0.9.1

@@ -25,9 +25,9 @@ enum DataClearingPixels {
     case retriggerIn20s
 }
 
-// MARK: - PixelKitEvent Protocol
+// MARK: - PixelKit.Event Protocol
 
-extension DataClearingPixels: PixelKitEvent {
+extension DataClearingPixels: PixelKit.Event {
 
     var name: String {
         switch self {

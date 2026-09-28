@@ -25,9 +25,20 @@ import WebKit
 public protocol HistoryCleaning {
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
     @MainActor func deleteAIChat(chatID: String) async -> Result<Void, Error>
+    @MainActor func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error>
 }
 
-public final class HistoryCleaner: HistoryCleaning {
+/// Splits `deleteAIChat`'s two phases so a caller can await the fast native delete without the slow JS clear.
+public protocol PhasedAIChatHistoryCleaning: HistoryCleaning {
+    /// Deletes the chat from native storage and writes the `locallyDeletedChatIds` tombstone;
+    /// `nil` means native storage was unavailable (not a failure).
+    @MainActor func deleteAIChatFromNativeStorage(chatID: String) -> Result<Void, Error>?
+
+    /// Clears the JS layer (localStorage + IndexedDB) via a headless WebView; `nil` clears all chats.
+    @MainActor func clearJSData(chatID: String?) async -> Result<Void, Error>
+}
+
+public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let featureFlagProvider: AIChatFeatureFlagProviding?
     private let jsDataCleaner: AIChatJSDataCleaning
@@ -65,15 +76,38 @@ public final class HistoryCleaner: HistoryCleaning {
         return await performClear(chatID: chatID)
     }
 
+    /// Deletes a specific set of Duck.ai chats in one pass: a single native file listing and one
+    /// JS clearing session, rather than repeating both per chat.
     @MainActor
-    private func performClear(chatID: String?) async -> Result<Void, Error> {
-        let nativeResult = clearLocalStorageIfAvailable(chatID: chatID)
-        let jsResult = await jsDataCleaner.clearJSData(chatID: chatID)
+    public func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> {
+        let nativeResult = clearLocalStorageIfAvailable(chatIDs: chatIDs)
+        let jsResult = await jsDataCleaner.clearJSData(chatIDs: chatIDs)
 
         if case .failure = nativeResult {
             return nativeResult ?? jsResult
         }
         return jsResult
+    }
+
+    @MainActor
+    private func performClear(chatID: String?) async -> Result<Void, Error> {
+        let nativeResult = clearLocalStorageIfAvailable(chatID: chatID)
+        let jsResult = await clearJSData(chatID: chatID)
+
+        if case .failure = nativeResult {
+            return nativeResult ?? jsResult
+        }
+        return jsResult
+    }
+
+    @MainActor
+    public func deleteAIChatFromNativeStorage(chatID: String) -> Result<Void, Error>? {
+        clearLocalStorageIfAvailable(chatID: chatID)
+    }
+
+    @MainActor
+    public func clearJSData(chatID: String?) async -> Result<Void, Error> {
+        await jsDataCleaner.clearJSData(chatID: chatID)
     }
 
     private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {
@@ -94,6 +128,30 @@ public final class HistoryCleaner: HistoryCleaning {
                 Logger.aiChat.debug("HistoryCleaner: deleting all chats from localStorage")
                 try nativeStorageHandler.deleteAllFiles()
                 try nativeStorageHandler.deleteAllChats()
+            }
+            return .success(())
+        } catch {
+            Logger.aiChat.error("HistoryCleaner: Failed to clear local storage: \(error.localizedDescription)")
+            return .failure(error)
+        }
+    }
+
+    private func clearLocalStorageIfAvailable(chatIDs: [String]) -> Result<Void, Error>? {
+        guard let featureFlagProvider, featureFlagProvider.isNativeDataStorageEnabled(),
+              let nativeStorageHandler, (try? nativeStorageHandler.isMigrationDone()) == true else {
+            return nil
+        }
+
+        do {
+            Logger.aiChat.debug("HistoryCleaner: deleting \(chatIDs.count) chats from localStorage")
+            // List files once for the whole set instead of per chat.
+            let idSet = Set(chatIDs)
+            let files = try nativeStorageHandler.listFiles().filter { idSet.contains($0.chatId) }
+            for file in files {
+                try nativeStorageHandler.deleteFile(uuid: file.uuid)
+            }
+            for chatID in chatIDs {
+                try nativeStorageHandler.deleteChat(chatId: chatID)
             }
             return .success(())
         } catch {

@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 /// Central point for coordinating text zoom activities.
 /// * Host is used to represent unaltered host from a URL. Domain is a normalised host.
@@ -176,7 +177,7 @@ final class TextZoomCoordinator: TextZoomCoordinating {
             guard let self = self, let controller = controller, let webView = webView else { return }
             Task { @MainActor in
                 self.showTextZoomEditor(inController: controller, forWebView: webView)
-                Pixel.fire(pixel: .browsingMenuZoom)
+                PixelKit.fire(Pixel.Event.browsingMenuZoom)
             }
         }
     }

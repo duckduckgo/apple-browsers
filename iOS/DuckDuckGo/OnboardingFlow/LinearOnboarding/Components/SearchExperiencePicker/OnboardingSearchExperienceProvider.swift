@@ -25,8 +25,12 @@ protocol OnboardingSearchExperienceProvider {
     var didEnableAIChatSearchInputDuringOnboarding: Bool { get }
     var didMakeChoiceDuringOnboarding: Bool { get }
     var didApplyOnboardingChoiceSettings: Bool { get set }
+    /// `true` once the user has started an AI chat during onboarding (e.g. via the Search/Duck.ai query
+    /// junction). Used to suppress the "Try Duck.ai" end-of-journey nudge for users who already tried AI.
+    var didStartAIChatDuringOnboarding: Bool { get }
 
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool)
+    func storeDidStartAIChatDuringOnboarding(_ didStart: Bool)
 }
 
 final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
@@ -51,14 +55,23 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
         set { storage.set(newValue, forKey: .didApplyOnboardingChoiceSettings) }
     }
 
+    var didStartAIChatDuringOnboarding: Bool {
+        (storage.object(forKey: .didStartAIChatDuringOnboardingKey) as? Bool) ?? false
+    }
+
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
         storage.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
+    }
+
+    func storeDidStartAIChatDuringOnboarding(_ didStart: Bool) {
+        storage.set(didStart, forKey: .didStartAIChatDuringOnboardingKey)
     }
 }
 
 private extension String {
     static let didEnableAIChatSearchInputDuringOnboardingKey = "com.duckduckgo.ios.onboarding.didEnableAIChatSearchInputDuringOnboarding"
     static let didApplyOnboardingChoiceSettings = "com.duckduckgo.ios.onboarding.didApplyOnboardingChoiceSettings"
+    static let didStartAIChatDuringOnboardingKey = "com.duckduckgo.ios.onboarding.didStartAIChatDuringOnboarding"
 }
 
 private extension Bool {

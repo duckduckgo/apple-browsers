@@ -25,6 +25,17 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
     private let pinningManager: PinningManager
     weak var delegate: BrowserTabSelectionDelegate?
 
+    private static let minimumSidebarWidth: CGFloat = 150
+    private static let maximumSidebarWidth: CGFloat = 400
+    private static let defaultSidebarWidth: CGFloat = 320
+    private static let minimumDetailWidth: CGFloat = 415
+
+    /// We own the sidebar width; NSSplitViewController's Auto Layout otherwise overrides the dragged divider position.
+    private var sidebarWidthConstraint: NSLayoutConstraint?
+
+    /// User's chosen width; the constraint may be clamped smaller on a narrow window and restored when space allows.
+    private lazy var preferredSidebarWidth: CGFloat = Self.defaultSidebarWidth
+
     lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
     lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
 
@@ -56,15 +67,15 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         splitView.setValue(NSColor.divider, forKey: #keyPath(NSSplitView.dividerColor))
 
         let sidebarViewItem = NSSplitViewItem(contentListWithViewController: sidebarViewController)
-        sidebarViewItem.minimumThickness = 128
-        sidebarViewItem.maximumThickness = 256
-        sidebarViewItem.holdingPriority = .defaultLow
+        sidebarViewItem.minimumThickness = Self.minimumSidebarWidth
+        sidebarViewItem.maximumThickness = Self.maximumSidebarWidth
+        sidebarViewItem.holdingPriority = .defaultHigh
 
         addSplitViewItem(sidebarViewItem)
 
         let detailViewItem = NSSplitViewItem(viewController: detailViewController)
-        detailViewItem.minimumThickness = 415
-        detailViewItem.holdingPriority = .dragThatCannotResizeWindow
+        detailViewItem.minimumThickness = Self.minimumDetailWidth
+        detailViewItem.holdingPriority = .defaultLow
         addSplitViewItem(detailViewItem)
 
         view = splitView
@@ -75,6 +86,26 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
 
         sidebarViewController.delegate = self
         detailViewController.delegate = self
+
+        // Just below `.required`: wins over holding-priority constraints but still yields to the min/max thickness.
+        let widthConstraint = sidebarViewController.view.widthAnchor.constraint(equalToConstant: Self.defaultSidebarWidth)
+        widthConstraint.priority = .init(999)
+        widthConstraint.isActive = true
+        sidebarWidthConstraint = widthConstraint
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard splitView.bounds.width > 0 else { return }
+        // Re-clamp on resize so the detail pane keeps its minimum; the preferred width returns when space allows.
+        let clamped = max(Self.minimumSidebarWidth, min(preferredSidebarWidth, maxSidebarWidth(in: splitView)))
+        if sidebarWidthConstraint?.constant != clamped {
+            sidebarWidthConstraint?.constant = clamped
+        }
+    }
+
+    private func maxSidebarWidth(in splitView: NSSplitView) -> CGFloat {
+        min(Self.maximumSidebarWidth, splitView.bounds.width - splitView.dividerThickness - Self.minimumDetailWidth)
     }
 
     /// If search bar is focused, make it so that clicking outside of it
@@ -96,13 +127,12 @@ extension BookmarkManagementSplitViewController: BookmarkManagementSidebarViewCo
         delegate?.selectedTabContent(content)
     }
 
-    override func splitView(_ splitView: NSSplitView,
-                            effectiveRect proposedEffectiveRect: NSRect,
-                            forDrawnRect drawnRect: NSRect,
-                            ofDividerAt dividerIndex: Int) -> NSRect {
-        // Prevent drag cursor from appearing on split view divider
-        // From: https://stackoverflow.com/a/9571348
-        return NSRect.zero
+    override func splitView(_ splitView: NSSplitView, constrainSplitPosition proposedPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        // Cap so the detail pane keeps its minimum width even on a narrow bookmarks area.
+        let clamped = max(Self.minimumSidebarWidth, min(proposedPosition, maxSidebarWidth(in: splitView)))
+        preferredSidebarWidth = clamped
+        sidebarWidthConstraint?.constant = clamped
+        return clamped
     }
 
 }

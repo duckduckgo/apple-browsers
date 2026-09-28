@@ -1,0 +1,18 @@
+diff --git a/crossbench/browsers/chromium_based/webdriver.py b/crossbench/browsers/chromium_based/webdriver.py
+--- a/crossbench/browsers/chromium_based/webdriver.py
++++ b/crossbench/browsers/chromium_based/webdriver.py
+@@ -379,6 +379,13 @@ class ChromiumBasedWebDriver(
+     output = self._tracer.end()
+     self._tracer = None
+     return output
+-
++  @override
++  def force_quit_webdriver(self, driver: webdriver.Remote) -> None:
++    if self.platform.is_macos and self._driver_pid:
++      logging.info("Terminating the macOS Chromium driver process tree")
++      self.platform.terminate(self._driver_pid)
++      return
++    super().force_quit_webdriver(driver)
++
+   @override
+   def force_quit(self) -> None:

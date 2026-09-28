@@ -20,6 +20,7 @@
 import AIChat
 import Core
 import UIKit
+import PixelKit
 
 /// Drives the Duck.ai reasoning-level picker
 @MainActor
@@ -40,18 +41,18 @@ final class IPadOmnibarReasoningPickerController {
 
     init(
         store: UTIModelStore,
-        menuFactory: UnifiedToggleInputReasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(),
         accessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
-        upsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()
+        upsellPresenter: DuckAISubscriptionUpselling? = nil,
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
     ) {
         self.store = store
-        self.menuFactory = menuFactory
+        self.menuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: updatedModelPickerFeature.isAvailable)
         self.accessResolver = accessResolver
-        self.upsellPresenter = upsellPresenter
+        self.upsellPresenter = upsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: store.upsellPolicy)
     }
 
     var isReasoningPickerAvailable: Bool {
-        store.selectedModel?.supportsReasoningPicker ?? false
+        store.isReasoningPickerAvailable
     }
 
     var currentReasoningMode: AIChatReasoningMode? {
@@ -65,9 +66,19 @@ final class IPadOmnibarReasoningPickerController {
 
     func makeMenu() -> UIMenu? {
         guard let model = store.selectedModel else { return nil }
-        return menuFactory.makeMenu(model: model, selectedMode: currentReasoningMode) { [weak self] mode in
+
+        let onSelect: (AIChatReasoningMode) -> Void = { [weak self] mode in
             self?.handleReasoningModeSelection(mode)
         }
+
+        return menuFactory.makeMenu(
+            model: model,
+            selectedMode: currentReasoningMode,
+            userTier: store.subscriptionState.userTier,
+            freeTrialEligibility: store.freeTrialEligibility,
+            allowsSubscriptionUpsell: store.allowsSubscriptionUpsell,
+            onSelect: onSelect
+        )
     }
 
     func handleReasoningModeSelection(_ mode: AIChatReasoningMode) {
@@ -99,7 +110,7 @@ final class IPadOmnibarReasoningPickerController {
 
     private func select(_ mode: AIChatReasoningMode) {
         store.updateSelectedReasoningMode(mode)
-        Pixel.fire(pixel: .unifiedToggleInputReasoningEffortSelected, withAdditionalParameters: ["effort_level": mode.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
+        PixelKit.fire(Pixel.Event.unifiedToggleInputReasoningEffortSelected, options: .parameters(["effort_level": mode.rawValue, "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue]))
         onReasoningUpdated?()
     }
 

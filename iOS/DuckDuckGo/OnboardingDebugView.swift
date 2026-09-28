@@ -28,6 +28,8 @@ struct OnboardingDebugView: View {
     @State private var isShowingResetDaxDialogsAlert = false
     @State private var isShowingResetOnboardingAlert = false
     @State private var isShowingSubscriptionPromoCooldownAlert = false
+    @State private var isShowingExistingUserSubscriptionPromoCooldownAlert = false
+    @State private var isShowingResetInstallDateAlert = false
 
     private let newOnboardingIntroStartAction: () -> Void
 
@@ -70,6 +72,26 @@ struct OnboardingDebugView: View {
                 })
                 .alert(isPresented: $isShowingSubscriptionPromoCooldownAlert, content: {
                     Alert(title: Text(verbatim: "Subscription promo cooldown set"), dismissButton: .cancel(Text(verbatim: "Done")))
+                })
+
+                Button(action: {
+                    viewModel.markExistingUserSubscriptionPromoCooldownPassed()
+                    isShowingExistingUserSubscriptionPromoCooldownAlert = true
+                }, label: {
+                    Text(verbatim: "Set Existing User Subscription Promo Cooldown Passed")
+                })
+                .alert(isPresented: $isShowingExistingUserSubscriptionPromoCooldownAlert, content: {
+                    Alert(title: Text(verbatim: "Existing user subscription promo cooldown set"), dismissButton: .cancel(Text(verbatim: "Done")))
+                })
+
+                Button(action: {
+                    viewModel.resetInstallDateToToday()
+                    isShowingResetInstallDateAlert = true
+                }, label: {
+                    Text(verbatim: "Reset Install Date to Today (Cooldown Not Passed)")
+                })
+                .alert(isPresented: $isShowingResetInstallDateAlert, content: {
+                    Alert(title: Text(verbatim: "Install date reset to today"), dismissButton: .cancel(Text(verbatim: "Done")))
                 })
             }
 
@@ -194,6 +216,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         tutorialSettings.hasSeenOnboarding = false
         // Clear the persisted flow type so the next launch re-evaluates default vs Duck.ai.
         tutorialSettings.onboardingFlowType = nil
+        // Clear the persisted download reason.
+        tutorialSettings.onboardingDownloadReason = nil
         // Drop any resume-step checkpoint left over from a partial onboarding run, and
         // clear the onboarding pixel context (source/flow/variant) so it's re-recorded
         // when the next onboarding run begins. `KeyedStorage` is constructed directly
@@ -241,6 +265,16 @@ final class OnboardingDebugViewModel: ObservableObject {
         statisticsStore.installDate = Calendar.current.date(byAdding: .day,
                                                             value: -SubscriptionPromoCoordinator.cooldownDays,
                                                             to: Date())
+    }
+
+    func markExistingUserSubscriptionPromoCooldownPassed() {
+        statisticsStore.installDate = Calendar.current.date(byAdding: .day,
+                                                            value: -SubscriptionPromoExistingUserCoordinator.cooldownDays,
+                                                            to: Date())
+    }
+
+    func resetInstallDateToToday() {
+        statisticsStore.installDate = Date()
     }
 }
 

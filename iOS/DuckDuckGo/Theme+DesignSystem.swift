@@ -29,7 +29,7 @@ extension Theme {
     var barBackgroundColor: UIColor { UIColor(designSystemColor: .panel) }
     var barTintColor: UIColor { UIColor(designSystemColor: .icons) }
     var browsingMenuBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
-    var tableCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
+    var tableCellBackgroundColor: UIColor { UIColor(singleUseColor: .groupedListContentBackground) }
     var tabSwitcherCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var searchBarTextPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     

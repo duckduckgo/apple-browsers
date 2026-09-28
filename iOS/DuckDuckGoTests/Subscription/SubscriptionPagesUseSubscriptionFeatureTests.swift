@@ -19,7 +19,7 @@
 
 import XCTest
 import WebKit
-import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import UserNotifications
 @testable import DuckDuckGo
@@ -27,10 +27,14 @@ import UserNotifications
 @testable import UserScript
 @testable import Subscription
 import SubscriptionTestingUtilities
-import PixelKitTestingUtilities
-import Networking
+@_spi(Testing) import Networking
 import BrowserServicesKitTestsUtils
-import NetworkingTestingUtils
+
+private struct SubscriptionExperimentAttributionProviderStub: SubscriptionExperimentAttributionProviding {
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        nil
+    }
+}
 
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     
@@ -78,7 +82,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             tierEventReporter: mockTierEventReporter,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator)
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub())
     }
 
     override func tearDown() {
@@ -469,7 +474,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
@@ -481,7 +487,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(started.purchasePlatform, .appStore)
         XCTAssertEqual(started.subscriptionIdentifier, "yearly")
         XCTAssertEqual(started.freeTrialEligible, true)
-        XCTAssertEqual(started.funnelName, "funnel_appsettings_ios")
+        XCTAssertEqual(started.entryPoint, .settings)
 
         let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
@@ -490,6 +496,29 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let completion = try XCTUnwrap(mockWideEvent.completions.first)
         XCTAssertTrue(completion.0 is SubscriptionPurchaseWideEventData)
         XCTAssertEqual(completion.1, .success(reason: nil))
+    }
+
+    func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
+            .settings)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.onboarding.rawValue),
+            .onboarding)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.existingUserPromo.rawValue),
+            .appPromotion)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabMenu.rawValue),
+            .newTabPage)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
+            .duckAI)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.toolbarVPN.rawValue),
+            .vpn)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
     @MainActor
@@ -521,7 +550,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
@@ -561,13 +591,14 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
         let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
-        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertEqual(started.entryPoint, .settings)
     }
 
     // MARK: - SubscriptionChangeSelected Tests
@@ -596,7 +627,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -635,7 +667,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -673,7 +706,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -712,7 +746,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -748,7 +783,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         // Invalid params - missing "id"
@@ -787,7 +823,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "monthly-plus", "change": "downgrade"]
@@ -830,7 +867,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: mockPendingTransactionHandler,
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
         
         let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -889,7 +927,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
@@ -953,7 +992,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
@@ -1008,7 +1048,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.plus.yearly.renews.us", "change": "downgrade"], original: message)
@@ -1067,7 +1108,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         // No "change" parameter provided
@@ -1243,7 +1285,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             requestValidator: mockRequestValidator,
             userNotificationCenter: notificationCenter,
             expirationReminderScheduler: scheduler,
-            isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled
+            isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
     }
 

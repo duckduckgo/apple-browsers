@@ -261,6 +261,30 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         }
     }
 
+    func testWhenPageContextNotAttachableButOtherAttachmentsAvailableThenAskAboutPageActionIsDisabled() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makeCoordinator(host: .contextualChat, preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.onPageContextAttachRequested = {}
+        sut.isPageContextAttachable = { false }
+        sut.updateImageButtonVisibility()
+
+        let actions = attachmentMenuActionsByTitle(for: sut)
+        // The menu still shows (photo/file available); the page-context item is disabled.
+        XCTAssertNotNil(actions[UserText.aiChatAttachmentOptionAttachPhoto])
+        XCTAssertTrue(actions[UserText.aiChatAttachmentOptionAskAboutPage]?.attributes.contains(.disabled) == true)
+    }
+
+    func testWhenPageContextIsOnlyAttachmentAndNotAttachableThenAttachButtonHidden() {
+        let sut = makeCoordinator(host: .contextualChat)
+        sut.onPageContextAttachRequested = {}
+        sut.isPageContextAttachable = { false }
+        sut.updateImageButtonVisibility()
+
+        XCTAssertTrue(sut.viewController.isImageButtonHidden)
+    }
+
     func testWhenPageContextActionAvailableOutsideContextualChatThenAttachmentMenuDoesNotShowAskAboutPageAction() {
         let prefs = StubAIChatPreferences()
         prefs.selectedModelId = "mixed-model"
@@ -544,6 +568,41 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
         XCTAssertEqual(sut.viewController.attachmentValidationMessage, expectedMessage)
+    }
+
+    func testTransientLimitBannerSurvivesAsyncModelResync() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true, supportedFileTypes: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        let limitMessage = UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3)
+        sut.presentPasteError(limitMessage)
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, limitMessage)
+
+        // A models refresh (onModelsUpdated fires on a Duck.ai tab, routing through handleModelsUpdated) must not clear a limit banner that isn't backed by an attachment.
+        sut.updateSelectedModel("image-model")
+        XCTAssertEqual(sut.viewController.attachmentValidationMessage, limitMessage)
+
+        // A genuine user action still clears it.
+        sut.clearAttachments()
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
+    }
+
+    func testTransientLimitBannerDoesNotLeakToAnotherTab() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makeCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true, supportedFileTypes: [])]
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.presentPasteError(UserText.aiChatAttachmentImageTurnLimit(maxImagesPerTurn: 3))
+        XCTAssertNotNil(sut.viewController.attachmentValidationMessage)
+
+        // Loading another tab's state (an aiChat tab with no invalid attachment) must not re-show the previous tab's paste banner.
+        sut.applyState(TabInputState(toggleMode: .aiChat))
+        XCTAssertNil(sut.viewController.attachmentValidationMessage)
     }
 
     func testAttachmentErrorBannerDisplaysAllAttachmentErrorCopy() {

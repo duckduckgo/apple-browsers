@@ -22,32 +22,32 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 @testable import Core
 @testable import BrowserServicesKit
-import PixelKit
+@_spi(Testing) import PixelKit
 
 class StatisticsLoaderTests: XCTestCase {
 
     var mockStatisticsStore: StatisticsStore!
     var mockUsageSegmentation: MockUsageSegmentation!
-    var mockPixelFiring: PixelFiringMock.Type!
+    var pixelKitMock: PixelKitMock!
     var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var fireNewAIPromptExperimentPixelsCalled = false
     private var firedOSDistributionMetrics: [OSDistributionPixel.Metric] = []
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        PixelFiringMock.tearDown()
-
-        mockPixelFiring = PixelFiringMock.self
+        pixelKitMock = PixelKitMock()
         mockStatisticsStore = MockStatisticsStore()
         mockUsageSegmentation = MockUsageSegmentation()
         testee = StatisticsLoader(statisticsStore: mockStatisticsStore,
                                   usageSegmentation: mockUsageSegmentation,
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
+                                  fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true },
                                   fireOSDistributionPixel: { self.firedOSDistributionMetrics.append($0) },
-                                  pixelFiring: mockPixelFiring)
+                                  pixelFiring: pixelKitMock)
     }
 
     func testRefreshAppRetentionAtbFiresClientOSDistributionPixel() {
@@ -96,9 +96,27 @@ class StatisticsLoaderTests: XCTestCase {
         XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
     }
 
+    func testRefreshRetentionAtbOnDuckAIPromptSubmissionFiresSearchExperimentPixels() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        // A Duck.ai prompt counts as a search, so it must fire the search experiment pixels
+        // (via refreshSearchRetentionAtb) in addition to the AI-prompt experiment pixels.
+        XCTAssertTrue(fireSearchExperimentPixelsCalled)
+        XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
+    }
+
     override func tearDown() {
         HTTPStubs.removeAllStubs()
-        PixelFiringMock.tearDown()
         super.tearDown()
     }
 
@@ -346,12 +364,12 @@ class StatisticsLoaderTests: XCTestCase {
 
         let testExpectation = expectation(description: "refresh complete")
         testee.refreshAppRetentionAtb {
-            Thread.sleep(forTimeInterval: .seconds(0.1))
+            Thread.sleep(forTimeInterval: 0.1)
             testExpectation.fulfill()
         }
 
         wait(for: [testExpectation], timeout: 10.0)
-        XCTAssertEqual(mockPixelFiring.lastPixelName, Pixel.Event.appInstall.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.appInstall.name })
     }
 
     func loadSuccessfulAtbStub(version: String? = nil) {
@@ -508,6 +526,23 @@ class StatisticsLoaderTests: XCTestCase {
         }
         wait(for: [testExpectation], timeout: 1)
         XCTAssertTrue(mockUsageSegmentation.atbs[0].installAtb.isReturningUser)
+    }
+
+    func testWhenDuckAIRefreshHappens_ThenAIChatExperimentPixelsFired() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+
+        // When
+        loadSuccessfulAtbStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 1)
+        XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
     }
 
 }

@@ -91,7 +91,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -121,9 +121,18 @@ protocol AIChatUserScriptHandling: AnyObject {
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
+    func resetConversationSourceForNewDocument()
 
     @MainActor func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatTabContent(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    // MARK: Browser tools
+
+    @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
+    @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -192,8 +201,23 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
+    private let browserTools: AIChatBrowserToolsService
 
     var isFireWindowProvider: (() -> Bool)?
+
+    /// Surface that opened this chat, consumed once per document and retained for its pixels.
+    private var conversationSource: AIChatConversationSource?
+    private var didConsumeConversationSource = false
+    private let conversationSourceHandler: AIChatConversationSourceHandler
+
+    /// Whether page context with content is currently attached to this chat — set by the native
+    /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
+    /// the conversation pixels' `hasPageContext`. Best-effort, mirroring Windows: only sidebar chats
+    /// (whose underlying page is attachable) can report true.
+    private var hasAttachedPageContext = false
+
+    /// An unstamped chat reports `.unattributed` rather than dropping the parameter.
+    private var pixelConversationSource: AIChatConversationSource { conversationSource ?? .unattributed }
 
     init(
         storage: AIChatPreferencesStorage,
@@ -207,11 +231,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
         freeTrialConversionService: FreeTrialConversionInstrumentationService = Application.appDelegate.freeTrialConversionService,
         notificationCenter: NotificationCenter = .default,
-        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil
+        voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
+        conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
+        self.browserTools = browserTools
         self.pixelFiring = pixelFiring
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(pixelFiring: pixelFiring)
         self.statisticsLoader = statisticsLoader
@@ -220,6 +247,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
+        self.conversationSourceHandler = conversationSourceHandler
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -251,9 +279,29 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+    @MainActor public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        // Consume exactly once per document, at load, before the user can submit a prompt. Guarded by
+        // a flag (not by `conversationSource == nil`) so a chat that loaded with an empty mailbox
+        // can't later steal a different chat's pending source on a subsequent config fetch.
+        if !didConsumeConversationSource {
+            didConsumeConversationSource = true
+            let url = message.messageWebView?.url
+            // Only a chat may claim the stamp: duckduckgo.com's other pages fetch this config too, and
+            // the mailbox is app-wide. A nil URL can't be told apart from a chat, so it consumes.
+            if url == nil || url?.isDuckAIURL == true {
+                conversationSource = conversationSourceHandler.consumeData()
+                    ?? (url?.isDuckAIOpenedFromHomepage == true ? .duckduckgoHomepage : nil)
+            }
+        }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    /// A committed document is a new conversation as far as attribution goes — a tab reused for a
+    /// second chat must not keep the first one's source.
+    func resetConversationSourceForNewDocument() {
+        didConsumeConversationSource = false
+        conversationSource = nil
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -297,9 +345,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         // context, trigger a fresh collection and await it so the content is returned directly in
         // this response instead of arriving later via the submit push.
         if payload.reason == "userAction" {
-            let hasAttachedContent = pageContext != nil
-                && pageContext?.attached != false
-                && !(pageContext?.content.isEmpty ?? true)
+            let hasAttachedContent = pageContext?.attached != false
+                && pageContext?.hasAttachedPage == true
             if !hasAttachedContent {
                 let collected = await requestPageContextAndWait()
                 return PageContextResponse(pageContext: collected)
@@ -434,6 +481,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+        hasAttachedPageContext = pageContext.map { $0.attached != false && $0.hasAttachedPage } ?? false
         pageContextSubject.send(pageContext)
     }
 
@@ -468,8 +516,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func getAIChatOpenTabs(params: Any, message: UserScriptMessage) async -> Encodable? {
-        // Source tabs from all windows (except Fire Windows) relative to the window the picker was
-        // opened in — see `AIChatTabPickerSource`. A Fire Window only sees its own tabs.
+        // Every regular window's tabs relative to the one the picker was opened in; a Fire Window
+        // sees only its own — see `AIChatTabPickerSource`.
         guard let origin = AIChatTabPickerSource.originTabCollectionViewModel(for: message.messageWebView, in: windowControllersManager) else {
             return AIChatOpenTabsResponse(tabs: [])
         }
@@ -526,7 +574,31 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Shared by the JS-bridge consumer (`getAIChatTabContent`) and the omnibar's submit
     /// path so both go through the exact same extraction + favicon-enrichment logic.
     @MainActor
-    static func extractPageContext(from tab: Tab, timeout: TimeInterval = 5) async -> AIChatPageContextData? {
+    static func extractPageContext(from tab: Tab,
+                                   timeout: TimeInterval = 5,
+                                   featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) async -> AIChatPageContextData? {
+        // A local (file://) page is never attachable: hand back a non-attachable context rather
+        // than nil, which callers would treat as "nothing to attach" or fall through to a collect.
+        if case .url(let url, _, _) = tab.content, url.isFileURL {
+            return AIChatPageContextData(
+                title: tab.title ?? "",
+                favicon: [],
+                url: url.absoluteString,
+                content: "",
+                truncated: false,
+                fullContentLength: 0,
+                attachable: false,
+                mimeType: await tab.webView.mimeType ?? AIChatPageContextData.htmlMIMEType
+            )
+        }
+
+        // A document tab (PDF) is handed over as bytes — the user script can't read it, so this
+        // bypasses collection entirely. Covers both consumers: the sidebar's `@` picker
+        // (`getAIChatTabContent`) and the omnibar's submit path.
+        if let documentContext = await documentContext(for: tab, timeout: timeout, featureFlagger: featureFlagger) {
+            return documentContext
+        }
+
         // Access the tab's PageContextUserScript via its content blocking assets
         guard let userScripts = tab.userContentController?.contentBlockingAssets?.userScripts as? UserScripts,
               let pageContextScript = userScripts.pageContextUserScript else {
@@ -546,31 +618,46 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let pageContext = await pageContextScript.collectAndWait(timeout: timeout)
 
         // Replace favicon URLs with base64-encoded data to avoid CSP blocking in the sidebar
-        return pageContext.map { ctx -> AIChatPageContextData in
-            guard let pageURL = URL(string: ctx.url),
-                  let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
-                  let base64 = favicon.base64PNGDataURL else {
-                return ctx
-            }
-            let faviconEntry = AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")
-            return AIChatPageContextData(
-                title: ctx.title,
-                favicon: [faviconEntry],
-                url: ctx.url,
-                content: ctx.content,
-                truncated: ctx.truncated,
-                fullContentLength: ctx.fullContentLength,
-                attachable: ctx.attachable
-            )
+        return pageContext.map(withEncodedFavicon)
+    }
+
+    /// Builds a document (PDF) context for the tab, or nil when the tab isn't a document — in which
+    /// case the caller falls back to collecting page markdown as usual. A document whose bytes can't
+    /// be read also returns nil: there's nothing to attach either way.
+    @MainActor
+    private static func documentContext(for tab: Tab,
+                                        timeout: TimeInterval,
+                                        featureFlagger: FeatureFlagger) async -> AIChatPageContextData? {
+        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext),
+              case .url(let url, _, _) = tab.content,
+              DocumentPageContextProvider.isSupportedDocument(mimeType: await tab.webView.mimeType, url: url) else {
+            return nil
+        }
+
+        switch await DocumentPageContextProvider.makeDocumentContext(webView: tab.webView,
+                                                                     url: url,
+                                                                     title: tab.title ?? "",
+                                                                     timeout: timeout) {
+        case .document(let context), .tooLarge(let context):
+            return withEncodedFavicon(context)
+        case .unavailable:
+            return nil
         }
     }
 
-    /// Resolves `tabId` to a live `Tab` within the origin scope — **waking a suspended/unloaded tab
-    /// if needed** — then extracts its page context. A freshly-woken tab's page isn't loaded yet, so
-    /// we trigger a load and wait (bounded) for navigation to finish before collecting; an
-    /// already-loaded tab (e.g. the current page) extracts immediately with no wait. Returns `nil`
-    /// if the tab can't be found, the wake fails, or the page doesn't load within the budget.
-    /// Never selects or focuses the tab.
+    /// Swaps a context's favicon for base64 data — raw favicon URLs get CSP-blocked in the sidebar.
+    @MainActor
+    private static func withEncodedFavicon(_ context: AIChatPageContextData) -> AIChatPageContextData {
+        guard let pageURL = URL(string: context.url),
+              let favicon = NSApp.delegateTyped.faviconManager.getCachedFavicon(for: pageURL, sizeCategory: .small)?.image,
+              let base64 = favicon.base64PNGDataURL else {
+            return context
+        }
+        return context.withFavicon([AIChatPageContextData.PageContextFavicon(href: base64, rel: "icon")])
+    }
+
+    /// Resolves `tabId` to a live `Tab` in the origin scope and extracts its page context, loading the
+    /// tab first (or waiting out a load in flight) so content isn't collected from a blank page.
     @MainActor
     static func extractPageContext(forTabId tabId: String,
                                    origin: TabCollectionViewModel,
@@ -581,34 +668,31 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
 
-        if resolved.wasMaterialized {
-            // Mirror `resumeTab(at:)`: a just-materialized tab won't auto-load, so kick a reload and
-            // wait for navigation to finish before collecting — otherwise an early empty JS response
-            // could win the `collectAndWait` race.
-            let didNavigate = await waitForNavigationFinish(tab: resolved.tab, timeout: navigationTimeout) {
+        // `needsLoad` goes false as soon as a navigation starts, so check for a load in flight first —
+        // otherwise the load started at attach time gets restarted here.
+        if resolved.tab.isLoading {
+            let didLoad = await waitForLoadingFinish(tab: resolved.tab, timeout: navigationTimeout) {}
+            guard didLoad else { return nil }
+        } else if resolved.needsLoad {
+            let didLoad = await waitForLoadingFinish(tab: resolved.tab, timeout: navigationTimeout) {
                 resolved.tab.reload()
             }
-            guard didNavigate else { return nil }
+            guard didLoad else { return nil }
         }
 
         return await extractPageContext(from: resolved.tab, timeout: collectTimeout)
     }
 
-    /// Subscribes to the tab's first finished navigation, runs `start()` (e.g. `reload()`), and
-    /// awaits the navigation bounded by `timeout`. Subscribing before `start()` avoids missing a
-    /// fast-finishing navigation. Returns `true` if navigation finished, `false` on timeout.
-    ///
-    /// The navigation signal is bridged through an `AsyncStream` (not `withCheckedContinuation`) so
-    /// that cancelling the task group on timeout actually tears the waiter down — a bare
-    /// continuation isn't cancellation-aware, so the timeout loser would otherwise hang the group
-    /// forever and leak the continuation. Mirrors `PageContextUserScript.collectAndWait`.
+    /// Runs `start()` and waits (bounded) for the tab's first completed load; pass an empty `start` to
+    /// wait on a load already in flight. Same signal `TabLazyLoader` uses for restored pinned tabs.
     @MainActor
-    private static func waitForNavigationFinish(tab: Tab,
-                                                timeout: TimeInterval,
-                                                start: @escaping @MainActor () -> Void) async -> Bool {
-        let navigationFinished = AsyncStream<Void> { continuation in
+    private static func waitForLoadingFinish(tab: Tab,
+                                             timeout: TimeInterval,
+                                             start: @escaping @MainActor () -> Void) async -> Bool {
+        // `AsyncStream` rather than a continuation so cancelling on timeout tears the waiter down.
+        let loadingFinished = AsyncStream<Void> { continuation in
             var cancellable: AnyCancellable?
-            cancellable = tab.webViewDidFinishNavigationPublisher
+            cancellable = tab.loadingFinishedPublisher
                 .first()
                 .sink { _ in
                     continuation.yield(())
@@ -620,7 +704,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask {
-                for await _ in navigationFinished { return true }
+                for await _ in loadingFinished { return true }
                 return false
             }
             group.addTask {
@@ -637,7 +721,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
             return nil
         }
-        let pixel: PixelKitEvent = {
+        hasAttachedPageContext = payload.enabled
+        let pixel: PixelKit.Event = {
             if payload.enabled {
                 return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
             }
@@ -837,6 +922,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync already on")
         }
 
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.aiChat.rawValue]))
         Task { @MainActor in
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
         }
@@ -919,7 +1005,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor
-    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKitEvent) {
+    private func fireSyncDailyAndStandardPixel(_ pixel: PixelKit.Event) {
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
     }
 
@@ -961,7 +1047,87 @@ extension AIChatUserScriptHandler {
 
 extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
+    /// Maps each frontend-reported funnel metric to its origin and click flag. Native-only
+    /// surfaces (address bar / NTP / prompt bar picker impressions) are intentionally absent —
+    /// instrumented natively elsewhere, not via `reportMetric`.
+    private static let funnelMetrics: [AIChatMetricName: (origin: SubscriptionFunnelOrigin, isClick: Bool)] = [
+        .userDidViewAiSidebarUpgradeButton: (.duckAIAiSidebar, false),
+        .userDidClickAiSidebarUpgradeButton: (.duckAIAiSidebar, true),
+        .userDidViewActivateSubscriptionBanner: (.duckAIActivateSubscription, false),
+        .userDidClickActivateSubscriptionButton: (.duckAIActivateSubscription, true),
+        .userDidViewFreePlanBadge: (.duckAIFreeLabel, false),
+        .userDidClickFreePlanUpgradeButton: (.duckAIFreeLabel, true),
+        .userDidViewFreeLimitMessage: (.duckAIFreeLimit, false),
+        .userDidClickFreeLimitSubscribeLink: (.duckAIFreeLimit, true),
+        .userDidViewImageGenerationLimitMessage: (.duckAIImageGenerationLimit, false),
+        .userDidClickImageGenerationLimitSubscribeButton: (.duckAIImageGenerationLimit, true),
+        .userDidViewPlusLimitMessage: (.duckAIPlusLimit, false),
+        .userDidClickPlusLimitUpgradeLink: (.duckAIPlusLimit, true),
+        .userDidViewPromotionCard: (.duckAIPromotionCard, false),
+        .userDidClickPromotionCardButton: (.duckAIPromotionCard, true),
+        .userDidViewSettingsSubscribeButton: (.duckAISettings, false),
+        .userDidClickSettingsSubscribeButton: (.duckAISettings, true),
+        .userDidViewProUpgradeDisclaimerBanner: (.duckAIDisclaimerBanner, false),
+        .userDidClickProUpgradeDisclaimerBannerButton: (.duckAIDisclaimerBanner, true),
+        .userDidViewVoiceChatLimitModal: (.duckAIVoiceChatLimit, false),
+        .userDidClickVoiceChatLimitModalSubscribeButton: (.duckAIVoiceChatLimit, true),
+        .userDidViewVoiceChatDurationLimitModal: (.duckAIVoiceChatDurationLimit, false),
+        .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.duckAIVoiceChatDurationLimit, true),
+        .userDidViewModelPickerUpgrade: (.duckAIModelPicker, false),
+        .userDidClickModelPickerUpgrade: (.duckAIModelPicker, true),
+        .userDidViewReasoningDropdownUpgrade: (.duckAIReasoningDropdown, false),
+        .userDidClickReasoningDropdownUpgrade: (.duckAIReasoningDropdown, true),
+        .userDidViewSwitchModelUpgrade: (.duckAISwitchModel, false),
+        .userDidClickSwitchModelUpgrade: (.duckAISwitchModel, true),
+    ]
+
+    /// The modal metrics, each building its pixel from the origin the modal was opened from.
+    private static let modalFunnelPixels: [AIChatMetricName: (String) -> AIChatPixel] = [
+        .userDidOpenSubscribeModal: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalImpression,
+        .userDidClickSubscribeOnSubscribeModal: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalSubscribeClick,
+        .userDidClickActivateOnSubscribeModal: AIChatPixel.aiChatSubscriptionFunnelSubscribeModalActivateClick,
+        .userDidOpenUpgradeToProModal: AIChatPixel.aiChatSubscriptionFunnelUpgradeToProModalImpression,
+        .userDidClickUpgradeOnUpgradeToProModal: AIChatPixel.aiChatSubscriptionFunnelUpgradeToProModalUpgradeClick,
+    ]
+
+    /// Entry points a modal can be opened from. Allow-listed rather than interpolated into an origin so
+    /// an unrecognised frontend slug can't reach the pixel's origin parameter.
+    private static let modalFunnelOrigins: [String: SubscriptionFunnelOrigin] = [
+        "activatesubscription": .duckAIActivateSubscription,
+        "aisidebar": .duckAIAiSidebar,
+        "disclaimerbanner": .duckAIDisclaimerBanner,
+        "freelabel": .duckAIFreeLabel,
+        "freelimit": .duckAIFreeLimit,
+        "imagegenerationlimit": .duckAIImageGenerationLimit,
+        "modelpicker": .duckAIModelPicker,
+        "pluslimit": .duckAIPlusLimit,
+        "promotioncard": .duckAIPromotionCard,
+        "reasoningdropdown": .duckAIReasoningDropdown,
+        "switchmodel": .duckAISwitchModel,
+        "voicechatdurationlimit": .duckAIVoiceChatDurationLimit,
+        "voicechatlimit": .duckAIVoiceChatLimit,
+        "unknown": .duckAIUnknown,
+    ]
+
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
+        if let funnel = Self.funnelMetrics[metric.metricName] {
+            let pixel: AIChatPixel = funnel.isClick
+                ? .aiChatSubscriptionFunnelClick(origin: funnel.origin.rawValue)
+                : .aiChatSubscriptionFunnelImpression(origin: funnel.origin.rawValue)
+            pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+            completion?()
+            return
+        }
+
+        if let makePixel = Self.modalFunnelPixels[metric.metricName] {
+            // Without a recognised entry point the pixel would carry no usable attribution, so skip it.
+            if let source = metric.source, let origin = Self.modalFunnelOrigins[source] {
+                pixelFiring?.fire(makePixel(origin.rawValue), frequency: .dailyAndCount)
+            }
+            completion?()
+            return
+        }
+
         switch metric.metricName {
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
@@ -969,7 +1135,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricStartNewConversation, frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
+                                                             hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -978,7 +1148,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(AIChatPixel.aiChatMetricSentPromptOngoingChat, frequency: .standard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatMetricSentPromptOngoingChat(source: pixelConversationSource,
+                                                              hasPageContext: hasAttachedPageContext),
+                frequency: .standard
+            )
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1036,4 +1210,112 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         freeTrialConversionService.markDuckAIActivated()
     }
 
+}
+
+// MARK: - Browser tools
+
+extension AIChatUserScriptHandler {
+
+    /// Always answers, even on an unreadable payload: the bridge has no timeout, so silence would
+    /// leave the caller pending forever.
+    @MainActor
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        let request: MCPInitializeRequest? = DecodableHelper.decode(from: params)
+
+        if let ownerTabID = ownerTabID(for: message) {
+            browserTools.sessions.applyInitialize(forOwnerTabID: ownerTabID,
+                                                  protocolVersion: request?.protocolVersion,
+                                                  supportsElicitationForm: request?.supportsElicitationForm ?? false)
+        }
+
+        return MCPInitializeResult(serverName: AIChatBrowserToolsService.serverName,
+                                   serverVersion: AppVersion.shared.versionAndBuildNumber)
+    }
+
+    /// The bridge decides whether this reply is delivered — a message with an envelope `id` gets
+    /// it, a plain notification discards it — so returning a result is correct either way.
+    @MainActor
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let ownerTabID = ownerTabID(for: message) {
+            browserTools.sessions.markInitialized(forOwnerTabID: ownerTabID)
+        }
+        return MCPEmptyResult()
+    }
+
+    /// A listing failure is a top-level `error` token, unlike `tools/call`, which carries failures
+    /// inside the MCP result envelope.
+    @MainActor
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let ownerTabID = ownerTabID(for: message),
+              let session = browserTools.sessions.session(forOwnerTabID: ownerTabID),
+              session.isInitialized else {
+            return BrowserToolsListResponse(failure: .notInitialized)
+        }
+
+        // No Fire check, mirroring Windows: a Fire window is advertised the catalogue and refused
+        // on every call. Detectable, and a known cross-platform gap to close on both sides together.
+        let permissions = browserTools.permissions
+        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map {
+            $0.descriptor(permissionState: permissions.effectiveState(for: $0).rawValue)
+        })
+    }
+
+    /// Every outcome is a well-formed reply carrying the request's `callId`. A refusal rides in
+    /// `isError`; the envelope status describes the round trip only, and is always `ok`.
+    /// - Parameter elicitationPusher: where a permission prompt raised by this call is delivered.
+    @MainActor
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
+        guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {
+            // Recover the call id even from a payload we could not read, so the front end can still
+            // match the failure to the call it made rather than being left guessing.
+            return InvokeBrowserToolResponse(callId: Self.callID(fromRawParams: params), result: .failure(.invalidRequest))
+        }
+
+        guard let ownerTabID = ownerTabID(for: message),
+              let session = browserTools.sessions.session(forOwnerTabID: ownerTabID),
+              session.isInitialized else {
+            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.notInitialized))
+        }
+
+        // Scoped by the owner tab, never the key window: a backgrounded chat would otherwise act on
+        // whichever window the user is in now, Fire included.
+        guard let ownerCollection = AIChatTabPickerSource.ownerCollection(for: message.messageWebView,
+                                                                          ownerTabID: ownerTabID,
+                                                                          in: windowControllersManager) else {
+            return InvokeBrowserToolResponse(callId: request.callId, result: .failure(.unavailable))
+        }
+        let context = BrowserToolCallContext(
+            ownerTabID: ownerTabID,
+            ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: ownerCollection),
+            isBurner: ownerCollection.isBurner,
+            supportsElicitationForm: session.supportsElicitationForm
+        )
+
+        let result = await browserTools.invoker.invoke(toolNamed: request.name,
+                                                       arguments: request.arguments,
+                                                       context: context,
+                                                       elicitationPusher: elicitationPusher)
+        return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
+    }
+
+    /// Always acknowledged, even for a malformed payload, so a front end that sends this as a
+    /// request cannot hang. An unreadable `result` completes the prompt as `cancel`.
+    @MainActor
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let response: AIChatElicitationResponseRequest = DecodableHelper.decode(from: params), !response.id.isEmpty {
+            browserTools.elicitations.complete(id: response.id, result: response.result ?? .cancel)
+        }
+        return MCPEmptyResult()
+    }
+
+    private static func callID(fromRawParams params: Any) -> String {
+        (params as? [String: Any])?["callId"] as? String ?? ""
+    }
+
+    /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached
+    /// window, the chat's own tab otherwise. Sessions and tool scoping are keyed on it.
+    @MainActor
+    private func ownerTabID(for message: UserScriptMessage) -> TabIdentifier? {
+        AIChatTabPickerSource.ownerTabID(for: message.messageWebView, in: windowControllersManager)
+    }
 }

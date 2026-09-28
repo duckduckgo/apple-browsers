@@ -80,7 +80,6 @@ struct MenuItemWithBadgeConstants {
         }
         return .menuItemHover
     }()
-
 }
 
 // MARK: - Custom Badge Shape
@@ -154,6 +153,16 @@ struct BadgeView: View {
     /// The text content to display in the badge
     let text: String
 
+    /// `true` rounds all four corners equally (e.g. the omnibar's "Try for free"/"Upgrade" tags);
+    /// `false` (default) keeps the asymmetric shape used by the PLUS/PRO/BETA/free-trial tags
+    /// elsewhere in the app.
+    var hasUniformCorners: Bool = false
+    /// `true` once the omnibar's shared impression cap is reached — keeps the badge (and its tap
+    /// action) in place but swaps the attention-grabbing yellow for a neutral fill, per the Ship
+    /// Review decision to reduce long-term annoyance without removing the entry point. Only
+    /// applies to the uniform-corner style; other badges using this view aren't subject to the cap.
+    var isMuted: Bool = false
+
     // Cache commonly used styling values to avoid repeated calculations
     private static let badgeFont = Font.system(size: 11, weight: .bold)
     private static let badgeShape = BadgeShape()
@@ -161,14 +170,28 @@ struct BadgeView: View {
     var body: some View {
         Text(text)
             .font(Self.badgeFont)
-            .foregroundColor(.black)
+            .foregroundColor(isMuted ? Color(designSystemColor: .textPrimary) : .black)
             .padding(.top, MenuItemWithBadgeConstants.paddingTop)
             .padding(.bottom, MenuItemWithBadgeConstants.paddingBottom)
             .padding(.leading, MenuItemWithBadgeConstants.paddingLeft)
             .padding(.trailing, MenuItemWithBadgeConstants.paddingRight)
             .frame(height: MenuItemWithBadgeConstants.height)
-            .background(Self.badgeShape.fill(Color(baseColor: .yellow60)))
+            .background(badgeBackground)
     }
+
+    @ViewBuilder
+    private var badgeBackground: some View {
+        if hasUniformCorners {
+            RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.cornerRadius)
+                .fill(isMuted ? Color(designSystemColor: .controlsFillSecondary) : Self.tryForFreeBadgeColor)
+        } else {
+            Self.badgeShape.fill(Color(baseColor: .yellow60))
+        }
+    }
+
+    /// Figma's "Pollen 300" — `RebrandingColor.Pollen.pollen30` on this palette's 0-100 (rather
+    /// than Figma's 50-900) step convention.
+    private static let tryForFreeBadgeColor = RebrandingColor.Pollen.pollen30
 }
 
 // MARK: - Menu Item with Badge
@@ -322,4 +345,19 @@ extension NSMenuItem {
 
         return menuItem
     }
+}
+
+extension NSMenuItem {
+
+    /// Creates a non-interactive, muted section title (no CTA) — `NSMenuItem.sectionHeader` is macOS 14+.
+    static func createMutedSectionHeader(title: String) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        item.attributedTitle = NSAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: 12),
+            .foregroundColor: NSColor(designSystemColor: .textTertiary)
+        ])
+        return item
+    }
+
 }

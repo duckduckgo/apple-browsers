@@ -122,6 +122,10 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.submitAIChatSelectionContext(selection)
     }
 
+    func focusChatWebView() {
+        view.window?.makeFirstResponder(aiTab.webView)
+    }
+
     public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
         aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }

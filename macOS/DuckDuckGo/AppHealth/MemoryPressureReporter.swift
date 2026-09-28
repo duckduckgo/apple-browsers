@@ -28,7 +28,7 @@ enum MemoryPressureNotification {
     static let contextKey = "memoryReportingContext"
 }
 
-enum MemoryPressurePixel: PixelKitEvent {
+enum MemoryPressurePixel: PixelKit.Event {
     /// Fired when the system reports critical level memory pressure, with context about browser state.
     case memoryPressureCritical(context: MemoryReportingContext)
 

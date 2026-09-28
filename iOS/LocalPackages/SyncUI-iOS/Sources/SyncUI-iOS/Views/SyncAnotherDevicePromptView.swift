@@ -24,84 +24,103 @@ import SwiftUI
 struct SyncAnotherDevicePromptView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
-    @State private var bottomSafeArea: CGFloat = 0
 
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationView {
             VStack(spacing: 0) {
-                Image(rebrandable: "Desktop-Sync-New-Feature-128", bundle: .module)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 128, height: 96)
-                    .padding(.bottom, 20)
+                VStack(spacing: 0) {
+                    Image(rebrandable: "Desktop-Mobile-Sync-Pair-Feature-128", bundle: .module)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 128, height: 96)
 
-                Text(UserText.simplifiedSyncAnotherDeviceTitle)
-                    .daxTitle1()
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, 24)
+                    Text(UserText.simplifiedSyncAnotherDeviceTitle)
+                        .daxTitle1()
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 24)
 
-                Text(UserText.simplifiedSyncAnotherDeviceBody)
-                    .daxBodyRegular()
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .foregroundStyle(Color(designSystemColor: .textPrimary))
-            .padding(.horizontal, 24)
-            .padding(.top, 56)
+                    Text(UserText.simplifiedSyncAnotherDeviceBody)
+                        .daxBodyRegular()
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                .padding(.top, 20)
 
-            Spacer()
+                Spacer()
 
-            VStack(spacing: 8) {
-                Button {
-                    model.syncAnotherDeviceFromPromptTapped()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
-                        Text(UserText.simplifiedSyncAnotherDeviceButton)
+                VStack(spacing: 8) {
+                    Button {
+                        model.syncAnotherDeviceFromConnectingSheet()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
+                            Text(UserText.simplifiedSyncWithAnotherDeviceButton)
+                        }
                     }
-                }
-                .buttonStyle(PrimaryButtonStyle())
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(model.isConnectingThisDeviceOnly)
 
-                Button {
-                    model.dismissSyncWithAnotherDevicePrompt()
-                } label: {
-                    Text(UserText.simplifiedSyncAnotherDeviceNotNow)
+                    Button {
+                        model.syncThisDeviceOnlyFromConnectingSheet()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if model.isConnectingThisDeviceOnly {
+                                ProgressView()
+                            }
+                            Text(UserText.simplifiedSyncThisDeviceOnly)
+                        }
+                    }
+                    .buttonStyle(SecondaryFillButtonStyle())
+                    .disabled(model.isConnectingThisDeviceOnly)
                 }
-                .buttonStyle(GhostButtonStyle())
+                .padding(.bottom, 20)
             }
-            .frame(maxWidth: 360)
-            .padding(.horizontal, 30)
-            .padding(.bottom, max(20 - bottomSafeArea, 0))
+            .padding(.horizontal, 24)
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                model.anotherDevicePromptAppeared()
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        model.dismissAnotherDevicePrompt()
+                    } label: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                    }
+                    .accessibilityLabel(UserText.simplifiedScanCloseButton)
+                    .disabled(model.isConnectingThisDeviceOnly)
+                }
+            }
         }
-        .background(
-            GeometryReader { geometry in
-                Color.clear
-                    .onAppear { bottomSafeArea = geometry.safeAreaInsets.bottom }
-            }
-        )
-        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
-
-// MARK: - Previews
 
 #if DEBUG
 
 private extension SyncSettingsViewModel {
-    /// A bare model for previews — this view only calls model methods from its buttons and doesn't
-    /// branch on model state, so no configuration is needed.
-    static func previewModel() -> SyncSettingsViewModel {
-        SyncSettingsViewModel(
+    static func previewModel(isConnecting: Bool = false) -> SyncSettingsViewModel {
+        let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
             autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
         )
+        model.isSyncEnabled = true
+        model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
+        model.connectingSheetPhase = .syncAnotherDevice(isConnecting: isConnecting)
+        return model
     }
 }
 
 #Preview("Rebranded") {
     RebrandedPreview(isRebranded: true) {
         SyncAnotherDevicePromptView(model: .previewModel())
+    }
+}
+
+#Preview("Connecting") {
+    RebrandedPreview(isRebranded: true) {
+        SyncAnotherDevicePromptView(model: .previewModel(isConnecting: true))
     }
 }
 

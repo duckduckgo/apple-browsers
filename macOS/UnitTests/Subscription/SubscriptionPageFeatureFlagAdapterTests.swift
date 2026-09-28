@@ -17,7 +17,7 @@
 //
 
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import Testing
 @testable import DuckDuckGo_Privacy_Browser

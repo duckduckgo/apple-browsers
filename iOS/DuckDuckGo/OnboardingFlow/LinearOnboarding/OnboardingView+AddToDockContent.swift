@@ -72,9 +72,9 @@ extension OnboardingView {
                 ),
                 message: AnyView(
                     Text(content.message)
-                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                    .font(onboardingTheme.typography.body)
-                    .multilineTextAlignment(.center)
+                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                        .font(onboardingTheme.typography.body)
+                        .multilineTextAlignment(.center)
                 ),
                 content: AnyView(
                     OnboardingView.AddToDockPromoView()

@@ -53,7 +53,7 @@ struct SyncDialog<Content, Buttons>: View where Content: View, Buttons: View {
         .padding(.bottom, 16.0)
         .frame(minWidth: 360, idealHeight: 314)
         .background(
-            Color(.dialogPanelBackground)
+            Color(designSystemColor: .surfaceSecondary)
         )
     }
 }

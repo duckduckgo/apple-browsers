@@ -73,6 +73,7 @@ public enum SyncConnectionError: Error, Equatable {
     case unexpectedSecondHello
     case unexpectedEvent
     case pairingSessionNotReady
+    case pairingV2OperationFailure(PairingV2FailureContext)
     case relayChannelUnavailable
     case recoveryCodePreparationFailed
     case peerRecoveryCodeUnavailable
@@ -109,6 +110,7 @@ enum SyncSetupFailureReason {
     static let unexpectedSecondHello = "unexpected_second_hello"
     static let unexpectedEvent = "unexpected_event"
     static let pairingSessionNotReady = "pairing_session_not_ready"
+    static let relayChannelFailure = "relay_channel_failure"
     static let relayChannelUnavailable = "relay_channel_unavailable"
     static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
     static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
@@ -163,6 +165,8 @@ public extension SyncConnectionError {
             return SyncSetupFailureReason.unexpectedEvent
         case .pairingSessionNotReady:
             return SyncSetupFailureReason.pairingSessionNotReady
+        case .pairingV2OperationFailure(let context):
+            return context.kind == nil ? SyncSetupFailureReason.unexpectedFailure : SyncSetupFailureReason.relayChannelFailure
         case .relayChannelUnavailable:
             return SyncSetupFailureReason.relayChannelUnavailable
         case .recoveryCodePreparationFailed:
@@ -191,6 +195,13 @@ public extension SyncConnectionError {
         default:
             return nil
         }
+    }
+
+    var pairingV2FailureContext: PairingV2FailureContext? {
+        guard case .pairingV2OperationFailure(let context) = self else {
+            return nil
+        }
+        return context
     }
 }
 
@@ -313,6 +324,8 @@ public class SyncConnectionController: SyncConnectionControlling {
     private let dependencies: SyncDependencies
     private let pairingV2PollingTimeout: TimeInterval
     private let pairingV2PollIntervalNanoseconds: UInt64
+    private let makePairingV2KeyPair: () throws -> PairingV2KeyPair
+    private let createPairingV2QRCodeURL: (PairingV2QRCodePayload) throws -> URL
 
     private weak var delegate: SyncConnectionControllerDelegate?
 
@@ -332,7 +345,11 @@ public class SyncConnectionController: SyncConnectionControlling {
          syncService: DDGSyncing,
          dependencies: SyncDependencies,
          pairingV2PollingTimeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
-         pairingV2PollIntervalNanoseconds: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds) {
+         pairingV2PollIntervalNanoseconds: UInt64 = PairingV2PollingDefaults.pollIntervalNanoseconds,
+         makePairingV2KeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
+         createPairingV2QRCodeURL: @escaping (PairingV2QRCodePayload) throws -> URL = {
+             try $0.toURL(baseURL: SyncConnectionController.pairingURLBase)
+         }) {
         self.deviceName = deviceName
         self.deviceType = deviceType
         self.syncService = syncService
@@ -340,6 +357,8 @@ public class SyncConnectionController: SyncConnectionControlling {
         self.dependencies = dependencies
         self.pairingV2PollingTimeout = pairingV2PollingTimeout
         self.pairingV2PollIntervalNanoseconds = pairingV2PollIntervalNanoseconds
+        self.makePairingV2KeyPair = makePairingV2KeyPair
+        self.createPairingV2QRCodeURL = createPairingV2QRCodeURL
     }
 
     public func startExchangeMode() async throws -> PairingInfo {
@@ -504,10 +523,10 @@ public class SyncConnectionController: SyncConnectionControlling {
         let payload = try await coordinator.startPresenting()
         let url: URL
         do {
-            url = try payload.toURL(baseURL: Self.pairingURLBase)
+            url = try createPairingV2QRCodeURL(payload)
         } catch {
             await coordinator.cancel()
-            throw error
+            throw PairingV2OperationFailure(generationStage: .presenterGenerateCode, underlyingError: error)
         }
 
         await state.replacePairingV2Coordinator(with: coordinator)
@@ -585,7 +604,9 @@ public class SyncConnectionController: SyncConnectionControlling {
             return
         }
 
-        if let syncError = error as? SyncError {
+        if let operationFailure = error as? PairingV2OperationFailure {
+            await delegate?.controllerDidError(.pairingV2OperationFailure(operationFailure.context), underlyingError: operationFailure.underlyingError, setupRole: setupRole)
+        } else if let syncError = error as? SyncError {
             await handlePairingV2SyncError(syncError, coordinator: coordinator, setupRole: setupRole)
         } else if let pairingV2Error = error as? PairingV2Error {
             await delegate?.controllerDidError(pairingV2ConnectionError(for: pairingV2Error), underlyingError: nil, setupRole: setupRole)
@@ -874,7 +895,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             deviceType: deviceType,
             flags: PairingV2RolloutFlags(isV2ScanningEnabled: isPairingV2ScanningEnabled,
                                          isV2CodeEnabled: isPairingV2PresentationEnabled),
-            confirmationDelegate: self
+            confirmationDelegate: self,
+            makeKeyPair: makePairingV2KeyPair
         )
     }
 

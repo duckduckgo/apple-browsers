@@ -21,27 +21,20 @@ import BrowserServicesKit
 import Contacts
 import Core
 import Foundation
+@_spi(Testing) import PixelKit
 import Testing
 @testable import DuckDuckGo
 
 @Suite("CompleteDownloadRowViewModel", .serialized)
 final class CompleteDownloadRowViewModelTests {
 
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
-
     @available(iOS 17, *)
-    @Test("Returns a prepared event for a single-VEVENT .ics file when the flag is on", .timeLimit(.minutes(1)))
+    @Test("Returns a prepared event for a single-VEVENT .ics file", .timeLimit(.minutes(1)))
     func preparesEventForSingleVEvent() throws {
         let url = try writeTempFile(name: "single.ics", contents: Fixtures.singleEvent)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         let prepared = viewModel.preparePreviewEvent()
 
         #expect(prepared != nil)
@@ -49,22 +42,12 @@ final class CompleteDownloadRowViewModelTests {
     }
 
     @available(iOS 17, *)
-    @Test("Returns nil when the feature flag is off", .timeLimit(.minutes(1)))
-    func returnsNilWhenFlagIsOff() throws {
-        let url = try writeTempFile(name: "single.ics", contents: Fixtures.singleEvent)
-        defer { try? FileManager.default.removeItem(at: url) }
-
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: MockFeatureFlagger())
-        #expect(viewModel.preparePreviewEvent() == nil)
-    }
-
-    @available(iOS 17, *)
-    @Test("Returns nil for a non-.ics file even when the flag is on", .timeLimit(.minutes(1)))
+    @Test("Returns nil for a non-.ics file", .timeLimit(.minutes(1)))
     func returnsNilForNonICSExtension() throws {
         let url = try writeTempFile(name: "calendar.txt", contents: Fixtures.singleEvent)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewEvent() == nil)
     }
 
@@ -74,7 +57,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "multi.ics", contents: Fixtures.multipleEvents)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewEvent() == nil)
     }
 
@@ -84,7 +67,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "broken.ics", contents: "not a calendar")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: flaggerWithICSOn())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewEvent() == nil)
     }
 
@@ -96,7 +79,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "single.vcf", contents: Fixtures.singleContact)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: MockFeatureFlagger())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         let contact = viewModel.preparePreviewContact()
 
         #expect(contact?.givenName == "John")
@@ -110,8 +93,7 @@ final class CompleteDownloadRowViewModelTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     featureFlagger: MockFeatureFlagger(),
-                                                     pixelFiring: PixelFiringMock.self)
+                                                     pixelFiring: PixelKitMock())
         let contact = viewModel.preparePreviewContact()
 
         // We present the first contact and ignore the rest.
@@ -126,8 +108,7 @@ final class CompleteDownloadRowViewModelTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     featureFlagger: MockFeatureFlagger(),
-                                                     pixelFiring: PixelFiringMock.self)
+                                                     pixelFiring: PixelKitMock())
         #expect(viewModel.preparePreviewContact() == nil)
     }
 
@@ -137,7 +118,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "contact.txt", contents: Fixtures.singleContact)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url, featureFlagger: MockFeatureFlagger())
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewContact() == nil)
     }
 
@@ -148,14 +129,15 @@ final class CompleteDownloadRowViewModelTests {
     func contactCardCoordinatorReportsSave() {
         var didSave = false
         var didDismiss = false
+        let pixelKitMock = PixelKitMock()
         let coordinator = ContactCardView.Coordinator(onSaved: { didSave = true },
                                                       onDismiss: { didDismiss = true },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      pixelFiring: pixelKitMock)
         coordinator.complete(saved: true)
 
         #expect(didSave)
         #expect(didDismiss)
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.vcardContactEditorSaved.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.vcardContactEditorSaved.name })
     }
 
     @available(iOS 16, *)
@@ -163,14 +145,15 @@ final class CompleteDownloadRowViewModelTests {
     func contactCardCoordinatorReportsCancel() {
         var didSave = false
         var didDismiss = false
+        let pixelKitMock = PixelKitMock()
         let coordinator = ContactCardView.Coordinator(onSaved: { didSave = true },
                                                       onDismiss: { didDismiss = true },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      pixelFiring: pixelKitMock)
         coordinator.cancelButtonTapped()
 
         #expect(!didSave)
         #expect(didDismiss)
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.vcardContactEditorCancelled.name })
+        #expect(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.vcardContactEditorCancelled.name })
     }
 
     @available(iOS 16, *)
@@ -179,7 +162,7 @@ final class CompleteDownloadRowViewModelTests {
         var dismissCount = 0
         let coordinator = ContactCardView.Coordinator(onSaved: {},
                                                       onDismiss: { dismissCount += 1 },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      pixelFiring: PixelKitMock())
         coordinator.complete(saved: false)
         coordinator.complete(saved: true) // dismantle/swipe arriving after an explicit completion
 
@@ -187,10 +170,6 @@ final class CompleteDownloadRowViewModelTests {
     }
 
     // MARK: - Helpers
-
-    private func flaggerWithICSOn() -> MockFeatureFlagger {
-        MockFeatureFlagger(enabledFeatureFlags: [.icsCalendarLinks])
-    }
 
     private func writeTempFile(name: String, contents: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory

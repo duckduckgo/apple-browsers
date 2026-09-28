@@ -17,8 +17,8 @@
 //
 
 import Combine
-import FeatureFlags
-import Navigation
+import FeatureFlags_macOS
+import DDGNavigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities

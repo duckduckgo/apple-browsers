@@ -27,17 +27,18 @@ struct HomeButtonMenuFactory {
         let index = menu.index(of: menuItem)
         guard index >= 0 else { return nil }
 
-        let item = makeMenuItem(prefs: prefs, pinningManager: pinningManager)
+        let item = makeMenuItem(prefs: prefs, pinningManager: pinningManager, visibleOnMacOS27: false)
         menu.replaceItem(at: index, with: item)
         return item
     }
 
     static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences, pinningManager: PinningManager) {
-        menu.addItem(makeMenuItem(prefs: prefs, pinningManager: pinningManager))
+        menu.addItem(makeMenuItem(prefs: prefs, pinningManager: pinningManager, visibleOnMacOS27: true))
     }
 
-    private static func makeMenuItem(prefs: AppearancePreferences, pinningManager: PinningManager) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.mainMenuHomeButton).withImage(DesignSystemImages.Glyphs.Size12.home)
+    private static func makeMenuItem(prefs: AppearancePreferences, pinningManager: PinningManager, visibleOnMacOS27: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.mainMenuHomeButton)
+            .withImage(DesignSystemImages.Glyphs.Size12.home, visibleOnMacOS27: visibleOnMacOS27)
 
         let isButtonVisible = pinningManager.isPinned(.homeButton)
         let buttonPosition = prefs.homeButtonPosition

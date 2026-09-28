@@ -22,7 +22,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to the navigation bar.
  */
-enum NavigationBarPixel: PixelKitEvent {
+enum NavigationBarPixel: PixelKit.Event {
 
     /**
      * Event Trigger: Home toolbar button clicked.

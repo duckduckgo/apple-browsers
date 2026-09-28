@@ -32,7 +32,6 @@ class AddressBarKeyboardShortcutsTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp()
         urlStringForAddressBar = "https://duckduckgo.com/duckduckgo-help-pages/results/translation/"
         urlForAddressBar = URL(string: urlStringForAddressBar)

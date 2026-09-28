@@ -35,6 +35,10 @@ protocol AIChatHistoryCleaning {
 
     /// Deletes all Duck.ai chat history.
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
+
+    /// All Duck.ai chats currently stored locally, decoded with their titles.
+    /// Returns an empty array if native chat storage isn't available or a chat fails to decode.
+    func allChats() -> [DuckAiChat]
 }
 
 final class AIChatHistoryCleaner: AIChatHistoryCleaning {
@@ -46,6 +50,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     private let pixelKit: PixelKit?
     private let dataClearingPixelsReporter: DataClearingPixelsReporter
     private var historyCleaner: HistoryCleaning
+    private let nativeStorageHandler: DuckAiNativeStorageHandling?
 
     @Published
     private var aiChatWasUsedBefore: Bool
@@ -68,6 +73,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.notificationCenter = notificationCenter
         self.pixelKit = pixelKit
+        self.nativeStorageHandler = nativeStorageHandler
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
         self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger,
@@ -102,6 +108,11 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         }
 
         return result
+    }
+
+    func allChats() -> [DuckAiChat] {
+        guard let nativeStorageHandler, let records = try? nativeStorageHandler.getAllChats() else { return [] }
+        return records.compactMap { try? DuckAiChat.decode(from: $0.data).chat }
     }
 
     private func subscribeToChanges() {

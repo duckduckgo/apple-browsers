@@ -21,6 +21,7 @@ import Foundation
 import Common
 import FoundationExtensions
 import Core
+import PixelKit
 
 final class PromptCooldownStorePixelReporter: EventMapping<PromptCooldownKeyValueFilesStore.DebugEvent> {
 
@@ -28,9 +29,9 @@ final class PromptCooldownStorePixelReporter: EventMapping<PromptCooldownKeyValu
         super.init { event, error, _, _ in
             switch event {
             case .failedToRetrieveLastPresentationTimestamp:
-                DailyPixel.fireDailyAndCount(pixel: .debugPromptCoordinationFailedToRetrieveLastPresentationDate, error: error)
+                PixelKit.fire(Pixel.Event.debugPromptCoordinationFailedToRetrieveLastPresentationDate.withError(error), frequency: .dailyAndCount)
             case .failedToSaveLastPresentationTimestamp:
-                DailyPixel.fireDailyAndCount(pixel: .debugPromptCoordinationFailedToSaveLastPresentationDate, error: error)
+                PixelKit.fire(Pixel.Event.debugPromptCoordinationFailedToSaveLastPresentationDate.withError(error), frequency: .dailyAndCount)
             }
         }
     }

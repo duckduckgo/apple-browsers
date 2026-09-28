@@ -20,17 +20,17 @@ DuckDuckGo.xcworkspace/          # Main workspace (ALWAYS open this)
 ```
 iOS/
 ├── DuckDuckGo/                  # Main iOS app
-│   ├── AppDelegate.swift        # App lifecycle
-│   ├── MainViewController.swift # Primary browser interface
 │   ├── BrowserTab.swift        # Tab state and WebKit integration
 │   ├── AIChat/                 # AI chat integration
-│   ├── AppLifecycle/           # App lifecycle management
+│   ├── Application/            # App lifecycle, configuration, and services
+│   │   └── AppLifecycle/       # AppDelegate, SceneDelegate, app state machine
 │   ├── Autofill/               # Form autofill features
 │   ├── Bookmarks/              # Bookmark management
 │   ├── BrowsingMenu/           # Browser menu UI
 │   ├── Configuration/          # App configuration
 │   ├── DataImport/             # Data import utilities
 │   ├── HealthKitReporting/     # Health data reporting
+│   ├── Main/                   # MainViewController and browser chrome
 │   ├── MainWindow/             # Main window controllers
 │   ├── Subscription/           # Premium features
 │   ├── SyncPrompt/             # Sync feature prompts
@@ -68,6 +68,15 @@ macOS/
 ├── DuckDuckGoNotifications/    # System notifications
 └── Configuration/              # Build configurations
 ```
+
+## Adding files and directories to the iOS project
+
+Use buildable folders by default when creating directories. Create an ordinary Xcode group only when the existing project structure requires one.
+
+Before adding a file, determine how its destination is represented in `iOS/DuckDuckGo-iOS.xcodeproj/project.pbxproj`.
+
+- **Buildable folder** (`PBXFileSystemSynchronizedRootGroup`): Create the file or directory in the corresponding filesystem location. Xcode detects it automatically, so no `project.pbxproj` change is needed.
+- **Xcode group** (`PBXGroup`): Create the file and update the necessary file reference, group membership, build phase, and target membership in `project.pbxproj`.
 
 ## Dependencies and Packages
 

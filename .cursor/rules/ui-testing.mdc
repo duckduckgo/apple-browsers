@@ -301,6 +301,8 @@ XCTAssertTrue(addressBarValue.contains("example.com"), "Should be on example.com
 
 **XCUIElement queries are always valid and re-query the UI when accessed (e.g., `exists`, `waitForExistence`). No need to create "fresh" element references:**
 
+**Do not reassign stored `XCUIElement` properties inside test methods to "refresh" them after navigation, tab changes, app activation, or app relaunch.** `XCUIElement` stores a query, not a resolved UI object snapshot, so reassigning the same query does not make the test more stable; it only adds noise and can hide the actual interaction/state transition being tested. Assign stored element properties once in `setUpWithError`, then reuse them. If an element is only needed in one test, declare it once with `let` in that test and reuse that query.
+
 ```swift
 // ✅ CORRECT: Reuse the same element reference
 class FeatureUITests: UITestCase {
@@ -337,11 +339,20 @@ class FeatureUITests: UITestCase {
 func testBadPattern() {
     addressBarTextField.typeText("example.com")
     
-    // ❌ Wrong: No need to create fresh reference
+    // ❌ Wrong: No need to create fresh references
     let freshAddressBar = app.textFields["AddressBarViewController.addressBarTextField"]
     let currentAddressBar = app.textFields["AddressBarViewController.addressBarTextField"]
     
     // The original addressBarTextField reference is still valid!
+}
+
+// ❌ INCORRECT: Reassigning a stored element to "refresh" it mid-test
+func testAnotherBadPattern() {
+    addressBarTextField.typeText("example.com")
+    app.openNewTab()
+
+    addressBarTextField = app.addressBar // Wrong: stored query is already live
+    addressBarTextField.typeText("another-site.com")
 }
 ```
 

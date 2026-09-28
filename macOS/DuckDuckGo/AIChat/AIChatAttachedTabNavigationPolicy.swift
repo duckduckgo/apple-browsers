@@ -1,0 +1,80 @@
+//
+//  AIChatAttachedTabNavigationPolicy.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import AppKit
+import Foundation
+
+/// Everything an attached tab publishes about the page it is on.
+struct AIChatAttachedTabPage {
+    let content: Tab.TabContent
+    let title: String?
+    let favicon: NSImage?
+    var isLoading: Bool = false
+
+    init(content: Tab.TabContent, title: String?, favicon: NSImage?, isLoading: Bool = false) {
+        self.content = content
+        self.title = title
+        self.favicon = favicon
+        self.isLoading = isLoading
+    }
+
+    init(tab: Tab) {
+        self.init(content: tab.content, title: tab.title, favicon: tab.favicon, isLoading: tab.isLoading)
+    }
+}
+
+/// What an attached tab's navigation does to its card. An omnibar prompt is always about a new
+/// chat, so a card follows its tab rather than being dropped when the page changes under it.
+enum AIChatAttachedTabNavigationPolicy {
+
+    enum Action: Equatable {
+        case keep
+        case refresh(AIChatTabAttachment)
+        case drop
+    }
+
+    static func action(for attachment: AIChatTabAttachment, page: AIChatAttachedTabPage) -> Action {
+        guard case .url(let url, _, _) = page.content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else {
+            return .drop
+        }
+        return url == attachment.url ? updatedMetadata(for: attachment, page: page) : movedTo(url, from: attachment)
+    }
+
+    /// The title still describes the page being left, so the card falls back to the host until the
+    /// new one lands. A favicon belongs to the site, so it survives a move within one host.
+    private static func movedTo(_ url: URL, from attachment: AIChatTabAttachment) -> Action {
+        .refresh(AIChatTabAttachment(id: attachment.id,
+                                     title: url.host ?? url.absoluteString,
+                                     url: url,
+                                     favicon: url.host == attachment.url.host ? attachment.favicon : nil,
+                                     instanceID: attachment.instanceID))
+    }
+
+    /// Same page: title and favicon land after it does, and neither is ever downgraded back to nil.
+    private static func updatedMetadata(for attachment: AIChatTabAttachment, page: AIChatAttachedTabPage) -> Action {
+        let title = page.title ?? attachment.title
+        let favicon = page.favicon ?? attachment.favicon
+        guard title != attachment.title || favicon !== attachment.favicon else { return .keep }
+        return .refresh(AIChatTabAttachment(id: attachment.id,
+                                            title: title,
+                                            url: attachment.url,
+                                            favicon: favicon,
+                                            instanceID: attachment.instanceID))
+    }
+}

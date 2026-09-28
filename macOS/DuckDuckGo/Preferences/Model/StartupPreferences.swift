@@ -20,7 +20,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 
 enum StartupWindowType: String, CaseIterable {

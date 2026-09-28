@@ -24,6 +24,9 @@ import Onboarding
 private enum ComparisonTableMetrics {
     // Header
     static let headerIconSize: CGFloat = 64
+    /// Compensates for the icon PDFs' built-in vertical shadow padding so the title's center aligns with the
+    /// visible icons rather than their 64pt frame center. Negative moves the title up. Tune to taste.
+    static let headerTitleVerticalOffset: CGFloat = -4
 
     // Row layout
     static let rowSpacing: CGFloat = 0
@@ -111,6 +114,8 @@ private struct ComparisonHeader: View {
                 .font(onboardingTheme.typography.rowDetails)
                 .foregroundColor(onboardingTheme.colorPalette.textPrimary)
                 .multilineTextAlignment(.trailing)
+                // Align with the visible icons, not the icon frame center (see metric note).
+                .offset(y: ComparisonTableMetrics.headerTitleVerticalOffset)
             iconsRow(leftIcon: leftIcon, rightIcon: rightIcon)
         }
     }
@@ -331,3 +336,29 @@ struct CircleCheckView: View {
         }
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+
+private struct CircleCheckViewPreviewSamples: View {
+    var body: some View {
+        HStack(spacing: 24) {
+            CircleCheckView(size: 24, shouldAnimate: true, staggerDelay: 0)
+            CircleCheckView(size: 44, shouldAnimate: true, staggerDelay: 0)
+            CircleCheckView(size: 72, shouldAnimate: true, staggerDelay: 0)
+        }
+        .padding()
+    }
+}
+
+#Preview("Light") {
+    CircleCheckViewPreviewSamples()
+}
+
+#Preview("Dark") {
+    CircleCheckViewPreviewSamples()
+        .preferredColorScheme(.dark)
+}
+
+#endif

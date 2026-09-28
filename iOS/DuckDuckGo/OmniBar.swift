@@ -98,15 +98,10 @@ protocol OmniBar: AnyObject {
     func prepareForMoveTransition()
     func moveTransitionCompleted()
 
-    /// Hides (or restores) the Dax logo in the editing state. If the editing state view controller
-    /// does not yet exist, the hidden flag is applied to it on creation so the logo is never visible.
-    /// Used by chat-path onboarding to avoid flashing the Dax while transitioning to the completion dialog.
-    func setEditingStateLogoHidden(_ hidden: Bool)
 }
 
 extension OmniBar {
-    /// Begins editing without overriding the toggle mode. The SwitchBarHandler
-    /// will use its self-resolved default from settings.
+    /// Begins editing without overriding the selected mode.
     func beginEditing(animated: Bool) {
         beginEditing(animated: animated, forTextEntryMode: nil)
     }

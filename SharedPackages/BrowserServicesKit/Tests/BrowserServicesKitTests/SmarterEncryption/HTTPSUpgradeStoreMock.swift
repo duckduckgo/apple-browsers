@@ -34,11 +34,11 @@ struct HTTPSUpgradeStoreMock: HTTPSUpgradeStore {
         excludedDomains.contains(domain)
     }
 
-    func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws {
+    func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         fatalError()
     }
 
-    func persistExcludedDomains(_ domains: [String]) throws {
+    func persistExcludedDomains(_ domains: [String]) throws -> Bool {
         fatalError()
     }
 

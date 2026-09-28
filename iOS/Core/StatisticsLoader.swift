@@ -24,7 +24,9 @@ import BrowserServicesKit
 import Networking
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 import os.log
+import FeatureFlags_iOS
 
 public class StatisticsLoader {
 
@@ -38,27 +40,85 @@ public class StatisticsLoader {
     private let parser = AtbParser()
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
+    private let fireNewAIPromptExperimentPixels: () -> Void
     private let fireOSDistributionPixel: (OSDistributionPixel.Metric) -> Void
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private var isDuckAIRetentionRequestInProgress = false
     private let isPad: Bool
 
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
-         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
-         fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels,
+         fireAppRetentionExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireAppRetentionExperimentPixels()
+            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "app_use")
+         },
+         fireSearchExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireSearchExperimentPixels()
+            StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
+            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
+            StatisticsLoader.fireOnboardingByDownloadReasonSearchExperimentPixels()
+         },
+         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
-         pixelFiring: PixelFiring.Type = Pixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
         self.statisticsStore = statisticsStore
         self.returnUserMeasurement = returnUserMeasurement
         self.usageSegmentation = usageSegmentation
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
+        self.fireNewAIPromptExperimentPixels = fireNewAIPromptExperimentPixels
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
+    }
+
+    /// Fires the d1-4 conversion-window metric scoped to the search-token experiment only.
+    static func fireSearchTokenExperimentPixels(metric: String) {
+        for threshold in [1, 4, 6, 11, 21, 30] {
+            PixelKit.fireExperimentPixelIfThresholdReached(
+                for: iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue,
+                metric: metric,
+                conversionWindowDays: 1...4,
+                threshold: threshold
+            )
+        }
+    }
+
+    // Temporary: per-download-reason d5-7 search retention for the onboarding-by-download-reason experiment.
+    // No-op for users who haven't selected a reason or aren't enrolled (fireExperimentPixelIfThresholdReached guards both).
+    static func fireOnboardingByDownloadReasonSearchExperimentPixels() {
+        guard let pixelToken = OnboardingDownloadReasonStore.currentPixelToken() else { return }
+        let metric = "download_reason_search_retention_\(pixelToken)"
+        for threshold in [1, 4, 6, 11, 21, 30] {
+            PixelKit.fireExperimentPixelIfThresholdReached(
+                for: iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+                metric: metric,
+                conversionWindowDays: 5...7,
+                threshold: threshold
+            )
+        }
+    }
+
+    /// Transitional: preserves the previous 8-15 search window for experiments already running when
+    /// the canonical window was shortened to 8-14, so their in-flight analysis keeps the window it
+    /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
+    static func fireLegacySearchRetentionExperimentPixels() {
+        let inProgressExperiments = [
+            iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
+            AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
+        ]
+        for subfeatureID in inProgressExperiments {
+            for threshold in [4, 6, 11, 21, 30] {
+                PixelKit.fireExperimentPixelIfThresholdReached(
+                    for: subfeatureID,
+                    metric: "search",
+                    conversionWindowDays: 8...15,
+                    threshold: threshold
+                )
+            }
+        }
     }
 
     public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {
@@ -122,7 +182,7 @@ public class StatisticsLoader {
             "locale": formattedLocale,
             "reinstall": isReinstall
         ]
-        pixelFiring.fire(.appInstall, withAdditionalParameters: parameters, includedParameters: [.appVersion], onComplete: { error in
+        pixelFiring?.fire(event: Pixel.Event.appInstall, frequency: .standard, options: .parameters(parameters), onComplete: { _, error in
             if let error {
                 Logger.general.error("Install pixel failed with error: \(error.localizedDescription, privacy: .public)")
             }
@@ -216,6 +276,7 @@ public class StatisticsLoader {
 
     private func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
+        fireNewAIPromptExperimentPixels()
 
         guard !isDuckAIRetentionRequestInProgress else {
             completion()
@@ -297,7 +358,7 @@ extension UsageSegmentation {
                 return
             }
 
-            Pixel.fire(pixel: .usageSegments, withAdditionalParameters: params)
+            PixelKit.fire(Pixel.Event.usageSegments, options: .parameters(params))
         }
     }
 }

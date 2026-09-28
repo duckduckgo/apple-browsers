@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "VPN-Disabled-Feature-128.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

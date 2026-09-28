@@ -25,6 +25,20 @@ final class TabsBarView: UIView {
     let buttonsStack = UIStackView()
     let buttonsBackground = UIView()
 
+    private var collectionViewLeading: NSLayoutConstraint?
+
+    /// Leading tab margin, expanded when window controls share the row.
+    var firstTabLeadingMargin: CGFloat = TabsBarViewController.Constants.firstTabLeadingMargin {
+        didSet {
+            collectionViewLeading?.constant = Self.collectionViewLeadingConstant(for: firstTabLeadingMargin)
+        }
+    }
+
+    // Offset by one ramp width so content inset can preserve the tab margin without clipping the flare.
+    private static func collectionViewLeadingConstant(for firstTabLeadingMargin: CGFloat) -> CGFloat {
+        firstTabLeadingMargin - TabsBarViewController.Constants.tabRampSize.width
+    }
+
     override init(frame: CGRect) {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -61,8 +75,13 @@ final class TabsBarView: UIView {
         addSubview(buttonsBackground)
         addSubview(buttonsStack)
 
+        let collectionViewLeading = collectionView.leadingAnchor.constraint(
+            equalTo: leadingAnchor,
+            constant: Self.collectionViewLeadingConstant(for: firstTabLeadingMargin))
+        self.collectionViewLeading = collectionViewLeading
+
         NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: TabsBarViewController.Constants.leadingInset),
+            collectionViewLeading,
             collectionView.topAnchor.constraint(equalTo: topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
 

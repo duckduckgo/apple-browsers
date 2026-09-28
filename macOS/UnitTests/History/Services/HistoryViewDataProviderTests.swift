@@ -1197,6 +1197,10 @@ final class MockHistoryViewDateFormatter: HistoryViewDateFormatting {
         "10:08"
     }
 
+    func shortString(for date: Date) -> String {
+        "Jun 2"
+    }
+
     var date: Date = Date()
 }
 

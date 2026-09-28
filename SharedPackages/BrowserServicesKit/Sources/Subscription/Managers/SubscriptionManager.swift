@@ -22,7 +22,7 @@ import Common
 import FoundationExtensions
 import os.log
 import Networking
-import PixelKit
+import WideEvent
 
 public enum AuthVersion: String {
     // case v1 // removed
@@ -67,7 +67,11 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     var hasAppStoreProductsAvailable: Bool { get }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    /// Also emits when the initial product fetch finishes, even if availability is unchanged.
     var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the initial App Store product fetch has finished, including an empty result or failure.
+    var hasResolvedAppStoreProducts: Bool { get }
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
@@ -87,6 +91,10 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// The user email
     var userEmail: String? { get }
 
+    /// Returns the state of the locally stored token without mutating account state.
+    /// This does not refresh tokens, update caches, or fall back to cached authentication state.
+    func localTokenState() -> LocalSubscriptionTokenState
+
     /// Sign out the user, clear and invalidate the access token and clear the subscription cache
     func signOut(notifyUI: Bool, userInitiated: Bool) async
 
@@ -97,7 +105,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription
 
     /// Confirm a purchase with a platform signature
-    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription
+    func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription
 
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
@@ -155,6 +163,16 @@ extension SubscriptionManager {
     @discardableResult
     public func getSubscription() async throws -> DuckDuckGoSubscription? {
         try await getSubscription(forceRefresh: false)
+    }
+
+    /// Whether the current subscription has an active free-trial offer. `false` on any fetch failure.
+    public func isOnFreeTrial() async -> Bool {
+        (try? await getSubscription())?.hasActiveTrialOffer ?? false
+    }
+
+    /// Whether the current subscription is active. `false` on any fetch failure.
+    public func isActiveSubscription() async -> Bool {
+        (try? await getSubscription())?.isActive ?? false
     }
 
     public func signOut(notifyUI: Bool) async {
@@ -218,6 +236,8 @@ actor SubscriptionRequestCoalescer {
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManager: SubscriptionManager {
 
+    static let hasAppStoreProductsAvailableKey = "com.duckduckgo.subscription.hasAppStoreProductsAvailable"
+
     var oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManager?
     private let subscriptionEndpointService: SubscriptionEndpointService
@@ -228,6 +248,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let isInternalUserEnabled: () -> Bool
     private let userDefaults: UserDefaults
     private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
+    public private(set) var hasResolvedAppStoreProducts = false
     private var cancellables = Set<AnyCancellable>()
     private let requestCoalescer = SubscriptionRequestCoalescer()
     private let wideEvent: WideEventManaging?
@@ -278,11 +299,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public var hasAppStoreProductsAvailable: Bool {
         guard let storePurchaseManager = _storePurchaseManager else { return false }
-        return storePurchaseManager.areProductsAvailable
+        return storePurchaseManager.areProductsAvailable || (userDefaults.cachedHasAppStoreProductsAvailable ?? false)
     }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    /// Also emits after the initial fetch resolves and its result is cached.
     public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
         hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
     }
@@ -321,8 +343,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
             .store(in: &cancellables)
 
-        Task {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             await storePurchaseManager().updateAvailableProducts()
+            userDefaults.cachedHasAppStoreProductsAvailable = storePurchaseManager().areProductsAvailable
+            hasResolvedAppStoreProducts = true
+            hasAppStoreProductsAvailableSubject.send(hasAppStoreProductsAvailable)
         }
     }
 
@@ -538,6 +564,21 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
+    public func localTokenState() -> LocalSubscriptionTokenState {
+        localTokenSnapshot().state
+    }
+
+    private func localTokenSnapshot() -> LocalTokenSnapshot {
+        do {
+            guard let tokenContainer = try oAuthClient.currentTokenContainer() else {
+                return .missing
+            }
+            return .present(tokenContainer)
+        } catch {
+            return .readError
+        }
+    }
+
     public var userEmail: String? {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
@@ -588,6 +629,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscriptionTokensManagement.debug("Get tokens \(policy.description, privacy: .public)")
+        let tokenBeforeAttempt = localTokenSnapshot()
 
         do {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
@@ -600,41 +642,85 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             // Expected when no tokens are available
             self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
-        } catch {
-            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, error))
-            Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(error, privacy: .public)")
+        } catch let tokenRequestError {
+            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError))
+            Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(tokenRequestError, privacy: .public)")
 
-            switch error {
+            switch tokenRequestError {
             case OAuthClientError.unknownAccount:
-                await signOut(notifyUI: true, userInitiated: false)
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
+                await automaticallySignOut(recoveryOutcome: .notApplicable,
+                                           failedRequest: failedRequest,
+                                           triggeringError: tokenRequestError,
+                                           notifyUI: true)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
+                let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
                     return recoveredTokenContainer
-                } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
-                    // No restore ran (no handler, or the platform can't restore): record the refresh
-                    // as a failure whose recovery was never attempted, keeping its invalid-token error.
-                    await signOut(notifyUI: false, userInitiated: false)
+                } catch let recoveryError {
+                    // `tokenRecoveryNotAttempted` means no restore ran (no handler, or the platform
+                    // can't restore), which is a different finding from a restore that ran and
+                    // failed to yield a valid token. Either way the refresh is a failure.
+                    let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
+                    await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
+                                               failedRequest: failedRequest,
+                                               triggeringError: tokenRequestError,
+                                               notifyUI: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted, error: nil)
-                    throw SubscriptionManagerError.noTokenAvailable
-                } catch {
-                    // A restore ran but did not yield a valid token.
-                    await signOut(notifyUI: false, userInitiated: false)
-                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
-                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: error)
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(
+                        outcome: notAttempted ? .notAttempted : .failed,
+                        error: notAttempted ? nil : recoveryError,
+                        signedOut: true)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 
             default:
-                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: tokenRequestError)
             }
         }
+    }
+
+    /// The state a failed token request leaves behind, as it stood before any recovery ran.
+    private struct FailedTokenRequestState {
+        let policy: AuthTokensCachePolicy
+        let tokenBeforeAttempt: LocalTokenSnapshot
+        let tokenAfterAttempt: LocalTokenSnapshot
+        let cachedSubscription: DuckDuckGoSubscription?
+        let capturedAt: Date
+    }
+
+    /// Snapshots what the sign-out pixel reports about a failed token request. Call this in the
+    /// `catch`, never at sign-out time: recovery runs in between and rewrites both the stored token
+    /// container and the subscription cache.
+    private func captureFailedTokenRequestState(policy: AuthTokensCachePolicy,
+                                                tokenBeforeAttempt: LocalTokenSnapshot) async -> FailedTokenRequestState {
+        FailedTokenRequestState(policy: policy,
+                                tokenBeforeAttempt: tokenBeforeAttempt,
+                                tokenAfterAttempt: localTokenSnapshot(),
+                                cachedSubscription: await subscriptionCachingService.get(),
+                                capturedAt: Date())
+    }
+
+    private func automaticallySignOut(recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
+                                      failedRequest: FailedTokenRequestState,
+                                      triggeringError: Error,
+                                      notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+
+        let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
+                                                         policy: failedRequest.policy,
+                                                         tokenBeforeAttempt: failedRequest.tokenBeforeAttempt,
+                                                         tokenAfterAttempt: failedRequest.tokenAfterAttempt,
+                                                         cachedSubscription: failedRequest.cachedSubscription,
+                                                         localTokenStateAfterSignOut: localTokenState(),
+                                                         now: failedRequest.capturedAt)
+        pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {
@@ -731,12 +817,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
         Logger.subscription.log("Confirming Purchase...")
         let accessToken = try await getTokenContainer(policy: .localValid).accessToken
         let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,
                                                                                  signature: signature,
-                                                                                 additionalParams: additionalParams)
+                                                                                 experimentAttribution: experimentAttribution)
         let subscription = try await ingestSubscription(confirmation.subscription)
         Logger.subscription.log("Purchase confirmed!")
         return subscription
@@ -811,6 +897,11 @@ extension DefaultSubscriptionManager: SubscriptionTokenProvider {
 }
 
 fileprivate extension UserDefaults {
+
+    var cachedHasAppStoreProductsAvailable: Bool? {
+        get { object(forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) as? Bool }
+        set { set(newValue, forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) }
+    }
 
     private static let isUserAuthenticatedKey = "com.duckduckgo.subscription.isUserAuthenticated"
     var isUserAuthenticated: Bool {

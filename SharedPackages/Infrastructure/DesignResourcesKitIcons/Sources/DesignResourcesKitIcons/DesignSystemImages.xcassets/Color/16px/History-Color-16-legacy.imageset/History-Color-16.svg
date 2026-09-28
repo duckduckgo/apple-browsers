@@ -1,0 +1,21 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#History-Color-16_svg__a)">
+    <path fill="#FC3" d="M15.5 8a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/>
+    <path fill="url(#History-Color-16_svg__b)" fill-rule="evenodd" d="M15.074 7.37a6.003 6.003 0 0 0-10.46-2.12H.852C1.985 2.468 4.787.5 8.064.5c3.965 0 7.234 2.88 7.695 6.596l-.685.274Z" clip-rule="evenodd"/>
+    <path fill="url(#History-Color-16_svg__c)" fill-rule="evenodd" d="M1.696 4.953A1 1 0 0 0 2 5h2.5a.5.5 0 0 1 0 1H2a2 2 0 0 1-2-2V1a.5.5 0 1 1 1 0v3c0 .038.002.076.006.113A8 8 0 1 1 0 8a.5.5 0 0 1 1 0 7 7 0 1 0 .696-3.047Z" clip-rule="evenodd"/>
+    <path fill="#92540C" fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v4.293l2.354 2.353a.5.5 0 0 1-.708.708l-2.5-2.5A.5.5 0 0 1 7.5 8V3.5A.5.5 0 0 1 8 3Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <radialGradient id="History-Color-16_svg__b" cx="0" cy="0" r="1" gradientTransform="matrix(12.5 0 0 25.8662 2.814 3.989)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0C2"/>
+      <stop offset=".822" stop-color="#FFD65C"/>
+    </radialGradient>
+    <linearGradient id="History-Color-16_svg__c" x1="2.75" x2="13.25" y1="1.75" y2="14.25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <clipPath id="History-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

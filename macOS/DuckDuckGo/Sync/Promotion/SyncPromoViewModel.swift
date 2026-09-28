@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import AppKit
 
 struct SyncPromoViewModel {
 
@@ -45,11 +46,12 @@ struct SyncPromoViewModel {
         UserText.syncPromoMessage
     }
 
-    var image: String {
-        switch touchpointType {
-        default:
-            return "Sync-OK-96x96"
+    var image: NSImage {
+        if isAppRebranded {
+            return .syncStart96
         }
+
+        return .syncOK96X96
     }
 
     var primaryButtonTitle: String {

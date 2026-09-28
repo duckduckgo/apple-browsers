@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import FoundationExtensions
 @testable import DuckDuckGo
 
 final class AdClickExternalOpenDetectorTests: XCTestCase {

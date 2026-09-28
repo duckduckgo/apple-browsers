@@ -28,7 +28,7 @@ enum QuitSurveyPixelName: String {
 
 }
 
-enum QuitSurveyPixels: PixelKitEvent {
+enum QuitSurveyPixels: PixelKit.Event {
     private static let reasonsKey = "reasons"
     private static let affectedDomainsKey = "affected_domains"
 

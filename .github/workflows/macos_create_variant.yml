@@ -73,6 +73,9 @@ jobs:
           .github
           macOS/scripts
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Download DMG artifact
       id: download-dmg-artifact
       if: ${{ !env.DMG_URL }}

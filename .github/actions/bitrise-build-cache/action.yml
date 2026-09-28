@@ -1,0 +1,33 @@
+name: 'Setup Bitrise Build Cache'
+description: 'Sets up Bitrise build cache'
+
+inputs:
+  enabled:
+    description: 'Whether to enable caching'
+    required: true
+  token:
+    description: 'Bitrise Build Cache API Token'
+    required: true
+  workspace-id:
+    description: 'Bitrise Workspace ID'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - id: check-conditions
+      shell: bash
+      run: |
+        if [[ "${{ runner.environment }}" != "self-hosted" ]]; then
+          echo "Not a self-hosted runner, Bitrise Build Cache won't be enabled"
+        elif [[ "${{ inputs.enabled }}" != "1" ]]; then
+          echo "::warning::Bitrise Build Cache is disabled. Pass 'enabled: 1' to enabled it."
+        fi
+    - id: bitrise-build-cache
+      if: runner.environment == 'self-hosted' && inputs.enabled == '1'
+      shell: bash
+      env:
+        BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ inputs.token }}
+        BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ inputs.workspace-id }}
+      run: |
+        ${{ github.action_path }}/setup_bitrise_build_cache.sh

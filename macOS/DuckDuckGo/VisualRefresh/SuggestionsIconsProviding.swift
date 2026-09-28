@@ -39,7 +39,7 @@ final class LegacySuggestionsIconsProvider: SuggestionsIconsProviding {
     var favoriteEntryIcon: NSImage = .favoritedBookmarkSuggestion
     var unknownEntryIcon: NSImage = .web
     var folderEntryIcon: NSImage = .bookmarksFolder
-    var settingsEntryIcon: NSImage = .settingsMulticolor16
+    var settingsEntryIcon: NSImage = .settingsMulticolor16Legacy
     var historyEntryIcon: NSImage = .historySuggestion
     var homeEntryIcon: NSImage = .home16
     var openTabEntryIcon: NSImage = .openTabSuggestion

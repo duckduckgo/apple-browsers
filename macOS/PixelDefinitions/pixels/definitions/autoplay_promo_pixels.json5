@@ -1,0 +1,32 @@
+// Autoplay Discoverability Promo pixels
+// The promo auto-opens the Permission Center the first time a page displays the autoplay policy
+{
+    "m_mac_autoplay-promo_shown": {
+        "description": "Fired when the Autoplay Discoverability Promo auto-opens the Permission Center. Not fired for the internal debug force-show path.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_autoplay-promo_engaged": {
+        "description": "Fired when the user reaches the Autoplay Discoverability Promo's popover with the pointer before it auto-dismisses, which cancels the pending dismissal. Fires at most once per presentation.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_autoplay-promo_auto-dismissed": {
+        "description": "Fired when the Autoplay Discoverability Promo's display window elapses without engagement and the popover closes itself. Mutually exclusive with m_mac_autoplay-promo_engaged.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_autoplay-promo_settings-click": {
+        "description": "Fired when the user clicks the settings link in the autoplay disclaimer shown by the Autoplay Discoverability Promo, which opens General > Permissions.",
+        "owners": ["jleandroperez"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

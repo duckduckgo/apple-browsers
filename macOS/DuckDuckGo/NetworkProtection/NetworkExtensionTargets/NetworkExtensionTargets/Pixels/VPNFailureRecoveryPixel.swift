@@ -23,7 +23,7 @@ import PixelKit
 ///
 /// Ref: https://app.asana.com/0/0/1206939413299475/f
 ///
-public enum VPNFailureRecoveryPixel: PixelKitEvent {
+public enum VPNFailureRecoveryPixel: PixelKit.Event {
 
     /// This pixel is emitted when the last handshake diff is greater than n minutes and an attempt to recover is made (/register is called with failureRecovery)
     ///

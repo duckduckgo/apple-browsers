@@ -23,7 +23,10 @@ import Foundation
 public typealias ConversionWindow = ClosedRange<Int>
 public typealias NumberOfCalls = Int
 
-struct ExperimentEvent: PixelKitEvent {
+/// Names here always start with `experiment_`, which routes them through PixelKit's dedicated
+/// experiment branch. That branch applies the platform marker itself and ignores
+/// `platformSuffixPolicy`, so setting one on this type would be dead code.
+struct ExperimentEvent: PixelKit.Event {
     var name: String
     var parameters: [String: String]?
     var standardParameters: [PixelKitStandardParameter]? {
@@ -33,22 +36,25 @@ struct ExperimentEvent: PixelKitEvent {
 
 extension PixelKit {
 
-    struct Constants {
+    public struct Constants {
         static let enrollmentEventPrefix = "experiment_enroll"
         static let metricsEventPrefix = "experiment_metrics"
         static let metricKey = "metric"
         static let conversionWindowDaysKey = "conversionWindowDays"
         static let valueKey = "value"
         static let enrollmentDateKey = "enrollmentDate"
-        static let searchMetricValue = "search"
+        /// Keeps additional per-experiment search windows under the standard search metric.
+        public static let searchMetricValue = "search"
         static let appUseMetricValue = "app_use"
+        static let aiChatMetricValue = "duck_ai_prompt_sent"
+        static let aiChatNewChatMetricValue = "duck_ai_new_chat"
     }
 
     // Static property to hold shared dependencies
     struct ExperimentConfig {
         static var featureFlagger: FeatureFlagger?
         static var eventTracker: ExperimentEventTracking = ExperimentEventTracker()
-        static var fireFunction: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
+        static var fireFunction: (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     }
@@ -57,7 +63,7 @@ extension PixelKit {
     public static func configureExperimentKit(
         featureFlagger: FeatureFlagger,
         eventTracker: ExperimentEventTracking = ExperimentEventTracker(),
-        fire: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
+        fire: @escaping (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     ) {
@@ -143,12 +149,12 @@ extension PixelKit {
     ///   must occur before the pixel is fired.
     public static func fireSearchExperimentPixels() {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
-            1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7],
-            4: [5...7, 8...15],
-            6: [5...7, 8...15],
-            11: [5...7, 8...15],
-            21: [5...7, 8...15],
-            30: [5...7, 8...15]
+            1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14],
+            4: [5...7, 8...14],
+            6: [5...7, 8...14],
+            11: [5...7, 8...14],
+            21: [5...7, 8...14],
+            30: [5...7, 8...14]
         ]
         guard let featureFlagger = ExperimentConfig.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
@@ -172,12 +178,7 @@ extension PixelKit {
     ///   must occur before the pixel is fired.
     public static func fireAppRetentionExperimentPixels() {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
-            1: [1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7],
-            4: [5...7, 8...15],
-            6: [5...7, 8...15],
-            11: [5...7, 8...15],
-            21: [5...7, 8...15],
-            30: [5...7, 8...15]
+            1: [1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14]
         ]
         guard let featureFlagger = ExperimentConfig.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
@@ -188,6 +189,54 @@ extension PixelKit {
                 for: experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.appUseMetricValue,
+                valueConversionDictionary: valueConversionDictionary
+            )
+        }
+    }
+
+    /// Fires AI chat prompt experiment pixels for all active experiments.
+    ///
+    /// This function iterates through all active experiments and triggers
+    /// pixel firing based on predefined AI chat value and conversion window mappings.
+    /// - The value and conversion windows define when and how many AI prompt sent actions
+    ///   must occur before the pixel is fired.
+    public static func fireNewAIPromptExperimentPixels() {
+        let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
+            1: [0...0, 1...1, 5...7, 8...14]
+        ]
+        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+            assertionFailure("PixelKit is not configured for experiments")
+            return
+        }
+        featureFlagger.allActiveExperiments.forEach { experiment in
+            fireExperimentPixels(
+                for: experiment.key,
+                experimentData: experiment.value,
+                metric: Constants.aiChatMetricValue,
+                valueConversionDictionary: valueConversionDictionary
+            )
+        }
+    }
+
+    /// Fires new AI chat experiment pixels for all active experiments.
+    ///
+    /// This function iterates through all active experiments and triggers
+    /// pixel firing based on predefined AI chat value and conversion window mappings.
+    /// - The value and conversion windows define when and how many new AI chat sent actions
+    ///   must occur before the pixel is fired.
+    public static func fireNewAIChatExperimentPixels() {
+        let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
+            1: [0...0, 1...1, 5...7, 8...14]
+        ]
+        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+            assertionFailure("PixelKit is not configured for experiments")
+            return
+        }
+        featureFlagger.allActiveExperiments.forEach { experiment in
+            fireExperimentPixels(
+                for: experiment.key,
+                experimentData: experiment.value,
+                metric: Constants.aiChatNewChatMetricValue,
                 valueConversionDictionary: valueConversionDictionary
             )
         }

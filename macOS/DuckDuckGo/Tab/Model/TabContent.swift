@@ -19,7 +19,7 @@
 import AppKit
 import Foundation
 import HistoryView
-import Navigation
+import DDGNavigation
 import Subscription
 
 extension Tab {

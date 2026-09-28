@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Common
 import FoundationExtensions
 
@@ -41,12 +42,20 @@ struct AboutViewText: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(.logo)
-                .resizable()
-                .frame(width: 96, height: 96)
-                .padding(.top)
+            if AppRebrand.isAppRebranded() {
+                Image(.logoStacked)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160, height: 128)
+                    .padding(.top)
+            } else {
+                Image(.logo)
+                    .resizable()
+                    .frame(width: 96, height: 96)
+                    .padding(.top)
 
-            Image(.textDuckDuckGo)
+                Image(.textDuckDuckGo)
+            }
 
             Text(UserText.aboutProtectionTagline)
                 .daxHeadline()
@@ -93,37 +102,36 @@ struct AboutViewVersion: View {
     }
 
     var body: some View {
+#if EXPERIMENTAL && !DEBUG
+        let version = "\(viewModel.state.version) (Experimental)"
+#elseif ALPHA && !DEBUG
+        let version = "\(viewModel.state.version) (Alpha)"
+#else
+        let version = viewModel.state.version
+#endif
+
+#if (ALPHA || EXPERIMENTAL) && !DEBUG
+        let build = AppVersion.shared.commitSHAShort
+#else
+        let build = ""
+#endif
+
+        let xcodeMajorVersion = AppVersion.shared.xcodeMajorVersion
+        let toolchainSuffix = xcodeMajorVersion.isEmpty ? "" : " (Xcode \(xcodeMajorVersion))"
+        let commitSuffix = build.isEmpty ? "" : "-(\(build))"
+        let copyable = "\(version)\(commitSuffix)"
+
         Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
-#if ((ALPHA || EXPERIMENTAL) && !DEBUG)
-            // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
-
-            #if EXPERIMENTAL
-            let version = "\(viewModel.state.version) (Experimental)"
-            #elseif ALPHA
-            let version = "\(viewModel.state.version) (Alpha)"
-            #endif
-
-            let build = AppVersion.shared.commitSHAShort
-            let commitSuffix = build.isEmpty ? "" : "-(\(build))"
-            let copyable = "\(version)\(commitSuffix)"
             Group {
                 SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
 
                 if !build.isEmpty {
-                    SettingsCellView(label: "Build", accessory: .rightDetail(build))
+                    SettingsCellView(label: "Build", accessory: .rightDetail("\(build)\(toolchainSuffix)"))
                 }
             }
             .onTapGesture {
                 copyVersion(copyable)
             }
-
-#else
-            let version = viewModel.state.version
-            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
-                .onTapGesture {
-                    copyVersion(version)
-                }
-#endif
 
             // Send Crash Reports
             SettingsCellView(label: UserText.settingsSendCrashReports,

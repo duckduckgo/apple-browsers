@@ -33,6 +33,18 @@ extension NSAlert {
         return button
     }
 
+    /// Confirmation for deleting a single recent Duck.ai chat, shared by the address-bar omnibar
+    /// and the New Tab Page so the two dialogs stay identical. `title` is the chat's title.
+    static func recentChatDeleteConfirmation(title: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.removeRecentChatConfirmationTitle
+        alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, title)
+        alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
+        alert.buttons.first?.hasDestructiveAction = true
+        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        return alert
+    }
+
     static func fireproofAlert(with domain: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)
@@ -170,6 +182,16 @@ extension NSAlert {
         alert.informativeText = message
         alert.alertStyle = .informational
         alert.addButton(withTitle: UserText.syncPairingV2ConfirmationAction)
+        alert.addButton(withTitle: UserText.cancel)
+        return alert
+    }
+
+    static func syncCloseSetupConfirmation() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.syncCloseSetupConfirmationTitleV2
+        alert.informativeText = UserText.syncCloseSetupConfirmationMessageV2
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: UserText.syncCloseSetupConfirmationActionV2)
         alert.addButton(withTitle: UserText.cancel)
         return alert
     }

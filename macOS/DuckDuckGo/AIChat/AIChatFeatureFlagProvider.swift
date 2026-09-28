@@ -18,7 +18,7 @@
 
 import AIChat
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 
 struct AIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
 

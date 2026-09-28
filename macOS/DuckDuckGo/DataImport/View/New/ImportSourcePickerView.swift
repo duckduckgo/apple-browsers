@@ -266,7 +266,7 @@ private struct RadioCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                .stroke(isSelected ? Color(designSystemColor: .accentPrimary) : Color.clear, lineWidth: 2)
         )
         .shadow(color: Color.black.opacity(isHovering ? 0.10 : 0.06), radius: 3, x: 0, y: 1)
         .contentShape(Rectangle())
@@ -287,6 +287,7 @@ private struct RadioButton: NSViewRepresentable {
         b.imagePosition = .imageOnly
         b.allowsMixedState = false
         b.focusRingType = .default
+        b.contentTintColor = NSColor(designSystemColor: .accentPrimary)
         return b
     }
 

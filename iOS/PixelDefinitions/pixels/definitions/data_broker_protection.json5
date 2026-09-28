@@ -1,4 +1,20 @@
 {
+    "m_ios_dbp_secure-vault_deferred-init-succeeded": {
+        "description": "Fired daily and count when deferred secure vault initialization completes successfully.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "trigger",
+                "description": "The app lifecycle entry point that triggered deferred secure vault initialization",
+                "type": "string",
+                "enum": ["launch", "appActive", "dashboard", "backgroundTask"]
+            }
+        ]
+    },
     "m_ios_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
         "owners": ["quanganhdo", "THISISDINOSAUR"],
@@ -223,6 +239,7 @@
             "dbpParentBroker",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            "dbpAwakeDuration",
             {
                 "key": "tries",
                 "description": "The number of tries it took to submit successfully",
@@ -290,6 +307,7 @@
             "dbpBrokerVersion",
             "dbpAttemptId",
             "dbpAttemptDuration",
+            "dbpAwakeDuration",
             {
                 "key": "error_category",
                 "description": "High-level error classification",
@@ -934,6 +952,7 @@
                 "description": "Total duration of the scan in milliseconds",
                 "type": "number"
             },
+            "dbpAwakeDuration",
             "dbpStageTries",
             {
                 "key": "is_manual_scan",
@@ -971,6 +990,7 @@
                 "description": "Total duration of the scan in milliseconds",
                 "type": "number"
             },
+            "dbpAwakeDuration",
             "dbpStageTries",
             {
                 "key": "is_manual_scan",
@@ -1010,6 +1030,7 @@
                 "description": "Total duration of the scan in milliseconds",
                 "type": "number"
             },
+            "dbpAwakeDuration",
             {
                 "key": "error_category",
                 "description": "High-level error classification",
@@ -1049,7 +1070,7 @@
         ]
     },
     "m_ios_dbp_data_broker_action-failed_error": {
-        "description": "Fired when a scan or opt-out action fails while processing a data broker.",
+        "description": "Fired when a scan or opt-out action fails while processing a data broker, including executeScript failures silenced by failSilently. A silenced failure does not stop the job, so this pixel does not necessarily indicate a failed scan or opt-out; filter on the isSilentFailure parameter to separate the two.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -1075,6 +1096,11 @@
                 "description": "Identifies the failing step type (scan or optOut)",
                 "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
+            },
+            {
+                "key": "isSilentFailure",
+                "description": "True when the failure was silenced by failSilently on an executeScript action and the job continued to the next action",
+                "type": "boolean"
             },
             "dbpParentBroker",
             "dbpIsFreeScan"

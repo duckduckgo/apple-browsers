@@ -38,13 +38,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26]
         include:
-          - xcode-version: "26.4"
-            runner: macos-26
+          - xcode-version: "26.6"
+            runner: [image:osx-tahoe-26, general-purpose]
+            runner-name: image-osx-tahoe-26,general-purpose # runner label without reserved characters, for use in the artifact name
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner-name }}
       cancel-in-progress: true
 
     timeout-minutes: 32
@@ -62,6 +62,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Start measuring duration
       id: start-duration
       uses: ./.github/actions/measure-duration
@@ -78,6 +81,10 @@ jobs:
 
     - name: Update Homebrew
       run: brew update
+
+    - name: Install Node.js
+      if: runner.environment == 'self-hosted'
+      run: asdf install nodejs 18.16.0
 
     - name: Start PIR Fake Broker
       run: |
@@ -149,6 +156,7 @@ jobs:
         xcode-version: ${{ matrix.xcode-version }}
 
     - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
       uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
@@ -198,7 +206,7 @@ jobs:
           PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -209,7 +217,7 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
@@ -224,7 +232,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
         pixel-params: |
-          runner: ${{ matrix.runner }}
+          runner: ${{ matrix.runner-name }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'
@@ -241,7 +249,7 @@ jobs:
       uses: mikepenz/action-junit-report@v6
       if: always()
       with:
-        check_name: "Test Report ${{ matrix.runner }}"
+        check_name: "Test Report ${{ matrix.runner-name }}"
         report_paths: macOS/pir-e2e-tests.xml
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 
@@ -254,7 +262,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
+        name: "BuildLogs ${{ matrix.runner-name }}"
         path: |
           macOS/xcodebuild.log
           macOS/pir-process.log

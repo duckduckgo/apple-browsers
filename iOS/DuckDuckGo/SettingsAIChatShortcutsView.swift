@@ -22,6 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 /// Visibility logic for the Duck.ai chrome shortcut surfaces.
 ///
@@ -52,6 +53,16 @@ enum DuckAIChromeShortcutVisibility {
         featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
             && isTabBarShortcutEnabled
             && (isDuckAIButtonVisible || isContextualSheetButtonVisible)
+    }
+
+    static func isChromeMenuButtonAvailable(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        isIPad
+            && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
+    }
+
+    static func isChromeMenuButtonVisible(featureFlagger: FeatureFlagger, isTabBarShortcutEnabled: Bool) -> Bool {
+        isChromeMenuButtonAvailable(isIPad: true, featureFlagger: featureFlagger) && isTabBarShortcutEnabled
     }
 
     /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai button only
@@ -103,60 +114,58 @@ struct SettingsAIChatShortcutsView: View {
 
     @ViewBuilder
     private var shortcutsSection: some View {
-        if viewModel.featureFlagger.isFeatureOn(.duckAIVoiceShortcut) {
-            if #available(iOS 17.0, *) {
-                Section {
-                    NavigationLink {
-                        DuckAIWidgetEducationView()
-                    } label: {
-                        Label {
-                            Text(UserText.duckAISettingsAddWidget)
-                        } icon: {
-                            Image(uiImage: DesignSystemImages.Color.Size24.addWidget)
-                                .frame(width: 24, height: 24)
-                        }.daxBodyRegular()
-                    }
+        if #available(iOS 17.0, *) {
+            Section {
+                NavigationLink {
+                    DuckAIWidgetEducationView()
+                } label: {
+                    Label {
+                        Text(UserText.duckAISettingsAddWidget)
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Color.Size24.addWidget)
+                            .frame(width: 24, height: 24)
+                    }.daxBodyRegular()
+                }
 
-                    if #available(iOS 18.0, *) {
-                        NavigationLink {
-                            ControlCenterWidgetEducationView(
-                                navBarTitle: UserText.controlCenterDuckAIWidgetEducationNavBarTitle,
-                                widget: .duckAIVoiceChat,
-                                fourthParagraphText: UserText.controlCenterDuckAIWidgetEducationParagraph
-                            )
-                        } label: {
-                            Label {
-                                Text(UserText.duckAISettingsAddControlCenterWidget)
-                            } icon: {
-                                Image(uiImage: DesignSystemImages.Color.Size24.settings)
-                                    .frame(width: 24, height: 24)
-                            }.daxBodyRegular()
-                        }
-                    }
-
+                if #available(iOS 18.0, *) {
                     NavigationLink {
-                        SiriEducationView(
-                            title: UserText.duckAISiriEducationScreenTitle,
-                            description: UserText.duckAISiriEducationScreenDescription,
-                            examples: [
-                                UserText.duckAISiriEducationScreenExample1,
-                                UserText.duckAISiriEducationScreenExample2,
-                                UserText.duckAISiriEducationScreenExample3
-                            ]
+                        ControlCenterWidgetEducationView(
+                            navBarTitle: UserText.controlCenterDuckAIWidgetEducationNavBarTitle,
+                            widget: .duckAIVoiceChat,
+                            fourthParagraphText: UserText.controlCenterDuckAIWidgetEducationParagraph
                         )
                     } label: {
                         Label {
-                            Text(UserText.duckAISettingsControlWithSiri)
+                            Text(UserText.duckAISettingsAddControlCenterWidget)
                         } icon: {
-                            Image(uiImage: DesignSystemImages.Color.Size24.askSiri)
+                            Image(uiImage: DesignSystemImages.Color.Size24.settings)
                                 .frame(width: 24, height: 24)
                         }.daxBodyRegular()
                     }
-                } header: {
-                    Text(UserText.duckAIShortcutsSectionHeader)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+
+                NavigationLink {
+                    SiriEducationView(
+                        title: UserText.duckAISiriEducationScreenTitle,
+                        description: UserText.duckAISiriEducationScreenDescription,
+                        examples: [
+                            UserText.duckAISiriEducationScreenExample1,
+                            UserText.duckAISiriEducationScreenExample2,
+                            UserText.duckAISiriEducationScreenExample3
+                        ]
+                    )
+                } label: {
+                    Label {
+                        Text(UserText.duckAISettingsControlWithSiri)
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Color.Size24.askSiri)
+                            .frame(width: 24, height: 24)
+                    }.daxBodyRegular()
+                }
+            } header: {
+                Text(UserText.duckAIShortcutsSectionHeader)
             }
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
     }
 

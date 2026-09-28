@@ -20,9 +20,8 @@ import AppKit
 
 /// A single row inside the omnibar's `@`-mention picker panel.
 ///
-/// Visually a sibling of `AIChatTabPickerMenuRowView` (same favicon / title / leading
-/// checkmark layout) but tuned for the non-activating `NSPanel` context rather than for
-/// hosting inside an `NSMenuItem.view`:
+/// Tuned for the non-activating `NSPanel` context rather than for hosting inside an
+/// `NSMenuItem.view`:
 ///
 /// 1. Hover state is owned by `AIChatMentionPickerViewController` (one centralized
 ///    `NSTrackingArea` on the scroll view's document) rather than by each row individually.

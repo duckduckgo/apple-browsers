@@ -40,11 +40,18 @@ public enum AIChatURLParameters {
     public static let voiceModeValue = "voice"
     public static let imageModeValue = "image"
 
+    /// Funnel marker duckduckgo.com puts on the chat URL when its homepage composer hands a prompt to Duck.ai.
+    public static let originName = "origin"
+    public static let homepageFunnelOriginValue = "funnel_home_website"
+
     public static let sidebarName = "sidebar"
     public static let sidebarOpenValue = "open"
 
     public static let settingsName = "settings"
     public static let settingsOpenValue = "open"
+
+    public static let chatProtectionName = "chatProtection"
+    public static let chatProtectionOpenValue = "open"
 
     /// Tells the Duck.ai FE to render only the Customize Responses card.
     public static let customizeResponsesName = "customize-responses"
@@ -68,6 +75,11 @@ public enum AIChatURLParameters {
     /// Appends `?settings=open` to the given base URL.
     public static func settingsOpenURL(from baseURL: URL) -> URL {
         baseURL.addingOrReplacing(URLQueryItem(name: settingsName, value: settingsOpenValue))
+    }
+
+    /// Appends `?chatProtection=open` to the given base URL.
+    public static func chatProtectionURL(from baseURL: URL) -> URL {
+        baseURL.addingOrReplacing(URLQueryItem(name: chatProtectionName, value: chatProtectionOpenValue))
     }
 
     /// Appends `?customize-responses=full` to the given base URL.

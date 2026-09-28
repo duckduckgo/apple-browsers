@@ -34,6 +34,15 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
 
     public var onActionSelected: ((Action) -> Void)?
 
+    /// Applied to every chip. Use `.opaque` when the chips float over dimmed content.
+    public var chipBackgroundStyle: AIChatQuickActionChipView.BackgroundStyle = .translucent {
+        didSet {
+            stackView.arrangedSubviews
+                .compactMap { $0 as? AIChatQuickActionChipView }
+                .forEach { $0.backgroundStyle = chipBackgroundStyle }
+        }
+    }
+
     private var loadingView: AIChatSuggestionsLoadingView?
 
     // MARK: - UI Components
@@ -70,11 +79,33 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
 
         for action in actions {
             let chipView = AIChatQuickActionChipView()
+            chipView.backgroundStyle = chipBackgroundStyle
             chipView.configure(with: action)
             chipView.onTap = { [weak self] in
                 self?.onActionSelected?(action)
             }
             stackView.addArrangedSubview(chipView)
+        }
+    }
+
+    public var chipCount: Int {
+        chips.count
+    }
+
+    /// Swaps the loader out for the chips, which are already in the stack behind it.
+    public func showChips() {
+        setLoading(false)
+    }
+
+    private var chips: [UIView] {
+        stackView.arrangedSubviews.filter { $0 !== loadingView }
+    }
+
+    /// Whether `point`, in `view`'s coordinate space, lands on a chip rather than the gaps around them.
+    public func containsChip(at point: CGPoint, from view: UIView) -> Bool {
+        stackView.arrangedSubviews.contains { chip in
+            guard !chip.isHidden, chip.alpha > 0.01 else { return false }
+            return chip.bounds.contains(view.convert(point, to: chip))
         }
     }
 
@@ -97,14 +128,38 @@ private extension AIChatQuickActionsView {
 
     func setupUI() {
         isAccessibilityElement = false
-        addSubview(stackView)
+        let stackHost = installGlassContainerIfAvailable() ?? self
+        stackHost.addSubview(stackView)
 
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
+            stackView.topAnchor.constraint(greaterThanOrEqualTo: stackHost.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: stackHost.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: stackHost.leadingAnchor),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: stackHost.trailingAnchor),
         ])
+    }
+
+    /// Renders every chip's glass as one combined effect rather than each resolving its own backdrop.
+    /// Returns the view the stack should live in, or nil where the container effect is unavailable.
+    func installGlassContainerIfAvailable() -> UIView? {
+        guard #available(iOS 26.0, *) else { return nil }
+
+        let containerEffect = UIGlassContainerEffect()
+        // Below the chip spacing, so combining their rendering does not also merge them into one pill.
+        containerEffect.spacing = 0
+        let containerView = UIVisualEffectView(effect: containerEffect)
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        // Interactive glass scales a chip past its bounds on touch.
+        containerView.clipsToBounds = false
+        addSubview(containerView)
+
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+        ])
+        return containerView.contentView
     }
 }
 #endif

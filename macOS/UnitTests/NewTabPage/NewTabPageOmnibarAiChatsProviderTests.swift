@@ -21,7 +21,7 @@ import AIChat
 import WebKit
 import Combine
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 @testable import DuckDuckGo_Privacy_Browser
 @testable import NewTabPage
 
@@ -343,11 +343,21 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var showViewAllAiChatsPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var isAIChatToolsEnabled: Bool = false
     var isImageGenerationEnabled: Bool = false
+    var isUpdatedCreateImageEnabled: Bool = false
+    @MainActor var imageGenerationModelId: String? { nil }
+    @MainActor func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? { nil }
     var isWebSearchEnabled: Bool = false
     var isCustomizeResponsesEnabled: Bool = false
     @MainActor
     func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState { .none }
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    @MainActor
+    func refreshUsageLimits(requestingWebView: WKWebView?) {}
+    @MainActor func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? { nil }
+    @MainActor func dismissUsageLimits() {}
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome { .handled }
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?
@@ -360,6 +370,10 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isVoiceChatAccessEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var showAskAiSuggestion: Bool = true
     var showAskAiSuggestionPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
+    var isAIChatDeletionEnabled: Bool = false
+    var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var isSearchSuggestionDeletionEnabled: Bool = false
+    var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

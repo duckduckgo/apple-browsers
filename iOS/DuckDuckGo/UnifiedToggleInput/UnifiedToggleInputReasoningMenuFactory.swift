@@ -20,17 +20,54 @@
 import AIChat
 import UIKit
 
+enum ReasoningPickerAvailability {
+    static func isAvailable(for model: AIChatModel, allowsSubscriptionUpsell: Bool) -> Bool {
+        model.supportsReasoningPicker
+            && (allowsSubscriptionUpsell || model.accessibleReasoningModes.count > 1)
+    }
+}
+
 /// Builds the reasoning-mode pull-down menu
 struct UnifiedToggleInputReasoningMenuFactory {
+
+    private let isUpdatedModelPickerEnabled: Bool
+
+    init(isUpdatedModelPickerEnabled: Bool) {
+        self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
+    }
 
     func makeMenu(
         model: AIChatModel,
         selectedMode: AIChatReasoningMode?,
+        userTier: AIChatUserTier,
+        freeTrialEligibility: FreeTrialEligibility = .unknown,
+        allowsSubscriptionUpsell: Bool = true,
+        onSelect: @escaping (AIChatReasoningMode) -> Void
+    ) -> UIMenu? {
+        guard ReasoningPickerAvailability.isAvailable(for: model, allowsSubscriptionUpsell: allowsSubscriptionUpsell) else { return nil }
+        if isUpdatedModelPickerEnabled {
+            return makeUpdatedMenu(
+                model: model,
+                selectedMode: selectedMode,
+                userTier: userTier,
+                freeTrialEligibility: freeTrialEligibility,
+                allowsSubscriptionUpsell: allowsSubscriptionUpsell,
+                onSelect: onSelect)
+        }
+
+        return makeLegacyMenu(model: model, selectedMode: selectedMode, allowsSubscriptionUpsell: allowsSubscriptionUpsell, onSelect: onSelect)
+    }
+
+    private func makeLegacyMenu(
+        model: AIChatModel,
+        selectedMode: AIChatReasoningMode?,
+        allowsSubscriptionUpsell: Bool,
         onSelect: @escaping (AIChatReasoningMode) -> Void
     ) -> UIMenu? {
         guard model.supportsReasoningPicker else { return nil }
 
-        let actions = model.availableReasoningModes.map { mode in
+        let modes = allowsSubscriptionUpsell ? model.availableReasoningModes : model.accessibleReasoningModes
+        let actions = modes.map { mode in
             UIAction(
                 title: mode.unifiedToggleInputTitle,
                 subtitle: mode.unifiedToggleInputSubtitle,
@@ -42,5 +79,50 @@ struct UnifiedToggleInputReasoningMenuFactory {
         }
 
         return UIMenu(options: .singleSelection, children: actions)
+    }
+
+    private func makeUpdatedMenu(
+        model: AIChatModel,
+        selectedMode: AIChatReasoningMode?,
+        userTier: AIChatUserTier,
+        freeTrialEligibility: FreeTrialEligibility,
+        allowsSubscriptionUpsell: Bool,
+        onSelect: @escaping (AIChatReasoningMode) -> Void
+    ) -> UIMenu? {
+        guard model.supportsReasoningPicker else { return nil }
+
+        let accessibleModes = model.availableReasoningModes.filter { model.accessibleReasoningModes.contains($0) }
+        let gatedModes = model.availableReasoningModes.filter { !model.accessibleReasoningModes.contains($0) }
+        var children: [UIMenuElement] = accessibleModes.map { mode in
+            makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: false, onSelect: onSelect)
+        }
+
+        if allowsSubscriptionUpsell && !gatedModes.isEmpty {
+            let gatedActions = gatedModes.map { mode in
+                makeUpdatedAction(mode: mode, selectedMode: selectedMode, isGated: true, onSelect: onSelect)
+            }
+            let gatedSectionTitle = UnifiedToggleInputGatedSectionTitleResolver.title(
+                for: userTier,
+                freeTrialEligibility: freeTrialEligibility)
+            children.append(UIMenu(title: gatedSectionTitle, options: .displayInline, children: gatedActions))
+        }
+
+        return UIMenu(options: .singleSelection, children: children)
+    }
+
+    private func makeUpdatedAction(
+        mode: AIChatReasoningMode,
+        selectedMode: AIChatReasoningMode?,
+        isGated: Bool,
+        onSelect: @escaping (AIChatReasoningMode) -> Void
+    ) -> UIAction {
+        UIAction(
+            title: isGated ? "\(mode.unifiedToggleInputTitle)…" : mode.unifiedToggleInputTitle,
+            subtitle: mode.unifiedToggleInputSubtitle,
+            image: mode.unifiedToggleInputMenuImage,
+            state: !isGated && mode == selectedMode ? .on : .off
+        ) { _ in
+            onSelect(mode)
+        }
     }
 }

@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import PixelKit
 
 struct SettingsAccessibilityView: View {
 
@@ -59,7 +60,7 @@ struct SettingsAccessibilityView: View {
                                     displayMode: .inline,
                                     viewModel: viewModel)
         .onForwardNavigationAppear {
-            Pixel.fire(pixel: .settingsAccessibilityOpen)
+            PixelKit.fire(Pixel.Event.settingsAccessibilityOpen)
         }
     }
 }

@@ -71,6 +71,7 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case fireDialogIncludeHistory = "fire-dialog_includeHistoryState"
     case fireDialogIncludeCookiesAndSiteData = "fire-dialog_includeCookiesAndSiteDataState"
     case fireDialogIncludeChatHistory = "fire-dialog_includeChatHistoryState"
+    case fireDialogSectionsExpanded = "fire-dialog_sectionsExpandedState"
 
     // MARK: - Sync Diagnosis Settings
 
@@ -98,6 +99,14 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     case feedbackTipLastShown = "feedbackTipLastShown"
     case feedbackTipButtonClicked = "feedbackTipButtonClicked"
 
+    // MARK: - Data Import Debug
+
+    case dataImportForceMacOS27PermissionsFix = "macos27-force-import-permissions-fix"
+
+    // MARK: - Promo Queue Legacy Flags
+
+    case syncDidPresentFaviconsFetcherOnboarding = "sync.did-present-favicons-fetcher-onboarding"
+    case bookmarksBarPromptShown = "bookmarks.bar.prompt.shown"
 }
 
 // MARK: - StorageKey Extensions

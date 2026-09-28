@@ -16,7 +16,8 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
+import PrivacyConfig
 import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser

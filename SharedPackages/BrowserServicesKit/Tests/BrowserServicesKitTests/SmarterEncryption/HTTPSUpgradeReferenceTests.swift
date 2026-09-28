@@ -152,6 +152,19 @@ final class HTTPSUpgradeReferenceTests: XCTestCase {
         XCTAssertEqual(resultURL.absoluteString, url.absoluteString, "FAILED: \(resultURL)")
     }
 
+    func testURLWithExplicitPortShouldNotUpgradeToHTTPS() async {
+        let httpsUpgrade = HTTPSUpgrade(store: mockStore, privacyManager: makePrivacyManager(), logger: Logger())
+        await httpsUpgrade.loadData()
+
+        let url = URL(string: "http://upgradable.url:8080")!
+        let result = await httpsUpgrade.upgrade(url: url)
+
+        guard case .failure(.explicitPort) = result else {
+            XCTFail("Expected explicit port HTTP URL not to upgrade, got \(result)")
+            return
+        }
+    }
+
     func testLocalUnprotectedDomainShouldUpgradeSubdomainToHTTPS() async {
         let httpsUpgrade = HTTPSUpgrade(store: mockStore, privacyManager: makePrivacyManager(config: nil, unprotectedDomains: ["thirdtest.com"]), logger: Logger())
         await httpsUpgrade.loadData()

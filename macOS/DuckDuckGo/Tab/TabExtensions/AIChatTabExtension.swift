@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import Foundation
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import os.log
 import Persistence
 import PrivacyConfig
@@ -314,6 +314,10 @@ extension AIChatTabExtension: NavigationResponder {
         if navigation.url.isDuckAIURL {
             featureDiscovery.setWasUsedBefore(.aiChat)
         }
+    }
+
+    func didCommit(_ navigation: Navigation) {
+        aiChatUserScript?.handler.resetConversationSourceForNewDocument()
     }
 }
 

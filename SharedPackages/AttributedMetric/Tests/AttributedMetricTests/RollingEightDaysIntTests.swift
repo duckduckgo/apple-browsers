@@ -39,8 +39,7 @@ final class RollingEightDaysIntTests: XCTestCase {
     func testInitialization() {
         XCTAssertEqual(rollingInt.values.count, 8)
         XCTAssertEqual(rollingInt.count, 0)
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 0)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 0)
+        XCTAssertEqual(rollingInt.past7DaysTotal, 0)
         XCTAssertNil(rollingInt.lastDay)
     }
 
@@ -100,46 +99,55 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.lastDay, referenceDate)
     }
 
-    func testPast7DaysAverageEmptyArray() {
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 0)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 0)
+    // MARK: - past7DaysAverage(daysSinceInstalled:)
+
+    func testAverage_installDay_returnsZeroAndNilDayAverage() {
+        rollingInt.append(5) // today's activity (excluded from the window)
+        let result = rollingInt.past7DaysAverage(daysSinceInstalled: 0)
+        XCTAssertEqual(result.average, 0)
+        XCTAssertNil(result.dayAverage)
     }
 
-    func testPast7DaysAverageSingleValue() {
-        // Add only one value (today)
-        rollingInt.append(10)
-
-        // With only one value, past7DaysAverage should return (0, 0) (no past days to average)
-        // This tests the guard clause that prevents division by zero
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 0)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 0)
-        XCTAssertEqual(rollingInt.count, 1)
+    func testAverage_establishedUser_dividesByFullWindowAndDropsDayAverage() {
+        // 21 events across 3 active days of the window (today excluded).
+        rollingInt.append(99)   // today (excluded)
+        rollingInt[0] = 10
+        rollingInt[1] = 5
+        rollingInt[2] = 6
+        let result = rollingInt.past7DaysAverage(daysSinceInstalled: 30)
+        XCTAssertEqual(result.average, 3.0, accuracy: 0.0001)   // 21 / 7, not 21 / 3 active days
+        XCTAssertNil(result.dayAverage)                          // full window -> dropped
     }
 
-    func testPast7DaysAverageWithValues() {
-        // Add values to fill some slots (including today)
-        for i in 1...8 {
-            rollingInt.append(i)
-        }
-
-        // past7DaysAverage should exclude the last value (today)
-        // Values: [1, 2, 3, 4, 5, 6, 7], average = (1+2+3+4+5+6+7)/7 = 4
-        let expectedAverage = (Float(1+2+3+4+5+6+7) / Float(rollingInt.count-1))
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, expectedAverage)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 7)
+    func testAverage_day7_dividesBy7AndDropsDayAverage() {
+        rollingInt.append(99)   // today (excluded)
+        rollingInt[0] = 21
+        let result = rollingInt.past7DaysAverage(daysSinceInstalled: 7)
+        XCTAssertEqual(result.average, 3.0, accuracy: 0.0001)   // 21 / 7
+        XCTAssertNil(result.dayAverage)
     }
 
-    func testPast7DaysAverageWithUnknownValues() {
-        // Add some values and leave some unknown
-        rollingInt.append(3)
-        rollingInt.append(8)
-        rollingInt.append(11)
-        rollingInt.append(1)
-        // past7DaysAverage should only count known values (excluding today)
-        // Values excluding today: [3, 8, 11], average = (3+8+11)/3
-        let expectedAverage = Float(3 + 8 + 11) / 3.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, expectedAverage, accuracy: 0.0001)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
+    func testAverage_rampUp_dividesByCalendarDaysNotActiveDays() {
+        // 12 events on a single active day, installed 3 days ago.
+        rollingInt.append(99)   // today (excluded)
+        rollingInt[0] = 12
+        let result = rollingInt.past7DaysAverage(daysSinceInstalled: 3)
+        XCTAssertEqual(result.average, 4.0, accuracy: 0.0001)   // 12 / 3 calendar days, not 12 / 1 active day
+        XCTAssertEqual(result.dayAverage, 3)                     // present during ramp-up
+    }
+
+    func testAverage_rampUp_lastPartialDay() {
+        rollingInt.append(99)   // today (excluded)
+        rollingInt[0] = 12
+        let result = rollingInt.past7DaysAverage(daysSinceInstalled: 6)
+        XCTAssertEqual(result.average, 2.0, accuracy: 0.0001)   // 12 / 6
+        XCTAssertEqual(result.dayAverage, 6)
+    }
+
+    func testAverage_noActivity_returnsZeroAndNilDayAverage() {
+        let result = rollingInt.past7DaysAverage(daysSinceInstalled: 10)
+        XCTAssertEqual(result.average, 0)
+        XCTAssertNil(result.dayAverage)
     }
 
     func testCountPast7DaysEmptyArray() {
@@ -166,92 +174,6 @@ final class RollingEightDaysIntTests: XCTestCase {
         // Should count only non-unknown values excluding today
         // Values excluding last: [unknown, unknown, unknown, unknown, unknown, 99, 1] = 2 non-unknown
         XCTAssertEqual(rollingInt.countPast7Days, 2)
-    }
-
-    func testPast7DaysAverageWithAllUnknownExceptToday() {
-        // Add only today's value, all others are unknown
-        rollingInt.append(10)
-
-        // Should return (0, 0) because there are no past days with values
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 0)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 0)
-    }
-
-    func testPast7DaysAverageReturnsExactFloat() {
-        // Test that the average returns an exact Float without rounding
-        rollingInt.append(10)  // Today (excluded)
-        rollingInt[0] = 5
-        rollingInt[1] = 6
-        rollingInt[2] = 4
-
-        // Average = (5+6+4)/3 = 5.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 5.0)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
-
-        // Add one more value to produce a non-integer average
-        rollingInt[3] = 4
-        // Average = (5+6+4+5)/4 = 4.75
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 4.75)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 4)
-    }
-
-    func testPast7DaysAverageWithSparseData() {
-        // Simulate sparse data: some days have values, most are unknown
-        rollingInt.append(20)    // Today (excluded)
-        rollingInt[1] = 5        // 6 days ago
-        rollingInt[4] = 10       // 3 days ago
-
-        // Only two past days have values: [5, 10]
-        // Average = (5+10)/2 = 7.5
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 7.5)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 2)
-    }
-
-    func testPast7DaysAverageWithZeroValues() {
-        // Test that zero values are counted (not treated as unknown)
-        rollingInt.append(5)     // Today (excluded)
-        rollingInt[0] = 0        // Zero is a valid value
-        rollingInt[1] = 0
-        rollingInt[2] = 3
-
-        // Average = (0+0+3)/3 = 1.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 1)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
-    }
-
-    func testPast7DaysAverageWithLargeValues() {
-        // Test with large integer values
-        rollingInt.append(1000)  // Today (excluded)
-        rollingInt[0] = 100
-        rollingInt[1] = 200
-        rollingInt[2] = 150
-
-        // Average = (100+200+150)/3 = 150.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 150)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 3)
-    }
-
-    func testPast7DaysAverageWithFullWeekOfData() {
-        // Fill 7 past days + 1 today = 8 values
-        for i in 1...8 {
-            rollingInt.append(i * 2)
-        }
-
-        // Past 7 days: [2, 4, 6, 8, 10, 12, 14]
-        // Average = (2+4+6+8+10+12+14)/7 = 56/7 = 8
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 8)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 7)
-    }
-
-    func testPast7DaysAverageWithTwoValues() {
-        // Test with exactly two past values
-        rollingInt.append(7)     // Today (excluded)
-        rollingInt[0] = 10
-        rollingInt[1] = 12
-
-        // Average = (10+12)/2 = 11.0
-        XCTAssertEqual(rollingInt.past7DaysAverage.average, 11)
-        XCTAssertEqual(rollingInt.past7DaysAverage.daysCounted, 2)
     }
 
     func testMultipleDaysSequenceWithIncrements() {
@@ -379,6 +301,38 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.last, 3)
         XCTAssertEqual(rollingInt.values.count, initialValuesCount) // No structural changes
         XCTAssertEqual(rollingInt.count, 1) // Still only one day with data
+    }
+
+    // MARK: - past7DaysTotal (numerator for the rolling average)
+
+    func testPast7DaysTotalEmptyArray() {
+        XCTAssertEqual(rollingInt.past7DaysTotal, 0)
+    }
+
+    func testPast7DaysTotalExcludesToday() {
+        // Fill 7 past days + 1 today = 8 values [1...8]; today (8) is excluded.
+        for i in 1...8 {
+            rollingInt.append(i)
+        }
+        XCTAssertEqual(rollingInt.past7DaysTotal, 1 + 2 + 3 + 4 + 5 + 6 + 7)
+    }
+
+    func testPast7DaysTotalIgnoresUnknownDays() {
+        // Sparse data: 6 searches 1 day, none since; then today.
+        rollingInt.append(6)     // active day
+        rollingInt.append(0)     // today (excluded)
+        // Window excluding today: [6] -> total 6 over 1 active day.
+        XCTAssertEqual(rollingInt.past7DaysTotal, 6)
+        XCTAssertEqual(rollingInt.countPast7Days, 1)
+    }
+
+    func testPast7DaysTotalSumsMultipleActiveDays() {
+        rollingInt.append(99)    // today (excluded)
+        rollingInt[0] = 10
+        rollingInt[1] = 11
+        // Window excluding today includes both active days: 10 + 11 = 21 over 2 active days.
+        XCTAssertEqual(rollingInt.past7DaysTotal, 21)
+        XCTAssertEqual(rollingInt.countPast7Days, 2)
     }
 
     // MARK: - Codable Persistence Tests

@@ -61,7 +61,7 @@ extension Preferences {
                                 Text(UserText.moreSearchSettingsLink)
                                 Image(.externalAppScheme)
                             }
-                            .foregroundColor(Color.linkBlue)
+                            .rebrandableLinkForeground()
                             .cursor(.pointingHand)
                         }
                         .buttonStyle(.plain)

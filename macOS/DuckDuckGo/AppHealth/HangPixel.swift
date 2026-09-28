@@ -18,7 +18,7 @@
 
 import PixelKit
 
-enum HangPixel: PixelKitEvent {
+enum HangPixel: PixelKit.Event {
 
     /// A recovered hang is one that has ended by the time we report it.
     case uiHangRecovered(durationSeconds: Int, inForeground: Bool?, anyWindowVisible: Bool?, batteryPower: BatteryPower?, openBrowserWindowCount: Int?, openBrowserTabCount: Int?, stackTrace: String?)

@@ -18,12 +18,11 @@
 
 import AppUpdaterShared
 import Combine
-import PersistenceTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import SharedTestUtilities
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -249,13 +248,10 @@ final class AppStateRestorationManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenAppDidTerminateUnexpectedlyAfterUnknownWithAppUpdate_ThenPixelIsFiredAndPromptIsShown() throws {
+    func testWhenAppDidTerminateUnexpectedlyAfterUnknownWithAppUpdate_ThenPixelIsNotFiredAndPromptIsShown() throws {
         try mockKeyValueStore.set(false, forKey: terminationFlagKey)
         mockRestartSourceResolver.resolvedSource = .unknownWithAppUpdate
         addMockSessionData()
-        mockPixelKit.expectedFireCalls = [
-            .init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected(reason: .unknownWithAppUpdate), frequency: .standard)
-        ]
 
         appStateManager.applicationDidFinishLaunching()
 

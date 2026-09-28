@@ -125,7 +125,7 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
         // no-op
     }
     
-    func generate(optionValues: [String: String]) async {
+    @MainActor func generate(optionValues: [String: String]) async {
         let count = Int(optionValues["Tab Count"] ?? "0") ?? 0
         let shouldCreateFireTabs = tabManager.currentTabsModel.shouldCreateFireTabs
         for index in 0 ..< count {

@@ -25,6 +25,7 @@ import History
 import HistoryView
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import AIChat
 
@@ -33,6 +34,10 @@ import AIChat
 protocol FireDialogViewPresenting {
     @MainActor
     func present(in window: NSWindow, completion: (() -> Void)?)
+
+    /// Closes the presented dialog, and does nothing when it is not presented any more.
+    @MainActor
+    func dismiss()
 }
 
 struct FireDialogViewConfig {
@@ -43,11 +48,29 @@ struct FireDialogViewConfig {
 
 typealias FireDialogViewFactory = (_ config: FireDialogViewConfig) -> FireDialogViewPresenting
 
-private struct DefaultFireDialogPresenter: FireDialogViewPresenting {
-    let view: any ModalView
+private final class DefaultFireDialogPresenter: FireDialogViewPresenting {
+    private let view: any ModalView
+    private weak var window: NSWindow?
+    private var isPresented = false
+
+    init(view: any ModalView) {
+        self.view = view
+    }
+
     @MainActor
     func present(in window: NSWindow, completion: (() -> Void)?) {
-        view.show(in: window, completion: completion)
+        self.window = window
+        isPresented = true
+        view.show(in: window) { [weak self] in
+            self?.isPresented = false
+            completion?()
+        }
+    }
+
+    @MainActor
+    func dismiss() {
+        guard isPresented, let window, let sheet = window.attachedSheet else { return }
+        window.endSheet(sheet)
     }
 }
 
@@ -122,14 +145,23 @@ final class FireCoordinator {
                 let view = LegacyFireDialogView(
                     viewModel: config.viewModel,
                     showIndividualSitesLink: config.showIndividualSitesLink,
-                    onConfirm: config.onConfirm
+                    onConfirm: { response in
+                        if case .noAction = response {
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                        }
+                        config.onConfirm(response)
+                    }
                 )
                 return DefaultFireDialogPresenter(view: view)
             }
             let view = FireDialogView(
                 viewModel: config.viewModel,
-                showIndividualSitesLink: config.showIndividualSitesLink,
-                onConfirm: config.onConfirm
+                onConfirm: { response in
+                    if case .noAction = response {
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                    }
+                    config.onConfirm(response)
+                }
             )
             return DefaultFireDialogPresenter(view: view)
         }
@@ -243,15 +275,18 @@ extension FireCoordinator {
             featureFlagger: self.featureFlagger,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
-            includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
+            includeChatHistory: mode.shouldShowChatHistoryToggle(featureFlagger) ? nil /* last selected */ : false,
             mode: mode,
             settings: settings,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
             tld: tld,
             windowControllersManager: self.windowControllersManager,
-            dataClearingPreferences: self.dataClearingPreferences
+            dataClearingPreferences: self.dataClearingPreferences,
+            pixelFiring: self.pixelFiring
         )
+
+        var tabsChangedCancellable: AnyCancellable?
 
         let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in
             var didResume = false
@@ -271,10 +306,25 @@ extension FireCoordinator {
                     }
                 )
             )
+
+            // The tabs of the window can change while the dialog is open, without the user doing it
+            // in the browser: a link opened from another app adds a tab and selects it. Let's close the
+            // dialog then.
+            tabsChangedCancellable = tabCollectionViewModel.tabCollection.$tabs
+                .dropFirst()
+                .map { _ in () }
+                .merge(with: tabCollectionViewModel.$selectedTabViewModel.dropFirst().map { _ in () })
+                .sink { _ in
+                    presenter.dismiss()
+                }
+
             presenter.present(in: parentWindow) {
                 resumeOnce(returning: .noAction)
             }
         }
+
+        // The dialog is closed here, so a later change of the tabs is none of its business.
+        tabsChangedCancellable?.cancel()
 
         switch response {
         case .noAction:
@@ -332,15 +382,29 @@ extension FireCoordinator {
             dataClearingWideEventService?.complete()
             return
         }
-        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+
         switch result.clearingOption {
         case .currentTab:
-            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
             guard let tabCollectionViewModel,
                   let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("No tab selected")
                 return
             }
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentTab(
+                        .init(
+                            pinned: tabViewModel.isPinned,
+                            closeTab: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
             let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
@@ -353,11 +417,26 @@ extension FireCoordinator {
                                                 dataClearingWideEventService: dataClearingWideEventService)
 
         case .currentWindow:
-            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
             guard let tabCollectionViewModel else {
                 assertionFailure("Missing TabCollectionViewModel for window scope")
                 return
             }
+
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentWindow(
+                        .init(
+                            hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty,
+                            closeWindow: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
@@ -370,6 +449,21 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .allData(
+                        .init(
+                            hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty,
+                            closeWindows: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData,
+                            clearAIChats: result.includeChatHistory
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
                 dataClearingWideEventService?.start(options: result, path: .burnAll, isAutoClear: false)
@@ -400,6 +494,10 @@ extension FireCoordinator {
                 .filter { $0.content.isHistory }
             historyTabs.forEach { $0.reload() }
         }
+
+        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
 
         // Complete wide event tracking
         dataClearingWideEventService?.complete()

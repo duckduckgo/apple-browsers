@@ -29,6 +29,7 @@ import Subscription
 import os.log
 import UIComponents
 import AIChat
+import DesignResourcesKit
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -486,6 +487,7 @@ final class AddressBarTextField: NSTextField {
             pixel = .aiChatSuggestionAIChatSubmittedMouse
         }
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBarSuggestion)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
     }
@@ -760,16 +762,12 @@ final class AddressBarTextField: NSTextField {
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
     private(set) lazy var suggestionViewController: SuggestionViewController = {
-        NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
-            let suggestionViewController = SuggestionViewController(coder: coder,
-                                                                    suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    isBurner: self.isBurner,
-                                                                    themeManager: self.themeManager,
-                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
-                                                                    featureFlagger: Application.appDelegate.featureFlagger)
-            suggestionViewController?.delegate = self
-            return suggestionViewController
-        }
+        let suggestionViewController = SuggestionViewController(suggestionContainerViewModel: self.suggestionContainerViewModel!,
+                                                                themeManager: self.themeManager,
+                                                                aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
+                                                                featureFlagger: Application.appDelegate.featureFlagger)
+        suggestionViewController.delegate = self
+        return suggestionViewController
     }()
 
     var isSuggestionWindowVisiblePublisher: AnyPublisher<Bool, Never> {
@@ -783,10 +781,18 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func initSuggestionWindow() {
-        let windowController = NSStoryboard.suggestion
-            .instantiateController(withIdentifier: "SuggestionWindowController") as? NSWindowController
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 218),
+                              styleMask: [.fullSizeContentView],
+                              backing: .buffered,
+                              defer: true)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.autorecalculatesKeyViewLoop = false
+        window.isRestorable = false
+        window.hasShadow = false
 
-        windowController?.contentViewController = suggestionViewController
+        let windowController = NSWindowController(window: window)
+        windowController.contentViewController = suggestionViewController
         self.suggestionWindowController = windowController
     }
 
@@ -1147,11 +1153,12 @@ extension AddressBarTextField {
         case openTab(URL)
 
         func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString {
-            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor(designSystemColor: .accentTextPrimary)
+            let suffixColor: DesignSystemColor = isBurner ? .accentFireTextPrimary : .accentTextPrimary
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: size, weight: .light),
-                .foregroundColor: suffixColor
+                .foregroundColor: NSColor(designSystemColor: suffixColor)
             ]
+
             return NSAttributedString(string: string, attributes: attrs)
         }
 
@@ -1583,10 +1590,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
 enum SuggestionInputMethod {
     case keyboard
     case mouse
-}
-
-fileprivate extension NSStoryboard {
-    static let suggestion = NSStoryboard(name: "Suggestion", bundle: .main)
 }
 
 extension URL {

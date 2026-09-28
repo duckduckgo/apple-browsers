@@ -19,9 +19,8 @@
 import AIChat
 import BrowserServicesKit
 import Combine
-import PixelKit
-import PixelKitTestingUtilities
-import FeatureFlags
+@_spi(Testing) import PixelKit
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
 import XCTest
@@ -1107,6 +1106,25 @@ class MockAIChatTabOpener: AIChatTabOpening {
         openMethodCalledExpectation = expectation
     }
 
+    var lastTargetedQuery: String?
+    var lastTargetWindowController: MainWindowController?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastTargetWindowController = windowController
+    }
+
+    var lastNewWindowDroppingPoint: NSPoint?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastNewWindowDroppingPoint = droppingPoint
+    }
+
     @MainActor
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
         openAIChatTabCalled = true
@@ -1116,6 +1134,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
         // Extract specific data based on content type
         switch trigger {
         case .newChat:
+            break
+        case .chatHistory:
             break
         case .query(let query, let shouldAutoSubmit):
             lastQuery = query

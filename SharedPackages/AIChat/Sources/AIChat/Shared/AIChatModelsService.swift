@@ -18,6 +18,7 @@
 
 import Foundation
 import os.log
+import Subscription
 import WebKit
 import WKAbstractions
 
@@ -30,14 +31,19 @@ public protocol AIChatCookieProviding {
 
 @MainActor
 public struct WKHTTPCookieStoreProvider: AIChatCookieProviding {
-    private let cookieStore: any DDGHTTPCookieStore
+    private let cookieStore: @MainActor @Sendable () -> any DDGHTTPCookieStore
 
-    public nonisolated init(cookieStore: any DDGHTTPCookieStore = HTTPCookieStoreWrapper(wrapped: WKWebsiteDataStore.default().httpCookieStore)) {
+    public nonisolated init(
+        cookieStore: @autoclosure @escaping @MainActor @Sendable () -> any DDGHTTPCookieStore = HTTPCookieStoreWrapper(
+            wrapped: WKWebsiteDataStore.default().httpCookieStore
+        )
+    ) {
         self.cookieStore = cookieStore
     }
 
     public func cookies(for url: URL) async -> [HTTPCookie] {
-        let cookies = await cookieStore.allCookies()
+        // Accessing the default WebKit store can block; defer it until a fetch, not scene creation.
+        let cookies = await cookieStore().allCookies()
         let domain = url.host ?? ""
         return cookies.filter { cookie in
             let cookieDomain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
@@ -87,6 +93,7 @@ public struct AIChatRemoteModel: Decodable, Equatable {
     public let accessTier: [String]
     public let supportedReasoningEffort: [AIChatReasoningEffort]
     public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
+    public let label: AIChatModelLabel?
 
     public init(
         id: String,
@@ -99,7 +106,8 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         supportedTools: [String],
         accessTier: [String],
         supportedReasoningEffort: [AIChatReasoningEffort] = [],
-        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) {
         self.id = id
         self.name = name
@@ -112,10 +120,11 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
         self.reasoningEffortAccess = reasoningEffortAccess
+        self.label = label
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier, reasoningEffortAccess
+        case id, name, modelShortName, provider, entityHasAccess, supportsImageUpload, supportedFileTypes, supportedTools, supportedReasoningEffort, accessTier, reasoningEffortAccess, label
     }
 
     /// Raw wire shape of a single `reasoningEffortAccess` entry. Decoded as `String` for
@@ -139,6 +148,13 @@ public struct AIChatRemoteModel: Decodable, Equatable {
         self.supportedReasoningEffort = try container.decodeIfPresent([String].self, forKey: .supportedReasoningEffort)?
             .compactMap(AIChatReasoningEffort.init(rawValue:)) ?? []
         self.accessTier = try container.decode([String].self, forKey: .accessTier)
+
+        do {
+            self.label = try container.decodeIfPresent(AIChatModelLabel.self, forKey: .label)
+        } catch {
+            Logger.aiChat.error("Failed to decode AI Chat model label: \(error.localizedDescription)")
+            self.label = nil
+        }
 
         do {
             let rawEntries = try container.decodeIfPresent([RawReasoningEffortAccess].self, forKey: .reasoningEffortAccess)
@@ -187,24 +203,30 @@ public final class AIChatModelsService: AIChatModelsProviding {
     private let baseURL: URL
     private let session: URLSession
     private let cookieProvider: AIChatCookieProviding
+    private let accessTokenProvider: (any SubscriptionTokenProvider)?
 
     public nonisolated init(
         baseURL: URL = AIChatModelsService.defaultBaseURL,
         session: URLSession = .shared,
-        cookieProvider: AIChatCookieProviding = WKHTTPCookieStoreProvider()
+        cookieProvider: AIChatCookieProviding = WKHTTPCookieStoreProvider(),
+        accessTokenProvider: (any SubscriptionTokenProvider)? = nil
     ) {
         self.baseURL = baseURL
         self.session = session
         self.cookieProvider = cookieProvider
+        self.accessTokenProvider = accessTokenProvider
     }
 
     public func fetchModels() async throws -> AIChatModelsResponse {
         let url = baseURL.appendingPathComponent("duckchat/v1/models")
 
         let cookies = await cookieProvider.cookies(for: baseURL)
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
         HTTPCookie.requestHeaderFields(with: cookies).forEach {
             request.addValue($1, forHTTPHeaderField: $0)
+        }
+        if let authorizationHeader = await authorizationHeader() {
+            request.setValue(authorizationHeader, forHTTPHeaderField: "Authorization")
         }
 
         let (data, response) = try await session.data(for: request)
@@ -217,6 +239,24 @@ public final class AIChatModelsService: AIChatModelsProviding {
         }
 
         return try JSONDecoder().decode(AIChatModelsResponse.self, from: data)
+    }
+
+    private func authorizationHeader() async -> String? {
+        guard baseURL.scheme == "https",
+              baseURL.host == URL.duckAIHost,
+              let accessTokenProvider else {
+            return nil
+        }
+
+        do {
+            let accessToken = try await accessTokenProvider.getAccessToken()
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !accessToken.isEmpty else { return nil }
+            return "Bearer \(accessToken)"
+        } catch {
+            // Signed-out users and unavailable credentials should still receive the anonymous models response.
+            return nil
+        }
     }
 
 }
@@ -254,7 +294,8 @@ extension AIChatModel {
             entityHasAccess: hasAccess,
             accessTier: remoteModel.accessTier,
             supportedReasoningEffort: remoteModel.supportedReasoningEffort,
-            reasoningEffortAccess: hasEffortAccess
+            reasoningEffortAccess: hasEffortAccess,
+            label: remoteModel.label
         )
     }
 }

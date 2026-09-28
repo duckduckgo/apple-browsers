@@ -21,6 +21,7 @@ import Crashes
 import Common
 import FoundationExtensions
 import Core
+import PixelKit
 
 extension CrashReportSender {
 
@@ -30,14 +31,14 @@ extension CrashReportSender {
             break
 
         case .failure(.crcidMissing):
-            Pixel.fire(pixel: .crashReportCRCIDMissing)
+            PixelKit.fire(Pixel.Event.crashReportCRCIDMissing)
 
         case .failure(.submissionFailed(let error)):
             if let error {
-                Pixel.fire(pixel: .crashReportingSubmissionFailed,
-                           withAdditionalParameters: ["HTTPStatusCode": "\(error.statusCode)"])
+                PixelKit.fire(Pixel.Event.crashReportingSubmissionFailed,
+                              options: .parameters(["HTTPStatusCode": "\(error.statusCode)"]))
             } else {
-                Pixel.fire(pixel: .crashReportingSubmissionFailed)
+                PixelKit.fire(Pixel.Event.crashReportingSubmissionFailed)
             }
         }
     }

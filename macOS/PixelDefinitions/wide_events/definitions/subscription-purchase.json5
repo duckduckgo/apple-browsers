@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "macos-subscription-purchase",
-            "version": "1.0"
+            "version": "2.0"
         },
         "feature": {
             "name": "subscription-purchase",
@@ -34,9 +34,21 @@
                         "type": "boolean",
                         "description": "Whether the user was eligible for a free trial at the time of purchase."
                     },
-                    "funnel_name": {
+                    "entry_point": {
                         "type": "string",
-                        "description": "Name of the funnel or entry point that originated the purchase, for example funnel_onboarding_ios."
+                        "description": "The coarse product surface from which the user entered the purchase flow.",
+                        "enum": [
+                            "app_menu",
+                            "app_promotion",
+                            "settings",
+                            "onboarding",
+                            "new_tab_page",
+                            "duck_ai",
+                            "vpn",
+                            "personal_information_removal",
+                            "web",
+                            "unknown"
+                        ]
                     },
                     "account_creation_latency_ms_bucketed": {
                         "type": "integer",

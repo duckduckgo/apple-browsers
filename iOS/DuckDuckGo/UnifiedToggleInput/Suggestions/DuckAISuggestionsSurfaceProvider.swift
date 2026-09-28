@@ -25,6 +25,8 @@ import History
 import Suggestions
 import AIChat
 import UIKit
+import FeatureFlags_iOS
+import PixelKit
 
 @MainActor
 protocol DuckAISuggestionsSurfaceProviderDelegate: AnyObject {
@@ -128,11 +130,9 @@ final class DuckAISuggestionsSurfaceProvider {
 
         let (chatManager, chatViewModel) = AIChatHistoryManager.makeHistoryManager(
             isFireTab: switchBarHandler.isFireTab,
-            isIPadExperience: false,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             chatSyncCleaner: aiChatSyncCleaner,
-            chatSettings: aiChatSettings,
             nativeStorageHandler: duckAiNativeStorageHandler)
 
         let requestRunner = AutocompleteRequestRunner()
@@ -151,7 +151,6 @@ final class DuckAISuggestionsSurfaceProvider {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { [weak self] in self?.switchBarHandler.currentText ?? "" },
-            deleteEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.removeChatHistory) },
             // The "View all chats" row opens the native history page — an iPhone-only experience gated on the same flag.
             viewAllChatsEnabled: { [featureFlagger] in
                 featureFlagger.isFeatureOn(.aiChatNativeChatHistory) && UIDevice.current.userInterfaceIdiom != .pad
@@ -262,15 +261,15 @@ final class DuckAISuggestionsSurfaceProvider {
     /// on confirm deletes the chat + fires the confirmed/cancelled pixels (mirrors the legacy coordinator).
     private func requestChatDeletion(rowID id: String, source: DuckAISuggestionsSource) {
         guard case .chat(let chat) = source.selection(forRowID: id) else { return }
-        DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteButtonTapped)
+        PixelKit.fire(Pixel.Event.aiChatRecentChatDeleteButtonTapped, frequency: .dailyAndCount)
         delegate?.duckAISurfaceRequestsChatDeletionConfirmation(
             for: chat,
             onConfirm: { [weak self] in
                 self?.chatDeleteAction?(chat)
-                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteConfirmed)
+                PixelKit.fire(Pixel.Event.aiChatRecentChatDeleteConfirmed, frequency: .dailyAndCount)
             },
             onCancel: {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatRecentChatDeleteCancelled)
+                PixelKit.fire(Pixel.Event.aiChatRecentChatDeleteCancelled, frequency: .dailyAndCount)
             })
     }
 }

@@ -18,7 +18,7 @@
 //
 
 /// The search mode selected by the user in the Duck.ai query selection onboarding step.
-enum DuckAIQueryMode {
+enum DuckAIQueryMode: Equatable {
     case search
     case duckAI
 }

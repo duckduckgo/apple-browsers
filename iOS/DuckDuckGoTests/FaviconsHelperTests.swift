@@ -53,9 +53,9 @@ class FaviconsHelperTests: XCTestCase {
         let result = FaviconsHelper.loadFaviconSync(forDomain: "duckduckgo.com",
                                                    usingCache: .fireproof,
                                                    useFakeFavicon: true)
-        
+
         XCTAssertNotNil(result.image)
-        XCTAssertEqual(result.image?.accessibilityIdentifier, "Logo")
+        XCTAssertEqual(result.image?.accessibilityIdentifier, "duckduckgo-favicon-128x128")
         XCTAssertFalse(result.isFake)
     }
     
@@ -73,7 +73,7 @@ class FaviconsHelperTests: XCTestCase {
         let domain = "example.com"
         let cache = Favicons.Constants.caches[.fireproof]!
         let resource = Favicons().defaultResource(forDomain: domain)!
-        let testImage = UIImage(resource: .logo)
+        let testImage = UIImage(named: "duckduckgo-favicon-128x128")!
         
         cache.store(testImage, forKey: resource.cacheKey)
         

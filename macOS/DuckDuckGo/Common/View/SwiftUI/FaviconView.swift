@@ -44,6 +44,11 @@ struct FaviconView: View {
         self.onFaviconMissing = onFaviconMissing
     }
 
+    // Refresh, not navigation: only upgrade to a decoded image, never clear an already-shown one.
+    // Favicon images can decode lazily off the main thread on a cache miss (see FaviconImageCache.get),
+    // posting `.faviconCacheUpdated` again once the image lands - unconditionally clearing here on every
+    // such refresh would blank the favicon back to the letter placeholder during that decode window,
+    // making it blink between placeholder and image as the notification fires repeatedly.
     func refreshImage() {
         if let duckPlayerImage = NSApp.delegateTyped.duckPlayer.image(for: self) {
             image = duckPlayerImage
@@ -58,8 +63,6 @@ struct FaviconView: View {
             }
             onFaviconMissing?()
         }
-
-        image = nil
     }
 
     var body: some View {

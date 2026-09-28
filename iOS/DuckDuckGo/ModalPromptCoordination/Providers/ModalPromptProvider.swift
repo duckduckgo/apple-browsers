@@ -37,22 +37,64 @@ struct ModalPromptConfiguration {
     }
 }
 
+/// How the coordination manager should treat a selected provider.
+enum ModalPromptPresentationKind {
+    /// Supplies a view controller. The manager starts the cooldown once it appears and frees the
+    /// slot when it is dismissed.
+    case modal
+
+    /// Holds the slot until an external event redeems or releases it. Nothing is presented and no
+    /// cooldown starts until redemption.
+    ///
+    /// For a promo whose UI the app does not own, or whose trigger comes after the foreground
+    /// checkpoint. All its eligibility must live in `isEligibleToPresent(isOnboardingComplete:)`,
+    /// since `provideModalPrompt()` is never called.
+    case deferred
+}
+
 /// A type that can provide a prompt to be presented to the centralised modal prompts coordination system.
 /// Providers act as lightweight adapters between feature-specific modal prompt logic and the centralised `ModalPromptCoordinationManager`.
 @MainActor
 protocol ModalPromptProvider {
+    /// Whether this provider presents a modal or holds the slot for a later event. Default: `.modal`.
+    var presentationKind: ModalPromptPresentationKind { get }
+
+    /// Per-provider onboarding gate. The manager calls this before evaluating `provideModalPrompt()`.
+    ///
+    /// Default: returns `isOnboardingComplete` — providers that need standard gating get it for free.
+    /// Override to apply a softer or stricter check.
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool
+
     /// Provides a `ModalPromptConfiguration` if the provider has a prompt that is eligible to present.
     /// - Returns: A configured `ModalPromptConfiguration` ready for presentation if it is eligible to present the modal. `nil` otherwise.
     func provideModalPrompt() -> ModalPromptConfiguration?
 
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
+    ///
+    /// For `.deferred`, called at redemption rather than when the slot is taken, so an unredeemed
+    /// attempt does not consume eligibility.
     func didPresentModal()
+
+    /// Called when a held `.deferred` slot is released unredeemed. Default: no-op.
+    func didReleaseDeferredSlot()
 }
 
 extension ModalPromptProvider {
 
+    var presentationKind: ModalPromptPresentationKind {
+        .modal
+    }
+
+    /// Default implementation returns `isOnboardingComplete` — providers that need standard gating get it for free.
+    /// Override to apply a softer or stricter check.
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
+        isOnboardingComplete
+    }
+
     func didPresentModal() {}
+
+    func didReleaseDeferredSlot() {}
 
 }
 

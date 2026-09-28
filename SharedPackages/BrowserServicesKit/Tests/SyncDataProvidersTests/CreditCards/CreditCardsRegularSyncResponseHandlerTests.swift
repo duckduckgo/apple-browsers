@@ -20,7 +20,7 @@ import XCTest
 import Common
 import DDGSync
 import GRDB
-import Persistence
+@_spi(Testing) import Persistence
 @testable import BrowserServicesKit
 @testable import SyncDataProviders
 

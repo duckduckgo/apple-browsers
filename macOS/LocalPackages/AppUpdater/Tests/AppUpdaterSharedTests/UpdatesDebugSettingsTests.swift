@@ -18,8 +18,7 @@
 
 import AppUpdaterShared
 import Common
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
 
 final class UpdatesDebugSettingsTests: XCTestCase {

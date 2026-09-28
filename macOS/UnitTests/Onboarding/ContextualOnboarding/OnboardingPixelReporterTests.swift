@@ -18,7 +18,7 @@
 
 import XCTest
 import PixelKit
-import Navigation
+import DDGNavigation
 import Onboarding
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,7 +27,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     var reporter: OnboardingPixelReporter!
     var onboardingState: MockContextualOnboardingState!
-    var eventSent: PixelKitEvent?
+    var eventSent: PixelKit.Event?
     var frequency: PixelKit.Frequency?
     var userDefaults: UserDefaults?
     private var sharedPixelHandler: MockOnboardingSharedPixelHandler!

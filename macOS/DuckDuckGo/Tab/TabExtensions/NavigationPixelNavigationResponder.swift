@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
@@ -185,6 +185,6 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             firstMeaningfulPaintMs: firstMeaningfulPaintMs,
             documentCompleteMs: documentCompleteMs,
             allResourcesCompleteMs: allResourcesCompleteMs
-        ), frequency: .sample(percentage: SiteLoadingPixel.samplePercentage), withAdditionalParameters: additionalParams)
+        ), frequency: .sample(percentage: SiteLoadingPixel.samplePercentage), options: .parameters(additionalParams))
     }
 }

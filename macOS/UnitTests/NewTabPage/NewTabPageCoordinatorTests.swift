@@ -23,9 +23,9 @@ import FoundationExtensions
 import History
 import HistoryView
 import NewTabPage
-import PersistenceTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyStats
@@ -74,7 +74,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
-    var firePixelCalls: [PixelKitEvent] = []
+    var firePixelCalls: [PixelKit.Event] = []
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!

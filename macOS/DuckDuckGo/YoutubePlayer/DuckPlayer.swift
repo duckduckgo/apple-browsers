@@ -22,7 +22,7 @@ import FoundationExtensions
 import Combine
 import CombineExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import NewTabPage
 import WebKit
 import UserScript
@@ -276,8 +276,8 @@ final class DuckPlayer {
 
     public func handleYoutubeError(params: Any, message: UserScriptMessage) -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        PixelKit.fire(dailyPixel, frequency: .legacyDaily, doNotEnforcePrefix: true)
-        PixelKit.fire(volumePixel, doNotEnforcePrefix: true)
+        PixelKit.fire(dailyPixel, frequency: .legacyDaily)
+        PixelKit.fire(volumePixel)
         return nil
     }
 

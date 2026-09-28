@@ -105,11 +105,25 @@ public struct AIChatImageAttachment: Identifiable {
     #elseif os(iOS)
     public let image: UIImage
 
+    public let originalEncodedData: Data?
+    public let originalFormat: String?
+
     public init(id: UUID = UUID(), image: UIImage, fileName: String, fileURL: URL? = nil) {
         self.id = id
         self.image = Self.resizeIfNeeded(image, maxDimension: 512)
         self.fileName = fileName
         self.fileURL = fileURL
+        self.originalEncodedData = nil
+        self.originalFormat = nil
+    }
+
+    public init(id: UUID = UUID(), image: UIImage, fileName: String, fileURL: URL? = nil, originalEncodedData: Data, originalFormat: String) {
+        self.id = id
+        self.image = Self.resizeIfNeeded(image, maxDimension: 512)
+        self.fileName = fileName
+        self.fileURL = fileURL
+        self.originalEncodedData = originalEncodedData
+        self.originalFormat = originalFormat
     }
 
     private static func resizeIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {

@@ -21,7 +21,9 @@ import SwiftUI
 import Core
 import DesignResourcesKitIcons
 
-protocol MobileCustomizationView { }
+protocol MobileCustomizationView {
+    var mobileCustomization: MobileCustomization { get }
+}
 
 extension MobileCustomizationView {
 
@@ -29,7 +31,7 @@ extension MobileCustomizationView {
         if button == .none {
             return Image(uiImage: DesignSystemImages.Glyphs.Size16.eyeClosed)
         }
-        guard let icon = button.smallIcon else { return nil }
+        guard let icon = mobileCustomization.smallIconForButton(button) else { return nil }
         return Image(uiImage: icon)
     }
 

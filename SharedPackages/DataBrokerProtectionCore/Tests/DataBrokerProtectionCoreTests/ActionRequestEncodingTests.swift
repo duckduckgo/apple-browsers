@@ -22,6 +22,100 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class ActionRequestEncodingTests: XCTestCase {
 
+    func testWhenBrokerJSONContainsExecuteScriptAction_thenActionRequestPreservesRawPayload() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';",
+                        "someNewField": "hello-world"
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first)
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawActionPayload["script"] as? String, "document.body.dataset.result = 'ok';")
+        XCTAssertEqual(rawActionPayload["someNewField"] as? String, "hello-world")
+    }
+
+    func testWhenExecuteScriptActionOmitsFailSilently_thenItDefaultsToFalse() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';"
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first as? ExecuteScriptAction)
+
+        XCTAssertFalse(action.failSilently)
+    }
+
+    func testWhenExecuteScriptActionSetsFailSilently_thenItIsDecoded() throws {
+        let stepJSON = """
+            {
+                "stepType": "scan",
+                "actions": [
+                    {
+                        "actionType": "executeScript",
+                        "id": "execute-script-1",
+                        "script": "document.body.dataset.result = 'ok';",
+                        "failSilently": true
+                    }
+                ]
+            }
+            """
+        let step = try JSONDecoder().decode(Step.self, from: Data(stepJSON.utf8))
+        let action = try XCTUnwrap(step.actions.first as? ExecuteScriptAction)
+
+        XCTAssertTrue(action.failSilently)
+    }
+
+    func testWhenExecuteScriptActionDoesNotContainRawJSON_thenActionRequestEncodingFallsBackToTypedAction() throws {
+        let action = ExecuteScriptAction(id: "execute-script-1",
+                                         actionType: .executeScript,
+                                         script: "document.body.dataset.result = 'ok';")
+
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawActionPayload["script"] as? String, "document.body.dataset.result = 'ok';")
+    }
+
+    func testWhenStepContainsExecuteScriptActionWithoutRawJSON_thenEncodingFallsBackToTypedAction() throws {
+        let action = ExecuteScriptAction(id: "execute-script-1",
+                                         actionType: .executeScript,
+                                         script: "document.body.dataset.result = 'ok';")
+        let step = Step(type: .scan, actions: [action])
+
+        let encodedStep = try JSONEncoder().encode(step)
+        let rawStep = try XCTUnwrap(try JSONSerialization.jsonObject(with: encodedStep) as? [String: Any])
+        let rawActions = try XCTUnwrap(rawStep["actions"] as? [[String: Any]])
+        let rawAction = try XCTUnwrap(rawActions.first)
+
+        XCTAssertEqual(rawAction["actionType"] as? String, "executeScript")
+        XCTAssertEqual(rawAction["id"] as? String, "execute-script-1")
+        XCTAssertEqual(rawAction["script"] as? String, "document.body.dataset.result = 'ok';")
+    }
+
     func testWhenActionContainsRawJSON_thenEncodingUsesRawActionPayload() throws {
         let stepJSON = """
             {
@@ -212,6 +306,36 @@ final class ActionRequestEncodingTests: XCTestCase {
         XCTAssertEqual(encodedProfile["email"] as? String, "legacy-disposable@duck.com")
         XCTAssertNil(data["fetchedEmail"])
         XCTAssertNil(data["emailData"])
+    }
+
+    func testWhenExtractedProfileHasExtras_thenTheyAreForwardedToFillForm() throws {
+        let action = FillFormAction(id: "fill-jane-smith", actionType: .fillForm, elements: [.init(type: "county")])
+        let extractedProfile = ExtractedProfile(name: "Jane Smith",
+                                                addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["zip": "62701"])],
+                                                extras: ["county": "Sangamon"])
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), extractedProfile, nil, [:])))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+        let encodedProfile = try XCTUnwrap(data["extractedProfile"] as? [String: Any])
+        let encodedAddress = try XCTUnwrap((encodedProfile["addresses"] as? [[String: Any]])?.first)
+
+        XCTAssertEqual(encodedProfile["extras"] as? [String: String], ["county": "Sangamon"])
+        XCTAssertEqual(encodedAddress["extras"] as? [String: String], ["zip": "62701"])
+    }
+
+    func testWhenExtractedProfileHasNoExtras_thenTheKeyIsOmittedFromTheFillFormPayload() throws {
+        let action = FillFormAction(id: "fill-jane-smith", actionType: .fillForm, elements: [.init(type: "city")])
+        let extractedProfile = ExtractedProfile(name: "Jane Smith", addresses: [AddressCityState(city: "Springfield", state: "IL")])
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), extractedProfile, nil, [:])))
+
+        let state = try XCTUnwrap(try params.toDictionary()["state"] as? [String: Any])
+        let data = try XCTUnwrap(state["data"] as? [String: Any])
+        let encodedProfile = try XCTUnwrap(data["extractedProfile"] as? [String: Any])
+        let encodedAddress = try XCTUnwrap((encodedProfile["addresses"] as? [[String: Any]])?.first)
+
+        XCTAssertNil(encodedProfile["extras"])
+        XCTAssertNil(encodedAddress["extras"])
     }
 
     func testWhenActionElementsContainBooleans_thenTheyEncodeAsJSONBooleansNotNumbers() throws {

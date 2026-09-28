@@ -51,6 +51,6 @@ jobs:
       - name: Run validation with GitHub user map
         run: npm run validate-defs-without-formatting -- -g ../internal-github-asana-utils/user_map.yml
         working-directory: ${{ matrix.platform }}
-      - name: Check wide event consistency and schema immutability
+      - name: Check wide event consistency and generated schemas
         run: npm run check-wide-events
         working-directory: ${{ matrix.platform }}

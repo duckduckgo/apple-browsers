@@ -30,13 +30,13 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
             isSubscriptionActive: true,
             trigger: .appStartup
         )
-        XCTAssertEqual(pixel.namePrefix, "m_mac_vpn_subs_client_check_")
+        XCTAssertEqual(pixel.namePrefix, .custom("m_mac_vpn_subs_client_check_"))
 #elseif os(iOS)
         let pixel = VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
             isSubscriptionActive: true,
             trigger: .appStartup
         )
-        XCTAssertEqual(pixel.namePrefix, "m_vpn_subs_client_check_")
+        XCTAssertEqual(pixel.namePrefix, .custom("m_vpn_subs_client_check_"))
 #endif
     }
 
@@ -46,7 +46,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
             isSubscriptionActive: true,
             trigger: .deviceWake
         )
-        XCTAssertEqual(pixel.namePrefix, "m_mac_vpn_subs_client_check_on_wake_")
+        XCTAssertEqual(pixel.namePrefix, .custom("m_mac_vpn_subs_client_check_on_wake_"))
     }
 #elseif os(iOS)
     func testNamePrefix_appForegrounded() {
@@ -54,7 +54,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
             isSubscriptionActive: true,
             trigger: .appForegrounded
         )
-        XCTAssertEqual(pixel.namePrefix, "m_vpn_subs_client_check_on_foreground_")
+        XCTAssertEqual(pixel.namePrefix, .custom("m_vpn_subs_client_check_on_foreground_"))
     }
 #endif
 
@@ -179,7 +179,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
             trigger: .appStartup
         )
 
-        let fullName = pixel.namePrefix + pixel.name
+        let fullName = (pixel.namePrefix.literal ?? "") + pixel.name
         XCTAssertEqual(fullName, expectedPrefix + "vpn_feature_enabled")
     }
 
@@ -192,7 +192,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
             error: error
         )
 
-        let fullName = pixel.namePrefix + pixel.name
+        let fullName = (pixel.namePrefix.literal ?? "") + pixel.name
         XCTAssertEqual(fullName, "m_mac_vpn_subs_client_check_on_wake_failed")
     }
 #elseif os(iOS)
@@ -204,7 +204,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
             error: error
         )
 
-        let fullName = pixel.namePrefix + pixel.name
+        let fullName = (pixel.namePrefix.literal ?? "") + pixel.name
         XCTAssertEqual(fullName, "m_vpn_subs_client_check_on_foreground_failed")
     }
 #endif

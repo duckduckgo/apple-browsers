@@ -17,8 +17,8 @@
 //
 
 import Combine
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
@@ -105,6 +105,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in }
             )
@@ -126,6 +127,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: mockRemoteAISettings,
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         ) { content in
             self.showTabCalled = true
@@ -161,7 +163,8 @@ final class RootViewV2Tests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
-            pinningManager: MockPinningManager()
+            pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -200,6 +203,7 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

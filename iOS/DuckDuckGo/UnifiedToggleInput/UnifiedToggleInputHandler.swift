@@ -32,7 +32,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     let usesExpandedAIChatTextEntryLayout: Bool = true
     /// The UTI uses the new layout metrics (insets / heights), never the legacy ones.
     let usesLegacyLayoutMetrics: Bool = false
-    /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
     var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
@@ -90,9 +89,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
-    var isAIVoiceChatEnabled: Bool = false {
+    /// Where the button dictates, voice-chat availability must not keep a dead microphone on screen.
+    var prefersDictationOverVoiceChat: Bool = false {
         didSet {
-            guard isAIVoiceChatEnabled != oldValue else { return }
+            guard prefersDictationOverVoiceChat != oldValue else { return }
             updateButtonState()
         }
     }
@@ -117,6 +117,12 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
             updateButtonState()
         }
     }
+
+    var isImageGenerationSelected: Bool = false
+
+    /// Mirrors the usage card's blocking state, so every path into a prompt is closed and not just
+    /// the buttons that look closed.
+    var isInputBlockedByUsageLimit: Bool = false
 
     // MARK: - SwitchBarHandling — Publishers
 
@@ -193,12 +199,14 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
+        guard !isInputBlockedByUsageLimit else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
     func submitAIChatAttachmentOnlyPrompt() {
+        guard !isInputBlockedByUsageLimit else { return }
         textSubmissionSubject.send((text: "", mode: .aiChat))
     }
 
@@ -251,7 +259,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+        let aiVoiceChatAvailable = !isExpanded && currentToggleState == .aiChat && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

@@ -161,7 +161,7 @@ struct TabHistoryDetailView: View {
         }
 
         let tab = tabManager.allTabsModel.tabs[tabItem.tabIndex]
-        let urls = await tabManager.viewModel(for: tab).tabHistory()
+        let urls = (try? await tabManager.viewModel(for: tab).tabHistory()) ?? []
         historyItems = urls.enumerated().map { HistoryDisplayItem(url: $1, index: $0) }
     }
 }
@@ -265,7 +265,8 @@ class HistoryDebugViewModel: ObservableObject {
         var items: [TabHistoryItem] = []
 
         for (index, tab) in tabManager.allTabsModel.tabs.enumerated() {
-            let historyCount = await tabManager.viewModel(for: tab).tabHistory().count
+            let history = try? await tabManager.viewModel(for: tab).tabHistory()
+            let historyCount = history?.count ?? 0
             let isCurrent = tab === currentTab
 
             let title: String

@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import PrivacyConfig
 
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
@@ -44,9 +45,9 @@ protocol TabStyleProviding {
 final class TabAnimationsStyleProvider: TabStyleProviding {
     private let palette: ThemeColors
 
-    var separatorColor: NSColor { palette.surfaceDecorationTertiary }
+    var separatorColor: NSColor { palette.surfaceDecorationSecondary }
     var selectedTabColor: NSColor { palette.surfacePrimary }
-    var hoverTabColor: NSColor { palette.controlsFillPrimary }
+    var hoverTabColor: NSColor { palette.surfacePrimary }
 
     let separatorHeight: CGFloat = 16
     let tabsScrollViewHeight: CGFloat = 38

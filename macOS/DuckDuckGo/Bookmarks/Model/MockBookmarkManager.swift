@@ -135,8 +135,11 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
         var withinParentFolder: ParentFolderType
     }
     var moveObjectsCalled: MoveArgs?
+
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
-        moveObjectsCalled = .init(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder)
+        let arguments = MoveArgs(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder)
+        moveObjectsCalled = arguments
+        completion(nil)
     }
 
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void) {}
@@ -146,6 +149,21 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
     }
 
     func handleFavoritesAfterDisablingSync() {}
+
+    struct ReorderByNameArgs {
+        let objectUUIDs: [String]
+        let parentFolder: ParentFolderType
+        let undoManager: UndoManager?
+    }
+    private(set) var reorderByNameCalls: [ReorderByNameArgs] = []
+
+    @MainActor
+    func reorderByName(_ children: [BaseBookmarkEntity], withinParentFolder parentFolder: ParentFolderType, undoManager: UndoManager?) {
+        reorderByNameCalls.append(.init(
+            objectUUIDs: children.map(\.id),
+            parentFolder: parentFolder,
+            undoManager: undoManager))
+    }
 
     @Published var list: BookmarkList?
 

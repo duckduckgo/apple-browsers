@@ -48,7 +48,8 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.currentToggleState, .aiChat)
     }
 
-    func test_initialState_voiceDisabled_buttonStateIsNoButtons() {
+    func test_searchMode_voiceSearchDisabled_buttonStateIsNoButtons() {
+        sut.setToggleState(.search)
         XCTAssertEqual(sut.buttonState, .noButtons)
     }
 
@@ -88,7 +89,8 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .clearOnly)
     }
 
-    func test_updateCurrentText_emptyWithVoiceDisabled_buttonStateIsNoButtons() {
+    func test_updateCurrentText_emptyInSearchModeWithVoiceDisabled_buttonStateIsNoButtons() {
+        sut.setToggleState(.search)
         sut.updateCurrentText("hello")
         sut.updateCurrentText("")
         XCTAssertEqual(sut.buttonState, .noButtons)
@@ -232,6 +234,21 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    /// The greyed-out button is not the only route into a prompt: the keyboard return key and
+    /// Paste & Go both come through here.
+    func test_submitText_whenInputIsBlockedByUsageLimit_doesNotFirePublisher() {
+        var fired = false
+        sut.textSubmissionPublisher
+            .sink { _ in fired = true }
+            .store(in: &cancellables)
+        sut.isInputBlockedByUsageLimit = true
+
+        sut.submitText("hello")
+        sut.submitAIChatAttachmentOnlyPrompt()
+
+        XCTAssertFalse(fired)
+    }
+
     func test_submitText_emptyString_doesNotFirePublisher() {
         var fired = false
         sut.textSubmissionPublisher
@@ -323,7 +340,8 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .voiceOnly)
     }
 
-    func test_setVoiceDisabled_withEmptyText_updatesButtonStateToNoButtons() {
+    func test_setVoiceDisabled_inSearchModeWithEmptyText_updatesButtonStateToNoButtons() {
+        sut.setToggleState(.search)
         sut.isVoiceSearchEnabled = true
         sut.isVoiceSearchEnabled = false
         XCTAssertEqual(sut.buttonState, .noButtons)
@@ -335,33 +353,29 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         XCTAssertEqual(sut.buttonState, .clearOnly)
     }
 
-    func test_setAIVoiceChatEnabled_aiChatModeWithEmptyText_keepsInlineVoiceSearchButton() {
+    func test_aiVoiceChat_aiChatModeWithEmptyText_keepsInlineVoiceSearchButton() {
         sut.isVoiceSearchEnabled = true
-        sut.isAIVoiceChatEnabled = true
         sut.isExpanded = true
         sut.setToggleState(.aiChat)
 
         XCTAssertEqual(sut.buttonState, .voiceOnly)
     }
 
-    func test_setAIVoiceChatEnabled_collapsedAIChatWithVoiceSearchDisabled_showsVoiceButton() {
-        sut.isAIVoiceChatEnabled = true
+    func test_aiVoiceChat_collapsedAIChatWithVoiceSearchDisabled_showsVoiceButton() {
         sut.setToggleState(.aiChat)
 
         XCTAssertEqual(sut.buttonState, .voiceOnly)
     }
 
-    func test_setAIVoiceChatEnabled_expandedAIChatWithVoiceSearchDisabled_hidesVoiceButton() {
-        sut.isAIVoiceChatEnabled = true
+    func test_aiVoiceChat_expandedAIChatWithVoiceSearchDisabled_hidesVoiceButton() {
         sut.isExpanded = true
         sut.setToggleState(.aiChat)
 
         XCTAssertEqual(sut.buttonState, .noButtons)
     }
 
-    func test_setAIVoiceChatEnabled_aiChatModeWithText_keepsClearButton() {
+    func test_aiVoiceChat_aiChatModeWithText_keepsClearButton() {
         sut.isVoiceSearchEnabled = true
-        sut.isAIVoiceChatEnabled = true
         sut.setToggleState(.aiChat)
         sut.updateCurrentText("hello")
 
@@ -370,7 +384,6 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
 
     func test_hidesVoiceButton_aiChatModeWithAIVoiceChatEnabled_hidesInlineVoiceSearchButton() {
         sut.isVoiceSearchEnabled = true
-        sut.isAIVoiceChatEnabled = true
         sut.setToggleState(.aiChat)
         sut.hidesVoiceButton = true
 
@@ -446,7 +459,7 @@ final class UnifiedToggleInputHandlerTests: XCTestCase {
         sut.isGenerating = true
         XCTAssertEqual(sut.buttonState, .stopGeneratingOnly)
         sut.isGenerating = false
-        XCTAssertEqual(sut.buttonState, .noButtons)
+        XCTAssertEqual(sut.buttonState, .voiceOnly, "Collapsed .aiChat falls back to the Duck AI voice button")
     }
 
     func test_isGenerating_false_withText_showsClear() {

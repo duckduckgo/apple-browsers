@@ -20,6 +20,7 @@ import XCTest
 import Combine
 import WebKit
 @testable import WebExtensions
+import WebExtensionsTestSupport
 
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
@@ -591,83 +592,4 @@ final class WebExtensionFeatureFlagHandlerTests: XCTestCase {
 
         XCTAssertEqual(callCount, 1)
     }
-}
-
-// MARK: - Mock
-
-@available(macOS 15.4, iOS 18.4, *)
-private final class MockWebExtensionManaging: WebExtensionManaging {
-
-    var uninstallAllExtensionsCalled = false
-    var uninstallEmbeddedExtensionCalled = false
-    var uninstalledEmbeddedType: DuckDuckGoWebExtensionType?
-    var uninstallEmbeddedExtensionHandler: (() -> Void)?
-    var syncEmbeddedExtensionsCalled = false
-
-    var loadedExtensions: Set<WKWebExtensionContext> { [] }
-    var webExtensionIdentifiers: [String] { [] }
-    var controller: WKWebExtensionController { WKWebExtensionController() }
-    var eventsListener: WebExtensionEventsListening { MockEventsListener() }
-    var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
-    var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
-
-    func loadInstalledExtensions() async {}
-    func reloadInstalledExtensions() async {}
-    func installExtension(from sourceURL: URL) async throws {}
-    @MainActor func uninstallExtension(identifier: String) throws {}
-
-    @MainActor
-    @discardableResult
-    func uninstallAllExtensions() -> [Result<Void, Error>] {
-        uninstallAllExtensionsCalled = true
-        return []
-    }
-
-    @MainActor
-    func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
-        syncEmbeddedExtensionsCalled = true
-    }
-
-    @MainActor func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {
-        uninstallEmbeddedExtensionCalled = true
-        uninstalledEmbeddedType = type
-        uninstallEmbeddedExtensionHandler?()
-    }
-
-    func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? {
-        nil
-    }
-
-    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? {
-        nil
-    }
-
-    func unloadAllExtensions() {}
-
-    func reloadExtension(identifier: String) async throws {}
-
-    func extensionName(for identifier: String) -> String? { nil }
-    func extensionVersion(for identifier: String) -> String? { nil }
-    func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
-    func context(for identifier: String) -> WKWebExtensionContext? { nil }
-    @MainActor func clearCachedScriptlets() {}
-    @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-private final class MockEventsListener: WebExtensionEventsListening {
-    var controller: WKWebExtensionController?
-    var droppedCallbacksCount = 0
-
-    func didOpenWindow(_ window: WKWebExtensionWindow) {}
-    func didCloseWindow(_ window: WKWebExtensionWindow) {}
-    func didFocusWindow(_ window: WKWebExtensionWindow) {}
-    func didOpenTab(_ tab: WKWebExtensionTab) {}
-    func didCloseTab(_ tab: WKWebExtensionTab, windowIsClosing: Bool) {}
-    func didActivateTab(_ tab: WKWebExtensionTab, previousActiveTab: WKWebExtensionTab?) {}
-    func didSelectTabs(_ tabs: [WKWebExtensionTab]) {}
-    func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {}
-    func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {}
-    func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {}
-    func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab) {}
 }

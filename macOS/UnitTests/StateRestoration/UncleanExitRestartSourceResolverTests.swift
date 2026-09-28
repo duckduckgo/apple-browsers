@@ -18,8 +18,7 @@
 
 import AppUpdaterShared
 import CrashReportingShared
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
 
 @testable import CrashReporting

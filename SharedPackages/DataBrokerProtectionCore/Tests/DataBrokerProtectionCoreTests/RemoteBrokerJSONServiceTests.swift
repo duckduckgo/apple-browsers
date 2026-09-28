@@ -560,7 +560,6 @@ extension HTTPURLResponse {
                                             headerFields: ["ETag": "something"])!
 }
 
-private class MockFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging, OptOutRetryErrorFeatureFlagging {
-    var isRemoteBrokerDeliveryFeatureOn: Bool { true }
+private class MockFeatureFlagger: OptOutRetryErrorFeatureFlagging {
     var isOptOutRetryErrorFrequencyExperimentOn: Bool { false }
 }

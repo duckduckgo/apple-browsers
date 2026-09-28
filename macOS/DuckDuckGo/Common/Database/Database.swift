@@ -89,7 +89,7 @@ final class Database {
 
 extension NSManagedObjectContext {
 
-    func save(onErrorFire event: PixelKitEvent) throws {
+    func save(onErrorFire event: PixelKit.Event) throws {
         do {
             try save()
         } catch {

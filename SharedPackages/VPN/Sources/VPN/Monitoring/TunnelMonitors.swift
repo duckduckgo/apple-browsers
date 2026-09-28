@@ -34,6 +34,8 @@ protocol TunnelMonitoring: AnyObject {
 @MainActor
 final class TunnelMonitors: TunnelMonitoring {
 
+    private var tunnelFailureMonitorGeneration: UUID?
+
     private let tunnelFailureMonitor: TunnelFailureMonitoring
     private let latencyMonitor: LatencyMonitoring
     private let entitlementMonitor: EntitlementMonitoring
@@ -51,6 +53,7 @@ final class TunnelMonitors: TunnelMonitoring {
 
     private let onReconfigureForMigration: @MainActor () async throws -> Void
     private let onConnectionTestResult: @MainActor (ConnectionTestingResult) -> Void
+    private let onTunnelFailureResult: @MainActor (NetworkProtectionTunnelFailureMonitor.Result) -> Void
     private let onFailureRecoveryConfigUpdate: @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     private let onAccessRevoked: @MainActor () async -> Void
 
@@ -69,6 +72,7 @@ final class TunnelMonitors: TunnelMonitoring {
         isConnectionTesterEnabled: @escaping @MainActor () -> Bool,
         onReconfigureForMigration: @escaping @MainActor () async throws -> Void,
         onConnectionTestResult: @escaping @MainActor (ConnectionTestingResult) -> Void,
+        onTunnelFailureResult: @escaping @MainActor (NetworkProtectionTunnelFailureMonitor.Result) -> Void = { _ in },
         onFailureRecoveryConfigUpdate: @escaping @MainActor (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void,
         onAccessRevoked: @escaping @MainActor () async -> Void
     ) {
@@ -86,6 +90,7 @@ final class TunnelMonitors: TunnelMonitoring {
         self.isConnectionTesterEnabled = isConnectionTesterEnabled
         self.onReconfigureForMigration = onReconfigureForMigration
         self.onConnectionTestResult = onConnectionTestResult
+        self.onTunnelFailureResult = onTunnelFailureResult
         self.onFailureRecoveryConfigUpdate = onFailureRecoveryConfigUpdate
         self.onAccessRevoked = onAccessRevoked
 
@@ -115,6 +120,8 @@ final class TunnelMonitors: TunnelMonitoring {
     /// reconfiguration (a reasserting config update): recovery is what *drives*
     /// those updates, so cancelling it mid-apply would truncate its retry loop.
     func stop(includingFailureRecovery: Bool = true) async {
+        // Invalidate in-flight callbacks before stopping any monitor can suspend.
+        tunnelFailureMonitorGeneration = nil
         connectionTester.stop()
         await keyExpirationTester.stop()
         await tunnelFailureMonitor.stop()
@@ -129,19 +136,26 @@ final class TunnelMonitors: TunnelMonitoring {
     // MARK: - Tunnel Failure Monitor
 
     private func startTunnelFailureMonitor() async {
+        let generation = UUID()
+        tunnelFailureMonitorGeneration = generation
+
         if await tunnelFailureMonitor.isStarted {
             await tunnelFailureMonitor.stop()
         }
 
+        guard tunnelFailureMonitorGeneration == generation else { return }
+
         await tunnelFailureMonitor.start { [weak self] result in
-            guard let self else { return }
+            guard let self, tunnelFailureMonitorGeneration == generation else { return }
 
             events.fire(.reportTunnelFailure(result: result))
 
             switch result {
             case .failureDetected:
+                onTunnelFailureResult(.failureDetected)
                 startServerFailureRecovery()
             case .failureRecovered:
+                onTunnelFailureResult(.failureRecovered)
                 Task {
                     await self.failureRecoveryHandler.stop()
                 }

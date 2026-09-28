@@ -41,7 +41,7 @@ jobs:
     name: iOS shared web tests
     if: ${{ github.event_name == 'schedule' || inputs.platform != 'macos' }}
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-26, general-purpose]
     timeout-minutes: 30
     steps:
 
@@ -54,6 +54,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
@@ -114,7 +117,7 @@ jobs:
     name: macOS shared web tests
     if: ${{ github.event_name == 'schedule' || inputs.platform != 'ios' }}
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-26, general-purpose]
     timeout-minutes: 30
     steps:
 
@@ -127,6 +130,9 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

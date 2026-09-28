@@ -19,7 +19,11 @@
 import Foundation
 import PixelKit
 
-enum AutofillPixelKitEvent: PixelKitEvent {
+enum AutofillPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     enum Parameter {
         static let lastUsed = "last_used"
     }

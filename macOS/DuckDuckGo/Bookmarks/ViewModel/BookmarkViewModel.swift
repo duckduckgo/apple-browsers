@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 
 struct BookmarkViewModel {
 
@@ -47,9 +48,9 @@ struct BookmarkViewModel {
             let favicon = bookmark.favicon(.small)?.copy() as? NSImage
             favicon?.size = NSSize.faviconSize
 
-            return favicon ?? .bookmarkDefaultFavicon
+            return favicon ?? DesignSystemImages.Color.Size16.bookmark
         } else if entity is BookmarkFolder {
-            return .folder
+            return DesignSystemImages.Color.Size16.folder
         } else {
             return nil
         }

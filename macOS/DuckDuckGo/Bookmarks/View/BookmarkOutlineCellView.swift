@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 protocol BookmarkOutlineCellViewDelegate: AnyObject {
     func outlineCellViewRequestedMenu(_ cell: BookmarkOutlineCellView)
@@ -104,7 +105,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         addSubview(favoriteImageView)
 
         faviconImageView.translatesAutoresizingMaskIntoConstraints = false
-        faviconImageView.image = .bookmarkDefaultFavicon
+        faviconImageView.image =  DesignSystemImages.Color.Size16.bookmark
         faviconImageView.imageScaling = .scaleProportionallyDown
         faviconImageView.wantsLayer = true
         faviconImageView.layer?.cornerRadius = 2.0
@@ -362,7 +363,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         }()) : ""
         urlLabel.isHidden = urlLabel.stringValue.isEmpty
         self.toolTip = bookmark.url
-        favoriteImageView.image = bookmark.isFavorite ? .favoriteFilledBorder : nil
+        favoriteImageView.image = bookmark.isFavorite ? DesignSystemImages.Color.Size16.favorite : nil
         favoriteImageView.isHidden = favoriteImageView.image == nil
 
         updateConstraints(isSearch: isSearch)
@@ -449,7 +450,7 @@ extension BookmarkOutlineCellView {
 
             translatesAutoresizingMaskIntoConstraints = true
 
-            let theme = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
+            let theme = ThemeStyle.buildThemeStyle(themeName: .default)
             let cells = [
                 BookmarkOutlineCellView(identifier: .init(""), theme: theme),
                 BookmarkOutlineCellView(identifier: .init(""), theme: theme),

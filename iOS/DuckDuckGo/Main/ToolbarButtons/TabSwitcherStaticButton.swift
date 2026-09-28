@@ -1,0 +1,191 @@
+//
+//  TabSwitcherStaticButton.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import Core
+import DesignResourcesKitIcons
+import PixelKit
+
+final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
+
+    private let tabSwitcherView = TabSwitcherStaticView()
+    private var longPressRecognizer: UILongPressGestureRecognizer!
+    weak var delegate: TabSwitcherButtonDelegate?
+
+    var showMenuOnLongPress: Bool {
+        didSet {
+            configureLongPressBehavior()
+        }
+    }
+
+    var text: String? {
+        tabSwitcherView.label.text
+    }
+
+    // Just to satisfy protocol requirement
+    let pointer: UIView? = nil
+
+    init(showMenuOnLongPress: Bool) {
+        self.showMenuOnLongPress = showMenuOnLongPress
+        super.init()
+        self.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+
+        addAction(UIAction(handler: { [weak self] _ in
+            guard let self else { return }
+
+            self.delegate?.showTabSwitcher(self)
+
+        }), for: .touchUpInside)
+
+        longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
+        longPressRecognizer.minimumPressDuration = 0.4
+
+        configureLongPressBehavior()
+        setUpSubviews()
+        self.isPointerInteractionEnabled = true
+        self.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
+        self.accessibilityIdentifier = "Browser.Toolbar.Button.TabSwitcher"
+    }
+
+    @available(*, unavailable)
+    @MainActor required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setUpSubviews() {
+        addSubview(tabSwitcherView)
+
+        tabSwitcherView.frame = bounds
+        tabSwitcherView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tabSwitcherView.isUserInteractionEnabled = false
+
+        // This is needed so the BrowserChromeButton is resized appropriately.
+        setImage(.fake(size: CGSize(width: 24, height: 24)))
+    }
+
+    var tabCount: Int = 0 {
+        didSet {
+            tabSwitcherView.updateCount(tabCount)
+        }
+    }
+
+    var hasUnread: Bool {
+        get {
+            tabSwitcherView.hasUnread
+        }
+
+        set {
+            tabSwitcherView.hasUnread = newValue
+        }
+    }
+
+    var isFireMode: Bool {
+        get {
+            tabSwitcherView.isFireMode
+        }
+
+        set {
+            tabSwitcherView.isFireMode = newValue
+        }
+    }
+
+    func animateUpdate(update: @escaping () -> Void) {
+        let animator1 = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
+            self.tabSwitcherView.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+        }
+
+        let animator2 = UIViewPropertyAnimator(duration: 0.8, dampingRatio: 0.3) {
+            self.tabSwitcherView.transform = .identity
+        }
+
+        animator1.addCompletion { _ in
+            update()
+            animator2.startAnimation()
+        }
+
+        animator1.startAnimation()
+    }
+
+    override func tintColorDidChange() {
+        super.tintColorDidChange()
+
+        tabSwitcherView.tintColor = tintColor
+    }
+    
+    private func configureLongPressBehavior() {
+        if showMenuOnLongPress {
+            setLongPressMenu()
+        } else {
+            setLongPressGestureRecognizer()
+        }
+    }
+
+    private func setLongPressMenu() {
+        removeGestureRecognizer(longPressRecognizer)
+        let menu = UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
+                    PixelParameters.source: "toolbar"
+                ]))
+                completion([
+                    UIAction(title: UserText.actionNewFireTab,
+                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
+                                 guard let self else { return }
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
+                                     PixelParameters.source: "toolbar"
+                                 ]))
+                                 delegate?.launchNewFireTab(self)
+                             },
+                    UIAction(title: UserText.actionNewTab,
+                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
+                                 guard let self else { return }
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
+                                     PixelParameters.source: "toolbar"
+                                 ]))
+                                 delegate?.launchNewNormalTab(self)
+                             }
+                ])
+            }
+        ])
+
+        self.menu = menu
+    }
+    
+    private func setLongPressGestureRecognizer() {
+        self.menu = nil
+        addGestureRecognizer(longPressRecognizer)
+    }
+
+    @objc private func onNewTabLongPressRecognizer(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        delegate?.launchNewTabWithCurrentMode(self)
+    }
+}
+
+private extension UIImage {
+    static func fake(size: CGSize) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { _ in
+            // No drawing operations needed for transparency
+        }
+        return image
+    }
+}

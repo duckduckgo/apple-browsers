@@ -21,12 +21,12 @@ import XCTest
 @testable import DuckDuckGo
 
 final class OnboardingSearchExperiencePickerViewModelTests: XCTestCase {
-    private var mockSearchExperienceProvider: ObservingMockOnboardingSearchExperienceProvider!
+    private var mockSearchExperienceProvider: MockOnboardingSearchExperienceProvider!
     private var sut: OnboardingSearchExperiencePickerViewModel!
     
     override func setUp() {
         super.setUp()
-        mockSearchExperienceProvider = ObservingMockOnboardingSearchExperienceProvider()
+        mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
         sut = OnboardingSearchExperiencePickerViewModel(searchExperienceProvider: mockSearchExperienceProvider)
     }
     
@@ -48,7 +48,7 @@ final class OnboardingSearchExperiencePickerViewModelTests: XCTestCase {
         
         // Then
         XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
-        XCTAssertEqual(mockSearchExperienceProvider.lastEnableValue, true)
+        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, true)
     }
     
     func testWhenSettingIsSearchAndAIChatEnabledToFalseThenStoreAIChatSearchInputDuringOnboardingChoiceIsCalled() {
@@ -61,7 +61,7 @@ final class OnboardingSearchExperiencePickerViewModelTests: XCTestCase {
         
         // Then
         XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
-        XCTAssertEqual(mockSearchExperienceProvider.lastEnableValue, false)
+        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, false)
     }
     
     func testWhenGettingIsSearchAndAIChatEnabledThenReturnsProviderValue() {
@@ -87,7 +87,7 @@ final class OnboardingSearchExperiencePickerViewModelTests: XCTestCase {
         
         // Then
         XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
-        XCTAssertEqual(mockSearchExperienceProvider.lastEnableValue, true)
+        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, true)
     }
     
     func testWhenConfirmChoiceIsCalledWithDefaultValueThenStoresChoice() {
@@ -100,22 +100,6 @@ final class OnboardingSearchExperiencePickerViewModelTests: XCTestCase {
         
         // Then
         XCTAssertTrue(mockSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
-        XCTAssertEqual(mockSearchExperienceProvider.lastEnableValue, false)
-    }
-}
-
-// MARK: - ObservingMockOnboardingSearchExperienceProvider
-
-private final class ObservingMockOnboardingSearchExperienceProvider: OnboardingSearchExperienceProvider {
-    var didEnableAIChatSearchInputDuringOnboarding = false
-    var didMakeChoiceDuringOnboarding = false
-    var didApplyOnboardingChoiceSettings = false
-    
-    var storeAIChatSearchInputDuringOnboardingChoiceCalled = false
-    var lastEnableValue: Bool?
-    
-    func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
-        storeAIChatSearchInputDuringOnboardingChoiceCalled = true
-        lastEnableValue = enable
+        XCTAssertEqual(mockSearchExperienceProvider.lastStoredValue, false)
     }
 }

@@ -204,12 +204,20 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
     func cancel() async {
     }
 
+    var startExchangeModeError: Error?
     func startExchangeMode() async throws -> PairingInfo {
-        .init(base64Code: "", deviceName: "")
+        if let startExchangeModeError {
+            throw startExchangeModeError
+        }
+        return .init(base64Code: "", deviceName: "")
     }
 
+    var startConnectModeError: Error?
     func startConnectMode() async throws -> PairingInfo {
-        .init(base64Code: "", deviceName: "")
+        if let startConnectModeError {
+            throw startConnectModeError
+        }
+        return .init(base64Code: "", deviceName: "")
     }
 
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {

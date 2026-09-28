@@ -42,6 +42,46 @@ final class MockPromptCooldownManager: PromptCooldownManaging {
     }
 }
 
+@MainActor
+final class MockPromoQueueCooldownPolicy: PromoQueueCooldownPolicying {
+    var remoteMessageAdmissionDecision = PromoQueueCooldownDecision.eligible
+    var modalAdmissionDecision = PromoQueueCooldownDecision.eligible
+    var snapshot = PromoQueueCooldownSnapshot(
+        lastConfirmedModalAppearance: nil,
+        lastConfirmedRemoteMessageAppearance: nil,
+        nextRemoteMessageEligibility: nil,
+        nextModalEligibility: nil
+    )
+
+    private(set) var remoteMessageAdmissionCallCount = 0
+    private(set) var modalAdmissionCallCount = 0
+    private(set) var recordConfirmedRemoteMessageAppearanceCallCount = 0
+    private(set) var resetModalCooldownCallCount = 0
+    private(set) var resetRemoteMessageCooldownCallCount = 0
+
+    func evaluateRemoteMessageAdmission() -> PromoQueueCooldownDecision {
+        remoteMessageAdmissionCallCount += 1
+        return remoteMessageAdmissionDecision
+    }
+
+    func evaluateModalAdmission() -> PromoQueueCooldownDecision {
+        modalAdmissionCallCount += 1
+        return modalAdmissionDecision
+    }
+
+    func recordConfirmedRemoteMessageAppearance() {
+        recordConfirmedRemoteMessageAppearanceCallCount += 1
+    }
+
+    func resetModalCooldown() {
+        resetModalCooldownCallCount += 1
+    }
+
+    func resetRemoteMessageCooldown() {
+        resetRemoteMessageCooldownCallCount += 1
+    }
+}
+
 extension PromptCooldownInfo {
     static let inCoolDown: PromptCooldownInfo = .init(
         isInCooldownPeriod: true,

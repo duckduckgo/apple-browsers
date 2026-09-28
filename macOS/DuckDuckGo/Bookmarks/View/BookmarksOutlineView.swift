@@ -88,10 +88,10 @@ final class BookmarksOutlineView: NSOutlineView {
         disclosureButton?.contentTintColor = allowsDisclosureButtonHighlight && highlighted ? palette.accentContentPrimary : palette.iconsPrimary
     }
 
-    /// popover (`BookmarksBarMenuCustomPopover`) displaying this Bookmarks Menu
+    /// popover (`BookmarkListPopover` or `BookmarksBarMenuCustomPopover`) displaying this Bookmarks Menu
     private var popoverHost: NSResponder? {
         let next = window?.contentViewController?.nextResponder
-        if next is any BookmarksBarMenuPopoverPresenting {
+        if next is NSPopover || next is any BookmarksBarMenuPopoverPresenting {
             return next
         }
         return nil

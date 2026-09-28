@@ -42,6 +42,14 @@ public protocol AIChatInputBoxHandling {
 
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }
+
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply
+    func cancelEdit()
+}
+
+public extension AIChatInputBoxHandling {
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply { .cancelled }
+    func cancelEdit() {}
 }
 
 public enum AIChatStatusValue: String, Codable {

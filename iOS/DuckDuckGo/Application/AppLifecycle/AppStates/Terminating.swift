@@ -1,0 +1,230 @@
+//
+//  Terminating.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit.UIApplication
+import Core
+import Persistence
+import PixelKit
+
+enum TerminationError: Error {
+
+    case database(DatabaseError)
+    case bookmarksDatabase(BookmarksDatabaseError)
+    case historyDatabase(Error)
+    case keyValueFileStore(AppKeyValueFileStoreService.Error)
+    case tabsPersistence(TabsPersistenceError)
+
+}
+
+enum TerminationReason {
+
+    case insufficientDiskSpace
+    case unrecoverableState
+
+}
+
+private enum TerminationMode {
+
+    case immediately(debugMessage: String)
+    case afterAlert(reason: TerminationReason)
+
+}
+
+/// Handles critical launch-time errors and terminates the app appropriately.
+///
+/// This is used when a fatal error is thrown during app startup (e.g. from the `Launching` class).
+/// It categorizes the error, reports it via a pixel, and either:
+/// - Terminates immediately, or
+/// - Shows a user-facing alert before termination (e.g. for disk space issues).
+///
+/// Unhandled errors result in a generic crash and pixel.
+///
+struct Terminating: TerminatingHandling {
+
+    private let application: UIApplication = .shared
+    private let mode: TerminationMode
+
+    init(error: Error) {
+        Logger.lifecycle.info("Terminating: \(#function)")
+
+        let pixel: Pixel.Event
+        var errorToReport: Error?
+        var additionalParams: [String: String] = [:]
+
+        guard let error = error as? TerminationError else {
+            PixelKit.fire(Pixel.Event.appDidTerminateWithUnhandledError.withError(error), frequency: .dailyAndCount)
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Unhandled error: \(error)")
+        }
+
+        switch error {
+        case .database(let error):
+            additionalParams = [
+                PixelParameters.applicationState: application.applicationState.stringValue,
+                PixelParameters.dataAvailability: "\(application.isProtectedDataAvailable)"
+            ]
+            switch error {
+            case .container(let error):
+                pixel = .dbContainerInitializationError
+                errorToReport = error
+                mode = .immediately(debugMessage: "DB container init failed: \(error.localizedDescription)")
+            case .other(let error):
+                pixel = .dbInitializationError
+                errorToReport = error
+                mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "DB init failed: \(error.localizedDescription)")
+            }
+        case .bookmarksDatabase(let bookmarkError):
+            var underlyingError: Error = bookmarkError
+            let debugMessage: String
+
+            switch bookmarkError {
+            // Database setup errors
+            case .couldNotGetFavoritesOrder(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks DB init failed: could not get favorites order"
+                pixel = .debugBookmarksCouldNotGetFavoritesOrder
+            case .couldNotPrepareDatabase(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks DB init failed: could not prepare database"
+                pixel = .debugBookmarksCouldNotPrepareDatabase
+
+            // Legacy storage errors
+            case .noDBSchemeFound:
+                debugMessage = "Legacy Bookmarks DB init failed: no DB scheme found"
+                pixel = .debugBookmarksNoDBSchemeFound
+            case .unableToLoadPersistentStores(let error):
+                underlyingError = error
+                debugMessage = "Legacy Bookmarks DB init failed: unable to load persistent stores"
+                pixel = .debugBookmarksUnableToLoadPersistentStores
+            case .errorCreatingTopLevelBookmarksFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: error creating top level bookmarks folder"
+                pixel = .debugBookmarksErrorCreatingTopLevelBookmarksFolder
+            case .errorCreatingTopLevelFavoritesFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: error creating top level favorites folder"
+                pixel = .debugBookmarksErrorCreatingTopLevelFavoritesFolder
+            case .couldNotFixBookmarkFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: could not fix bookmark folder"
+                pixel = .debugBookmarksCouldNotFixBookmarkFolder
+            case .couldNotFixFavoriteFolder:
+                debugMessage = "Legacy Bookmarks DB init failed: could not fix favorite folder"
+                pixel = .debugBookmarksCouldNotFixFavoriteFolder
+
+            // Migration errors
+            case .couldNotPrepareBookmarksDBStructure(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks migration failed: could not prepare DB structure"
+                pixel = .debugBookmarksCouldNotPrepareDBStructure
+            case .couldNotWriteToBookmarksDB(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks migration failed: could not write to DB"
+                pixel = .debugBookmarksCouldNotWriteToDB
+
+            // Generic
+            case .other(let error):
+                underlyingError = error
+                debugMessage = "Bookmarks DB init failed: \(bookmarkError)"
+                pixel = .bookmarksCouldNotLoadDatabase
+            }
+
+            errorToReport = underlyingError
+            mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
+        case .historyDatabase(let error):
+            pixel = .historyStoreLoadFailed
+            errorToReport = error
+            mode = .afterAlert(reason: error.isDiskFull ? .insufficientDiskSpace : .unrecoverableState)
+        case .keyValueFileStore(let error):
+            pixel = switch error {
+            case .appSupportDirAccessError: .keyValueFileStoreSupportDirAccessError
+            case .kvfsInitError: .keyValueFileStoreInitError
+            }
+            mode = .immediately(debugMessage: "KeyValueFileStore init failed: \(error)")
+        case .tabsPersistence(let error):
+            pixel = switch error {
+            case .appSupportDirAccess: .tabsStoreSupportDirAccessError
+            case .storeInit: .tabsStoreInitError
+            }
+            mode = .immediately(debugMessage: "TabsModelPersistence init failed: \(error)")
+        }
+
+        PixelKit.fire(pixel.withError(errorToReport),
+                      frequency: .dailyAndStandard,
+                      options: .parameters(additionalParams))
+
+        switch mode {
+        case .immediately(let debugMessage):
+            Thread.sleep(forTimeInterval: 1)
+            fatalError(debugMessage)
+        case .afterAlert:
+            /// We do nothing here because the app jumps into the `Terminating` state
+            /// directly from `Launching` (something threw there). At this point
+            /// there is no window available. We need to wait for `scene(_:willConnectTo:)`
+            /// to be called - that's where `alertAndTerminate(window:)` will actually run.
+            /// See: `func respond(to event: AppEvent, in terminating: TerminatingHandling)` in `AppStateMachine`.
+            break
+        }
+    }
+
+    func alertAndTerminate(window: UIWindow) {
+        guard case .afterAlert(let reason) = mode else {
+            return
+        }
+        let alertController: UIAlertController
+        switch reason {
+        case .insufficientDiskSpace:
+            alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
+        case .unrecoverableState:
+            alertController = CriticalAlerts.makePreemptiveCrashAlert()
+        }
+
+        let rootViewController = UIViewController()
+        rootViewController.view.backgroundColor = .white
+        window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
+
+        rootViewController.present(alertController, animated: true, completion: nil)
+    }
+
+}
+
+private extension UIApplication.State {
+
+    var stringValue: String {
+        switch self {
+        case .active: return "active"
+        case .inactive: return "inactive"
+        case .background: return "background"
+        @unknown default: return "unknown"
+        }
+    }
+
+}
+
+private extension Error {
+
+    var isDiskFull: Bool {
+        let nsError = self as NSError
+        if let underlyingError = nsError.userInfo["NSUnderlyingError"] as? NSError, underlyingError.code == 13 {
+            return true
+        } else if nsError.userInfo["NSSQLiteErrorDomain"] as? Int == 13 {
+            return true
+        }
+        return false
+    }
+
+}

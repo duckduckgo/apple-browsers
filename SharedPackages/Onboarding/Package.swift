@@ -36,6 +36,8 @@ let package = Package(
             targets: ["Onboarding"]),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../Infrastructure/DesignResourcesKit"),
@@ -50,11 +52,11 @@ let package = Package(
             name: "Onboarding",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
                 "UIComponents",
@@ -72,8 +74,7 @@ let package = Package(
             dependencies: [
                 "Onboarding",
                 "DesignResourcesKit",
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit")
+                .product(name: "PixelKit", package: "PixelKit"),
             ]
         )
     ]

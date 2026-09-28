@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import Navigation
+import DDGNavigation
 import VPN
 import PixelKit
 

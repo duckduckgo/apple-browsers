@@ -146,8 +146,13 @@ extension AIChatMessageHandler {
             supportsSuggestions: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
             supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
             supportsNativeDictationPermissionHandler: true,
+            supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
-            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
+            attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
+                ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
+                : nil,
+            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools)
         )
     }
 

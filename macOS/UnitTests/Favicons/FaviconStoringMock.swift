@@ -48,6 +48,10 @@ final class FaviconStoringMock: FaviconStoring {
     // Fulfilled when `removeFavicons(_:)` is called, so tests can await asynchronous removals.
     var removeFaviconsExpectation: XCTestExpectation?
 
+    // Fulfilled when the matching reference removal is called, for the same reason.
+    var removeHostReferencesExpectation: XCTestExpectation?
+    var removeUrlReferencesExpectation: XCTestExpectation?
+
     func loadFavicons() async throws -> [Favicon] {
         loadFaviconsCallCount += 1
         return faviconsToLoad
@@ -91,10 +95,12 @@ final class FaviconStoringMock: FaviconStoring {
 
     func remove(hostReferences: [FaviconHostReference]) async throws {
         removedHostReferenceIdentifiers.append(contentsOf: hostReferences.map(\.identifier))
+        removeHostReferencesExpectation?.fulfill()
     }
 
     func remove(urlReferences: [FaviconUrlReference]) async throws {
         removedUrlReferenceIdentifiers.append(contentsOf: urlReferences.map(\.identifier))
+        removeUrlReferencesExpectation?.fulfill()
     }
 
 }

@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import Navigation
+import DDGNavigation
 
 #if DEBUG
 

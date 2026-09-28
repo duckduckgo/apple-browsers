@@ -26,9 +26,9 @@ import UIComponents
 class TabsBarCell: UICollectionViewCell {
 
     static let reuseIdentifier = "Tab"
+    static let cornerRadius: CGFloat = 12
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 12
         static let faviconCornerRadius: CGFloat = 4
         static let faviconSize: CGFloat = 16
         static let faviconContainerWidth: CGFloat = 24
@@ -36,7 +36,6 @@ class TabsBarCell: UICollectionViewCell {
         static let titleLeadingInset: CGFloat = 12
         static let titleTrailingInset: CGFloat = 8
         static let titleCloseButtonTrailingOffset: CGFloat = 32
-        static let bottomBackgroundHeightMultiplier: CGFloat = 0.75
         static let separatorInset: CGFloat = 16
         static let separatorWidth: CGFloat = 1
         static let labelFontSize: CGFloat = 15
@@ -45,8 +44,6 @@ class TabsBarCell: UICollectionViewCell {
     private let label = FadeOutLabel()
     let removeButton = BrowserChromeButton(.tabSwitcher)
     private let faviconImage = UIImageView()
-    private let topBackgroundView = UIView()
-    private let bottomBackgroundView = UIView()
     private let separatorView = UIView()
 
     private let titleStackView = UIStackView()
@@ -64,6 +61,9 @@ class TabsBarCell: UICollectionViewCell {
     private weak var model: Tab?
     private var isFireModeEnabled = false
 
+    private var hidesCloseButtonUntilHover = false
+    private var isPointerHovering = false
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -75,14 +75,17 @@ class TabsBarCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isPointerHovering = false
+    }
+
     private func setUpSubviews() {
         clipsToBounds = true
         contentView.clipsToBounds = true
 
-        topBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        topBackgroundView.layer.cornerRadius = Constants.cornerRadius
-
-        bottomBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.layer.cornerRadius = Self.cornerRadius
+        contentView.layer.cornerCurve = .circular
 
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -111,12 +114,11 @@ class TabsBarCell: UICollectionViewCell {
         removeButton.addTarget(self, action: #selector(onRemovePressed), for: .touchUpInside)
 
         faviconContainerView.addSubview(faviconImage)
-        contentView.addSubview(topBackgroundView)
-        contentView.addSubview(bottomBackgroundView)
         contentView.addSubview(titleStackView)
         contentView.addSubview(separatorView)
         contentView.addSubview(removeButton)
         contentView.addInteraction(UIPointerInteraction(delegate: self))
+        contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(handleHover)))
 
         let titleTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: titleStackView.trailingAnchor,
                                                                             constant: Constants.titleTrailingInset)
@@ -127,17 +129,6 @@ class TabsBarCell: UICollectionViewCell {
         labelRemoveButtonConstraint?.isActive = false
 
         NSLayoutConstraint.activate([
-            topBackgroundView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            topBackgroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            topBackgroundView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            topBackgroundView.heightAnchor.constraint(equalTo: contentView.heightAnchor),
-
-            bottomBackgroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            bottomBackgroundView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            bottomBackgroundView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            bottomBackgroundView.heightAnchor.constraint(equalTo: contentView.heightAnchor,
-                                                         multiplier: Constants.bottomBackgroundHeightMultiplier),
-
             titleStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor,
                                                     constant: Constants.titleLeadingInset),
             titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -168,6 +159,14 @@ class TabsBarCell: UICollectionViewCell {
     @objc private func onRemovePressed() {
         onRemove?()
     }
+
+    @objc private func handleHover(_ recognizer: UIHoverGestureRecognizer) {
+        let hovering = recognizer.state == .began || recognizer.state == .changed
+        guard hovering != isPointerHovering else { return }
+        isPointerHovering = hovering
+        updateCloseButtonVisibility()
+        UIView.animate(withDuration: 0.15) { self.contentView.layoutIfNeeded() }
+    }
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -189,31 +188,38 @@ class TabsBarCell: UICollectionViewCell {
     func update(model: Tab,
                 isCurrent: Bool,
                 isNextCurrent: Bool,
+                hidesInactiveCloseButton: Bool,
                 isFireModeEnabled: Bool,
                 withTheme theme: Theme) {
         accessibilityElements = [label, removeButton]
-        
+
         self.model?.removeObserver(self)
-        
+
         self.model = model
         self.isFireModeEnabled = isFireModeEnabled
         model.addObserver(self)
 
         label.primaryColor = theme.barTintColor
-        if isCurrent {
-            topBackgroundView.backgroundColor = theme.omniBarBackgroundColor
-            bottomBackgroundView.backgroundColor = theme.omniBarBackgroundColor
-        } else {
-            topBackgroundView.backgroundColor = .clear
-            bottomBackgroundView.backgroundColor = .clear
+        applyCurrentStyle(isCurrent: isCurrent, isNextCurrent: isNextCurrent, hidesInactiveCloseButton: hidesInactiveCloseButton, withTheme: theme)
+
+        applyModel(model)
+    }
+
+    func applyCurrentStyle(isCurrent: Bool, isNextCurrent: Bool, hidesInactiveCloseButton: Bool, withTheme theme: Theme) {
+        if !isCurrent {
             separatorView.backgroundColor = theme.tabsBarSeparatorColor
         }
-
-        labelRemoveButtonConstraint?.isActive = isCurrent
         separatorView.isHidden = isCurrent || isNextCurrent
-        removeButton.isHidden = !isCurrent
-        
-        applyModel(model)
+
+        hidesCloseButtonUntilHover = hidesInactiveCloseButton && !isCurrent
+        updateCloseButtonVisibility()
+    }
+
+    /// Shows the close button unless the strip is overflowing and this inactive tab isn't hovered by a pointer.
+    private func updateCloseButtonVisibility() {
+        let showsCloseButton = !hidesCloseButtonUntilHover || isPointerHovering
+        removeButton.isHidden = !showsCloseButton
+        labelRemoveButtonConstraint?.isActive = showsCloseButton
     }
 
     /// Configures the cell to render without a backing `Tab`.
@@ -231,8 +237,6 @@ class TabsBarCell: UICollectionViewCell {
         label.accessibilityLabel = nil
         faviconImage.image = nil
 
-        topBackgroundView.backgroundColor = .clear
-        bottomBackgroundView.backgroundColor = .clear
         separatorView.backgroundColor = theme.tabsBarSeparatorColor
 
         labelRemoveButtonConstraint?.isActive = false
@@ -291,9 +295,10 @@ extension TabsBarCell: TabObserver {
 }
 
 extension TabsBarCell: UIPointerInteractionDelegate {
-    
+
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
-        return .init(effect: .highlight(.init(view: contentView)))
+        guard let view = interaction.view else { return nil }
+        return .init(effect: .automatic(.init(view: view)))
     }
-    
+
 }

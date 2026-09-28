@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import WebKit
 
 struct BackForwardListItem: Hashable {

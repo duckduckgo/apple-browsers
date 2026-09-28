@@ -23,7 +23,7 @@ private enum ThemePixelName: String {
     case themeNameDaily = "m_mac_theme_name"
 }
 
-enum ThemePixels: PixelKitEvent {
+enum ThemePixels: PixelKit.Event {
 
     case themeNameDaily(themeName: ThemeName)
 

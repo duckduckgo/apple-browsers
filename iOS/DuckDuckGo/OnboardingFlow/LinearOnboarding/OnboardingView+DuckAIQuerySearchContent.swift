@@ -123,14 +123,7 @@ struct DuckAIQuerySearchContent: View {
     ]
 
     init(
-        content: OnboardingDuckAIQueryContent = .init(
-            title: UserText.Onboarding.DuckAIQuery.title,
-            searchPlaceholder: UserText.Onboarding.DuckAIQuery.searchPlaceholder,
-            aiPlaceholder: UserText.Onboarding.DuckAIQuery.aiPlaceholder,
-            isToggleVisible: true,
-            daxAnimation: nil
-        ),
-        defaultMode: DuckAIQueryMode,
+        content: OnboardingDuckAIQueryContent,
         visualStyle: VisualStyle = .legacy,
         animateTitle: Binding<Bool> = .constant(false),
         onModeConfirmed: @escaping (DuckAIQueryMode) -> Void,
@@ -147,14 +140,14 @@ struct DuckAIQuerySearchContent: View {
         self.startExitTransitionAction = startExitTransitionAction
         self.visualStyle = visualStyle
         self.animateTitle = animateTitle
-        let initialSelection = (defaultMode == .duckAI) ? Self.pickerItems[1] : Self.pickerItems[0]
-        _selectedMode = State(initialValue: defaultMode)
+        let initialSelection = (content.defaultMode == .duckAI) ? Self.pickerItems[1] : Self.pickerItems[0]
+        _selectedMode = State(initialValue: content.defaultMode)
         _pickerViewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
             items: Self.pickerItems,
             selectedItem: initialSelection,
             configuration: ImageSegmentedPickerConfiguration(itemContentSpacing: Metrics.queryFieldContentSpacing,
                                                              textLineLimit: 1),
-            scrollProgress: defaultMode == .duckAI ? 1 : 0,
+            scrollProgress: content.defaultMode == .duckAI ? 1 : 0,
             isScrollProgressDriven: false
         ))
     }

@@ -52,6 +52,20 @@ public final class TunnelControllerViewModel: ObservableObject {
         vpnAppState.isUsingSystemExtension
     }
 
+    /// Whether the Strict routing toggle should be shown in the status view's Security section.
+    public let isStrictRoutingAvailable: Bool
+
+    /// Backs the Strict routing toggle in the status view's Security section. Writing it routes the
+    /// change through `VPNSettings`, which restarts the tunnel to apply the new routing.
+    @Published var enforceRoutes: Bool {
+        didSet {
+            guard vpnSettings.enforceRoutes != enforceRoutes else {
+                return
+            }
+            vpnSettings.enforceRoutes = enforceRoutes
+        }
+    }
+
     /// The type of extension that's being used for NetP
     ///
     @Published
@@ -104,6 +118,7 @@ public final class TunnelControllerViewModel: ObservableObject {
                 proxySettings: TransparentProxySettings,
                 locationFormatter: VPNLocationFormatting,
                 timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
+                isStrictRoutingAvailable: Bool = false,
                 uiActionHandler: VPNUIActionHandling) {
 
         self.tunnelController = controller
@@ -115,6 +130,8 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
         self.timeLapsedFormatter = timeLapsedFormatter
+        self.isStrictRoutingAvailable = isStrictRoutingAvailable
+        self.enforceRoutes = vpnSettings.enforceRoutes
         self.uiActionHandler = uiActionHandler
 
         // Get initial connection status
@@ -145,6 +162,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         subscribeToDataVolumeUpdates()
         subscribeToVPNEnabledChanges()
         subscribeToToggleDisableChanges()
+        subscribeToEnforceRoutesChanges()
 
         vpnSettings.dnsSettingsPublisher
             .assign(to: \.dnsSettings, onWeaklyHeld: self)
@@ -203,6 +221,15 @@ public final class TunnelControllerViewModel: ObservableObject {
         statusReporter.vpnEnabledObserver.publisher
             .removeDuplicates()
             .assign(to: \.isVPNEnabled, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    /// Keeps the Strict routing toggle in sync when `enforceRoutes` changes elsewhere (e.g. the
+    /// toggle in VPN settings), so both surfaces always reflect the same value.
+    private func subscribeToEnforceRoutesChanges() {
+        vpnSettings.enforceRoutesPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 
@@ -420,6 +447,22 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
+    /// Whether the Strict routing status pill should be shown under the header. It reflects the current
+    /// Strict routing state whenever the VPN is on, in both the on and off positions.
+    var showStrictRoutingPill: Bool {
+        isStrictRoutingAvailable && isConnectedOrConnecting
+    }
+
+    /// The message shown under the header. While the VPN is on but Strict routing is off it warns that
+    /// some traffic may bypass the VPN; otherwise it reflects the plain on/off state.
+    var headerMessage: String {
+        if isConnectedOrConnecting, isStrictRoutingAvailable, !enforceRoutes {
+            return UserText.networkProtectionStatusHeaderMessageStrictRoutingOff
+        }
+
+        return isToggleOn.wrappedValue ? UserText.networkProtectionStatusHeaderMessageOn : UserText.networkProtectionStatusHeaderMessageOff
+    }
+
     // MARK: - Server Information
 
     var showServerDetails: Bool {
@@ -552,6 +595,12 @@ public final class TunnelControllerViewModel: ObservableObject {
     func showLocationSettings() {
         Task { @MainActor in
             await uiActionHandler.showVPNLocations()
+        }
+    }
+
+    func showVPNSettings() {
+        Task { @MainActor in
+            await uiActionHandler.showVPNSettings()
         }
     }
 

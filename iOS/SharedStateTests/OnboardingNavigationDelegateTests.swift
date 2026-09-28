@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import Bookmarks
 import DDGSync
 import History
@@ -32,7 +32,6 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import Core
-import PersistenceTestingUtils
 import PrivacyConfig
 
 // swiftlint:disable force_try
@@ -136,6 +135,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             aiChatSettings: aiChatSettings,
             aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                                    aiChatSettings: aiChatSettings),
+            profileStateManager: profileStateManager,
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             customConfigurationURLProvider: MockCustomURLProvider()

@@ -19,11 +19,10 @@
 import XCTest
 import Common
 @testable import Subscription
-@testable import Networking
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 class SubscriptionManagerTests: XCTestCase {
 
@@ -40,6 +39,7 @@ class SubscriptionManagerTests: XCTestCase {
     fileprivate var mockPixelHandler: MockSubscriptionPixelHandler!
     var mockWideEvent: WideEventMock!
     var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
+    var recoveryHandlerSideEffect: (() -> Void)?
 
     override func setUp() {
         super.setUp()
@@ -77,11 +77,13 @@ class SubscriptionManagerTests: XCTestCase {
                     self.mockOAuthClient.internalCurrentTokenContainer = nil
                 }
             }
+            self.recoveryHandlerSideEffect?()
             try await DeadTokenRecoverer().attemptRecoveryFromPastPurchase(purchasePlatform: self.subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: self.mockAppStoreRestoreFlowV2)
         }
     }
 
     override func tearDown() {
+        recoveryHandlerSideEffect = nil
         subscriptionManager = nil
         mockOAuthClient = nil
         mockSubscriptionEndpointService = nil
@@ -93,6 +95,33 @@ class SubscriptionManagerTests: XCTestCase {
     }
 
     // MARK: - Token Retrieval Tests
+
+    func testWhenLocalTokenStateHasTokenThenReturnsPresentWithoutRefreshing() {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        let tokenState = subscriptionManager.localTokenState()
+
+        XCTAssertEqual(tokenState, .present)
+        XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
+    }
+
+    func testWhenLocalTokenStateHasNoTokenThenReturnsMissingWithoutRefreshing() {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+
+        let tokenState = subscriptionManager.localTokenState()
+
+        XCTAssertEqual(tokenState, .missing)
+        XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
+    }
+
+    func testWhenLocalTokenStateCannotBeReadThenReturnsReadErrorWithoutRefreshing() {
+        mockOAuthClient.currentTokenContainerError = NSError(domain: "LocalTokenStore", code: 1)
+
+        let tokenState = subscriptionManager.localTokenState()
+
+        XCTAssertEqual(tokenState, .readError)
+        XCTAssertTrue(mockOAuthClient.getTokensTriggers.isEmpty)
+    }
 
     func testGetTokenContainer_Success() async throws {
         let expectedTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -119,6 +148,11 @@ class SubscriptionManagerTests: XCTestCase {
     }
 
     func testGetTokenContainer_UnknownAccount_SendsGetTokensError() async throws {
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+        mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.subscription(
+            status: .autoRenewable,
+            activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)])
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
 
         do {
@@ -132,6 +166,43 @@ class SubscriptionManagerTests: XCTestCase {
 
         assertGetTokensErrorPixel(policy: .localValid)
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
+
+        let automaticSignOut = try XCTUnwrap(automaticSignOutPixel())
+        let automaticSignOutData = automaticSignOut.data
+        let automaticSignOutError = automaticSignOut.error as NSError
+        XCTAssertEqual(automaticSignOutError.domain, OAuthClientError.errorDomain)
+        XCTAssertEqual(automaticSignOutError.code, OAuthClientError.unknownAccount.errorCode)
+        XCTAssertNil(automaticSignOutError.userInfo[NSUnderlyingErrorKey])
+        XCTAssertEqual(automaticSignOutData.recoveryOutcome, .notApplicable)
+        XCTAssertEqual(automaticSignOutData.tokenCachePolicy, .localValid)
+        XCTAssertEqual(automaticSignOutData.entitlementStateBefore, .present)
+        XCTAssertEqual(automaticSignOutData.accessTokenTimeRemainingBefore, .lessThanOneHour)
+        XCTAssertEqual(automaticSignOutData.refreshTokenTimeRemainingBefore, .lessThanOneHour)
+        XCTAssertEqual(automaticSignOutData.refreshTokenAgeBefore, .lessThanOneHour)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .active)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTimeRemainingBefore, .moreThanThreeDays)
+        XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
+        XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
+    }
+
+    func testGetTokenContainer_UnknownAccount_WhenLogoutFails_ReportsLocalTokenStillPresent() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
+        mockOAuthClient.logoutError = NSError(domain: "Logout", code: 1)
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Error expected")
+        } catch SubscriptionManagerError.noTokenAvailable {
+            // Expected.
+        }
+
+        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixel()).data
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .unavailable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .unavailable)
+        XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .present)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {
@@ -146,11 +217,14 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
+        XCTAssertNil(automaticSignOutPixel())
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoveryFailure_Pixels() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.appleSubscription
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
-        overrideTokenResponseInRecoveryHandler = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "RecoveryError", code: 1)
 
         do {
             _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -165,6 +239,50 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
+
+        let automaticSignOut = try XCTUnwrap(automaticSignOutPixel())
+        let automaticSignOutData = automaticSignOut.data
+        let automaticSignOutError = automaticSignOut.error as NSError
+        XCTAssertEqual(automaticSignOutError.domain, OAuthClientError.errorDomain)
+        XCTAssertEqual(automaticSignOutError.code, OAuthClientError.invalidTokenRequest(.reused).errorCode)
+        let underlyingError = try XCTUnwrap(automaticSignOutError.userInfo[NSUnderlyingErrorKey] as? NSError)
+        XCTAssertEqual(underlyingError.domain, OAuthRequest.TokenStatus.errorDomain)
+        XCTAssertEqual(underlyingError.code, OAuthRequest.TokenStatus.reused.errorCode)
+        XCTAssertEqual(automaticSignOutData.recoveryOutcome, .failed)
+        XCTAssertEqual(automaticSignOutData.entitlementStateBefore, .present)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .notActive)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
+        // The recovery attempt drops the stored container, but that happens after the request this
+        // pixel describes, so the token is still reported as unchanged during the attempt itself.
+        XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
+        XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
+    }
+
+    func testGetTokenContainer_InvalidTokenRequest_WhenRecoveryClearsState_ReportsStateFromBeforeRecovery() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionCachingService.cachedSubscription = SubscriptionMockFactory.appleSubscription
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        overrideTokenResponseInRecoveryHandler = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        // The real restore flow clears the subscription cache and adopts a new token container before
+        // it can fail, so the pixel must report what was there when the request failed, not after.
+        recoveryHandlerSideEffect = { [weak self] in
+            self?.mockSubscriptionCachingService.cachedSubscription = nil
+            self?.mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeDeadTokenContainer()
+        }
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Error expected")
+        } catch SubscriptionManagerError.noTokenAvailable {
+            // Expected.
+        }
+
+        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixel()).data
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionStatusBefore, .autoRenewable)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionTrialStatusBefore, .notActive)
+        XCTAssertEqual(automaticSignOutData.cachedSubscriptionPurchasePlatformBefore, .appStore)
+        XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
     }
 
     // MARK: - Invalid-token recovery wide event completion
@@ -232,6 +350,7 @@ class SubscriptionManagerTests: XCTestCase {
 
         // With no recovery handler, recovery cannot even be attempted (as on non-App-Store platforms).
         subscriptionManager.tokenRecoveryHandler = nil
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
 
         do {
@@ -250,6 +369,11 @@ class SubscriptionManagerTests: XCTestCase {
         // invalid-token error is preserved for debugging.
         XCTAssertNil(refreshData.recoveryDuration)
         XCTAssertNotNil(refreshData.errorData)
+
+        let automaticSignOutData = try XCTUnwrap(automaticSignOutPixel()).data
+        XCTAssertEqual(automaticSignOutData.recoveryOutcome, .notAttempted)
+        XCTAssertEqual(automaticSignOutData.storedRefreshTokenStateDuringAttempt, .unchanged)
+        XCTAssertEqual(automaticSignOutData.localTokenStateAfterSignOut, .missing)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_SelectsNewestPendingFlow() async throws {
@@ -562,7 +686,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2Error.invalidResponse)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
-            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
+            _ = try await subscriptionManager.confirmPurchase(signature: testSignature, experimentAttribution: nil)
             XCTFail("Error expected")
         } catch {
             XCTAssertEqual(error as? APIRequestV2Error, APIRequestV2Error.invalidResponse)
@@ -593,7 +717,7 @@ class SubscriptionManagerTests: XCTestCase {
         mockSubscriptionEndpointService.getSubscriptionTierFeaturesResult = .failure(APIServiceError.serverError(statusCode: 500, statusDescription: "Internal Server Error"))
 
         do {
-            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", additionalParams: nil)
+            _ = try await subscriptionManager.confirmPurchase(signature: "testSignature", experimentAttribution: nil)
             XCTFail("Error expected from tier-features failure")
         } catch {
             // The cache must hold the raw (unenriched) subscription — not be empty.
@@ -788,7 +912,46 @@ class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Tests for hasAppStoreProductsAvailablePublisher
 
+    @MainActor
+    func testWhenInitialProductFetchFinishesThenAvailabilityIsResolved() async {
+        for available in [false, true] {
+            let store = StorePurchaseManagerMock()
+            let defaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+            let manager = DefaultSubscriptionManager(
+                storePurchaseManager: store,
+                oAuthClient: mockOAuthClient,
+                userDefaults: defaults,
+                subscriptionEndpointService: mockSubscriptionEndpointService,
+                subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
+                pixelHandler: mockPixelHandler
+            )
+            store.onUpdateAvailableProducts = { [weak manager, weak store] in
+                XCTAssertEqual(manager?.hasResolvedAppStoreProducts, false)
+                store?.areProductsAvailable = available
+            }
+            XCTAssertFalse(manager.hasResolvedAppStoreProducts)
+            XCTAssertFalse(manager.hasAppStoreProductsAvailable)
+
+            let resolved = expectation(description: "initial product fetch resolved")
+            let cancellable = manager.hasAppStoreProductsAvailablePublisher
+                .sink { value in
+                    XCTAssertTrue(manager.hasResolvedAppStoreProducts)
+                    XCTAssertEqual(value, available)
+                    XCTAssertEqual(manager.hasAppStoreProductsAvailable, available)
+                    resolved.fulfill()
+                }
+            await fulfillment(of: [resolved], timeout: 1)
+
+            XCTAssertTrue(manager.hasResolvedAppStoreProducts)
+            XCTAssertEqual(manager.hasAppStoreProductsAvailable, available)
+            cancellable.cancel()
+        }
+    }
+
+    @MainActor
     func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
+        try await waitForInitialProductFetch()
+
         // Given
         let expectation = expectation(description: "Publisher should emit value")
         var receivedValue: Bool?
@@ -811,7 +974,10 @@ class SubscriptionManagerTests: XCTestCase {
         cancellable.cancel()
     }
 
+    @MainActor
     func testCanPurchasePublisherEmitsMultipleValues() async throws {
+        try await waitForInitialProductFetch()
+
         // Given
         let expectation1 = expectation(description: "Publisher should emit first value")
         let expectation2 = expectation(description: "Publisher should emit second value")
@@ -840,6 +1006,19 @@ class SubscriptionManagerTests: XCTestCase {
         cancellable.cancel()
     }
 
+    @MainActor
+    private func waitForInitialProductFetch() async throws {
+        let manager = try XCTUnwrap(subscriptionManager)
+        guard !manager.hasResolvedAppStoreProducts else { return }
+
+        let resolved = expectation(description: "initial product fetch finished before forwarding test")
+        let cancellable = manager.hasAppStoreProductsAvailablePublisher
+            .first { _ in manager.hasResolvedAppStoreProducts }
+            .sink { _ in resolved.fulfill() }
+        await fulfillment(of: [resolved], timeout: 1)
+        cancellable.cancel()
+    }
+
     private func assertGetTokensErrorPixel(policy: AuthTokensCachePolicy) {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(where: { pixel in
             guard case .getTokensError(let capturedPolicy, _) = pixel else { return false }
@@ -852,6 +1031,15 @@ class SubscriptionManagerTests: XCTestCase {
             if case .getTokensError = pixel { return true }
             return false
         }))
+    }
+
+    private func automaticSignOutPixel() -> (data: SubscriptionAutomaticSignOutPixelData, error: Error)? {
+        mockPixelHandler.handledPixels.compactMap { pixel in
+            guard case .automaticSignOut(let data, let error) = pixel else {
+                return nil
+            }
+            return (data, error)
+        }.first
     }
 }
 
@@ -870,7 +1058,7 @@ private final class MockSubscriptionPixelHandler: SubscriptionPixelHandling {
     }
 }
 
-private struct SubscriptionPixelEvent: PixelKitEvent {
+private struct SubscriptionPixelEvent: PixelKit.Event {
     let name: String
     let parameters: [String: String]?
     let standardParameters: [PixelKitStandardParameter]? = [.pixelSource]

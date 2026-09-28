@@ -26,6 +26,7 @@ import WebKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
+import FeatureFlags_iOS
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 
@@ -118,6 +119,23 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
             message: message
         )
         waitForExpectations(timeout: 1.0)
+    }
+
+    @MainActor
+    func testWhenNativeAutoconsentPixelFiresThenHeuristicModeMatchesInitConfiguration() {
+        let cases: [(preference: CookiePopupPreference, heuristicEnabled: Bool, expectedMode: String)] = [
+            (.default, true, "tier1"),
+            (.max, true, "tier2"),
+            (.default, false, "off"),
+        ]
+
+        for testCase in cases {
+            assertHeuristicMode(
+                preference: testCase.preference,
+                heuristicEnabled: testCase.heuristicEnabled,
+                expectedMode: testCase.expectedMode
+            )
+        }
     }
 
     @MainActor
@@ -370,6 +388,30 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
         )
         waitForExpectations(timeout: 1.0)
         return receivedReply
+    }
+
+    @MainActor
+    private func assertHeuristicMode(preference: CookiePopupPreference,
+                                     heuristicEnabled: Bool,
+                                     expectedMode: String) {
+        let config = MockPrivacyConfiguration()
+        let preferences = MockAutoconsentPreferences()
+        preferences.cookiePopupPreference = preference
+        let enabledFeatureFlags: [FeatureFlag] = heuristicEnabled ? [.heuristicAction] : []
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabledFeatureFlags)
+        let management = MockAutoconsentManagement()
+        userScript = AutoconsentUserScript(
+            config: config,
+            preferences: preferences,
+            featureFlagger: featureFlagger
+        )
+        userScript.management = management
+
+        let response = sendInit(url: "https://example.com")
+        let initConfig = response?["config"] as? [String: Any]
+
+        XCTAssertEqual(initConfig?["heuristicMode"] as? String, expectedMode)
+        XCTAssertEqual(management.lastAdditionalParameters?["consentHeuristicEnabled"], expectedMode)
     }
 
     private func cookieConsentInfoDictionary(from cookieConsentInfo: CookieConsentInfo?) throws -> [String: Any] {

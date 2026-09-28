@@ -61,3 +61,15 @@ public enum HideAIGeneratedImages {
         }
     }
 }
+
+/// Value encoding for the SERP "Safe Search" setting (`kp`).
+///
+/// https://dub.duckduckgo.com/duckduckgo/ddg/blob/4cba2efc31a20e98e0e72ec0661fe33b2ddf6e84/www-release/frontend/src/js/data/settings.json#L187
+public enum SafeSearch: String {
+    case strict = "1"
+    case moderate = "-1"
+    case off = "-2"
+
+    /// Bundled default, used when the key is absent from native storage.
+    public static let defaultValue: SafeSearch = .moderate
+}

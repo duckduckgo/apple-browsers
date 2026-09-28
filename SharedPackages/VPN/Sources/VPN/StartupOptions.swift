@@ -32,7 +32,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
     let dnsSettings: NetworkProtectionDNSSettings
     let excludeLocalNetworks: Bool
     let excludeCGNAT: Bool
-    let isOrphanProxyDetectionEnabled: Bool
+    let enforceRoutes: Bool
+    let sessionHealthTelemetryEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
         case registrationKeyValidity
@@ -42,7 +43,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         case dnsSettings
         case excludeLocalNetworks
         case excludeCGNAT
-        case isOrphanProxyDetectionEnabled
+        case enforceRoutes
+        case sessionHealthTelemetryEnabled
     }
 
     /// Create a snapshot of the current VPN settings
@@ -54,7 +56,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.dnsSettings = settings.dnsSettings
         self.excludeLocalNetworks = settings.excludeLocalNetworks
         self.excludeCGNAT = settings.excludeCGNAT
-        self.isOrphanProxyDetectionEnabled = settings.isOrphanProxyDetectionEnabled
+        self.enforceRoutes = settings.enforceRoutes
+        self.sessionHealthTelemetryEnabled = settings.sessionHealthTelemetryEnabled
     }
 
     /// Create a snapshot with explicit values
@@ -65,7 +68,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
                 dnsSettings: NetworkProtectionDNSSettings,
                 excludeLocalNetworks: Bool,
                 excludeCGNAT: Bool = UserDefaults.excludeCGNATDefaultValue,
-                isOrphanProxyDetectionEnabled: Bool = UserDefaults.orphanProxyDetectionEnabledDefaultValue) {
+                enforceRoutes: Bool = UserDefaults.enforceRoutesDefaultValue,
+                sessionHealthTelemetryEnabled: Bool = UserDefaults.sessionHealthTelemetryEnabledDefaultValue) {
         self.registrationKeyValidity = registrationKeyValidity
         self.selectedEnvironment = selectedEnvironment
         self.selectedServer = selectedServer
@@ -73,7 +77,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         self.dnsSettings = dnsSettings
         self.excludeLocalNetworks = excludeLocalNetworks
         self.excludeCGNAT = excludeCGNAT
-        self.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
+        self.enforceRoutes = enforceRoutes
+        self.sessionHealthTelemetryEnabled = sessionHealthTelemetryEnabled
     }
 
     /// Custom decoding so snapshots persisted by older versions still decode, falling back to default
@@ -87,8 +92,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         dnsSettings = try container.decode(NetworkProtectionDNSSettings.self, forKey: .dnsSettings)
         excludeLocalNetworks = try container.decode(Bool.self, forKey: .excludeLocalNetworks)
         excludeCGNAT = try container.decodeIfPresent(Bool.self, forKey: .excludeCGNAT) ?? UserDefaults.excludeCGNATDefaultValue
-        isOrphanProxyDetectionEnabled = try container.decodeIfPresent(Bool.self, forKey: .isOrphanProxyDetectionEnabled)
-            ?? UserDefaults.orphanProxyDetectionEnabledDefaultValue
+        enforceRoutes = try container.decodeIfPresent(Bool.self, forKey: .enforceRoutes) ?? UserDefaults.enforceRoutesDefaultValue
+        sessionHealthTelemetryEnabled = try container.decodeIfPresent(Bool.self, forKey: .sessionHealthTelemetryEnabled) ?? UserDefaults.sessionHealthTelemetryEnabledDefaultValue
     }
 
     /// Apply these settings to a VPNSettings instance
@@ -100,7 +105,8 @@ public struct VPNSettingsSnapshot: Codable, Equatable {
         settings.dnsSettings = dnsSettings
         settings.excludeLocalNetworks = excludeLocalNetworks
         settings.excludeCGNAT = excludeCGNAT
-        settings.isOrphanProxyDetectionEnabled = isOrphanProxyDetectionEnabled
+        settings.enforceRoutes = enforceRoutes
+        settings.sessionHealthTelemetryEnabled = sessionHealthTelemetryEnabled
     }
 }
 
@@ -161,6 +167,17 @@ public struct StartupOptions {
             switch self {
             case .set(let value):
                 return String(describing: value)
+            case .reset:
+                return "reset"
+            case .useExisting:
+                return "useExisting"
+            }
+        }
+
+        var stateDescription: String {
+            switch self {
+            case .set:
+                return "set"
             case .reset:
                 return "reset"
             case .useExisting:
@@ -232,7 +249,7 @@ public struct StartupOptions {
         """
 #if os(macOS)
         result += """
-            tokenContainer: \(self.tokenContainer),
+            tokenContainer: \(self.tokenContainer.stateDescription),
         """
 #endif
         return result

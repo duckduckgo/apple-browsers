@@ -24,12 +24,13 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Networking
 import Subscription
 import os.log
 import Configuration
-import FeatureFlags
+import FeatureFlags_macOS
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
@@ -135,6 +136,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
             featureFlagger: dbpFeatureFlagger,
             wideEvent: wideEvent,
             vpnBypassService: VPNBypassService(),
+            resourceMonitor: dbpFeatureFlagger.isPerformanceMetricsOn ? ResourceMonitor() : nil,
             applicationNameForUserAgentProvider: { WebViewUserAgentProvider.applicationNameForUserAgent }
         )
         manager?.agentFinishedLaunching()

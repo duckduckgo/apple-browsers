@@ -81,8 +81,8 @@ Check the pixel event's `parameters` computed property in Swift for any addition
 ### Where to Look in Swift
 
 - **iOS:** `iOS/Core/PixelEvent.swift` defines pixel names. `iOS/Core/Pixel.swift` has `PixelParameters` constants. Check the `parameters` and `standardParameters` properties on the pixel event enum.
-- **macOS:** `macOS/DuckDuckGo/Statistics/GeneralPixel.swift` defines many pixel names, parameters, and standard parameters. However, pixel events can also be defined in dedicated files (e.g. `UpdateFlowPixels.swift`, `CrashReportPixels.swift`) — search for types conforming to `PixelKitEvent`.
-- **Shared:** `SharedPackages/BrowserServicesKit/Sources/PixelKit/` contains `PixelKit.swift` (firing logic) and `PixelKitEvent.swift` (protocol).
+- **macOS:** `macOS/DuckDuckGo/Statistics/GeneralPixel.swift` defines many pixel names, parameters, and standard parameters. However, pixel events can also be defined in dedicated files (e.g. `UpdateFlowPixels.swift`, `CrashReportPixels.swift`) — search for types conforming to `PixelKit.Event`.
+- **Shared:** `SharedPackages/BrowserServicesKit/Sources/PixelKit/` contains `PixelKit.swift` (firing logic) and `PixelKit+Event.swift` (the `PixelKit.Event` protocol).
 
 ## Reusing Parameters from the Dictionary
 

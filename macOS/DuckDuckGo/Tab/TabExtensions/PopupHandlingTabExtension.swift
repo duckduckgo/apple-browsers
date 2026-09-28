@@ -21,9 +21,9 @@ import Combine
 import Common
 import ConcurrencyExtensions
 import ContentBlocking
-import FeatureFlags
+import FeatureFlags_macOS
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import OSLog
 import PrivacyConfig
 import TrackerRadarKit
@@ -312,7 +312,8 @@ final class PopupHandlingTabExtension {
         if let sourceFrame = navigationAction.safeSourceFrame {
             let allowlist = popupBlockingConfig.allowlist
             let sourceHost = sourceFrame.securityOrigin.host
-            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist),
+               !permissionModel.isPopupBlockedByDefault(forDomain: sourceHost) {
                 Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
                 return .allowlistedDomain(sourceHost)
             }
@@ -427,6 +428,10 @@ extension PopupHandlingTabExtension: NavigationResponder {
 
         // Must be targeting an existing frame (not a new window/tab)
         guard let targetFrame = navigationAction.targetFrame else { return .next }
+
+        // Downloads must stay in the initiating tab: re-loading the URL in a new tab drops the download
+        // intent (and `blob:` URLs are only resolvable in the page that created them).
+        guard !navigationAction.shouldDownload else { return .next }
 
         // Check if the navigation action is a link activation (clicked link, etc.)
         let isLinkActivated = !navigationAction.isTargetingNewWindow

@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import FeatureFlags_iOS
 struct SmallOmniBarState {
 
     struct HomeEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
@@ -112,7 +113,11 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showCustomizableButton = false
+        var showCustomizableButton: Bool {
+            guard dependencies.featureFlagger.isFeatureOn(.customizeNTPIcons) else { return false }
+            let state = dependencies.mobileCustomization.state
+            return state.isEnabled && !state.currentAddressBarButton.requiresWebPage
+        }
         let showMenu = false
         let showSettings = false
         let showDismiss = false
@@ -298,7 +303,7 @@ struct SmallOmniBarState {
     }
     
     /// OmniBarState used when displaying AI Chat in a tab on iPad at small width.
-    /// Unlike `AIChatModeState` (which hides everything for iPhone full-mode branding),
+    /// Unlike `AIChatModeState` (which hides the omnibar for iPhone AI tabs),
     /// this state presents a normal browsing-style address bar with `showAIChatButton = false`.
     struct AIChatTabModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
         let hasLargeWidth = false
@@ -343,7 +348,7 @@ struct SmallOmniBarState {
         let isLoading: Bool
     }
 
-    /// OmniBarState used when a displaying AI Chat in 'full mode' (i.e in a tab)
+    /// OmniBarState used when displaying AI Chat in a tab on iPhone.
     struct AIChatModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
         var hasLargeWidth = false
         let showBackButton = false
@@ -365,8 +370,6 @@ struct SmallOmniBarState {
         let showDismiss = false
         let showVoiceSearch = false
         let isBrowsing = false
-        let showAIChatFullModeBranding = true
-        
         var allowCustomization = false
 
         var name: String { "Phone" + Type.name(self) }

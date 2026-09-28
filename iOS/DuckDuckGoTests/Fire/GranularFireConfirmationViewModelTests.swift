@@ -24,8 +24,7 @@ import Common
 import FoundationExtensions
 import History
 import AIChat
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 // swiftlint:disable force_try
 

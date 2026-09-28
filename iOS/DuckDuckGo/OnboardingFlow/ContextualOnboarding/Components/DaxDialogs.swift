@@ -47,6 +47,9 @@ protocol ContextualDaxDialogDisabling {
 
 protocol ContextualDaxDialogStatusProvider {
     var hasSeenOnboarding: Bool { get }
+    /// `true` while a contextual onboarding NTP dialog is currently visible on screen —
+    /// i.e. a home-screen spec has been returned but `setDaxDialogDismiss()` has not yet been called.
+    var isShowingContextualOnboardingDialog: Bool { get }
 }
 
 protocol ContextualOnboardingLogic {
@@ -381,6 +384,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
             return true
         }
         return false
+    }
+
+    var isShowingContextualOnboardingDialog: Bool {
+        lastShownDaxDialogType != nil || currentHomeSpec != nil
     }
 
     func setLastShownDialog(type: BrowsingSpec.SpecType) {

@@ -59,12 +59,19 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
         registerHandlersForExtension(identifier: identifier, context: context)
+        if context.webExtension.duckDuckGoWebExtensionType == .embedded {
+            MainActor.assumeIsolated {
+                cpmDiagnosticsRecorder?.contextWillLoad(context)
+            }
+        }
     }
 }
 
 // MARK: - Native Messaging
 
+/// This needs to be on the MainActor because accessing extension properties can cause concurrency problems.
 @available(macOS 15.4, iOS 18.4, *)
+@MainActor
 extension WebExtensionManager {
 
     enum MessageParsingError: Error, LocalizedError {
@@ -116,7 +123,7 @@ extension WebExtensionManager {
                                        sendMessage message: Any,
                                        toApplicationWithIdentifier applicationIdentifier: String?,
                                        for extensionContext: WKWebExtensionContext) async throws -> Any? {
-        let displayName = await extensionContext.webExtension.displayName ?? "(unknown)"
+        let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
         Logger.webExtensions.debug("📬 Received native message from extension: \(displayName)")
 
 //        Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")
@@ -164,7 +171,7 @@ extension WebExtensionManager {
     public func webExtensionController(_ controller: WKWebExtensionController,
                                        connectUsing port: WKWebExtension.MessagePort,
                                        for extensionContext: WKWebExtensionContext) async throws {
-        let displayName = await extensionContext.webExtension.displayName ?? "(unknown)"
+        let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
         Logger.webExtensions.debug("🔗 Connected to extension: \(displayName)")
 
         // Not supported

@@ -29,6 +29,8 @@ public final class ConnectionFailureLoopDetector {
 
     private let store: ThrowingKeyValueStoring
 
+    public private(set) var shouldSuppressCurrentAttemptTelemetry = false
+
     public var connectionLoopDetected: Bool {
         let count = (try? store.object(forKey: Keys.consecutiveFailureCount) as? Int) ?? 0
         return count > Self.threshold
@@ -36,6 +38,17 @@ public final class ConnectionFailureLoopDetector {
 
     public init(store: ThrowingKeyValueStoring) {
         self.store = store
+    }
+
+    /// Latches suppression for the whole attempt so nested telemetry, such as AuthV2 refresh,
+    /// uses the failure count from before the outer VPN failure is recorded.
+    public func connectionStarted(isOnDemand: Bool) {
+        let count = (try? store.object(forKey: Keys.consecutiveFailureCount) as? Int) ?? 0
+        shouldSuppressCurrentAttemptTelemetry = isOnDemand && count >= Self.threshold
+    }
+
+    public func connectionFinished() {
+        shouldSuppressCurrentAttemptTelemetry = false
     }
 
     @discardableResult
@@ -61,6 +74,7 @@ public final class ConnectionFailureLoopDetector {
     }
 
     private func resetState() {
+        connectionFinished()
         try? store.set(0, forKey: Keys.consecutiveFailureCount)
     }
 }

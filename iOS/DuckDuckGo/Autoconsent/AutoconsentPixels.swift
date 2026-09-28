@@ -20,7 +20,9 @@
 import PixelKit
 import UIKit
 
-enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
+enum AutoconsentPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
 
     case acInit
     case errorMultiplePopups
@@ -125,7 +127,9 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     }
 
 
-    var namePrefix: String {
+    var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(macOS)
         return "m_mac"
 #elseif os(iOS)

@@ -31,22 +31,12 @@ protocol PrivacyShieldAddressBarStyleProviding {
     var animationForShieldWithDot: String { get }
 }
 
-final class LegacyPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
-    let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
-    let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
-
-    let hoverAnimation: String = "shield-green-hover"
-    let hoverAnimationWithDot: String = "shield-gray-dot-hover"
-    let animationForShield: String = "shield.new"
-    let animationForShieldWithDot: String = "shield-dot-new"
-}
-
-final class LatestPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
+final class PrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
     let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
     let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
 
     let hoverAnimation: String = "Shield-Color-24-Hover"
-    let hoverAnimationWithDot: String = "shield-gray-dot-hover"
+    let hoverAnimationWithDot: String = "Shield-Off-Gray"
     let animationForShield: String = "Shield-Color-24"
-    let animationForShieldWithDot: String = "shield-dot-new"
+    let animationForShieldWithDot: String = "Shield-Off-Gray"
 }

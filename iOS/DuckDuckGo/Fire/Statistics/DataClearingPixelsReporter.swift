@@ -58,4 +58,25 @@ final class DataClearingPixelsReporter {
     func fireUserActionBeforeCompletionPixel() {
         pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
     }
+
+    // MARK: - Data Clearing Completion
+
+    /// An in-flight duration measurement. Opaque so callers cannot mint or adjust a start time
+    /// themselves; the clock stays the injected `timeProvider`.
+    struct Measurement {
+        fileprivate let start: CFTimeInterval
+    }
+
+    /// Starts measuring. Pair with `duration(of:)` once the measured work completes.
+    func beginMeasurement() -> Measurement {
+        Measurement(start: timeProvider())
+    }
+
+    func duration(of measurement: Measurement) -> TimeInterval {
+        timeProvider() - measurement.start
+    }
+
+    func fireDataClearingCompletionPixel(_ pixel: DataClearingCompletionPixels) {
+        pixelFiring?.fire(pixel, frequency: .standard)
+    }
 }

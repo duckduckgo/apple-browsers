@@ -32,6 +32,7 @@ import AIChat
 import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
+import PixelKit
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -63,6 +64,8 @@ class SettingsLegacyViewProvider: ObservableObject {
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
+    let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -85,7 +88,9 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
+         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -108,6 +113,8 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
+        self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
     }
     
     enum LegacyView {
@@ -116,7 +123,6 @@ class SettingsLegacyViewProvider: ObservableObject {
              autofill,
              appIcon,
              gpc,
-             autoconsent,
              unprotectedSites,
              fireproofSites,
              keyboard,
@@ -131,10 +137,9 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateAppIconController(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
-        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
-        return storyboard.instantiateViewController(identifier: "AppIcon") { coder in
-            return AppIconSettingsViewController(onChange: onChange, coder: coder)
-        }
+        let hostingController = UIHostingController(rootView: SettingsAppIconPicker(onChange: onChange))
+        hostingController.title = UserText.settingsIcon
+        return hostingController
     }
 
     private func instantiateFireproofingController() -> UIViewController {
@@ -165,14 +170,15 @@ class SettingsLegacyViewProvider: ObservableObject {
             subscriptionDataReporter: self.subscriptionDataReporter,
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
-            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler))
+            duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
+            promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
-    var autoConsent: UIViewController { instantiate("AutoconsentSettingsViewController", fromStoryboard: StoryboardName.settings) }
-    var unprotectedSites: UIViewController { instantiate("UnprotectedSites", fromStoryboard: StoryboardName.settings) }
+    var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }
@@ -238,7 +244,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         case .legacy(let importScreen):
             return makeDataImportViewController(importScreen: importScreen, delegate: delegate)
         case .hub:
-            Pixel.fire(pixel: .importHubEntryTapped, withAdditionalParameters: importScreen.importHubEntryPointParameters)
+            PixelKit.fire(Pixel.Event.importHubEntryTapped, options: .parameters(importScreen.importHubEntryPointParameters))
             return DataImportHubViewController(syncService: syncService,
                                                 keyValueStore: keyValueStore,
                                                 bookmarksDatabase: bookmarksDatabase,

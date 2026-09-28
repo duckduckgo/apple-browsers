@@ -32,7 +32,7 @@ import PixelKit
  * Anomaly Investigation:
  * - Unless otherwise specified, anomaly in all the pixels will be related to an increase/drop in app use.
  */
-enum HistoryViewPixel: PixelKitEvent {
+enum HistoryViewPixel: PixelKit.Event {
 
     // MARK: - Permanent Pixels
 

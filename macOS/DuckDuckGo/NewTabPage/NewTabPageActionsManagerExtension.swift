@@ -116,15 +116,32 @@ extension NewTabPageActionsManager {
         )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences
+            tabsPreferences: tabsPreferences,
+            historyCoordinator: historyCoordinator,
+            aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ))
         )
+        let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            duckAiStorageHandlerProvider: { burnerMode in
+                NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
+                    ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+            },
+            // Reuses whatever the model picker last resolved, rather than repeating the subscription
+            // lookup on every input activation.
+            userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
+            availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
+            isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()
@@ -232,9 +249,13 @@ extension NewTabPageActionsManager {
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
                                     aiChatsProvider: aiChatsProvider,
-                                    modelsProvider: NewTabPageOmnibarModelsProvider(),
+                                    modelsProvider: omnibarModelsProvider,
                                     actionHandler: omnibarActionHandler,
-                                    tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager)),
+                                    tabsProvider: NewTabPageOmnibarTabsProvider(windowControllersManager: windowControllersManager),
+                                    subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenter(
+                                        coordinator: Application.appDelegate.subscriptionNavigationCoordinator,
+                                        subscriptionManager: Application.appDelegate.subscriptionManager
+                                    )),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

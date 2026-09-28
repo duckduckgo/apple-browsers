@@ -19,22 +19,32 @@
 import Foundation
 import Common
 import Networking
-import PixelKit
+import WideEvent
 
 public protocol AuthV2TokenRefreshInstrumenting: AnyObject {
     var eventMapping: EventMapping<OAuthClientRefreshEvent> { get }
 
-    func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?)
+    func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?, signedOut: Bool)
 }
 
 public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting {
 
     private let wideEvent: WideEventManaging
     private let isFeatureEnabled: () -> Bool
+    private let shouldSuppressFailure: () -> Bool
+    private let subscriptionCachingService: SubscriptionCachingService
+    private let netpIsRunningProvider: () -> Bool?
 
-    public init(wideEvent: WideEventManaging, isFeatureEnabled: @escaping () -> Bool) {
+    public init(wideEvent: WideEventManaging,
+                isFeatureEnabled: @escaping () -> Bool,
+                shouldSuppressFailure: @escaping () -> Bool = { false },
+                subscriptionCachingService: SubscriptionCachingService = DefaultSubscriptionCachingService(),
+                netpIsRunningProvider: @escaping () -> Bool? = { nil }) {
         self.wideEvent = wideEvent
         self.isFeatureEnabled = isFeatureEnabled
+        self.shouldSuppressFailure = shouldSuppressFailure
+        self.subscriptionCachingService = subscriptionCachingService
+        self.netpIsRunningProvider = netpIsRunningProvider
     }
 
     public var eventMapping: EventMapping<OAuthClientRefreshEvent> {
@@ -43,13 +53,14 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
         }
     }
 
-    public func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?) {
+    public func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?, signedOut: Bool) {
         guard isFeatureEnabled(),
               let data = newestPendingRecoveryFlow() else {
             return
         }
 
         data.recoveryOutcome = outcome
+        data.signedOut = signedOut
 
         switch outcome {
         case .succeeded:
@@ -66,14 +77,14 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             if let error {
                 data.errorData = WideEventErrorData(error: error)
             }
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            completeFailure(data)
 
         case .notAttempted:
             // No restore ran (no handler, or the platform can't restore), so the recovery latency
             // measured from invalid-token detection would be meaningless - drop it. Keep the
             // original invalid-token error/failing step that the flow already carries.
             data.recoveryDuration = nil
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            completeFailure(data)
         }
     }
 
@@ -85,6 +96,8 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             let data = AuthV2TokenRefreshWideEventData(globalData: WideEventGlobalData(id: refreshID))
             data.failingStep = .tokenRead
             data.refreshTrigger = trigger
+            data.subscriptionStatus = SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus(status: subscriptionCachingService.cachedSubscriptionStatus)
+            data.netpIsRunning = netpIsRunningProvider()
             wideEvent.startFlow(data)
 
         case .tokenRefreshRefreshingAccessToken(let refreshID):
@@ -147,8 +160,23 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             return
         }
 
+        // On a client refresh, `SubscriptionManager.getTokenContainer` signs the user out
+        // unconditionally after an unknown-account failure, and only after this event has fired.
+        if case OAuthClientError.unknownAccount = error,
+           (data.refreshTrigger ?? .client) == .client {
+            data.signedOut = true
+        }
+
         wideEvent.updateFlow(data)
-        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        completeFailure(data)
+    }
+
+    private func completeFailure(_ data: AuthV2TokenRefreshWideEventData) {
+        if shouldSuppressFailure() {
+            wideEvent.discardFlow(data)
+        } else {
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        }
     }
 
     private func newestPendingRecoveryFlow() -> AuthV2TokenRefreshWideEventData? {

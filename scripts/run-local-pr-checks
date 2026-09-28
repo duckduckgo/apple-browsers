@@ -53,12 +53,13 @@ usage() {
 Usage: scripts/run-local-pr-checks [options]
 
 Runs the cheap static PR checks CI enforces: ActionLint, ShellCheck, SwiftLint,
-pixel lint/validation, and translation/string checks. Each tool is skipped (not
-failed) when it is not installed.
+and pixel lint/validation. Each tool is skipped (not failed) when it is not
+installed. Translation/string checks are deliberately left to CI - they compare
+against the base branch and report strings this branch never touched.
 
 Options:
-  --platform ios|macos   Restrict per-platform checks (pixel + translation) to
-                         one platform. Default: both.
+  --platform ios|macos   Restrict per-platform checks (pixel) to one platform.
+                         Default: both.
   --all                  Run SwiftLint over the whole repo (CI parity) instead
                          of only files changed vs the base branch (origin/main,
                          or origin/$GITHUB_BASE_REF when set).
@@ -184,9 +185,12 @@ check_swiftlint() {
   # SwiftLint indexes its working directory even when given explicit files (~50s
   # on this repo); running from /tmp with --working-directory avoids that scan
   # while still resolving config and the Mintfile-pinned version from the root.
+  # --force-exclude is required because SwiftLint consults `excluded:` only when
+  # scanning directories, so without it explicit paths lint files the config
+  # excludes (Package.swift, UserText.swift) that CI's whole-repo scan skips.
   run_check "swiftlint (${#swift_files[@]} changed)" /tmp \
     mint run --mintfile "$REPO_ROOT/Mintfile" swiftlint lint --strict --quiet \
-    --working-directory "$REPO_ROOT" "${swift_files[@]}"
+    --force-exclude --working-directory "$REPO_ROOT" "${swift_files[@]}"
 }
 
 check_pixels() {
@@ -199,19 +203,6 @@ check_pixels() {
     fi
     run_check "pixel-lint ($plat)" "$REPO_ROOT/$plat" npm run pixel-lint
     run_check "pixel-defs ($plat)" "$REPO_ROOT/$plat" npm run validate-defs-without-formatting
-  done
-}
-
-check_translations() {
-  if ! have python3; then skip "translation checks" "python3 not installed"; return; fi
-  if ! base_ref_available; then skip "translation checks" "$BASE_REF not available — fetch it"; return; fi
-
-  local scripts=(verify_locale_list verify_string_extraction check_new_string_translations check_marker_consistency check_deleted_string_translations)
-  local plat script
-  for plat in "${PLATFORMS[@]}"; do
-    for script in "${scripts[@]}"; do
-      run_check "$script ($plat)" "$REPO_ROOT" python3 "scripts/translation-pr-checks/$script.py" --platform "$plat"
-    done
   done
 }
 
@@ -266,7 +257,6 @@ check_actionlint
 check_shellcheck
 check_swiftlint
 check_pixels
-check_translations
 
 # Summary line: shown for any terminal/CI run, and for a hook run that failed
 # (gives the agent the counts). Suppressed only when a hook run fully passes.

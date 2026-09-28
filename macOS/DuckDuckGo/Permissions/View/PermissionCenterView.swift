@@ -56,6 +56,11 @@ struct PermissionCenterView: View {
         return PopoverWidth.base
     }
 
+    /// Whether anything follows the permission rows container, which gets a tighter bottom padding when so
+    private var displaysContentBelowPermissions: Bool {
+        viewModel.showAutoplayDisclaimer || viewModel.showReloadBanner
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header - only show if there are permission items
@@ -78,6 +83,7 @@ struct PermissionCenterView: View {
                                 item: item,
                                 currentDecision: viewModel.currentPopupDecision(),
                                 showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
+                                showNeverAllowOption: viewModel.showPopupsNeverAllowOption,
                                 onDecisionChanged: { decision in
                                     viewModel.setPopupDecision(decision)
                                 },
@@ -137,7 +143,15 @@ struct PermissionCenterView: View {
                         .stroke(Color(designSystemColor: .lines), lineWidth: 1)
                 )
                 .padding(.horizontal, 16)
-                .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
+                .padding(.bottom, displaysContentBelowPermissions ? 12 : 16)
+            }
+
+            // Autoplay disclaimer
+            if viewModel.showAutoplayDisclaimer {
+                AutoplayDiscoverabilityView(linkTitle: viewModel.autoplaySettingsLinkTitle,
+                                            onClickSettings: viewModel.openAutoplaySettings)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
             }
 
             // Reload banner
@@ -150,6 +164,12 @@ struct PermissionCenterView: View {
         }
         .frame(width: popoverWidth)
         .background(Color(viewModel.backgroundColor))
+        .onHover { isHovered in
+            // Reaching the popover with the pointer counts as engaging with it: stop any pending autodismissal.
+            if isHovered {
+                viewModel.disableAutodismiss()
+            }
+        }
     }
 }
 
@@ -213,7 +233,6 @@ struct PermissionRowView: View {
     let onRemove: () -> Void
     let onRequestSystemPermission: (() -> Void)?
 
-    @State private var isRemoveButtonHovered = false
     @State private var currentDecision: PersistedPermissionDecision
 
     init(item: PermissionCenterItem,
@@ -249,21 +268,7 @@ struct PermissionRowView: View {
                     .opacity(item.isPendingRemoval ? 0.5 : 1.0)
 
                 // Remove button with hover effect
-                Button(action: onRemove) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
-                )
-                .onHover { hovering in
-                    isRemoveButtonHovered = hovering
-                }
+                PermissionRemoveButton(action: onRemove)
                 .help(UserText.permissionCenterResetTooltip)
                 .disabled(item.isPendingRemoval)
                 .opacity(item.isPendingRemoval ? 0.5 : 1.0)
@@ -324,24 +329,13 @@ struct PermissionRowView: View {
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
-                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")
                 item?.representedObject = decision
             }
 
             return button
         }
         .fixedSize()
-    }
-
-    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
-        switch decision {
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        }
     }
 
     /// Whether this is a notification permission that hasn't been requested from the system yet
@@ -356,7 +350,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: UserText.permissionCenterSystemNotificationNotDetermined,
                 linkText: UserText.permissionCenterTurnOnNotifications,
-                linkColor: .accentColor
+                linkColor: Color(designSystemColor: .accentTextPrimary)
             ) {
                 onRequestSystemPermission?()
             }
@@ -365,7 +359,7 @@ struct PermissionRowView: View {
             SystemPermissionWarningView(
                 prefixText: item.permissionType.systemPermissionDisabledText,
                 linkText: item.permissionType.systemSettingsLinkText,
-                linkColor: .accentColor,
+                linkColor: Color(designSystemColor: .accentTextPrimary),
                 linkOnNewLine: item.permissionType == .notification
             ) {
                 openSystemSettings()
@@ -387,17 +381,18 @@ struct PopupPermissionRowView: View {
     let item: PermissionCenterItem
     let currentDecision: PopupDecision
     let showAllowForThisVisitOption: Bool
+    let showNeverAllowOption: Bool
     let onDecisionChanged: (PopupDecision) -> Void
     let onOpenPopup: (BlockedPopup) -> Void
     let onRemove: () -> Void
 
-    @State private var isRemoveButtonHovered = false
     @State private var selectedDecision: PopupDecision
 
     init(
         item: PermissionCenterItem,
         currentDecision: PopupDecision,
         showAllowForThisVisitOption: Bool,
+        showNeverAllowOption: Bool,
         onDecisionChanged: @escaping (PopupDecision) -> Void,
         onOpenPopup: @escaping (BlockedPopup) -> Void,
         onRemove: @escaping () -> Void
@@ -405,11 +400,19 @@ struct PopupPermissionRowView: View {
         self.item = item
         self.currentDecision = currentDecision
         self.showAllowForThisVisitOption = showAllowForThisVisitOption
+        self.showNeverAllowOption = showNeverAllowOption
         self.onDecisionChanged = onDecisionChanged
         self.onOpenPopup = onOpenPopup
         self.onRemove = onRemove
-        // If "allow for this visit" option is not available and that was the current decision, fall back to notify
-        let effectiveDecision = (!showAllowForThisVisitOption && currentDecision == .allowForThisVisit) ? .notify : currentDecision
+        // Fall back to notify when the current decision has no matching option in the menu.
+        let effectiveDecision: PopupDecision
+        switch currentDecision {
+        case .allowForThisVisit where !showAllowForThisVisitOption,
+             .neverAllow where !showNeverAllowOption:
+            effectiveDecision = .notify
+        default:
+            effectiveDecision = currentDecision
+        }
         self._selectedDecision = State(initialValue: effectiveDecision)
     }
 
@@ -436,21 +439,7 @@ struct PopupPermissionRowView: View {
                     .opacity(item.isPendingRemoval ? 0.5 : 1.0)
 
                 // Remove button with hover effect
-                Button(action: onRemove) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
-                )
-                .onHover { hovering in
-                    isRemoveButtonHovered = hovering
-                }
+                PermissionRemoveButton(action: onRemove)
                 .help(UserText.permissionCenterResetTooltip)
                 .disabled(item.isPendingRemoval)
                 .opacity(item.isPendingRemoval ? 0.5 : 1.0)
@@ -518,6 +507,11 @@ struct PopupPermissionRowView: View {
             decisions.append((.notify, UserText.privacyDashboardPopupsAlwaysAsk))
             decisions.append((.alwaysAllow, UserText.privacyDashboardPermissionAlwaysAllow))
 
+            // Offered only while "Never allow" is the standing default for pop-ups.
+            if showNeverAllowOption {
+                decisions.append((.neverAllow, UserText.permissionCenterNeverAllow))
+            }
+
             for (decision, title) in decisions {
                 let menuItem = button.menu?.addItem(withTitle: title, action: nil, keyEquivalent: "")
                 menuItem?.representedObject = decision
@@ -583,7 +577,6 @@ struct ExternalSchemeRowView: View {
     let onDecisionChanged: (PersistedPermissionDecision) -> Void
     let onRemove: () -> Void
 
-    @State private var isRemoveButtonHovered = false
     @State private var currentDecision: PersistedPermissionDecision
 
     init(
@@ -613,21 +606,7 @@ struct ExternalSchemeRowView: View {
                 .opacity(schemeInfo.isPendingRemoval ? 0.5 : 1.0)
 
             // Remove button with hover effect
-            Button(action: onRemove) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(PlainButtonStyle())
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(isRemoveButtonHovered && !schemeInfo.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
-            )
-            .onHover { hovering in
-                isRemoveButtonHovered = hovering
-            }
+            PermissionRemoveButton(action: onRemove)
             .help(UserText.permissionCenterResetTooltip)
             .disabled(schemeInfo.isPendingRemoval)
             .opacity(schemeInfo.isPendingRemoval ? 0.5 : 1.0)
@@ -653,24 +632,13 @@ struct ExternalSchemeRowView: View {
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
-                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")
                 item?.representedObject = decision
             }
 
             return button
         }
         .fixedSize()
-    }
-
-    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
-        switch decision {
-        case .ask:
-            return UserText.permissionCenterAlwaysAsk
-        case .allow:
-            return UserText.permissionCenterAlwaysAllow
-        case .deny:
-            return UserText.permissionCenterNeverAllow
-        }
     }
 }
 
@@ -685,7 +653,6 @@ struct AutoplayPermissionRowView: View {
     let onRemove: () -> Void
 
     @State private var selectedDecision: AutoplayDecision
-    @State private var isRemoveButtonHovered = false
 
     private var pendingRemovalOpacity: Double {
         item.isPendingRemoval ? 0.5 : 1
@@ -732,21 +699,7 @@ struct AutoplayPermissionRowView: View {
                 .opacity(pendingRemovalOpacity)
 
             // Remove button
-            Button(action: onRemove) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(PlainButtonStyle())
-            .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
-            )
-            .onHover { hovering in
-                isRemoveButtonHovered = hovering
-            }
+            PermissionRemoveButton(action: onRemove)
             .help(UserText.permissionCenterResetTooltip)
             .disabled(item.isPendingRemoval || !isRemoveAllowed)
             .opacity(pendingRemovalOpacity)

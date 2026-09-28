@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import Core
+import PixelKit
 
 struct WidgetEducationView: View {
     typealias Detail = NumberedParagraphConfig.Detail
@@ -29,16 +30,6 @@ struct WidgetEducationView: View {
     let navBarTitle: String
     let thirdParagraphText: String
     let thirdParagraphDetail: Detail
-
-    var secondParagraphText: Text {
-        if #available(iOS 18, *) {
-            // The LocalizedStringKey wrapper is necessary to properly parse markdown
-            return Text(LocalizedStringKey(UserText.addWidgetSettingsSecondParagraph))
-        } else {
-            // Ref: https://stackoverflow.com/questions/62168292/what-s-the-equivalent-to-string-localizedstringwithformat-for-swiftuis-lo
-            return Text("addWidget.settings.secondParagraph.\(Image.add)")
-        }
-    }
 
     init(navBarTitle: String = UserText.settingsAddWidget,
          thirdParagraphText: String = UserText.addWidgetSettingsThirdParagraph,
@@ -55,19 +46,8 @@ struct WidgetEducationView: View {
                 Text(navBarTitle)
                     .font(.system(size: 22, weight: .bold, design: .default))
 
-                NumberedParagraphListView(
-                    paragraphConfig: [
-                        NumberedParagraphConfig(text: UserText.addWidgetSettingsFirstParagraph),
-                        NumberedParagraphConfig(
-                            text: secondParagraphText,
-                            detail: .image(Image.homeScreen,
-                                           maxWidth: Const.Size.exampleImageWidth)),
-                        NumberedParagraphConfig(
-                            text: thirdParagraphText,
-                            detail: thirdParagraphDetail)
-                    ]
-                )
-                .foregroundColor(Color.font)
+                WidgetEducationContentView(thirdParagraphText: thirdParagraphText,
+                                           thirdParagraphDetail: thirdParagraphDetail)
             }
             .padding(.horizontal, Const.Padding.horizontal)
             .padding(.top, Const.Padding.top)
@@ -75,8 +55,50 @@ struct WidgetEducationView: View {
         .navigationBarTitle("")
         .background(Color.background)
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsNextStepsAddWidget)
+            PixelKit.fire(Pixel.Event.settingsNextStepsAddWidget)
         }
+    }
+}
+
+/// The numbered "how to add a widget" steps, shared by ``WidgetEducationView`` (which wraps them in its own
+/// scroll + bold title) and the subscription onboarding widget step (which places them inside its own page
+/// chrome). Owns no scroll, title, background, or pixel — those belong to the host screen.
+struct WidgetEducationContentView: View {
+    typealias Detail = NumberedParagraphConfig.Detail
+
+    let thirdParagraphText: String
+    let thirdParagraphDetail: Detail
+
+    init(thirdParagraphText: String = UserText.addWidgetSettingsThirdParagraph,
+         thirdParagraphDetail: Detail = .image(Image.widgetExample, maxWidth: Const.Size.exampleImageWidth)) {
+        self.thirdParagraphText = thirdParagraphText
+        self.thirdParagraphDetail = thirdParagraphDetail
+    }
+
+    private var secondParagraphText: Text {
+        if #available(iOS 18, *) {
+            // The LocalizedStringKey wrapper is necessary to properly parse markdown
+            return Text(LocalizedStringKey(UserText.addWidgetSettingsSecondParagraph))
+        } else {
+            // Ref: https://stackoverflow.com/questions/62168292/what-s-the-equivalent-to-string-localizedstringwithformat-for-swiftuis-lo
+            return Text("addWidget.settings.secondParagraph.\(Image.add)")
+        }
+    }
+
+    var body: some View {
+        NumberedParagraphListView(
+            paragraphConfig: [
+                NumberedParagraphConfig(text: UserText.addWidgetSettingsFirstParagraph),
+                NumberedParagraphConfig(
+                    text: secondParagraphText,
+                    detail: .image(Image.homeScreen,
+                                   maxWidth: Const.Size.exampleImageWidth)),
+                NumberedParagraphConfig(
+                    text: thirdParagraphText,
+                    detail: thirdParagraphDetail)
+            ]
+        )
+        .foregroundColor(Color.font)
     }
 }
 

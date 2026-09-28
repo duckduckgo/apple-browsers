@@ -25,13 +25,23 @@ protocol SpeechRecognizerDelegate: AnyObject {
     func speechRecognizer(_ speechRecognizer: SpeechRecognizer, availabilityDidChange available: Bool)
 }
 
+enum SpeechRecognizerError: Error {
+    case audioInputUnavailable
+}
+
 final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
+    private static let speechRecognizerSerialOperationQueue: OperationQueue = {
+        let operationQueue = OperationQueue()
+        operationQueue.qualityOfService = .userInteractive
+        operationQueue.maxConcurrentOperationCount = 1
+        return operationQueue
+    }()
+
     weak var delegate: SpeechRecognizerDelegate?
     private var audioEngine: AVAudioEngine?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let speechRecognizer: SFSpeechRecognizer?
-    private let operationQueue: OperationQueue
     
     private(set) var isAvailable = false {
         didSet {
@@ -40,15 +50,13 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
     }
     
     override init() {
-        operationQueue = OperationQueue()
-        operationQueue.qualityOfService = .userInteractive
 #if targetEnvironment(simulator)
         speechRecognizer = nil
 #else
         speechRecognizer = SFSpeechRecognizer()
 #endif
-        speechRecognizer?.queue = operationQueue
-        
+        speechRecognizer?.queue = SpeechRecognizer.speechRecognizerSerialOperationQueue
+
         super.init()
         
         speechRecognizer?.delegate = self
@@ -58,7 +66,7 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
     private func updateAvailabilityFlag() {
         // https://app.asana.com/0/0/1201701558793614/1201934552312834
         
-        operationQueue.addOperation { [weak self] in
+        SpeechRecognizer.speechRecognizerSerialOperationQueue.addOperation { [weak self] in
             guard let self = self else { return }
             self.isAvailable = self.supportsOnDeviceRecognition && (self.speechRecognizer?.isAvailable ?? false)
         }
@@ -85,6 +93,11 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
         return Array(buffer)
     }
     
+    // AVFAudio raises `IsFormatSampleRateAndChannelCountValid` and aborts when a tap is installed with either value at zero.
+    static func isValidRecordingFormat(_ format: AVAudioFormat) -> Bool {
+        format.sampleRate > 0 && format.channelCount > 0
+    }
+
     func getVolumeLevel(from channelData: UnsafeMutablePointer<Float>) -> Float {
         let channelDataArray = Array(UnsafeBufferPointer(start: channelData, count: 1024))
         guard channelDataArray.count != 0 else { return 0 }
@@ -125,6 +138,10 @@ final class SpeechRecognizer: NSObject, SpeechRecognizerProtocol {
             let inputNode = audioEngine.inputNode
             
             let recordingFormat = inputNode.outputFormat(forBus: 0)
+            guard Self.isValidRecordingFormat(recordingFormat) else {
+                throw SpeechRecognizerError.audioInputUnavailable
+            }
+
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer: AVAudioPCMBuffer, _) in
                 recognitionRequest.append(buffer)
                 

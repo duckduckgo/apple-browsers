@@ -28,7 +28,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         static let chipHeight: CGFloat = 44
         static let imageChipWidth: CGFloat = 82
         static let fileChipWidth: CGFloat = 196
-        static let chipCornerRadius: CGFloat = 15
+        static let chipCornerRadius: CGFloat = chipHeight / 2
         static let thumbnailSize: CGFloat = 28
         static let thumbnailCornerRadius: CGFloat = 6
         static let documentIconSize: CGFloat = 28
@@ -48,6 +48,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.clipsToBounds = true
         view.layer.cornerRadius = Constants.chipCornerRadius
+        view.layer.cornerCurve = .continuous
         view.layer.borderWidth = Constants.borderWidth
         return view
     }()

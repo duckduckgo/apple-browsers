@@ -28,6 +28,8 @@ import PrivacyConfig
 import SecureStorage
 import SyncDataProviders
 import Core
+import FeatureFlags_iOS
+import PixelKit
 
 public class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter
@@ -173,9 +175,9 @@ public class SyncDataProviders: DataProvidersSource {
         syncMetadataDatabase.loadStore { context, error in
             guard context != nil else {
                 if let error = error {
-                    Pixel.fire(pixel: .syncMetadataCouldNotLoadDatabase, error: error)
+                    PixelKit.fire(Pixel.Event.syncMetadataCouldNotLoadDatabase.withError(error))
                 } else {
-                    Pixel.fire(pixel: .syncMetadataCouldNotLoadDatabase)
+                    PixelKit.fire(Pixel.Event.syncMetadataCouldNotLoadDatabase)
                 }
 
                 Thread.sleep(forTimeInterval: 1)

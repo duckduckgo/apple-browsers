@@ -21,6 +21,8 @@ import Common
 import FoundationExtensions
 import Foundation
 import os.log
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSource, NSOutlineViewDelegate {
 
@@ -82,7 +84,6 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     private let treeController: BookmarkTreeController
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
-    private let presentFaviconsFetcherOnboarding: (() -> Void)?
     private let themeManager: ThemeManaging
 
     init(
@@ -91,14 +92,12 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         treeController: BookmarkTreeController,
         dragDropManager: BookmarkDragDropManager,
         sortMode: BookmarksSortMode,
-        presentFaviconsFetcherOnboarding: (() -> Void)? = nil,
         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.contentMode = contentMode
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeController = treeController
-        self.presentFaviconsFetcherOnboarding = presentFaviconsFetcherOnboarding
         self.sortMode = sortMode
         self.themeManager = themeManager
 
@@ -228,7 +227,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         cell.update(from: node, isSearch: isSearching)
 
         if let bookmark = node.representedObject as? Bookmark, bookmark.favicon(.small) == nil {
-            presentFaviconsFetcherOnboarding?()
+            NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
         }
 
         return cell
@@ -291,10 +290,10 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         let favicon: NSImage?
         if let bookmark = entity as? Bookmark {
             title = bookmark.title.isEmpty ? bookmark.url : bookmark.title
-            favicon = bookmark.favicon(.small) ?? .bookmarkDefaultFavicon
+            favicon = bookmark.favicon(.small) ?? DesignSystemImages.Color.Size16.bookmark
         } else if let folder = entity as? BookmarkFolder {
             title = folder.title
-            favicon = .bookmarksFolder
+            favicon = DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder
         } else {
             assertionFailure("Unsupported entity type: \(entity)")
             return

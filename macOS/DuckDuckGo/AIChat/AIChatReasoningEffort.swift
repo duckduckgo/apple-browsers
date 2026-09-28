@@ -42,7 +42,7 @@ extension AIChatReasoningEffort {
     /// Icon used on the picker chip and in the menu.
     var icon: NSImage {
         switch self {
-        case .none, .minimal: return DesignSystemImages.Glyphs.Size16.thunderbolt
+        case .none, .minimal: return DesignSystemImages.Glyphs.Size16.lightning
         case .low: return DesignSystemImages.Glyphs.Size16.thinking
         case .medium, .high: return DesignSystemImages.Glyphs.Size16.timer
         }

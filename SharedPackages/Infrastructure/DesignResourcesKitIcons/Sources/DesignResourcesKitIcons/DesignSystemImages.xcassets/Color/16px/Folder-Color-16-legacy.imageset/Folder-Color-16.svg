@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#8FABF9" d="M6 1.5H4A3.5 3.5 0 0 0 .5 5v6A3.5 3.5 0 0 0 4 14.5h8a3.5 3.5 0 0 0 3.5-3.5V7A3.5 3.5 0 0 0 12 3.5h-2a2.5 2.5 0 0 1-2-1 2.5 2.5 0 0 0-2-1Z"/>
+  <path fill="#7295F6" d="M6 1.5H4A3.5 3.5 0 0 0 .5 5v1.5h15l-2-3H10a2.5 2.5 0 0 1-2-1 2.5 2.5 0 0 0-2-1Z"/>
+  <path fill="url(#Folder-Color-16_svg__a)" d="M6 1a3 3 0 0 1 2.4 1.2A2 2 0 0 0 10 3h2a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V5a4 4 0 0 1 4-4h2ZM1 7v4a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V7H1Zm3-5a3 3 0 0 0-3 3v1h13.829A3 3 0 0 0 12 4h-2a3 3 0 0 1-2.4-1.2A2 2 0 0 0 6 2H4Z"/>
+  <defs>
+    <linearGradient id="Folder-Color-16_svg__a" x1="8" x2="8" y1="1" y2="15" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3969EF"/>
+      <stop offset="1" stop-color="#1E42A4"/>
+    </linearGradient>
+  </defs>
+</svg>

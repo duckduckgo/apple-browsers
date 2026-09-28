@@ -216,7 +216,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    private lazy var attachmentPrivacyCounter = AttachmentPrivacyDisplayCounter(storageHandler: duckAiNativeStorageHandler)
+    private lazy var attachmentPrivacyCounter = AttachmentPrivacyDisplayCounter(
+        store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
+        webKeySource: duckAiNativeStorageHandler
+    )
 
     /// One grant per tab, because the draft is per tab: a granted display survives swapping or
     /// removing the attachment, and switching tabs and back must not spend a second one. Entries

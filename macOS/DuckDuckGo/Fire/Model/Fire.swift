@@ -195,7 +195,7 @@ final class Fire: FireProtocol {
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     let isAppActiveProvider: @MainActor () -> Bool
     let aiChatHistoryCleaner: AIChatHistoryCleaning
-    let attachmentPrivacyDisplayCounter: AttachmentPrivacyDisplayCounter
+    let attachmentPrivacyDisplayCountRegistry: AttachmentPrivacyDisplayCountRegistry
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     var dataClearingWideEventService: DataClearingWideEventService?
 
@@ -350,7 +350,7 @@ final class Fire: FireProtocol {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
-         attachmentPrivacyDisplayCounter: AttachmentPrivacyDisplayCounter? = nil,
+         attachmentPrivacyDisplayCountRegistry: AttachmentPrivacyDisplayCountRegistry? = nil,
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
          dataClearingWideEventService: DataClearingWideEventService? = nil,
          tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
@@ -381,8 +381,8 @@ final class Fire: FireProtocol {
         } else {
             self.stateRestorationManager = NSApp.delegateTyped.stateRestorationManager
         }
-        self.attachmentPrivacyDisplayCounter = attachmentPrivacyDisplayCounter
-            ?? AttachmentPrivacyDisplayCounter(storageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler)
+        self.attachmentPrivacyDisplayCountRegistry = attachmentPrivacyDisplayCountRegistry
+            ?? NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
@@ -612,7 +612,7 @@ final class Fire: FireProtocol {
             dataClearingWideEventService?.update(.clearAutoconsentStats, result: autoconsentStatsResult)
 
             // Not chat history: it records what the user was shown, so it clears on every burn.
-            self.attachmentPrivacyDisplayCounter.reset()
+            self.attachmentPrivacyDisplayCountRegistry.resetPersistent()
 
             if includeChatHistory {
                 dataClearingWideEventService?.start(.clearAIChatHistory)

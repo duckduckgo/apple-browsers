@@ -33,10 +33,12 @@ final class AIChatDebugMenu: NSMenu {
     /// than the persistent one.
     private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
         let burnerMode = NSApp.delegateTyped.windowControllersManager
-            .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode
-        let handler = burnerMode.flatMap { NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: $0) }
-            ?? NSApp.delegateTyped.duckAiNativeStorageHandler
-        return AttachmentPrivacyDisplayCounter(storageHandler: handler)
+            .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
+        return AttachmentPrivacyDisplayCounter(
+            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
+            webKeySource: NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
+                ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        )
     }
 
     private var attachmentPrivacyScopeLabel: String {

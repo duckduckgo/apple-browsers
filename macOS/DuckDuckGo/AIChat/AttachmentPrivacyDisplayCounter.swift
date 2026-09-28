@@ -21,16 +21,96 @@ import AppKit
 import FeatureFlags_macOS
 import Foundation
 import os.log
+import Persistence
 import PrivacyConfig
+
+// MARK: - Storage
+
+/// Where the display count lives. One implementation persists; the other is scoped to a Fire
+/// Window and goes away with it.
+///
+/// Deliberately not the Duck.ai entries namespace: that is the web app's `localStorage`, and the
+/// web app replaces it wholesale on hydration, which reset the count and showed the disclosure
+/// again in every new tab.
+protocol AttachmentPrivacyDisplayCountStoring: AnyObject {
+    /// `nil` when nothing has been recorded, which is distinct from a recorded zero.
+    var count: Int? { get }
+    func setCount(_ count: Int)
+    func reset()
+}
+
+final class AttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplayCountStoring {
+
+    private static let key = "aichat.attachment-privacy.display-count"
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var count: Int? {
+        guard let value = try? keyValueStore.object(forKey: Self.key) else { return nil }
+        return value as? Int
+    }
+
+    func setCount(_ count: Int) {
+        try? keyValueStore.set(count, forKey: Self.key)
+    }
+
+    func reset() {
+        try? keyValueStore.removeObject(forKey: Self.key)
+    }
+}
+
+final class InMemoryAttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplayCountStoring {
+
+    private var stored: Int?
+
+    var count: Int? { stored }
+    func setCount(_ count: Int) { stored = count }
+    func reset() { stored = nil }
+}
+
+/// One store per Fire Window, keyed by its data store the way `BurnerDuckAiStorageRegistry` is, so
+/// every surface in that window shares a count that starts at zero and dies with the window.
+final class AttachmentPrivacyDisplayCountRegistry {
+
+    private let lock = NSLock()
+    private let persistentStore: AttachmentPrivacyDisplayCountStoring
+    private var burnerStores: [ObjectIdentifier: AttachmentPrivacyDisplayCountStoring] = [:]
+
+    init(persistentStore: AttachmentPrivacyDisplayCountStoring = AttachmentPrivacyDisplayCountStore()) {
+        self.persistentStore = persistentStore
+    }
+
+    func store(for burnerMode: BurnerMode) -> AttachmentPrivacyDisplayCountStoring {
+        guard case .burner(let dataStore) = burnerMode else { return persistentStore }
+
+        let key = ObjectIdentifier(dataStore)
+        lock.lock()
+        defer { lock.unlock() }
+        if let existing = burnerStores[key] {
+            return existing
+        }
+        let new = InMemoryAttachmentPrivacyDisplayCountStore()
+        burnerStores[key] = new
+        return new
+    }
+
+    /// The Fire Button. A Fire Window's own count needs no clearing: it dies with the window.
+    func resetPersistent() {
+        persistentStore.reset()
+    }
+}
+
+// MARK: - Counter
 
 /// Owns the file-upload privacy disclosure's display count. Check and increment are one operation,
 /// so no caller can take the total past the cap.
-///
-/// Built per surface with that surface's storage handler: a burner window resolves an in-memory
-/// one, which is what makes a Fire Window start at zero and leave nothing behind.
 final class AttachmentPrivacyDisplayCounter {
 
-    static let entryKey = "attachmentPrivacyDisplayCount"
+    static let cap = 3
 
     /// The web app's own key, which governs while native does not. Read as a starting point so a
     /// user who already saw the message on web does not get three more once native takes over.
@@ -38,14 +118,15 @@ final class AttachmentPrivacyDisplayCounter {
     /// nothing and the count restarts at zero.
     static let webEntryKey = "duckaiFileUploadDisclaimerShownCount"
 
-    static let cap = 3
-
-    private let storageHandler: DuckAiNativeStorageHandling?
+    private let store: AttachmentPrivacyDisplayCountStoring
+    private let webKeySource: DuckAiNativeStorageHandling?
     private let featureFlagger: FeatureFlagger
 
-    init(storageHandler: DuckAiNativeStorageHandling?,
+    init(store: AttachmentPrivacyDisplayCountStoring,
+         webKeySource: DuckAiNativeStorageHandling?,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.storageHandler = storageHandler
+        self.store = store
+        self.webKeySource = webKeySource
         self.featureFlagger = featureFlagger
     }
 
@@ -59,51 +140,37 @@ final class AttachmentPrivacyDisplayCounter {
         isEnabled && count < Self.cap
     }
 
+    /// Exposed for the debug menu, which shows how many displays are spent.
+    var displayCount: Int { count }
+
     /// Spends one display if any remain. The answer is what a surface renders on.
     @discardableResult
     func consumeDisplay() -> Bool {
-        guard isEnabled, let storageHandler else { return false }
+        guard isEnabled else { return false }
 
         let current = count
         Logger.aiChat.debug("Attachment privacy: display requested, count read as \(current, privacy: .public)")
         guard current < Self.cap else { return false }
 
-        do {
-            try storageHandler.putEntry(key: Self.entryKey, value: current + 1)
-        } catch {
-            // The disclosure is required, so a failed write shows the message and risks an extra
-            // impression rather than suppressing one.
-            Logger.aiChat.error("Attachment privacy: failed to record display: \(error.localizedDescription, privacy: .public)")
-            return true
-        }
-
-        // Read back: a write that lands but does not survive leaves the cap unenforced, and the
-        // only symptom is the message showing forever. Better to say so than to hide it.
-        let recorded = count
-        if recorded != current + 1 {
-            Logger.aiChat.error("Attachment privacy: count did not persist — wrote \(current + 1, privacy: .public), read back \(recorded, privacy: .public)")
-        }
+        store.setCount(current + 1)
         return true
     }
 
-    /// Both keys: leaving the web app's behind would have the next read fall back to it, so the
-    /// message would never return after a burn.
+    /// Both stores: leaving the web app's key behind would have the next read fall back to it, so
+    /// the message would never return after a burn.
     func reset() {
-        try? storageHandler?.deleteEntry(key: Self.entryKey)
-        try? storageHandler?.deleteEntry(key: Self.webEntryKey)
+        store.reset()
+        try? webKeySource?.deleteEntry(key: Self.webEntryKey)
     }
-
-    /// Exposed for the debug menu, which shows how many displays are spent.
-    var displayCount: Int { count }
 
     /// Ours once it exists, otherwise whatever the web app has counted. An absent or unreadable
     /// value counts as zero: erring towards showing a required disclosure.
     private var count: Int {
-        storedCount(forKey: Self.entryKey) ?? storedCount(forKey: Self.webEntryKey) ?? 0
+        store.count ?? webCount ?? 0
     }
 
-    private func storedCount(forKey key: String) -> Int? {
-        guard let value = try? storageHandler?.getEntry(key: key) else { return nil }
+    private var webCount: Int? {
+        guard let value = try? webKeySource?.getEntry(key: Self.webEntryKey) else { return nil }
 
         switch value {
         case let int as Int: return max(0, int)

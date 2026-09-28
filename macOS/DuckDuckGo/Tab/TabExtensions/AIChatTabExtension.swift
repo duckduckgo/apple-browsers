@@ -77,8 +77,11 @@ final class AIChatTabExtension {
         // A burner tab resolves an in-memory handler, so a display there neither reads nor writes
         // the persistent count.
         self.attachmentPrivacyCounterProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
-            let handler = burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? duckAiNativeStorageHandler
-            return AttachmentPrivacyDisplayCounter(storageHandler: handler, featureFlagger: featureFlagger)
+            AttachmentPrivacyDisplayCounter(
+                store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
+                webKeySource: burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? duckAiNativeStorageHandler,
+                featureFlagger: featureFlagger
+            )
         }
         self.bootstrapRefresher = Self.makeBootstrapRefresher(
             featureFlagger: featureFlagger,

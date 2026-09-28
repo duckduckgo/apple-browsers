@@ -651,6 +651,8 @@ final class AIChatContextualChatSessionState {
                    !suppressesAutoAttachForSelectionEntry {
                     handleOfferedContext(context)
                 }
+            } else {
+                cancelManualAttach()
             }
             return
         }

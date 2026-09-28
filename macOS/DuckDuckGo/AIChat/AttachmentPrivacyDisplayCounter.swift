@@ -31,6 +31,13 @@ import PrivacyConfig
 final class AttachmentPrivacyDisplayCounter {
 
     static let entryKey = "attachmentPrivacyDisplayCount"
+
+    /// The web app's own key, which governs while native does not. Read as a starting point so a
+    /// user who already saw the message on web does not get three more once native takes over.
+    /// Name pending confirmation with the front end — if it is wrong, seeding silently does
+    /// nothing and the count restarts at zero.
+    static let webEntryKey = "duckaiFileUploadDisclaimerShownCount"
+
     static let cap = 3
 
     private let storageHandler: DuckAiNativeStorageHandling?
@@ -78,22 +85,30 @@ final class AttachmentPrivacyDisplayCounter {
         return true
     }
 
+    /// Both keys: leaving the web app's behind would have the next read fall back to it, so the
+    /// message would never return after a burn.
     func reset() {
         try? storageHandler?.deleteEntry(key: Self.entryKey)
+        try? storageHandler?.deleteEntry(key: Self.webEntryKey)
     }
 
     /// Exposed for the debug menu, which shows how many displays are spent.
     var displayCount: Int { count }
 
-    /// An unreadable value counts as zero: erring towards showing a required disclosure.
+    /// Ours once it exists, otherwise whatever the web app has counted. An absent or unreadable
+    /// value counts as zero: erring towards showing a required disclosure.
     private var count: Int {
-        guard let value = try? storageHandler?.getEntry(key: Self.entryKey) else { return 0 }
+        storedCount(forKey: Self.entryKey) ?? storedCount(forKey: Self.webEntryKey) ?? 0
+    }
+
+    private func storedCount(forKey key: String) -> Int? {
+        guard let value = try? storageHandler?.getEntry(key: key) else { return nil }
 
         switch value {
         case let int as Int: return max(0, int)
         case let double as Double: return max(0, Int(double))
-        case let string as String: return max(0, Int(string) ?? 0)
-        default: return 0
+        case let string as String: return Int(string).map { max(0, $0) }
+        default: return nil
         }
     }
 }

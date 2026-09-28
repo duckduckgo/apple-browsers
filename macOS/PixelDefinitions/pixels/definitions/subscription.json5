@@ -679,6 +679,22 @@
                 "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
                 "enum": ["not_attempted", "succeeded", "failed"]
             },
+            {
+                "key": "feature.data.ext.signed_out",
+                "type": "boolean",
+                "description": "Whether this refresh ended with the user being signed out. Always emitted; true when invalid-token recovery failed or was not attempted, or when the backend reported an unknown account"
+            },
+            {
+                "key": "feature.data.ext.subscription_status",
+                "type": "string",
+                "description": "Status of the cached subscription when the refresh started. unavailable means no subscription was cached; unknown is a status returned by the backend",
+                "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+            },
+            {
+                "key": "feature.data.ext.netp_is_running",
+                "type": "boolean",
+                "description": "Whether the VPN tunnel was connected when the refresh started. Only emitted from the packet tunnel extension; false while the tunnel is still starting up"
+            },
             "channel"
         ]
     },

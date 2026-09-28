@@ -59,6 +59,10 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            attachmentPrivacyMenuItem
+
+            NSMenuItem.separator()
+
             storageServerMenuItem
 
 #if DEBUG
@@ -136,6 +140,20 @@ final class AIChatDebugMenu: NSMenu {
             item.toolTip = seed.expectation
             menu.addItem(item)
         }
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    /// The disclosure is capped at three displays per device, so without a reset it is a one-shot
+    /// to test. The title carries the current count.
+    private var attachmentPrivacyMenuItem: NSMenuItem {
+        let counter = AttachmentPrivacyDisplayCounter(storageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler)
+        let title = "Reset Attachment Privacy Disclosure (\(counter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown)"
+        return menuItem(title: title, action: #selector(resetAttachmentPrivacyDisplayCount))
+    }
+
+    @objc private func resetAttachmentPrivacyDisplayCount() {
+        AttachmentPrivacyDisplayCounter(storageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler).reset()
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {

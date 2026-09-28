@@ -74,6 +74,9 @@ final class AttachmentPrivacyDisplayCounter {
         try? storageHandler?.deleteEntry(key: Self.entryKey)
     }
 
+    /// Exposed for the debug menu, which shows how many displays are spent.
+    var displayCount: Int { count }
+
     /// An unreadable value counts as zero: erring towards showing a required disclosure.
     private var count: Int {
         guard let value = try? storageHandler?.getEntry(key: Self.entryKey) else { return 0 }

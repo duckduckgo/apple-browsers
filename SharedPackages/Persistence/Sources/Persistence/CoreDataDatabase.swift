@@ -132,7 +132,7 @@ public class CoreDataDatabase: CoreDataStoring {
            !description.isReadOnly,
            let storeURL = description.url {
             do {
-                try versionedModel.migrateStoreIfNeeded(at: storeURL)
+                try versionedModel.migrateStoreIfNeeded(at: storeURL, options: description.options)
             } catch {
                 completion(nil, error)
                 return

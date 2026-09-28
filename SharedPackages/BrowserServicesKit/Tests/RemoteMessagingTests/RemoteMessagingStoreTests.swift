@@ -40,12 +40,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         try super.setUpWithError()
 
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let bundle = RemoteMessaging.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "RemoteMessaging") else {
-            XCTFail("Failed to load model")
-            return
-        }
-        remoteMessagingDatabase = CoreDataDatabase(name: type(of: self).description(), containerLocation: location, model: model)
+        remoteMessagingDatabase = CoreDataDatabase(name: type(of: self).description(), containerLocation: location, model: .remoteMessaging)
         remoteMessagingDatabase.loadStore()
 
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()

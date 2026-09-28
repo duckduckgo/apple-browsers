@@ -98,7 +98,6 @@ let package = Package(
                 "DDGNavigation"
             ],
             resources: [
-                .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
                 .copy("../../PrivacyInfo.xcprivacy")
             ],
             swiftSettings: [
@@ -361,9 +360,6 @@ let package = Package(
                 "Configuration",
                 .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
-            ],
-            resources: [
-                .process("CoreData/RemoteMessaging.xcdatamodeld")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -747,9 +743,6 @@ let package = Package(
                 .copy("Resources/remote-messaging-config-cards-list-items.json"),
                 .copy("Resources/remote-messaging-config-placeholders.json"),
                 .copy("Resources/remote-messaging-config-cards-list-items-with-sections.json"),
-                .copy("Resources/Database_V1.sqlite"),
-                .copy("Resources/Database_V1.sqlite-shm"),
-                .copy("Resources/Database_V1.sqlite-wal"),
             ]
         ),
         .testTarget(

@@ -18,10 +18,41 @@
 
 import CoreData
 import Persistence
+
 extension HTTPSUpgrade {
 
-    public static let managedObjectModel: NSManagedObjectModel = {
-        return CoreDataDatabase.loadModel(from: .module, named: "HTTPSUpgrade")!
-    }()
+    public static var managedObjectModel: NSManagedObjectModel {
+        VersionedManagedObjectModel.httpsUpgrade.current
+    }
+}
 
+public extension VersionedManagedObjectModel {
+
+    static let httpsUpgrade = VersionedManagedObjectModel(versions: [
+        HTTPSUpgradeModel.v3,
+    ])
+}
+
+/// Schema versions of the HTTPS upgrade entities, formerly `HTTPSUpgrade.xcdatamodeld`, stored in the
+/// main iOS and macOS `Database` stores.
+///
+/// Versions 1 and 2 were removed from the model long before this conversion.
+/// Never change a shipped version: append a new one to `VersionedManagedObjectModel.httpsUpgrade`.
+public enum HTTPSUpgradeModel {
+
+    public static func v3() -> [CoreDataEntity] {
+        [
+            CoreDataEntity("HTTPSExcludedDomain", className: "HTTPSExcludedDomain", attributes: [
+                CoreDataAttribute("domain", .stringAttributeType, optional: true),
+            ], indexes: [
+                CoreDataIndex("domainIndex", properties: ["domain"]),
+            ], renamingIdentifier: "HTTPSWhitelistedDomain"),
+            CoreDataEntity("HTTPSStoredBloomFilterSpecification", className: "HTTPSStoredBloomFilterSpecification", attributes: [
+                CoreDataAttribute("bitCount", .integer64AttributeType, defaultValue: 0),
+                CoreDataAttribute("errorRate", .doubleAttributeType, defaultValue: 0),
+                CoreDataAttribute("sha256", .stringAttributeType),
+                CoreDataAttribute("totalEntries", .integer64AttributeType, defaultValue: 0),
+            ]),
+        ]
+    }
 }

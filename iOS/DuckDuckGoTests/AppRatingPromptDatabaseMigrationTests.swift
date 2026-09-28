@@ -23,55 +23,49 @@ import XCTest
 import CoreData
 import Persistence
 
-// If making future changes take a copy of the v2 momd and Database file like here and update / add tests as appropiate.
-class AppRatingPromptDatabaseMigrationTests: XCTestCase {
+final class AppRatingPromptDatabaseMigrationTests: XCTestCase {
 
-    func testExpectedNumberOfModelVersionsInLatestModel() throws {
-        guard let modelURL = Bundle.main.url(forResource: "AppRatingPrompt", withExtension: "momd") else {
-            XCTFail("Error loading model URL")
-            return
+    /// Entity version hashes of every shipped schema version, as compiled by `momc` from the former
+    /// `AppRatingPrompt.xcdatamodeld`. A mismatch means a shipped version was changed — add a new version instead.
+    func testEveryVersionMatchesShippedVersionHashes() {
+        let expected = [
+            "toMA+c/wuxvWObcyatsUwgaNE/IryjRBX4PxX7XVmKk=",
+            "xuGb1YlO69OWozj+UZy937w0091kBLB7S6U78K4U1/Q=",
+        ]
+        let versions = [AppRatingPromptModel.v1, AppRatingPromptModel.v2]
+
+        for (index, (version, hash)) in zip(versions, expected).enumerated() {
+            let model = NSManagedObjectModel(entities: version())
+            XCTAssertEqual(model.entityVersionHashesByName.mapValues { $0.base64EncodedString() }, ["AppRatingPromptEntity": hash],
+                           "AppRatingPrompt v\(index + 1)")
         }
-        let modelVersions = try FileManager.default.contentsOfDirectory(at: modelURL, includingPropertiesForKeys: nil, options: [])
-            .filter { $0.lastPathComponent.hasSuffix(".mom") }
-        XCTAssertEqual(2, modelVersions.count)
     }
 
-    func testMigrationFromV1toLatest() {
+    /// `AppRatingPrompt_v1` is a real `Database` store saved with AppRatingPrompt v1, RemoteMessaging v1 and HTTPSUpgrade v3.
+    func testMigrationFromV1toLatest() throws {
+        let fixtureURL = try XCTUnwrap(Bundle(for: type(of: self)).url(forResource: "AppRatingPrompt_v1", withExtension: nil))
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.copyItem(at: fixtureURL, to: location)
+        defer { try? FileManager.default.removeItem(at: location) }
+        let storeURL = location.appendingPathComponent("Database.sqlite")
 
-        guard let baseURL = Bundle(for: (type(of: self))).url(forResource: "AppRatingPrompt_v1", withExtension: nil) else {
-            XCTFail("could not get base url")
-            return
-        }
+        // The fixture must match known versions, so it's migrated without relying on Core Data's cached model.
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: storeURL)
+        XCTAssertNotNil(Database.model.model(compatibleWithStoreMetadata: metadata))
 
-        guard let latestModel = CoreDataDatabase.loadModel(from: .main, named: "AppRatingPrompt") else {
-            XCTFail("could not load latest model")
-            return
-        }
+        let database = CoreDataDatabase(name: "Database", containerLocation: location, model: Database.model)
+        var loadError: Error?
+        database.loadStore { _, error in loadError = error }
+        XCTAssertNil(loadError)
+        defer { try? database.tearDown(deleteStores: false) }
 
-        let storeURL = baseURL.appendingPathComponent("Database.sqlite")
-
-        do {
-            let options = [NSMigratePersistentStoresAutomaticallyOption: true,
-                           NSInferMappingModelAutomaticallyOption: true]
-
-            // Run the migration
-            let newCoordinator = NSPersistentStoreCoordinator(managedObjectModel: latestModel)
-            let newStore = try newCoordinator.addPersistentStore(ofType: NSSQLiteStoreType,
-                                                                 configurationName: nil,
-                                                                 at: storeURL,
-                                                                 options: options)
-
-            // Check the data exists
-            let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-            context.persistentStoreCoordinator = newCoordinator
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "AppRatingPromptEntity")
-            let count = try context.count(for: fetchRequest)
+        let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        try context.performAndWait {
+            let count = try context.count(for: NSFetchRequest<NSFetchRequestResult>(entityName: "AppRatingPromptEntity"))
             XCTAssertGreaterThan(count, 0, "Migration failed, no entities found.")
-
-        } catch {
-            XCTFail("Migration failed with error: \(error)")
         }
-
+        let migratedMetadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: storeURL)
+        XCTAssertTrue(Database.model.current.isConfiguration(withName: nil, compatibleWithStoreMetadata: migratedMetadata))
     }
 
 }

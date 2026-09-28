@@ -22,20 +22,14 @@ import CoreData
 import Persistence
 import RemoteMessaging
 import XCTest
+@testable import Core
 
 final class RemoteMessagingModelMigrationTests: XCTestCase {
 
     func testMergedIOSDatabaseMigratesRemoteMessagingV3ToCurrentModel() throws {
-        let resourceURL = try XCTUnwrap(RemoteMessaging.bundle.resourceURL)
-        let modelDirectory = RemoteMessaging.bundle.url(forResource: "RemoteMessaging", withExtension: "momd")
-            ?? resourceURL.appendingPathComponent("RemoteMessaging.momd")
-        let remoteMessagingV3Model = try XCTUnwrap(NSManagedObjectModel(contentsOf: modelDirectory.appendingPathComponent("RemoteMessaging 3.mom")))
-        let currentRemoteMessagingModel = try XCTUnwrap(CoreDataDatabase.loadModel(from: RemoteMessaging.bundle, named: "RemoteMessaging"))
-        let appRatingModel = try XCTUnwrap(CoreDataDatabase.loadModel(from: .main, named: "AppRatingPrompt"))
-        let oldModel = try XCTUnwrap(NSManagedObjectModel(byMerging: [appRatingModel, remoteMessagingV3Model, HTTPSUpgrade.managedObjectModel]))
-        let currentModel = try XCTUnwrap(NSManagedObjectModel(byMerging: [appRatingModel, currentRemoteMessagingModel, HTTPSUpgrade.managedObjectModel]))
+        let entities = AppRatingPromptModel.v2() + RemoteMessagingModel.v3() + HTTPSUpgradeModel.v3()
         // V3 lacks impressionCount, so it must not bind the current managed-object subclass.
-        oldModel.entities.forEach { $0.managedObjectClassName = NSStringFromClass(NSManagedObject.self) }
+        let oldModel = NSManagedObjectModel(entities: entities, bindsClasses: false)
 
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -57,20 +51,17 @@ final class RemoteMessagingModelMigrationTests: XCTestCase {
         }
         try sourceCoordinator.remove(sourceStore)
 
-        let destinationCoordinator = NSPersistentStoreCoordinator(managedObjectModel: currentModel)
-        let options: [String: Any] = [NSMigratePersistentStoresAutomaticallyOption: true,
-                                      NSInferMappingModelAutomaticallyOption: true]
-        let destinationStore = try destinationCoordinator.addPersistentStore(ofType: NSSQLiteStoreType,
-                                                                             configurationName: nil,
-                                                                             at: storeURL,
-                                                                             options: options)
-        defer { try? destinationCoordinator.remove(destinationStore) }
-        let destinationContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        destinationContext.persistentStoreCoordinator = destinationCoordinator
-        try destinationContext.performAndWait {
+        let database = CoreDataDatabase(name: "Database", containerLocation: directory, model: Database.model)
+        var loadError: Error?
+        database.loadStore { _, error in loadError = error }
+        XCTAssertNil(loadError)
+        defer { try? database.tearDown(deleteStores: true) }
+
+        let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        try context.performAndWait {
             // The app and test bundle can load separate copies of the managed-object class.
             let messageRequest = NSFetchRequest<NSManagedObject>(entityName: "RemoteMessageManagedObject")
-            let messages = try destinationContext.fetch(messageRequest)
+            let messages = try context.fetch(messageRequest)
             guard messages.count == 1 else {
                 XCTFail("Expected one migrated remote message, got \(messages.count)")
                 return
@@ -82,7 +73,7 @@ final class RemoteMessagingModelMigrationTests: XCTestCase {
             XCTAssertEqual((message.value(forKey: "impressionCount") as? NSNumber)?.int64Value, 0)
 
             let appRatingRequest = NSFetchRequest<NSManagedObject>(entityName: "AppRatingPromptEntity")
-            let appRatings = try destinationContext.fetch(appRatingRequest)
+            let appRatings = try context.fetch(appRatingRequest)
             XCTAssertEqual(appRatings.count, 1)
             XCTAssertEqual(appRatings.first?.value(forKey: "firstShown") as? Date, shownDate)
         }

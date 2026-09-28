@@ -24,17 +24,10 @@ import Persistence
 
 @Suite("RMF - Core Data Migration")
 final class RemoteMessagingModelMigrationTests {
-    let resourcesURLDirectory: URL
     let testLocation: URL
 
-    init() throws {
+    init() {
         testLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let resourcesLocation = testLocation.appendingPathComponent( "BrowserServicesKit_RemoteMessagingTests.bundle/Contents/Resources/")
-        if FileManager.default.fileExists(atPath: resourcesLocation.path) == false {
-            resourcesURLDirectory = try #require(Bundle.module.resourceURL)
-        } else {
-            resourcesURLDirectory = resourcesLocation
-        }
     }
 
     deinit {
@@ -43,13 +36,16 @@ final class RemoteMessagingModelMigrationTests {
 
     @Test("Check Model Lightweight Migration From V1 to Current Version")
     func checkModelMigrationFromV1ToCurrentVersion() throws {
-        // GIVEN
-        // Copy real V1 database files
-        try copyDatabase(name: "Database_V1", formDirectory: resourcesURLDirectory, toDirectory: testLocation, targetName: "RemoteMessaging")
+        // GIVEN a standalone Remote Messaging store (as on macOS) saved with V1
+        let storeURL = testLocation.appendingPathComponent("RemoteMessaging.sqlite")
+        try makeV1Store(at: storeURL)
 
-        // WHEN Load with V2 model - Core Data automatically perform lightweight migration
-        let v2Model = try #require(CoreDataDatabase.loadModel(from: RemoteMessaging.bundle, named: "RemoteMessaging"))
-        let migratedDatabase = CoreDataDatabase(name: "RemoteMessaging", containerLocation: testLocation, model: v2Model)
+        // The store must match a known version, so it's migrated without relying on Core Data's cached model.
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: NSSQLiteStoreType, at: storeURL)
+        #expect(VersionedManagedObjectModel.remoteMessaging.model(compatibleWithStoreMetadata: metadata) != nil)
+
+        // WHEN Load with the current model, which migrates the store
+        let migratedDatabase = CoreDataDatabase(name: "RemoteMessaging", containerLocation: testLocation, model: .remoteMessaging)
         migratedDatabase.loadStore()
 
         // THEN Assert fetching and save new object works fine.
@@ -60,7 +56,10 @@ final class RemoteMessagingModelMigrationTests {
             let messages = try context.fetch(fetchRequest)
             #expect(messages.count == 1)
             let message = try #require(messages.first)
+            #expect(message.id == "v1-message")
+            #expect(message.shown == true)
             #expect(message.surfaces == nil, "Migrated records should have nil surfaces")
+            #expect(message.firstShownDate == nil)
             #expect(message.impressionCount == 0, "Migrated records should start with no impressions")
         }
 
@@ -83,15 +82,20 @@ final class RemoteMessagingModelMigrationTests {
 
 extension RemoteMessagingModelMigrationTests {
 
-    func copyDatabase(name: String, formDirectory: URL, toDirectory: URL, targetName: String) throws {
-        let fileManager = FileManager.default
-        try fileManager.createDirectory(at: toDirectory, withIntermediateDirectories: true)
-        try ["sqlite", "sqlite-shm", "sqlite-wal"].forEach { ext in
-            let sourceURL = formDirectory.appendingPathComponent("\(name).\(ext)")
-            let targetURL  = toDirectory.appendingPathComponent("\(targetName).\(ext)")
-            if fileManager.fileExists(atPath: sourceURL.path) {
-                try fileManager.copyItem(at: sourceURL, to: targetURL)
-            }
+    func makeV1Store(at storeURL: URL) throws {
+        try FileManager.default.createDirectory(at: testLocation, withIntermediateDirectories: true)
+        // V1 lacks later attributes, so it must not bind the current managed-object subclasses.
+        let model = NSManagedObjectModel(entities: RemoteMessagingModel.v1(), bindsClasses: false)
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
+        let store = try coordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: storeURL)
+        let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        context.persistentStoreCoordinator = coordinator
+        try context.performAndWait {
+            let message = NSEntityDescription.insertNewObject(forEntityName: "RemoteMessageManagedObject", into: context)
+            message.setValue("v1-message", forKey: "id")
+            message.setValue(true, forKey: "shown")
+            try context.save()
         }
+        try coordinator.remove(store)
     }
 }

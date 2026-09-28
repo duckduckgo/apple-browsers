@@ -553,7 +553,6 @@
 		8524CC98246D66E100E59D45 /* String+Markdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8524CC95246D620B00E59D45 /* String+Markdown.swift */; };
 		8528AE7C212EF4A200D0BD74 /* AppRatingPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE7B212EF4A200D0BD74 /* AppRatingPrompt.swift */; };
 		8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE7D212EF5FF00D0BD74 /* AppRatingPromptTests.swift */; };
-		8528AE81212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE7F212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld */; };
 		8528AE84212FF9A100D0BD74 /* AppRatingPromptStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE82212FF91A00D0BD74 /* AppRatingPromptStorageTests.swift */; };
 		852A4D013013738B00FA7A16 /* PrivacyUserDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852A4D003013738B00FA7A16 /* PrivacyUserDefaultsTests.swift */; };
 		852BCC4D2EC4AEAC0093C753 /* DataAuditDebugScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852BCC4C2EC4AEA60093C753 /* DataAuditDebugScreen.swift */; };
@@ -822,6 +821,8 @@
 		9876DF2E2DEEE21700E30713 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */; };
 		98788E9A2521DA1E00D55218 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 98788E9C2521DA1E00D55218 /* Localizable.stringsdict */; };
 		9887DC252354D2AA005C85F5 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9887DC242354D2AA005C85F5 /* Database.swift */; };
+		6E1137596F3EE13ADE093EAE /* AppRatingPromptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82FC8286E7A24D36996B4DED /* AppRatingPromptModel.swift */; };
+		8806C98BB3F2197AFF5EEEDF /* AppRatingPromptEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C91283FD80A573D6A185FF /* AppRatingPromptEntity.swift */; };
 		9888F77B2224980500C46159 /* FeedbackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9888F77A2224980500C46159 /* FeedbackViewController.swift */; };
 		988AC355257E47C100793C64 /* RequeryLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988AC354257E47C100793C64 /* RequeryLogic.swift */; };
 		98983096255B5019003339A2 /* BookmarksCachingSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98983095255B5019003339A2 /* BookmarksCachingSearchTests.swift */; };
@@ -2592,7 +2593,6 @@
 		8524CC95246D620B00E59D45 /* String+Markdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Markdown.swift"; sourceTree = "<group>"; };
 		8528AE7B212EF4A200D0BD74 /* AppRatingPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPrompt.swift; sourceTree = "<group>"; };
 		8528AE7D212EF5FF00D0BD74 /* AppRatingPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptTests.swift; sourceTree = "<group>"; };
-		8528AE80212F15D600D0BD74 /* AppRatingPrompt.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = AppRatingPrompt.xcdatamodel; sourceTree = "<group>"; };
 		8528AE82212FF91A00D0BD74 /* AppRatingPromptStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptStorageTests.swift; sourceTree = "<group>"; };
 		852A4D003013738B00FA7A16 /* PrivacyUserDefaultsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyUserDefaultsTests.swift; sourceTree = "<group>"; };
 		852BCC4C2EC4AEA60093C753 /* DataAuditDebugScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataAuditDebugScreen.swift; sourceTree = "<group>"; };
@@ -2614,7 +2614,6 @@
 		8544C37A250B823600A0FE73 /* UserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
 		8544C97F2EDDE5DA001E1DB4 /* ProductSurfaceTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductSurfaceTelemetryTests.swift; sourceTree = "<group>"; };
 		8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockProductSurfaceTelemetry.swift; sourceTree = "<group>"; };
-		85481A6A2BA46AFB00F9EFB0 /* AppRatingPrompt 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "AppRatingPrompt 2.xcdatamodel"; sourceTree = "<group>"; };
 		85482D882462DCD100EDEDD1 /* OpenAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OpenAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		85482D8C2462DCD100EDEDD1 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		85482D912462DCD100EDEDD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -3083,6 +3082,8 @@
 		98788EC32521DA3900D55218 /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = sv; path = sv.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		98788EC42521DA3900D55218 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = tr; path = tr.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		9887DC242354D2AA005C85F5 /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
+		82FC8286E7A24D36996B4DED /* AppRatingPromptModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptModel.swift; sourceTree = "<group>"; };
+		D6C91283FD80A573D6A185FF /* AppRatingPromptEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptEntity.swift; sourceTree = "<group>"; };
 		9888F77A2224980500C46159 /* FeedbackViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewController.swift; sourceTree = "<group>"; };
 		988AC354257E47C100793C64 /* RequeryLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequeryLogic.swift; sourceTree = "<group>"; };
 		9896632322C56716007BE4FE /* EtagStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EtagStorage.swift; sourceTree = "<group>"; };
@@ -5848,7 +5849,6 @@
 			isa = PBXGroup;
 			children = (
 				8528AE7B212EF4A200D0BD74 /* AppRatingPrompt.swift */,
-				8528AE7F212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld */,
 			);
 			name = AppStore;
 			sourceTree = "<group>";
@@ -8267,6 +8267,8 @@
 				CBAA195927BFE15600A4BD49 /* NSManagedObjectContextExtension.swift */,
 				4BE27566272F878F006B20B0 /* URLRequestExtension.swift */,
 				9887DC242354D2AA005C85F5 /* Database.swift */,
+				D6C91283FD80A573D6A185FF /* AppRatingPromptEntity.swift */,
+				82FC8286E7A24D36996B4DED /* AppRatingPromptModel.swift */,
 				F10849612D6CAA69000D3C3F /* Logger+Pixel.swift */,
 				F143C3231E4A9A0E00CFDE3A /* Logger+Multiple.swift */,
 				F10E522C1E946F8800CE1253 /* NSAttributedStringExtension.swift */,
@@ -9840,7 +9842,6 @@
 				805674FB2EEF790700152470 /* SettingsDataClearingView.swift in Sources */,
 				D65625A12C232F5E006EF297 /* SettingsYouTubeAdBlockingView.swift in Sources */,
 				D65625A22C232F5F006EF298 /* SettingsDuckPlayerView.swift in Sources */,
-				8528AE81212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld in Sources */,
 				1E24295E293F57FA00584836 /* LottieView.swift in Sources */,
 				6FE095D82BD90AFB00490FF8 /* UniversalOmniBarState.swift in Sources */,
 				1DEAADE82BA38AA500E25A97 /* SettingsGeneralView.swift in Sources */,
@@ -11559,6 +11560,8 @@
 				B652DF0D287C2A6300C12A9C /* PrivacyFeatures.swift in Sources */,
 				F10E522D1E946F8800CE1253 /* NSAttributedStringExtension.swift in Sources */,
 				9887DC252354D2AA005C85F5 /* Database.swift in Sources */,
+				8806C98BB3F2197AFF5EEEDF /* AppRatingPromptEntity.swift in Sources */,
+				6E1137596F3EE13ADE093EAE /* AppRatingPromptModel.swift in Sources */,
 				F143C3171E4A99D200CFDE3A /* AppURLs.swift in Sources */,
 				8598D2DE2CEB97BE00C45685 /* FaviconHasher.swift in Sources */,
 			);
@@ -15685,17 +15688,6 @@
 /* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
-		8528AE7F212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld */ = {
-			isa = XCVersionGroup;
-			children = (
-				85481A6A2BA46AFB00F9EFB0 /* AppRatingPrompt 2.xcdatamodel */,
-				8528AE80212F15D600D0BD74 /* AppRatingPrompt.xcdatamodel */,
-			);
-			currentVersion = 85481A6A2BA46AFB00F9EFB0 /* AppRatingPrompt 2.xcdatamodel */;
-			path = AppRatingPrompt.xcdatamodeld;
-			sourceTree = "<group>";
-			versionGroupType = wrapper.xcdatamodel;
-		};
 		F41C2DA126C1925600F9A760 /* BookmarksAndFolders.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (

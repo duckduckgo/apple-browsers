@@ -33,19 +33,17 @@ public class Database {
 
     public static let shared = makeCoreDataDatabase()
 
+    /// The models sharing the store, each migrated from whichever of its versions the store was saved with.
+    public static let model = VersionedManagedObjectModel(merging: [
+        .appRatingPrompt,
+        .remoteMessaging,
+        .httpsUpgrade,
+    ])
+
     static func makeCoreDataDatabase() -> CoreDataDatabase {
-
-        guard let appRatingModel = CoreDataDatabase.loadModel(from: .main, named: "AppRatingPrompt"),
-              let remoteMessagingModel = CoreDataDatabase.loadModel(from: RemoteMessaging.bundle, named: "RemoteMessaging"),
-              let managedObjectModel = NSManagedObjectModel(byMerging: [appRatingModel,
-                                                                        remoteMessagingModel,
-                                                                        HTTPSUpgrade.managedObjectModel]) else {
-            fatalError("No DB scheme found")
-        }
-
         let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Database.Constants.databaseGroupID)!
         return CoreDataDatabase(name: Constants.databaseName,
                                 containerLocation: url,
-                                model: managedObjectModel)
+                                model: model)
     }
 }

@@ -31,13 +31,8 @@ public final class RemoteMessagingDatabase {
     }
 
     public static func make(location: URL) -> CoreDataDatabase {
-        let bundle = RemoteMessaging.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "RemoteMessaging") else {
-            fatalError("Failed to load model")
-        }
-
         return CoreDataDatabase(name: "RemoteMessaging",
                                 containerLocation: location,
-                                model: model)
+                                model: .remoteMessaging)
     }
 }

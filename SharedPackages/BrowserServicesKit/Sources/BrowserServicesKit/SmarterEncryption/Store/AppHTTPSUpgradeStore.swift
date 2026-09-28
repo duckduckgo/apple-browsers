@@ -58,7 +58,6 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     private let context: NSManagedObjectContext
     private let storeQueue = DispatchQueue(label: "AppHTTPSUpgradeStore queue")
 
-    public static var bundle: Bundle { .module }
     private let logger: Logger
 
     public init(database: CoreDataDatabase,

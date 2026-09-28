@@ -27,7 +27,7 @@ import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
 import os.log

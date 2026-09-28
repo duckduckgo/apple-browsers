@@ -18,7 +18,7 @@
 
 import XCTest
 import PixelKit
-import Navigation
+import DDGNavigation
 import Onboarding
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser

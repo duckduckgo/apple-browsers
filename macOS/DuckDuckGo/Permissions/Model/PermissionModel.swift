@@ -20,7 +20,7 @@ import AVFoundation
 import Combine
 import CoreLocation
 import Foundation
-import Navigation
+import DDGNavigation
 import UserNotifications
 import WebKit
 import os.log

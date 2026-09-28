@@ -25,6 +25,7 @@ import Core
 import Onboarding
 import RemoteMessaging
 import Subscription
+import SwiftUI
 
 /// Builds the New Tab Page shown in a browser tab.
 @MainActor
@@ -59,7 +60,7 @@ struct NewTabPageBuilder {
         // Fire tabs are excluded because their empty state is drawn elsewhere and would cover the
         // page.
         if !tab.fireTab, redesignFeature.isAvailable {
-            return makeRedesignedNewTabPage()
+            return makeRedesignedNewTabPage(openedAfterIdle: openedAfterIdle)
         }
 
         return makeCurrentNewTabPage(tab: tab,
@@ -67,7 +68,7 @@ struct NewTabPageBuilder {
                                      daxDialogFactory: daxDialogFactory)
     }
 
-    private func makeRedesignedNewTabPage() -> any NewTabPage {
+    private func makeRedesignedNewTabPage(openedAfterIdle: Bool) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
         let searchInputView = NewTabPageSearchInputView(
@@ -86,13 +87,53 @@ struct NewTabPageBuilder {
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             })
 
+        let pageModel = NewTabPageViewModel(fireTab: false)
+        pageModel.openedAfterIdle = openedAfterIdle
+        let messagesModel = NewTabPageMessagesModel(
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            subscriptionDataReporter: subscriptionDataReporting,
+            messageActionHandler: remoteMessagingActionHandler,
+            imageLoader: remoteMessagingImageLoader,
+            pixelReporter: remoteMessagingPixelReporter,
+            isOpenedAfterIdle: { [weak pageModel] in pageModel?.openedAfterIdle ?? false })
+        messagesModel.onMessageInteraction = { interaction in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPage(newTabPage, didInteractWithMessage: interaction)
+        }
+
+        let favoritesModel = FavoritesViewModel(
+            isFocussedState: false,
+            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: favoritesInteractionModel),
+            faviconLoader: faviconLoader,
+            faviconsCache: faviconsCache)
+        favoritesModel.onFavoriteURLSelected = { [internalUserCommands] favorite in
+            guard let newTabPage else { return }
+            if let url = favorite.url.flatMap(URL.init(string:)), internalUserCommands.handle(url: url) {
+                return
+            }
+            newTabPage.delegate?.newTabPageDidSelectFavorite(newTabPage, favorite: favorite)
+        }
+        favoritesModel.onFavoriteEdit = { favorite in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidEditFavorite(newTabPage, favorite: favorite)
+        }
+        favoritesModel.onFaviconMissing = {
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(newTabPage)
+        }
+
         let page = RedesignedNewTabPageViewController(blocks: [
             NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
                 model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
                                              contextChanges: daxGreetingChanges,
                                              updateAppearance: updateDaxGreetingAppearance))),
-            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView)
-        ])
+            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
+            NewTabPageSwiftUIBlock(id: .escapeHatch,
+                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
+            NewTabPageSwiftUIBlock(id: .messages,
+                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel)),
+            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel))
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel)
         newTabPage = page
         return page
     }

@@ -36,12 +36,17 @@ protocol AttachmentPrivacyDisplayCountStoring: AnyObject {
     /// `nil` when nothing has been recorded, which is distinct from a recorded zero.
     var count: Int? { get }
     func setCount(_ count: Int)
+    /// Whether the web app's count has already been taken over. The migration runs once.
+    var hasMigratedWebCount: Bool { get }
+    func markWebCountMigrated()
+    /// Clears the count and the migration marker.
     func reset()
 }
 
 final class AttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplayCountStoring {
 
     private static let key = "aichat.attachment-privacy.display-count"
+    private static let migratedKey = "aichat.attachment-privacy.web-count-migrated"
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -58,18 +63,35 @@ final class AttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplayCountSto
         try? keyValueStore.set(count, forKey: Self.key)
     }
 
+    var hasMigratedWebCount: Bool {
+        guard let value = try? keyValueStore.object(forKey: Self.migratedKey) else { return false }
+        return value as? Bool ?? false
+    }
+
+    func markWebCountMigrated() {
+        try? keyValueStore.set(true, forKey: Self.migratedKey)
+    }
+
     func reset() {
         try? keyValueStore.removeObject(forKey: Self.key)
+        try? keyValueStore.removeObject(forKey: Self.migratedKey)
     }
 }
 
 final class InMemoryAttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplayCountStoring {
 
     private var stored: Int?
+    private var migrated = false
 
     var count: Int? { stored }
     func setCount(_ count: Int) { stored = count }
-    func reset() { stored = nil }
+    var hasMigratedWebCount: Bool { migrated }
+    func markWebCountMigrated() { migrated = true }
+
+    func reset() {
+        stored = nil
+        migrated = false
+    }
 }
 
 /// One store per Fire Window, keyed by its data store the way `BurnerDuckAiStorageRegistry` is, so
@@ -128,6 +150,21 @@ final class AttachmentPrivacyDisplayCounter {
         self.store = store
         self.webKeySource = webKeySource
         self.featureFlagger = featureFlagger
+        migrateWebCountIfNeeded()
+    }
+
+    /// The web app ships this disclosure before native and counts with its own key, so a user who
+    /// has already seen it there must not get three more. Runs once: after this the web app's key
+    /// is never consulted again.
+    private func migrateWebCountIfNeeded() {
+        guard !store.hasMigratedWebCount else { return }
+
+        store.markWebCountMigrated()
+        guard let webCount, webCount > 0 else { return }
+
+        let migrated = min(webCount, Self.cap)
+        store.setCount(migrated)
+        Logger.aiChat.debug("Attachment privacy: migrated web count \(migrated, privacy: .public)")
     }
 
     private var isEnabled: Bool {
@@ -156,17 +193,17 @@ final class AttachmentPrivacyDisplayCounter {
         return true
     }
 
-    /// Both stores: leaving the web app's key behind would have the next read fall back to it, so
-    /// the message would never return after a burn.
+    /// The web app's key goes too, and the marker is put back: nothing is left to migrate, so the
+    /// message can actually return after a burn.
     func reset() {
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
+        store.markWebCountMigrated()
     }
 
-    /// Ours once it exists, otherwise whatever the web app has counted. An absent or unreadable
-    /// value counts as zero: erring towards showing a required disclosure.
+    /// An absent or unreadable value counts as zero: erring towards showing a required disclosure.
     private var count: Int {
-        store.count ?? webCount ?? 0
+        store.count ?? 0
     }
 
     private var webCount: Int? {

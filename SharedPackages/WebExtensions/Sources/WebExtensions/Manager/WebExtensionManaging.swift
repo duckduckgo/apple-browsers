@@ -165,6 +165,7 @@ public protocol WebExtensionManaging: AnyObject {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+    // Preserve lightweight test and platform-specific conformers that do not own embedded content.
     @MainActor
     func loadEmbeddedExtensionBackgroundContent() async {}
 }

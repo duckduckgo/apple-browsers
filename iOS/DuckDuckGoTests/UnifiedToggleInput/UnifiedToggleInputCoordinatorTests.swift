@@ -507,7 +507,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     private func assertDeferredPromptReporting(expectedDelivery: Bool,
-                                              invalidate: (AIChatUserScript) -> Void = { _ in }) async {
+                                               invalidate: (AIChatUserScript) -> Void = { _ in }) async {
         let instrumentation = MockDuckAIWideEventInstrumentation()
         let scope = DuckAIWideEventFlowScope.contextual(UUID())
         sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,

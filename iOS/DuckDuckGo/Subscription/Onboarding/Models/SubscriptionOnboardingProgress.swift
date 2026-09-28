@@ -43,7 +43,7 @@ protocol SubscriptionOnboardingProgressPersisting {
 
 /// Duck.ai's enabled state, for reconciling its fake-completion status — or that reconciling isn't
 /// relevant right now (e.g. the checklist is already fully complete, so it would have no visible effect).
-enum DuckAIChatAvailability: Equatable {
+enum SubscriptionOnboardingDuckAIChatStatus: Equatable {
     case enabled
     case disabled
     case reconciliationNotNeeded
@@ -61,11 +61,11 @@ extension SubscriptionOnboardingProgressPersisting {
     }
 
     /// Fake-completes `.duckAI` while disabled; undoes it once re-enabled, unless it later completed for real.
-    mutating func reconcileDuckAICompletion(_ availability: DuckAIChatAvailability) {
-        guard availability != .reconciliationNotNeeded else { return }
+    mutating func reconcileDuckAICompletion(_ status: SubscriptionOnboardingDuckAIChatStatus) {
+        guard status != .reconciliationNotNeeded else { return }
         progressLock.lock()
         defer { progressLock.unlock() }
-        if availability == .disabled {
+        if status == .disabled {
             var items = completedItems
             guard !items.contains(.duckAI) else { return }
             items.insert(.duckAI)
@@ -192,9 +192,9 @@ struct SubscriptionOnboardingProgress {
 
     private var persistor: SubscriptionOnboardingProgressPersisting
 
-    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus, duckAIChatAvailability: DuckAIChatAvailability = .reconciliationNotNeeded) {
+    init(persistor: SubscriptionOnboardingProgressPersisting, isPIRAvailable: Bool, entitlement: EntitlementStatus, duckAIChatStatus: SubscriptionOnboardingDuckAIChatStatus = .reconciliationNotNeeded) {
         var persistor = persistor
-        persistor.reconcileDuckAICompletion(duckAIChatAvailability)
+        persistor.reconcileDuckAICompletion(duckAIChatStatus)
         self.persistor = persistor
         self.checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
     }

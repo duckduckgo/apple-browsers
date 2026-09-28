@@ -1028,7 +1028,7 @@
                 "key": "reason",
                 "type": "string",
                 "description": "Why the flow never launched",
-                "enum": ["missingPersistor", "emptyChecklist"]
+                "enum": ["missingPersistor", "emptyChecklist", "notPresentable"]
             }
         ]
     },

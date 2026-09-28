@@ -86,7 +86,7 @@ extension SubscriptionOnboardingFlowViewModel {
                                           vpnController: vpnController,
                                           profileStateManager: profileStateManager,
                                           freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                          duckAIChatAvailability: aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
+                                          duckAIChatStatus: aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
         return makeFlow(entryPoint: .postCheckout,
                         progress: progress,
                         onFinish: onFinish,
@@ -112,7 +112,7 @@ extension SubscriptionOnboardingFlowViewModel {
                                           vpnController: vpnController,
                                           profileStateManager: profileStateManager,
                                           freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                          duckAIChatAvailability: aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
+                                          duckAIChatStatus: aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
         return makeFlow(entryPoint: .subscriptionSettings,
                         progress: progress,
                         onFinish: onFinish,
@@ -128,7 +128,7 @@ extension SubscriptionOnboardingFlowViewModel {
                                      vpnController: SubscriptionOnboardingVPNControlling,
                                      profileStateManager: DBPProfileStateManaging,
                                      freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
-                                     duckAIChatAvailability: DuckAIChatAvailability) async -> SubscriptionOnboardingProgress {
+                                     duckAIChatStatus: SubscriptionOnboardingDuckAIChatStatus) async -> SubscriptionOnboardingProgress {
         async let entitlement = subscriptionManager.getAllEntitlementStatus()
         let persistor = await backfilledPersistor(persistor,
                                                    vpnController: vpnController,
@@ -137,7 +137,7 @@ extension SubscriptionOnboardingFlowViewModel {
         return SubscriptionOnboardingProgress(persistor: persistor,
                                               isPIRAvailable: isPIRAvailable,
                                               entitlement: await entitlement,
-                                              duckAIChatAvailability: duckAIChatAvailability)
+                                              duckAIChatStatus: duckAIChatStatus)
     }
 
     /// Live-checks VPN and PIR activation and marks either complete on `persistor`, skipping the check

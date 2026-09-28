@@ -29,6 +29,9 @@ enum SubscriptionOnboardingLaunchFailureReason: String {
     case missingPersistor
     /// The checklist came back empty — something is wrong with the entitlement read
     case emptyChecklist
+    /// The screen meant to present onboarding was already presenting something else, or was no longer
+    /// attached to a window, at the moment the cover tried to present.
+    case notPresentable
 }
 
 enum SubscriptionPixel: PixelKit.Event {

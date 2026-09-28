@@ -20,6 +20,8 @@
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import os.log
+import PixelKit
 
 // MARK: - Presentation
 
@@ -47,41 +49,60 @@ final class SubscriptionOnboardingViewCoordinator: UIViewController {
     /// `presenter` is only invoked when actually presenting for the first time.
     @MainActor
     func present<Content: View>(_ content: Content, from presenter: () -> UIViewController, onDismiss: (() -> Void)? = nil) {
-        self.onDismiss = onDismiss
         guard presented == nil else {
             guard let hosting = presented as? SubscriptionOnboardingPortraitHostingController<Content> else {
                 assertionFailure("Already presenting a different Content type — use a separate coordinator instance")
                 return
             }
+            self.onDismiss = onDismiss
             hosting.rootView = content
             return
         }
+        let target = presenter()
+        guard target.presentedViewController == nil, target.viewIfLoaded?.window != nil else {
+            Logger.subscription.error("Onboarding cover: \(String(describing: target), privacy: .public) is not in a state to present")
+            assertionFailure("\(target) is not in a state to present — cannot present onboarding cover")
+            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingLaunchFailure(.notPresentable), frequency: .dailyAndCount)
+            return
+        }
+        self.onDismiss = onDismiss
         let hosting = SubscriptionOnboardingPortraitHostingController(rootView: content)
         hosting.modalPresentationStyle = .overFullScreen
         hosting.view.backgroundColor = UIColor(designSystemColor: .background)
         presented = hosting
-        presenter().present(hosting, animated: true)
+        target.present(hosting, animated: true)
     }
 
     /// `beforeDismiss` runs before the cover's own dismiss animation (e.g. an unanimated pop underneath,
     /// invisible under the still-opaque cover).
     @MainActor
     func finish(beforeDismiss: () -> Void = {}) {
+        dismissPresented(beforeDismiss: beforeDismiss, animated: true, notifyOnDismiss: true)
+    }
+
+    /// Safety net if the presenting screen is torn down while the cover is still up. Unanimated and silent,
+    /// deliberately: there's nothing left to animate, and `onDismiss` may reference state tied to the
+    /// presenting screen that's disappearing along with it.
+    @MainActor
+    func forceDismiss() {
+        dismissPresented(animated: false, notifyOnDismiss: false)
+    }
+
+    /// Falls back to calling `onDismiss` directly if `presented` was already torn out of the hierarchy by
+    /// something else (e.g. a caller dismissing the whole presentation stack itself before we get here).
+    /// Only applies when `notifyOnDismiss` is true — `forceDismiss` opts out entirely.
+    @MainActor
+    private func dismissPresented(beforeDismiss: () -> Void = {}, animated: Bool, notifyOnDismiss: Bool) {
         guard let presented else { return }
         self.presented = nil
         beforeDismiss()
-        let onDismiss = onDismiss
+        let onDismiss = notifyOnDismiss ? onDismiss : nil
         self.onDismiss = nil
-        presented.dismiss(animated: true, completion: onDismiss)
-    }
-
-    /// Safety net if the presenting screen is torn down while the cover is still up.
-    @MainActor
-    func forceDismiss() {
-        guard let presented else { return }
-        self.presented = nil
-        onDismiss = nil
-        presented.dismiss(animated: false)
+        guard let presenter = presented.presentingViewController else {
+            onDismiss?()
+            return
+        }
+        presenter.dismiss(animated: animated, completion: onDismiss)
     }
 }
 

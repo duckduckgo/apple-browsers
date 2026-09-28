@@ -71,10 +71,11 @@ final class SubscriptionOnboardingViewCoordinatorTests: XCTestCase {
     }
 
     /// The parent-chain walk building `from` is only worth skipping if `present` actually skips calling it
-    /// on the refresh path. Doesn't need a real window — it only counts closure invocations.
+    /// on the refresh path. Needs a real window: `present` now checks the target is actually presentable
+    /// before doing anything else, so a windowless presenter would never get past the first call.
     func testWhenAlreadyPresentingThenThePresenterClosureIsNotInvokedAgain() {
         let sut = SubscriptionOnboardingViewCoordinator()
-        let presenter = UIViewController()
+        let presenter = makePresenter()
         var presenterCallCount = 0
 
         sut.present(Text("first"), from: { presenterCallCount += 1; return presenter })
@@ -110,11 +111,11 @@ final class SubscriptionOnboardingViewCoordinatorTests: XCTestCase {
         XCTAssertTrue(beforeDismissRan)
     }
 
-    /// Doesn't need a real window — the coordinator's own bookkeeping (what `finish`'s guard checks) is set
-    /// before the real UIKit presentation is even attempted.
+    /// Needs a real window: `present` now checks the target is actually presentable before doing anything
+    /// else, so a windowless presenter would never get far enough to set up the state this test checks.
     func testWhenFinishedTwiceThenTheSecondCallIsANoOp() {
         let sut = SubscriptionOnboardingViewCoordinator()
-        let presenter = UIViewController()
+        let presenter = makePresenter()
         sut.present(Text("content"), from: { presenter })
         sut.finish()
 

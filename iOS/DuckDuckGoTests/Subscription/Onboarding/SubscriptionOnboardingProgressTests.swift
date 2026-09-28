@@ -278,7 +278,7 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     }
 
     func testWhenProgressIsInitializedWithDuckAIDisabledThenDuckAIIsFakeCompleted() {
-        let progress = makeProgress(isPIRAvailable: true, duckAIChatAvailability: .disabled)
+        let progress = makeProgress(isPIRAvailable: true, duckAIChatStatus: .disabled)
 
         XCTAssertTrue(progress.completedItems.contains(.duckAI))
     }
@@ -465,9 +465,9 @@ final class SubscriptionOnboardingProgressTests: XCTestCase {
     private func makeProgress(isPIRAvailable: Bool,
                               completed: Set<SubscriptionOnboardingChecklistItem> = [],
                               entitlement: EntitlementStatus = .mockAllEnabled,
-                              duckAIChatAvailability: DuckAIChatAvailability = .enabled) -> SubscriptionOnboardingProgress {
+                              duckAIChatStatus: SubscriptionOnboardingDuckAIChatStatus = .enabled) -> SubscriptionOnboardingProgress {
         sut.completedItems = completed
-        return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable, entitlement: entitlement, duckAIChatAvailability: duckAIChatAvailability)
+        return SubscriptionOnboardingProgress(persistor: sut, isPIRAvailable: isPIRAvailable, entitlement: entitlement, duckAIChatStatus: duckAIChatStatus)
     }
 
     // MARK: - Card first shown

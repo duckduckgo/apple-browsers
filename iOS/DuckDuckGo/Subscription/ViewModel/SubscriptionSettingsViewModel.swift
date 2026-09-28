@@ -249,13 +249,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         // Once fully done, a Duck.ai toggle flip in Settings shouldn't resurrect or alter the checklist.
         let checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
         let currentPercentage = SubscriptionOnboardingChecklistItem.completionPercentage(completed: onboardingPersistor.completedItems, checklist: checklist)
-        let duckAIChatAvailability: DuckAIChatAvailability = currentPercentage < 100
+        let duckAIChatStatus: SubscriptionOnboardingDuckAIChatStatus = currentPercentage < 100
             ? (aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
             : .reconciliationNotNeeded
         let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor,
                                                       isPIRAvailable: isPIRAvailable,
                                                       entitlement: entitlement,
-                                                      duckAIChatAvailability: duckAIChatAvailability)
+                                                      duckAIChatStatus: duckAIChatStatus)
         onboardingSetupState = progress.checklist.isEmpty ? .hidden : .setup(progress)
     }
 

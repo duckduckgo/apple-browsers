@@ -222,7 +222,9 @@ struct SubscriptionFlowView: View {
                 onboardingFlow = nil
                 onboardingViewCoordinator.finish {
                     guard viewModel.onboardingFinished() else { return }
-                    UIView.performWithoutAnimation {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
                         dismiss()
                     }
                 }

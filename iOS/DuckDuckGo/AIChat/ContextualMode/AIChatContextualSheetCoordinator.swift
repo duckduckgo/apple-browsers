@@ -92,6 +92,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
+    private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
@@ -263,6 +264,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.floatingInputFeature = floatingInputFeature
+        self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
@@ -754,7 +756,7 @@ final class AIChatContextualSheetCoordinator {
 
     private func removeAttachedContext() {
         if sessionState.isPageContextAttachInProgress,
-           featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) {
+           case .available = attachMoreTabsFeature.state {
             sessionState.removePendingPageAttachment()
         } else {
             sessionState.downgradeToPlaceholder()
@@ -855,7 +857,7 @@ private extension AIChatContextualSheetCoordinator {
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
-            attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings),
+            attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
             tabAttachmentSource: tabAttachmentSource,

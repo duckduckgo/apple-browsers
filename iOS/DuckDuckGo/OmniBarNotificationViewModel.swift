@@ -38,8 +38,17 @@ final class OmniBarNotificationViewModel: ObservableObject {
         static let easeOutCurve: Double = 4
     }
 
-    let animationName: String
-    let staticIconImage: UIImage?
+    /// The leading icon shown by the notification
+    enum Icon {
+        /// A Lottie that plays as the notification opens, drawn at a fixed size.
+        case animation(String)
+        /// A Lottie held on its resting frame, drawn at its own canvas size.
+        /// Lets the notification reuse artwork used by the address bar.
+        case still(String)
+        case image(UIImage)
+    }
+
+    let icon: Icon
     let eventCount: Int
     private let textGenerator: ((Int) -> String)?
 
@@ -47,9 +56,11 @@ final class OmniBarNotificationViewModel: ObservableObject {
     @Published var isOpen: Bool = false
     @Published var isAnimating: Bool = false
 
-    init(text: String, animationName: String, staticIconImage: UIImage? = nil, eventCount: Int = 0, textGenerator: ((Int) -> String)? = nil) {
-        self.animationName = animationName
-        self.staticIconImage = staticIconImage
+    init(text: String,
+         icon: Icon,
+         eventCount: Int = 0,
+         textGenerator: ((Int) -> String)? = nil) {
+        self.icon = icon
         self.eventCount = eventCount
         self.textGenerator = textGenerator
 

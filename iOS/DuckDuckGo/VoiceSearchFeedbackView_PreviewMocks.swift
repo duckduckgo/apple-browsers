@@ -51,6 +51,7 @@ private final class PreviewAIChatSettingsProvider: AIChatSettingsProvider {
     let aiChatURL = URL(string: "https://duck.ai")!
     let isAIChatEnabled = true
     let sessionTimerInMinutes = 60
+    let aiChatAttachMoreTabsLimit = 3
     let isAIChatAddressBarUserSettingsEnabled = false
     let isAIChatSearchInputUserSettingsEnabled = false
     let isAIChatSearchInputUserSettingsDisabledByUser = false

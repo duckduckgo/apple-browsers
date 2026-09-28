@@ -51,6 +51,9 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.addFileAttachment(makeFileAttachment(fileName: "first.pdf"))
         let originalID = sut.viewController.currentAttachments.first?.id
         XCTAssertNotNil(originalID)
+        let tabAttachment = UnifiedToggleInputAttachment.tab(.init(tabId: "page-tab", title: "Page",
+                                                                    url: URL(string: "https://example.com")!))
+        sut.viewController.addAttachment(tabAttachment)
         XCTAssertTrue(sut.completeOmnibarDeactivation())
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
 
@@ -58,10 +61,11 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.activateFromOmnibar(inputMode: .aiChat)
 
         XCTAssertEqual(sut.viewController.currentAttachments.first?.id, originalID)
+        XCTAssertEqual(sut.viewController.currentAttachments.last?.id, tabAttachment.id)
         XCTAssertEqual(sut.currentText, "keep this draft")
         sut.addFileAttachment(makeFileAttachment(fileName: "second.pdf"))
-        XCTAssertEqual(sut.viewController.currentAttachments.count, 2)
-        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 2)
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 3)
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 3)
         XCTAssertEqual(store.states["tab-A"]?.attachments.first?.id, originalID)
     }
 

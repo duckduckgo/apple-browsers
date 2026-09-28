@@ -76,8 +76,7 @@ struct SyncAnotherDevicePromptView: View {
 
 #if DEBUG
 #Preview("Default") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return SyncAnotherDevicePromptView()
+    SyncAnotherDevicePromptView()
         .environmentObject(ManagementDialogModel())
 }
 

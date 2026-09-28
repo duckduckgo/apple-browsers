@@ -51,8 +51,7 @@ struct SyncAuthenticationCancelledView: View {
 
 #if DEBUG
 #Preview("Default") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return SyncAuthenticationCancelledView()
+    SyncAuthenticationCancelledView()
         .environmentObject(ManagementDialogModel())
 }
 #endif

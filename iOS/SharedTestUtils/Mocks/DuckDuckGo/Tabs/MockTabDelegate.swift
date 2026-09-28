@@ -31,12 +31,23 @@ import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
 import MaliciousSiteProtection
+import SitePermissions
 @testable import DuckDuckGo
 import Combine
 @testable import Core
 
 final class MockTabDelegate: TabDelegate {
     var shouldRequestAppRatingPrompt = false
+    private(set) var grantedSitePermissions = [Set<SitePermissionType>]()
+    private(set) var sitePermissionAnimationCancellationCount = 0
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        grantedSitePermissions.append(permissionTypes)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        sitePermissionAnimationCancellationCount += 1
+    }
 
     private(set) var didLoadPageForAppRatingPromptCallCount = 0
     private(set) var didRequestAppRatingPromptCallCount = 0
@@ -207,7 +218,10 @@ extension TabViewController {
         sitePermissionsEnabled: Bool = false,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
-        fireTab: Bool = false
+        fireTab: Bool = false,
+        interactionStateData: Data? = nil,
+        initialRequest: URLRequest? = nil,
+        consumeCookies: Bool = false
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
             model: .init(link: link, fireTab: fireTab),
@@ -244,7 +258,8 @@ extension TabViewController {
             eventHub: StubEventHub(),
             sitePermissionsEnabled: sitePermissionsEnabled
         )
-        tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
+        tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,
+                          andLoadRequest: initialRequest, consumeCookies: consumeCookies, customWebView: customWebView)
         return tab
     }
 

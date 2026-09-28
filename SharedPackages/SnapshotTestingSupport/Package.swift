@@ -39,7 +39,7 @@ let package = Package(
     dependencies: [
         // Keep the reporting graph consistent across Xcode 26 and 27.
         .package(url: "https://github.com/pointfreeco/swift-custom-dump", exact: "1.7.0"),
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.4"),
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.6"),
         .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", exact: "1.11.0"),
     ],
     targets: [

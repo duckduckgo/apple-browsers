@@ -224,6 +224,18 @@ extension LaunchOptionsHandler {
             }
         }
 
+#if DEBUG
+        // UI tests can start the app with saved site permission decisions, for example
+        // "always allow the camera on 127.0.0.1". They pass them in the -sitePermissionsTestSeed
+        // launch argument, and this copies them into the key SitePermissionsStore reads.
+        // Tests can't pass that key directly: a launch argument overrides the stored value for
+        // the whole run, so decisions deleted by the Fire button would still appear to exist.
+        if isUITesting,
+           let permissions = userDefaults.dictionary(forKey: "sitePermissionsTestSeed") as? [String: [String: String]] {
+            userDefaults.set(permissions, forKey: "site-permissions-per-site")
+        }
+#endif
+
         // Writing ATB keys in -backdateInstallDate makes hasInstallStatistics=true, which causes
         // assignVariantIfNeeded to return early without calling onVariantAssigned → primeForUse()
         // is never called → isDismissed stays true (its default) → contextual dax dialogs are
@@ -250,6 +262,11 @@ extension LaunchOptionsHandler {
         }
         UserDefaults(suiteName: statisticsGroupName)?.removePersistentDomain(forName: statisticsGroupName)
         clearAppSupportFiles()
+
+        // WebKit stops showing its location prompt for a host after repeated denials and keeps that across launches.
+        if let libraryDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
+            try? FileManager.default.removeItem(at: libraryDir.appendingPathComponent("WebKit/GeolocationSitesV2.plist"))
+        }
     }
 
     private func clearAppSupportFiles() {

@@ -32,6 +32,42 @@ struct CreateImageModelSwitchNotice: Equatable {
     }
 }
 
+struct UTIFooterItem: Equatable, Identifiable {
+    enum ID: Int, CaseIterable {
+        case termsConsent
+        case outOfUsage
+        case attachmentPrivacy
+        case modelSwitch
+        case usageWarning
+        case highUsage
+    }
+
+    enum MessageType {
+        case required
+        case action
+        case informational
+    }
+
+    var type: MessageType {
+        switch id {
+        case .termsConsent: return .required
+        case .outOfUsage, .attachmentPrivacy: return .required
+        case .modelSwitch: return .action
+        case .usageWarning, .highUsage: return .informational
+        }
+    }
+
+    let id: ID
+    let message: UTIFooterMessage
+
+    static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        guard !isEditing else { return [] }
+        let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
+        let required = ordered.filter { $0.type == .required }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
@@ -40,10 +76,17 @@ struct UTIFooterMessage: Equatable {
         case alert
         case info
         case modelSwitch
+        case shield
     }
 
     struct PrimaryAction: Equatable {
         let title: String
+    }
+
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
+    struct Link: Equatable {
+        let text: String
+        let url: URL
     }
 
     let icon: Icon
@@ -51,6 +94,21 @@ struct UTIFooterMessage: Equatable {
     let subtitle: String?
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
+    let link: Link?
+
+    init(icon: Icon,
+         title: String,
+         subtitle: String?,
+         primaryAction: PrimaryAction?,
+         isDismissible: Bool,
+         link: Link? = nil) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.primaryAction = primaryAction
+        self.isDismissible = isDismissible
+        self.link = link
+    }
 }
 
 /// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as

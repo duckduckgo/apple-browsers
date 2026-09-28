@@ -128,6 +128,14 @@ final class PopupHandlingTabExtension {
                 }
             }
             .store(in: &cancellables)
+
+        permissionModel.popupDecisionRemoved
+            .sink { [weak self] in
+                MainActor.assumeMainThread {
+                    self?.popupsTemporarilyAllowedForCurrentPage = false
+                }
+            }
+            .store(in: &cancellables)
     }
 
     /// Handles WKUIDelegate createWebViewWithConfiguration:forNavigationAction:windowFeatures: callback

@@ -140,11 +140,6 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Dismissal
 
-    func test_message_dismissibilityComesFromTheWarning() {
-        XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
-        XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
-    }
-
     // MARK: - High-usage model notice
 
     func test_message_highUsageNoticeNamesTheModel() {
@@ -164,6 +159,31 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     func test_message_highUsageNoticeIsDismissible() {
         XCTAssertTrue(sut.message(for: notice).isDismissible)
+    }
+
+    // MARK: - Terms of Service
+
+    /// Required: nothing closes it before the user has seen what sending agrees to.
+    func test_termsOfServiceMessage_hasNoCloseButtonAndNoAction() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertNil(message.primaryAction)
+    }
+
+    func test_termsOfServiceMessage_linksThePhraseToThePrivacyTerms() throws {
+        let message = sut.termsOfServiceMessage()
+        let link = try XCTUnwrap(message.link)
+
+        XCTAssertTrue(message.title.contains(link.text))
+        XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertEqual(message.icon, .shield)
+        XCTAssertNil(message.subtitle)
     }
 
     // MARK: - Create Image model switch

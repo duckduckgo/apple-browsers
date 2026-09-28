@@ -119,6 +119,7 @@ final class AIChatContextualSheetCoordinator {
 
     /// Session state - single source of truth for frontend and chip state
     let sessionState: AIChatContextualChatSessionState
+    var tabProvider: () -> Tab? = { nil }
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -541,33 +542,27 @@ final class AIChatContextualSheetCoordinator {
 
     /// Voice chat replaces whatever is on screen, and the sheet may not be the surface showing it.
     func requestNewVoiceChatLeavingCurrentSurface() {
-        let requestVoiceChat = { [weak self] in
+        leaveCurrentSurface { [weak self] in
             guard let self else { return }
-            self.delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
-        }
-        if floatingInputViewController != nil {
-            dismissFloatingInput()
-            requestVoiceChat()
-        } else if let sheetViewController {
-            sheetViewController.dismiss(animated: true, completion: requestVoiceChat)
-        } else {
-            requestVoiceChat()
+            delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
         }
     }
 
-    /// The link opens in a new tab, which the floating input would otherwise stay on top of.
-    func openURLLeavingCurrentSurface(_ url: URL) {
-        let openURL = { [weak self] in
+    func openInNewTabLeavingCurrentSurface(_ url: URL) {
+        leaveCurrentSurface { [weak self] in
             guard let self else { return }
-            self.delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+            delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
         }
+    }
+
+    private func leaveCurrentSurface(perform action: @escaping () -> Void) {
         if floatingInputViewController != nil {
-            dismissFloatingInput()
-            openURL()
+            dismissFloatingInput(.systemTeardown)
+            action()
         } else if let sheetViewController {
-            sheetViewController.dismiss(animated: true, completion: openURL)
+            sheetViewController.dismiss(animated: true, completion: action)
         } else {
-            openURL()
+            action()
         }
     }
 
@@ -876,6 +871,7 @@ private extension AIChatContextualSheetCoordinator {
             attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
+            tabProvider: { [weak self] in self?.tabProvider() },
             tabAttachmentSource: tabAttachmentSource,
             isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
         )
@@ -922,8 +918,8 @@ private extension AIChatContextualSheetCoordinator {
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
         }
-        host.onOpenURLRequested = { [weak self] url in
-            self?.openURLLeavingCurrentSurface(url)
+        host.onOpenInNewTabRequested = { [weak self] url in
+            self?.openInNewTabLeavingCurrentSurface(url)
         }
         self.persistentUTIHost = host
         return host

@@ -515,6 +515,30 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
 
+    func testWhenAddressBarIsAtBottomThenWebViewEndsAboveBottomChrome() {
+        let obscuredContentInsets = UIEdgeInsets(top: 59, left: 0, bottom: 154, right: 0)
+
+        let layout = FloatingUILayoutPolicy.webViewLayout(
+            obscuredContentInsets: obscuredContentInsets,
+            addressBarPosition: .bottom
+        )
+
+        XCTAssertEqual(layout.bottomAnchorConstant, -154)
+        XCTAssertEqual(layout.obscuredContentInsets, UIEdgeInsets(top: 59, left: 0, bottom: 0, right: 0))
+    }
+
+    func testWhenAddressBarIsAtTopThenWebViewRemainsFullBleed() {
+        let obscuredContentInsets = UIEdgeInsets(top: 111, left: 0, bottom: 83, right: 0)
+
+        let layout = FloatingUILayoutPolicy.webViewLayout(
+            obscuredContentInsets: obscuredContentInsets,
+            addressBarPosition: .top
+        )
+
+        XCTAssertEqual(layout.bottomAnchorConstant, 0)
+        XCTAssertEqual(layout.obscuredContentInsets, obscuredContentInsets)
+    }
+
     func testWhenFloatingTopBarThenNewTabPageBottomInsetClearsTheToolbar() {
         let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
             isFloatingUIEnabled: true,

@@ -171,6 +171,7 @@ class TabViewController: UIViewController {
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
+    var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []
     private var fullscreenStateObserver: NSKeyValueObservation?
@@ -1219,6 +1220,7 @@ class TabViewController: UIViewController {
             obscuredContentInsets: obscuredInsets,
             addressBarPosition: appSettings.currentAddressBarPosition
         )
+        webViewTopAnchorConstraint?.constant = webViewLayout.topAnchorConstant
         webViewBottomAnchorConstraint?.constant = webViewLayout.bottomAnchorConstant
         obscuredInsets = webViewLayout.obscuredContentInsets
 
@@ -1244,6 +1246,7 @@ class TabViewController: UIViewController {
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
         applyContextualOnboardingTopInset(0)
+        webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
@@ -2263,13 +2266,15 @@ class TabViewController: UIViewController {
     private func pinWebViewToContainer() {
         webView.translatesAutoresizingMaskIntoConstraints = false
 
-        // Retained so the fullscreen round-trip re-activates the same objects, preserving the bottom
-        // constant. Rebuilt when a different web view is attached.
+        // Retained so the fullscreen round-trip re-activates the same objects, preserving constants.
+        // Rebuilt when a different web view is attached.
         if webViewLayoutConstraints.first?.firstItem !== webView {
+            let topConstraint = webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor)
             let bottomConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+            webViewTopAnchorConstraint = topConstraint
             webViewBottomAnchorConstraint = bottomConstraint
             webViewLayoutConstraints = [
-                webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+                topConstraint,
                 webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
                 bottomConstraint,
                 webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
@@ -2325,7 +2330,9 @@ class TabViewController: UIViewController {
     /// painted content valid, so WebKit animates to fullscreen instead of re-rendering from blank.
     private func onScreenWebViewRect(in host: UIView) -> CGRect {
         var rect = webViewContainer.bounds
-        rect.size.height += webViewBottomAnchorConstraint?.constant ?? 0
+        let topOffset = webViewTopAnchorConstraint?.constant ?? 0
+        rect.origin.y += topOffset
+        rect.size.height += (webViewBottomAnchorConstraint?.constant ?? 0) - topOffset
         return webViewContainer.convert(rect, to: host)
     }
 

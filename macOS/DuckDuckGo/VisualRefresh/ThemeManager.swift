@@ -66,7 +66,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
         self.isAppRebranded = isAppRebranded
-        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette
 
@@ -102,7 +102,7 @@ private extension ThemeManager {
 
     /// Relay the change to all of our observers
     func switchToTheme(named themeName: ThemeName) {
-        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName)
     }
 
     /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette

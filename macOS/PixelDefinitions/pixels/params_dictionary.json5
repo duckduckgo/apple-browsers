@@ -417,12 +417,55 @@
         "description": "Visual state of the subscription entry-point promo at impression time. Indicates which badge variant the user saw on a non-subscriber surface (App Menu, Preferences).",
         "enum": ["churned", "free-eligible", "free-ineligible"]
     },
+    // Mirrors `SubscriptionFunnelOrigin` in macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift
+    // case for case. Keep the two lists in sync whenever a case is added, renamed, or removed there.
+    // Privacy note: this is a product funnel-step identifier, not an ad-attribution channel — never
+    // add an ad-campaign or marketing-attribution origin to this list (those are a distinct concept,
+    // handled by AttributedMetric's install-origin parsing).
     "subscriptionFunnelOrigin": {
         "key": "origin",
         "type": "string",
-        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Values follow the convention `funnel_<entry-point>_<platform>[_<modifier>]`.",
-        "pattern": "^funnel_",
-        "examples": ["funnel_appmenu_macos", "funnel_appsettings_macos", "funnel_freescan_macos", "funnel_appmenu_macos_winback"]
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` (macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift); never an ad-campaign or marketing-attribution origin.",
+        "enum": [
+            "funnel_appsettings_macos",
+            "funnel_appmenu_macos",
+            "funnel_freescan_macos",
+            "funnel_applaunch_macos_winback",
+            "funnel_appmenu_macos_winback",
+            "funnel_appsettings_macos_winback",
+            "funnel_newtab_macos_winback",
+            "funnel_onboarding_macOS__nextstepscard",
+            "funnel_onboarding_macos__subscriptionupsell",
+            "funnel_newtab_macos__firewindowvpn",
+            "funnel_toolbar_macos__subscriptionvpnupsell",
+            "funnel_toolbar_macos__subscriptionvpnrevoked",
+            "funnel_menubar_macos__subscriptionvpnrevoked",
+            "funnel_addressbar_macos__modelpicker",
+            "funnel_addressbar_macos__reasoningdropdown",
+            "funnel_newtab_macos__omnibar",
+            "funnel_newtab_macos__modelpicker",
+            "funnel_newtab_macos__reasoningdropdown",
+            "funnel_newtab_macos__usagelimit",
+            "funnel_promptbar_macos__modelpicker",
+            "funnel_promptbar_macos__reasoningdropdown",
+            "funnel_addressbar_macos__usagelimit",
+            "funnel_promptbar_macos__usagelimit",
+            "funnel_duckai_macos__aisidebar",
+            "funnel_duckai_macos__activatesubscription",
+            "funnel_duckai_macos__freelabel",
+            "funnel_duckai_macos__freelimit",
+            "funnel_duckai_macos__imagegenerationlimit",
+            "funnel_duckai_macos__pluslimit",
+            "funnel_duckai_macos__promotioncard",
+            "funnel_duckai_macos__settings",
+            "funnel_duckai_macos__disclaimerbanner",
+            "funnel_duckai_macos__voicechatlimit",
+            "funnel_duckai_macos__voicechatdurationlimit",
+            "funnel_duckai_macos__modelpicker",
+            "funnel_duckai_macos__reasoningdropdown",
+            "funnel_duckai_macos__switchmodel",
+            "funnel_duckai_macos__unknown"
+        ]
     },
     "onboardingEventType": {
         "key": "event",

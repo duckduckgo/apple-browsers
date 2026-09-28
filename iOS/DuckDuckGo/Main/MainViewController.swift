@@ -95,11 +95,12 @@ enum FloatingGlassAppearancePolicy {
     static func interfaceStyle(isFireMode: Bool,
                                traitCollection: UITraitCollection,
                                pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
-        if isFireMode || traitCollection.userInterfaceStyle == .dark {
+        if isFireMode {
             return .dark
         }
+        // Follow the page in both themes: forcing dark glass over a light page leaves its white icons washed out.
         guard let pageBackgroundColor else {
-            return .light
+            return traitCollection.userInterfaceStyle == .dark ? .dark : .light
         }
         let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
         return resolvedColor.brightnessPercentage < 50 ? .dark : .light
@@ -3923,7 +3924,7 @@ class MainViewController: UIViewController {
     }
     
     private func showNoMicrophonePermissionAlert() {
-        let isRedesigned = featureFlagger.isFeatureOn(.sitePermissions)
+        let isRedesigned = tabManager.isSitePermissionsEnabled
         guard isRedesigned else {
             let alertController = NoMicPermissionAlert.build(isRedesigned: false) { _ in }
             present(alertController, animated: true, completion: nil)
@@ -4515,7 +4516,7 @@ class MainViewController: UIViewController {
     /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
     private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
-            isSitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
             onAction: { [weak self] action in
                 self?.dismiss(animated: true) {
@@ -8066,6 +8067,8 @@ extension MainViewController {
         // Unrelated trait changes must preserve that hierarchy.
         if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
             || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
+            // A raster captured before editing cannot follow a later appearance change.
+            restingNewTabPageSnapshot = nil
             refreshSettledFloatingGlassAppearance()
         }
         updateFindInPage()

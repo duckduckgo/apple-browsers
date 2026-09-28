@@ -468,11 +468,24 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
         XCTAssertEqual(interfaceStyle, .dark)
     }
 
-    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleIsDark() {
+    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenDarkDeviceAppearanceHasNoPageColorThenInterfaceStyleIsDark() {
         let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: false,
             traitCollection: UITraitCollection(userInterfaceStyle: .dark),
-            pageBackgroundColor: .white)
+            pageBackgroundColor: nil)
 
         XCTAssertEqual(interfaceStyle, .dark)
     }
@@ -805,6 +818,25 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         barView.setFloatingMinimalChromeBar(false)
         XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
+
+    func testWhenFloatingMinimalChromeBarShowsLightPageThenAllGlassFollowsPageStyle() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
+        barView.overrideUserInterfaceStyle = .dark
+        barView.setFloatingMinimalChromeBar(true)
+
+        barView.refreshMaterialAppearance(interfaceStyle: .light)
+
+        let glassViews = allGlassViews(in: barView)
+        XCTAssertEqual(glassViews.count, 3)
+        XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .light })
+    }
+
+    private func allGlassViews(in view: UIView) -> [UIVisualEffectView] {
+        view.subviews.flatMap { subview in
+            ((subview as? UIVisualEffectView).map { [$0] } ?? []) + allGlassViews(in: subview)
+        }
     }
 
     func testWhenFloatingUIDisabledThenMinimalChromeBarAddsNoGlassGroups() {

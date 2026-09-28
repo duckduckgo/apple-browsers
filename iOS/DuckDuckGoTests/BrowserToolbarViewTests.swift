@@ -118,14 +118,14 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertFalse(isInsideGlassContentView)
     }
 
-    func testWhenStandaloneGlassUsesDarkAppearanceThenItHasAContrastTint() throws {
+    func testWhenStandaloneGlassChangesAppearanceThenItStaysUntinted() throws {
         guard #available(iOS 26.0, *) else { return }
         let sut = makeSUT(embeddedOmnibar: false)
 
         sut.refreshMaterialAppearance(interfaceStyle: .dark)
 
         let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
-        XCTAssertNotNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
 
         sut.refreshMaterialAppearance(interfaceStyle: .light)
 

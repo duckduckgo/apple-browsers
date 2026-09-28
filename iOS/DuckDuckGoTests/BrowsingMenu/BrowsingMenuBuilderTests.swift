@@ -413,6 +413,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         let sut = TabViewController.fake(
             customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : []),
+            sitePermissionsEnabled: featureEnabled,
             link: Link(title: nil, url: url),
             fireTab: fireTab
         )

@@ -23,9 +23,16 @@ import DesignResourcesKitIcons
 struct WebsitePermissionsViewState: Equatable {
     var recents: [RecentRow] = []
     var rows: [Row] = []
+    var detailModel: WebsitePermissionDetailViewModel?
 
     var hasRecents: Bool {
         !recents.isEmpty
+    }
+}
+
+extension WebsitePermissionsViewState {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.recents == rhs.recents && lhs.rows == rhs.rows && lhs.detailModel === rhs.detailModel
     }
 }
 
@@ -50,6 +57,8 @@ extension WebsitePermissionsViewState {
                 return UserText.permissionCenterExternalApps
             case .popups:
                 return UserText.permissionPopups
+            case .autoplay:
+                return UserText.permissionAutoplay
             }
         }
 
@@ -67,6 +76,8 @@ extension WebsitePermissionsViewState {
                 return DesignSystemImages.Glyphs.Size16.openIn
             case .popups:
                 return DesignSystemImages.Glyphs.Size16.popupBlocked
+            case .autoplay:
+                return DesignSystemImages.Glyphs.Size16.permissionAutoplay
             }
         }
 

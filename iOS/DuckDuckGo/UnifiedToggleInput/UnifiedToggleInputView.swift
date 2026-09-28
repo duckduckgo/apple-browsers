@@ -374,6 +374,7 @@ final class UnifiedToggleInputView: UIView {
     var onFooterDismissTapped: (() -> Void)?
     /// The footer card entering or leaving the bottom slot, i.e. actually appearing on screen.
     var onFooterVisibilityChanged: ((Bool) -> Void)?
+    var onFooterLinkTapped: ((URL) -> Void)?
 
     // MARK: - Attachment API
 
@@ -585,6 +586,10 @@ final class UnifiedToggleInputView: UIView {
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
+    func cardFrame(in view: UIView) -> CGRect {
+        cardView.convert(cardView.bounds, to: view)
+    }
+
     var cardTopAnchor: NSLayoutYAxisAnchor { cardView.topAnchor }
     var cardLeadingAnchor: NSLayoutXAxisAnchor { cardView.leadingAnchor }
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
@@ -1767,6 +1772,7 @@ private extension UnifiedToggleInputView {
         footerCard.alpha = 0
         footerCard.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?() }
         footerCard.onDismissTap = { [weak self] in self?.onFooterDismissTapped?() }
+        footerCard.onLinkTap = { [weak self] url in self?.onFooterLinkTapped?(url) }
         insertSubview(footerCard, belowSubview: cardView)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)

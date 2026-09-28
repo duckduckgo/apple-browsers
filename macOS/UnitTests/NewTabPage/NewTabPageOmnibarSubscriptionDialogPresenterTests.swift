@@ -20,6 +20,7 @@ import Testing
 import Foundation
 import AIChat
 import NewTabPage
+import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 import Subscription
 import SubscriptionTestingUtilities
@@ -29,7 +30,9 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
 
     // MARK: - Test Setup
 
-    private func createPresenter(isEligibleForFreeTrial: Bool = false) -> (NewTabPageOmnibarSubscriptionDialogPresenter, MockSubscriptionTabsShowing, SubscriptionManagerMock) {
+    private func createPresenter(isEligibleForFreeTrial: Bool = false,
+                                 pixelFiring: PixelFiring? = nil,
+                                 showDialog: @escaping @MainActor (AIChatSubscriptionUpsellDialog) -> Void = { _ in }) -> (NewTabPageOmnibarSubscriptionDialogPresenter, MockSubscriptionTabsShowing, SubscriptionManagerMock) {
         let mockTabShower = MockSubscriptionTabsShowing()
         let mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/pro")!
@@ -38,7 +41,10 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
             tabShower: mockTabShower,
             subscriptionManager: mockSubscriptionManager
         )
-        let presenter = NewTabPageOmnibarSubscriptionDialogPresenter(coordinator: coordinator, subscriptionManager: mockSubscriptionManager)
+        let presenter = NewTabPageOmnibarSubscriptionDialogPresenter(coordinator: coordinator,
+                                                                     subscriptionManager: mockSubscriptionManager,
+                                                                     pixelFiring: pixelFiring,
+                                                                     showDialog: showDialog)
         return (presenter, mockTabShower, mockSubscriptionManager)
     }
 
@@ -56,7 +62,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
     @available(iOS 16, macOS 13, *)
     @Test("Upsell dialog reads Upgrade once the user isn't free-trial eligible, and routes to the purchase flow", .timeLimit(.minutes(1)))
     func upsellDialogRoutesToPurchase() async throws {
-        let (presenter, mockTabShower, _) = createPresenter(isEligibleForFreeTrial: false)
+        let pixelFiring = NewTabPageOmnibarPixelFiringMock()
+        let (presenter, mockTabShower, _) = createPresenter(isEligibleForFreeTrial: false, pixelFiring: pixelFiring)
         let dialog = presenter.makeUpsellDialog(userTier: .free, source: .model)
 
         #expect(dialog.primaryButtonText == UserText.aiChatSubscriptionUpsellDialogUpgradeButton)
@@ -69,6 +76,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
         }
         #expect(url.absoluteString.contains("featurePage=duckai"))
         #expect(url.absoluteString.contains("origin=funnel_newtab_macos__modelpicker"))
+        assertUpsellTriggered(pixelFiring.fireCalls, flowType: "purchase")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -101,7 +109,8 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
     @available(iOS 16, macOS 13, *)
     @Test("Upgrade dialog uses the Pro title/message, hides the Have-Subscription button, and routes to the plans flow", .timeLimit(.minutes(1)))
     func upgradeDialogRoutesToPlans() async throws {
-        let (presenter, mockTabShower, _) = createPresenter()
+        let pixelFiring = NewTabPageOmnibarPixelFiringMock()
+        let (presenter, mockTabShower, _) = createPresenter(pixelFiring: pixelFiring)
         let dialog = presenter.makeUpgradeDialog(source: .model)
 
         #expect(dialog.title == UserText.aiChatSubscriptionUpsellDialogProTitle)
@@ -117,6 +126,7 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
         }
         #expect(url.absoluteString.contains("featurePage=duckai"))
         #expect(url.absoluteString.contains("origin=funnel_newtab_macos__modelpicker"))
+        assertUpsellTriggered(pixelFiring.fireCalls, flowType: "upgrade")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -139,6 +149,69 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Showing the upsell or upgrade dialog after a gated tap fires a gated-row click pixel with that picker's origin", .timeLimit(.minutes(1)))
+    func showDialogsFireGatedRowClick() async throws {
+        for (source, expectedOrigin) in [(NewTabPageDataModel.OmnibarSubscriptionUpsellSource.model, "funnel_newtab_macos__modelpicker"),
+                                         (.reasoning, "funnel_newtab_macos__reasoningdropdown")] {
+            let upsellPixels = NewTabPageOmnibarPixelFiringMock()
+            let (upsellPresenter, _, _) = createPresenter(pixelFiring: upsellPixels)
+            await upsellPresenter.showSubscriptionUpsellDialog(source: source)
+            assertDialogPixels(upsellPixels.fireCalls, origin: expectedOrigin, source: source)
+
+            let upgradePixels = NewTabPageOmnibarPixelFiringMock()
+            let (upgradePresenter, _, _) = createPresenter(pixelFiring: upgradePixels)
+            upgradePresenter.showSubscriptionUpgradeDialog(source: source)
+            assertDialogPixels(upgradePixels.fireCalls, origin: expectedOrigin, source: source)
+        }
+    }
+
+    private func assertDialogPixels(_ fireCalls: [NewTabPageOmnibarPixelFiringMock.FireCall],
+                                    origin: String,
+                                    source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        let clickCall = fireCalls.first { $0.pixel.name == "aichat_ntp_gated_row_click" }
+        #expect(clickCall != nil, "Missing gated-row click pixel for \(source)")
+        #expect(clickCall?.pixel.parameters == ["origin": origin])
+        #expect(clickCall?.frequency == .dailyAndCount)
+        #expect(fireCalls.filter { $0.pixel.name == "aichat_ntp_gated_row_click" }.count == 1)
+
+        let shownCall = fireCalls.first { $0.pixel.name == "aichat_ntp_subscription_upsell_shown" }
+        #expect(shownCall != nil, "Missing dialog-shown pixel for \(source)")
+        #expect(shownCall?.pixel.parameters == ["origin": origin])
+        #expect(shownCall?.frequency == .dailyAndCount)
+    }
+
+    private func assertUpsellTriggered(_ fireCalls: [NewTabPageOmnibarPixelFiringMock.FireCall], flowType: String) {
+        let triggeredCall = fireCalls.first { $0.pixel.name == "aichat_ntp_subscription_upsell_triggered" }
+        #expect(triggeredCall != nil)
+        #expect(triggeredCall?.pixel.parameters == [
+            "flow_type": flowType,
+            "source": "model",
+            "origin": "funnel_newtab_macos__modelpicker"
+        ])
+        #expect(triggeredCall?.frequency == .dailyAndCount)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Subscription callbacks keep pixel firing alive after the presenter owner releases it", .timeLimit(.minutes(1)))
+    func subscriptionCallbacksKeepPixelFiringAliveAfterPresenterOwnerReleasesIt() {
+        let purchasePixels = NewTabPageOmnibarPixelFiringMock()
+        let purchaseDialog = {
+            let (presenter, _, _) = createPresenter(pixelFiring: purchasePixels)
+            return presenter.makeUpsellDialog(userTier: .free, source: .model)
+        }()
+        purchaseDialog.onSubscribe?()
+        assertUpsellTriggered(purchasePixels.fireCalls, flowType: "purchase")
+
+        let upgradePixels = NewTabPageOmnibarPixelFiringMock()
+        let upgradeDialog = {
+            let (presenter, _, _) = createPresenter(pixelFiring: upgradePixels)
+            return presenter.makeUpgradeDialog(source: .model)
+        }()
+        upgradeDialog.onSubscribe?()
+        assertUpsellTriggered(upgradePixels.fireCalls, flowType: "upgrade")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Upgrade dialog's 'I Have a Subscription' button routes to activation", .timeLimit(.minutes(1)))
     func upgradeDialogHaveSubscriptionRoutesToActivation() async throws {
         let (presenter, mockTabShower, _) = createPresenter()
@@ -151,5 +224,23 @@ struct NewTabPageOmnibarSubscriptionDialogPresenterTests {
             return
         }
         #expect(!url.absoluteString.contains("featurePage"))
+    }
+}
+
+private final class NewTabPageOmnibarPixelFiringMock: PixelFiring {
+
+    struct FireCall {
+        let pixel: PixelKit.Event
+        let frequency: PixelKit.Frequency
+    }
+
+    private(set) var fireCalls: [FireCall] = []
+
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
+        fireCalls.append(FireCall(pixel: event, frequency: frequency))
+        onComplete(true, nil)
     }
 }

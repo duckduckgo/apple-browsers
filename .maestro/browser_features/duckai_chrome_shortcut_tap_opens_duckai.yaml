@@ -1,6 +1,6 @@
 # duckai_chrome_shortcut_tap_opens_duckai.yaml
 #
-# Scenario 1: Tapping the chrome shortcut (text half) opens Duck.ai.
+# Scenario 1: Tapping the chrome shortcut opens the Duck.ai menu, and New Chat opens Duck.ai.
 appId: com.duckduckgo.mobile.ios
 tags:
     - ipad
@@ -12,13 +12,16 @@ tags:
 
 # The chrome shortcut is visible in the iPad tabs bar on a clean launch.
 - assertVisible:
-    id: "Browser.TabsBar.AIChatChip"
-- assertVisible:
-    id: "Browser.TabsBar.AIChatChip.OpenButton"
+    id: "Browser.TabsBar.AIChatMenuButton"
 
-# Tapping the text half opens Duck.ai.
+# The button shows its menu as the primary action, so a plain tap opens the menu.
 - tapOn:
-    id: "Browser.TabsBar.AIChatChip.OpenButton"
+    id: "Browser.TabsBar.AIChatMenuButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "New Chat"
+
+- tapOn: "New Chat"
 - waitForAnimationToEnd:
     timeout: 3000
 

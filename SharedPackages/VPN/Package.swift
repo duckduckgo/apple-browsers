@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
@@ -31,7 +32,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "Networking", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit")
@@ -56,7 +57,7 @@ let package = Package(
                 .product(name: "WideEvent", package: "WideEvent"),
                 "VPN",
                 "VPNTestUtils",
-                .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
             ],
             resources: [
                 .copy("Resources/servers-original-endpoint.json"),

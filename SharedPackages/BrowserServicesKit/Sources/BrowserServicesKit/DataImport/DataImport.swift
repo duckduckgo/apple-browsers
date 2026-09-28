@@ -53,10 +53,6 @@ public enum DataImport {
         public var isSafari: Bool {
             self == .safari || self == .safariTechnologyPreview
         }
-
-        public var isAvailableForLegacyImports: Bool {
-            return self != .fileImport
-        }
     }
 
     public enum DataType: String, Hashable, CaseIterable, CustomStringConvertible {

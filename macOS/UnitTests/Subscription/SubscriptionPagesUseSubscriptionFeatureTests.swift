@@ -19,8 +19,7 @@
 import BrowserServicesKitTestsUtils
 import Common
 import FoundationExtensions
-import Networking
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import SubscriptionTestingUtilities
 import WebKit
 import XCTest

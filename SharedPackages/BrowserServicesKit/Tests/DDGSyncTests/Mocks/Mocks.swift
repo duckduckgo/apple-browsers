@@ -322,6 +322,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var isScopedAccessCredentialsEnabled: () -> Bool = { true }
     var isPairingV2ScanningEnabled: () -> Bool = { true }
     var isPairingV2CodeEnabled: () -> Bool = { true }
+    var canUseExchangeV2Point1: () -> Bool = { false }
     var canWriteUnifiedDeviceList: () -> Bool = { false }
     var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
     var canReadUnifiedDeviceList: () -> Bool = { false }
@@ -329,6 +330,7 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         isScopedAccessCredentialsEnabled: { [weak self] in self?.isScopedAccessCredentialsEnabled() == true },
         isPairingV2ScanningEnabled: { [weak self] in self?.isPairingV2ScanningEnabled() == true },
         isPairingV2CodeEnabled: { [weak self] in self?.isPairingV2CodeEnabled() == true },
+        canUseExchangeV2Point1: { [weak self] in self?.canUseExchangeV2Point1() == true },
         canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
         canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
         canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true }

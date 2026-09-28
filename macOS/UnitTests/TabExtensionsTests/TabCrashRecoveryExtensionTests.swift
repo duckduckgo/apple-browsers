@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import FeatureFlags_macOS
-import Navigation
+import DDGNavigation
 import PixelKit
 import PrivacyConfig
 import SharedTestUtilities

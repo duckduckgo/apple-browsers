@@ -467,7 +467,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     private func onImport() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {

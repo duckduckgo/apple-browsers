@@ -60,6 +60,13 @@ public struct SitePermissionDialogView: View {
                         }
                     }
                     title
+                    if let body = viewModel.body {
+                        Text(body)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Constants.contentHorizontalPadding)
@@ -119,8 +126,8 @@ public struct SitePermissionDialogView: View {
     }
 
     private func iconView(for icon: SitePermissionDialogViewModel.Icon) -> some View {
-        Image(systemName: systemImageName(for: icon))
-            .renderingMode(.template)
+        image(for: icon)
+            .renderingMode(icon == .duckDuckGo ? .original : .template)
             .resizable()
             .scaledToFit()
             .frame(width: Constants.iconSize, height: Constants.iconSize)
@@ -133,15 +140,16 @@ public struct SitePermissionDialogView: View {
             .accessibilityHidden(true)
     }
 
-    private func systemImageName(for icon: SitePermissionDialogViewModel.Icon) -> String {
+    private func image(for icon: SitePermissionDialogViewModel.Icon) -> Image {
         switch icon {
         case .camera:
-            return "video"
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.video)
         case .microphone:
-            if #available(iOS 18.0, *) {
-                return "microphone"
-            }
-            return "mic"
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
+        case .location:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
+        case .duckDuckGo:
+            return Image(uiImage: DesignSystemImages.Color.Size32.duckDuckGo)
         }
     }
 

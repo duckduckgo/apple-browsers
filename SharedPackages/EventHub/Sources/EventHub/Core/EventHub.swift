@@ -259,21 +259,15 @@ public final class EventHub: EventHubManaging {
         let matching = latestConfigs.filter { $0.isEnabled && $0.trigger.type == .immediateV2 && $0.trigger.source == source }
         Logger.eventHub.debug("[EventHub] immediate routing for \(source, privacy: .private) → \(matching.isEmpty ? "no immediate telemetry is triggered by it" : matching.map(\.name).joined(separator: ", "), privacy: .public)")
         for config in matching {
+            // Fires once per delivered event whatever its parameters resolve to; a parameter with no
+            // value is omitted from the pixel rather than cancelling it.
             var params: [String: String] = [:]
-            var declaresDataParameters = false
             for (paramName, paramConfig) in config.parameters where paramConfig.template == .data {
-                declaresDataParameters = true
                 // Transient: an immediate pixel has no period, so this parameter reports the triggering
                 // event's own payload and is discarded straight after firing.
                 let parameter = DataParameter(dataKey: paramConfig.dataKey)
                 parameter.handle(data: data)
                 if let value = parameter.queryValue() { params[paramName] = value }
-            }
-            // A pixel that declares data parameters but resolved none of them has nothing to report, so
-            // it does not fire. A pixel declaring no parameters at all still fires on the event alone.
-            guard !declaresDataParameters || !params.isEmpty else {
-                Logger.eventHub.debug("[EventHub] \(config.name, privacy: .public) not fired, none of its data parameters resolved")
-                continue
             }
             pixelFiring.enqueueFirePixel(named: config.name, parameters: params)
         }

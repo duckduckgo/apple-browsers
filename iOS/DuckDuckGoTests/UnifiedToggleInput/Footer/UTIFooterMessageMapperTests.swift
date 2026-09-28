@@ -166,6 +166,31 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertTrue(sut.message(for: notice).isDismissible)
     }
 
+    // MARK: - Terms of Service
+
+    /// Required: nothing closes it before the user has seen what sending agrees to.
+    func test_termsOfServiceMessage_hasNoCloseButtonAndNoAction() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertNil(message.primaryAction)
+    }
+
+    func test_termsOfServiceMessage_linksThePhraseToThePrivacyTerms() throws {
+        let message = sut.termsOfServiceMessage()
+        let link = try XCTUnwrap(message.link)
+
+        XCTAssertTrue(message.title.contains(link.text))
+        XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertEqual(message.icon, .shield)
+        XCTAssertNil(message.subtitle)
+    }
+
     // MARK: - Create Image model switch
 
     /// The title names the model now in use; the subtitle names the one it replaced. Getting these
@@ -204,6 +229,23 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
             XCTAssertEqual(message.subtitle, "Whatever doesn't support image creation.",
                            "unexpected subtitle for provider \(provider)")
+        }
+    }
+
+    func testUnavailablePurchaseOmitsBothUpsellLabelsAndPreservesLimitInformation() {
+        for isTrialEligible in [true, false] {
+            let warning = warning(.freeReached, window: .daily, isDismissible: false,
+                                  action: .tryForFree(isTrialEligible: isTrialEligible))
+            let available = sut.message(for: warning)
+            let unavailable = sut.message(for: warning, allowsSubscriptionUpsell: false)
+
+            XCTAssertNotNil(available.primaryAction)
+            XCTAssertNil(unavailable.primaryAction)
+            XCTAssertEqual(unavailable.title, available.title)
+            XCTAssertEqual(unavailable.subtitle, available.subtitle)
+            XCTAssertEqual(unavailable.icon, available.icon)
+            XCTAssertFalse(unavailable.isDismissible)
+            XCTAssertTrue(warning.blocksInput)
         }
     }
 

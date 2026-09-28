@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Darwin
 import XCTest
 import WebKit
 import UserScript
@@ -74,7 +75,27 @@ class UserScriptTests: XCTestCase {
             }
             XCTAssertEqual(fileName, jsFile)
             XCTAssertNotNil(underlyingError)
+            XCTAssertTrue(error.localizedDescription.contains(fileName))
+            XCTAssertTrue(error.localizedDescription.contains((underlyingError as NSError).domain))
         }
+    }
+
+    func testWhenUTF8ResourceHasStaleEncodingMetadataThenLoadJSPreservesItsContent() throws {
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("js")
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let source = "const city = 'Łódź'; // ©\n"
+        try Data(source.utf8).write(to: fileURL)
+        let encoding = "us-ascii;1536"
+        let result = encoding.withCString {
+            setxattr(fileURL.path, "com.apple.TextEncoding", $0, encoding.utf8.count, 0, 0)
+        }
+        XCTAssertEqual(result, 0)
+
+        let bundle = MockBundle()
+        bundle.pathToReturn = fileURL.path
+        let loaded = try TestUserScript.loadJS(fileURL.deletingPathExtension().lastPathComponent, from: bundle)
+
+        XCTAssertEqual(loaded, source)
     }
 
     // MARK: - loadJS replacement integration tests

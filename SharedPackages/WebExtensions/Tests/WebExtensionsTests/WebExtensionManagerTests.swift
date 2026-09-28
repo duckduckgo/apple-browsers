@@ -73,7 +73,8 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Helper
 
     @MainActor
-    private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil) -> WebExtensionManager {
+    private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
+                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
         let manager = WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
@@ -82,6 +83,7 @@ final class WebExtensionManagerTests: XCTestCase {
             loader: webExtensionLoadingMock,
             eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock,
+            pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
         )
         manager.unloadGuard = WebExtensionUnloadGuard(
@@ -346,6 +348,49 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Reload Installed Extensions Tests
 
     @MainActor
+    func testWhenExplicitReloadUnloadFails_ThenFiresReloadErrorPixel() async {
+        let pixelFiring = CapturingReloadErrorPixelFiring()
+        let manager = makeManager(pixelFiring: pixelFiring)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1", embeddedType: .embedded)
+        ]
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.reloadExtension(identifier: "extension1")
+            XCTFail("Expected reload to fail")
+        } catch {
+            XCTAssertEqual(pixelFiring.records, [
+                .init(type: .embedded, trigger: .explicit, phase: .unload, errorDomain: "test", errorCode: "1")
+            ])
+        }
+    }
+
+    @MainActor
+    func testWhenExplicitReloadLoadFails_ThenFiresReloadErrorPixel() async {
+        let pixelFiring = CapturingReloadErrorPixelFiring()
+        let manager = makeManager(pixelFiring: pixelFiring)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1", embeddedType: .embedded)
+        ]
+        webExtensionLoadingMock.mockError = NSError(
+            domain: WKWebExtensionContext.errorDomain,
+            code: WKWebExtensionContext.Error.Code.baseURLAlreadyInUse.rawValue
+        )
+
+        do {
+            try await manager.reloadExtension(identifier: "extension1")
+            XCTFail("Expected reload to fail")
+        } catch {
+            XCTAssertEqual(pixelFiring.records, [
+                .init(type: .embedded, trigger: .explicit, phase: .load,
+                      errorDomain: WKWebExtensionContext.errorDomain,
+                      errorCode: String(WKWebExtensionContext.Error.Code.baseURLAlreadyInUse.rawValue))
+            ])
+        }
+    }
+
+    @MainActor
     func testWhenReloadInstalledExtensionsCalledWithEmptyCache_ThenFallsBackToFullLoad() async {
         installedExtensionStoringMock.installedExtensions = [
             makeInstalledWebExtension(uniqueIdentifier: "extension1")
@@ -414,7 +459,8 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     func testWhenLightweightReloadFails_ThenFallsBackToFullLoad() async throws {
-        let manager = makeManager()
+        let pixelFiring = CapturingReloadErrorPixelFiring()
+        let manager = makeManager(pixelFiring: pixelFiring)
         try await loadRealContext(identifier: "extension1", into: manager.controller)
         installedExtensionStoringMock.installedExtensions = [
             makeInstalledWebExtension(uniqueIdentifier: "extension1")
@@ -431,6 +477,29 @@ final class WebExtensionManagerTests: XCTestCase {
         // The lightweight reload was attempted, failed, and recovery used the full load path.
         XCTAssertTrue(webExtensionLoadingMock.reloadWebExtensionCalled)
         XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionsCalled)
+        XCTAssertEqual(pixelFiring.records, [
+            .init(type: nil, trigger: .dataClearing, phase: .lightweightLoad, errorDomain: "test", errorCode: "1")
+        ])
+    }
+
+    @MainActor
+    func testWhenLightweightAndFallbackReloadFail_ThenFiresBothReloadErrorPhases() async throws {
+        let pixelFiring = CapturingReloadErrorPixelFiring()
+        let manager = makeManager(pixelFiring: pixelFiring)
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1", embeddedType: .embedded)
+        ]
+        webExtensionLoadingMock.mockLoadResults = [.failure(NSError(domain: "fallback", code: 2))]
+
+        manager.unloadAllExtensions()
+        webExtensionLoadingMock.mockError = NSError(domain: "lightweight", code: 1)
+        await manager.reloadInstalledExtensions()
+
+        XCTAssertEqual(pixelFiring.records, [
+            .init(type: .embedded, trigger: .dataClearing, phase: .lightweightLoad, errorDomain: "lightweight", errorCode: "1"),
+            .init(type: .embedded, trigger: .dataClearing, phase: .fallbackLoad, errorDomain: "fallback", errorCode: "2")
+        ])
     }
 
     @MainActor
@@ -678,5 +747,35 @@ private final class CapturingCPMLifecycleMonitor: CPMMessagingHealthMonitoring {
     func handle(_ event: CPMMessagingHealthEvent) {
         guard case .extensionLifecycle(let lifecycleEvent) = event else { return }
         lifecycleEvents.append(lifecycleEvent)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class CapturingReloadErrorPixelFiring: WebExtensionPixelFiring {
+    struct Record: Equatable {
+        let type: DuckDuckGoWebExtensionType?
+        let trigger: WebExtensionReloadTrigger
+        let phase: WebExtensionReloadFailurePhase
+        let errorDomain: String
+        let errorCode: String
+    }
+
+    private(set) var records: [Record] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        guard case .reloadError(let type, let trigger, let phase, let error) = event else { return }
+        let metadata = WebExtensionReloadErrorPixelMetadata(
+            type: type,
+            trigger: trigger,
+            phase: phase,
+            error: error
+        )
+        records.append(Record(
+            type: type,
+            trigger: trigger,
+            phase: phase,
+            errorDomain: metadata.parameters["d"] ?? "missing",
+            errorCode: metadata.parameters["e"] ?? "missing"
+        ))
     }
 }

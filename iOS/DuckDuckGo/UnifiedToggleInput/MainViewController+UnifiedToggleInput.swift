@@ -599,6 +599,11 @@ private extension MainViewController {
     }
 
     func subscribeToSystemEvents() {
+        unifiedToggleInputCoordinator?.onSubscriptionUpsellAvailabilityChanged = { [weak self] in
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.aiChatTabChatHeaderView?.setAllowsSubscriptionUpsell(coordinator.modelStore.shouldShowHeaderUpsell)
+        }
+
         NotificationCenter.default.publisher(for: .speechRecognizerDidChangeAvailability)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -938,7 +943,10 @@ private extension MainViewController {
         Task { @MainActor [weak self] in
             let isActive = (try? await AppDependencyProvider.shared.subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false
             self?.isPaidAIChatEnabledForSwipe = isActive
-            self?.aiChatTabChatHeaderView?.configure(isSubscriptionActive: isActive)
+            guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.aiChatTabChatHeaderView?.configure(
+                isSubscriptionActive: isActive,
+                allowsSubscriptionUpsell: coordinator.modelStore.shouldShowHeaderUpsell)
         }
     }
 }
@@ -963,6 +971,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: isOnAITab)
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -1034,6 +1043,13 @@ extension MainViewController {
             contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         contentVC.didMove(toParent: self)
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: currentTab?.isAITab == true)
+    }
+
+    /// Selects presentation only. The content controller and its view stay installed for the session.
+    func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
+        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
+            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
     }
 
     func installFloatingReturnKeyViewController() {
@@ -1093,6 +1109,11 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
+        if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
+            dismissInlineNewTabPageInput(coordinator: coordinator, animated: true, completion: completion)
+            return
+        }
+
         let omnibarPlaceholderWindowX = omnibarPlaceholderWindowXForHandoff(coordinator)
         let omnibarPlaceholderColor = currentOmnibarPlaceholderColor()
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
@@ -1178,7 +1199,7 @@ extension MainViewController {
         newTabPageViewController?.setFavoritesHidden(false)
     }
 
-    private func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
+    func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
@@ -1196,6 +1217,8 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
+        // The unified input dismisses on its own path, apart from `dismissOmniBar`.
+        updateAddressBarSuppressionForNewTabPage()
         completion?()
     }
 
@@ -1294,6 +1317,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
               currentTab?.isAITab != true else {
             return .allowDefault
         }
+        // Reveal before unified input measures the bar for its transition.
+        revealAddressBarForEditing()
+        defer { finishNewTabPageInputHandoff() }
         if tapped {
             onExperimentalAddressBarTapped()
         }
@@ -1411,6 +1437,13 @@ extension MainViewController: UnifiedToggleInputDelegate {
         applyEditModeChrome(isEditing)
     }
 
+    /// A new tab, like the web app's own links, so the draft and the chat stay where they were.
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
+    }
+
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
         let tab = tabManager.currentTabsModel.currentTab
         // AI tab reuses the same textView for the flanked input — populating it with the URL
@@ -1514,11 +1547,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapUpgrade() {
+        guard let policy = unifiedToggleInputCoordinator?.subscriptionUpsellPolicy, policy.isPurchaseEligible else { return }
         if let subscriptionState = unifiedToggleInputCoordinator?.subscriptionState, !subscriptionState.hasActiveSubscription {
             PixelKit.fire(Pixel.Event.unifiedToggleInputChatHeaderUpgradeTapped,
                           options: .parameters([AttributionParameter.origin: SubscriptionFunnelOrigin.duckAIFreeLabel.rawValue]))
         }
-        DuckAISubscriptionUpsellPresenter().presentPurchaseFlow(origin: .duckAIFreeLabel)
+        DuckAISubscriptionUpsellPresenter(policy: policy).presentPurchaseFlow(origin: .duckAIFreeLabel)
     }
 
     /// Close the chat tab. Selection follows the tab-switcher rule; chat is recoverable via Duck.ai → Recent chats.

@@ -418,6 +418,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         XCTAssertEqual(extractionPixels.calls.count, 1)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .markdown)
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
     }
 
@@ -683,6 +684,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(received?.contextData.hasAttachedPage ?? false)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .pdf)
     }
 
     func testWhenDocumentTabAndUserRequestIsTooLargeThenPublishesNil() async {
@@ -727,6 +729,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         XCTAssertNil(received)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.documentUnavailable))
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .pdf)
     }
 
     func testWhenDocumentCollectIsInFlightAndURLChangesThenResultIsDropped() async {
@@ -787,6 +790,91 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         )
 
         XCTAssertTrue(handler.isCurrentPageAttachable())
+    }
+
+    func testWhenLocalFileThenIsCurrentPageNotAttachable() {
+        let localPDF = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+        let localPDFWithoutBlocklist = makeHandler(
+            attachabilityPolicyProvider: { nil },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+        let localHTML = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/page.html") },
+            mimeTypeProvider: { _ in "text/html" }
+        )
+
+        XCTAssertFalse(localPDF.isCurrentPageAttachable())
+        XCTAssertFalse(localPDFWithoutBlocklist.isCurrentPageAttachable(), "Local files are excluded even without the blocklist config")
+        XCTAssertFalse(localHTML.isCurrentPageAttachable())
+    }
+
+    func testWhenLocalHTMLThenCollectionIsPrevented() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/page.html") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
+    }
+
+    func testWhenLocalPDFThenCollectionIsPreventedWithoutReadingBytes() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        var didReadDocument = false
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in
+                didReadDocument = true
+                return .unavailable
+            }
+        )
+
+        let expectation = XCTestExpectation(description: "Nil context published")
+        var received: AIChatPageContext?
+        var didPublish = false
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                received = context
+                didPublish = true
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertTrue(didPublish)
+        XCTAssertNil(received)
+        XCTAssertFalse(didReadDocument)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
     }
 
     func testWhenDocumentTabAndFlagOffThenBlocklistStillPreventsCollection() {
@@ -1044,14 +1132,16 @@ private final class MockPageContextExtractionPixelFiring: PageContextExtractionP
         let outcome: PageContextExtractionOutcome
         let trigger: PageContextExtractionTrigger
         let latency: PageContextExtractionLatencyBucket?
+        let contextType: PageContextType
     }
 
     private(set) var calls: [Call] = []
 
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?) {
-        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency))
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType) {
+        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency, contextType: contextType))
     }
 }
 
@@ -1101,17 +1191,29 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
 
     private func capture(_ outcome: PageContextExtractionOutcome,
                          trigger: PageContextExtractionTrigger,
-                         latency: PageContextExtractionLatencyBucket?) -> (event: Pixel.Event, params: [String: String])? {
+                         latency: PageContextExtractionLatencyBucket?,
+                         contextType: PageContextType = .markdown) -> (event: Pixel.Event, params: [String: String])? {
         var captured: (Pixel.Event, [String: String])?
         let handler = PageContextExtractionPixelHandler(firePixel: { captured = ($0, $1) })
-        handler.fire(outcome, trigger: trigger, latency: latency)
+        handler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
         return captured.map { (event: $0.0, params: $0.1) }
     }
 
-    func testWhenSuccessThenFiresSuccessPixelWithNoAdditionalParams() {
+    func testWhenSuccessThenFiresSuccessPixelWithContextTypeOnly() {
         let result = capture(.success, trigger: .navigation, latency: .under1s)
         XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_success")
-        XCTAssertEqual(result?.params, [:])
+        XCTAssertEqual(result?.params, ["context_type": "markdown"])
+    }
+
+    func testWhenSuccessForADocumentThenSuccessPixelSaysPDF() {
+        let result = capture(.success, trigger: .userRequest, latency: .under1s, contextType: .pdf)
+        XCTAssertEqual(result?.params["context_type"], "pdf")
+    }
+
+    func testWhenFailureForADocumentThenFailedPixelSaysPDF() {
+        let result = capture(.failure(.documentUnavailable), trigger: .userRequest, latency: nil, contextType: .pdf)
+        XCTAssertEqual(result?.params["context_type"], "pdf")
+        XCTAssertEqual(result?.params["reason"], "document_unavailable")
     }
 
     func testWhenFailureThenFiresFailedPixelWithReasonTriggerLatency() {
@@ -1120,6 +1222,7 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(result?.params["reason"], "empty_content")
         XCTAssertEqual(result?.params["trigger"], "auto")
         XCTAssertEqual(result?.params["latency"], "1_to_5s")
+        XCTAssertEqual(result?.params["context_type"], "markdown")
     }
 
     func testWhenFailureWithoutLatencyThenOmitsLatencyParam() {
@@ -1134,5 +1237,6 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(result?.params["category"], "pdf")
         XCTAssertEqual(result?.params["reason"], "non_attachable")
         XCTAssertEqual(result?.params["trigger"], "tab_content")
+        XCTAssertNil(result?.params["context_type"], "category already names the page kind")
     }
 }

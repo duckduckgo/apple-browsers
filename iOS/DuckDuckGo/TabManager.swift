@@ -177,6 +177,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private weak var controllerPendingTerminationRecovery: TabViewController?
+    let isSitePermissionsEnabled: Bool
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
 
     @MainActor
@@ -230,6 +231,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
          featureFlagger: FeatureFlagger,
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
@@ -279,6 +281,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
         self.tabEvictionSettings = tabEvictionSettings
@@ -414,6 +417,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              sitePermissionsEnabled: isSitePermissionsEnabled,
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })
@@ -556,6 +560,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              sitePermissionsEnabled: isSitePermissionsEnabled,
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
                                                               })

@@ -719,7 +719,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func onImportClicked() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     private func showManageBookmarks() {

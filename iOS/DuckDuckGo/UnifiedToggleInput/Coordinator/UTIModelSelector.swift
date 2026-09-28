@@ -89,7 +89,7 @@ final class UTIModelSelector {
          isUpdatedModelPickerEnabled: Bool,
          isUpdatedCreateImageEnabled: Bool,
          reasoningAccessResolver: ReasoningModeAccessResolving = ReasoningModeAccessResolver(),
-         subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter()) {
+         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil) {
         self.modelStore = modelStore
         self.toolsController = toolsController
         self.pixelReporter = pixelReporter
@@ -99,7 +99,7 @@ final class UTIModelSelector {
         self.modelMenuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningMenuFactory = UnifiedToggleInputReasoningMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         self.reasoningAccessResolver = reasoningAccessResolver
-        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: modelStore.upsellPolicy)
         self.isUpdatedCreateImageEnabled = isUpdatedCreateImageEnabled
     }
 
@@ -300,6 +300,7 @@ final class UTIModelSelector {
             selectedId: selectedId,
             userTier: modelStore.subscriptionState.userTier,
             freeTrialEligibility: modelStore.freeTrialEligibility,
+            allowsSubscriptionUpsell: modelStore.allowsSubscriptionUpsell,
             onSelect: onSelect
         )
     }
@@ -313,7 +314,7 @@ final class UTIModelSelector {
             return
         }
         let selectedMode = resolvedSelectedReasoningMode
-        let shouldHide = !(modelStore.selectedModel?.supportsReasoningPicker ?? false)
+        let shouldHide = !modelStore.isReasoningPickerAvailable
         view.setSelectedReasoningMode(selectedMode)
         view.setReasoningButtonHidden(shouldHide)
         view.setReasoningPickerMenu(shouldHide ? nil : buildReasoningPickerMenu())
@@ -331,6 +332,7 @@ final class UTIModelSelector {
             selectedMode: resolvedSelectedReasoningMode,
             userTier: modelStore.subscriptionState.userTier,
             freeTrialEligibility: modelStore.freeTrialEligibility,
+            allowsSubscriptionUpsell: modelStore.allowsSubscriptionUpsell,
             onSelect: onSelect
         )
     }

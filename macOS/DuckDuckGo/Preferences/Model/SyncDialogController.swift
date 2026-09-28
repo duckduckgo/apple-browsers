@@ -27,7 +27,7 @@ import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
 import os.log
@@ -85,6 +85,7 @@ final class SyncDialogController {
     private let pixelFiring: PixelFiring?
     private let keyValueStore: KeyValueStoring
     private let diagnosisHelper: SyncDiagnosisHelper
+    private let deviceNameProvider: @MainActor () -> String
 
     private enum Constants {
         static let authenticationCancelledPromptCountKey = "sync.authentication-cancelled-prompt.presented-count"
@@ -92,7 +93,8 @@ final class SyncDialogController {
     }
 
     private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
-        syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: delegate)
+        let device = deviceInfo()
+        return syncService.createConnectionController(deviceName: device.name, deviceType: device.type, delegate: delegate)
     }
     private static let defaultCloseSetupConfirmation: @MainActor () async -> Bool = {
         NSAlert.syncCloseSetupConfirmation().runModal() == .alertFirstButtonReturn
@@ -130,7 +132,8 @@ final class SyncDialogController {
         featureFlagger: FeatureFlagger? = nil,
         pixelFiring: PixelFiring? = PixelKit.shared,
         keyValueStore: KeyValueStoring = UserDefaults.standard,
-        confirmCloseSetup: (@MainActor () async -> Bool)? = nil
+        confirmCloseSetup: (@MainActor () async -> Bool)? = nil,
+        deviceNameProvider: (@MainActor () -> String)? = nil
     ) {
         self.confirmCloseSetup = confirmCloseSetup ?? SyncDialogController.defaultCloseSetupConfirmation
         self.syncService = syncService
@@ -140,11 +143,10 @@ final class SyncDialogController {
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.pixelFiring = pixelFiring
         self.keyValueStore = keyValueStore
+        self.deviceNameProvider = deviceNameProvider ?? { Self.deviceInfo().name }
         self.managementDialogModel = managementDialogModel
         self.managementDialogModel.isAppRebranded = DesignSystemRebrand.isAppRebranded()
         self.managementDialogModel.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
-        self.managementDialogModel.thisDeviceName = Self.deviceInfo().name
-
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 
         self.managementDialogModel.delegate = self
@@ -219,12 +221,18 @@ final class SyncDialogController {
 
     @MainActor
     private func presentDialog(for currentDialog: ManagementDialogKind) {
+        if case .saveRecoveryCode = currentDialog, managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            managementDialogModel.thisDeviceName = deviceNameProvider()
+        }
         managementDialogModel.currentDialog = currentDialog
     }
 
     static private func deviceInfo() -> (name: String, type: String) {
-        let hostname = SCDynamicStoreCopyComputerName(nil, nil) as? String ?? ProcessInfo.processInfo.hostName
-        return (name: hostname, type: "desktop")
+        guard let computerName = SCDynamicStoreCopyComputerName(nil, nil) as? String else {
+            PixelKit.fire(SyncDeviceNamePixel.computerNameUnavailable, frequency: .dailyAndCount)
+            return (name: ProcessInfo.processInfo.hostName, type: "desktop")
+        }
+        return (name: computerName, type: "desktop")
     }
 
     @MainActor

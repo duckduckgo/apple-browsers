@@ -118,7 +118,11 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: onboardingKeyValueStore,
             meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
@@ -212,7 +216,11 @@ enum SubscriptionContainerViewFactory {
                                                                                                      subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                                                      requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                                                      expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                                                     isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) })
+                                                                                                     isExpirationReminderFeatureEnabled: {
+                                                                                                         featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                                                     },
+                                                                                                     subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                                                         featureFlagger: featureFlagger))
 
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
@@ -284,7 +292,11 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
             meetsPIRLocaleRequirement: { false }
@@ -334,7 +346,11 @@ enum SubscriptionContainerViewFactory {
                                                                        subscriptionFlowsExecuter: subscriptionFlowsExecuter,
                                                                        requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
                                                                        expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
-                                                                       isExpirationReminderFeatureEnabled: { featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification) }),
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
             meetsPIRLocaleRequirement: { false }

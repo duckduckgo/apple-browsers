@@ -48,6 +48,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterLink url: URL)
 }
 
 // MARK: - View Controller
@@ -67,6 +68,10 @@ final class UnifiedToggleInputViewController: UIViewController {
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
+    func inputCardFrame(in view: UIView) -> CGRect {
+        inputBarView.cardFrame(in: view)
+    }
+
     var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputBarView.cardLeadingAnchor }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputBarView.cardTrailingAnchor }
@@ -484,6 +489,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onFooterVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }
             delegate?.unifiedToggleInputVC(self, didChangeFooterVisibility: isVisible)
+        }
+        barView.onFooterLinkTapped = { [weak self] url in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVC(self, didTapFooterLink: url)
         }
         let containerView = UnifiedToggleInputContainerView(inputView: barView)
         containerView.cardPosition = barView.cardPosition

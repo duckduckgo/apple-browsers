@@ -95,6 +95,73 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
         XCTAssertEqual(header.chatListButtonPill.alpha, 1, accuracy: 0.001)
     }
 
+    func testFreeIneligibleHeaderShowsNeutralTitleWithoutUpgradeImpressionOrAction() throws {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false, allowsSubscriptionUpsell: false)
+        let plate = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIControl }.first)
+        let titleStack = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIStackView }.first)
+
+        XCTAssertTrue(plate.isHidden)
+        XCTAssertTrue(plate.accessibilityElementsHidden)
+        XCTAssertFalse(titleStack.isHidden)
+        XCTAssertEqual(titleStack.arrangedSubviews.compactMap { $0 as? UILabel }.first?.text, UserText.aiChatHeaderPaidTitle)
+        XCTAssertNotNil(titleStack.arrangedSubviews.compactMap { $0 as? UIImageView }.first?.image)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0)
+
+        plate.sendActions(for: .touchUpInside)
+        let freeTitleStack = try XCTUnwrap(plate.subviews.compactMap { $0 as? UIStackView }.first)
+        let upgradeLabel = try XCTUnwrap(freeTitleStack.arrangedSubviews.compactMap { $0 as? UILabel }.first)
+        let accessibilityAction = try XCTUnwrap(upgradeLabel.accessibilityCustomActions?.first)
+        XCTAssertEqual(accessibilityAction.actionHandler?(accessibilityAction), false)
+        XCTAssertEqual(delegate.upgradeTappedCount, 0)
+
+        header.setAllowsSubscriptionUpsell(true)
+        XCTAssertEqual(accessibilityAction.actionHandler?(accessibilityAction), true)
+        XCTAssertEqual(delegate.upgradeTappedCount, 1)
+    }
+
+    func testAvailabilityChangesRestoreUpgradePlateAndItsImpression() throws {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: false, allowsSubscriptionUpsell: false)
+        header.setAllowsSubscriptionUpsell(true)
+        let plate = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIControl }.first)
+        XCTAssertFalse(plate.isHidden)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1)
+        plate.sendActions(for: .touchUpInside)
+        XCTAssertEqual(delegate.upgradeTappedCount, 1)
+
+        header.setAllowsSubscriptionUpsell(false)
+        plate.sendActions(for: .touchUpInside)
+        XCTAssertTrue(plate.isHidden)
+        XCTAssertEqual(delegate.upgradeTappedCount, 1)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 1)
+    }
+
+    func testNeutralHeaderPreservesVoiceAndOnboardingVisibility() throws {
+        header.configure(isSubscriptionActive: false, allowsSubscriptionUpsell: false)
+        let titleStack = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIStackView }.first)
+        header.setVoiceSessionActive(true)
+        XCTAssertTrue(header.titleHolder.isHidden)
+        header.setVoiceSessionActive(false)
+        XCTAssertFalse(header.titleHolder.isHidden)
+
+        header.setOnboardingLocked(true)
+        XCTAssertTrue(titleStack.isHidden)
+        header.setOnboardingLocked(false)
+        XCTAssertFalse(titleStack.isHidden)
+    }
+
+    func testPaidHeaderRetainsTitleWhenPurchaseIsUnavailable() throws {
+        let (header, delegate) = makeHeaderWithSpyDelegate()
+        header.setContainerVisible(true)
+        header.configure(isSubscriptionActive: true, allowsSubscriptionUpsell: false)
+        let titleStack = try XCTUnwrap(header.titleHolder.subviews.compactMap { $0 as? UIStackView }.first)
+        XCTAssertFalse(titleStack.isHidden)
+        XCTAssertEqual(delegate.upgradePlateDidBecomeVisibleCount, 0)
+    }
+
     // MARK: - Upgrade plate impressions
 
     /// Fresh header with an unresolved subscription state and a hidden container — the state the view is
@@ -234,13 +301,14 @@ final class AIChatTabChatHeaderViewTests: XCTestCase {
 private final class SpyAIChatTabChatHeaderViewDelegate: AIChatTabChatHeaderViewDelegate {
 
     private(set) var upgradePlateDidBecomeVisibleCount = 0
+    private(set) var upgradeTappedCount = 0
 
     func aiChatTabChatHeaderUpgradePlateDidBecomeVisible() {
         upgradePlateDidBecomeVisibleCount += 1
     }
 
     func aiChatTabChatHeaderDidTapChatList() {}
-    func aiChatTabChatHeaderDidTapUpgrade() {}
+    func aiChatTabChatHeaderDidTapUpgrade() { upgradeTappedCount += 1 }
     func aiChatTabChatHeaderDidTapClose() {}
     func aiChatTabChatHeaderDidTapNewChat() {}
     func aiChatTabChatHeaderDidTapNewVoiceChat() {}

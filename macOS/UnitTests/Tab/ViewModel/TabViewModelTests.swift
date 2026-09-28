@@ -21,7 +21,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import FeatureFlags_macOS
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils

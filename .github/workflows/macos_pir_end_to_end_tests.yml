@@ -38,14 +38,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [bitrise:macos26-m4]
         include:
           - xcode-version: "26.6"
-            runner: bitrise:macos26-m4
-            runner-name: bitrise-macos26-m4 # runner label without reserved characters, for use in the artifact name
+            runner: [image:osx-tahoe-26, general-purpose]
+            runner-name: image-osx-tahoe-26,general-purpose # runner label without reserved characters, for use in the artifact name
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner-name }}
       cancel-in-progress: true
 
     timeout-minutes: 32
@@ -165,13 +164,6 @@ jobs:
         restore-keys: |
           xcode-compilation-cache-pir-e2e-
 
-    - name: Setup Bitrise Build Cache
-      uses: ./.github/actions/bitrise-build-cache
-      with:
-        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-
     - name: Wait for PIR Fake Broker
       run: |
         for i in {1..60}; do
@@ -240,7 +232,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
         pixel-params: |
-          runner: ${{ matrix.runner }}
+          runner: ${{ matrix.runner-name }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'
@@ -257,7 +249,7 @@ jobs:
       uses: mikepenz/action-junit-report@v6
       if: always()
       with:
-        check_name: "Test Report ${{ matrix.runner }}"
+        check_name: "Test Report ${{ matrix.runner-name }}"
         report_paths: macOS/pir-e2e-tests.xml
         check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
 

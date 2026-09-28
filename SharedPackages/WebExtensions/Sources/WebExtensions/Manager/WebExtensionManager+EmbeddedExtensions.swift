@@ -96,6 +96,7 @@ extension WebExtensionManager {
                     // Install before uninstalling: the versions have distinct identifiers and can
                     // coexist, so a failed upgrade leaves the old version installed and working.
                     try await installEmbeddedExtension(from: bundledURL, type: descriptor.type, requiresExtraction: bundledMetadata.requiresExtraction)
+                    cpmDiagnosticsRecorder?.extensionDidUpdate(type: descriptor.type)
 
                     // Only unload the old version once its own load has settled.
                     await unloadGuard.awaitSettled(context(for: oldIdentifier))

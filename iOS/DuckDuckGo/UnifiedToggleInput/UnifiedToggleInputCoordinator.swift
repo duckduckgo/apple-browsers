@@ -311,7 +311,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private let usageLimitsStore: DuckAiUsageLimitsStore?
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
-    /// `nil` when the usage-warnings feature isn't active, which differs from having nothing to show.
+    var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
+
+    var subscriptionUpsellPolicy: DuckAISubscriptionUpsellPolicy { modelStore.upsellPolicy }
+    /// `nil` when neither usage warnings nor the Terms of Service disclaimer is active, which differs
+    /// from having nothing to show.
     private var footerController: UTIFooterController?
 
     // MARK: - Initialization
@@ -346,9 +350,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-        subscriptionUpsellPresenter: DuckAISubscriptionUpselling = DuckAISubscriptionUpsellPresenter(),
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
+        let upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
         self.host = host
@@ -384,9 +391,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
-        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
+        self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
-        // rather than bound here — see `setUpUsageWarnings`.
+        // rather than bound here — see `setUpFooter`.
         self.usageLimitsStore = usageLimitsStore
             ?? duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger) }
         contentViewController = UnifiedInputContentContainerViewController(
@@ -399,7 +406,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
-        setUpUsageWarnings(subscriptionManager: subscriptionManager)
+        let isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
+            ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
+        setUpFooter(subscriptionManager: subscriptionManager,
+                    termsOfServiceStore: isNativeTermsOfServiceAvailable ? termsOfServiceStore : nil)
         textModel = UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
@@ -472,7 +482,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 }
             ),
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
-            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled
+            isUpdatedCreateImageEnabled: isUpdatedCreateImageEnabled,
+            subscriptionUpsellPresenter: self.subscriptionUpsellPresenter
         )
         attachmentController = UTIAttachmentController(
             pixelReporter: pixelReporter,
@@ -943,9 +954,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
-    // MARK: - Usage Warnings
+    // MARK: - Footer
 
-    private func setUpUsageWarnings(subscriptionManager: any SubscriptionManager) {
+    private func setUpFooter(subscriptionManager: any SubscriptionManager, termsOfServiceStore: DuckAiTermsOfServiceStore?) {
         let viewModel = usageLimitsStore?.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
@@ -958,15 +969,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             // must never surface the regular session's.
             isFireMode: { [weak self] in self?.viewController.handler.isFireTab ?? false }
         )
-        guard let viewModel else { return }
+        guard viewModel != nil || termsOfServiceStore != nil else { return }
 
-        viewModel.onAction = { [weak self] action in
+        viewModel?.onAction = { [weak self] action in
             self?.handleUsageWarningAction(action)
         }
         footerController = UTIFooterController(viewModel: viewModel,
-                                              highUsageNotice: makeHighUsageNoticeSource(),
+                                              termsOfServiceStore: termsOfServiceStore,
+                                              // Part of the usage warnings, so it goes wherever they do.
+                                              highUsageNotice: viewModel == nil ? nil : makeHighUsageNoticeSource(),
                                               measurement: makeUsageWarningMeasurement(),
-                                              createImagePixelFiring: createImagePixelFiring)
+                                              createImagePixelFiring: createImagePixelFiring,
+                                              allowsSubscriptionUpsell: { [weak self] in
+                                                  self?.modelStore.allowsSubscriptionUpsell ?? false
+                                              })
         footerController?.presenter = viewController
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
@@ -1406,6 +1422,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
+        footerController?.acceptTermsIfDisclaimerShown()
         let configuration = promptSubmissionConfiguration
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
@@ -1850,6 +1867,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             attachments: viewController.currentAttachments
         )
         footerController?.recordPromptSubmitted()
+        // Ahead of delivery, which stamps the prompt with the acceptance.
+        footerController?.acceptTermsIfDisclaimerShown()
 
         let configuration = promptSubmissionConfiguration
         recordDuckAISubmissionStarted(
@@ -1984,6 +2003,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool) {
         footerController?.footerVisibilityChanged(isVisible: isVisible)
+    }
+
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterLink url: URL) {
+        delegate?.unifiedToggleInputDidRequestOpenURL(url)
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {
@@ -2169,6 +2192,7 @@ private extension UnifiedToggleInputCoordinator {
     // MARK: Tools
 
     func handleModelsUpdated() {
+        onSubscriptionUpsellAvailabilityChanged?()
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
         // The model-switch CTA needs the fetched list, so the card is resolved again once it lands.

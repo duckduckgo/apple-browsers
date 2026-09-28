@@ -19,33 +19,59 @@
 
 import Combine
 import Foundation
+import PixelKit
 
 final class NewTabPageCustomizationModel: ObservableObject {
 
     @Published var isFavoritesSectionVisible: Bool {
-        didSet { persistor.isFavoritesSectionVisible = isFavoritesSectionVisible }
+        didSet {
+            guard oldValue != isFavoritesSectionVisible else { return }
+            persistor.isFavoritesSectionVisible = isFavoritesSectionVisible
+            pixelFiring?.fire(NewTabPageCustomizationPixel.favoritesToggled, frequency: .dailyAndCount)
+        }
     }
 
     @Published var isMessagesSectionVisible: Bool {
-        didSet { persistor.isMessagesSectionVisible = isMessagesSectionVisible }
+        didSet {
+            guard oldValue != isMessagesSectionVisible else { return }
+            persistor.isMessagesSectionVisible = isMessagesSectionVisible
+            pixelFiring?.fire(NewTabPageCustomizationPixel.messagesToggled, frequency: .dailyAndCount)
+        }
     }
 
     @Published var isKeyboardShownOnNewTab: Bool {
-        didSet { keyboardSettings.onNewTab = isKeyboardShownOnNewTab }
+        didSet {
+            guard oldValue != isKeyboardShownOnNewTab else { return }
+            keyboardSettings.onNewTab = isKeyboardShownOnNewTab
+            pixelFiring?.fire(NewTabPageCustomizationPixel.keyboardToggled, frequency: .dailyAndCount)
+        }
     }
 
     var onAllSettingsSelected: (() -> Void)?
+
+    private let pixelFiring: (any PixelKitFiring)?
 
     private var persistor: NewTabPageCustomizationPersisting
     private var keyboardSettings: KeyboardSettings
 
     init(persistor: NewTabPageCustomizationPersisting = NewTabPageCustomizationStore(),
-         keyboardSettings: KeyboardSettings = KeyboardSettings()) {
+         keyboardSettings: KeyboardSettings = KeyboardSettings(),
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
         self.persistor = persistor
         self.keyboardSettings = keyboardSettings
 
         isFavoritesSectionVisible = persistor.isFavoritesSectionVisible
         isMessagesSectionVisible = persistor.isMessagesSectionVisible
         isKeyboardShownOnNewTab = keyboardSettings.onNewTab
+    }
+
+    func reportOpening() {
+        pixelFiring?.fire(NewTabPageCustomizationPixel.opened, frequency: .dailyAndCount)
+    }
+
+    func selectAllSettings() {
+        pixelFiring?.fire(NewTabPageCustomizationPixel.allSettingsOpened, frequency: .dailyAndCount)
+        onAllSettingsSelected?()
     }
 }

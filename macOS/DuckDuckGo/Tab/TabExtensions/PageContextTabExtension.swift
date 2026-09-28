@@ -19,7 +19,7 @@
 import AIChat
 import Combine
 import Foundation
-import Navigation
+import DDGNavigation
 import os.log
 import PrivacyConfig
 import WebKit
@@ -411,6 +411,9 @@ final class PageContextTabExtension {
     }
 
     private func preventedAttachReason(for url: URL) -> String? {
+        // Local (file://) pages are never attachable — checked before the document carve-out and
+        // independently of the blocklist config, which may be absent.
+        if url.isFileURL { return PageContextExtractionOutcome.localFileCategory }
         // A document tab is handed over as bytes, so the blocklist category that used to prevent it
         // (`pdf`) is exactly what this feature replaces. Keeps the gate in one place for every caller.
         if isDocumentTab(url) { return nil }
@@ -509,7 +512,8 @@ final class PageContextTabExtension {
 
     /// Whether this tab's page goes to Duck.ai as document bytes rather than markdown.
     private func isDocumentTab(_ url: URL) -> Bool {
-        featureFlagger.isFeatureOn(.aiChatPdfPageContext)
+        !url.isFileURL
+            && featureFlagger.isFeatureOn(.aiChatPdfPageContext)
             && DocumentPageContextProvider.isSupportedDocument(mimeType: mainFrameMIMECache[url], url: url)
     }
 

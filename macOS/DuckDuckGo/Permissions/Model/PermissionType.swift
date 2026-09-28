@@ -19,7 +19,9 @@
 import AppKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
+import FeatureFlags_macOS
 import Foundation
+import PrivacyConfig
 import WebKit
 
 enum PermissionType: Hashable {
@@ -81,6 +83,10 @@ extension PermissionType {
         !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
     }
 
+    func isUserEditable(forDomain domain: String, featureFlagger: FeatureFlagger) -> Bool {
+        isUserEditable(forDomain: domain, nativeVoiceFlowEnabled: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow))
+    }
+
     static var permissionsUpdatedExternally: [PermissionType] {
         return [.camera, .microphone, .geolocation, .notification]
     }
@@ -99,6 +105,15 @@ extension PermissionType {
         case .popups:
             return false
         }
+    }
+
+    var editableDecisions: [PersistedPermissionDecision] {
+        // Autoplay's three states are a scale rather than a grant, so they are ordered from most
+        // to least permissive, matching the Website Permissions design.
+        if case .autoplayPolicy = self {
+            return [.allow, .ask, .deny]
+        }
+        return canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
     }
 
     var isExternalScheme: Bool {

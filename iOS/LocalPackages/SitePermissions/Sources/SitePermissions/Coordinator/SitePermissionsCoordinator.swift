@@ -68,7 +68,7 @@ public struct SitePermissionPrompt: Equatable, Sendable {
 
 /// The user's response to an on-site permission prompt.
 public enum SitePermissionPromptDecision: Equatable, Sendable {
-    /// Allows access until capture ends without storing a persistent site decision.
+    /// Keeps a page-scoped grant without persisting it; a new request may prompt after capture ends.
     case allowOnce
     /// Grants access and stores an Allow decision for the site outside Fire mode.
     case allowWhileUsingSite
@@ -99,6 +99,12 @@ public enum SitePermissionResolution: Equatable, Sendable {
     case grant
     /// Denies access. An empty array means that a site-level decision blocked the request.
     case deny(systemBlocks: [SitePermissionSystemBlock])
+}
+
+public enum SitePermissionQueryState: String, Equatable, Sendable {
+    case prompt
+    case granted
+    case denied
 }
 
 public enum SitePermissionRecovery: Equatable, Sendable {
@@ -162,6 +168,7 @@ public final class SitePermissionsCoordinator {
     private let store: SitePermissionsStore
     private let isFireMode: Bool
     private let currentContext: CurrentContextProvider
+    private let currentSite: (() -> SitePermissionKey?)?
     private let authorizationState: AuthorizationStateProvider
     private let requestAuthorization: AuthorizationRequester
     private let recoveryHandler: RecoveryHandler
@@ -188,12 +195,14 @@ public final class SitePermissionsCoordinator {
                             systemPermissionClient: SystemPermissionClient,
                             isFireMode: Bool,
                             currentContext: @escaping CurrentContextProvider,
+                            currentSite: (() -> SitePermissionKey?)? = nil,
                             recoveryHandler: @escaping RecoveryHandler,
                             cancellationHandler: @escaping () -> Void = {},
                             eventHandler: @escaping EventHandler = { _ in }) {
         self.init(store: store,
                   isFireMode: isFireMode,
                   currentContext: currentContext,
+                  currentSite: currentSite,
                   authorizationState: systemPermissionClient.authorizationState,
                   requestAuthorization: systemPermissionClient.requestAuthorization,
                   recoveryHandler: recoveryHandler,
@@ -204,6 +213,7 @@ public final class SitePermissionsCoordinator {
     init(store: SitePermissionsStore,
          isFireMode: Bool,
          currentContext: @escaping CurrentContextProvider,
+         currentSite: (() -> SitePermissionKey?)? = nil,
          authorizationState: @escaping AuthorizationStateProvider,
          requestAuthorization: @escaping AuthorizationRequester,
          recoveryHandler: @escaping RecoveryHandler,
@@ -212,6 +222,7 @@ public final class SitePermissionsCoordinator {
         self.store = store
         self.isFireMode = isFireMode
         self.currentContext = currentContext
+        self.currentSite = currentSite
         self.authorizationState = authorizationState
         self.requestAuthorization = requestAuthorization
         self.recoveryHandler = recoveryHandler
@@ -238,6 +249,26 @@ public final class SitePermissionsCoordinator {
         }
     }
 
+    /// Returns the synchronous Permissions API state using the same precedence as a real request.
+    /// This intentionally has no queueing, prompting, persistence, or management-state effects.
+    public func queryState(for permissionType: SitePermissionType,
+                           context: SitePermissionRequestContext) -> SitePermissionQueryState {
+        guard !isClosed,
+              isValid(context) else {
+            return .denied
+        }
+
+        let request = SitePermissionRequest(context: context, permissionTypes: [permissionType])
+        switch disposition(for: request) {
+        case .deny:
+            return .denied
+        case .prompt:
+            return .prompt
+        case .allow:
+            return authorizationState(permissionType) == .authorized ? .granted : .denied
+        }
+    }
+
     private func disposition(for request: SitePermissionRequest) -> RequestDisposition {
         var disposition = RequestDisposition.allow
         for permissionType in ordered(request.permissionTypes) {
@@ -254,10 +285,12 @@ public final class SitePermissionsCoordinator {
                 if deniedForPage.contains(permissionType) {
                     return .deny
                 }
-                if allowOnce.contains(permissionType) {
+                if allowOnce.contains(permissionType), captureStates[permissionType] != .inactive {
                     continue
                 }
                 if store.globalDefault(for: permissionType) == .deny {
+                    // WebKit resolves cameraAndMicrophone with one decision: granting either grants both.
+                    // A bundled request must not bypass a global block by prompting for the other type.
                     return .deny
                 }
                 disposition = .prompt
@@ -278,8 +311,11 @@ public final class SitePermissionsCoordinator {
     }
 
     public func captureDidEnd(_ permissionTypes: Set<SitePermissionType>) {
-        allowOnce.subtract(permissionTypes)
-        siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
+        for permissionType in permissionTypes {
+            // Keep the page grant for management; an explicit inactive state allows the next request to prompt.
+            // No state means capture has not started yet, including the initial inactive WebKit observation.
+            captureStates[permissionType] = .inactive
+        }
     }
 
     public func managementSnapshot(for site: SitePermissionKey) -> SitePermissionsManagementSnapshot {
@@ -296,11 +332,13 @@ public final class SitePermissionsCoordinator {
         let ephemeralPermissionTypes = isCurrentSite ? allowOnce : []
         let siteAllowedPermissionTypes = isCurrentSite ? siteAllowedPermissionTypesThisVisit : []
         let requestedPermissionTypes = isCurrentSite ? requestedPermissionTypesThisVisit : []
-        let currentCaptureStates = isCurrentSite ? captureStates : [:]
-        let systemAuthorizationStates = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes.reduce(into: [:]) { states, permissionType in
+        // Provisional navigation resets page grants before the committed page and its capture change.
+        let isCaptureSite = currentSite.map { $0() == site } ?? isCurrentSite
+        let currentCaptureStates = isCaptureSite ? captureStates : [:]
+        let systemAuthorizationStates = SitePermissionsManagementSnapshot.managedPermissionTypes.reduce(into: [:]) { states, permissionType in
             states[permissionType] = authorizationState(permissionType)
         }
-        let systemBlockedPermissionTypes = SitePermissionsManagementSnapshot.cameraAndMicrophoneTypes.filter { permissionType in
+        let systemBlockedPermissionTypes = SitePermissionsManagementSnapshot.managedPermissionTypes.filter { permissionType in
             let isAllowedAtSite: Bool
             switch storedPermissions[permissionType] {
             case .allow:
@@ -338,16 +376,18 @@ public final class SitePermissionsCoordinator {
         if isFireMode {
             fireModeRemovedPermissionTypes.formUnion(permissionTypes)
         }
-        clearManagementSessionState(for: permissionTypes, at: site)
+        clearManagementSessionState(for: permissionTypes)
+        cancelRequests(for: permissionTypes, at: site)
     }
 
     public func revokeManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
         currentManagementSite = site
         fireModeRemovedPermissionTypes.subtract(permissionTypes)
-        clearManagementSessionState(for: permissionTypes, at: site)
+        clearManagementSessionState(for: permissionTypes)
+        cancelRequests(for: permissionTypes, at: site)
     }
 
-    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>) {
         allowOnce.subtract(permissionTypes)
         deniedForPage.subtract(permissionTypes)
         siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
@@ -355,7 +395,6 @@ public final class SitePermissionsCoordinator {
         for permissionType in permissionTypes {
             fireModeManagementOverrides[permissionType] = nil
         }
-        cancelRequests(for: permissionTypes, at: site)
     }
 
     private func cancelRequests(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
@@ -411,6 +450,10 @@ public final class SitePermissionsCoordinator {
         captureStates[permissionType] ?? .inactive
     }
 
+    public func updateGeolocationCaptureState(_ state: SitePermissionCaptureState) {
+        updateCaptureState(state, for: .location)
+    }
+
     public func observeMediaCapture(in webView: WKWebView) {
         invalidateMediaCaptureObservations()
         guard !isClosed else { return }
@@ -432,6 +475,20 @@ public final class SitePermissionsCoordinator {
         }
     }
 
+    /// Discards media requests on feature rollback while preserving geolocation in existing documents.
+    /// The caller resolves media bridge replies first; presentation dismissal precedes the next queued prompt.
+    public func resetMediaPermissions(dismissPresentation: () -> Void) {
+        let permissionTypes: Set<SitePermissionType> = [.camera, .microphone]
+        clearManagementSessionState(for: permissionTypes)
+        fireModeRemovedPermissionTypes.subtract(permissionTypes)
+        queuedRequests.removeAll { !$0.request.permissionTypes.isDisjoint(with: permissionTypes) }
+        if let activeRequest, !activeRequest.request.permissionTypes.isDisjoint(with: permissionTypes) {
+            self.activeRequest = nil
+            dismissPresentation()
+        }
+        processNextRequestIfNeeded()
+    }
+
     public func pageDidChange(_ change: SitePermissionPageChange) {
         guard change != .sameDocumentNavigation else { return }
         resetPageState()
@@ -450,7 +507,6 @@ public final class SitePermissionsCoordinator {
         guard previousState != state else { return }
 
         if state == .inactive {
-            captureStates[permissionType] = nil
             captureDidEnd([permissionType])
         } else {
             captureStates[permissionType] = state
@@ -511,6 +567,13 @@ public final class SitePermissionsCoordinator {
     private func handle(_ decision: SitePermissionPromptDecision, for pendingRequest: PendingRequest) {
         guard isActiveAndValid(pendingRequest) else {
             drop(pendingRequest)
+            return
+        }
+
+        // A manager can change the durable decision while this prompt is visible. Its explicit
+        // denial is authoritative; never let a stale prompt response overwrite it.
+        if disposition(for: pendingRequest.request) == .deny {
+            finish(pendingRequest, with: .deny(systemBlocks: []))
             return
         }
 
@@ -586,6 +649,9 @@ public final class SitePermissionsCoordinator {
             if blocks.isEmpty {
                 if activatesAllowOnce {
                     allowOnce.formUnion(pendingRequest.request.permissionTypes)
+                    for permissionType in pendingRequest.request.permissionTypes where captureStates[permissionType] == .inactive {
+                        captureStates[permissionType] = nil
+                    }
                 }
                 finish(pendingRequest, with: .grant)
             } else {

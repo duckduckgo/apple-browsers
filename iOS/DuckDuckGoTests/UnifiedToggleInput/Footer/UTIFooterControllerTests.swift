@@ -31,36 +31,55 @@ final class UTIFooterControllerTests: XCTestCase {
     private var measurementFiring: RecordingUsageWarningPixelFiring!
     private var createImagePixelFiring: MockCreateImagePixelFiring!
     private var selectedModel: (id: String?, shortName: String?) = (nil, nil)
+    private var allowsSubscriptionUpsell = true
+    private var isTrialEligible = false
     private var animationCount = 0
     private var reportedBlocks: [Bool] = []
+    private var termsUserDefaults: UserDefaults!
     private var sut: UTIFooterController!
 
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    private var termsSuiteName: String { String(describing: self) + ".terms" }
+
     override func setUp() {
         super.setUp()
+        termsUserDefaults = UserDefaults(suiteName: termsSuiteName)
+        termsUserDefaults.removePersistentDomain(forName: termsSuiteName)
         limitsProvider = StubUsageLimitsProvider()
         dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
         presenter = SpyUTIFooterPresenter()
         measurementFiring = RecordingUsageWarningPixelFiring()
         createImagePixelFiring = MockCreateImagePixelFiring()
         selectedModel = (nil, nil)
+        allowsSubscriptionUpsell = true
+        isTrialEligible = false
         animationCount = 0
         reportedBlocks = []
         viewModel = makeViewModel()
-        sut = UTIFooterController(viewModel: viewModel,
-                                  highUsageNotice: makeNoticeSource(),
-                                  measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
-                                  createImagePixelFiring: createImagePixelFiring,
-                                  animator: { [unowned self] changes in
-                                      animationCount += 1
-                                      changes()
-                                  })
-        sut.presenter = presenter
-        sut.onInputBlockChanged = { [unowned self] blocked in reportedBlocks.append(blocked) }
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: nil)
+    }
+
+    private func makeSUT(viewModel: DuckAiUsageWarningViewModel?,
+                         termsOfServiceStore: DuckAiTermsOfServiceStore?) -> UTIFooterController {
+        let controller = UTIFooterController(viewModel: viewModel,
+                                             termsOfServiceStore: termsOfServiceStore,
+                                             highUsageNotice: makeNoticeSource(),
+                                             measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
+                                             createImagePixelFiring: createImagePixelFiring,
+                                             allowsSubscriptionUpsell: { [unowned self] in allowsSubscriptionUpsell },
+                                             animator: { [unowned self] changes in
+                                                 animationCount += 1
+                                                 changes()
+                                             })
+        controller.presenter = presenter
+        controller.onInputBlockChanged = { [unowned self] blocked in reportedBlocks.append(blocked) }
+        return controller
     }
 
     override func tearDown() {
+        termsUserDefaults.removePersistentDomain(forName: termsSuiteName)
+        termsUserDefaults = nil
         sut = nil
         viewModel = nil
         presenter = nil
@@ -183,9 +202,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
     /// The dismissal is recorded against a rung of the redisplay ladder, so crossing the next one
     /// brings the card back.
-    /// Per the spec an approaching message is suppressed until `resetsAt`, so a higher percentage in
-    /// the same period is the same message and stays gone.
-    func test_dismissCurrent_keepsTheSameNoticeHiddenForThatResetPeriod() {
+    func test_dismissCurrent_doesNotHideTheNextThreshold() {
         limitsProvider.limits = weeklyUsage(50)
         sut.refresh()
         sut.dismissCurrent()
@@ -193,7 +210,7 @@ final class UTIFooterControllerTests: XCTestCase {
         limitsProvider.limits = weeklyUsage(90)
         sut.refresh()
 
-        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("90%") ?? false)
     }
 
     /// A dismissed approaching message must not take the reached one with it.
@@ -807,7 +824,231 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(createImagePixelFiring.isEmpty)
     }
 
+    func testUnavailablePurchaseRetainsBothTrialVariantsAndInputBlocking() {
+        allowsSubscriptionUpsell = false
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        for trialEligible in [true, false] {
+            isTrialEligible = trialEligible
+            sut.refresh()
+
+            XCTAssertNotNil(sut.currentMessage)
+            XCTAssertNil(sut.currentMessage?.primaryAction)
+            XCTAssertEqual(sut.currentMessage?.title, UserText.utiDuckAIWarningsWeeklyLimitReached)
+            XCTAssertNotNil(sut.currentMessage?.subtitle)
+            XCTAssertNil(presenter.appliedMessages.last??.primaryAction)
+            XCTAssertEqual(reportedBlocks, [true])
+        }
+    }
+
+    func testPurchaseAvailabilityRefreshRemovesAndRestoresActionWithoutRetiringCard() throws {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        for trialEligible in [true, false] {
+            isTrialEligible = trialEligible
+            allowsSubscriptionUpsell = true
+            sut.refresh()
+            let original = try XCTUnwrap(sut.currentMessage)
+            XCTAssertEqual(original.primaryAction?.title,
+                           trialEligible ? UserText.utiDuckAIWarningsTryForFree : UserText.utiDuckAIWarningsSubscribe)
+
+            allowsSubscriptionUpsell = false
+            sut.refresh()
+            XCTAssertNil(presenter.appliedMessages.last??.primaryAction)
+            XCTAssertEqual(sut.currentMessage?.title, original.title)
+            XCTAssertEqual(sut.currentMessage?.subtitle, original.subtitle)
+
+            allowsSubscriptionUpsell = true
+            sut.refresh()
+            XCTAssertEqual(sut.currentMessage, original)
+            XCTAssertEqual(presenter.appliedMessages.last ?? nil, original)
+            XCTAssertEqual(reportedBlocks, [true])
+        }
+    }
+
+    func testUnavailablePurchaseCannotExecuteOrMeasureHiddenOrStaleAction() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        var actions: [DuckAiUsageAction] = []
+        viewModel.onAction = { actions.append($0) }
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        let eventsBeforeTap = measurementFiring.events
+
+        allowsSubscriptionUpsell = false
+        sut.performPrimaryAction()
+        sut.refresh()
+        sut.performPrimaryAction()
+
+        XCTAssertTrue(actions.isEmpty)
+        XCTAssertEqual(measurementFiring.events, eventsBeforeTap)
+        XCTAssertNil(sut.currentMessage?.primaryAction)
+        XCTAssertEqual(reportedBlocks, [true])
+    }
+
+    func testUnavailablePurchasePreservesOtherFooterActions() {
+        allowsSubscriptionUpsell = false
+        var actions: [DuckAiUsageAction] = []
+        viewModel.onAction = { actions.append($0) }
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        XCTAssertNotNil(sut.currentMessage?.primaryAction)
+        sut.performPrimaryAction()
+        XCTAssertEqual(actions.count, 1)
+
+        limitsProvider.limits = dailyReachedWithWeeklyHandOff()
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessage?.primaryAction?.title, UserText.utiDuckAIWarningsStartUsingWeeklyLimit)
+        sut.performPrimaryAction()
+        XCTAssertEqual(actions.count, 2)
+    }
+
+    // MARK: - Terms of Service
+
+    func test_refresh_presentsTheTermsOfServiceUntilTheyAreAccepted() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_refresh_presentsNothingOnceTheTermsAreAccepted() {
+        termsStore.recordWebReport()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.isEmpty)
+    }
+
+    /// The disclaimer is its own feature: usage warnings being off must not take it away.
+    func test_refresh_presentsTheTermsOfServiceWithoutUsageWarnings() {
+        sut = makeSUT(viewModel: nil, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_refresh_termsOfServiceOutrankAnApproachingWarning() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_showModelSwitchNotice_doesNotReplaceTheTermsOfService() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    /// A spent allowance blocks the send that would accept the terms, so its explanation has to show.
+    func test_refresh_aSpentAllowanceOutranksTheTermsOfService() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Weekly usage limit reached") ?? false)
+    }
+
+    func test_setSuppressed_hidesTheTermsOfService() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.setSuppressed(true)
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// A stray close must neither hide the terms nor spend the warning waiting behind them.
+    func test_dismissCurrent_leavesTheTermsOfServiceAndTheWarningBehindThem() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.dismissCurrent()
+        termsStore.recordWebReport()
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+    }
+
+    func test_acceptTermsIfDisclaimerShown_acceptsWhenTheDisclaimerIsOnScreen() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertTrue(termsStore.hasAccepted)
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    func test_acceptTermsIfDisclaimerShown_revealsTheWarningBehindTheTerms() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+    }
+
+    /// Resolved but still waiting for the input to expand: the user hasn't seen it.
+    func test_acceptTermsIfDisclaimerShown_acceptsNothingWhileTheCardIsOffScreen() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    /// Search mode hides the disclaimer, so a prompt sent from there leaves the web app its own card.
+    func test_acceptTermsIfDisclaimerShown_acceptsNothingWhileSuppressed() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.setSuppressed(true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    func test_acceptTermsIfDisclaimerShown_acceptsNothingWhenAnotherCardIsShowing() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    func test_resetForPoseChange_bringsTheTermsOfServiceBackOnTheNextRefresh() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.resetForPoseChange()
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.count, 2)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
     // MARK: - Helpers
+
+    private var termsStore: DuckAiTermsOfServiceStore {
+        DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults)
+    }
 
     private func approachingExposure(percentBucket: Int) -> DuckAiUsageWarningExposure {
         DuckAiUsageWarningExposure(kind: .approaching, window: .weekly, percentBucket: percentBucket)
@@ -840,6 +1081,7 @@ final class UTIFooterControllerTests: XCTestCase {
             snapshotProvider: limitsProvider,
             dismissalStore: dismissalStore,
             modelSuggester: StubCheaperModelSuggester(),
+            isTrialEligible: { [unowned self] in isTrialEligible },
             dateProvider: { [unowned self] in now }
         )
     }

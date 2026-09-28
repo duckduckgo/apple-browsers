@@ -22,7 +22,7 @@ import MaliciousSiteProtection
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

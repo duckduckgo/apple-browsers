@@ -49,10 +49,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-26-xlarge]
         include:
           - xcode-version: 26.6
-            runner: macos-26-xlarge
+            runner: [image:osx-tahoe-26, ui-tests]
+            runner-name: image:osx-tahoe-26,ui-tests
             os-version: 26
 
     timeout-minutes: 60
@@ -240,7 +240,7 @@ jobs:
         START_TIME=$(date -u -r "${{ steps.start-duration.outputs.start-timestamp }}" '+%Y-%m-%d %H:%M:%S')
 
         ./scripts/build-memory-metrics-sql.sh \
-          --runner "${{ matrix.runner }}" \
+          --runner "${{ matrix.runner-name }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --run-id "${{ github.run_id }}" \
           --branch "${{ github.ref_name }}" \
@@ -249,7 +249,7 @@ jobs:
           > insert-statements-memory.sql
 
         ./scripts/build-startup-metrics-sql.sh \
-          --runner "${{ matrix.runner }}" \
+          --runner "${{ matrix.runner-name }}" \
           --xcresult-path "$XCRESULT_PATH" \
           --suite StartupPerformanceTests \
           --run-id "${{ github.run_id }}" \
@@ -320,7 +320,7 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_performance_tests
         pixel-params: |
-          runner: ${{ matrix.runner }}
+          runner: ${{ matrix.runner-name }}
 
     - name: Prepare test report
       if: always() && steps.run-ui-tests.outcome != 'skipped'
@@ -332,7 +332,7 @@ jobs:
       uses: mikepenz/action-junit-report@v6
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       with:
-        check_name: "Test Report ${{ matrix.runner }}"
+        check_name: "Test Report ${{ matrix.runner-name }}"
         report_paths: macOS/ui-tests.xml
         check_retries: true
 
@@ -340,7 +340,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "xcresult-${{ matrix.runner }}"
+        name: "xcresult-${{ matrix.runner-name }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
@@ -348,7 +348,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
-        name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
+        name: "app-console-${{ matrix.runner-name }}-macos${{ matrix.os-version }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -361,7 +361,7 @@ jobs:
 
         # Create staging directory with timestamp and OS version
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ matrix.runner }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        archive_name="BuildLogs ${{ matrix.runner-name }} (macOS ${{ matrix.os-version }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

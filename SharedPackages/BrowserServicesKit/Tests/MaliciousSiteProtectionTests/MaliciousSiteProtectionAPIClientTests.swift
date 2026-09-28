@@ -16,8 +16,7 @@
 //  limitations under the License.
 //
 import Foundation
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 import XCTest
 
 @testable import MaliciousSiteProtection

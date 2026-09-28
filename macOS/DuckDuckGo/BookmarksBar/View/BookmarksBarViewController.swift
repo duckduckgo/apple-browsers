@@ -374,7 +374,7 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true, in: view.window)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(in: view.window)
     }
 
     @IBOutlet weak var syncButtonZeroWidthConstraint: NSLayoutConstraint!

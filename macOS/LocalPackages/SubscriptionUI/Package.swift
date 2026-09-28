@@ -15,6 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../../SharedPackages/WideEvent"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Networking"),
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../FeatureFlags-macOS")
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "PreferencesUI-macOS", package: "PreferencesUI-macOS"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS")

@@ -18,8 +18,7 @@
 
 import Foundation
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 public struct SubscriptionAPIMockResponseFactory {
 
@@ -39,11 +38,12 @@ public struct SubscriptionAPIMockResponseFactory {
         apiService.set(response: response, forRequest: request)
     }
 
+    @_spi(Testing)
     public static func mockConfirmPurchase(destinationMockAPIService apiService: MockAPIService, success: Bool) {
         let request = SubscriptionRequest.confirmPurchase(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url,
                                                           accessToken: "somAccessToken",
                                                           signature: "someSignature",
-                                                          additionalParams: nil)!
+                                                          experimentAttribution: nil)!
         if success {
             let jsonString = """
 {"email":"","entitlements":[{"product":"Data Broker Protection","name":"subscriber"},{"product":"Identity Theft Restoration","name":"subscriber"},{"product":"Network Protection","name":"subscriber"}],"subscription":{"productId":"ios.subscription.1month","name":"Monthly Subscription","billingPeriod":"Monthly","startedAt":1730991734000,"expiresOrRenewsAt":1730992034000,"platform":"apple","status":"Auto-Renewable", "activeOffers": [] }}
@@ -59,6 +59,7 @@ public struct SubscriptionAPIMockResponseFactory {
         }
     }
 
+    @_spi(Testing)
     public static func mockGetTierFeatures(destinationMockAPIService apiService: MockAPIService, success: Bool, subscriptionIDs: [String]) {
         guard let request = SubscriptionRequest.subscriptionTierFeatures(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url, subscriptionIDs: subscriptionIDs) else {
             return

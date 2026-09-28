@@ -66,7 +66,8 @@ final class PullToRefreshViewAdapter: NSObject {
     private let fakeScrollView = UIScrollView()
     private let refreshControl = UIRefreshControl()
     private var topConstraint: NSLayoutConstraint?
-    private var panGestureRecognizer: UIPanGestureRecognizer?
+    private weak var panGestureRecognizer: UIPanGestureRecognizer?
+    private var isObservingPanGesture = false
 
     private var isPulling = false
     private var isRefreshControlEnabled = true
@@ -179,6 +180,10 @@ final class PullToRefreshViewAdapter: NSObject {
         }
     }
 
+    deinit {
+        stopObservingPanGesture()
+    }
+
     private func applyBackgroundColor() {
         let refreshBackgroundColor = Self.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
         backdropView.backgroundColor = refreshBackgroundColor
@@ -240,10 +245,21 @@ final class PullToRefreshViewAdapter: NSObject {
     }
 
     private func setupPanGestureRecognizer() {
-        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
-        panGestureRecognizer.delegate = self
+        guard let panGestureRecognizer = scrollView?.panGestureRecognizer else { return }
         self.panGestureRecognizer = panGestureRecognizer
-        scrollView?.addGestureRecognizer(panGestureRecognizer)
+        startObservingPanGesture()
+    }
+
+    private func startObservingPanGesture() {
+        guard !isObservingPanGesture else { return }
+        panGestureRecognizer?.addTarget(self, action: #selector(handlePanGesture(_:)))
+        isObservingPanGesture = true
+    }
+
+    private func stopObservingPanGesture() {
+        guard isObservingPanGesture else { return }
+        panGestureRecognizer?.removeTarget(self, action: #selector(handlePanGesture(_:)))
+        isObservingPanGesture = false
     }
 
     @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
@@ -435,7 +451,16 @@ final class PullToRefreshViewAdapter: NSObject {
     /// (WebKit's fullscreen window), where a drag must not reach `onRefresh`.
     func setPullSuspended(_ isSuspended: Bool) {
         isPullSuspended = isSuspended
-        panGestureRecognizer?.isEnabled = !isSuspended
+        if isSuspended {
+            stopObservingPanGesture()
+            if isPulling {
+                let shouldKeepRefreshVisible = refreshControl.isRefreshing && !didEndRefreshing
+                resetPullState()
+                animatePullableViewToRestingPosition(whileRefreshing: shouldKeepRefreshVisible)
+            }
+        } else {
+            startObservingPanGesture()
+        }
         applyRefreshControlState()
     }
 
@@ -449,12 +474,5 @@ final class PullToRefreshViewAdapter: NSObject {
     func setTopOffset(_ offset: CGFloat) {
         topConstraint?.constant = offset
     }
-
-}
-
-extension PullToRefreshViewAdapter: UIGestureRecognizerDelegate {
-
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
 
 }

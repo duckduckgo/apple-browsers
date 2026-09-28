@@ -450,6 +450,7 @@ enum GeneralPixel: PixelKit.Event {
     case feedbackReportingFailed
 
     case blankNavigationOnBurnFailed
+    case blankNavigationOnBurnTimedOut
 
     case historyRemoveFailed
     case historyReloadFailed
@@ -1250,6 +1251,8 @@ enum GeneralPixel: PixelKit.Event {
 
         case .blankNavigationOnBurnFailed:
             return "blank_navigation_on_burn_failed"
+        case .blankNavigationOnBurnTimedOut:
+            return "blank_navigation_on_burn_timed_out"
 
         case .historyRemoveFailed:
             return "history_remove_failed"
@@ -1902,6 +1905,7 @@ enum GeneralPixel: PixelKit.Event {
                 .secureVaultError,
                 .feedbackReportingFailed,
                 .blankNavigationOnBurnFailed,
+                .blankNavigationOnBurnTimedOut,
                 .historyRemoveFailed,
                 .historyReloadFailed,
                 .historyCleanEntriesFailed,

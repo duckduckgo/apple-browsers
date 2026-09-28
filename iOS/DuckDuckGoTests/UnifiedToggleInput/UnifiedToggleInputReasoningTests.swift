@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
@@ -28,20 +29,52 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
     private var sut: UnifiedToggleInputCoordinator!
     private var mockDelegate: MockUnifiedToggleInputReasoningDelegate!
     private var mockPreferences: MockAIChatReasoningPreferences!
+    private var subscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         mockPreferences = MockAIChatReasoningPreferences()
-        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: mockPreferences)
+        subscriptionManager = SubscriptionManagerMock()
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: mockPreferences,
+                                            subscriptionManager: subscriptionManager)
         mockDelegate = MockUnifiedToggleInputReasoningDelegate()
         sut.delegate = mockDelegate
     }
 
     override func tearDown() {
         sut = nil
+        subscriptionManager = nil
         mockDelegate = nil
         mockPreferences = nil
         super.tearDown()
+    }
+
+    func testUnavailablePurchaseHidesSoleAccessibleModeAndSubmitsItsEffort() {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        sut.modelStore.models = [makeReasoningModel(id: "reasoning", supportedReasoningEffort: [.none, .low], reasoningEffortAccess: [
+            .init(effort: .none, accessTier: ["plus"], entityHasAccess: false),
+            .init(effort: .low, accessTier: ["free"], entityHasAccess: true)
+        ])]
+        sut.updateSelectedModel("reasoning")
+
+        XCTAssertTrue(sut.viewController.isReasoningButtonHidden)
+        XCTAssertNil(sut.viewController.reasoningPickerMenu)
+        XCTAssertEqual(sut.persistedReasoningEffort, .low)
+        XCTAssertNil(mockPreferences.selectedReasoningMode)
+    }
+
+    func testRejectedStaleReasoningSelectionDoesNotCreatePendingChoice() {
+        sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium],
+                                                   reasoningEffortAccess: gpt52MediumGatedForPlus())]
+        sut.updateSelectedModel("gpt-5.2")
+        sut.updateSelectedReasoningMode(.reasoning)
+        subscriptionManager.hasAppStoreProductsAvailable = false
+
+        sut.handleReasoningModeSelection(.extendedReasoning)
+        sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
+        sut.modelStore.onModelsUpdated?()
+
+        XCTAssertEqual(mockPreferences.selectedReasoningMode, .reasoning)
     }
 
     func testSubmitAIChatWithoutBoundScriptPassesResolvedReasoningEffort() {

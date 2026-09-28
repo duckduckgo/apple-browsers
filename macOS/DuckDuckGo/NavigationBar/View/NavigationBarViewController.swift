@@ -178,6 +178,7 @@ final class NavigationBarViewController: NSViewController {
     private let tabsPreferences: TabsPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
+    private let pixelFiring: (any PixelKitFiring)?
     private let pinningManager: PinningManager
 
     let themeManager: ThemeManaging
@@ -255,6 +256,7 @@ final class NavigationBarViewController: NSViewController {
                        accessibilityPreferences: AccessibilityPreferences,
                        pinningManager: PinningManager,
                        memoryUsageMonitor: MemoryUsageMonitor,
+                       pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -294,6 +296,7 @@ final class NavigationBarViewController: NSViewController {
                 accessibilityPreferences: accessibilityPreferences,
                 pinningManager: pinningManager,
                 memoryUsageMonitor: memoryUsageMonitor,
+                pixelFiring: pixelFiring,
                 showTab: showTab
             )
         }!
@@ -331,6 +334,7 @@ final class NavigationBarViewController: NSViewController {
         accessibilityPreferences: AccessibilityPreferences,
         pinningManager: PinningManager,
         memoryUsageMonitor: MemoryUsageMonitor,
+        pixelFiring: (any PixelKitFiring)?,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -384,6 +388,7 @@ final class NavigationBarViewController: NSViewController {
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
+        self.pixelFiring = pixelFiring
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         self.memoryUsageDisplayer = MemoryUsageDisplayer(memoryUsageMonitor: memoryUsageMonitor, featureFlagger: featureFlagger)
@@ -2203,7 +2208,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu) {
@@ -2215,6 +2220,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.moreMenu.rawValue]))
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .moreMenu, completion: nil)
     }
 

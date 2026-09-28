@@ -17,15 +17,26 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Core
+import Foundation
 import PixelKit
 import WebExtensions
+
 private struct CPMWebExtensionPixel: PixelKit.Event {
     let metadata: CPMWebExtensionPixelMetadata
 
     var name: String { metadata.name }
 
+    var parameters: [String: String]? { metadata.parameters }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+}
+
+@available(iOS 18.4, *)
+private struct WebExtensionReloadErrorPixel: PixelKit.Event {
+    let metadata: WebExtensionReloadErrorPixelMetadata
+
+    var name: String { WebExtensionReloadErrorPixelMetadata.name }
     var parameters: [String: String]? { metadata.parameters }
     var standardParameters: [PixelKitStandardParameter]? { nil }
     var namePrefix: PixelKitNamePrefix { .none }
@@ -100,6 +111,14 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .loadError(let error):
             PixelKit.fire(Pixel.Event.webExtensionLoadError.withError(error),
                           frequency: .dailyAndStandard)
+        case .reloadError(let type, let trigger, let phase, let error):
+            let metadata = WebExtensionReloadErrorPixelMetadata(
+                type: type,
+                trigger: trigger,
+                phase: phase,
+                error: error
+            )
+            PixelKit.fire(WebExtensionReloadErrorPixel(metadata: metadata), frequency: .dailyAndCount)
         case .embeddedInstalled(let type):
             PixelKit.fire(type.installedPixel,
                           frequency: .dailyAndStandard)

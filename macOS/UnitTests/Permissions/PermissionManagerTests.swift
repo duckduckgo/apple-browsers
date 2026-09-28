@@ -625,6 +625,69 @@ extension PermissionManagerTests {
         let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
         XCTAssertEqual(result, .ask)
     }
+
+    // MARK: - Category defaults
+
+    func testWhenNothingIsPersistedThenTheCategoryDefaultIsReturned() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .camera), .deny)
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .microphone), .ask,
+                       "A category with no stored default should stay on Ask each time")
+    }
+
+    func testWhenDecisionIsPersistedThenItWinsOverTheCategoryDefault() {
+        store.permissions = [.entity1]
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain, permissionType: .camera), .allow)
+    }
+
+    func testWhenOverrideIsActiveThenItWinsOverTheCategoryDefault() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.microphone: .deny])
+        let manager = PermissionManager(store: store,
+                                        decisionOverride: StubOverride(stub: [.microphone: .allow]),
+                                        defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: "duck.ai", permissionType: .microphone), .allow)
+    }
+
+    func testWhenPermissionTypeHasNoCategoryThenDefaultIsAskEachTime() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        // Autoplay is not part of the Website Permissions pane yet, so it has no category default.
+        XCTAssertEqual(manager.defaultDecision(for: .autoplayPolicy), .ask)
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy), .ask)
+    }
+
+    func testWhenNoDefaultsProviderIsSuppliedThenDefaultIsAskEachTime() {
+        XCTAssertEqual(manager.defaultDecision(for: .camera), .ask)
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .camera), .ask)
+    }
+
+    func testWhenCategoryDefaultAppliesThenNothingIsPersistedForTheDomain() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .camera), .deny)
+        XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: .camera))
+        XCTAssertFalse(manager.hasPermissionPersisted(forDomain: "example.com", permissionType: .camera))
+        XCTAssertEqual(store.history, [.load])
+    }
+
+    func testWhenSettingADecisionEqualToTheDefaultThenItIsStillPersisted() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        manager.setPermission(.deny, forDomain: "example.com", permissionType: .camera)
+
+        XCTAssertEqual(manager.persistedDecision(forDomain: "example.com", permissionType: .camera), .deny)
+        XCTAssertTrue(manager.hasPermissionPersisted(forDomain: "example.com", permissionType: .camera))
+    }
+
 }
 
 fileprivate extension PermissionEntity {

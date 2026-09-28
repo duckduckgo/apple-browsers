@@ -22,6 +22,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import UIComponents
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -347,13 +348,7 @@ private struct MenuRowButton: View {
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textSecondary))
                     case .badge(let string):
-                        Text(string)
-                            .daxCallout()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color(singleUseColor: .fireModeAccent))
-                            .clipShape(RoundedRectangle(cornerRadius: 10.5))
+                        BadgeView(text: string)
                     }
                 }
             }

@@ -45,6 +45,7 @@
             "vpnSystemExtension",
             "vpnSystemExtensionAppStore",
             "vpnProxyExtension",
+            "vpnSystemExtensionProxy",
             "dbpBackgroundAgent"
         ]
     },

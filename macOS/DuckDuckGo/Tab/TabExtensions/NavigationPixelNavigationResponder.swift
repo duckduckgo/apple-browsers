@@ -185,6 +185,6 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             firstMeaningfulPaintMs: firstMeaningfulPaintMs,
             documentCompleteMs: documentCompleteMs,
             allResourcesCompleteMs: allResourcesCompleteMs
-        ), frequency: .standard, options: .parameters(additionalParams))
+        ), frequency: .sample(percentage: SiteLoadingPixel.samplePercentage), options: .parameters(additionalParams))
     }
 }

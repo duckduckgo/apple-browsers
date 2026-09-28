@@ -65,7 +65,7 @@ final class FireWindowClosingTests: XCTestCase {
             tabCollectionViewModel: windowController.mainViewController.tabCollectionViewModel
         )
 
-        let windowClosed = expectation(forNotification: NSWindow.willCloseNotification, object: window)
+        let windowClosed = expectationForClosing(window)
         popoverViewController.closeBurnerWindowButtonAction(self)
         await fulfillment(of: [windowClosed], timeout: 5)
 
@@ -80,7 +80,7 @@ final class FireWindowClosingTests: XCTestCase {
         var animationStates = [Bool]()
         subscribeToAnimationStates(of: windowController) { animationStates.append($0) }
 
-        let windowClosed = expectation(forNotification: NSWindow.willCloseNotification, object: window)
+        let windowClosed = expectationForClosing(window)
         windowController.mainViewController.tabCollectionViewModel.remove(at: .unpinned(0))
         await fulfillment(of: [windowClosed], timeout: 5)
 
@@ -97,7 +97,7 @@ final class FireWindowClosingTests: XCTestCase {
         var animationStates = [Bool]()
         subscribeToAnimationStates(of: windowController) { animationStates.append($0) }
 
-        let windowClosed = expectation(forNotification: NSWindow.willCloseNotification, object: window)
+        let windowClosed = expectationForClosing(window)
         windowController.burnAndClose(window)
         await fulfillment(of: [windowClosed], timeout: 5)
 
@@ -105,6 +105,15 @@ final class FireWindowClosingTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func expectationForClosing(_ window: NSWindow) -> XCTestExpectation {
+        // Notification expectations retain their observed object. Avoid keeping the closed window
+        // and its view hierarchy alive while the harness checks deallocation at teardown.
+        expectation(forNotification: NSWindow.willCloseNotification, object: nil) { [weak window] notification in
+            guard let window else { return false }
+            return notification.object as? NSWindow === window
+        }
+    }
 
     @MainActor
     private func openFireWindow() throws -> MainWindowController {

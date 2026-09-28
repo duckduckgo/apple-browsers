@@ -1225,6 +1225,28 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("sendToSetupSync does not fire sync promo confirmed pixel when sync is already on", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatSendToSetupSyncDoesNotFireSyncPromoConfirmedWhenSyncAlreadyOn() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage.mock())
+
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "sync already on")
+        #expect(!pixelFiring.actualFireCalls.contains { $0.pixel.name == SyncPromoPixelKitEvent.syncPromoConfirmed.name })
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("setAIChatHistoryEnabled is notify-only and best-effort persists even when account is missing", .timeLimit(.minutes(1)))
     @MainActor
     func testThatSetAIChatHistoryEnabledBestEffortPersistsWhenAccountIsMissing() throws {

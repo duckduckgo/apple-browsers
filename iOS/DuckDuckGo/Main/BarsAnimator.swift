@@ -27,8 +27,6 @@ class BarsAnimator {
         static let legacyTransitionSpeed: CGFloat = 0.5
 
         static let floatingVelocityCommitThreshold: CGFloat = 0.15
-        static let floatingFastStepThreshold: CGFloat = 0.35
-        static let floatingFastStepAnimationDuration: CGFloat = 0.12
     }
 
     weak var delegate: BrowserChromeDelegate?
@@ -118,7 +116,7 @@ class BarsAnimator {
             if barsState != .revealed || transitionProgress != 0 {
                 barsState = .revealed
                 transitionProgress = 0
-                delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
+                delegate?.setBarsVisibility(1, animated: true, animationDuration: nil)
             }
             transitionStartPosY = pageTopY
             transitionStartProgress = 0
@@ -131,8 +129,6 @@ class BarsAnimator {
             && transitionProgress == ratio
         guard !ratioMatchesSettledState else { return }
 
-        let shouldAnimateFastStep = (ratio == 0 || ratio == 1)
-            && abs(ratio - transitionProgress) >= Metrics.floatingFastStepThreshold
         if ratio >= 1.0 {
             barsState = .hidden
         } else if ratio <= 0.0 {
@@ -141,10 +137,9 @@ class BarsAnimator {
             barsState = .transitioning
         }
         transitionProgress = ratio
-        delegate?.setBarsVisibility(
-            1.0 - ratio,
-            animated: shouldAnimateFastStep,
-            animationDuration: shouldAnimateFastStep ? Metrics.floatingFastStepAnimationDuration : nil)
+        // Always a target, never a decision: the speed limit tracks an unhurried drag exactly and
+        // paces out anything faster.
+        delegate?.setBarsVisibility(1.0 - ratio, animated: true, animationDuration: nil)
     }
 
     private func revealedAndScrolling(in scrollView: UIScrollView) {
@@ -302,12 +297,10 @@ class BarsAnimator {
     }
 
     func revealBars(animated: Bool, animationDuration: CGFloat? = nil) {
-        let alreadyRevealed = barsState == .revealed
-
         barsState = .revealed
         transitionProgress = 0
 
-        delegate?.setBarsVisibility(1, animated: animated && !alreadyRevealed, animationDuration: animationDuration)
+        delegate?.setBarsVisibility(1, animated: animated, animationDuration: animationDuration)
     }
 
     func hideBars(animated: Bool, animationDuration: CGFloat? = nil) {

@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import DesignResourcesKit
 
 enum FloatingOmnibarSwipeDirection: Equatable {
     case left
@@ -1058,11 +1057,7 @@ final class BrowserToolbarView: UIView {
 
     private func materialEffect() -> UIVisualEffect {
         if #available(iOS 26.0, *) {
-            let effect = UIGlassEffect(style: .regular)
-            if materialInterfaceStyle == .dark {
-                effect.tintColor = UIColor(designSystemColor: .surfaceCanvas)
-            }
-            return effect
+            return UIGlassEffect(style: .regular)
         } else {
             return UIBlurEffect(style: .systemThinMaterial)
         }

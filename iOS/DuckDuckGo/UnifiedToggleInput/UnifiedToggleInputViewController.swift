@@ -48,6 +48,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterLink url: URL)
 }
 
 // MARK: - View Controller
@@ -488,6 +489,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         barView.onFooterVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }
             delegate?.unifiedToggleInputVC(self, didChangeFooterVisibility: isVisible)
+        }
+        barView.onFooterLinkTapped = { [weak self] url in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVC(self, didTapFooterLink: url)
         }
         let containerView = UnifiedToggleInputContainerView(inputView: barView)
         containerView.cardPosition = barView.cardPosition

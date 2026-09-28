@@ -971,6 +971,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: isOnAITab)
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -1042,6 +1043,13 @@ extension MainViewController {
             contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         contentVC.didMove(toParent: self)
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: currentTab?.isAITab == true)
+    }
+
+    /// Selects presentation only. The content controller and its view stay installed for the session.
+    func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
+        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
+            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
     }
 
     func installFloatingReturnKeyViewController() {
@@ -1427,6 +1435,13 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         applyEditModeChrome(isEditing)
+    }
+
+    /// A new tab, like the web app's own links, so the draft and the chat stay where they were.
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {

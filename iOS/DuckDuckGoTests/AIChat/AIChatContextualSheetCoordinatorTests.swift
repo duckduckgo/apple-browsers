@@ -656,6 +656,21 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [testURL])
     }
 
+    /// The link opens in a new tab, which a floating input left up would cover.
+    @MainActor
+    func testWhenURLIsOpenedFromFloatingInputThenInputIsDismissedAndURLIsLoaded() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.presentFloatingInput(from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        let url = URL(string: "https://duckduckgo.com/duckai/privacy-terms")!
+
+        sut.openInNewTabLeavingCurrentSurface(url)
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+    }
+
     @MainActor
     func testDelegateReceivesExpandRequestWithURL() async {
         // Given

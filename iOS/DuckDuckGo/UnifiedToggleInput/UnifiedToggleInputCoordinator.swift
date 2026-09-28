@@ -363,7 +363,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        tabProvider: @escaping () -> Tab? = { nil }
+        tabProvider: @escaping () -> Tab? = { nil },
+        nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
         let upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
@@ -405,7 +407,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
-        // rather than bound here — see `setUpUsageWarnings`.
+        // rather than bound here — see `setUpFooter`.
         self.usageLimitsStore = usageLimitsStore
             ?? duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger) }
         contentViewController = UnifiedInputContentContainerViewController(
@@ -418,7 +420,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()
         viewController.delegate = self
-        setUpUsageWarnings(subscriptionManager: subscriptionManager)
+        let isNativeTermsOfServiceAvailable = (nativeTermsOfServiceFeature
+            ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
+        setUpFooter(subscriptionManager: subscriptionManager,
+                    termsOfServiceStore: isNativeTermsOfServiceAvailable ? termsOfServiceStore : nil)
         textModel = UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
@@ -977,7 +982,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Usage Warnings
 
-    private func setUpUsageWarnings(subscriptionManager: any SubscriptionManager) {
+    private func setUpFooter(subscriptionManager: any SubscriptionManager, termsOfServiceStore: DuckAiTermsOfServiceStore?) {
         let viewModel = usageLimitsStore?.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: { [weak self] in self?.models ?? [] },
@@ -1009,6 +1014,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
         )
         footerController = UTIFooterController(viewModel: viewModel,
+                                              termsOfServiceStore: termsOfServiceStore,
                                               highUsageNotice: viewModel == nil ? nil : makeHighUsageNoticeSource(),
                                               attachmentPrivacyNotice: attachmentPrivacyNoticeSource,
                                               measurement: makeUsageWarningMeasurement(),
@@ -1461,6 +1467,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
+        footerController?.acceptTermsIfDisclaimerShown()
         let configuration = promptSubmissionConfiguration
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
@@ -1905,6 +1912,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let files = selectedModelSupportsFileUpload
                 ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
+            footerController?.acceptTermsIfDisclaimerShown()
             footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()
             exitEditMode(reply: .submit(prompt: text, images: images, files: files))
@@ -1926,6 +1934,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
+        footerController?.acceptTermsIfDisclaimerShown()
         footerController?.recordPromptSubmitted()
 
         let configuration = promptSubmissionConfiguration

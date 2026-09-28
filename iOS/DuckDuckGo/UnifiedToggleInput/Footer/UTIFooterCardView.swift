@@ -50,6 +50,7 @@ final class UTIFooterCardView: UIView {
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
     private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
     private let modelSwitchIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.importExport)
+    private let shieldIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.shieldCheck)
     private let titleLabel = UILabel()
     private let linkTextView = UTIFooterLinkTextView()
     private let subtitleLabel = UILabel()
@@ -72,34 +73,23 @@ final class UTIFooterCardView: UIView {
     }
 
     func configure(with message: UTIFooterMessage, animateIcon: Bool) {
+        let visibleIcon: UIView?
         switch message.icon {
         case .none:
-            usageRing.isHidden = true
-            alertIcon.isHidden = true
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = true
+            visibleIcon = nil
         case .usageRing(let progress, let severity):
-            usageRing.isHidden = false
-            alertIcon.isHidden = true
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = true
+            visibleIcon = usageRing
             usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
-            usageRing.isHidden = true
-            alertIcon.isHidden = false
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = true
+            visibleIcon = alertIcon
         case .info:
-            usageRing.isHidden = true
-            alertIcon.isHidden = true
-            infoIcon.isHidden = false
-            modelSwitchIcon.isHidden = true
+            visibleIcon = infoIcon
         case .modelSwitch:
-            usageRing.isHidden = true
-            alertIcon.isHidden = true
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = false
+            visibleIcon = modelSwitchIcon
+        case .shield:
+            visibleIcon = shieldIcon
         }
+        allIcons.forEach { $0.isHidden = $0 !== visibleIcon }
         let hasIcon = message.icon != UTIFooterMessage.Icon.none
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
@@ -108,6 +98,7 @@ final class UTIFooterCardView: UIView {
         let isStandaloneCopy = message.subtitle == nil
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
         titleLabel.text = message.title
+        // A label can't take a tap on part of its text, so copy carrying a link renders in the text view.
         titleLabel.isHidden = message.link != nil
         linkTextView.isHidden = message.link == nil
         if let link = message.link {
@@ -144,6 +135,10 @@ final class UTIFooterCardView: UIView {
         onDismissTap?()
     }
 
+    private var allIcons: [UIView] {
+        [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon]
+    }
+
 }
 
 // MARK: - Setup
@@ -160,7 +155,7 @@ private extension UTIFooterCardView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
 
-        [usageRing, alertIcon, infoIcon, modelSwitchIcon].forEach {
+        allIcons.forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -170,7 +165,8 @@ private extension UTIFooterCardView {
         alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
         infoIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Info"
         modelSwitchIcon.accessibilityIdentifier = "AIChat.Footer.Icon.ModelSwitch"
-        [alertIcon, infoIcon, modelSwitchIcon].forEach {
+        shieldIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Shield"
+        [alertIcon, infoIcon, modelSwitchIcon, shieldIcon].forEach {
             $0.contentMode = .scaleAspectFit
             $0.isHidden = true
         }
@@ -258,6 +254,11 @@ private extension UTIFooterCardView {
             modelSwitchIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             modelSwitchIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            shieldIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            shieldIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            shieldIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            shieldIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
             iconTextGap,
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
@@ -282,11 +283,12 @@ private extension UTIFooterCardView {
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        linkTextView.applyColors()
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         infoIcon.tintColor = UIColor(designSystemColor: .icons)
         modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)
+        shieldIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        linkTextView.applyColors()
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()
     }

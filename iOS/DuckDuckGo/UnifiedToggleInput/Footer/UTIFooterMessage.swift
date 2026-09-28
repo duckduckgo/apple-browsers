@@ -34,9 +34,7 @@ struct CreateImageModelSwitchNotice: Equatable {
 
 struct UTIFooterItem: Equatable, Identifiable {
     enum ID: Int, CaseIterable {
-#if DEBUG || ALPHA
         case termsConsent
-#endif
         case outOfUsage
         case attachmentPrivacy
         case modelSwitch
@@ -52,9 +50,7 @@ struct UTIFooterItem: Equatable, Identifiable {
 
     var type: MessageType {
         switch id {
-#if DEBUG || ALPHA
         case .termsConsent: return .required
-#endif
         case .outOfUsage, .attachmentPrivacy: return .required
         case .modelSwitch: return .action
         case .usageWarning, .highUsage: return .informational
@@ -80,6 +76,7 @@ struct UTIFooterMessage: Equatable {
         case alert
         case info
         case modelSwitch
+        case shield
     }
 
     struct PrimaryAction: Equatable {
@@ -98,6 +95,20 @@ struct UTIFooterMessage: Equatable {
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
     let link: Link?
+
+    init(icon: Icon,
+         title: String,
+         subtitle: String?,
+         primaryAction: PrimaryAction?,
+         isDismissible: Bool,
+         link: Link? = nil) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.primaryAction = primaryAction
+        self.isDismissible = isDismissible
+        self.link = link
+    }
 }
 
 /// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as
@@ -133,23 +144,3 @@ struct UTIFooterResetDescriber {
         static let secondsPerDay: TimeInterval = 24 * 60 * 60
     }
 }
-
-#if DEBUG || ALPHA
-@MainActor
-enum UTIFooterDebugOverrides {
-    private(set) static var termsMessage: UTIFooterMessage?
-
-    static func showTermsPreview() {
-        termsMessage = UTIFooterMessage(icon: .info,
-                                       title: "Terms of Service (debug preview)",
-                                       subtitle: "First-prompt layout preview. Clears on submit; no consent is recorded.",
-                                       primaryAction: nil,
-                                       isDismissible: false,
-                                       link: nil)
-    }
-
-    static func clearTermsPreview() {
-        termsMessage = nil
-    }
-}
-#endif

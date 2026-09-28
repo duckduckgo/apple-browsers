@@ -99,9 +99,8 @@ final class AIChatUsageWarningCardView: NSView {
         static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
-        /// Leaves room for the disclosure's two lines inside the band. A text view lays out from
-        /// the top rather than centring, so this is what centres it.
-        static let disclosureVerticalInset: CGFloat = 6
+        /// Re-inset by less than this and the layout pass is not worth repeating.
+        static let disclosureInsetTolerance: CGFloat = 0.5
     }
 
     // MARK: - UI Components
@@ -322,10 +321,8 @@ final class AIChatUsageWarningCardView: NSView {
             disclosureTextView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             disclosureTextView.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor,
                                                          constant: -Constants.horizontalPadding),
-            disclosureTextView.topAnchor.constraint(equalTo: contentGuide.topAnchor,
-                                                    constant: Constants.disclosureVerticalInset),
-            disclosureTextView.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor,
-                                                       constant: -Constants.disclosureVerticalInset),
+            disclosureTextView.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            disclosureTextView.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor),
 
             actionButton.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor,
                                                   constant: Constants.titleActionSpacing),
@@ -523,6 +520,27 @@ final class AIChatUsageWarningCardView: NSView {
         result.append(NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore,
                                          attributes: linkAttributes))
         return result
+    }
+
+    /// A text view lays out from its top edge, so the copy sits high in the band whether it takes
+    /// one line or two. Padding the container is what centres it.
+    override func layout() {
+        super.layout()
+        centreDisclosureText()
+    }
+
+    private func centreDisclosureText() {
+        guard !disclosureTextView.isHidden,
+              let layoutManager = disclosureTextView.layoutManager,
+              let container = disclosureTextView.textContainer else { return }
+
+        layoutManager.ensureLayout(for: container)
+        let textHeight = layoutManager.usedRect(for: container).height
+        let inset = max(0, (disclosureTextView.bounds.height - textHeight) / 2)
+        // Setting the inset triggers another pass, so only move when it would show.
+        guard abs(disclosureTextView.textContainerInset.height - inset) > Constants.disclosureInsetTolerance else { return }
+
+        disclosureTextView.textContainerInset = NSSize(width: 0, height: inset)
     }
 
     private func showTitleLabel() {

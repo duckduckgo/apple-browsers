@@ -299,7 +299,6 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
     }
 
-    /// Or every resolve asks again for something that can never be granted.
     func testADeniedCompositionIsRememberedToo() {
         for tab in ["A", "B", "C"] {
             _ = gate.shouldShow(hasStagedAttachment: true, tabID: tab)

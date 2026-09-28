@@ -203,7 +203,6 @@ final class AIChatOmnibarController {
     /// Blocked-submit reason, for the container VC's attachments error label.
     var onAttachmentValidationFailed: ((String) -> Void)?
 
-    /// A prompt was submitted, so the composition the user was building has ended.
     var onPromptSubmitted: (() -> Void)?
 
     /// Waits for all attachment resizing to complete before proceeding.

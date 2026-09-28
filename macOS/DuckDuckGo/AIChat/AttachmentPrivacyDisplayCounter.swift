@@ -29,12 +29,10 @@ import PrivacyConfig
 /// Not the Duck.ai entries namespace: the web app replaces that wholesale on hydration, which
 /// wiped the count.
 protocol AttachmentPrivacyDisplayCountStoring: AnyObject {
-    /// `nil` is "nothing recorded", distinct from a recorded zero.
     var count: Int? { get }
     func setCount(_ count: Int)
     var hasMigratedWebCount: Bool { get }
     func markWebCountMigrated()
-    /// Count and marker both.
     func reset()
 }
 
@@ -114,7 +112,6 @@ final class AttachmentPrivacyDisplayCountRegistry {
         return new
     }
 
-    /// The Fire Button. A Fire Window's own count dies with the window.
     func resetPersistent() {
         persistentStore.reset()
     }
@@ -160,12 +157,10 @@ final class AttachmentPrivacyDisplayCounter {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
     }
 
-    /// Reads without spending, for a resolver that re-runs on every change.
     var canDisplay: Bool {
         isEnabled && count < Self.cap
     }
 
-    /// For the debug menu.
     var displayCount: Int { count }
 
     @discardableResult
@@ -211,7 +206,6 @@ final class AttachmentPrivacyDisplayCounter {
 /// submit does.
 final class AttachmentPrivacyCompositionGate {
 
-    /// A surface with no tab — the Prompt Bar — has one composition at a time.
     private static let tablessKey = "no-tab"
 
     private let counter: AttachmentPrivacyDisplayCounter
@@ -234,13 +228,11 @@ final class AttachmentPrivacyCompositionGate {
         return granted
     }
 
-    /// Only that tab: others keep the drafts they are still composing.
     func compositionEnded(tabID: String?) {
         grants[tabID ?? Self.tablessKey] = nil
     }
 }
 
-/// Answer to `attachmentPrivacyShouldDisplay`.
 struct AttachmentPrivacyShouldDisplayResponse: Encodable {
     let show: Bool
 }

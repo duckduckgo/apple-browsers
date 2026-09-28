@@ -74,7 +74,6 @@ final class AIChatTabExtension {
             .resolve(isFireMode: burnerMode.isBurner,
                      handler: burnerDuckAiStorageRegistry?.handler(for: burnerMode))
         }
-        // A burner tab resolves its own store, so nothing there touches the persistent count.
         self.attachmentPrivacyCounterProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
             AttachmentPrivacyDisplayCounter(
                 store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),

@@ -99,7 +99,6 @@ final class AIChatUsageWarningCardView: NSView {
         static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
-        /// Below this the re-inset is not worth another layout pass.
         static let disclosureInsetTolerance: CGFloat = 0.5
     }
 
@@ -370,7 +369,6 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
-    /// Not dismissible, so no ✕; the inline link is the only action.
     func updateForAttachmentPrivacy() {
         applyInfoIcon()
         titleLabel.isHidden = true

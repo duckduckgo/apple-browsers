@@ -48,7 +48,6 @@ final class AIChatDebugMenu: NSMenu {
         return isBurner ? "this Fire Window" : "persistent"
     }
 
-    /// Title carries the current count, refreshed in `update()`.
     private lazy var attachmentPrivacyMenuItem = NSMenuItem(
         title: "",
         action: #selector(resetAttachmentPrivacyDisplayCount),

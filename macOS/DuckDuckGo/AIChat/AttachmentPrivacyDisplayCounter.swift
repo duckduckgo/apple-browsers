@@ -26,20 +26,15 @@ import PrivacyConfig
 
 // MARK: - Storage
 
-/// Where the display count lives. One implementation persists; the other is scoped to a Fire
-/// Window and goes away with it.
-///
-/// Deliberately not the Duck.ai entries namespace: that is the web app's `localStorage`, and the
-/// web app replaces it wholesale on hydration, which reset the count and showed the disclosure
-/// again in every new tab.
+/// Not the Duck.ai entries namespace: the web app replaces that wholesale on hydration, which
+/// wiped the count.
 protocol AttachmentPrivacyDisplayCountStoring: AnyObject {
-    /// `nil` when nothing has been recorded, which is distinct from a recorded zero.
+    /// `nil` is "nothing recorded", distinct from a recorded zero.
     var count: Int? { get }
     func setCount(_ count: Int)
-    /// Whether the web app's count has already been taken over. The migration runs once.
     var hasMigratedWebCount: Bool { get }
     func markWebCountMigrated()
-    /// Clears the count and the migration marker.
+    /// Count and marker both.
     func reset()
 }
 
@@ -94,8 +89,7 @@ final class InMemoryAttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplay
     }
 }
 
-/// One store per Fire Window, keyed by its data store the way `BurnerDuckAiStorageRegistry` is, so
-/// every surface in that window shares a count that starts at zero and dies with the window.
+/// One store per Fire Window, keyed by its data store like `BurnerDuckAiStorageRegistry`.
 final class AttachmentPrivacyDisplayCountRegistry {
 
     private let lock = NSLock()
@@ -120,7 +114,7 @@ final class AttachmentPrivacyDisplayCountRegistry {
         return new
     }
 
-    /// The Fire Button. A Fire Window's own count needs no clearing: it dies with the window.
+    /// The Fire Button. A Fire Window's own count dies with the window.
     func resetPersistent() {
         persistentStore.reset()
     }
@@ -128,16 +122,12 @@ final class AttachmentPrivacyDisplayCountRegistry {
 
 // MARK: - Counter
 
-/// Owns the file-upload privacy disclosure's display count. Check and increment are one operation,
-/// so no caller can take the total past the cap.
+/// Check and increment are one operation, so no caller can pass the cap.
 final class AttachmentPrivacyDisplayCounter {
 
     static let cap = 3
 
-    /// The web app's own key, which governs while native does not. Read as a starting point so a
-    /// user who already saw the message on web does not get three more once native takes over.
-    /// Name pending confirmation with the front end — if it is wrong, seeding silently does
-    /// nothing and the count restarts at zero.
+    /// Name pending confirmation with the front end: wrong, and the takeover silently does nothing.
     static let webEntryKey = "duckaiFileUploadDisclaimerShownCount"
 
     private let store: AttachmentPrivacyDisplayCountStoring
@@ -153,9 +143,8 @@ final class AttachmentPrivacyDisplayCounter {
         migrateWebCountIfNeeded()
     }
 
-    /// The web app ships this disclosure before native and counts with its own key, so a user who
-    /// has already seen it there must not get three more. Runs once: after this the web app's key
-    /// is never consulted again.
+    /// The web app ships first and counts with its own key, so a user who already saw it there
+    /// must not get three more. Once only.
     private func migrateWebCountIfNeeded() {
         guard !store.hasMigratedWebCount else { return }
 
@@ -171,16 +160,14 @@ final class AttachmentPrivacyDisplayCounter {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
     }
 
-    /// Whether a display is still available, without spending one. For a resolver that re-runs on
-    /// every change; spending happens once per composition through `consumeDisplay()`.
+    /// Reads without spending, for a resolver that re-runs on every change.
     var canDisplay: Bool {
         isEnabled && count < Self.cap
     }
 
-    /// Exposed for the debug menu, which shows how many displays are spent.
+    /// For the debug menu.
     var displayCount: Int { count }
 
-    /// Spends one display if any remain. The answer is what a surface renders on.
     @discardableResult
     func consumeDisplay() -> Bool {
         guard isEnabled else { return false }
@@ -193,15 +180,15 @@ final class AttachmentPrivacyDisplayCounter {
         return true
     }
 
-    /// The web app's key goes too, and the marker is put back: nothing is left to migrate, so the
-    /// message can actually return after a burn.
+    /// The marker goes back on, or the burn would re-migrate the web count and the message would
+    /// never return.
     func reset() {
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
         store.markWebCountMigrated()
     }
 
-    /// An absent or unreadable value counts as zero: erring towards showing a required disclosure.
+    /// Absent counts as zero: erring towards showing a required disclosure.
     private var count: Int {
         store.count ?? 0
     }
@@ -220,15 +207,11 @@ final class AttachmentPrivacyDisplayCounter {
 
 // MARK: - Composition gate
 
-/// Turns the counter's "may I show this" into the rule the disclosure actually follows: once per
-/// prompt draft, per tab.
-///
-/// The draft is per tab, so a different tab is a different prompt. Within one, removing or swapping
-/// the attachment does not end the composition — otherwise a user on their last display who
-/// changes the file would watch the disclosure vanish mid-flow. Only a submit ends it.
+/// Once per prompt draft, per tab. Swapping the attachment does not end a composition; only a
+/// submit does.
 final class AttachmentPrivacyCompositionGate {
 
-    /// A surface with no originating tab — the Prompt Bar — has one composition at a time.
+    /// A surface with no tab — the Prompt Bar — has one composition at a time.
     private static let tablessKey = "no-tab"
 
     private let counter: AttachmentPrivacyDisplayCounter
@@ -238,10 +221,8 @@ final class AttachmentPrivacyCompositionGate {
         self.counter = counter
     }
 
-    /// Asks the counter once per composition, then keeps the answer for the rest of it.
     func shouldShow(hasStagedAttachment: Bool, tabID: String?) -> Bool {
-        // Nothing to show without an attachment, but the grant is kept: removing one does not end
-        // the composition, so re-attaching must not spend another display.
+        // The grant is kept: re-attaching must not spend another display.
         guard hasStagedAttachment else { return false }
 
         let key = tabID ?? Self.tablessKey
@@ -253,8 +234,7 @@ final class AttachmentPrivacyCompositionGate {
         return granted
     }
 
-    /// The submitting tab's next attachment asks the counter again. Other tabs keep the drafts
-    /// they are still composing.
+    /// Only that tab: others keep the drafts they are still composing.
     func compositionEnded(tabID: String?) {
         grants[tabID ?? Self.tablessKey] = nil
     }

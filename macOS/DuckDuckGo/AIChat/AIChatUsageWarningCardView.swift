@@ -99,7 +99,7 @@ final class AIChatUsageWarningCardView: NSView {
         static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
-        /// Re-inset by less than this and the layout pass is not worth repeating.
+        /// Below this the re-inset is not worth another layout pass.
         static let disclosureInsetTolerance: CGFloat = 0.5
     }
 
@@ -170,16 +170,14 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
-    /// The attachment privacy disclosure only. A text view rather than the label because its copy
-    /// carries an inline link, and AppKit does the hit testing and the cursor for a `.link`
-    /// attribute — the label would need the glyph range measured by hand.
+    /// A text view, not the label: AppKit hit-tests a `.link` attribute, which a label would need
+    /// measured by hand.
     private lazy var disclosureTextView: NSTextView = {
         let view = NSTextView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.delegate = self
         view.isEditable = false
-        // Required for link clicks to reach the delegate.
-        view.isSelectable = true
+        view.isSelectable = true // Required for link clicks to reach the delegate.
         view.drawsBackground = false
         view.textContainerInset = .zero
         view.textContainer?.lineFragmentPadding = 0
@@ -372,8 +370,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
-    /// The attachment privacy disclosure: two lines, an inline Learn more link, and no ✕ — it is
-    /// not dismissible.
+    /// Not dismissible, so no ✕; the inline link is the only action.
     func updateForAttachmentPrivacy() {
         applyInfoIcon()
         titleLabel.isHidden = true
@@ -507,7 +504,6 @@ final class AIChatUsageWarningCardView: NSView {
         NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
     }
 
-    /// The approved copy carries its link inline, so the card's pill CTA cannot serve it.
     private static func attributedDisclosure() -> NSAttributedString {
         var bodyAttributes = textAttributes(weight: .regular)
         bodyAttributes[.cursor] = NSCursor.arrow
@@ -515,15 +511,14 @@ final class AIChatUsageWarningCardView: NSView {
                                                attributes: bodyAttributes)
 
         var linkAttributes = bodyAttributes
-        // The value is only the delegate's signal — the host decides how to open it.
+        // Only the delegate's signal; the host decides how to open it.
         linkAttributes[.link] = URL.aiChatPrivacy
         result.append(NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore,
                                          attributes: linkAttributes))
         return result
     }
 
-    /// A text view lays out from its top edge, so the copy sits high in the band whether it takes
-    /// one line or two. Padding the container is what centres it.
+    /// A text view lays out from its top edge, so padding the container is what centres it.
     override func layout() {
         super.layout()
         centreDisclosureText()
@@ -537,7 +532,7 @@ final class AIChatUsageWarningCardView: NSView {
         layoutManager.ensureLayout(for: container)
         let textHeight = layoutManager.usedRect(for: container).height
         let inset = max(0, (disclosureTextView.bounds.height - textHeight) / 2)
-        // Setting the inset triggers another pass, so only move when it would show.
+        // Setting the inset triggers another pass.
         guard abs(disclosureTextView.textContainerInset.height - inset) > Constants.disclosureInsetTolerance else { return }
 
         disclosureTextView.textContainerInset = NSSize(width: 0, height: inset)
@@ -910,8 +905,6 @@ final class AIChatUsageWarningActionButton: NSView {
 
 extension AIChatUsageWarningCardView: NSTextViewDelegate {
 
-    /// Only the link's glyphs reach this, which is the point of using a text view: the rest of the
-    /// sentence is not a hit target.
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
         onLearnMore?()
         return true

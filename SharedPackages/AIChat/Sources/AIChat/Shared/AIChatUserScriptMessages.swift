@@ -37,9 +37,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openAIChatLink
     case responseReceived
 
-    /// FE→native, request/response. Asked once per prompt composition, immediately before the
-    /// file-upload privacy disclosure would be shown. Native spends one display if any remain and
-    /// answers whether to show it, so the cap is enforced across every surface.
+    /// FE→native, once per prompt composition, before the file-upload disclosure would show.
+    /// Native spends a display if any remain and answers whether to show it.
     case attachmentPrivacyShouldDisplay
 
     case getAIChatPageContext

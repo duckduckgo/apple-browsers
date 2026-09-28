@@ -155,9 +155,8 @@ public struct AIChatNativeConfigValues: Codable {
     /// serves as version-skew protection against builds that predate the bridge.
     public let supportsBrowserTools: Bool
 
-    /// `true` when native owns how often the file-upload privacy disclosure is shown. The web app
-    /// then asks before displaying it rather than applying its own frequency. Absent on builds that
-    /// predate the handler, which is the version-skew signal.
+    /// `true` when native owns how often the file-upload privacy disclosure is shown, so the web
+    /// app asks before displaying it. Absent on builds that predate the handler.
     public let supportsAttachmentPrivacyDisplayCount: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {

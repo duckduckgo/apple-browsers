@@ -118,8 +118,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     var messageHandling: AIChatMessageHandling { get }
 
     var isFireWindowProvider: (() -> Bool)? { get set }
-    /// Set by the tab extension, which is where the tab's burner mode is known — the counter has to
-    /// be built with that tab's storage handler or a Fire Window would spend persistent displays.
+    /// Set by the tab extension: only it knows the tab's burner mode, and a Fire Window must not
+    /// spend persistent displays.
     var attachmentPrivacyCounterProvider: (() -> AttachmentPrivacyDisplayCounter?)? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
@@ -302,7 +302,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
-    /// One operation: spends a display if any remain, and answers whether to show the disclosure.
     public func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
         AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyCounterProvider?()?.consumeDisplay() ?? false)
     }

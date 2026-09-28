@@ -64,7 +64,6 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertFalse(counter.canDisplay)
     }
 
-    /// A read must not spend anything: the resolver calls it on every change.
     func testCanDisplayDoesNotSpendADisplay() {
         let counter = makeCounter()
 
@@ -105,7 +104,6 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertFalse(counter.consumeDisplay())
     }
 
-    /// Once is the whole point: after the takeover the web app's key is never consulted again.
     func testWebCountIsAdoptedOnlyOnce() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
         _ = makeCounter()
@@ -116,8 +114,6 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertEqual(second.displayCount, 1)
     }
 
-    /// The takeover runs whether or not there was anything to take, so a value written afterwards
-    /// belongs to a web app that is no longer the authority.
     func testWebCountAppearingAfterTheTakeoverIsIgnored() {
         _ = makeCounter()
 
@@ -128,8 +124,7 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertTrue(second.consumeDisplay())
     }
 
-    /// Deliberate: the takeover is about state, not about showing anything, so deferring it until
-    /// the flag is on would risk missing it entirely.
+    /// Deliberate: a state handover, not a display, so waiting for the flag risks missing it.
     func testTheTakeoverHappensEvenWithTheFlagOff() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 2
 
@@ -144,7 +139,6 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertEqual(counter.displayCount, 0)
     }
 
-    /// Erring towards showing a required disclosure.
     func testUnreadableWebCountLeavesTheCountAtZero() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = ["unexpected": true]
 
@@ -182,8 +176,7 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertNil(webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey])
     }
 
-    /// Otherwise the burn would clear our count, re-adopt the web app's, and the message would
-    /// never come back.
+    /// Otherwise the burn re-adopts the web count and the message never comes back.
     func testResetDoesNotLeaveTheWebCountToBeAdoptedAgain() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 3
         let counter = makeCounter()
@@ -240,7 +233,6 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    /// Re-resolving on every change must not spend a display each time.
     func testResolvingRepeatedlyInOneCompositionSpendsOne() {
         for _ in 0..<5 {
             XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
@@ -249,8 +241,7 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    /// The case that felt broken in testing: changing the file mid-flow must not cost a display,
-    /// and must not make the message disappear.
+    /// Reported as feeling broken: changing the file mid-flow must not cost a display.
     func testRemovingAndReattachingKeepsTheSameDisplay() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
@@ -274,7 +265,6 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 2)
     }
 
-    /// Going A → B → A is two drafts, not three.
     func testReturningToATabKeepsItsGrant() {
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
@@ -293,7 +283,6 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 2)
     }
 
-    /// A surface with no originating tab still gets one composition at a time.
     func testASurfaceWithoutATabIsOneComposition() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
@@ -301,7 +290,6 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    /// Past the cap the answer is no, and it stays no for that composition.
     func testOnceExhaustedNothingShows() {
         for tab in ["A", "B", "C"] {
             XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: tab))
@@ -311,8 +299,7 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
     }
 
-    /// A denied composition must not ask again on every resolve, or the log fills with requests
-    /// that can never be granted.
+    /// Or every resolve asks again for something that can never be granted.
     func testADeniedCompositionIsRememberedToo() {
         for tab in ["A", "B", "C"] {
             _ = gate.shouldShow(hasStagedAttachment: true, tabID: tab)
@@ -361,7 +348,6 @@ final class AttachmentPrivacyDisplayCountRegistryTests: XCTestCase {
         XCTAssertNil(persistent.count)
     }
 
-    /// The Fire Button clears the persistent count; a Fire Window's dies with the window.
     func testResetPersistentLeavesBurnerStoresAlone() {
         let registry = AttachmentPrivacyDisplayCountRegistry()
         let mode = BurnerMode(isBurner: true)
@@ -375,7 +361,7 @@ final class AttachmentPrivacyDisplayCountRegistryTests: XCTestCase {
     }
 }
 
-/// Stores entries so the migration can be driven; everything else is unused here.
+/// Stores entries so the takeover can be driven; the rest is unused.
 private final class FakeWebKeyStorage: DuckAiNativeStorageHandling {
 
     var entries: [String: Any] = [:]

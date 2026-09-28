@@ -611,7 +611,7 @@ final class Fire: FireProtocol {
             let autoconsentStatsResult = await self.burnAutoconsentStats()
             dataClearingWideEventService?.update(.clearAutoconsentStats, result: autoconsentStatsResult)
 
-            // Not chat history: it records what the user was shown, so it clears on every burn.
+            // Not chat history: it records what the user was shown, so every burn clears it.
             self.attachmentPrivacyDisplayCountRegistry.resetPersistent()
 
             if includeChatHistory {

@@ -1265,9 +1265,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
 
-        // Required > Action > Informational, then priority within type. Out of usage is Required
-        // because it is the reason Send is disabled, so it outranks the disclosure; the two only
-        // meet at all because a drop can stage an attachment while the input is blocked.
+        // Required > Action > Informational. Out of usage outranks the disclosure: it is the
+        // reason Send is disabled.
         if let warning, warning.blocksInput {
             usageWarningCardView.update(with: warning)
             currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
@@ -1276,7 +1275,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         if shouldShowAttachmentPrivacyDisclosure {
             usageWarningCardView.updateForAttachmentPrivacy()
-            // Not a usage message, so nothing here is an impression.
             currentUsageWarningExposure = nil
             setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
             return
@@ -1300,8 +1298,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     // MARK: - Attachment privacy disclosure
 
-    /// Images and files only — a page-context chip is not a file and nothing is scanned, so the
-    /// claim would not apply.
+    /// Images and files only: a page-context chip is not scanned, so the claim would not apply.
     private var hasStagedFileOrImageAttachment: Bool {
         !omnibarController.activeImageAttachments.isEmpty || !omnibarController.activeFileAttachments.isEmpty
     }
@@ -2159,8 +2156,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         omnibarController.hasImageAttachments = hasAttachments
 
-        // The disclosure's trigger is a staged image or file, and this runs for every change to
-        // that set — the attach menu, the file picker and drag & drop all land here.
+        // Every path that changes the staged set lands here: menu, picker and drag & drop.
         refreshUsageCard()
 
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven

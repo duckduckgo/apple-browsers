@@ -468,6 +468,9 @@ final class MainCoordinator {
         )
 
         tabManager.setWebExtensionManager(webExtensionManager)
+        tabManager.setWebExtensionInitialLoadWaiterProvider { [weak lifecycleCoordinator] in
+            lifecycleCoordinator?.initialLoadWaiter
+        }
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionLifecycleCoordinator(lifecycleCoordinator)
@@ -506,9 +509,11 @@ final class MainCoordinator {
 
         isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
+        guard let coordinator = webExtensionLifecycleCoordinator else { return }
+        let loadAndSyncTask = coordinator.loadAndSync()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
-            await coordinator.loadAndSync().value
+            guard let self else { return }
+            await loadAndSyncTask.value
             guard !Task.isCancelled else { return }
             self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
@@ -609,6 +614,7 @@ final class MainCoordinator {
         webExtensionEventsCoordinator = nil
         darkReaderCancellables.removeAll()
         tabManager.setWebExtensionManager(nil)
+        tabManager.setWebExtensionInitialLoadWaiterProvider { nil }
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)
     }

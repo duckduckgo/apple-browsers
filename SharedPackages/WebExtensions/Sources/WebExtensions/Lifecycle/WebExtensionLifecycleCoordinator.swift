@@ -17,7 +17,33 @@
 //
 
 import Foundation
+import ConcurrencyExtensions
 import os.log
+
+public typealias WebExtensionInitialLoadWaiter = @MainActor () async -> Void
+
+public struct WebExtensionNavigationGate {
+    public static let defaultInitialLoadTimeout: TimeInterval = 10
+
+    private let initialLoadTimeout: TimeInterval
+
+    public init(initialLoadTimeout: TimeInterval = Self.defaultInitialLoadTimeout) {
+        self.initialLoadTimeout = initialLoadTimeout
+    }
+
+    public func waitIfNeeded(isMainFrame: Bool,
+                             url: URL?,
+                             initialLoadWaiter: WebExtensionInitialLoadWaiter?) async {
+        guard isMainFrame,
+              let scheme = url?.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              let initialLoadWaiter else { return }
+
+        try? await withTimeout(initialLoadTimeout) {
+            await initialLoadWaiter()
+        }
+    }
+}
 
 /// Serializes every web-extension lifecycle operation (load, sync, reload, unload) through a single
 /// FIFO async chain so exactly one runs at a time. This prevents `WebExtensionManager`'s
@@ -41,6 +67,24 @@ public final class WebExtensionLifecycleCoordinator {
     private var pendingSync: Task<Void, Never>?
     private var pendingLoadAndSync: Task<Void, Never>?
 
+    /// The first launch / re-init operation while it is in progress. Tabs should await this before
+    /// their first navigation so WebKit has loaded extension contexts before it decides which
+    /// document-start scripts to inject.
+    private var initialLoadAndSync: Task<Void, Never>?
+    private var didEnqueueInitialLoadAndSync = false
+    private var initialLoadAndSyncWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
+
+    var isInitialLoadAndSyncPending: Bool {
+        initialLoadAndSync != nil
+    }
+
+    public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
+        guard initialLoadAndSync != nil else { return nil }
+        return { [weak self] in
+            await self?.waitOnInitialLoadAndSync()
+        }
+    }
+
     /// Bumped by `cancelAll()`; every queued op captures the generation at enqueue time and bails if
     /// it changed, so a single cancel stops the whole chain (not just the tail).
     private var generation = 0
@@ -57,15 +101,26 @@ public final class WebExtensionLifecycleCoordinator {
     @discardableResult
     public func loadAndSync() -> Task<Void, Never> {
         if let pendingLoadAndSync { return pendingLoadAndSync }
-        let task = enqueue(clearPendingOnStart: { [weak self] in self?.pendingLoadAndSync = nil }) { [weak self] in
+        let isInitialLoadAndSync = !didEnqueueInitialLoadAndSync
+        didEnqueueInitialLoadAndSync = true
+        let task = enqueue(clearPendingOnStart: { [weak self] in self?.pendingLoadAndSync = nil },
+                           onCompletion: { [weak self] in
+                               guard isInitialLoadAndSync else { return }
+                               self?.initialLoadAndSyncDidComplete()
+                           }) { [weak self] in
             guard let self else { return }
             await self.manager.loadInstalledExtensions()
             guard !Task.isCancelled else { return }
             await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
             guard !Task.isCancelled else { return }
+            await self.manager.loadEmbeddedExtensionBackgroundContent()
+            guard !Task.isCancelled else { return }
             self.reportConsistency()
         }
         pendingLoadAndSync = task
+        if isInitialLoadAndSync {
+            initialLoadAndSync = task
+        }
         return task
     }
 
@@ -124,10 +179,12 @@ public final class WebExtensionLifecycleCoordinator {
     /// feature-flag disable / teardown.
     public func cancelAll() {
         generation += 1
+        initialLoadAndSync?.cancel()
         tail?.cancel()
         tail = nil
         pendingSync = nil
         pendingLoadAndSync = nil
+        initialLoadAndSyncDidComplete()
     }
 
     /// Compares enabled embedded types against loaded ones and fires pixels. Runs on the chain.
@@ -154,10 +211,12 @@ public final class WebExtensionLifecycleCoordinator {
 
     @discardableResult
     private func enqueue(clearPendingOnStart: (@MainActor () -> Void)? = nil,
+                         onCompletion: (@MainActor () -> Void)? = nil,
                          _ body: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
         let previous = tail
         let enqueuedGeneration = generation
         let task = Task { @MainActor [weak self] in
+            defer { onCompletion?() }
             await previous?.value
             clearPendingOnStart?()
             guard !Task.isCancelled, self?.generation == enqueuedGeneration else { return }
@@ -165,5 +224,30 @@ public final class WebExtensionLifecycleCoordinator {
         }
         tail = task
         return task
+    }
+
+    private func initialLoadAndSyncDidComplete() {
+        initialLoadAndSync = nil
+        let waiters = Array(initialLoadAndSyncWaiters.values)
+        initialLoadAndSyncWaiters.removeAll()
+        waiters.forEach { $0.resume() }
+    }
+
+    private func waitOnInitialLoadAndSync() async {
+        guard initialLoadAndSync != nil else { return }
+        let waiterID = UUID()
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                guard initialLoadAndSync != nil, !Task.isCancelled else {
+                    continuation.resume()
+                    return
+                }
+                initialLoadAndSyncWaiters[waiterID] = continuation
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                self?.initialLoadAndSyncWaiters.removeValue(forKey: waiterID)?.resume()
+            }
+        }
     }
 }

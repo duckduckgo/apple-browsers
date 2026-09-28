@@ -68,6 +68,122 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testInitialLoadWaiterDoesNotCompleteBeforeLoadAndSync() async throws {
+        let manager = RecordingWebExtensionManager()
+        manager.suspendLoad = true
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+
+        let loadAndSync = sut.loadAndSync()
+        while !manager.isLoadSuspended {
+            await Task.yield()
+        }
+
+        var waitCompleted = false
+        let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let waiter = Task { @MainActor in
+            await initialLoadWaiter()
+            waitCompleted = true
+        }
+        await Task.yield()
+
+        XCTAssertFalse(waitCompleted)
+
+        manager.resumeLoad()
+        await loadAndSync.value
+        await waiter.value
+
+        XCTAssertTrue(waitCompleted)
+        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+        XCTAssertFalse(sut.isInitialLoadAndSyncPending)
+    }
+
+    @MainActor
+    func testInitialLoadWaiterCompletesWhenLoadAndSyncIsCancelled() async throws {
+        let manager = RecordingWebExtensionManager()
+        manager.opDelay = .seconds(1)
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+
+        let loadAndSync = sut.loadAndSync()
+        let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let waiter = Task { @MainActor in
+            await initialLoadWaiter()
+        }
+        sut.cancelAll()
+
+        await loadAndSync.value
+        await waiter.value
+
+        XCTAssertTrue(manager.finished.isEmpty)
+        XCTAssertFalse(sut.isInitialLoadAndSyncPending)
+    }
+
+    @MainActor
+    func testInitialLoadWaiterDoesNotCompleteBeforeBackgroundContentLoads() async throws {
+        let manager = RecordingWebExtensionManager()
+        manager.suspendBackgroundContentLoad = true
+        manager.stubbedLoadedTypes = [.embedded]
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+
+        let loadAndSync = sut.loadAndSync()
+        while !manager.isBackgroundContentLoadSuspended {
+            await Task.yield()
+        }
+
+        var waitCompleted = false
+        let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
+        let waiter = Task { @MainActor in
+            await initialLoadWaiter()
+            waitCompleted = true
+        }
+        await Task.yield()
+
+        XCTAssertFalse(waitCompleted)
+        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+
+        manager.resumeBackgroundContentLoad()
+        await loadAndSync.value
+        await waiter.value
+
+        XCTAssertTrue(waitCompleted)
+        XCTAssertFalse(sut.isInitialLoadAndSyncPending)
+    }
+
+    @MainActor
+    func testInitialLoadWaiterReturnsImmediatelyWhenLoadAndSyncWasNotEnqueued() async {
+        let manager = RecordingWebExtensionManager()
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+
+        XCTAssertNil(sut.initialLoadWaiter)
+        XCTAssertTrue(manager.started.isEmpty)
+    }
+
+    @MainActor
+    func testNavigationGateTimesOutWithoutCancellingInitialLoad() async throws {
+        let manager = RecordingWebExtensionManager()
+        manager.suspendLoad = true
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        let loadAndSync = sut.loadAndSync()
+        while !manager.isLoadSuspended {
+            await Task.yield()
+        }
+
+        let gate = WebExtensionNavigationGate(initialLoadTimeout: 0.01)
+        await gate.waitIfNeeded(isMainFrame: true,
+                                url: URL(string: "https://example.com")!,
+                                initialLoadWaiter: sut.initialLoadWaiter)
+
+        XCTAssertTrue(sut.isInitialLoadAndSyncPending)
+        XCTAssertEqual(manager.started, [.load])
+        XCTAssertTrue(manager.finished.isEmpty)
+
+        manager.resumeLoad()
+        await loadAndSync.value
+
+        XCTAssertFalse(sut.isInitialLoadAndSyncPending)
+        XCTAssertEqual(manager.finished, [.load, .sync([.embedded])])
+    }
+
+    @MainActor
     func testRapidSyncsCoalesceToSingleRun() async {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [] })
@@ -270,6 +386,12 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
     /// Delay inside each async op so that, were ops NOT serialized, overlap would be observable.
     var opDelay: Duration = .milliseconds(10)
+    var suspendLoad = false
+    private var loadContinuation: CheckedContinuation<Void, Never>?
+    var isLoadSuspended: Bool { loadContinuation != nil }
+    var suspendBackgroundContentLoad = false
+    private var backgroundContentLoadContinuation: CheckedContinuation<Void, Never>?
+    var isBackgroundContentLoadSuspended: Bool { backgroundContentLoadContinuation != nil }
 
     /// Stubbed loaded embedded types, representing controller state after an op.
     var stubbedLoadedTypes: Set<DuckDuckGoWebExtensionType> = []
@@ -289,16 +411,36 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
     // Recorded lifecycle methods
     func loadInstalledExtensions() async {
-        begin(.load); try? await Task.sleep(for: opDelay); end(.load)
+        begin(.load)
+        if suspendLoad {
+            await withCheckedContinuation { loadContinuation = $0 }
+        } else {
+            try? await Task.sleep(for: opDelay)
+        }
+        end(.load)
     }
     func reloadInstalledExtensions() async {
         begin(.reload); try? await Task.sleep(for: opDelay); end(.reload)
+    }
+    func loadEmbeddedExtensionBackgroundContent() async {
+        guard suspendBackgroundContentLoad else { return }
+        await withCheckedContinuation { backgroundContentLoadContinuation = $0 }
     }
     @MainActor func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {
         begin(.sync(enabledTypes)); try? await Task.sleep(for: opDelay); end(.sync(enabledTypes))
     }
     func unloadAllExtensions() {
         begin(.unload); end(.unload)
+    }
+
+    func resumeLoad() {
+        loadContinuation?.resume()
+        loadContinuation = nil
+    }
+
+    func resumeBackgroundContentLoad() {
+        backgroundContentLoadContinuation?.resume()
+        backgroundContentLoadContinuation = nil
     }
 
     // Unused protocol requirements

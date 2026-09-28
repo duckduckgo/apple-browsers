@@ -37,6 +37,8 @@ final class PrivacyDashboardTabExtension {
     private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private let tabIdentifier: String
     private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+    private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
+    private let webExtensionNavigationGate: WebExtensionNavigationGate
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?
@@ -49,6 +51,7 @@ final class PrivacyDashboardTabExtension {
 
     init(tabIdentifier: String,
          webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?,
          contentBlocking: some ContentBlockingProtocol,
          certificateTrustEvaluator: CertificateTrustEvaluating,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -62,6 +65,8 @@ final class PrivacyDashboardTabExtension {
 
         self.tabIdentifier = tabIdentifier
         self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
+        self.webExtensionNavigationGate = WebExtensionNavigationGate()
         self.contentBlocking = contentBlocking
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
@@ -233,6 +238,11 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        if #available(macOS 15.4, *) {
+            await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
+                                                          url: navigationAction.url,
+                                                          initialLoadWaiter: webExtensionInitialLoadWaiterProvider())
+        }
         resetConnectionUpgradedTo(navigationAction: navigationAction)
         updateMaliciousSiteInfo(for: navigationAction.url)
         return .next

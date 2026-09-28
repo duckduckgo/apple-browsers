@@ -122,16 +122,29 @@ final class WebViewPageHighlighter: BrowserToolPageHighlighting {
         // Case-sensitive on purpose: the contract defines `quotes` as exact page substrings.
         // Same two-step sequence as the find bar: a cold search with the overlay does not reliably
         // paint. The first pass only reports the next match; the overlay pass reports the total.
+        // Each await yields the main actor, so the user can open Cmd+F mid-sequence; from then on the
+        // overlay is theirs and we stop touching it.
         let webView = tab.webView
+        guard !isFindBarVisible(in: tab) else { return .cancelled }
         let result = await webView.find(quote, with: [.showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !isFindBarVisible(in: tab) else { return .cancelled }
+        let firstMatches: UInt?
         switch result {
-        case .found(let firstMatches):
+        case .found(let matches):
+            firstMatches = matches
+        case .notFound:
             webView.clearFindInPageState()
-            let overlay = await webView.find(quote, with: [.noIndexChange, .showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
-            if case .found(let total) = overlay, let total {
-                return .painted(count: total)
-            }
-            return .painted(count: firstMatches)
+            return .notFound
+        case .cancelled:
+            return .cancelled
+        }
+
+        webView.clearFindInPageState()
+        let overlay = await webView.find(quote, with: [.noIndexChange, .showOverlay, .showFindIndicator, .wrapAround], maxCount: Self.maxMatches)
+        guard !isFindBarVisible(in: tab) else { return .cancelled }
+        switch overlay {
+        case .found(let total):
+            return .painted(count: total ?? firstMatches)
         case .notFound:
             webView.clearFindInPageState()
             return .notFound

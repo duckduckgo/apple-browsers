@@ -91,7 +91,8 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
     private func updateLoadedExtensions() {
         // Only extensions that declare a toolbar action get a button. Our own embedded
-        // extensions declare none, so they stay out of the navigation bar.
+        // extensions (even though most of them declare none) are forced out of the
+        // navigation bar by the logic in `declaresToolbarAction`.
         //
         // `loadedExtensions` is a set, so sort the contexts to keep the button order
         // the same between updates and between app launches.

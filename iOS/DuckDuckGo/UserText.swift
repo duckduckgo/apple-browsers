@@ -2544,8 +2544,8 @@ public struct UserText {
 
     // MARK: - Duck.ai Terms of Service (unified toggle input footer)
 
-    public static let duckAITermsOfServiceDisclaimer = NSLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By sending a message, you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; sending a message accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
-    public static let duckAITermsOfServiceDisclaimerLink = NSLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
+    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By sending a message, you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; sending a message accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 

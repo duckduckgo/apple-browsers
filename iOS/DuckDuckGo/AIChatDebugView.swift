@@ -38,6 +38,7 @@ struct AIChatDebugView: View {
 
 #if DEBUG || ALPHA
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            AIChatTermsOfServiceSection()
 #endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -308,6 +309,30 @@ private struct AIChatDebugSessionTimerEntryView: View {
 }
 
 #if DEBUG || ALPHA
+private struct AIChatTermsOfServiceSection: View {
+
+    @State private var status: String?
+
+    private var defaultFooter: String {
+        "Brings the native input's disclaimer back. The web app keeps its own acceptance until "
+        + "Duck.ai data is cleared. Needs the duckAINativeTermsOfService flag on."
+    }
+
+    var body: some View {
+        Section(header: Text(verbatim: "Duck.ai Terms of Service"),
+                footer: Text(verbatim: status ?? defaultFooter)) {
+            Button {
+                let store = DuckAiTermsOfServiceStore()
+                store.resetForDebugging()
+                status = "Native acceptance cleared (accepted: \(store.hasAccepted))."
+            } label: {
+                Text(verbatim: "Reset native acceptance")
+            }
+            .foregroundColor(.red)
+        }
+    }
+}
+
 // Matches the `debugOverride` gate in DuckAiUsageLimitsStore — Release must not carry the override.
 private struct AIChatUsageWarningsSection: View {
 

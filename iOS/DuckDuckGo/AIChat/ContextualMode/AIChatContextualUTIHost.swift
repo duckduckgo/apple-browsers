@@ -63,6 +63,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
+    var onOpenURLRequested: ((URL) -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -83,6 +84,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
@@ -91,7 +93,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
         self.hasDeliveredFirstPrompt = !start.isPreSubmit
-        let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+        let wideEventInstrumentation = duckAIWideEventInstrumentation ?? DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
         self.duckAIWideEventInstrumentation = wideEventInstrumentation
@@ -574,6 +576,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidRequestAppMenu() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         onEditModeChange?(isEditing)
+    }
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
+        onOpenURLRequested?(url)
     }
 }
 

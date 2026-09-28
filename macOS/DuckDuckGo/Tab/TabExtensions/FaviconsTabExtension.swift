@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import Navigation
+import DDGNavigation
 import UserScript
 import WebKit
 

@@ -30,6 +30,8 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private var messagesCancellable: AnyCancellable?
     private var legacyNotificationObserver: NSObjectProtocol?
+    private var appearedRemoteMessageIdentity: HomeMessageViewModel.ViewIdentity?
+    var onMessageVisibilityChanged: (() -> Void)?
 
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
@@ -87,11 +89,11 @@ final class NewTabPageMessagesModel: ObservableObject {
         )
     }
 
-    func didAppear(_ homeMessage: HomeMessage) {
-        homePageMessagesConfiguration.didAppear(
-            homeMessage,
-            presentationContext: homePageMessagesConfiguration.presentationContext(for: homeMessage)
-        )
+    /// Being in the view hierarchy tells us the view is ready; the browser controller controls whether it’s visible.
+    func hasAppearedRemoteMessage(withID messageID: String) -> Bool {
+        homeMessageViewModels.contains {
+            $0.messageId == messageID && appearedRemoteMessageIdentity == $0.viewIdentity
+        }
     }
 
     // MARK: - Private
@@ -123,6 +125,16 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func updateHomeMessageViewModel() {
         let messages = homePageMessagesConfiguration.homeMessages
         homeMessageViewModels = messages.compactMap(homeMessageViewModel(for:))
+        if let appearedRemoteMessageIdentity,
+           !homeMessageViewModels.contains(where: { $0.viewIdentity == appearedRemoteMessageIdentity }) {
+            self.appearedRemoteMessageIdentity = nil
+        }
+    }
+
+    private func messageViewDidAppear(with identity: HomeMessageViewModel.ViewIdentity) {
+        guard homeMessageViewModels.contains(where: { $0.viewIdentity == identity }) else { return }
+        appearedRemoteMessageIdentity = identity
+        onMessageVisibilityChanged?()
     }
 
     // MARK: - HomeMessageViewModel Mapping
@@ -139,16 +151,19 @@ final class NewTabPageMessagesModel: ObservableObject {
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
+            } onDidDisappear: {
+                // no-op
             } onAttachAdditionalParameters: { _, params in
                 params
             }
 
         case .remoteMessage(let remoteMessage):
             let presentationContext = homePageMessagesConfiguration.presentationContext(for: message)
-
-            if homePageMessagesConfiguration.mode == .legacy {
-                // Preserve legacy map-time accounting. Coordinated mode confirms only from actual appearance.
-                homePageMessagesConfiguration.didAppear(message)
+            let viewIdentity: HomeMessageViewModel.ViewIdentity
+            if let acquisitionIdentity = presentationContext?.acquisitionIdentity {
+                viewIdentity = .coordinated(messageID: remoteMessage.id, acquisitionIdentity: acquisitionIdentity)
+            } else {
+                viewIdentity = .legacy(messageID: remoteMessage.id)
             }
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
@@ -200,11 +215,17 @@ final class NewTabPageMessagesModel: ObservableObject {
 
                 }
             } onDidAppear: { [weak self] in
-                self?.homePageMessagesConfiguration.didAppear(
-                    message,
-                    presentationContext: presentationContext
-                )
+                self?.messageViewDidAppear(with: viewIdentity)
+            } onDidDisappear: { [weak self] in
+                self?.messageViewDidDisappear(with: viewIdentity)
             }
+        }
+    }
+
+    private func messageViewDidDisappear(with identity: HomeMessageViewModel.ViewIdentity) {
+        if appearedRemoteMessageIdentity == identity {
+            appearedRemoteMessageIdentity = nil
+            onMessageVisibilityChanged?()
         }
     }
 

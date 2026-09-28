@@ -173,6 +173,22 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didCallMCPToolsCall)
     }
 
+    /// A prompt raised by the call must go back to the page that made it, so the script hands
+    /// itself over as the pusher.
+    @MainActor func testWhenToolsCallIsReceivedThenTheScriptIsTheElicitationPusher() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.receivedElicitationPusher === userScript)
+    }
+
+    @MainActor func testWhenElicitationResponseIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.elicitationResponse.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPElicitationResponse)
+    }
+
     // MARK: - Open Settings handshake
 
     @MainActor func testRequestOpenSettingsActionArmsHandshake() {
@@ -411,6 +427,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didCallMCPNotificationsInitialized = false
     var didCallMCPToolsList = false
     var didCallMCPToolsCall = false
+    var didCallMCPElicitationResponse = false
+    var receivedElicitationPusher: (any AIChatElicitationPushing)?
 
     func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
         didCallMCPInitialize = true
@@ -427,8 +445,14 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable? {
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
         didCallMCPToolsCall = true
+        receivedElicitationPusher = elicitationPusher
+        return nil
+    }
+
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPElicitationResponse = true
         return nil
     }
 

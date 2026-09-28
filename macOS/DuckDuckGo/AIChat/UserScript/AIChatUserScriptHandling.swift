@@ -91,7 +91,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -131,7 +131,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
-    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
+    @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -278,13 +279,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+    @MainActor public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
         // Consume exactly once per document, at load, before the user can submit a prompt. Guarded by
         // a flag (not by `conversationSource == nil`) so a chat that loaded with an empty mailbox
         // can't later steal a different chat's pending source on a subsequent config fetch.
         if !didConsumeConversationSource {
             didConsumeConversationSource = true
-            let url = await message.messageWebView?.url
+            let url = message.messageWebView?.url
             // Only a chat may claim the stamp: duckduckgo.com's other pages fetch this config too, and
             // the mailbox is app-wide. A nil URL can't be told apart from a chat, so it consumes.
             if url == nil || url?.isDuckAIURL == true {
@@ -921,6 +922,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return AIChatErrorResponse(reason: "sync already on")
         }
 
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.aiChat.rawValue]))
         Task { @MainActor in
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
         }
@@ -1252,13 +1254,17 @@ extension AIChatUserScriptHandler {
 
         // No Fire check, mirroring Windows: a Fire window is advertised the catalogue and refused
         // on every call. Detectable, and a known cross-platform gap to close on both sides together.
-        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map { $0.descriptor() })
+        let permissions = browserTools.permissions
+        return BrowserToolsListResponse(tools: browserTools.catalog.enabledTools.map {
+            $0.descriptor(permissionState: permissions.effectiveState(for: $0).rawValue)
+        })
     }
 
     /// Every outcome is a well-formed reply carrying the request's `callId`. A refusal rides in
     /// `isError`; the envelope status describes the round trip only, and is always `ok`.
+    /// - Parameter elicitationPusher: where a permission prompt raised by this call is delivered.
     @MainActor
-    func mcpToolsCall(params: Any, message: UserScriptMessage) async -> Encodable? {
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
         guard let request: InvokeBrowserToolRequest = DecodableHelper.decode(from: params), !request.name.isEmpty else {
             // Recover the call id even from a payload we could not read, so the front end can still
             // match the failure to the call it made rather than being left guessing.
@@ -1287,8 +1293,19 @@ extension AIChatUserScriptHandler {
 
         let result = await browserTools.invoker.invoke(toolNamed: request.name,
                                                        arguments: request.arguments,
-                                                       context: context)
+                                                       context: context,
+                                                       elicitationPusher: elicitationPusher)
         return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
+    }
+
+    /// Always acknowledged, even for a malformed payload, so a front end that sends this as a
+    /// request cannot hang. An unreadable `result` completes the prompt as `cancel`.
+    @MainActor
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let response: AIChatElicitationResponseRequest = DecodableHelper.decode(from: params), !response.id.isEmpty {
+            browserTools.elicitations.complete(id: response.id, result: response.result ?? .cancel)
+        }
+        return MCPEmptyResult()
     }
 
     private static func callID(fromRawParams params: Any) -> String {

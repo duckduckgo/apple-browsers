@@ -46,6 +46,26 @@ enum UserText {
             return String(format: format, domain)
         }
 
+        static func locationTitle(domain: String) -> String {
+            let format = NotLocalizedString("sitePermissions.dialog.location.title", bundle: Bundle.module,
+                                            value: "“%@” website wants to access your location",
+                                            comment: "Title shown when a website asks to use location. The placeholder is the website domain.")
+            return String(format: format, domain)
+        }
+
+        static let duckDuckGoSERPLocationTitle = NotLocalizedString(
+            "sitePermissions.dialog.location.duckduckgo-serp.title",
+            bundle: Bundle.module,
+            value: "“duckduckgo.com” wants to access your location",
+            comment: "Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review."
+        )
+        static let duckDuckGoSERPLocationBody = NotLocalizedString(
+            "sitePermissions.dialog.location.duckduckgo-serp.body",
+            bundle: Bundle.module,
+            value: "We’ll anonymize your location and use it to deliver better results, closer to you.",
+            comment: "Explanation shown when DuckDuckGo search results ask to use location. Copy requires review."
+        )
+
         static let allowOnce = NotLocalizedString("sitePermissions.dialog.allow-once", bundle: Bundle.module,
                                                   value: "Allow Once",
                                                   comment: "Button that grants a website permission until the page changes.")
@@ -67,6 +87,12 @@ enum UserText {
             value: "DuckDuckGo couldn’t give microphone access to this site",
             comment: "Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied."
         )
+        static let locationToast = NotLocalizedString(
+            "sitePermissions.recovery.toast.location",
+            bundle: Bundle.module,
+            value: "DuckDuckGo couldn’t share location with this site",
+            comment: "Toast shown when a website was allowed location access but the iOS location prompt was denied."
+        )
         static let cameraAndMicrophoneToast = NotLocalizedString(
             "sitePermissions.recovery.toast.camera-and-microphone",
             bundle: Bundle.module,
@@ -86,6 +112,12 @@ enum UserText {
         static let microphoneBody = NotLocalizedString("sitePermissions.recovery.reminder.microphone.body", bundle: Bundle.module,
                                                        value: "Microphone permissions are needed if you want to use microphone features on this site.",
                                                        comment: "Body of the reminder shown when iOS microphone access is blocked.")
+        static let locationTitle = NotLocalizedString("sitePermissions.recovery.reminder.location.title", bundle: Bundle.module,
+                                                      value: "DuckDuckGo needs to access your location",
+                                                      comment: "Title of the reminder shown when iOS location access is blocked.")
+        static let locationBody = NotLocalizedString("sitePermissions.recovery.reminder.location.body", bundle: Bundle.module,
+                                                     value: "Location permissions are needed if you want to use location features on this site.",
+                                                     comment: "Body of the reminder shown when iOS location access is blocked.")
         static let cameraAndMicrophoneTitle = NotLocalizedString(
             "sitePermissions.recovery.reminder.camera-and-microphone.title",
             bundle: Bundle.module,

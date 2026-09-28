@@ -24,7 +24,7 @@ import CombineExtensions
 import StoreKit
 import LocalAuthentication
 import BrowserServicesKit
-import Navigation
+import DDGNavigation
 import SwiftUI
 import Bookmarks
 import Persistence
@@ -632,6 +632,7 @@ class TabViewController: UIViewController {
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                                   sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -671,6 +672,7 @@ class TabViewController: UIViewController {
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
+                                 sitePermissionsEnabled: sitePermissionsEnabled,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
@@ -764,9 +766,11 @@ class TabViewController: UIViewController {
     let autoplaySettings: AutoplaySettings
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    let isSitePermissionsEnabled: Bool
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
+    var sitePermissionsNavigationTimeout: TimeInterval = 10
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -894,6 +898,7 @@ class TabViewController: UIViewController {
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
@@ -950,6 +955,7 @@ class TabViewController: UIViewController {
         self.autoplaySettings = autoplaySettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
@@ -964,8 +970,6 @@ class TabViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(nibName: nil, bundle: nil)
-
-        subscribeToSitePermissionsChanges()
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
@@ -1039,6 +1043,7 @@ class TabViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setSitePermissionsGeolocationActive(true)
         
         registerForResignActive()
         registerForKeyboardNotifications()
@@ -1046,6 +1051,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        setSitePermissionsGeolocationActive(false)
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
@@ -1414,7 +1420,8 @@ class TabViewController: UIViewController {
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
             privacyConfigurationManager: privacyConfigurationManager,
-            earlyAccessHandlers: [mediaCaptureUserScript]
+            earlyAccessHandlers: [mediaCaptureUserScript],
+            replyToUnavailableHandlers: isSitePermissionsEnabled
         )
         userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
@@ -1576,6 +1583,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -1587,6 +1595,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
         dismissJSAlertIfNeeded()
@@ -1625,6 +1634,7 @@ class TabViewController: UIViewController {
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
+        prepareSitePermissionsForDataClearing()
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
         delegate = nil
@@ -1833,6 +1843,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserReload()
@@ -1849,6 +1860,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
 
@@ -1921,6 +1933,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
 
@@ -2231,6 +2244,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
         chromeDelegate?.omniBar.cancelAllAnimations()
@@ -2397,6 +2411,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         webView.stopLoading()
         wasLoadingStoppedExternally = true
@@ -2569,6 +2584,10 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if webView === self.webView {
+            captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,
+                                                     isForMainFrame: navigationResponse.isForMainFrame)
+        }
         let httpResponse = navigationResponse.response as? HTTPURLResponse
         let didMarkAsInternal = internalUserDecider.markUserAsInternalIfNeeded(forUrl: webView.url, response: httpResponse)
         if didMarkAsInternal {
@@ -3351,6 +3370,12 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        if webView === self.webView,
+           navigationAction.isTargetingMainFrame,
+           isSitePermissionsEnabled {
+            sitePermissionsState.cancelContentBlockingWaits()
+        }
+
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
         // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
         // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
@@ -3395,14 +3420,13 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         if let url = navigationAction.request.url,
-           !url.isDuckDuckGoSearch,
-           true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] in
-               guard let self = self else {
+           true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] shouldContinue in
+               guard shouldContinue, let self = self else {
                    wrappedHandler(.cancel)
                    return
                }
                self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
-           }) {
+           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
@@ -3610,24 +3634,83 @@ extension TabViewController: WKNavigationDelegate {
     }
     // swiftlint:enable cyclomatic_complexity
 
-    private func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor () -> Void) -> Bool {
+    func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor (Bool) -> Void,
+                                                for url: URL,
+                                                isMainFrame: Bool = true) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
-        if userContentController.contentBlockingAssetsInstalled
-            || !privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
+        let shouldWait = Self.shouldWaitForContentBlockingAssets(
+            assetsInstalled: userContentController.contentBlockingAssetsInstalled,
+            contentBlockingEnabled: privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
+            sitePermissionsEnabled: isSitePermissionsEnabled,
+            geolocationScriptInstalled: userScripts?.geolocationUserScript != nil,
+            isDuckDuckGoSearch: url.isDuckDuckGoSearch
+        )
+        if !shouldWait {
 
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
         }
 
-        Task {
-            rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
-            showProgressIndicator()
-            await userContentController.awaitContentBlockingAssetsInstalled()
-            rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+        guard isSitePermissionsEnabled else {
+            // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            Task {
+                rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+                showProgressIndicator()
+                await userContentController.awaitContentBlockingAssetsInstalled()
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                completion(true)
+            }
+            return true
+        }
 
-            await MainActor.run(body: completion)
+        // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
+        // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
+        rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+        showProgressIndicator()
+        let waitID = UUID()
+        let timeout = sitePermissionsNavigationTimeout
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
+            defer {
+                state?.contentBlockingWaitTasks[waitID] = nil
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+            }
+            guard !Task.isCancelled else {
+                completion(false)
+                return
+            }
+            // Only readiness may reset the deadline; unrelated asset updates must not extend it.
+            let readiness = userContentController.$contentBlockingAssets
+                .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+                .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
+                .first()
+            var isReady = false
+            for await _ in readiness.values {
+                isReady = true
+                break
+            }
+            // Remove before completion: success re-enters the navigation policy delegate.
+            let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
+            guard !Task.isCancelled, isCurrentWait else {
+                completion(false)
+                return
+            }
+            if !isReady, isMainFrame {
+                self?.showSitePermissionsAssetsTimeout(for: url)
+            }
+            completion(isReady)
         }
         return true
+    }
+
+    private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
+        let error = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: failedURL])
+        lastError = error
+        pendingNativeLoadURL = nil
+        shouldReloadOnError = false
+        url = failedURL
+        hideProgressIndicator()
+        showError(message: error.localizedDescription)
+        webpageDidFailToLoad()
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -4600,6 +4683,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
+        configureSitePermissionsGeolocation(with: userScripts.geolocationUserScript)
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in

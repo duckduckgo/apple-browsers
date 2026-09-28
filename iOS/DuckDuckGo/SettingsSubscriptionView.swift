@@ -410,6 +410,18 @@ struct SettingsSubscriptionView: View {
             .disabled(!hasITREntitlement)
         }
 
+        // Subscriber Offers. Reached from here rather than from the Subscription Settings page so the
+        // acquisition entry point is not a click deeper, matching the other platforms. Free trials are
+        // active subscriptions, so this branch already covers "subscribers, full and trial".
+        if settingsViewModel.isSubscriberOffersEnabled {
+            SettingsCellView(label: UserText.settingsPProSubscriberOffersTitle,
+                             image: Image(.subscriptionGift),
+                             action: { settingsViewModel.openSubscriberOffers() },
+                             webLinkIndicator: true,
+                             isButton: true,
+                             optionalBadgeText: settingsViewModel.shouldShowSubscriberOffersNewBadge ? UserText.settingsItemNewBadge : nil)
+        }
+
         let isActiveTrialOffer = settingsViewModel.state.subscription.isActiveTrialOffer
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
         NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,

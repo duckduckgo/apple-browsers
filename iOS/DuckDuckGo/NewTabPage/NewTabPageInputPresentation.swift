@@ -38,6 +38,11 @@ enum NewTabPageInputPresentation: Equatable {
         return isEditing ? .editing(usesUnifiedInput: usesUnifiedInput) : .resting(usesUnifiedInput: usesUnifiedInput)
     }
 
+    /// Only an inline NTP editing session can select the redesigned focused presentation.
+    func usesRedesignedFocusedLayout(isOnAITab: Bool) -> Bool {
+        !isOnAITab && self == .editing(usesUnifiedInput: true)
+    }
+
     var hidesNavigationContainer: Bool {
         if case .resting = self { return true }
         return false

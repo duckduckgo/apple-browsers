@@ -22,7 +22,7 @@ import FoundationExtensions
 import Combine
 import CombineExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import NewTabPage
 import WebKit
 import UserScript

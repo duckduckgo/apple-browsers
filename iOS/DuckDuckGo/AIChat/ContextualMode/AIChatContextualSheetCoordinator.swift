@@ -92,6 +92,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
+    private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private let debugSettings: AIChatDebugSettingsHandling
@@ -263,6 +264,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.floatingInputFeature = floatingInputFeature
+        self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
@@ -553,6 +555,22 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
+    /// The link opens in a new tab, which the floating input would otherwise stay on top of.
+    func openURLLeavingCurrentSurface(_ url: URL) {
+        let openURL = { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+        }
+        if floatingInputViewController != nil {
+            dismissFloatingInput()
+            openURL()
+        } else if let sheetViewController {
+            sheetViewController.dismiss(animated: true, completion: openURL)
+        } else {
+            openURL()
+        }
+    }
+
     /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
     private func requestManualPageContextAttach() {
         sessionState.beginManualAttach()
@@ -754,7 +772,7 @@ final class AIChatContextualSheetCoordinator {
 
     private func removeAttachedContext() {
         if sessionState.isPageContextAttachInProgress,
-           featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) {
+           case .available = attachMoreTabsFeature.state {
             sessionState.removePendingPageAttachment()
         } else {
             sessionState.downgradeToPlaceholder()
@@ -855,7 +873,7 @@ private extension AIChatContextualSheetCoordinator {
             isFireTab: isFireTab,
             lastUsedModelProvider: duckAiLastUsedModelProvider,
             floatingInputFeature: floatingInputFeature,
-            attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings),
+            attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
             tabAttachmentSource: tabAttachmentSource,
@@ -903,6 +921,9 @@ private extension AIChatContextualSheetCoordinator {
         host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
+        }
+        host.onOpenURLRequested = { [weak self] url in
+            self?.openURLLeavingCurrentSurface(url)
         }
         self.persistentUTIHost = host
         return host

@@ -165,6 +165,7 @@ final class AIChatDebugMenu: NSMenu {
     private func updateAttachmentPrivacyMenuItemTitle() {
         attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
             + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown)"
+    }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {
         let item = NSMenuItem(title: title)

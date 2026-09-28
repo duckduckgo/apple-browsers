@@ -1202,6 +1202,50 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
     }
 
+    func testWhenFireModeManagementDeniesPermissionThenPendingRequestsCancelAndOtherPermissionsContinue() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness(isFireMode: true)
+            harness.store.resetDecision(for: permissionType, at: harness.site)
+            let storedPermissions = harness.store.permissions(for: harness.site)
+            let queuedTypes: Set<SitePermissionType> = permissionType == .location ? [.location] : [.camera, .microphone]
+            let otherType: SitePermissionType = permissionType == .camera ? .microphone : .camera
+            var responder: ((SitePermissionPromptDecision) -> Void)?
+            var resolutions = [SitePermissionResolution]()
+            var cancellationCount = 0
+            var otherPromptCount = 0
+            harness.cancellationHandler = { cancellationCount += 1 }
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                responder = respond
+            }, completion: { resolutions.append($0) })
+            harness.coordinator.request(harness.request(queuedTypes), promptHandler: { _, _ in
+                XCTFail("The denied queued request must not prompt")
+            }, completion: { resolutions.append($0) })
+            harness.coordinator.request(harness.request([otherType]), promptHandler: { _, respond in
+                otherPromptCount += 1
+                respond(.denyOnce)
+            }, completion: { _ in })
+
+            XCTAssertNotNil(responder)
+            XCTAssertTrue(resolutions.isEmpty)
+            XCTAssertEqual(otherPromptCount, 0)
+
+            harness.coordinator.applyFireModeManagementDecision(.deny, for: permissionType, at: harness.site)
+
+            XCTAssertEqual(cancellationCount, 1)
+            XCTAssertEqual(resolutions, [.deny(systemBlocks: []), .deny(systemBlocks: [])])
+            XCTAssertEqual(otherPromptCount, 1)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .denied)
+            XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions[permissionType], .deny)
+            XCTAssertEqual(harness.store.permissions(for: harness.site), storedPermissions)
+
+            try XCTUnwrap(responder)(.allowWhileUsingSite)
+
+            XCTAssertEqual(cancellationCount, 1)
+            XCTAssertEqual(resolutions, [.deny(systemBlocks: []), .deny(systemBlocks: [])])
+            XCTAssertEqual(harness.store.permissions(for: harness.site), storedPermissions)
+        }
+    }
+
     func testWhenPermissionIsRemovedDuringSystemAuthorizationThenLateGrantIsIgnored() async throws {
         let harness = try Harness()
         harness.systemStates[.camera] = .notDetermined

@@ -27,10 +27,23 @@ import UIKit
 public struct SitePermissionsSheetView: View {
 
     private enum Constants {
+        static let horizontalPadding: CGFloat = 16
+        static let headerSpacing: CGFloat = 12
+        static let bottomPadding: CGFloat = 12
+        static let closeButtonSize: CGFloat = 24
+        static let closeButtonTapTarget: CGFloat = 44
         static let rowHorizontalInset: CGFloat = 16
         static let rowVerticalInset: CGFloat = 14
         static let iconSpacing: CGFloat = 16
         static let copySpacing: CGFloat = 8
+    }
+
+    private struct SheetCloseButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            CloseButtonStyle().makeBody(configuration: configuration)
+                .frame(width: Constants.closeButtonTapTarget, height: Constants.closeButtonTapTarget)
+                .contentShape(Rectangle())
+        }
     }
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -54,18 +67,32 @@ public struct SitePermissionsSheetView: View {
             }
         }
         .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
-        .accessibilityIdentifier("SitePermissions.Sheet")
     }
 
     private var sheetContent: some View {
-        VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
+        VStack(alignment: .leading, spacing: Constants.headerSpacing) {
             header
 
+            permissionSections
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, SheetMetrics.contentSpacing)
+        .padding(.bottom, Constants.bottomPadding)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("SitePermissions.Sheet")
+    }
+
+    private var permissionSections: some View {
+        VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
             if !viewModel.rows.isEmpty {
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     permissionRows
                     if viewModel.state == .permissionsOnly {
                         reloadCaption
+                            .opacity(viewModel.hasCommittedChanges ? 1 : 0)
+                            .accessibilityHidden(!viewModel.hasCommittedChanges)
                     }
                 }
             }
@@ -85,29 +112,25 @@ public struct SitePermissionsSheetView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, SheetMetrics.contentHorizontalPadding)
-        .padding(.top, SheetMetrics.contentSpacing)
-        .padding(.bottom, SheetMetrics.contentBottomPadding)
     }
 
     private var header: some View {
         HStack(spacing: 12) {
             Text(viewModel.title)
-                .daxBodyBold()
+                .daxSubheadSemibold()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .lineLimit(1)
                 .truncationMode(.middle)
+                .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("SitePermissions.Sheet.Title")
 
-            Spacer(minLength: 0)
-
             Button(action: viewModel.dismiss) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
             }
-            .buttonStyle(CloseButtonStyle())
+            .buttonStyle(SheetCloseButtonStyle())
+            // Align the visible circle with the card edge while keeping the larger tap target.
+            .padding(.trailing, -(Constants.closeButtonTapTarget - Constants.closeButtonSize) / 2)
             .accessibilityLabel(UserText.PermissionManagement.close)
             .accessibilityIdentifier("SitePermissions.Sheet.Close")
         }
@@ -153,6 +176,7 @@ public struct SitePermissionsSheetView: View {
                             Text(UserText.PermissionManagement.title(for: option))
                         }
                     }
+                    .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized).\(option.rawValue)")
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -195,6 +219,9 @@ public struct SitePermissionsSheetView: View {
             items,
             dividerLeadingInset: 0,
             contentInset: .init(horizontal: Constants.rowHorizontalInset, vertical: Constants.rowVerticalInset),
+            accessibilityIdentifier: { index in
+                includesRemove && index == 0 ? "SitePermissions.Sheet.RemovePermissions" : "SitePermissions.Sheet.GoToSystemSettings"
+            },
             onSelect: { index in
                 guard items.indices.contains(index) else { return nil }
                 if includesRemove, index == 0 {
@@ -205,6 +232,7 @@ public struct SitePermissionsSheetView: View {
         )
         .background(Color(designSystemColor: .surfaceTertiary))
         .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius, style: .continuous))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("SitePermissions.Sheet.Actions")
     }
 
@@ -243,19 +271,24 @@ public struct SitePermissionsSheetView: View {
     private func permissionIcon(for row: SitePermissionsSheetViewModel.Row) -> Image {
         let image: UIImage
         switch (row.permissionType, row.iconState) {
-        case (.camera, .inUse):
-            return Image(systemName: "video.fill")
-        case (.camera, _):
-            return Image(systemName: "video")
+        case (.camera, .outline):
+            image = DesignSystemImages.Glyphs.Size24.video
+        case (.camera, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.videoBlocked
+        case (.camera, .solid), (.camera, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.videoSolid
         case (.microphone, .outline):
             image = DesignSystemImages.Glyphs.Size24.microphone
         case (.microphone, .blocked):
             image = DesignSystemImages.Glyphs.Size24.microphoneBlocked
         case (.microphone, .solid), (.microphone, .inUse):
             image = DesignSystemImages.Glyphs.Size24.microphoneSolid
-        case (.location, _):
-            assertionFailure("Location management lands in Phase 6")
+        case (.location, .outline):
             image = DesignSystemImages.Glyphs.Size24.location
+        case (.location, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.locationBlocked
+        case (.location, .solid), (.location, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.locationSolid
         }
         return Image(uiImage: image)
     }

@@ -44,6 +44,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
 import RemoteMessaging
+import SitePermissions
 import Subscription
 import Suggestions
 import SwiftUI
@@ -217,6 +218,7 @@ class MainViewController: UIViewController {
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isDownloadMenuAlertVisible: Bool?
+    private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
     }
@@ -5563,7 +5565,7 @@ extension MainViewController: OmniBarDelegate {
             case .fire:
                 browsingMenu.highlightFireButton()
 
-            case .openBookmarks:
+            case .openBookmarks, .sitePermissions:
                 break
             }
         }
@@ -7304,6 +7306,21 @@ extension MainViewController: TabDelegate {
     func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: TabViewController) {
         guard currentTab === tab else { return }
         viewCoordinator.omniBar?.showYouTubeAdBlockNotification()
+    }
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        guard currentTab === tab else { return }
+        let orderedPermissionTypes = SitePermissionType.allCases.filter(permissionTypes.contains)
+        sitePermissionAnimationTab = tab
+        viewCoordinator.menuToolbarButton.animateSitePermissionGranted(orderedPermissionTypes)
+        viewCoordinator.omniBar.barView.menuButton.animateSitePermissionGranted(orderedPermissionTypes)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        guard sitePermissionAnimationTab === tab else { return }
+        viewCoordinator.menuToolbarButton.cancelSitePermissionAnimation()
+        viewCoordinator.omniBar.barView.menuButton.cancelSitePermissionAnimation()
+        sitePermissionAnimationTab = nil
     }
 
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController) {

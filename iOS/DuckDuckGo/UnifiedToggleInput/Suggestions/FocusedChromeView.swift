@@ -68,11 +68,7 @@ struct FocusedChromeView: View {
             .frame(maxWidth: .infinity)
             // Raised cards provide their own background; leave their surrounding space clear
             // so scrolled content remains visible around the rounded edges.
-            .background {
-                if !usesRaisedEscapeHatch {
-                    Color(designSystemColor: .background)
-                }
-            }
+            .background(usesRaisedEscapeHatch ? Color.clear : Color(designSystemColor: .background))
         } else {
             Color.clear.frame(height: 0)
         }

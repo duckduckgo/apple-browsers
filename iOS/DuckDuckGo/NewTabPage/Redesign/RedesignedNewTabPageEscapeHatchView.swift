@@ -29,7 +29,6 @@ struct RedesignedNewTabPageEscapeHatchView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, Metrics.horizontalPadding)
                 .padding(.top, Metrics.topPadding)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

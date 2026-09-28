@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import WebKit
 import XCTest

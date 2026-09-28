@@ -811,6 +811,7 @@ private extension AIChatContextualChatSessionState {
 
     func handleAutoAttach(_ context: AIChatPageContext) {
         var didUpdateAttachment = false
+        let previousAttachedURL = intendedAttachedContext?.contextData.url
 
         if isShowingNativeInput || isUnifiedToggleInputActive {
             switch chipState {
@@ -840,7 +841,8 @@ private extension AIChatContextualChatSessionState {
             emitDeliveryIfNeeded(context.contextData)
         }
 
-        if didUpdateAttachment {
+        // The same page re-collects repeatedly; each refresh blinks the row through its loader.
+        if didUpdateAttachment, intendedAttachedContext?.contextData.url != previousAttachedURL {
             refreshActiveChatSuggestions(for: context)
         }
     }

@@ -231,10 +231,16 @@ final class AIChatContextualSuggestionsStrip {
         }
     }
 
+    /// The controller's chips lag this: an interrupted fade-out skips its clear.
+    private var hasVisibleChips: Bool {
+        guard let latestContent, latestContent.isLoaded else { return false }
+        return !latestContent.suggestions.isEmpty || (style.offersQuickActions && !latestContent.quickActions.isEmpty)
+    }
+
     /// Chips arrive asynchronously with the page context, so this waits for the first batch with content
     /// rather than showing at mount.
     private func showIfNeeded() {
-        guard controller.startActionCount > 0, input.isInputExpanded else { return }
+        guard hasVisibleChips, input.isInputExpanded else { return }
         guard !hasShown else {
             fade(to: 1)
             return

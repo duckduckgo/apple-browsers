@@ -1494,7 +1494,10 @@ private extension AIChatContextualSheetViewController {
 
     /// Re-runnable: the floating surface borrows the same input, so a mounted sheet can lose it.
     func mountPersistentUTIHostIfNeeded() {
-        guard let persistentUTIHost, !persistentUTIHost.isMounted(in: self) else { return }
+        guard let persistentUTIHost else { return }
+        // Also on the calls that find it mounted already: the chat starts after the first mount.
+        defer { embedSuggestionsStripIfNeeded() }
+        guard !persistentUTIHost.isMounted(in: self) else { return }
 
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
             self?.setEditMode(isEditing)
@@ -1509,9 +1512,12 @@ private extension AIChatContextualSheetViewController {
         if contentDragKeyboardDismissRecognizer.view == nil {
             contentContainerView.addGestureRecognizer(contentDragKeyboardDismissRecognizer)
         }
-        if featureFlagger.isFeatureOn(.contextualActiveChatSuggestions) {
-            persistentUTIHost.embedSuggestions(in: self, style: .activeChat)
-        }
+    }
+
+    /// Without a chat the sheet shows its own start chips, and the strip would stack a second row.
+    private func embedSuggestionsStripIfNeeded() {
+        guard featureFlagger.isFeatureOn(.contextualActiveChatSuggestions), sessionState.hasActiveChat else { return }
+        persistentUTIHost?.embedSuggestions(in: self, style: .activeChat)
     }
 
     @objc private func handleContentDragToDismissKeyboard(_ gesture: UIPanGestureRecognizer) {

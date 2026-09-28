@@ -30,6 +30,21 @@ struct UTIFooterMessageMapper {
         self.resetDescriber = resetDescriber
     }
 
+    /// Required, so it carries no close button: sending the prompt is what retires it.
+    func termsOfServiceMessage() -> UTIFooterMessage {
+        let linkText = UserText.duckAITermsOfServiceDisclaimerLink
+        return UTIFooterMessage(
+            icon: .shield,
+            title: String(format: UserText.duckAITermsOfServiceDisclaimer, linkText),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: false,
+            link: UTIFooterMessage.Link(text: linkText, url: Self.privacyTermsURL)
+        )
+    }
+
+    static let privacyTermsURL = URL(string: "https://duckduckgo.com/duckai/privacy-terms")!
+
     func message(for notice: CreateImageModelSwitchNotice) -> UTIFooterMessage {
         let subtitleFormat = notice.previousModelHasExtraPrivacyProtections
             ? UserText.utiCreateImageModelSwitchPrivacyPreservingSubtitle

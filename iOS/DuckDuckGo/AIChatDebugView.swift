@@ -37,8 +37,9 @@ struct AIChatDebugView: View {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
 #if DEBUG || ALPHA
-            AIChatFooterPreviewSection()
+            AIChatAttachmentPrivacySection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+            AIChatTermsOfServiceSection()
 #endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -309,6 +310,30 @@ private struct AIChatDebugSessionTimerEntryView: View {
 }
 
 #if DEBUG || ALPHA
+private struct AIChatTermsOfServiceSection: View {
+
+    @State private var status: String?
+
+    private var defaultFooter: String {
+        "Brings the native input's disclaimer back. The web app keeps its own acceptance until "
+        + "Duck.ai data is cleared. Needs the duckAINativeTermsOfService flag on."
+    }
+
+    var body: some View {
+        Section(header: Text(verbatim: "Duck.ai Terms of Service"),
+                footer: Text(verbatim: status ?? defaultFooter)) {
+            Button {
+                let store = DuckAiTermsOfServiceStore()
+                store.resetForDebugging()
+                status = "Native acceptance cleared (accepted: \(store.hasAccepted))."
+            } label: {
+                Text(verbatim: "Reset native acceptance")
+            }
+            .foregroundColor(.red)
+        }
+    }
+}
+
 // Matches the `debugOverride` gate in DuckAiUsageLimitsStore — Release must not carry the override.
 private struct AIChatUsageWarningsSection: View {
 
@@ -542,23 +567,11 @@ private final class StorageServerState: ObservableObject {
 }
 
 #if DEBUG || ALPHA
-private struct AIChatFooterPreviewSection: View {
+private struct AIChatAttachmentPrivacySection: View {
     @State private var status = ""
 
     var body: some View {
         Section {
-            Button {
-                UTIFooterDebugOverrides.showTermsPreview()
-                status = "Open the real Duck.ai input and attach a file to see both cards."
-            } label: {
-                Text(verbatim: "Show ToS preview until next submit")
-            }
-            Button {
-                UTIFooterDebugOverrides.clearTermsPreview()
-                status = "ToS preview cleared."
-            } label: {
-                Text(verbatim: "Clear ToS preview")
-            }
             Button {
                 UTIAttachmentPrivacyNoticeDisplayStore().reset()
                 status = "Normal browsing count reset. Open a new Fire Tab to test a fresh Fire count."
@@ -569,7 +582,7 @@ private struct AIChatFooterPreviewSection: View {
         } header: {
             Text(verbatim: "Unified input footer")
         } footer: {
-            Text(verbatim: "Uses the real input drawer. ToS is placeholder copy for layout testing only. Preview state ends on submit or app restart.")
+            Text(verbatim: "Resets the attachment disclosure in normal browsing. Each Fire Tab has its own display count.")
         }
     }
 }

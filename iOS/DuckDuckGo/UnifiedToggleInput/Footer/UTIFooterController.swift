@@ -35,6 +35,7 @@ final class UTIFooterController {
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
 
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let viewModel: DuckAiUsageWarningViewModel?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource?
@@ -60,6 +61,7 @@ final class UTIFooterController {
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
 
     init(viewModel: DuckAiUsageWarningViewModel?,
+         termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
@@ -68,6 +70,7 @@ final class UTIFooterController {
          createImagePixelFiring: CreateImagePixelFiring,
          allowsSubscriptionUpsell: @escaping () -> Bool = { true },
          animator: Animator? = nil) {
+        self.termsOfServiceStore = termsOfServiceStore
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.attachmentPrivacyNotice = attachmentPrivacyNotice
@@ -138,9 +141,7 @@ final class UTIFooterController {
         beginDismissal()
         defer { finishDismissal() }
         switch id {
-#if DEBUG || ALPHA
         case .termsConsent: return
-#endif
         case .outOfUsage, .attachmentPrivacy: return
         case .modelSwitch:
             modelSwitchNotice = nil
@@ -171,10 +172,13 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+    func acceptTermsIfDisclaimerShown() {
+        guard visibleIDs.contains(.termsConsent), let termsOfServiceStore else { return }
+        termsOfServiceStore.recordAcceptedInNativeInput()
+        applyCurrentState()
+    }
+
     func recordPromptSubmitted() {
-#if DEBUG || ALPHA
-        UTIFooterDebugOverrides.clearTermsPreview()
-#endif
         measurement.promptSubmitted()
         highUsageMeasurement.promptSubmitted()
         modelSwitchNotice = nil
@@ -270,11 +274,9 @@ final class UTIFooterController {
 
     private func applicableMessages() -> [UTIFooterItem] {
         var items: [UTIFooterItem] = []
-#if DEBUG || ALPHA
-        if let terms = UTIFooterDebugOverrides.termsMessage, viewModel?.warning?.blocksInput != true {
-            items.append(.init(id: .termsConsent, message: terms))
+        if let termsOfServiceStore, !termsOfServiceStore.hasAccepted, viewModel?.warning?.blocksInput != true {
+            items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage()))
         }
-#endif
         if attachmentPrivacyNotice?.isPresented == true, viewModel?.warning?.blocksInput != true {
             items.append(.init(id: .attachmentPrivacy, message: mapper.attachmentPrivacyMessage()))
         }

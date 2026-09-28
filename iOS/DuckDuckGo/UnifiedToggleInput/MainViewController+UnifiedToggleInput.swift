@@ -1442,6 +1442,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
     /// crosses the AI/web boundary, so from the address bar it would load in place and take the
     /// user's pending attachment with it.
     func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 

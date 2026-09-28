@@ -156,6 +156,29 @@ final class WKWebExtensionContextExtensionTests: XCTestCase {
     // MARK: - declaresToolbarAction
 
     @MainActor
+    func testWhenManifestHasDDGDarkReaderId_ThenDoesNotDeclareToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Dark Reader",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "org.duckduckgo.web-extension.darkreader"
+                }
+            },
+            "action": {
+                "default_title": "Dark Reader",
+                "default_popup": "ui/popup/index.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertFalse(context.declaresToolbarAction)
+    }
+
+    @MainActor
     func testWhenManifestHasAction_ThenDeclaresToolbarAction() async throws {
         let manifest = """
         {

@@ -75,10 +75,14 @@ public extension WKWebExtension {
     ///
     /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
     /// Extensions without one of these keys have no user-facing button, so the browser
-    /// must not put them in the navigation bar. Our own embedded extensions (autoconsent,
-    /// content blocking, search token) fall into that group.
+    /// must not put them in the navigation bar.
+    ///
+    /// Our own embedded extensions are currently forced to not display a toolbar action at all.
     var declaresToolbarAction: Bool {
-        manifest[actionKey] != nil || manifest[browserActionKey] != nil || manifest[pageActionKey] != nil
+        if duckDuckGoWebExtensionType != nil {
+            return false
+        }
+        return manifest[actionKey] != nil || manifest[browserActionKey] != nil || manifest[pageActionKey] != nil
     }
 
     /// Returns whether the extension requires extraction from zip before loading.

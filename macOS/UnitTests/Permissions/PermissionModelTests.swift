@@ -236,15 +236,25 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(permissionManagerMock.permission(forDomain: URL.duckDuckGo.host!, permissionType: .microphone), .allow)
     }
 
-    func testWhenNotificationsAreAllowedThisVisitThenOnlyAskIsStored() throws {
-        try assertNotificationDecision(granted: true, remember: false, expectedStoredDecision: .ask)
+    func testWhenNotificationsAreAllowedThisVisitThenNothingIsStored() throws {
+        try assertNotificationDecision(granted: true, remember: false, expectedStoredDecision: nil)
     }
 
     func testWhenNotificationsAreAllowedWithLegacyDecisionThenAllowIsStored() throws {
         try assertNotificationDecision(granted: true, remember: nil, expectedStoredDecision: .allow)
     }
 
-    private func assertNotificationDecision(granted: Bool, remember: Bool?, expectedStoredDecision: PersistedPermissionDecision) throws {
+    func testWhenCameraIsAllowedWithLegacyDecisionThenAskIsStored() throws {
+        webView.urlValue = URL.duckDuckGo
+        model.permissions([.camera], requestedForDomain: URL.duckDuckGo.host!) { (_: Bool) in }
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        query.handleDecision(grant: true, remember: nil)
+
+        XCTAssertEqual(permissionManagerMock.persistedDecision(forDomain: URL.duckDuckGo.host!, permissionType: .camera), .ask)
+    }
+
+    private func assertNotificationDecision(granted: Bool, remember: Bool?, expectedStoredDecision: PersistedPermissionDecision?) throws {
         let domain = "example.com"
         var actualGranted: Bool?
         model.permissions([.notification], requestedForDomain: domain) { (isGranted: Bool) in

@@ -218,8 +218,9 @@ final class PermissionModel {
                     for permission in permissions {
                         if self.shouldPersistDecision(remember: remember, for: permission, domain: domain) {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
-                        } else {
-                            // One-time decisions store .ask for permission center visibility
+                        } else if remember == nil {
+                            // The legacy Allow / Deny prompt stores .ask for permission center visibility.
+                            // Allow this visit (`remember == false`) is temporary and is never stored.
                             self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
                     }

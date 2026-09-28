@@ -22,6 +22,8 @@ import os.log
 
 public typealias WebExtensionInitialLoadWaiter = @MainActor () async -> Void
 
+/// Delays the first restored web navigation until Web Extension background content is ready. The gate
+/// fails open after a bounded wait so an extension startup failure cannot block page loading.
 public struct WebExtensionNavigationGate {
     public static let defaultInitialLoadTimeout: TimeInterval = 10
 
@@ -39,6 +41,7 @@ public struct WebExtensionNavigationGate {
               scheme == "http" || scheme == "https",
               let initialLoadWaiter else { return }
 
+        // Timing out cancels only this waiter; the shared extension load must continue for other tabs.
         try? await withTimeout(initialLoadTimeout) {
             await initialLoadWaiter()
         }
@@ -113,6 +116,8 @@ public final class WebExtensionLifecycleCoordinator {
             guard !Task.isCancelled else { return }
             await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
             guard !Task.isCancelled else { return }
+            // Loading the context is not enough: WebKit must also restore its background listeners
+            // before a restored page starts, otherwise document-start extension work can be missed.
             await self.manager.loadEmbeddedExtensionBackgroundContent()
             guard !Task.isCancelled else { return }
             self.reportConsistency()
@@ -236,6 +241,9 @@ public final class WebExtensionLifecycleCoordinator {
     private func waitOnInitialLoadAndSync() async {
         guard initialLoadAndSync != nil else { return }
         let waiterID = UUID()
+        // Do not await `initialLoadAndSync.value` directly: `withTimeout` uses structured
+        // cancellation and would still wait for that non-cooperative task. This continuation lets
+        // the timed-out navigation stop waiting without cancelling the shared initial load.
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 guard initialLoadAndSync != nil, !Task.isCancelled else {

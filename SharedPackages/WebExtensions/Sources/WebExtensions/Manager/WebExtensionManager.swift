@@ -494,6 +494,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             $0.webExtension.duckDuckGoWebExtensionType == .embedded
         }), context.webExtension.hasBackgroundContent else { return }
 
+        // Explicitly await WebKit's background startup so restored tabs cannot navigate before the
+        // Web Extension has registered the listeners and scripts needed for that first document.
         do {
             try await context.loadBackgroundContent()
         } catch {

@@ -510,6 +510,8 @@ final class MainCoordinator {
         isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
         guard let coordinator = webExtensionLifecycleCoordinator else { return }
+        // Enqueue synchronously so restored tabs can obtain the initial-load waiter immediately;
+        // the wrapper task only performs follow-up registration after loading finishes.
         let loadAndSyncTask = coordinator.loadAndSync()
         webExtensionLoadTask = Task { @MainActor [weak self] in
             guard let self else { return }

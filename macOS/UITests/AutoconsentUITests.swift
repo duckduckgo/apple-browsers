@@ -99,6 +99,8 @@ class AutoconsentUITests: UITestCase {
         XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Autoconsent should manage cookie consent before reproducing the initial background load race")
 
+        // Force WebKit through the cold background-listener path on every restoration. Repeating it
+        // makes the startup race deterministic enough to catch without introducing multiple tabs.
         for reproductionIndex in 1...reproductionCount {
             XCTContext.runActivity(named: "Reproduce initial background load race \(reproductionIndex)") { _ in
                 app.menuItems[XCUIApplication.AccessibilityIdentifiers.quitMenuItem].tap()
@@ -328,6 +330,8 @@ class AutoconsentUITests: UITestCase {
     }
 
     private func clearPersistedBackgroundListeners(file: StaticString = #file, line: UInt = #line) throws {
+        // Test-only reproduction hook: removing these private WebKit persistence keys makes the
+        // embedded extension rebuild its background listeners while the saved tab is restoring.
         let webKitDirectory = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/WebKit", isDirectory: true)
         let bundleIdentifiers = [

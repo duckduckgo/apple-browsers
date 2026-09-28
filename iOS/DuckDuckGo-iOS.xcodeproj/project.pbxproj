@@ -4491,12 +4491,12 @@
 			children = (
 				C1F580BA2DFA20AE005E4C12 /* CompleteSetup */,
 				1DEAADE32BA386C600E25A97 /* PrivacyProtections */,
-				1DEAADF72BA488E600E25A97 /* Privacy Pro */,
+				1DEAADF72BA488E600E25A97 /* Subscription */,
 				1DEAADE42BA386D100E25A97 /* MainSettings */,
 				1DEAADE52BA386E000E25A97 /* NextSteps */,
 				1DEAADE62BA386E800E25A97 /* Others */,
 			);
-			name = Sections;
+			path = Sections;
 			sourceTree = "<group>";
 		};
 		1DEAADE32BA386C600E25A97 /* PrivacyProtections */ = {
@@ -4509,13 +4509,13 @@
 				1DEAADFE2BA7832F00E25A97 /* EmailProtectionView.swift */,
 				569B07292DD7378700E0719A /* ThreatProtectionView.swift */,
 			);
-			name = PrivacyProtections;
+			path = PrivacyProtections;
 			sourceTree = "<group>";
 		};
 		1DEAADE42BA386D100E25A97 /* MainSettings */ = {
 			isa = PBXGroup;
 			children = (
-				9F7ED8122D52EEBA00CCF4F5 /* Sub Sections */,
+				9F7ED8122D52EEBA00CCF4F5 /* SubSections */,
 				1DDF402C2BA09482006850D9 /* SettingsMainSettingsView.swift */,
 				C0DE55010000000000000001 /* SettingsSitePermissionsView.swift */,
 				1DEAADE72BA38AA500E25A97 /* SettingsGeneralView.swift */,
@@ -4528,7 +4528,7 @@
 				9F9A92332C86B42B001D036D /* AppIconPicker.swift */,
 				9FDEC7BB2C91204900C7A692 /* AppIconPickerViewModel.swift */,
 			);
-			name = MainSettings;
+			path = MainSettings;
 			sourceTree = "<group>";
 		};
 		1DEAADE52BA386E000E25A97 /* NextSteps */ = {
@@ -4537,7 +4537,7 @@
 				1D200C962BA3157A00108701 /* SettingsNextStepsView.swift */,
 				5AFC4FD630F546C4B43AE85E /* SettingsNextStepsDebugView.swift */,
 			);
-			name = NextSteps;
+			path = NextSteps;
 			sourceTree = "<group>";
 		};
 		1DEAADE62BA386E800E25A97 /* Others */ = {
@@ -4547,15 +4547,15 @@
 				1D200C9A2BA31A6A00108701 /* AboutView.swift */,
 				D6E83C652B23936F006C8AFB /* SettingsDebugView.swift */,
 			);
-			name = Others;
+			path = Others;
 			sourceTree = "<group>";
 		};
-		1DEAADF72BA488E600E25A97 /* Privacy Pro */ = {
+		1DEAADF72BA488E600E25A97 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
 				D69FBF752B28BE3600B505F1 /* SettingsSubscriptionView.swift */,
 			);
-			name = "Privacy Pro";
+			path = Subscription;
 			sourceTree = "<group>";
 		};
 		1E162603296840790004127F /* SwiftUI */ = {
@@ -5862,7 +5862,7 @@
 				8531A08D1F9950E6000484F0 /* UnprotectedSitesViewController.swift */,
 				D6E83C672B23B6A3006C8AFB /* FontSettings.swift */,
 			);
-			name = UIkit;
+			path = UIkit;
 			sourceTree = "<group>";
 		};
 		8544C97E2EDDE5C9001E1DB4 /* Telemetry */ = {
@@ -6021,7 +6021,7 @@
 				6F72353C2D3EBCB000710C07 /* WebViewStateRestorationDebugView.swift */,
 				1E6DF8342F2B7AE800493342 /* WebExtensionsDebugView.swift */,
 			);
-			name = Debug;
+			path = Debug;
 			sourceTree = "<group>";
 		};
 		858650CF2469BCC100C36F8A /* DaxOnboarding */ = {
@@ -6688,7 +6688,7 @@
 			path = ModalPromptCoordination;
 			sourceTree = "<group>";
 		};
-		9F7ED8122D52EEBA00CCF4F5 /* Sub Sections */ = {
+		9F7ED8122D52EEBA00CCF4F5 /* SubSections */ = {
 			isa = PBXGroup;
 			children = (
 				5BF65FD32F58C01C00BCC9F4 /* SettingsAutoplayView.swift */,
@@ -6697,7 +6697,7 @@
 				85CD91C12EBCE8FE006A0F7C /* MobileCustomizationViews.swift */,
 				31A968142E4E6E1300F4305E /* SettingsAIChatShortcutsView.swift */,
 			);
-			name = "Sub Sections";
+			path = SubSections;
 			sourceTree = "<group>";
 		};
 		9F80A9892EA9E4CF0079C5AD /* Migrator */ = {
@@ -6790,7 +6790,7 @@
 			children = (
 				9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */,
 			);
-			name = OnboardingDebugView;
+			path = OnboardingDebugView;
 			sourceTree = "<group>";
 		};
 		9F9A92322C86B419001D036D /* AppIconPicker */ = {
@@ -7134,7 +7134,7 @@
 				C14D43002B45D6CD00ACA4DC /* AutofillDebugViewController.swift */,
 				C1E42C7A2C5CD8AD00509204 /* AutofillCredentialsDebugViewController.swift */,
 			);
-			name = Autofill;
+			path = Autofill;
 			sourceTree = "<group>";
 		};
 		C1056A542E253D81003220BA /* CredentialsImport */ = {
@@ -7583,7 +7583,7 @@
 			children = (
 				C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */,
 			);
-			name = CompleteSetup;
+			path = CompleteSetup;
 			sourceTree = "<group>";
 		};
 		CB1A79722E4CAD54009C96C1 /* SERP */ = {
@@ -7707,7 +7707,7 @@
 				1DDF40272BA04CF3006850D9 /* Sections */,
 				85449EF623FDA03100512AAF /* UIkit */,
 			);
-			name = Views;
+			path = Views;
 			sourceTree = "<group>";
 		};
 		D6E83C492B20C883006C8AFB /* Model */ = {
@@ -7722,7 +7722,7 @@
 				D6E83C2D2B1EA06E006C8AFB /* SettingsViewModel.swift */,
 				6F76B5D52EAA6EC00027C425 /* SettingsAutoClearActionDelegate.swift */,
 			);
-			name = Model;
+			path = Model;
 			sourceTree = "<group>";
 		};
 		EA7EFE662677F5BD0075464E /* PrivacyReferenceTests */ = {
@@ -8462,7 +8462,7 @@
 				858566F1252E55AE007501B8 /* Debug */,
 				1DDF402A2BA05A65006850D9 /* Settings.xcassets */,
 			);
-			name = Settings;
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		F1AE54DB1F0425BB00D9A700 /* Privacy */ = {

@@ -66,6 +66,14 @@ final class AttachmentPrivacyDisplayCounter {
             // The disclosure is required, so a failed write shows the message and risks an extra
             // impression rather than suppressing one.
             Logger.aiChat.error("Attachment privacy: failed to record display: \(error.localizedDescription, privacy: .public)")
+            return true
+        }
+
+        // Read back: a write that lands but does not survive leaves the cap unenforced, and the
+        // only symptom is the message showing forever. Better to say so than to hide it.
+        let recorded = count
+        if recorded != current + 1 {
+            Logger.aiChat.error("Attachment privacy: count did not persist — wrote \(current + 1, privacy: .public), read back \(recorded, privacy: .public)")
         }
         return true
     }

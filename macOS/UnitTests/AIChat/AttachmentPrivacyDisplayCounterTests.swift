@@ -205,6 +205,125 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
     }
 }
 
+final class AttachmentPrivacyCompositionGateTests: XCTestCase {
+
+    private var store: InMemoryAttachmentPrivacyDisplayCountStore!
+    private var gate: AttachmentPrivacyCompositionGate!
+
+    override func setUp() {
+        super.setUp()
+        store = InMemoryAttachmentPrivacyDisplayCountStore()
+        gate = AttachmentPrivacyCompositionGate(
+            counter: AttachmentPrivacyDisplayCounter(
+                store: store,
+                webKeySource: nil,
+                featureFlagger: MockFeatureFlagger(
+                    featuresStub: [FeatureFlag.aiChatAttachmentPrivacyDisclosure.rawValue: true]
+                )
+            )
+        )
+    }
+
+    override func tearDown() {
+        store = nil
+        gate = nil
+        super.tearDown()
+    }
+
+    func testNothingShowsWithoutAnAttachment() {
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
+        XCTAssertNil(store.count)
+    }
+
+    func testStagingAnAttachmentSpendsOneDisplay() {
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 1)
+    }
+
+    /// Re-resolving on every change must not spend a display each time.
+    func testResolvingRepeatedlyInOneCompositionSpendsOne() {
+        for _ in 0..<5 {
+            XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        }
+
+        XCTAssertEqual(store.count, 1)
+    }
+
+    /// The case that felt broken in testing: changing the file mid-flow must not cost a display,
+    /// and must not make the message disappear.
+    func testRemovingAndReattachingKeepsTheSameDisplay() {
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
+
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 1)
+    }
+
+    func testANewPromptAfterSubmittingSpendsAnother() {
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        gate.compositionEnded(tabID: "A")
+
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 2)
+    }
+
+    func testDifferentTabsAreDifferentPrompts() {
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
+
+        XCTAssertEqual(store.count, 2)
+    }
+
+    /// Going A → B → A is two drafts, not three.
+    func testReturningToATabKeepsItsGrant() {
+        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
+        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
+
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 2)
+    }
+
+    func testSubmittingInOneTabLeavesAnotherTabsDraftAlone() {
+        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
+        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
+
+        gate.compositionEnded(tabID: "A")
+
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
+        XCTAssertEqual(store.count, 2)
+    }
+
+    /// A surface with no originating tab still gets one composition at a time.
+    func testASurfaceWithoutATabIsOneComposition() {
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
+
+        XCTAssertEqual(store.count, 1)
+    }
+
+    /// Past the cap the answer is no, and it stays no for that composition.
+    func testOnceExhaustedNothingShows() {
+        for tab in ["A", "B", "C"] {
+            XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: tab))
+        }
+
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "D"))
+        XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
+    }
+
+    /// A denied composition must not ask again on every resolve, or the log fills with requests
+    /// that can never be granted.
+    func testADeniedCompositionIsRememberedToo() {
+        for tab in ["A", "B", "C"] {
+            _ = gate.shouldShow(hasStagedAttachment: true, tabID: tab)
+        }
+
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "D"))
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "D"))
+        XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
+    }
+}
+
 final class AttachmentPrivacyDisplayCountRegistryTests: XCTestCase {
 
     func testRegularModeUsesThePersistentStore() {

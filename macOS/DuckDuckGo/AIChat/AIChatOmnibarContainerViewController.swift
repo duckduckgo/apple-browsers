@@ -216,22 +216,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    private lazy var attachmentPrivacyCounter = AttachmentPrivacyDisplayCounter(
-        store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
-        webKeySource: duckAiNativeStorageHandler
+    private lazy var attachmentPrivacyGate = AttachmentPrivacyCompositionGate(
+        counter: AttachmentPrivacyDisplayCounter(
+            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
+            webKeySource: duckAiNativeStorageHandler
+        )
     )
-
-    /// One grant per tab, because the draft is per tab: a granted display survives swapping or
-    /// removing the attachment, and switching tabs and back must not spend a second one. Entries
-    /// are cleared by the submit that ends their composition.
-    private var attachmentPrivacyGrants: [String: Bool] = [:]
-
-    /// A surface with no originating tab — the Prompt Bar — has one composition at a time.
-    private static let tablessGrantKey = "no-tab"
-
-    private var attachmentPrivacyGrantKey: String {
-        omnibarController.currentTabUUID ?? Self.tablessGrantKey
-    }
 
     /// Only the exposed band counts; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
@@ -1316,26 +1306,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         !omnibarController.activeImageAttachments.isEmpty || !omnibarController.activeFileAttachments.isEmpty
     }
 
-    /// Asks the counter once per composition, then keeps the answer. Without that the disclosure
-    /// would vanish mid-flow for a user on their last display who swaps the file.
     private var shouldShowAttachmentPrivacyDisclosure: Bool {
-        // No attachment staged: nothing to show, but the grant is kept — removing one does not end
-        // the composition, so re-attaching must not spend another display.
-        guard hasStagedFileOrImageAttachment else { return false }
-
-        let key = attachmentPrivacyGrantKey
-        if let granted = attachmentPrivacyGrants[key] {
-            return granted
-        }
-        let granted = attachmentPrivacyCounter.consumeDisplay()
-        attachmentPrivacyGrants[key] = granted
-        return granted
+        attachmentPrivacyGate.shouldShow(hasStagedAttachment: hasStagedFileOrImageAttachment,
+                                         tabID: omnibarController.currentTabUUID)
     }
 
-    /// The composition ended for the tab that submitted, so its next attachment asks the counter
-    /// again. Other tabs keep the drafts they are still composing.
     private func resetAttachmentPrivacyComposition() {
-        attachmentPrivacyGrants[attachmentPrivacyGrantKey] = nil
+        attachmentPrivacyGate.compositionEnded(tabID: omnibarController.currentTabUUID)
     }
 
     /// A new tab, so the staged attachment and the draft survive.

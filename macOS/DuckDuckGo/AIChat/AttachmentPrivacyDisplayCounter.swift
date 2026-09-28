@@ -218,6 +218,48 @@ final class AttachmentPrivacyDisplayCounter {
     }
 }
 
+// MARK: - Composition gate
+
+/// Turns the counter's "may I show this" into the rule the disclosure actually follows: once per
+/// prompt draft, per tab.
+///
+/// The draft is per tab, so a different tab is a different prompt. Within one, removing or swapping
+/// the attachment does not end the composition — otherwise a user on their last display who
+/// changes the file would watch the disclosure vanish mid-flow. Only a submit ends it.
+final class AttachmentPrivacyCompositionGate {
+
+    /// A surface with no originating tab — the Prompt Bar — has one composition at a time.
+    private static let tablessKey = "no-tab"
+
+    private let counter: AttachmentPrivacyDisplayCounter
+    private var grants: [String: Bool] = [:]
+
+    init(counter: AttachmentPrivacyDisplayCounter) {
+        self.counter = counter
+    }
+
+    /// Asks the counter once per composition, then keeps the answer for the rest of it.
+    func shouldShow(hasStagedAttachment: Bool, tabID: String?) -> Bool {
+        // Nothing to show without an attachment, but the grant is kept: removing one does not end
+        // the composition, so re-attaching must not spend another display.
+        guard hasStagedAttachment else { return false }
+
+        let key = tabID ?? Self.tablessKey
+        if let granted = grants[key] {
+            return granted
+        }
+        let granted = counter.consumeDisplay()
+        grants[key] = granted
+        return granted
+    }
+
+    /// The submitting tab's next attachment asks the counter again. Other tabs keep the drafts
+    /// they are still composing.
+    func compositionEnded(tabID: String?) {
+        grants[tabID ?? Self.tablessKey] = nil
+    }
+}
+
 /// Answer to `attachmentPrivacyShouldDisplay`.
 struct AttachmentPrivacyShouldDisplayResponse: Encodable {
     let show: Bool

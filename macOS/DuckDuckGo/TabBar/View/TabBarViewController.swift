@@ -385,6 +385,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         scrollView.borderType = .noBorder
         scrollView.hasVerticalScroller = false
         scrollView.verticalScrollElasticity = .none
+        // The tab bar is moved from the titlebar into the main view for the duration of the fire
+        // animation, where it sits right below the titlebar. AppKit would then inset the scroll
+        // view content by the titlebar height, collapsing the collection view to zero height and
+        // hiding all tabs. The storyboard used to set explicit zero insets, disabling this.
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsetsZero
         scrollView.contentView = clipView
         scrollViewHeightConstraint = scrollView.heightAnchor
             .constraint(equalToConstant: LayoutConstants.scrollViewHeight)

@@ -46,6 +46,17 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private var buttons = Set<MouseOverButton>()
     private var updateCancellable: AnyCancellable?
 
+    /// Whether the toolbar buttons are shown. The navigation bar sets it from the selected tab's
+    /// content, because an extension popup makes no sense on a tab without a web page.
+    var buttonsAreVisible = true {
+        didSet {
+            guard buttonsAreVisible != oldValue else { return }
+            for button in buttons {
+                button.isHidden = !buttonsAreVisible
+            }
+        }
+    }
+
     init(webExtensionManager: WebExtensionManaging,
          themeManager: ThemeManaging,
          container: NSStackView) {
@@ -158,6 +169,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         button.isBordered = false
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
+        button.isHidden = !buttonsAreVisible
         button.toolTip = context.webExtension.displayActionLabel ?? context.webExtension.displayName
         button.target = self
         button.action = #selector(toolbarButtonClicked)

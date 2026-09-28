@@ -1253,9 +1253,17 @@ final class NavigationBarViewController: NSViewController {
     private func subscribeToTabContent() {
         urlCancellable = tabCollectionViewModel.selectedTabViewModel?.tab.$content
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] _ in
+            .sink(receiveValue: { [weak self] content in
                 self?.updatePasswordManagementButton()
+                self?.updateWebExtensionButtonsVisibility(for: content)
             })
+    }
+
+    /// Web extension buttons apply to a web page only, so tabs that show native content hide them.
+    private func updateWebExtensionButtonsVisibility(for content: TabContent) {
+        guard #available(macOS 15.4, *),
+              let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
     }
 
     private func subscribeToDownloads() {

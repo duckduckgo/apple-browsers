@@ -786,6 +786,8 @@ class TabViewController: UIViewController {
     private let pageContextPageChanges = PassthroughSubject<Void, Never>()
     private let pageContextProcessTerminations = PassthroughSubject<Void, Never>()
 
+    private lazy var pageContextHandler = makePageContextHandler()
+
     private func makePageContextHandler() -> AIChatPageContextHandler {
         AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -805,12 +807,12 @@ class TabViewController: UIViewController {
                          url: webView.url,
                          isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
-                         isAttachable: self.makePageContextHandler().isCurrentPageAttachable(),
+                         isAttachable: self.pageContextHandler.isCurrentPageAttachable(),
                          hasTerminatedProcess: self.pageContextProcessTerminated)
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
                                      webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
         collect: { [weak self] url, isValid in
-            guard let handler = self?.makePageContextHandler() else { return .unavailable }
+            guard let handler = self?.pageContextHandler else { return .unavailable }
             return await handler.collectContext(for: url, isValid: isValid)
         }, loadIfNeeded: { [weak self] in
             self?.loadPageForTabAttachmentIfNeeded()
@@ -831,7 +833,6 @@ class TabViewController: UIViewController {
     }
 
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let pageContextHandler = makePageContextHandler()
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
             aiChatSettings: aiChatSettings,

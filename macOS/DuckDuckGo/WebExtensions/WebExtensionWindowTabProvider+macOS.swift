@@ -25,9 +25,6 @@ import WebKit
 @MainActor
 final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
-    /// Hosts extension action popups. Exposed so the toolbar button can toggle its own popup.
-    let popupPresenter = WebExtensionPopupPresenter()
-
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
     }
@@ -110,19 +107,15 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return
         }
 
-        guard let popupWebView = action.popupWebView else {
-            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup web view")
+        guard let popupPopover = action.popupPopover,
+              let popupWebView = action.popupWebView
+        else {
+            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup popover or web view")
             return
         }
 
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
-
-        // `action.popupPopover` is never shown. Its rounded chrome cannot be clipped from
-        // outside on macOS 26, and extension popups such as Dark Reader paint a square page
-        // over it, which leaves the frame corners showing. `WebExtensionPopupPresenter` hosts
-        // the same web view in a square panel instead, and reads the popover only for the size
-        // WebKit computes for the page.
-        popupPresenter.present(action, for: context, from: button)
+        popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
 
     // MARK: - Private Helpers

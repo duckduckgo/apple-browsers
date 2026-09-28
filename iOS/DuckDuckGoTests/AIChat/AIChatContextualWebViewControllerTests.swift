@@ -69,6 +69,17 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     }
 
     @MainActor
+    func testQueuedRequestIsReleasedOnControllerTeardown() async {
+        var sut: AIChatContextualWebViewController? = makeAttachmentSubmissionController()
+        let released = expectation(description: "Queued request released")
+        sut?.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                          tabAttachmentRequest: .init(contexts: { XCTFail("Discarded request must not collect"); return [] },
+                                                      didConsume: {}, cancel: { released.fulfill() }))
+        sut = nil
+        await fulfillment(of: [released], timeout: 1)
+    }
+
+    @MainActor
     private func makeAttachmentSubmissionController(utiHost: AIChatContextualUTIHost? = nil) -> AIChatContextualWebViewController {
         AIChatContextualWebViewController(aiChatSettings: MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!),
                                           privacyConfigurationManager: MockPrivacyConfigurationManager(),

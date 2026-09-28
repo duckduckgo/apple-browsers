@@ -469,6 +469,15 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 1)
     }
 
+    func testCancellationIsForwardedToUserScript() {
+        let script = MockAIChatUserScript()
+        handler.setup(with: script, webView: WKWebView(), displayMode: .contextual)
+
+        handler.cancelPendingTabContextSubmission()
+
+        XCTAssertEqual(script.cancelPendingTabContextSubmissionCallCount, 1)
+    }
+
     @MainActor
     func testNewChatCancelsPendingTabSubmissionBeforeRequestingCurrentPage() async {
         let script = MockAIChatUserScript()

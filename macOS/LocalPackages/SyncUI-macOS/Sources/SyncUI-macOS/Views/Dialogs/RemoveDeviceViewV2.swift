@@ -80,14 +80,12 @@ struct RemoveDeviceViewV2: View {
 
 #if DEBUG
 #Preview("This Device") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return RemoveDeviceViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+    RemoveDeviceViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
         .environmentObject(ManagementDialogModel())
 }
 
 #Preview("Other Device") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return RemoveDeviceViewV2(device: SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"))
+    RemoveDeviceViewV2(device: SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"))
         .environmentObject(ManagementDialogModel())
 }
 #endif

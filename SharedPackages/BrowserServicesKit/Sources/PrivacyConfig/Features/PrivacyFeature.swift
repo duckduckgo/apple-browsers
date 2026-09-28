@@ -374,6 +374,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
 
+    /// Enables attaching content from multiple open tabs in the iOS contextual AI chat sheet.
+    case contextualAttachMoreTabs
+
     /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
@@ -386,6 +389,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the native input attachment privacy disclosure.
+    case unifiedToggleInputAttachmentPrivacy
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -527,6 +533,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
+
+    /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
+    case nativeTermsOfService
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

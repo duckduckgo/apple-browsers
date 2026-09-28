@@ -46,6 +46,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     private let configurationManager: ConfigurationManager
     private let wideEvent: WideEventManaging
     private let unNotificationPresenter: NetworkProtectionUNNotificationPresenter
+    private let connectionStatusBox: ConnectionStatusBox
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -546,10 +547,15 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             return authEnvironment == .production
 #endif
         }
+        let connectionStatusBox = ConnectionStatusBox()
         let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(wideEvent: wideEvent,
                                                                                     isFeatureEnabled: isAuthV2WideEventEnabled,
                                                                                     shouldSuppressFailure: {
                                                                                         loopDetector.shouldSuppressCurrentAttemptTelemetry
+                                                                                    },
+                                                                                    netpIsRunningProvider: {
+                                                                                        if case .connected = connectionStatusBox.value { return true }
+                                                                                        return false
                                                                                     })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
@@ -582,6 +588,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         }
         tokenHandler = subscriptionManager
         self.subscriptionManager = subscriptionManager
+        self.connectionStatusBox = connectionStatusBox
 
         // MARK: -
 
@@ -822,6 +829,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
         super.handleConnectionStatusChange(old: old, new: new)
 
+        connectionStatusBox.value = new
+
         activationDateStore.setActivationDateIfNecessary()
         activationDateStore.updateLastActiveDate()
 
@@ -836,6 +845,27 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             etag: configurationStore.loadEtag(for: .privacyConfiguration),
             data: configurationStore.loadData(for: .privacyConfiguration)
         )
+    }
+}
+
+/// Lets a synchronous, non-actor context (the AuthV2 refresh instrumentation) read the tunnel's
+/// @MainActor `connectionStatus` without hopping actors. Written from `handleConnectionStatusChange`
+/// on every change.
+private final class ConnectionStatusBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: ConnectionStatus = .default
+
+    var value: ConnectionStatus {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _value
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _value = newValue
+        }
     }
 }
 

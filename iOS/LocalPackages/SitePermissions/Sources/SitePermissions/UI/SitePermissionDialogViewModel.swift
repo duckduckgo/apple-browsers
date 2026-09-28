@@ -23,6 +23,7 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
     case allowOnce
     case allowWhileUsingSite
     case neverAllow
+    case dismissed
 
     public var promptDecision: SitePermissionPromptDecision {
         switch self {
@@ -32,6 +33,8 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
             return .allowWhileUsingSite
         case .neverAllow:
             return .neverAllow
+        case .dismissed:
+            return .denyOnce
         }
     }
 
@@ -43,6 +46,8 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
             return .allowAlways
         case .neverAllow:
             return .never
+        case .dismissed:
+            return .dismissed
         }
     }
 }
@@ -63,6 +68,8 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
     enum Icon: Hashable, Sendable {
         case camera
         case microphone
+        case location
+        case duckDuckGo
     }
 
     public var title: String { title(domain: domain) }
@@ -72,10 +79,12 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
     let domain: String
     let permissionTypes: Set<SitePermissionType>
     let icons: [Icon]
+    let isDuckDuckGoSERP: Bool
 
-    public init?(prompt: SitePermissionPrompt) {
+    public init?(prompt: SitePermissionPrompt, isDuckDuckGoSERP: Bool = false) {
         domain = prompt.site.host
         permissionTypes = prompt.permissionTypes
+        self.isDuckDuckGoSERP = isDuckDuckGoSERP && prompt.permissionTypes == [.location]
         switch prompt.permissionTypes {
         case [.camera]:
             icons = [.camera]
@@ -83,11 +92,13 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
             icons = [.microphone]
         case [.camera, .microphone]:
             icons = [.camera, .microphone]
+        case [.location]:
+            icons = [self.isDuckDuckGoSERP ? .duckDuckGo : .location]
         default:
             return nil
         }
 
-        body = nil
+        body = self.isDuckDuckGoSERP ? UserText.PermissionDialog.duckDuckGoSERPLocationBody : nil
         actions = [
             ActionItem(action: .allowOnce, title: UserText.PermissionDialog.allowOnce),
             ActionItem(action: .allowWhileUsingSite, title: UserText.PermissionDialog.allowWhileUsingSite),
@@ -103,6 +114,10 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
             return UserText.PermissionDialog.microphoneTitle(domain: domain)
         case [.camera, .microphone]:
             return UserText.PermissionDialog.cameraAndMicrophoneTitle(domain: domain)
+        case [.location] where isDuckDuckGoSERP:
+            return UserText.PermissionDialog.duckDuckGoSERPLocationTitle
+        case [.location]:
+            return UserText.PermissionDialog.locationTitle(domain: domain)
         default:
             assertionFailure("Unsupported permission dialog variant")
             return ""

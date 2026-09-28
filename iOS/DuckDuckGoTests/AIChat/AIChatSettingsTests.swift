@@ -88,6 +88,53 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertEqual(settings.aiChatURL, URL(string: override))
     }
 
+    func testAttachMoreTabsLimitReturnsDefaultWhenRemoteSettingsAreMissing() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+    }
+
+    func testAttachMoreTabsLimitReturnsPositiveRemoteValue() {
+        (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings[
+            AIChatSubfeature.contextualAttachMoreTabs.rawValue
+        ] = #"{"aiChatAttachMoreTabsLimit":500}"#
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 500)
+    }
+
+    func testAttachMoreTabsLimitReturnsDefaultForNonPositiveRemoteValues() {
+        let privacyConfiguration = mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        for limit in [0, -1] {
+            privacyConfiguration?.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+                #"{"aiChatAttachMoreTabsLimit":\#(limit)}"#
+            XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+        }
+    }
+
+    func testAttachMoreTabsLimitReturnsDefaultForNullRemoteValue() {
+        (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings[
+            AIChatSubfeature.contextualAttachMoreTabs.rawValue
+        ] = #"{"aiChatAttachMoreTabsLimit":null}"#
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+    }
+
     func testEnableAIChatBrowsingMenuUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,

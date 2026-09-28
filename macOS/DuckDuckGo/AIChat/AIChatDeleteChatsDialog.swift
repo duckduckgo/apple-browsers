@@ -29,7 +29,7 @@ struct AIChatDeleteChatsDialog: ModalView {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(themeManager.isAppRebranded ? .burnAlert : .fireChatLegacy)
+            Image(.burnAlert)
 
             VStack(spacing: 8) {
                 Text(UserText.aiChatMenuDeleteAllChatsDialogTitle)

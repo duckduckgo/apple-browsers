@@ -1163,7 +1163,7 @@ extension TabManager {
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache
-                .filter { $0 !== currentController }
+                .filter { $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil }
                 .forEach { evictFromCache($0, reason: .memoryWarning) }
         }
         flushPendingSave()

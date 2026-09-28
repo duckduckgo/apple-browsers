@@ -402,6 +402,18 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(privacyEventKinds, [.image, .file])
     }
 
+    func testTermsLinkDoesNotFireAttachmentPrivacyPixel() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(visible: [.termsConsent, .attachmentPrivacy])
+        XCTAssertEqual(privacyEvents, [.shown])
+        sut.recordLinkTapped(.termsConsent)
+        XCTAssertEqual(privacyEvents, [.shown])
+        sut.recordLinkTapped(.attachmentPrivacy)
+        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
+    }
+
     func testPrivacyFlagOffDoesNotResolveOrReport() {
         privacyKind = .image
         privacyEnabled = false

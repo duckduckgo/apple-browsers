@@ -972,6 +972,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func exitEditMode(reply: EditPromptReply) {
         guard isEditing else { return }
         clearAttachments()
+        attachmentPrivacyNoticeSource?.hasCountedDraft = false
         isEditing = false
         resolveEdit(reply)
         resetToolsSelection()

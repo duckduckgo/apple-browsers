@@ -90,9 +90,14 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         store.states["tab-A"] = TabInputState(text: "draft", hasCountedAttachmentPrivacyForDraft: true)
         let sut = makeSUT(stateStore: store)
         sut.activateForTab("tab-A")
+        let otherDraft = TabInputState(text: "other draft", hasCountedAttachmentPrivacyForDraft: true, selectedTool: .webSearch)
+        store.states["tab-B"] = otherDraft
         sut.hide()
+        XCTAssertTrue(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft == true)
         sut.handleExternalSubmission(.prompt)
         XCTAssertFalse(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft ?? true)
+        XCTAssertEqual(store.states["tab-A"]?.text, "")
+        XCTAssertEqual(store.states["tab-B"], otherDraft)
     }
 
     func testEndingEditDoesNotCountReloadedAttachmentsAsANewDisclosure() {
@@ -134,6 +139,58 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
             sut.showExpanded(inputMode: .aiChat, activatesInput: false)
             sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
             XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1, "A newly composed attachment must still count")
+            sut.viewController.viewWillDisappear(false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+    }
+
+    func testEditExitStartsNewDraftWithoutCountingReloadedAttachments() {
+        for submits in [false, true] {
+            let tab = Tab(fireTab: true)
+            let store = FakeInputStateStore()
+            let sut = UnifiedToggleInputCoordinator(
+                host: .omnibar,
+                isToggleEnabled: true,
+                isFireTab: true,
+                preferences: MockAIChatPreferencesForPerTab(),
+                toggleModeStorage: MockToggleModeStorageForPerTab(),
+                stateStore: store,
+                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputAttachmentPrivacy]),
+                tabProvider: { tab }
+            )
+            sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
+            sut.modelStore.attachmentLimits = makeLimits()
+            sut.activateForTab(tab.uid)
+            sut.showExpanded(inputMode: .aiChat, activatesInput: false)
+            sut.addImageAttachment(image: UIImage(), fileName: "first-draft.jpg")
+            XCTAssertFalse(store.states[tab.uid]?.hasCountedAttachmentPrivacyForDraft ?? true)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+            window.rootViewController = sut.viewController
+            window.makeKeyAndVisible()
+            sut.viewController.viewDidAppear(false)
+            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
+            XCTAssertTrue(store.states[tab.uid]?.hasCountedAttachmentPrivacyForDraft == true)
+            let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "edited.jpg"))
+            sut.beginEditMode(prompt: "Edited prompt", attachments: [attachment])
+            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
+
+            if submits {
+                sut.submitProgrammatic(text: "Edited prompt")
+            } else {
+                sut.cancelEdit()
+            }
+            XCTAssertFalse(sut.isEditing)
+            XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
+
+            XCTAssertFalse(store.states[tab.uid]?.hasCountedAttachmentPrivacyForDraft ?? true)
+            sut.showExpanded(inputMode: .aiChat, activatesInput: false)
+            sut.addImageAttachment(image: UIImage(), fileName: "next-draft.jpg")
+            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 2, "A new draft on the same tab must count")
             sut.viewController.viewWillDisappear(false)
             window.isHidden = true
             window.rootViewController = nil

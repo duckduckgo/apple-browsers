@@ -55,6 +55,10 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Sidebar Debugging").submenu(AIChatSidebarDebugMenu())
+
+            NSMenuItem.separator()
+
             usageWarningsMenuItem
 
             NSMenuItem.separator()
@@ -379,3 +383,203 @@ extension AIChatDebugMenu: NSMenuDelegate {
     }
 }
 #endif
+
+// MARK: - Sidebar Debugging
+
+enum AIChatSidebarDebugSettings {
+
+    enum RevealPolicy: String, CaseIterable {
+        case immediately, afterCommit, afterFirstPaint, afterFinish
+
+        var title: String {
+            switch self {
+            case .immediately: return "Immediately (current behavior)"
+            case .afterCommit: return "After Commit"
+            case .afterFirstPaint: return "After First Paint"
+            case .afterFinish: return "After Finish"
+            }
+        }
+    }
+
+    enum UnderPageColor: String, CaseIterable {
+        case system, blue, black, red
+
+        var title: String { rawValue.capitalized }
+
+        var color: NSColor? {
+            switch self {
+            case .system: return nil
+            case .blue: return .systemBlue
+            case .black: return .black
+            case .red: return .systemRed
+            }
+        }
+    }
+
+    static let loadDelayOptions: [Int] = [0, 1, 3, 5, 10]
+
+    private static let defaults = UserDefaults.standard
+    private static let prefix = "aiChatSidebarDebug."
+
+    private static func bool(_ key: String, default defaultValue: Bool = false) -> Bool {
+        defaults.object(forKey: prefix + key) as? Bool ?? defaultValue
+    }
+
+    static var showTimelineOverlay: Bool {
+        get { bool("showTimelineOverlay") }
+        set { defaults.set(newValue, forKey: prefix + "showTimelineOverlay") }
+    }
+
+    static var tintLayers: Bool {
+        get { bool("tintLayers") }
+        set { defaults.set(newValue, forKey: prefix + "tintLayers") }
+    }
+
+    static var webViewDrawsBackground: Bool {
+        get { bool("webViewDrawsBackground", default: true) }
+        set { defaults.set(newValue, forKey: prefix + "webViewDrawsBackground") }
+    }
+
+    static var underPageColor: UnderPageColor {
+        get { defaults.string(forKey: prefix + "underPageColor").flatMap(UnderPageColor.init) ?? .system }
+        set { defaults.set(newValue.rawValue, forKey: prefix + "underPageColor") }
+    }
+
+    static var revealPolicy: RevealPolicy {
+        get { defaults.string(forKey: prefix + "revealPolicy").flatMap(RevealPolicy.init) ?? .immediately }
+        set { defaults.set(newValue.rawValue, forKey: prefix + "revealPolicy") }
+    }
+
+    static var slowMotionOpen: Bool {
+        get { bool("slowMotionOpen") }
+        set { defaults.set(newValue, forKey: prefix + "slowMotionOpen") }
+    }
+
+    static var autoOpenInspector: Bool {
+        get { bool("autoOpenInspector") }
+        set { defaults.set(newValue, forKey: prefix + "autoOpenInspector") }
+    }
+
+    static var loadDelaySeconds: Int {
+        get { defaults.integer(forKey: prefix + "loadDelaySeconds") }
+        set { defaults.set(newValue, forKey: prefix + "loadDelaySeconds") }
+    }
+
+    static var lastTimeline: String {
+        get { defaults.string(forKey: prefix + "lastTimeline") ?? "" }
+        set { defaults.set(newValue, forKey: prefix + "lastTimeline") }
+    }
+
+    static func reset() {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(prefix) {
+            defaults.removeObject(forKey: key)
+        }
+    }
+}
+
+final class AIChatSidebarDebugMenu: NSMenu, NSMenuDelegate {
+
+    typealias Settings = AIChatSidebarDebugSettings
+
+    init() {
+        super.init(title: "")
+        autoenablesItems = false
+        delegate = self
+        menuNeedsUpdate(self)
+    }
+
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === self else { return }
+        removeAllItems()
+
+        let note = NSMenuItem(title: "Changes apply the next time the sidebar opens")
+        note.isEnabled = false
+        addItem(note)
+        addItem(.separator())
+
+        addItem(toggle("Show Load Timeline Overlay", Settings.showTimelineOverlay, #selector(toggleTimelineOverlay)))
+        addItem(action("Copy Last Load Timeline", #selector(copyLastTimeline), isEnabled: !Settings.lastTimeline.isEmpty))
+        addItem(.separator())
+
+        addItem(toggle("Tint Native Layers", Settings.tintLayers, #selector(toggleTintLayers)))
+        let legend = NSMenuItem(title: "    magenta: sidebar container · red: sidebar root · green: web view container · blue: under-page")
+        legend.isEnabled = false
+        addItem(legend)
+        addItem(toggle("Web View Draws Background", Settings.webViewDrawsBackground, #selector(toggleDrawsBackground)))
+        addItem(choices("Under-Page Background Color",
+                        Settings.UnderPageColor.allCases.map { ($0.title, $0.rawValue, $0 == Settings.underPageColor) },
+                        #selector(selectUnderPageColor(_:))))
+        addItem(.separator())
+
+        addItem(choices("Reveal Web View",
+                        Settings.RevealPolicy.allCases.map { ($0.title, $0.rawValue, $0 == Settings.revealPolicy) },
+                        #selector(selectRevealPolicy(_:))))
+        addItem(.separator())
+
+        addItem(toggle("Slow-Motion Open (10×)", Settings.slowMotionOpen, #selector(toggleSlowMotion)))
+        addItem(toggle("Auto-Open Web Inspector", Settings.autoOpenInspector, #selector(toggleAutoOpenInspector)))
+        addItem(choices("Delay Load Start",
+                        Settings.loadDelayOptions.map { ($0 == 0 ? "Off" : "\($0) s", $0, $0 == Settings.loadDelaySeconds) },
+                        #selector(selectLoadDelay(_:))))
+        addItem(.separator())
+
+        addItem(action("Reset Sidebar Debug Settings", #selector(resetSettings)))
+    }
+
+    private func toggle(_ title: String, _ isOn: Bool, _ selector: Selector) -> NSMenuItem {
+        let item = action(title, selector)
+        item.state = isOn ? .on : .off
+        return item
+    }
+
+    private func action(_ title: String, _ selector: Selector, isEnabled: Bool = true) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: selector, keyEquivalent: "")
+        item.target = self
+        item.isEnabled = isEnabled
+        return item
+    }
+
+    private func choices(_ title: String, _ options: [(title: String, value: Any, isSelected: Bool)], _ selector: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title)
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+        for option in options {
+            let optionItem = toggle(option.title, option.isSelected, selector)
+            optionItem.representedObject = option.value
+            submenu.addItem(optionItem)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func toggleTimelineOverlay() { Settings.showTimelineOverlay.toggle() }
+    @objc private func toggleTintLayers() { Settings.tintLayers.toggle() }
+    @objc private func toggleDrawsBackground() { Settings.webViewDrawsBackground.toggle() }
+    @objc private func toggleSlowMotion() { Settings.slowMotionOpen.toggle() }
+    @objc private func toggleAutoOpenInspector() { Settings.autoOpenInspector.toggle() }
+    @objc private func resetSettings() { Settings.reset() }
+
+    @objc private func selectUnderPageColor(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String, let color = Settings.UnderPageColor(rawValue: rawValue) else { return }
+        Settings.underPageColor = color
+    }
+
+    @objc private func selectRevealPolicy(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String, let policy = Settings.RevealPolicy(rawValue: rawValue) else { return }
+        Settings.revealPolicy = policy
+    }
+
+    @objc private func selectLoadDelay(_ sender: NSMenuItem) {
+        guard let seconds = sender.representedObject as? Int else { return }
+        Settings.loadDelaySeconds = seconds
+    }
+
+    @objc private func copyLastTimeline() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(Settings.lastTimeline, forType: .string)
+    }
+}

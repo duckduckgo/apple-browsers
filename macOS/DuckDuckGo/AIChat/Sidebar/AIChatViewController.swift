@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import AIChat
 import Combine
+import os.log
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -92,7 +93,10 @@ final class AIChatViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), burnerMode: burnerMode, isLoadedInSidebar: true)
+    private lazy var aiTab: Tab = Tab(content: AIChatSidebarDebugSettings.loadDelaySeconds > 0 ? .none : .url(currentAIChatURL, source: .ui),
+                                      burnerMode: burnerMode,
+                                      isLoadedInSidebar: true)
+    private var didAutoOpenInspector = false
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private var cancellables = Set<AnyCancellable>()
@@ -157,6 +161,7 @@ final class AIChatViewController: NSViewController {
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)
         createAndSetupWebViewContainer(in: container)
+        setUpSidebarDebugging()
 
         NSLayoutConstraint.activate([
             topBar.topAnchor.constraint(equalTo: container.topAnchor),
@@ -171,6 +176,10 @@ final class AIChatViewController: NSViewController {
         ])
 
         self.view = container
+
+        if AIChatSidebarDebugSettings.showTimelineOverlay {
+            addTimelineOverlay(in: container)
+        }
 
         // Initial mask update
         updateWebViewMask()
@@ -338,6 +347,26 @@ final class AIChatViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
         updateTopBarForHostingContext()
+        applyDebugTintIfNeeded()
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        AIChatSidebarLoadTimeline.shared.mark("view appeared in window")
+
+        if AIChatSidebarDebugSettings.autoOpenInspector, !didAutoOpenInspector {
+            didAutoOpenInspector = true
+            aiTab.webView.openDeveloperTools()
+            aiTab.webView.detachDeveloperTools()
+        }
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        // sidebarContainer outlives this view controller, so the tint must not leak into the next session.
+        if AIChatSidebarDebugSettings.tintLayers {
+            (view.superview as? ColorView)?.backgroundColor = .browserTabBackground
+        }
     }
 
     private func updateTopBarForHostingContext() {
@@ -572,6 +601,138 @@ extension AIChatViewController: ThemeUpdateListening {
         attachButton?.normalTintColor = iconsPrimary
         closeButton?.normalTintColor = iconsPrimary
         titleArrowView?.contentTintColor = iconsPrimary
+        applyDebugTintIfNeeded()
+    }
+}
+
+// MARK: - Sidebar Debugging
+extension AIChatViewController {
+
+    fileprivate func setUpSidebarDebugging() {
+        typealias Settings = AIChatSidebarDebugSettings
+        let timeline = AIChatSidebarLoadTimeline.shared
+        let webView = aiTab.webView
+        timeline.mark("web view created")
+
+        if #available(macOS 13.3, *) {
+            webView.isInspectable = true
+        }
+        if !Settings.webViewDrawsBackground {
+            webView.setValue(false, forKey: "drawsBackground")
+        }
+        if let color = Settings.underPageColor.color ?? (Settings.tintLayers ? .systemBlue : nil) {
+            webView.underPageBackgroundColor = color
+        }
+
+        aiTab.webViewDidStartNavigationPublisher
+            .sink { timeline.mark("navigation started") }
+            .store(in: &cancellables)
+        aiTab.$hasCommittedContent
+            .filter { $0 }
+            .prefix(1)
+            .sink { _ in timeline.mark("navigation committed") }
+            .store(in: &cancellables)
+        aiTab.webViewRenderingProgressDidChangePublisher
+            .prefix(1)
+            .sink { timeline.mark("first visually non-empty layout") }
+            .store(in: &cancellables)
+        aiTab.webViewDidFinishNavigationPublisher
+            .sink { timeline.mark("navigation finished") }
+            .store(in: &cancellables)
+
+        let revealTrigger: AnyPublisher<Void, Never>? = switch Settings.revealPolicy {
+        case .immediately: nil
+        case .afterCommit: aiTab.$hasCommittedContent.filter { $0 }.asVoid().eraseToAnyPublisher()
+        case .afterFirstPaint: aiTab.webViewRenderingProgressDidChangePublisher.eraseToAnyPublisher()
+        case .afterFinish: aiTab.webViewDidFinishNavigationPublisher.eraseToAnyPublisher()
+        }
+        if let revealTrigger {
+            // alphaValue rather than isHidden: WebKit may hold back painting for a hidden view.
+            webView.alphaValue = 0
+            // webViewDidFailNavigationPublisher is never sent, so a timeout is the only way out of a failed load.
+            let timeoutSeconds = TimeInterval(10 + Settings.loadDelaySeconds)
+            let timeout = Just("web view revealed (10 s timeout)")
+                .delay(for: .seconds(timeoutSeconds), scheduler: RunLoop.main)
+            revealTrigger.map { "web view revealed" }
+                .merge(with: timeout)
+                .prefix(1)
+                .sink { [weak webView] event in
+                    webView?.alphaValue = 1
+                    timeline.mark(event)
+                }
+                .store(in: &cancellables)
+        }
+
+        let delay = Settings.loadDelaySeconds
+        if delay > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + DispatchTimeInterval.seconds(delay)) { [weak self] in
+                guard let self else { return }
+                timeline.mark("load started after \(delay) s delay")
+                aiTab.setContent(.url(currentAIChatURL, source: .ui))
+            }
+        }
+    }
+
+    fileprivate func applyDebugTintIfNeeded() {
+        guard AIChatSidebarDebugSettings.tintLayers, isViewLoaded else { return }
+        (view as? ColorView)?.backgroundColor = .systemRed
+        (view.superview as? ColorView)?.backgroundColor = .magenta
+        webViewContainer?.layer?.backgroundColor = NSColor.systemGreen.cgColor
+    }
+
+    fileprivate func addTimelineOverlay(in container: NSView) {
+        let label = PassthroughLabel(wrappingLabelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
+        label.textColor = .white
+        label.drawsBackground = true
+        label.backgroundColor = NSColor.black.withAlphaComponent(0.75)
+        label.isSelectable = false
+        container.addSubview(label, positioned: .above, relativeTo: webViewContainer)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: webViewContainer.topAnchor, constant: 12),
+            label.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor, constant: 12),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: webViewContainer.trailingAnchor, constant: -12),
+        ])
+
+        AIChatSidebarLoadTimeline.shared.$text
+            .sink { [weak label] text in label?.stringValue = text }
+            .store(in: &cancellables)
+    }
+}
+
+private final class PassthroughLabel: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+/// Timestamps of one sidebar open, relative to the moment it was requested.
+@MainActor
+final class AIChatSidebarLoadTimeline {
+
+    static let shared = AIChatSidebarLoadTimeline()
+
+    @Published private(set) var text = ""
+    private var startTime: CFTimeInterval?
+    private var lines: [String] = []
+
+    func start() {
+        typealias Settings = AIChatSidebarDebugSettings
+        startTime = CACurrentMediaTime()
+        lines = ["reveal: \(Settings.revealPolicy.rawValue), drawsBackground: \(Settings.webViewDrawsBackground), "
+                 + "underPage: \(Settings.underPageColor.rawValue), tint: \(Settings.tintLayers), "
+                 + "delay: \(Settings.loadDelaySeconds) s, slowMo: \(Settings.slowMotionOpen), "
+                 + "appearance: \(NSApp.effectiveAppearance.name.rawValue)"]
+        Logger.aiChat.notice("[SidebarDebug] \(self.lines[0], privacy: .public)")
+    }
+
+    func mark(_ event: String) {
+        guard let startTime else { return }
+        let line = String(format: "+%6.0f ms  %@", (CACurrentMediaTime() - startTime) * 1000, event)
+        lines.append(line)
+        text = lines.joined(separator: "\n")
+        AIChatSidebarDebugSettings.lastTimeline = text
+        Logger.aiChat.notice("[SidebarDebug] \(line, privacy: .public)")
     }
 }
 

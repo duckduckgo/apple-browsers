@@ -310,6 +310,11 @@ final class AIChatCoordinator: AIChatCoordinating {
         sessionStore.expireSessionIfNeeded(for: tabID)
 
         let session = sessionStore.getOrCreateSession(for: tabID, burnerMode: sidebarHost.burnerMode)
+        let isFreshOpen = session.chatViewController == nil
+        if isFreshOpen {
+            AIChatSidebarLoadTimeline.shared.start()
+            AIChatSidebarLoadTimeline.shared.mark("sidebar open requested")
+        }
         let chatViewController = session.chatViewController ?? session.makeChatViewController(tabID: tabID)
 
         chatViewController.isChatFloatingEnabled = isChatFloatingEnabled
@@ -318,7 +323,11 @@ final class AIChatCoordinator: AIChatCoordinating {
         session.state.setSidebar()
 
         sidebarPresenceDidChangeSubject.send(.init(tabID: tabID, isShown: true))
-        transitionSidebar(for: tabID, isShowing: true, animated: animated)
+        transitionSidebar(for: tabID, isShowing: true, animated: animated) {
+            if isFreshOpen {
+                AIChatSidebarLoadTimeline.shared.mark("slide-in animation finished")
+            }
+        }
     }
 
     /// Updates state, animates the sidebar closed, then tears down UI and ends the session.
@@ -361,7 +370,7 @@ final class AIChatCoordinator: AIChatCoordinating {
         if animated {
             NSAnimationContext.runAnimationGroup { [weak self] context in
                 guard let self else { return }
-                context.duration = 0.25
+                context.duration = 0.25 * (AIChatSidebarDebugSettings.slowMotionOpen ? 10 : 1)
                 context.allowsImplicitAnimation = true
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 sidebarHost.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue

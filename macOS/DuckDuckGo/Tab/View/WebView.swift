@@ -345,6 +345,10 @@ final class WebView: WKWebView {
         inspectorPerform("close")
     }
 
+    @nonobjc func detachDeveloperTools() {
+        inspectorPerform("detach")
+    }
+
     @nonobjc func openJavaScriptConsole() {
         inspectorPerform("showConsole")
     }

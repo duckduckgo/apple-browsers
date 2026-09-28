@@ -525,6 +525,7 @@ final class TabNavigationInterfaceTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertTrue(app.tabs["New Tab"].exists)
         XCTAssertEqual(app.tabs.count, 2)
         try app.tabs.element(boundBy: 1).closeTab()
+        XCTAssertTrue(app.wait(for: .keyPath(\.tabs.count, equalTo: 1), timeout: UITests.Timeouts.elementExistence))
 
         app.activateAddressBar()
         app.addressBar.typeText("Bookmarked Page #20")

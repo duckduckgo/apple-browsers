@@ -29,9 +29,21 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
-    private lazy var attachmentPrivacyCounter = AttachmentPrivacyDisplayCounter(
-        storageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler
-    )
+    /// Resolved per read against the key window, so a Fire Window reports its own count rather
+    /// than the persistent one.
+    private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
+        let burnerMode = NSApp.delegateTyped.windowControllersManager
+            .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode
+        let handler = burnerMode.flatMap { NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: $0) }
+            ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        return AttachmentPrivacyDisplayCounter(storageHandler: handler)
+    }
+
+    private var attachmentPrivacyScopeLabel: String {
+        let isBurner = NSApp.delegateTyped.windowControllersManager
+            .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.isBurner ?? false
+        return isBurner ? "this Fire Window" : "persistent"
+    }
 
     /// The disclosure is capped at three displays per device, so without a reset it is a one-shot
     /// to test. The title carries the current count, refreshed in `update()`.
@@ -164,7 +176,8 @@ final class AIChatDebugMenu: NSMenu {
     /// Re-read on every menu open: the count moves as the user attaches, not only when it is reset.
     private func updateAttachmentPrivacyMenuItemTitle() {
         attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
-            + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown)"
+            + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown, "
+            + "\(attachmentPrivacyScopeLabel))"
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {

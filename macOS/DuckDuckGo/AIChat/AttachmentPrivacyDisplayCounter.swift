@@ -65,6 +65,7 @@ final class AttachmentPrivacyDisplayCounter {
         guard isEnabled, let storageHandler else { return false }
 
         let current = count
+        Logger.aiChat.debug("Attachment privacy: display requested, count read as \(current, privacy: .public)")
         guard current < Self.cap else { return false }
 
         do {

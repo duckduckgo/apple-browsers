@@ -40,6 +40,61 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         )
     }
 
+    func testCountedDraftSurvivesTabSwitchAndAttachmentRemoval() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(text: "draft", hasCountedAttachmentPrivacyForDraft: true)
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.clearAttachments()
+        sut.activateForTab("tab-B")
+        XCTAssertFalse(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
+        sut.activateForTab("tab-A")
+        XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
+        XCTAssertTrue(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft == true)
+    }
+
+    func testDraftBoundariesResetCountedFlag() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        let countedDraft = TabInputState(text: "draft", toggleMode: .aiChat, hasCountedAttachmentPrivacyForDraft: true)
+        sut.activateForTab("tab-A")
+        for boundary in 0..<5 {
+            sut.applyState(countedDraft)
+            XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
+            switch boundary {
+            case 0: sut.unifiedToggleInputVC(sut.viewController, didChangeText: "")
+            case 1: sut.startNewChat()
+            case 2: sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+            case 3: sut.handleExternalSubmission(.prompt)
+            default: sut.submitProgrammatic(text: "draft")
+            }
+            XCTAssertFalse(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
+            XCTAssertFalse(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft ?? true)
+        }
+    }
+
+    func testEmptyTextWithStagedAttachmentDoesNotResetCountedDraft() {
+        let store = FakeInputStateStore()
+        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "draft.jpg"))
+        store.states["tab-A"] = TabInputState(text: "draft", attachments: [attachment], hasCountedAttachmentPrivacyForDraft: true)
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "")
+        XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
+        sut.clearAttachments()
+        XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
+    }
+
+    func testSubmissionAfterHideClearsStoredCountedDraft() {
+        let store = FakeInputStateStore()
+        store.states["tab-A"] = TabInputState(text: "draft", hasCountedAttachmentPrivacyForDraft: true)
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.hide()
+        sut.handleExternalSubmission(.prompt)
+        XCTAssertFalse(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft ?? true)
+    }
+
     func testEndingEditDoesNotCountReloadedAttachmentsAsANewDisclosure() {
         for submits in [false, true] {
             let tab = Tab(fireTab: true)

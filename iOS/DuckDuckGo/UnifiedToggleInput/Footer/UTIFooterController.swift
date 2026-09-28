@@ -328,6 +328,10 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
     private var displayedScope: DisplayScope?
 
+    /// Travels with the in-memory draft; ending an appearance does not reset it.
+    var hasCountedDraft = false
+    var onDraftCounted: (() -> Void)?
+
     private(set) var isPresented = false
     private(set) var kind: UTIAttachmentPrivacyKind?
 
@@ -353,13 +357,17 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
         let scope = displayScope()
         guard isPresented, displayedScope == nil,
               count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit else { return false }
-        switch scope {
-        case .normal:
-            displayStore.recordDisplay()
-        case .fireTab(let tab):
-            tab?.attachmentPrivacyNoticeDisplayCount += 1
-        }
         displayedScope = scope
+        if !hasCountedDraft {
+            hasCountedDraft = true
+            switch scope {
+            case .normal:
+                displayStore.recordDisplay()
+            case .fireTab(let tab):
+                tab?.attachmentPrivacyNoticeDisplayCount += 1
+            }
+            onDraftCounted?()
+        }
         return true
     }
 

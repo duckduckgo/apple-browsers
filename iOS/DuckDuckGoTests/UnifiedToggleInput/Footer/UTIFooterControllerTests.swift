@@ -388,6 +388,20 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(privacyEventKinds, [.image, .file, .file])
     }
 
+    func testRemovingAndReattachingFiresTwoShownPixelsAndCountsOneDraft() {
+        privacyKind = .image
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        privacyKind = nil
+        sut.refresh()
+        privacyKind = .file
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertEqual(privacyEvents, [.shown, .shown])
+        XCTAssertEqual(privacyEventKinds, [.image, .file])
+    }
+
     func testPrivacyFlagOffDoesNotResolveOrReport() {
         privacyKind = .image
         privacyEnabled = false
@@ -541,14 +555,14 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.resetForPoseChange()
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 2)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
         sut.setSuppressed(true)
         sut.setSuppressed(false)
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
         sut.setEditing(true)
         sut.setEditing(false)
-        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
     }
 
     func testThirdAppearanceSurvivesRefreshAndLinkThenStopsAfterRemoval() {

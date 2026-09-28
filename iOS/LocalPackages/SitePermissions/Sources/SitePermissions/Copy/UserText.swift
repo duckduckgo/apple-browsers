@@ -46,6 +46,26 @@ enum UserText {
             return String(format: format, domain)
         }
 
+        static func locationTitle(domain: String) -> String {
+            let format = NotLocalizedString("sitePermissions.dialog.location.title", bundle: Bundle.module,
+                                            value: "“%@” website wants to access your location",
+                                            comment: "Title shown when a website asks to use location. The placeholder is the website domain.")
+            return String(format: format, domain)
+        }
+
+        static let duckDuckGoSERPLocationTitle = NotLocalizedString(
+            "sitePermissions.dialog.location.duckduckgo-serp.title",
+            bundle: Bundle.module,
+            value: "“duckduckgo.com” wants to access your location",
+            comment: "Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review."
+        )
+        static let duckDuckGoSERPLocationBody = NotLocalizedString(
+            "sitePermissions.dialog.location.duckduckgo-serp.body",
+            bundle: Bundle.module,
+            value: "We’ll anonymize your location and use it to deliver better results, closer to you.",
+            comment: "Explanation shown when DuckDuckGo search results ask to use location. Copy requires review."
+        )
+
         static let allowOnce = NotLocalizedString("sitePermissions.dialog.allow-once", bundle: Bundle.module,
                                                   value: "Allow Once",
                                                   comment: "Button that grants a website permission until the page changes.")
@@ -67,6 +87,12 @@ enum UserText {
             value: "DuckDuckGo couldn’t give microphone access to this site",
             comment: "Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied."
         )
+        static let locationToast = NotLocalizedString(
+            "sitePermissions.recovery.toast.location",
+            bundle: Bundle.module,
+            value: "DuckDuckGo couldn’t share location with this site",
+            comment: "Toast shown when a website was allowed location access but the iOS location prompt was denied."
+        )
         static let cameraAndMicrophoneToast = NotLocalizedString(
             "sitePermissions.recovery.toast.camera-and-microphone",
             bundle: Bundle.module,
@@ -86,6 +112,12 @@ enum UserText {
         static let microphoneBody = NotLocalizedString("sitePermissions.recovery.reminder.microphone.body", bundle: Bundle.module,
                                                        value: "Microphone permissions are needed if you want to use microphone features on this site.",
                                                        comment: "Body of the reminder shown when iOS microphone access is blocked.")
+        static let locationTitle = NotLocalizedString("sitePermissions.recovery.reminder.location.title", bundle: Bundle.module,
+                                                      value: "DuckDuckGo needs to access your location",
+                                                      comment: "Title of the reminder shown when iOS location access is blocked.")
+        static let locationBody = NotLocalizedString("sitePermissions.recovery.reminder.location.body", bundle: Bundle.module,
+                                                     value: "Location permissions are needed if you want to use location features on this site.",
+                                                     comment: "Body of the reminder shown when iOS location access is blocked.")
         static let cameraAndMicrophoneTitle = NotLocalizedString(
             "sitePermissions.recovery.reminder.camera-and-microphone.title",
             bundle: Bundle.module,
@@ -138,12 +170,12 @@ enum UserText {
         static let microphone = NotLocalizedString("sitePermissions.management.microphone", bundle: Bundle.module,
                                                   value: "Microphone",
                                                   comment: "Microphone permission row label.")
+        static let location = NotLocalizedString("sitePermissions.management.location", bundle: Bundle.module,
+                                                 value: "Location",
+                                                 comment: "Location permission row label.")
         static let askEachTime = NotLocalizedString("sitePermissions.management.ask-each-time", bundle: Bundle.module,
                                                    value: "Ask Each Time",
                                                    comment: "Permission picker option that asks again when a site requests access.")
-        static let allowThisTime = NotLocalizedString("sitePermissions.management.allow-this-time", bundle: Bundle.module,
-                                                     value: "Allow This Time",
-                                                     comment: "Checked permission picker option while a one-time grant is active.")
         static let alwaysAllow = NotLocalizedString("sitePermissions.management.always-allow", bundle: Bundle.module,
                                                    value: "Always Allow",
                                                    comment: "Permission picker option that always allows this site.")
@@ -176,8 +208,7 @@ enum UserText {
             case .microphone:
                 return microphone
             case .location:
-                assertionFailure("Location management lands in Phase 6")
-                return ""
+                return location
             }
         }
 
@@ -185,8 +216,6 @@ enum UserText {
             switch option {
             case .askEachTime:
                 return askEachTime
-            case .allowThisTime:
-                return allowThisTime
             case .alwaysAllow:
                 return alwaysAllow
             case .neverAllow:
@@ -207,23 +236,28 @@ enum UserText {
                                            value: "DuckDuckGo needs to access your %@, if you want to use related features on this site.",
                                            comment: "Reminder shown when iOS blocks permissions a site is allowed to use. "
                                                + "The placeholder is a localized list of permission names. Copy requires review.")
-            let list: String
-            switch permissionTypes.intersection([.camera, .microphone]) {
-            case [.camera]:
-                list = NotLocalizedString("sitePermissions.management.reminder.camera", bundle: Bundle.module,
-                                         value: "camera",
-                                         comment: "Camera name in the system-permission reminder sentence.")
-            case [.microphone]:
-                list = NotLocalizedString("sitePermissions.management.reminder.microphone", bundle: Bundle.module,
-                                         value: "microphone",
-                                         comment: "Microphone name in the system-permission reminder sentence.")
-            case [.camera, .microphone]:
-                list = NotLocalizedString("sitePermissions.management.reminder.camera-and-microphone", bundle: Bundle.module,
-                                         value: "camera and microphone",
-                                         comment: "Camera and microphone list in the system-permission reminder sentence. Copy requires review.")
-            default:
-                return nil
-            }
+            let names = [SitePermissionType.camera, .location, .microphone]
+                .filter(permissionTypes.contains)
+                .map { permissionType in
+                    switch permissionType {
+                    case .camera:
+                        return NotLocalizedString("sitePermissions.management.reminder.camera", bundle: Bundle.module,
+                                                 value: "camera",
+                                                 comment: "Camera name in the system-permission reminder sentence.")
+                    case .location:
+                        return NotLocalizedString("sitePermissions.management.reminder.location", bundle: Bundle.module,
+                                                 value: "location",
+                                                 comment: "Location name in the system-permission reminder sentence.")
+                    case .microphone:
+                        return NotLocalizedString("sitePermissions.management.reminder.microphone", bundle: Bundle.module,
+                                                 value: "microphone",
+                                                 comment: "Microphone name in the system-permission reminder sentence.")
+                    }
+                }
+            guard !names.isEmpty else { return nil }
+            let formatter = ListFormatter()
+            formatter.locale = Locale(identifier: Bundle.module.preferredLocalizations.first ?? "en")
+            let list = formatter.string(from: names) ?? names.joined(separator: ", ")
             return String(format: format, list)
         }
     }

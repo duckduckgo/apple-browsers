@@ -41,9 +41,6 @@ class PrintingTests: UITestCase {
         addressBarTextField = app.addressBar
         printMenuItem = app.menuItems.element(matching: .menuItem, identifier: "PDFContextMenu.print")
         saveAsMenuItem = app.menuItems.element(matching: .menuItem, identifier: "PDFContextMenu.saveAs")
-        printDialog = app.sheets.containing(.button, identifier: "Print").firstMatch
-        saveDialog = app.sheets.containing(.button, identifier: "Save").firstMatch
-
         app.enforceSingleWindow()
     }
 
@@ -69,10 +66,7 @@ class PrintingTests: UITestCase {
         try app.clickContextMenuItem(matching: { $0.identifier == "PDFContextMenu.print" })
 
         // Wait for print dialog to appear
-        XCTAssertTrue(
-            printDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Print dialog did not appear in a reasonable timeframe."
-        )
+        printDialog = waitForDialog(containingButton: "Print")
 
         // Cancel the print dialog
         let cancelButton = printDialog.buttons["Cancel"]
@@ -91,10 +85,7 @@ class PrintingTests: UITestCase {
         app.typeKey("p", modifierFlags: [.command])
 
         // Wait for print dialog to appear
-        XCTAssertTrue(
-            printDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Print dialog did not appear in a reasonable timeframe."
-        )
+        printDialog = waitForDialog(containingButton: "Print")
         // Cancel the print dialog
         let cancelButton = printDialog.buttons["Cancel"]
         if cancelButton.exists {
@@ -114,10 +105,7 @@ class PrintingTests: UITestCase {
         try app.clickContextMenuItem(matching: { $0.identifier == "PDFContextMenu.saveAs" })
 
         // Wait for save dialog to appear
-        XCTAssertTrue(
-            saveDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save dialog did not appear in a reasonable timeframe."
-        )
+        saveDialog = waitForDialog(containingButton: "Save")
 
         // Get default save location and create a unique filename
         let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
@@ -172,10 +160,7 @@ class PrintingTests: UITestCase {
         app.typeKey("s", modifierFlags: [.command])
 
         // Wait for save dialog to appear
-        XCTAssertTrue(
-            saveDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save dialog did not appear in a reasonable timeframe."
-        )
+        saveDialog = waitForDialog(containingButton: "Save")
 
         // Get default save location and create a unique filename
         let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
@@ -227,19 +212,13 @@ class PrintingTests: UITestCase {
         app.typeKey("p", modifierFlags: [.command])
 
         // Wait for print dialog to appear
-        XCTAssertTrue(
-            printDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Print dialog did not appear in a reasonable timeframe."
-        )
+        printDialog = waitForDialog(containingButton: "Print")
 
         // Click PDF menu button in print dialog
         chooseSaveAsPDF(in: printDialog)
 
         // Wait for save dialog to appear
-        XCTAssertTrue(
-            saveDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save dialog did not appear in a reasonable timeframe."
-        )
+        saveDialog = waitForDialog(containingButton: "Save")
 
         // Create unique filename for validation test
         let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
@@ -566,6 +545,30 @@ class PrintingTests: UITestCase {
 }
 
 // MARK: - Helper Methods
+
+private extension PrintingTests {
+
+    func waitForDialog(containingButton identifier: String) -> XCUIElement {
+        var dialog: XCUIElement!
+        let appeared = app.wait(for: NSPredicate { _, _ in
+            let sheet = self.app.sheets.containing(.button, identifier: identifier).firstMatch
+            let window = self.app.windows.containing(.button, identifier: identifier).firstMatch
+
+            if sheet.exists {
+                dialog = sheet
+                return true
+            }
+            if window.exists {
+                dialog = window
+                return true
+            }
+            return false
+        }, timeout: UITests.Timeouts.elementExistence)
+
+        XCTAssertTrue(appeared, "Dialog containing \(identifier) did not appear in a reasonable timeframe.")
+        return dialog
+    }
+}
 
 private extension PrintingTests {
 

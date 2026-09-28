@@ -44,6 +44,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
 import RemoteMessaging
+import SitePermissions
 import Subscription
 import Suggestions
 import SwiftUI
@@ -217,6 +218,7 @@ class MainViewController: UIViewController {
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isDownloadMenuAlertVisible: Bool?
+    private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
     }
@@ -3924,7 +3926,7 @@ class MainViewController: UIViewController {
     }
     
     private func showNoMicrophonePermissionAlert() {
-        let isRedesigned = featureFlagger.isFeatureOn(.sitePermissions)
+        let isRedesigned = tabManager.isSitePermissionsEnabled
         guard isRedesigned else {
             let alertController = NoMicPermissionAlert.build(isRedesigned: false) { _ in }
             present(alertController, animated: true, completion: nil)
@@ -4516,7 +4518,7 @@ class MainViewController: UIViewController {
     /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
     private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
-            isSitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
             onAction: { [weak self] action in
                 self?.dismiss(animated: true) {
@@ -5563,7 +5565,7 @@ extension MainViewController: OmniBarDelegate {
             case .fire:
                 browsingMenu.highlightFireButton()
 
-            case .openBookmarks:
+            case .openBookmarks, .sitePermissions:
                 break
             }
         }
@@ -7304,6 +7306,21 @@ extension MainViewController: TabDelegate {
     func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: TabViewController) {
         guard currentTab === tab else { return }
         viewCoordinator.omniBar?.showYouTubeAdBlockNotification()
+    }
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        guard currentTab === tab else { return }
+        let orderedPermissionTypes = SitePermissionType.allCases.filter(permissionTypes.contains)
+        sitePermissionAnimationTab = tab
+        viewCoordinator.menuToolbarButton.animateSitePermissionGranted(orderedPermissionTypes)
+        viewCoordinator.omniBar.barView.menuButton.animateSitePermissionGranted(orderedPermissionTypes)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        guard sitePermissionAnimationTab === tab else { return }
+        viewCoordinator.menuToolbarButton.cancelSitePermissionAnimation()
+        viewCoordinator.omniBar.barView.menuButton.cancelSitePermissionAnimation()
+        sitePermissionAnimationTab = nil
     }
 
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController) {

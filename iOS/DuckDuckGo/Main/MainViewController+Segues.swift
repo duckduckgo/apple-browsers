@@ -549,10 +549,12 @@ extension MainViewController {
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   whatsNewCoordinator: whatsNewCoordinator,
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
-                                                  adBlockingAvailability: adBlockingAvailability)
+                                                  adBlockingAvailability: adBlockingAvailability,
+                                                  sitePermissionsEnabled: tabManager.isSitePermissionsEnabled)
 
         settingsViewModel.configureSitePermissions(
             store: tabManager.sitePermissionsStore,
+            favicons: tabManager.sitePermissionsFavicons,
             eventHandler: { [sitePermissionsPixelHandler = tabManager.sitePermissionsPixelHandler] event in
                 sitePermissionsPixelHandler.fire(event)
             },

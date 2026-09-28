@@ -23,13 +23,20 @@ import WebKit
 
 /// A wrapper for the PDF HUD window with Zoom controls, Download and Open in Preview buttons
 /// Used to trigger Save PDF
+///
+/// Before macOS 27 the HUD is an Obj-C `WKPDFHUDView` drawing its controls with CALayers and toggling visibility with `_setVisible:`.
+/// Since macOS 27 (WebKit 309541@main) the HUD is a Swift `WKDefaultPDFHUDView` (or `WKAlternatePDFHUDView`) using NSButtons;
+/// `WKPDFHUDView` became a protocol and `_setVisible:` was replaced with `show`.
 struct WKPDFHUDViewWrapper {
 
-    static let WKPDFHUDViewClass: AnyClass? = NSClassFromString("WKPDFHUDView")
+    static let hudViewClasses: [AnyClass] = ["WKPDFHUDView", "WKDefaultPDFHUDView", "WKAlternatePDFHUDView"].compactMap(NSClassFromString)
+
     static let performActionForControlSelector = NSSelectorFromString("_performActionForControl:")
+    // macOS 27+
+    static let showSelector = NSSelectorFromString("show")
+    // Legacy (pre-macOS 27) `WKPDFHUDView`
     static let visibleKey = "_visible"
     static let setVisibleSelector = NSSelectorFromString("_setVisible:")
-    static let showSelector = NSSelectorFromString("show")
 
     private enum ControlId: String {
         case savePDF = "arrow.down.circle"
@@ -39,24 +46,26 @@ struct WKPDFHUDViewWrapper {
 
     private let hudView: NSView
 
-    var isVisible: Bool {
-        get {
-            hudView.layer?.sublayers?.first?.opacity ?? 0 > 0
-        }
-        nonmutating set {
-            guard hudView.responds(to: Self.setVisibleSelector) else { return }
-            hudView.perform(Self.setVisibleSelector, with: newValue)
-        }
+    private var isLegacyHUDView: Bool {
+        hudView.responds(to: Self.setVisibleSelector)
     }
 
-    /// Create a wrapper over the PDF HUD view validating its class is `WKPDFHUDView`
-    /// - parameter view: the WKPDFHUDView to wrap
-    /// - returns nil if the view
-    init?(view: NSView) {
-        guard type(of: view) == Self.WKPDFHUDViewClass else { return nil }
+    static func isHUDView(_ view: NSView) -> Bool {
+        hudViewClasses.contains { type(of: view) == $0 }
+    }
 
-        guard Self.WKPDFHUDViewClass?.instancesRespond(to: Self.performActionForControlSelector) == true else {
-            assertionFailure("WKPDFHUDView doesn‘t respond to _performActionForControl:")
+    /// Create a wrapper over the PDF HUD view validating its class is one of the known PDF HUD view classes
+    /// - parameter view: the PDF HUD view to wrap or its subview (macOS 27+ HUD hit-tests to its NSButtons)
+    /// - returns nil if the view is not a PDF HUD view or its subview
+    init?(view: NSView) {
+        var view: NSView = view
+        while !Self.isHUDView(view) {
+            guard !(view is WKWebView), let superview = view.superview else { return nil }
+            view = superview
+        }
+
+        guard view.responds(to: Self.performActionForControlSelector) else {
+            assertionFailure("\(type(of: view)) doesn‘t respond to _performActionForControl:")
             return nil
         }
         self.hudView = view
@@ -66,7 +75,7 @@ struct WKPDFHUDViewWrapper {
     /// 
     /// Used to get PDF controls view of a clicked WebView frame for `Print…` and `Save As…` PDF context menu commands
     static func getPdfHudView(in webView: WKWebView, at location: NSPoint? = nil) -> Self? {
-        guard let hudView = webView.subviews.last(where: { type(of: $0) == Self.WKPDFHUDViewClass && $0.frame.contains(location ?? $0.frame.origin) }) else {
+        guard let hudView = webView.subviews.last(where: { isHUDView($0) && $0.frame.contains(location ?? $0.frame.origin) }) else {
 #if DEBUG
             if AppVersion.runType == .normal {
                 Task {
@@ -94,15 +103,19 @@ struct WKPDFHUDViewWrapper {
     }
 
     private func performAction(for controlId: ControlId) {
-        // WebKit's NSButton-based HUD exposes show(), and no longer has the _visible ivar.
-        // Its button actions require the HUD to be visible; show() also schedules it to hide.
-        if !hudView.responds(to: Self.setVisibleSelector), hudView.responds(to: Self.showSelector) {
-            hudView.perform(Self.showSelector)
+        guard isLegacyHUDView else {
+            // macOS 27+: `WKDefaultPDFHUDView` ignores control actions while its bar is auto-hidden
+            // and there‘s no ivar to toggle, so show the HUD (it auto-hides again after a delay)
+            if hudView.responds(to: Self.showSelector) {
+                hudView.perform(Self.showSelector)
+            } else {
+                assertionFailure("\(type(of: hudView)) doesn‘t respond to show")
+            }
             hudView.perform(Self.performActionForControlSelector, with: controlId.rawValue)
             return
         }
 
-        let wasVisible = isVisible
+        let wasVisible = isLegacyHUDVisible
         self.setIsVisibleIVar(true)
         defer {
             if !wasVisible {
@@ -110,6 +123,10 @@ struct WKPDFHUDViewWrapper {
             }
         }
         hudView.perform(Self.performActionForControlSelector, with: controlId.rawValue)
+    }
+
+    private var isLegacyHUDVisible: Bool {
+        hudView.layer?.sublayers?.first?.opacity ?? 0 > 0
     }
 
     // try to set _visible ivar value directly to avoid actually showing the HUD
@@ -120,7 +137,7 @@ struct WKPDFHUDViewWrapper {
             }
         } catch {
             assertionFailure("\(error)")
-            self.isVisible = value
+            hudView.perform(Self.setVisibleSelector, with: value)
         }
     }
 

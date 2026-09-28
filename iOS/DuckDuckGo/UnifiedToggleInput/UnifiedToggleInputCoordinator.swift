@@ -2003,10 +2003,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             showCollapsed()
         }
         if let userScript {
-            let didSendBridgeMessage = userScript.canDispatchBridgeMessages
-            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest)
-            delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
-            recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+            let origin = pixelReporter.currentPromptOrigin()
+            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools,
+                                    reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest,
+                                    onPromptDispatched: { [weak self] in
+                self?.delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: origin)
+                self?.recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: true)
+            })
         } else {
             delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)

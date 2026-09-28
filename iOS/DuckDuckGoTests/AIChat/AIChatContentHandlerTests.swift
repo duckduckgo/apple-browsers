@@ -895,7 +895,8 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
-                      tabAttachmentRequest: MultiTabAttachmentRequest?) {
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext

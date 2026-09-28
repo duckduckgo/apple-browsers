@@ -258,9 +258,11 @@ final class AIChatContextualWebViewController: UIViewController {
                       tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if canDeliverPrompt {
-            let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
-            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort, tabAttachmentRequest: tabAttachmentRequest)
-            utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+                                             pageContext: pageContext, reasoningEffort: reasoningEffort,
+                                             tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: { [weak self] in
+                self?.utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: true)
+            })
         } else {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingRichPrompt?.tabAttachmentRequest?.cancel()
@@ -467,7 +469,6 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func submitPromptNow(_ richPrompt: PendingRichPrompt) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending rich prompt now")
-        let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
         aiChatContentHandler.submitPrompt(richPrompt.prompt,
                                          images: richPrompt.images,
                                          files: richPrompt.files,
@@ -475,8 +476,10 @@ final class AIChatContextualWebViewController: UIViewController {
                                          tools: richPrompt.tools,
                                          pageContext: richPrompt.pageContext,
                                          reasoningEffort: richPrompt.reasoningEffort,
-                                         tabAttachmentRequest: richPrompt.tabAttachmentRequest)
-        utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
+                                         tabAttachmentRequest: richPrompt.tabAttachmentRequest,
+                                         onPromptDispatched: { [weak self] in
+            self?.utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: true)
+        })
     }
 
     // MARK: - URL Observation

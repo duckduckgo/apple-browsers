@@ -83,6 +83,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
@@ -91,7 +92,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         self.startsPreSubmit = start.isPreSubmit
         self.usesFloatingInput = isFloatingInputAvailable
         self.hasDeliveredFirstPrompt = !start.isPreSubmit
-        let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+        let wideEventInstrumentation = duckAIWideEventInstrumentation ?? DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
         self.duckAIWideEventInstrumentation = wideEventInstrumentation

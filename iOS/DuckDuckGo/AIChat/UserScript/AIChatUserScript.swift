@@ -407,10 +407,15 @@ final class AIChatUserScript: NSObject, Subfeature {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
-                      tabAttachmentRequest: MultiTabAttachmentRequest?) {
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)? = nil) {
         let currentPageContext = pageContext ?? attachedPageContextProvider?()
         let selections = attachedSelectionsPayload
-        submitWithTabContexts(currentPageContext: currentPageContext, request: tabAttachmentRequest, didSubmit: onPromptSubmitted) { context in
+        let onPromptSubmitted = onPromptSubmitted
+        submitWithTabContexts(currentPageContext: currentPageContext, request: tabAttachmentRequest, didSubmit: {
+            onPromptSubmitted?()
+            onPromptDispatched?()
+        }, makePayload: { context in
             AIChatNativePrompt.queryPrompt(
                 prompt,
                 autoSubmit: true,
@@ -421,7 +426,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                 pageContext: context,
                 selections: selections,
                 reasoningEffort: reasoningEffort)
-        }
+        })
     }
 
     private func submitWithTabContexts(currentPageContext: AIChatPageContextData?,
@@ -429,7 +434,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                                        didSubmit: (() -> Void)? = nil,
                                        makePayload: @escaping (AIChatPageContextPayload?) -> AIChatNativePrompt) {
         guard request != nil || pendingTabContextSubmission != nil else {
-            pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single)))
+            guard pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single))) else { return }
             didSubmit?()
             return
         }

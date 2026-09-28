@@ -49,7 +49,8 @@ protocol AIChatUserScriptProviding: AnyObject {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
-                      tabAttachmentRequest: MultiTabAttachmentRequest?)
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)?)
     func submitStartChatAction()
     func cancelPendingTabContextSubmission()
     func submitOpenSettingsAction()
@@ -65,9 +66,11 @@ extension AIChatUserScriptProviding {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
-                      reasoningEffort: AIChatReasoningEffort?) {
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
         submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
-                     pageContext: pageContext, reasoningEffort: reasoningEffort, tabAttachmentRequest: nil)
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: nil)
     }
 
     func submitPrompt(_ prompt: String) {
@@ -133,7 +136,8 @@ protocol AIChatContentHandling: AnyObject {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
-                      tabAttachmentRequest: MultiTabAttachmentRequest?)
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() async
@@ -174,9 +178,11 @@ extension AIChatContentHandling {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
-                      reasoningEffort: AIChatReasoningEffort?) {
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
         submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
-                     pageContext: pageContext, reasoningEffort: reasoningEffort, tabAttachmentRequest: nil)
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: nil)
     }
 
     func submitPrompt(_ prompt: String) {
@@ -345,13 +351,15 @@ final class AIChatContentHandler: AIChatContentHandling {
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
-                      tabAttachmentRequest: MultiTabAttachmentRequest?) {
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)? = nil) {
         guard let userScript else {
             Task { @MainActor in tabAttachmentRequest?.cancel() }
             return
         }
         userScript.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
-                                pageContext: pageContext, reasoningEffort: reasoningEffort, tabAttachmentRequest: tabAttachmentRequest)
+                                pageContext: pageContext, reasoningEffort: reasoningEffort,
+                                tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: onPromptDispatched)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.

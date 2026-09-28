@@ -434,6 +434,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Bound-chat prompt submission reporting
 
     func testWhenPromptGoesToBoundChatThenTheSubmissionIsReportedOnce() {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true,
+                                            duckAIWideEventInstrumentation: instrumentation)
+        sut.delegate = mockDelegate
+        sut.activateForTab("tab-A")
         sut.duckAIEntrySourceProvider = { .addressBarIcon }
         let userScript = makeBridgeReadyUserScript()
         sut.bindToTab(userScript, hasExistingChat: true)
@@ -442,6 +447,10 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, [.addressBarIcon])
         XCTAssertNil(mockDelegate.submittedPrompt, "A bound chat takes the prompt directly, without navigation")
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, 1)
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.scope, .tab("tab-A"))
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.wasQueued, false)
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.didSendBridgeMessage, true)
     }
 
     func testWhenNoChatIsBoundThenTheSubmissionIsNotReportedAsBoundChat() {
@@ -449,6 +458,96 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
         XCTAssertEqual(mockDelegate.submittedPrompt, "a new prompt")
+    }
+
+    func testWhenTabContextIsPendingThenDeliveryIsReportedOnlyAfterDispatch() async {
+        await assertDeferredPromptReporting(expectedDelivery: true)
+    }
+
+    func testWhenPendingPromptIsStoppedThenDeliveryIsNotReported() async {
+        await assertDeferredPromptReporting(expectedDelivery: false) { _ in
+            self.sut.didPressStopGeneratingButton.send()
+        }
+    }
+
+    func testWhenNewChatCancelsPendingPromptThenDeliveryIsNotReported() async {
+        await assertDeferredPromptReporting(expectedDelivery: false) { script in
+            script.submitStartChatAction()
+        }
+    }
+
+    func testWhenWebViewChangesBeforeDispatchThenDeliveryIsNotReported() async {
+        let replacement = WKWebView()
+        await assertDeferredPromptReporting(expectedDelivery: false) { script in
+            script.webView = replacement
+        }
+    }
+
+    func testWhenBrokerIsRemovedBeforeDispatchThenDeliveryIsNotReported() async {
+        await assertDeferredPromptReporting(expectedDelivery: false) { script in
+            script.broker = nil
+        }
+    }
+
+    func testWhenImmediatePromptCannotDispatchThenDeliveryIsNotReported() {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true,
+                                            duckAIWideEventInstrumentation: instrumentation)
+        sut.delegate = mockDelegate
+        sut.activateForTab("tab-A")
+        let userScript = makeBridgeReadyUserScript()
+        userScript.broker = nil
+        sut.bindToTab(userScript, hasExistingChat: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertTrue(instrumentation.promptDeliveryUpdates.isEmpty)
+    }
+
+    private func assertDeferredPromptReporting(expectedDelivery: Bool,
+                                              invalidate: (AIChatUserScript) -> Void = { _ in }) async {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let scope = DuckAIWideEventFlowScope.contextual(UUID())
+        sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                            duckAIWideEventInstrumentation: instrumentation,
+                                            duckAIWideEventFlowScope: scope)
+        sut.delegate = mockDelegate
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        let started = expectation(description: "Waiting for tab context")
+        let submitted = expectation(description: "Existing submission callback")
+        submitted.isInverted = !expectedDelivery
+        var continuation: CheckedContinuation<[AIChatPageContextData], Never>?
+        userScript.attachedTabContextsProvider = {
+            MultiTabAttachmentRequest(contexts: {
+                await withCheckedContinuation {
+                    continuation = $0
+                    started.fulfill()
+                }
+            }, didConsume: {})
+        }
+        userScript.onPromptSubmitted = { submitted.fulfill() }
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+        await fulfillment(of: [started], timeout: 1)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [scope])
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertTrue(instrumentation.promptDeliveryUpdates.isEmpty)
+
+        invalidate(userScript)
+        continuation?.resume(returning: [])
+        await fulfillment(of: [submitted], timeout: expectedDelivery ? 1 : 0.1)
+
+        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, expectedDelivery ? [.contextualChat] : [])
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, expectedDelivery ? 1 : 0)
+        if expectedDelivery {
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.scope, scope)
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.wasQueued, false)
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.didSendBridgeMessage, true)
+        }
     }
 
     // MARK: - Recovery Picker Session Pixels

@@ -216,6 +216,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
+    private lazy var attachmentPrivacyCounter = AttachmentPrivacyDisplayCounter(storageHandler: duckAiNativeStorageHandler)
+
+    /// Whether the disclosure was granted for the prompt currently being composed. `nil` until it
+    /// is asked for. Counting is per prompt, so a granted display survives swapping or removing the
+    /// attachment and only resets when the composition ends.
+    private var attachmentPrivacyGrant: Bool?
+
     /// Only the exposed band counts; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
         isUsageWarningVisible ? AIChatUsageWarningCardView.Constants.contentHeight : 0
@@ -1214,6 +1221,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onOpenModelPicker = { [weak self] in
             self?.omnibarController.usageWarningViewModel?.openModelPicker()
         }
+        usageWarningCardView.onLearnMore = { [weak self] in
+            self?.openAttachmentPrivacyLearnMore()
+        }
+        omnibarController.onPromptSubmitted = { [weak self] in
+            self?.resetAttachmentPrivacyComposition()
+        }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
@@ -1251,6 +1264,23 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
+
+        // Required > Action > Informational, then priority within type. Out of usage is Required
+        // because it is the reason Send is disabled, so it outranks the disclosure; the two only
+        // meet at all because a drop can stage an attachment while the input is blocked.
+        if let warning, warning.blocksInput {
+            usageWarningCardView.update(with: warning)
+            currentUsageWarningExposure = DuckAiUsageWarningExposure(warning: warning)
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
+        if shouldShowAttachmentPrivacyDisclosure {
+            usageWarningCardView.updateForAttachmentPrivacy()
+            // Not a usage message, so nothing here is an impression.
+            currentUsageWarningExposure = nil
+            setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+            return
+        }
         if let createImageModelSwitchNotice {
             usageWarningCardView.update(with: createImageModelSwitchNotice)
             // Not a usage message, so nothing here is an impression — and leaving the last one set
@@ -1266,6 +1296,42 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             return
         }
         applyHighUsageNotice()
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    /// Images and files only — a page-context chip is not a file and nothing is scanned, so the
+    /// claim would not apply.
+    private var hasStagedFileOrImageAttachment: Bool {
+        !omnibarController.activeImageAttachments.isEmpty || !omnibarController.activeFileAttachments.isEmpty
+    }
+
+    /// Asks the counter once per composition, then keeps the answer. Without that the disclosure
+    /// would vanish mid-flow for a user on their last display who swaps the file.
+    private var shouldShowAttachmentPrivacyDisclosure: Bool {
+        // No attachment staged: nothing to show, but the grant is kept — removing one does not end
+        // the composition, so re-attaching must not spend another display.
+        guard hasStagedFileOrImageAttachment else { return false }
+
+        if let attachmentPrivacyGrant {
+            return attachmentPrivacyGrant
+        }
+        let granted = attachmentPrivacyCounter.consumeDisplay()
+        attachmentPrivacyGrant = granted
+        return granted
+    }
+
+    /// The composition ended, so the next attachment asks the counter again.
+    private func resetAttachmentPrivacyComposition() {
+        attachmentPrivacyGrant = nil
+    }
+
+    /// A new tab, so the staged attachment and the draft survive.
+    private func openAttachmentPrivacyLearnMore() {
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
+                                                              source: .ui,
+                                                              newTab: true,
+                                                              selected: true)
     }
 
     /// Spent allowance: the whole input goes inert so the card is the only thing left to act on,
@@ -2103,6 +2169,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let isFull = omnibarController.isActiveTabImageAttachmentsFull
 
         omnibarController.hasImageAttachments = hasAttachments
+
+        // The disclosure's trigger is a staged image or file, and this runs for every change to
+        // that set — the attach menu, the file picker and drag & drop all land here.
+        refreshUsageCard()
 
         // Image thumbnails and tab cards share the carousel's row, so the row's height is driven
         // jointly through `updateAttachmentsCarouselLayout()` (single source of truth for the row).

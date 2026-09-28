@@ -666,12 +666,14 @@ extension AIChatViewController {
 
         let windowControllersManager = NSApp.delegateTyped.windowControllersManager
         // Resolved through this sidebar's window: a pinned host tab is in every window's collection.
-        let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager) { [weak self] in
+        let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager,
+                                                    onClose: { [weak self] in self?.hideBrowserToolsDebugPanel() },
+                                                    ownerTabProvider: { [weak self] in
             guard let self, let tabID,
                   let collection = AIChatTabPickerSource.ownerCollection(for: aiTab.webView, ownerTabID: tabID, in: windowControllersManager),
                   let index = collection.indexInAllTabs(where: { $0.uuid == tabID }) else { return nil }
             return collection.materialize(at: index)
-        }
+        })
         addChild(panel)
         panel.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(panel.view)
@@ -682,6 +684,15 @@ extension AIChatViewController {
             panel.view.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor),
             panel.view.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         ])
+    }
+
+    /// The session outlives tab switches, so the panel would otherwise stay until the sidebar closes.
+    private func hideBrowserToolsDebugPanel() {
+        for child in children where child is BrowserToolsDebugViewController {
+            child.view.removeFromSuperview()
+            child.removeFromParent()
+        }
+        webViewContainer.isHidden = false
     }
 }
 #endif

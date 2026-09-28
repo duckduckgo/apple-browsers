@@ -518,12 +518,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
     case aiChatChromeMenuButtonIPad
 
-    /// Warns Duck.ai users in the unified toggle input as they approach their usage limits, using the
-    /// snapshot the web app writes into the reserved `usageLimits` native-storage entry.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511214?focus=true
     case utiDuckAIWarnings
 
-    /// Shows the Duck.ai Terms of Service disclaimer in the unified toggle input, where sending a
-    /// prompt accepts them, and tells the web app it can trust prompts accepted that way.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
     case duckAINativeTermsOfService
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true

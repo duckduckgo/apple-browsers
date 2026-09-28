@@ -58,6 +58,7 @@ public struct WebExtensionNavigationGate {
 public final class WebExtensionLifecycleCoordinator {
 
     private let manager: WebExtensionManaging
+    private let initialLoadGateEnabledProvider: @MainActor () -> Bool
     private let enabledTypesProvider: @MainActor () -> Set<DuckDuckGoWebExtensionType>
     private let pixelFiring: WebExtensionPixelFiring
 
@@ -82,7 +83,7 @@ public final class WebExtensionLifecycleCoordinator {
     }
 
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
-        guard initialLoadAndSync != nil else { return nil }
+        guard initialLoadGateEnabledProvider(), initialLoadAndSync != nil else { return nil }
         return { [weak self] in
             await self?.waitOnInitialLoadAndSync()
         }
@@ -93,9 +94,11 @@ public final class WebExtensionLifecycleCoordinator {
     private var generation = 0
 
     public init(manager: WebExtensionManaging,
+                initialLoadGateEnabledProvider: @escaping @MainActor () -> Bool = { true },
                 enabledTypesProvider: @escaping @MainActor () -> Set<DuckDuckGoWebExtensionType>,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         self.manager = manager
+        self.initialLoadGateEnabledProvider = initialLoadGateEnabledProvider
         self.enabledTypesProvider = enabledTypesProvider
         self.pixelFiring = pixelFiring
     }
@@ -116,10 +119,12 @@ public final class WebExtensionLifecycleCoordinator {
             guard !Task.isCancelled else { return }
             await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
             guard !Task.isCancelled else { return }
-            // Loading the context is not enough: WebKit must also restore its background listeners
-            // before a restored page starts, otherwise document-start extension work can be missed.
-            await self.manager.loadEmbeddedExtensionBackgroundContent()
-            guard !Task.isCancelled else { return }
+            if self.initialLoadGateEnabledProvider() {
+                // Loading the context is not enough: WebKit must also restore its background listeners
+                // before a restored page starts, otherwise document-start extension work can be missed.
+                await self.manager.loadEmbeddedExtensionBackgroundContent()
+                guard !Task.isCancelled else { return }
+            }
             self.reportConsistency()
         }
         pendingLoadAndSync = task

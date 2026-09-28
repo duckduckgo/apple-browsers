@@ -36,6 +36,7 @@ let package = Package(
             targets: ["Onboarding"]),
     ],
     dependencies: [
+        .package(path: "../Infrastructure/AssetCatalogPlugin"),
         .package(path: "../Common"),
         .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
@@ -67,6 +68,10 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ],
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]
         ),
         .testTarget(

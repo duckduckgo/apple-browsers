@@ -35,6 +35,7 @@ let package = Package(
         .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/Infrastructure/AssetCatalogPlugin"),
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.6.1"),
         .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
@@ -148,6 +149,10 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ],
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]
         ),
 

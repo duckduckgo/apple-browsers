@@ -134,6 +134,29 @@ jobs:
         check_name: "Test Report: Shell Scripts"
         report_paths: 'bats-tests.xml'
 
+  asset-catalog-plugin:
+
+    name: Check AssetCatalogPlugin usage
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
+    steps:
+    - name: Check out the code
+      if: github.event_name == 'pull_request' || github.event_name == 'push'
+      uses: actions/checkout@v6
+
+    - name: Check out the code
+      if: github.event_name != 'pull_request' && github.event_name != 'push'
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Check that package targets with asset catalogs use AssetCatalogPlugin
+      run: scripts/check_asset_catalog_plugin.sh ..
+
   tests:
     name: Test
 
@@ -838,7 +861,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
+    needs: [bats, asset-catalog-plugin, tests, release-build, verify-npm-bundles, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
@@ -859,7 +882,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
+    needs: [bats, asset-catalog-plugin, tests, release-build, verify-npm-bundles, private-api]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 

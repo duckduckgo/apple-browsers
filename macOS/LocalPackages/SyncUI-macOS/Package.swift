@@ -19,6 +19,7 @@ let package = Package(
             targets: ["SyncUI-macOS"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/Infrastructure/AssetCatalogPlugin"),
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
@@ -43,7 +44,11 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ] + (forceDebugForSnapshots ? [.define("DEBUG")] : [])
+            ] + (forceDebugForSnapshots ? [.define("DEBUG")] : []),
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
+            ]
         ),
         .testTarget(
             name: "SyncUI-macOSTests",

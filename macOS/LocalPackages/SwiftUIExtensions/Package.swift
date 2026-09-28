@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "SwiftUIExtensions", targets: ["SwiftUIExtensions"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/Infrastructure/AssetCatalogPlugin"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
         .package(path: "../../../SharedPackages/UIComponents"),
         .package(path: "../../../SharedPackages/Common"),
@@ -24,6 +25,10 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ],
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]
         ),
     ]

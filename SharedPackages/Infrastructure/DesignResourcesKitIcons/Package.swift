@@ -31,6 +31,9 @@ let package = Package(
             name: "DesignResourcesKitIcons",
             targets: ["DesignResourcesKitIcons"]),
     ],
+    dependencies: [
+        .package(path: "../AssetCatalogPlugin"),
+    ],
     targets: [
         .target(
             name: "DesignResourcesKitIcons",
@@ -39,8 +42,15 @@ let package = Package(
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")
+            ],
+            plugins: [
+                // Compiles the catalog for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]
         ),
-
+        .testTarget(
+            name: "DesignResourcesKitIconsTests",
+            dependencies: ["DesignResourcesKitIcons"]
+        ),
     ]
 )

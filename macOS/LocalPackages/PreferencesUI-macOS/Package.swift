@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "PreferencesUI-macOS", targets: ["PreferencesUI-macOS"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/Infrastructure/AssetCatalogPlugin"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit")
     ],
@@ -26,6 +27,10 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
+            ],
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]
         ),
     ]

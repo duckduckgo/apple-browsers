@@ -14,6 +14,7 @@ let package = Package(
             targets: ["PerformanceTest"])
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/Infrastructure/AssetCatalogPlugin"),
         // Add NetworkQualityMonitor dependency
         .package(path: "../NetworkQualityMonitor")
     ],
@@ -24,6 +25,10 @@ let package = Package(
             resources: [
                 .process("Resources"),
                 .copy("SafariTestRunner")
+            ],
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]),
         .testTarget(
             name: "PerformanceTestTests",

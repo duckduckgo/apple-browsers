@@ -32,6 +32,7 @@ let package = Package(
             targets: ["UIComponents"]),
     ],
     dependencies: [
+        .package(path: "../Infrastructure/AssetCatalogPlugin"),
         .package(path: "../Infrastructure/DesignResourcesKit"),
         .package(path: "../Infrastructure/DesignResourcesKitIcons")
     ],
@@ -44,6 +45,10 @@ let package = Package(
             ],
             resources: [
                 .process("Resources/Assets.xcassets")
+            ],
+            plugins: [
+                // Compiles asset catalogs for `swift build`; Xcode does it itself
+                .plugin(name: "AssetCatalogPlugin", package: "AssetCatalogPlugin")
             ]
         ),
         .testTarget(

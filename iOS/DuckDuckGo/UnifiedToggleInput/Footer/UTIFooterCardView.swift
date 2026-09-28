@@ -42,6 +42,7 @@ final class UTIFooterCardView: UIView {
 
     var onPrimaryTap: (() -> Void)?
     var onDismissTap: (() -> Void)?
+    var onLinkTap: ((URL) -> Void)?
 
     let contentView = UIView()
 
@@ -49,7 +50,9 @@ final class UTIFooterCardView: UIView {
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
     private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
     private let modelSwitchIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.importExport)
+    private let shieldIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.shieldCheck)
     private let titleLabel = UILabel()
+    private let linkTextView = UTIFooterLinkTextView()
     private let subtitleLabel = UILabel()
     private let actionButton = UTIFooterActionButton()
     private let dismissButton = UIButton(type: .system)
@@ -70,34 +73,23 @@ final class UTIFooterCardView: UIView {
     }
 
     func configure(with message: UTIFooterMessage, animateIcon: Bool) {
+        let visibleIcon: UIView?
         switch message.icon {
         case .none:
-            usageRing.isHidden = true
-            alertIcon.isHidden = true
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = true
+            visibleIcon = nil
         case .usageRing(let progress, let severity):
-            usageRing.isHidden = false
-            alertIcon.isHidden = true
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = true
+            visibleIcon = usageRing
             usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
-            usageRing.isHidden = true
-            alertIcon.isHidden = false
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = true
+            visibleIcon = alertIcon
         case .info:
-            usageRing.isHidden = true
-            alertIcon.isHidden = true
-            infoIcon.isHidden = false
-            modelSwitchIcon.isHidden = true
+            visibleIcon = infoIcon
         case .modelSwitch:
-            usageRing.isHidden = true
-            alertIcon.isHidden = true
-            infoIcon.isHidden = true
-            modelSwitchIcon.isHidden = false
+            visibleIcon = modelSwitchIcon
+        case .shield:
+            visibleIcon = shieldIcon
         }
+        allIcons.forEach { $0.isHidden = $0 !== visibleIcon }
         let hasIcon = message.icon != UTIFooterMessage.Icon.none
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
@@ -106,6 +98,12 @@ final class UTIFooterCardView: UIView {
         let isStandaloneCopy = message.subtitle == nil
         titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
         titleLabel.text = message.title
+        // A label can't take a tap on part of its text, so copy carrying a link renders in the text view.
+        titleLabel.isHidden = message.link != nil
+        linkTextView.isHidden = message.link == nil
+        if let link = message.link {
+            linkTextView.configure(text: message.title, link: link)
+        }
 
         subtitleLabel.numberOfLines = message.icon == .modelSwitch ? 3 : (message.primaryAction == nil ? 2 : 1)
         subtitleLabel.text = message.subtitle
@@ -137,6 +135,10 @@ final class UTIFooterCardView: UIView {
         onDismissTap?()
     }
 
+    private var allIcons: [UIView] {
+        [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon]
+    }
+
 }
 
 // MARK: - Setup
@@ -153,7 +155,7 @@ private extension UTIFooterCardView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentView)
 
-        [usageRing, alertIcon, infoIcon, modelSwitchIcon].forEach {
+        allIcons.forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.setContentHuggingPriority(.required, for: .horizontal)
             $0.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -163,7 +165,8 @@ private extension UTIFooterCardView {
         alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
         infoIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Info"
         modelSwitchIcon.accessibilityIdentifier = "AIChat.Footer.Icon.ModelSwitch"
-        [alertIcon, infoIcon, modelSwitchIcon].forEach {
+        shieldIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Shield"
+        [alertIcon, infoIcon, modelSwitchIcon, shieldIcon].forEach {
             $0.contentMode = .scaleAspectFit
             $0.isHidden = true
         }
@@ -183,7 +186,11 @@ private extension UTIFooterCardView {
         subtitleLabel.font = .daxCaption1()
         subtitleLabel.accessibilityIdentifier = "AIChat.Footer.Label.Subtitle"
 
-        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        linkTextView.accessibilityIdentifier = "AIChat.Footer.Label.Link"
+        linkTextView.isHidden = true
+        linkTextView.onLinkTap = { [weak self] url in self?.onLinkTap?(url) }
+
+        let textStack = UIStackView(arrangedSubviews: [titleLabel, linkTextView, subtitleLabel])
         textStack.axis = .vertical
         // `.fill`, not `.leading`: a leading-aligned label keeps the width its own content was last
         // measured at, and this card is measured at the flanked width too, where there is no room.
@@ -205,7 +212,6 @@ private extension UTIFooterCardView {
         contentView.addSubview(dismissButton)
 
         let contentTop = contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.overlap + Constants.contentTopGap)
-        contentTop.priority = .defaultHigh
 
         let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
         actionCollapsedWidthConstraint = actionCollapsedWidth
@@ -248,6 +254,11 @@ private extension UTIFooterCardView {
             modelSwitchIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             modelSwitchIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            shieldIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            shieldIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            shieldIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            shieldIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
             iconTextGap,
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
             textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
@@ -276,6 +287,8 @@ private extension UTIFooterCardView {
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         infoIcon.tintColor = UIColor(designSystemColor: .icons)
         modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)
+        shieldIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        linkTextView.applyColors()
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()
     }
@@ -370,5 +383,95 @@ final class UTIFooterActionButton: UIView {
 
     @objc private func primaryTapped() {
         onPrimaryTap?()
+    }
+}
+
+// MARK: - Link text
+
+/// Uses the text view's rendered link rectangles for touch routing, including wrapped and RTL text.
+final class UTIFooterLinkTextView: UITextView {
+    private static let hitSlop: CGFloat = 8
+    var onLinkTap: ((URL) -> Void)?
+    private var content: (text: String, link: UTIFooterMessage.Link)?
+    private var linkRange: NSRange?
+
+    init() {
+        super.init(frame: .zero, textContainer: nil)
+        isEditable = false
+        isSelectable = true
+        isScrollEnabled = false
+        backgroundColor = .clear
+        textContainerInset = .zero
+        textContainer.lineFragmentPadding = 0
+        adjustsFontForContentSizeCategory = true
+        textDragInteraction?.isEnabled = false
+        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        delegate = self
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var canBecomeFirstResponder: Bool { false }
+
+    func configure(text: String, link: UTIFooterMessage.Link) {
+        content = (text, link)
+        applyColors()
+    }
+
+    func applyColors() {
+        guard let content else { return }
+        let attributed = NSMutableAttributedString(string: content.text, attributes: [
+            .font: UIFont.daxFootnoteRegular(),
+            .foregroundColor: UIColor(designSystemColor: .textPrimary)
+        ])
+        let range = (content.text as NSString).range(of: content.link.text, options: .backwards)
+        linkRange = range.location == NSNotFound ? nil : range
+        if let linkRange {
+            attributed.addAttribute(.link, value: content.link.url, range: linkRange)
+        }
+        attributedText = attributed
+        linkTextAttributes = [.foregroundColor: UIColor(designSystemColor: .accentTextPrimary)]
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) ||
+            traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            applyColors()
+        }
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        guard super.point(inside: point, with: event), let linkRange,
+              let start = position(from: beginningOfDocument, offset: linkRange.location),
+              let end = position(from: start, offset: linkRange.length),
+              let range = textRange(from: start, to: end) else { return false }
+        return selectionRects(for: range).contains {
+            !$0.rect.isEmpty && $0.rect.insetBy(dx: -Self.hitSlop, dy: -Self.hitSlop).contains(point)
+        }
+    }
+}
+
+extension UTIFooterLinkTextView: UITextViewDelegate {
+    @available(iOS 17.0, *)
+    func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+        guard case .link(let url) = textItem.content else { return nil }
+        return UIAction { [weak self] _ in self?.onLinkTap?(url) }
+    }
+
+    @available(iOS 17.0, *)
+    func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem, defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
+        nil
+    }
+
+    @available(iOS, deprecated: 17.0)
+    func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+        if interaction == .invokeDefaultAction {
+            onLinkTap?(URL)
+        }
+        return false
     }
 }

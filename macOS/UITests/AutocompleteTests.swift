@@ -66,7 +66,7 @@ class AutocompleteTests: UITestCase {
             suggestionCellWithBookmarkedSite.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The expected table view cell with the suggestion for the bookmarked site didn't become available in a reasonable timeframe."
         )
-        let containerCellForBookmarkedSuggestion = app.tables.cells.containing(.any, identifier: suggestionCellWithBookmarkedSite.identifier)
+        let containerCellForBookmarkedSuggestion = suggestionsTableView.cells.containing(.staticText, identifier: siteTitleForBookmarkedSite)
             .firstMatch
 
         XCTAssertTrue(
@@ -93,7 +93,7 @@ class AutocompleteTests: UITestCase {
             suggestionCellWithHistorySite.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The expected table view cell with the suggestion for the history site didn't become available in a reasonable timeframe."
         )
-        let containerCellForHistorySuggestion = app.tables.cells.containing(.any, identifier: suggestionCellWithHistorySite.identifier)
+        let containerCellForHistorySuggestion = suggestionsTableView.cells.containing(.staticText, identifier: siteTitleForHistorySite)
             .firstMatch
 
         XCTAssertTrue(
@@ -127,7 +127,7 @@ class AutocompleteTests: UITestCase {
             suggestionCellWithWebsite.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The expected table view cell with the suggestion for the website didn't become available in a reasonable timeframe."
         )
-        let containerCellForWebsiteSuggestion = app.tables.cells.containing(.any, identifier: suggestionCellWithWebsite.identifier)
+        let containerCellForWebsiteSuggestion = suggestionsTableView.cells.containing(.staticText, identifier: websiteURL.absoluteString)
             .firstMatch
         XCTAssertTrue(
             containerCellForWebsiteSuggestion.waitForExistence(timeout: UITests.Timeouts.elementExistence),

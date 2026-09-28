@@ -88,6 +88,14 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
         )
     }
 
+    public static var voiceSearchSettings: PermissionReminderDialogViewModel {
+        PermissionReminderDialogViewModel(
+            title: UserText.VoiceSearchPermissionRecovery.title,
+            body: UserText.VoiceSearchPermissionRecovery.settingsBody,
+            actions: settingsActions
+        )
+    }
+
     public static var voiceChat: PermissionReminderDialogViewModel {
         PermissionReminderDialogViewModel(
             title: UserText.PermissionRecovery.microphoneTitle,

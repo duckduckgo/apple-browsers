@@ -60,7 +60,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     let isAppRebranded: Bool
 
     init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
-        let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        let isAppRebranded = true
         AppRebrand.setupDuckRebrandedUX(isAppRebranded: isAppRebranded)
 
         self.appearancePreferences = appearancePreferences

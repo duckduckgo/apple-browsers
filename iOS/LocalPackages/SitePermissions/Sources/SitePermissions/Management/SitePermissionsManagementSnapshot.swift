@@ -69,6 +69,5 @@ public struct SitePermissionsManagementSnapshot: Equatable, Sendable {
             || captureStates.contains { $0.value != .inactive }
     }
 
-    static let cameraAndMicrophoneTypes: Set<SitePermissionType> = [.camera, .microphone]
     static let managedPermissionTypes = Set(SitePermissionType.allCases)
 }

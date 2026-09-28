@@ -131,14 +131,12 @@ struct DeviceDetailsViewV2: View {
 
 #if DEBUG
 #Preview("This Device") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return DeviceDetailsViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+    DeviceDetailsViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
         .environmentObject(ManagementDialogModel())
 }
 
 #Preview("Other Device") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return DeviceDetailsViewV2(device: SyncDevice(kind: .mobile, name: "Pixel 8", id: "mobile-device"))
+    DeviceDetailsViewV2(device: SyncDevice(kind: .mobile, name: "Pixel 8", id: "mobile-device"))
         .environmentObject(ManagementDialogModel())
 }
 #endif

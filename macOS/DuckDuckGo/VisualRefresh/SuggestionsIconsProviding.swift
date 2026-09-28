@@ -32,19 +32,6 @@ protocol SuggestionsIconsProviding {
     var openTabEntryIcon: NSImage { get }
 }
 
-final class LegacySuggestionsIconsProvider: SuggestionsIconsProviding {
-    var phraseEntryIcon: NSImage = .search
-    var websiteEntryIcon: NSImage = .historySuggestion
-    var bookmarkEntryIcon: NSImage = .bookmarkSuggestion
-    var favoriteEntryIcon: NSImage = .favoritedBookmarkSuggestion
-    var unknownEntryIcon: NSImage = .web
-    var folderEntryIcon: NSImage = .bookmarksFolder
-    var settingsEntryIcon: NSImage = .settingsMulticolor16Legacy
-    var historyEntryIcon: NSImage = .historySuggestion
-    var homeEntryIcon: NSImage = .home16
-    var openTabEntryIcon: NSImage = .openTabSuggestion
-}
-
 final class CurrentSuggestionsIconsProvider: SuggestionsIconsProviding {
     var phraseEntryIcon: NSImage = DesignSystemImages.Glyphs.Size16.findSearch
     var websiteEntryIcon: NSImage = DesignSystemImages.Glyphs.Size16.globe

@@ -40,10 +40,17 @@ struct UTIFooterMessage: Equatable {
         case alert
         case info
         case modelSwitch
+        case shield
     }
 
     struct PrimaryAction: Equatable {
         let title: String
+    }
+
+    /// A phrase inside `title` that opens `url`.
+    struct Link: Equatable {
+        let text: String
+        let url: URL
     }
 
     let icon: Icon
@@ -51,6 +58,21 @@ struct UTIFooterMessage: Equatable {
     let subtitle: String?
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
+    let link: Link?
+
+    init(icon: Icon,
+         title: String,
+         subtitle: String?,
+         primaryAction: PrimaryAction?,
+         isDismissible: Bool,
+         link: Link? = nil) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.primaryAction = primaryAction
+        self.isDismissible = isDismissible
+        self.link = link
+    }
 }
 
 /// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as

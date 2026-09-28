@@ -207,7 +207,10 @@ extension TabViewController {
         sitePermissionsEnabled: Bool = false,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
-        fireTab: Bool = false
+        fireTab: Bool = false,
+        interactionStateData: Data? = nil,
+        initialRequest: URLRequest? = nil,
+        consumeCookies: Bool = false
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
             model: .init(link: link, fireTab: fireTab),
@@ -244,7 +247,8 @@ extension TabViewController {
             eventHub: StubEventHub(),
             sitePermissionsEnabled: sitePermissionsEnabled
         )
-        tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
+        tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,
+                          andLoadRequest: initialRequest, consumeCookies: consumeCookies, customWebView: customWebView)
         return tab
     }
 

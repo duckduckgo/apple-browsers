@@ -730,6 +730,13 @@ extension TabViewController {
                 sitePermissionsState?.dismissDialog()
                 sitePermissionsState?.dismissRecovery()
             },
+            revocationHandler: { [weak self] permissionTypes, site in
+                guard let self else { return }
+                // Let the current location request finish normally; revoking it here would cancel its response.
+                revokeSitePermissions(permissionTypes.subtracting([.location]), for: site, clearingManagementSessionState: false)
+                guard !tabModel.fireTab else { return }
+                dependencies.revokePermissionsInOtherTabs(site, permissionTypes, tabModel.uid)
+            },
             eventHandler: { [weak self] event in
                 self?.fireSitePermissionsEvent(event)
             }

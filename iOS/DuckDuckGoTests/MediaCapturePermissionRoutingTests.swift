@@ -1835,6 +1835,84 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(nativeDecision, .deny)
     }
 
+    func testWhenCombinedPromptIsNeverAllowedThenRunningAllowOnceCameraIsRevoked() async throws {
+        for fireTab in [false, true] {
+            var revocations = [(site: SitePermissionKey, permissionTypes: Set<SitePermissionType>, sourceTabID: String)]()
+            let sut = makeSUT(featureEnabled: true, fireTab: fireTab, revokePermissionsInOtherTabs: { site, permissionTypes, sourceTabID in
+                revocations.append((site, permissionTypes, sourceTabID))
+            })
+            var promptCount = 0
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                promptCount += 1
+                completion(promptCount == 1 ? .allowOnce : .neverAllow)
+            }
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+            let cameraDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .camera)
+            XCTAssertEqual(cameraDecision, .allow)
+            let webView = try XCTUnwrap(sut.webView as? SitePermissionURLWebView)
+            webView.setCameraCaptureStateForTesting(.active)
+
+            let combinedDecision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+
+            XCTAssertEqual(combinedDecision, .deny)
+            XCTAssertEqual(webView.requestedCameraCaptureStates, [.none])
+            // Revoking the camera also discards its outstanding Allow Once approval, so WebKit can no longer use it.
+            var nativeDecision: WKPermissionDecision?
+            requestPermission(on: sut, originHost: site.host, captureType: .camera,
+                              decisionHandler: { nativeDecision = $0 })
+            XCTAssertEqual(nativeDecision, .deny)
+            XCTAssertEqual(promptCount, 2)
+            XCTAssertEqual(revocations.map(\.site), fireTab ? [] : [site])
+            XCTAssertEqual(revocations.map(\.permissionTypes), fireTab ? [] : [[.camera, .microphone]])
+            XCTAssertEqual(revocations.map(\.sourceTabID), fireTab ? [] : [sut.tabModel.uid])
+        }
+    }
+
+    func testWhenCombinedPromptIsNeverAllowedWithoutCaptureThenOtherTabsAreRevoked() async throws {
+        var revocations = [(site: SitePermissionKey, permissionTypes: Set<SitePermissionType>, sourceTabID: String)]()
+        let sut = makeSUT(featureEnabled: true, revokePermissionsInOtherTabs: { site, permissionTypes, sourceTabID in
+            revocations.append((site, permissionTypes, sourceTabID))
+        })
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.neverAllow) }
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+
+        let decision = await requestPermissionThroughBridge(on: sut, originHost: site.host, captureType: .cameraAndMicrophone)
+
+        XCTAssertEqual(decision, .deny)
+        XCTAssertEqual(revocations.map(\.site), [site])
+        XCTAssertEqual(revocations.map(\.permissionTypes), [[.camera, .microphone]])
+        XCTAssertEqual(revocations.map(\.sourceTabID), [sut.tabModel.uid])
+    }
+
+    func testWhenLocationPromptIsNeverAllowedThenOtherTabsAreRevokedAndRequestCompletes() async throws {
+        var revocations = [(site: SitePermissionKey, permissionTypes: Set<SitePermissionType>, sourceTabID: String)]()
+        let sut = makeSUT(featureEnabled: true, revokePermissionsInOtherTabs: { site, permissionTypes, sourceTabID in
+            revocations.append((site, permissionTypes, sourceTabID))
+        })
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.neverAllow) }
+        let url = URL(string: "https://top-level.example")!
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: url))
+        let userScript = GeolocationUserScript(installImmediately: true)
+        sut.configureSitePermissionsGeolocation(with: userScript)
+        let delegate = try XCTUnwrap(userScript.delegate)
+        let frame = geolocationFrame(on: sut.webView, originURL: url)
+        let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+
+        let result = await delegate.geolocationUserScript(userScript,
+                                                          getCurrentPositionWith: .init(),
+                                                          constraints: constraints,
+                                                          in: frame)
+
+        guard case .failure(let error) = result else {
+            XCTFail("Expected a denied location request")
+            return
+        }
+        XCTAssertEqual(error.code, .permissionDenied)
+        XCTAssertEqual(revocations.map(\.site), [site])
+        XCTAssertEqual(revocations.map(\.permissionTypes), [[.location]])
+        XCTAssertEqual(revocations.map(\.sourceTabID), [sut.tabModel.uid])
+    }
+
     func testMainFramePreapprovalCannotBeConsumedBySameOriginSubframe() async {
         let sut = makeSUT()
         sut.sitePermissionsPromptHandlerOverride = { _, completion in
@@ -1889,6 +1967,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     }
 
     private func makeSUT(featureEnabled: Bool = true,
+                         fireTab: Bool = false,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
                          hasCommittedMainFrame: Bool = true,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
@@ -1897,13 +1976,16 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                          committedURL: URL = URL(string: "https://top-level.example/path")!,
                          avAuthorizationStatus: ((AVMediaType) -> AVAuthorizationStatus)? = nil,
                          avRequestAccess: ((AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void)? = nil,
-                         eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in }) -> TabViewController {
+                         eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in },
+                         revokePermissionsInOtherTabs: @escaping (SitePermissionKey, Set<SitePermissionType>, String) -> Void = { _, _, _ in }
+    ) -> TabViewController {
         let featureFlagger = providedFeatureFlagger
             ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions)
+            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            fireTab: fireTab
         )
         let dependencies = SitePermissionsDependencies(
             store: store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring()),
@@ -1914,7 +1996,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 avRequestAccess: avRequestAccess ?? { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
             ),
-            eventHandler: eventHandler
+            eventHandler: eventHandler,
+            revokePermissionsInOtherTabs: revokePermissionsInOtherTabs
         )
         sut.sitePermissionsDependenciesProvider = { dependencies }
         sut.setSitePermissionsGeolocationActive(true)
@@ -2067,6 +2150,8 @@ private extension AVCaptureDevice {
 
 private final class SitePermissionURLWebView: WKWebView {
     private let fixedURL: URL
+    private var cameraCaptureStateValue = WKMediaCaptureState.none
+    private(set) var requestedCameraCaptureStates = [WKMediaCaptureState]()
 
     init(url: URL, configuration: WKWebViewConfiguration) {
         fixedURL = url
@@ -2080,6 +2165,22 @@ private final class SitePermissionURLWebView: WKWebView {
 
     override var url: URL? {
         fixedURL
+    }
+
+    override var cameraCaptureState: WKMediaCaptureState {
+        cameraCaptureStateValue
+    }
+
+    func setCameraCaptureStateForTesting(_ state: WKMediaCaptureState) {
+        willChangeValue(for: \.cameraCaptureState)
+        cameraCaptureStateValue = state
+        didChangeValue(for: \.cameraCaptureState)
+    }
+
+    override func setCameraCaptureState(_ state: WKMediaCaptureState, completionHandler: (@MainActor @Sendable () -> Void)?) {
+        requestedCameraCaptureStates.append(state)
+        setCameraCaptureStateForTesting(state)
+        completionHandler?()
     }
 }
 

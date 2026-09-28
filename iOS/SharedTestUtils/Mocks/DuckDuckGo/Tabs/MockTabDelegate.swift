@@ -25,6 +25,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
+import PrivacyConfig
 @_spi(Testing) import Persistence
 import Subscription
 import SubscriptionTestingUtilities
@@ -202,7 +203,9 @@ extension TabViewController {
         contextualOnboardingPresenter: ContextualOnboardingPresenting = ContextualOnboardingPresenterMock(),
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
-        featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+        featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        sitePermissionsEnabled: Bool = false,
+        contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false
     ) -> TabViewController {
@@ -214,7 +217,7 @@ extension TabViewController {
             historyManager: MockHistoryManager(),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,
@@ -238,7 +241,8 @@ extension TabViewController {
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
             adBlockingAvailability: StubAdBlockingAvailability(),
-            eventHub: StubEventHub()
+            eventHub: StubEventHub(),
+            sitePermissionsEnabled: sitePermissionsEnabled
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -248,6 +252,7 @@ extension TabViewController {
 
 class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     var delegate: (any DuckDuckGo.SpecialErrorPageNavigationDelegate)?
+    var handlesNavigationResponse = true
     
     var isSpecialErrorPageVisible: Bool = false
 
@@ -264,7 +269,7 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {}
     
     func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool {
-        true
+        handlesNavigationResponse
     }
     
     func handleWebView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {

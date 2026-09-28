@@ -410,7 +410,8 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// Consumes the payload's selections only once it has been dispatched, so a dropped push does not
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
-    private func pushPrompt(_ payload: AIChatNativePrompt) {
+    private func pushPrompt(_ prompt: AIChatNativePrompt) {
+        let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker())
         guard push(.submitPrompt(payload)) else { return }
         guard let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty else { return }
 

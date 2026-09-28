@@ -47,6 +47,7 @@ protocol DependencyProvider {
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
+    var isSitePermissionsEnabled: Bool { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -123,6 +124,7 @@ final class AppDependencyProvider: DependencyProvider {
     let variantManager: VariantManager = DefaultVariantManager()
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
+    let isSitePermissionsEnabled: Bool
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -223,9 +225,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                               },
                                                               experimentManager: experimentManager,
                                                               for: FeatureFlag.self)
-            self.featureFlagger = defaultFeatureFlagger
             self.contentScopeExperimentsManager = defaultFeatureFlagger
-            featureFlagger = defaultFeatureFlagger
 
             // Applied after DefaultFeatureFlagger.init, which clears local overrides for non-internal users.
             // Writing overrides afterwards keeps them intact for UI test mode where allowOverrides also returns true.
@@ -233,7 +233,12 @@ final class AppDependencyProvider: DependencyProvider {
                 featureFlagOverrideStore: featureFlagOverrideStore,
                 configRolloutStore: .standard
             )
+            self.featureFlagger = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
         }
+
+        // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
+        isSitePermissionsEnabled = featureFlagger.isFeatureOn(.sitePermissions)
 
         // Configure PixelKit Experiments
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,

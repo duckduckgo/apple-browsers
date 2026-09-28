@@ -550,6 +550,22 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
+    /// The link opens in a new tab, which the floating input would otherwise stay on top of.
+    func openURLLeavingCurrentSurface(_ url: URL) {
+        let openURL = { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+        }
+        if floatingInputViewController != nil {
+            dismissFloatingInput()
+            openURL()
+        } else if let sheetViewController {
+            sheetViewController.dismiss(animated: true, completion: openURL)
+        } else {
+            openURL()
+        }
+    }
+
     /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
     private func requestManualPageContextAttach() {
         sessionState.beginManualAttach()
@@ -882,6 +898,9 @@ private extension AIChatContextualSheetCoordinator {
         host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
         host.onVoiceSearchRequested = { [weak self] in
             self?.presentDictation()
+        }
+        host.onOpenURLRequested = { [weak self] url in
+            self?.openURLLeavingCurrentSurface(url)
         }
         self.persistentUTIHost = host
         return host

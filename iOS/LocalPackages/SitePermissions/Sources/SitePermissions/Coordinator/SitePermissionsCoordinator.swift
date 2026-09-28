@@ -376,16 +376,18 @@ public final class SitePermissionsCoordinator {
         if isFireMode {
             fireModeRemovedPermissionTypes.formUnion(permissionTypes)
         }
-        clearManagementSessionState(for: permissionTypes, at: site)
+        clearManagementSessionState(for: permissionTypes)
+        cancelRequests(for: permissionTypes, at: site)
     }
 
     public func revokeManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
         currentManagementSite = site
         fireModeRemovedPermissionTypes.subtract(permissionTypes)
-        clearManagementSessionState(for: permissionTypes, at: site)
+        clearManagementSessionState(for: permissionTypes)
+        cancelRequests(for: permissionTypes, at: site)
     }
 
-    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
+    private func clearManagementSessionState(for permissionTypes: Set<SitePermissionType>) {
         allowOnce.subtract(permissionTypes)
         deniedForPage.subtract(permissionTypes)
         siteAllowedPermissionTypesThisVisit.subtract(permissionTypes)
@@ -393,7 +395,6 @@ public final class SitePermissionsCoordinator {
         for permissionType in permissionTypes {
             fireModeManagementOverrides[permissionType] = nil
         }
-        cancelRequests(for: permissionTypes, at: site)
     }
 
     private func cancelRequests(for permissionTypes: Set<SitePermissionType>, at site: SitePermissionKey) {
@@ -472,6 +473,20 @@ public final class SitePermissionsCoordinator {
                 self?.updateCaptureState(state, for: .microphone)
             }
         }
+    }
+
+    /// Discards media requests on feature rollback while preserving geolocation in existing documents.
+    /// The caller resolves media bridge replies first; presentation dismissal precedes the next queued prompt.
+    public func resetMediaPermissions(dismissPresentation: () -> Void) {
+        let permissionTypes: Set<SitePermissionType> = [.camera, .microphone]
+        clearManagementSessionState(for: permissionTypes)
+        fireModeRemovedPermissionTypes.subtract(permissionTypes)
+        queuedRequests.removeAll { !$0.request.permissionTypes.isDisjoint(with: permissionTypes) }
+        if let activeRequest, !activeRequest.request.permissionTypes.isDisjoint(with: permissionTypes) {
+            self.activeRequest = nil
+            dismissPresentation()
+        }
+        processNextRequestIfNeeded()
     }
 
     public func pageDidChange(_ change: SitePermissionPageChange) {

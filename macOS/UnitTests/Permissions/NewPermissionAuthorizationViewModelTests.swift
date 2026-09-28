@@ -17,6 +17,8 @@
 //
 
 @_spi(Testing) import PixelKit
+import FeatureFlags_macOS
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -96,9 +98,12 @@ final class NewPermissionAuthorizationViewModelTests: XCTestCase {
 
     func testWhenDismissedPermissionIsRequestedAgainThenPendingQueryIsReplacedWithoutSavingDecision() throws {
         let manager = PermissionManagerMock()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
         let model = PermissionModel(permissionManager: manager,
                                     geolocationService: GeolocationServiceMock(),
-                                    systemPermissionManager: SystemPermissionManagerMock())
+                                    systemPermissionManager: SystemPermissionManagerMock(),
+                                    featureFlagger: featureFlagger)
         let permission = PermissionType.externalScheme(scheme: "mailto")
         var decisions: [Bool] = []
         model.permissions([permission], requestedForDomain: "example.com") { (granted: Bool) in
@@ -111,6 +116,7 @@ final class NewPermissionAuthorizationViewModelTests: XCTestCase {
 
         XCTAssertEqual(decisions, [false])
         XCTAssertNil(model.authorizationQuery)
+        XCTAssertNil(model.permissions[permission])
         XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: permission))
 
         model.permissions([permission], requestedForDomain: "example.com") { (granted: Bool) in

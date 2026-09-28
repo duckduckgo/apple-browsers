@@ -21,6 +21,8 @@ import Combine
 import CoreLocation
 import Foundation
 import DDGNavigation
+import FeatureFlags_macOS
+import PrivacyConfig
 import UserNotifications
 import WebKit
 import os.log
@@ -46,6 +48,9 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
+
+    private var temporarilyAllowedExternalSchemes: [String: Set<PermissionType>] = [:]
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
@@ -69,11 +74,13 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()) {
+         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
 
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
         self.systemPermissionManager = systemPermissionManager
+        self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -120,6 +127,7 @@ final class PermissionModel {
             permissions[permission].willReload()
         }
         authorizationQueries = []
+        temporarilyAllowedExternalSchemes.removeAll()
         removedPermissions.removeAll()
         clearPermissionsNeedReload()
     }
@@ -212,10 +220,18 @@ final class PermissionModel {
             if let self,
                let idx = self.authorizationQueries.firstIndex(where: { Unmanaged.passUnretained($0).toOpaque() == queryPtr }) {
 
-                self.authorizationQueries.remove(at: idx)
+                let completedQuery = self.authorizationQueries.remove(at: idx)
+
+                if case .failure = result {
+                    self.clearDismissedQuery(completedQuery)
+                }
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
+                        if granted, remember == false, permission.isExternalScheme,
+                           self.featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+                            self.temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix(), default: []].insert(permission)
+                        }
                         if self.shouldPersistDecision(remember: remember, for: permission, domain: domain) {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else if remember == nil {
@@ -238,10 +254,21 @@ final class PermissionModel {
         authorizationQueries.append(query)
     }
 
+    private func clearDismissedQuery(_ query: PermissionAuthorizationQuery) {
+        // Only the new prompt marks explicit dismissals. Legacy cancellation keeps its existing state.
+        guard query.wasDismissed, featureFlagger.isFeatureOn(.websitePermissionsPrompts) else { return }
+        for permission in query.permissions {
+            if case .requested(let pendingQuery) = permissions[permission], pendingQuery === query {
+                permissions[permission] = nil
+            }
+        }
+    }
+
     private func permissionManager(_: PermissionManagerProtocol,
                                    didChangePermission permissionType: PermissionType,
                                    forDomain domain: String,
                                    change: PermissionChange) {
+        temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix()]?.remove(permissionType)
         guard currentDomain?.droppingWwwPrefix() == domain else { return }
 
         switch change {
@@ -283,6 +310,7 @@ final class PermissionModel {
     }
 
     func revoke(_ permission: PermissionType) {
+        clearTemporaryExternalSchemeGrant(for: permission)
         if let domain = currentDomain,
            case .allow = permissionManager.permission(forDomain: domain, permissionType: permission) {
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
@@ -310,6 +338,7 @@ final class PermissionModel {
     }
 
     private func removePermissionFromCurrentPage(_ permission: PermissionType) {
+        clearTemporaryExternalSchemeGrant(for: permission)
         // Track as explicitly removed to prevent re-adding via updatePermissions()
         guard removedPermissions.insert(permission).inserted else { return }
 
@@ -323,6 +352,12 @@ final class PermissionModel {
 
         // Remove from dictionary (will trigger @Published update)
         permissions[permission] = nil
+    }
+
+    private func clearTemporaryExternalSchemeGrant(for permission: PermissionType) {
+        for domain in temporarilyAllowedExternalSchemes.keys {
+            temporarilyAllowedExternalSchemes[domain]?.remove(permission)
+        }
     }
 
     /// Checks if a permission is granted (either persistently via "Always Allow" or for this session via one-time grant).
@@ -429,6 +464,9 @@ final class PermissionModel {
                 grant = .allow
             } else if case .deny = stored, shouldApplyDenial(of: permission, isPersistedForDomain: isPersistedForDomain) {
                 grant = .deny
+            } else if featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+                      temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix()]?.contains(permission) == true {
+                grant = .allow
             } else if let state = self.permissions[permission] {
                 switch state {
                 // deny if already denied during current page being displayed

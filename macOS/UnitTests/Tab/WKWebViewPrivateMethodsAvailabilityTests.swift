@@ -72,9 +72,20 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     }
 
     func testWKPDFHUDViewClassAvailable() {
-        XCTAssertNotNil(WKPDFHUDViewWrapper.WKPDFHUDViewClass)
-        XCTAssertTrue(WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.performActionForControlSelector) ==  true)
-        XCTAssertTrue(WKPDFHUDViewWrapper.WKPDFHUDViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) ==  true)
+        XCTAssertFalse(WKPDFHUDViewWrapper.hudViewClasses.isEmpty)
+        for hudViewClass in WKPDFHUDViewWrapper.hudViewClasses {
+            XCTAssertTrue(hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.performActionForControlSelector), "\(hudViewClass)")
+        }
+
+        if #available(macOS 27, *) {
+            let hudViewClass: AnyClass? = NSClassFromString("WKDefaultPDFHUDView")
+            XCTAssertNotNil(hudViewClass)
+            XCTAssertTrue(hudViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.showSelector) == true)
+        } else {
+            let hudViewClass: AnyClass? = NSClassFromString("WKPDFHUDView")
+            XCTAssertNotNil(hudViewClass)
+            XCTAssertTrue(hudViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) == true)
+        }
     }
 
     func testWebViewRespondsTo_isPlayingAudio() {

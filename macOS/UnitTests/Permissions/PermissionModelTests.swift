@@ -1240,13 +1240,15 @@ final class PermissionModelTests: XCTestCase {
         secondWebView.urlValue = URL.duckDuckGo
         secondWebView.microphoneCaptureState = .active
         let secondModel = PermissionModel(webView: secondWebView, permissionManager: permissionManagerMock,
-                                          geolocationService: geolocationServiceMock, systemPermissionManager: systemPermissionManagerMock)
+                                          geolocationService: geolocationServiceMock, systemPermissionManager: systemPermissionManagerMock,
+                                          featureFlagger: featureFlagger)
 
         let unrelatedWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
         unrelatedWebView.urlValue = URL(string: "https://example.com")!
         unrelatedWebView.microphoneCaptureState = .active
         let unrelatedModel = PermissionModel(webView: unrelatedWebView, permissionManager: permissionManagerMock,
-                                             geolocationService: geolocationServiceMock, systemPermissionManager: systemPermissionManagerMock)
+                                             geolocationService: geolocationServiceMock, systemPermissionManager: systemPermissionManagerMock,
+                                             featureFlagger: featureFlagger)
 
         let revoked = expectation(description: "Microphone revoked in both matching tabs")
         revoked.expectedFulfillmentCount = 2
@@ -1791,7 +1793,8 @@ extension PermissionModelTests {
             let model = PermissionModel(webView: webView,
                                         permissionManager: permissionManagerMock,
                                         geolocationService: geolocationServiceMock,
-                                        systemPermissionManager: systemPermissionManagerMock)
+                                        systemPermissionManager: systemPermissionManagerMock,
+                                        featureFlagger: featureFlagger)
             permissionManagerMock.defaultDecisions = [category: .deny]
             if permission.requiresSystemPermission {
                 systemPermissionManagerMock.authorizationStates[permission] = .authorized

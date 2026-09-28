@@ -75,7 +75,7 @@ final class PermissionModel {
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
          systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger) {
 
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
@@ -193,6 +193,10 @@ final class PermissionModel {
         }
     }
 
+    private func shouldStoreTemporaryGrant(granted: Bool, remember: Bool?, for permission: PermissionType) -> Bool {
+        granted && remember == false && permission.isExternalScheme && featureFlagger.isFeatureOn(.websitePermissionsPrompts)
+    }
+
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
@@ -228,8 +232,7 @@ final class PermissionModel {
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        if granted, remember == false, permission.isExternalScheme,
-                           self.featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+                        if self.shouldStoreTemporaryGrant(granted: granted, remember: remember, for: permission) {
                             self.temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix(), default: []].insert(permission)
                         }
                         if self.shouldPersistDecision(remember: remember, for: permission, domain: domain) {

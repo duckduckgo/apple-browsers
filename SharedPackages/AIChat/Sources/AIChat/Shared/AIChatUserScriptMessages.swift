@@ -37,6 +37,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openAIChatLink
     case responseReceived
 
+    /// FE→native, request/response. Asked once per prompt composition, immediately before the
+    /// file-upload privacy disclosure would be shown. Native spends one display if any remain and
+    /// answers whether to show it, so the cap is enforced across every surface.
+    case attachmentPrivacyShouldDisplay
+
     case getAIChatPageContext
     case submitAIChatPageContext
     /// Pushed (native→FE) to append one user text selection to the duck.ai selection-context list.

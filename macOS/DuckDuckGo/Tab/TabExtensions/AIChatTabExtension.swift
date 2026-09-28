@@ -46,6 +46,7 @@ final class AIChatTabExtension {
     private let featureFlagger: FeatureFlagger
     private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
     private let fireModeStorageProvider: () -> DuckAiFireModeStorage
+    private let attachmentPrivacyCounterProvider: () -> AttachmentPrivacyDisplayCounter?
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -73,6 +74,12 @@ final class AIChatTabExtension {
             .resolve(isFireMode: burnerMode.isBurner,
                      handler: burnerDuckAiStorageRegistry?.handler(for: burnerMode))
         }
+        // A burner tab resolves an in-memory handler, so a display there neither reads nor writes
+        // the persistent count.
+        self.attachmentPrivacyCounterProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
+            let handler = burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? duckAiNativeStorageHandler
+            return AttachmentPrivacyDisplayCounter(storageHandler: handler, featureFlagger: featureFlagger)
+        }
         self.bootstrapRefresher = Self.makeBootstrapRefresher(
             featureFlagger: featureFlagger,
             handler: duckAiNativeStorageHandler,
@@ -95,6 +102,9 @@ final class AIChatTabExtension {
                 self?.aiChatUserScript?.webView = self?.webView
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
+                }
+                if let counterProvider = self?.attachmentPrivacyCounterProvider {
+                    self?.aiChatUserScript?.handler.attachmentPrivacyCounterProvider = counterProvider
                 }
                 if let provider = self?.fireModeStorageProvider {
                     scripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = provider

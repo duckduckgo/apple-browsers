@@ -155,6 +155,11 @@ public struct AIChatNativeConfigValues: Codable {
     /// serves as version-skew protection against builds that predate the bridge.
     public let supportsBrowserTools: Bool
 
+    /// `true` when native owns how often the file-upload privacy disclosure is shown. The web app
+    /// then asks before displaying it rather than applying its own frequency. Absent on builds that
+    /// predate the handler, which is the version-skew signal.
+    public let supportsAttachmentPrivacyDisplayCount: Bool
+
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
         return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
@@ -229,7 +234,8 @@ public struct AIChatNativeConfigValues: Codable {
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
-                supportsBrowserTools: Bool = false) {
+                supportsBrowserTools: Bool = false,
+                supportsAttachmentPrivacyDisplayCount: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -260,6 +266,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
         self.supportsBrowserTools = supportsBrowserTools
+        self.supportsAttachmentPrivacyDisplayCount = supportsAttachmentPrivacyDisplayCount
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

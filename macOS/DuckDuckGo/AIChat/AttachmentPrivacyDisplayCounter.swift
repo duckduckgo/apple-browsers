@@ -85,3 +85,8 @@ final class AttachmentPrivacyDisplayCounter {
         }
     }
 }
+
+/// Answer to `attachmentPrivacyShouldDisplay`.
+struct AttachmentPrivacyShouldDisplayResponse: Encodable {
+    let show: Bool
+}

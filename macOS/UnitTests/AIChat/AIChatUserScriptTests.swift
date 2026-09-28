@@ -307,6 +307,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
     var isFireWindowProvider: (() -> Bool)?
+    var attachmentPrivacyCounterProvider: (() -> AttachmentPrivacyDisplayCounter?)?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling
@@ -315,6 +316,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     func openAIChatSettings(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         didOpenSettings = true
         return nil
+    }
+
+    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
+        nil
     }
 
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {

@@ -218,10 +218,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private lazy var attachmentPrivacyCounter = AttachmentPrivacyDisplayCounter(storageHandler: duckAiNativeStorageHandler)
 
-    /// Whether the disclosure was granted for the prompt currently being composed. `nil` until it
-    /// is asked for. Counting is per prompt, so a granted display survives swapping or removing the
-    /// attachment and only resets when the composition ends.
-    private var attachmentPrivacyGrant: Bool?
+    /// Whether the disclosure was granted for the prompt currently being composed, and the tab
+    /// that prompt belongs to. `nil` until it is asked for. Counting is per prompt, so a granted
+    /// display survives swapping or removing the attachment and only resets when the composition
+    /// ends — but the draft is per tab, so a different tab is a different prompt.
+    private var attachmentPrivacyGrant: (tabID: String?, granted: Bool)?
 
     /// Only the exposed band counts; the rest is behind the panel and costs nothing.
     private var usageWarningReservation: CGFloat {
@@ -1313,11 +1314,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // the composition, so re-attaching must not spend another display.
         guard hasStagedFileOrImageAttachment else { return false }
 
-        if let attachmentPrivacyGrant {
-            return attachmentPrivacyGrant
+        let tabID = omnibarController.currentTabUUID
+        if let attachmentPrivacyGrant, attachmentPrivacyGrant.tabID == tabID {
+            return attachmentPrivacyGrant.granted
         }
         let granted = attachmentPrivacyCounter.consumeDisplay()
-        attachmentPrivacyGrant = granted
+        attachmentPrivacyGrant = (tabID, granted)
         return granted
     }
 

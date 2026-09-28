@@ -36,7 +36,7 @@ final class WebExtensionNavigationGateTests: XCTestCase {
                                 initialLoadWaiter: { didWait = true })
 
         XCTAssertTrue(didWait)
-        XCTAssertEqual(WebExtensionNavigationGate.defaultInitialLoadTimeout, 10)
+        XCTAssertEqual(WebExtensionNavigationGate.defaultInitialLoadTimeout, 5)
     }
 
     func testSubframeHTTPNavigationDoesNotWaitForInitialExtensionLoad() async {

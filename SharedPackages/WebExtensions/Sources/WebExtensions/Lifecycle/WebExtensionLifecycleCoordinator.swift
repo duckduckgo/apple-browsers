@@ -25,7 +25,7 @@ public typealias WebExtensionInitialLoadWaiter = @MainActor () async -> Void
 /// Delays the first restored web navigation until Web Extension background content is ready. The gate
 /// fails open after a bounded wait so an extension startup failure cannot block page loading.
 public struct WebExtensionNavigationGate {
-    public static let defaultInitialLoadTimeout: TimeInterval = 10
+    public static let defaultInitialLoadTimeout: TimeInterval = 5
 
     private let initialLoadTimeout: TimeInterval
 

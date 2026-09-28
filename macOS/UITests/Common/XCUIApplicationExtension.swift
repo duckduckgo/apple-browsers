@@ -92,6 +92,7 @@ extension XCUIApplication {
 
         static let addBookmarkFolderDropdown = "bookmark.add.folder.dropdown"
 
+        static let stateRestorePicker = "PreferencesGeneralView.stateRestorePicker"
         static let reopenAllWindowsFromLastSession = "PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"
         static let startupTypeOpenANewWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow"
         static let startupWindowTypeRegularWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
@@ -151,10 +152,8 @@ extension XCUIApplication {
             terminate()
         } else {
             typeKey("q", modifierFlags: .command)
-            guard wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence) else {
-                XCTFail("The app did not quit before restarting")
-                return
-            }
+            XCTAssertTrue(wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence),
+                          "App should quit on Cmd+Q; disable Warn Before Quitting before calling restart()")
         }
         launch()
     }
@@ -206,13 +205,13 @@ extension XCUIApplication {
 
     /// Pins current tab using the main menu
     func pinCurrentTab() {
-        menuBars.menuBarItems["Window"].clickAfterExistenceTestSucceeds()
+        menuBarItems["Window"].click()
         mainMenuPinTabMenuItem.clickAfterExistenceTestSucceeds()
     }
 
     /// Unpins current tab using the main menu
     func unpinCurrentTab() {
-        menuBars.menuBarItems["Window"].clickAfterExistenceTestSucceeds()
+        menuBarItems["Window"].click()
         mainMenuUnpinTabMenuItem.clickAfterExistenceTestSucceeds()
     }
 
@@ -245,7 +244,9 @@ extension XCUIApplication {
     /// Enables the "Warn Before Closing Pinned Tabs" setting in General preferences
     func enableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
         openGeneralPreferences()
-        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        let checkbox = warnBeforeClosingPinnedTabsCheckbox
+        scrollIntoViewInPreferences(checkbox)
+        checkbox.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: ensureHittable)
         if closeSettings {
             typeKey("w", modifierFlags: [.command])
         }
@@ -254,7 +255,9 @@ extension XCUIApplication {
     /// Disables the "Warn Before Closing Pinned Tabs" setting in General preferences
     func disableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
         openGeneralPreferences()
-        warnBeforeClosingPinnedTabsCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        let checkbox = warnBeforeClosingPinnedTabsCheckbox
+        scrollIntoViewInPreferences(checkbox)
+        checkbox.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: ensureHittable)
         if closeSettings {
             typeKey("w", modifierFlags: [.command])
         }
@@ -291,7 +294,13 @@ extension XCUIApplication {
     func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
         if shouldActivate {
             activateAddressBar()
+            // Some web pages handle Cmd+L themselves, leaving the address bar in its passive, non-editable state
+            let passiveAddressBar = windows.firstMatch.staticTexts[AccessibilityIdentifiers.addressBarPassiveTextField]
+            if !addressBar.waitForExistence(timeout: 2), passiveAddressBar.exists {
+                passiveAddressBar.click()
+            }
         }
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Address bar should be editable")
         return addressBar.value as? String
     }
 
@@ -512,9 +521,9 @@ extension XCUIApplication {
 
             if let folderName = folderName {
                 let folderLocationButton = popUpButtons["bookmark.add.folder.dropdown"]
-                folderLocationButton.tap()
+                folderLocationButton.clickAfterExistenceTestSucceeds()
                 let folderOneLocation = folderLocationButton.menuItems[folderName]
-                folderOneLocation.tap()
+                folderOneLocation.clickAfterExistenceTestSucceeds()
             }
 
             if escapingDialog {
@@ -655,31 +664,32 @@ extension XCUIApplication {
     }
 
     func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
-        // Newer SwiftUI versions expose the combined radio button and window-type menu as a pop-up button.
-        let startupWindowPicker = prefs.radioGroups["PreferencesGeneralView.stateRestorePicker"].popUpButtons.firstMatch
-        if state != .restoreLastSession && startupWindowPicker.exists {
-            ensureHittable(startupWindowPicker)
-            if !startupWindowPicker.isSelected {
-                // Select the radio control at the leading edge before opening its window-type menu.
-                startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.03, dy: 0.5)).click()
-            }
-            startupWindowPicker.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).click()
-            // The popup menu's items are not exposed by newer SwiftUI accessibility trees.
-            // Select through the keyboard, then verify the selected type on the enclosing control.
-            typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
-            typeKey(.enter, modifierFlags: [])
+        if state != .restoreLastSession {
+            let startupTypePicker = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker]
+            let startupWindowTypePicker = startupTypePicker.popUpButtons.firstMatch
+            if startupWindowTypePicker.exists {
+                let reopenAllWindowsRadioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+                if reopenAllWindowsRadioButton.isSelected {
+                    // Newer macOS merges the "Open a new" radio button into the window type popup
+                    let openANewRadioButton = startupTypePicker.radioButtons
+                        .matching(NSPredicate(format: "identifier != %@", AccessibilityIdentifiers.reopenAllWindowsFromLastSession))
+                        .firstMatch
+                    let openANewOption = openANewRadioButton.exists ? openANewRadioButton : startupWindowTypePicker
+                    ensureHittable(openANewOption)
+                    // Click the radio circle on the leading edge, not the center, which opens the popup
+                    openANewOption.coordinate(withNormalizedOffset: .zero)
+                        .withOffset(CGVector(dx: 8, dy: openANewOption.frame.height / 2))
+                        .click()
+                    XCTAssertTrue(reopenAllWindowsRadioButton.wait(for: \.isSelected, equals: false, timeout: UITests.Timeouts.elementExistence),
+                                  "\"Open a new\" should be selected instead of \"Reopen all windows from last session\"")
+                }
 
-            let optionIdentifier = state == .fireWindow
-                ? AccessibilityIdentifiers.startupWindowTypeFireWindow
-                : AccessibilityIdentifiers.startupWindowTypeRegularWindow
-            // SwiftUI can combine the radio row and selected menu item's identifiers.
-            let combinedIdentifier = "\(optionIdentifier)-\(optionIdentifier)"
-            let selectedOption = prefs.popUpButtons.matching(NSPredicate(
-                format: "identifier == %@ OR identifier == %@", optionIdentifier, combinedIdentifier
-            )).firstMatch
-            XCTAssertTrue(selectedOption.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Requested startup window type was not selected")
-            XCTAssertTrue(selectedOption.isSelected)
-            return
+                startupWindowTypePicker.click()
+                typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
+                typeKey(.enter, modifierFlags: [])
+                XCTAssertFalse(reopenAllWindowsRadioButton.isSelected, "Startup should not reopen all windows from last session")
+                return
+            }
         }
 
         var radioButton: XCUIElement
@@ -741,6 +751,17 @@ extension XCUIApplication {
     func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.openPopupOnDownloadCompletionCheckbox]
         checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+    }
+
+    /// Scrolls Settings until the element is fully inside the visible area.
+    /// Unlike `ensureHittable`, this also scrolls elements that are hittable but partially clipped at the bottom edge.
+    func scrollIntoViewInPreferences(_ element: XCUIElement) {
+        XCTAssertTrue(element.waitForExistence(timeout: UITests.Timeouts.elementExistence), "\(element) should exist in Preferences")
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
+        let scrollDistance = element.frame.maxY - scrollView.frame.maxY + 20
+        if scrollDistance > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: -scrollDistance)
+        }
     }
 
     func ensureHittable(_ element: XCUIElement) {

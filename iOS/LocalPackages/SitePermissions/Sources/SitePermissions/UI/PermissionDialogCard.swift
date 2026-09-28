@@ -25,7 +25,7 @@ struct PermissionDialogButtonLabel: View {
 
     var body: some View {
         Text(title)
-            .font(.body.weight(.medium))
+            .font(Font(UIFont.daxBodyRegular()).weight(.medium))
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity, minHeight: 48)

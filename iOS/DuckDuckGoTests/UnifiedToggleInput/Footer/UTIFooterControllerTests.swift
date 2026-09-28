@@ -35,12 +35,17 @@ final class UTIFooterControllerTests: XCTestCase {
     private var isTrialEligible = false
     private var animationCount = 0
     private var reportedBlocks: [Bool] = []
+    private var termsUserDefaults: UserDefaults!
     private var sut: UTIFooterController!
 
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    private var termsSuiteName: String { String(describing: self) + ".terms" }
+
     override func setUp() {
         super.setUp()
+        termsUserDefaults = UserDefaults(suiteName: termsSuiteName)
+        termsUserDefaults.removePersistentDomain(forName: termsSuiteName)
         limitsProvider = StubUsageLimitsProvider()
         dismissalStore = InMemoryDuckAiUsageWarningDismissalStore()
         presenter = SpyUTIFooterPresenter()
@@ -52,20 +57,29 @@ final class UTIFooterControllerTests: XCTestCase {
         animationCount = 0
         reportedBlocks = []
         viewModel = makeViewModel()
-        sut = UTIFooterController(viewModel: viewModel,
-                                  highUsageNotice: makeNoticeSource(),
-                                  measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
-                                  createImagePixelFiring: createImagePixelFiring,
-                                  allowsSubscriptionUpsell: { [unowned self] in allowsSubscriptionUpsell },
-                                  animator: { [unowned self] changes in
-                                      animationCount += 1
-                                      changes()
-                                  })
-        sut.presenter = presenter
-        sut.onInputBlockChanged = { [unowned self] blocked in reportedBlocks.append(blocked) }
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: nil)
+    }
+
+    private func makeSUT(viewModel: DuckAiUsageWarningViewModel?,
+                         termsOfServiceStore: DuckAiTermsOfServiceStore?) -> UTIFooterController {
+        let controller = UTIFooterController(viewModel: viewModel,
+                                             termsOfServiceStore: termsOfServiceStore,
+                                             highUsageNotice: makeNoticeSource(),
+                                             measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
+                                             createImagePixelFiring: createImagePixelFiring,
+                                             allowsSubscriptionUpsell: { [unowned self] in allowsSubscriptionUpsell },
+                                             animator: { [unowned self] changes in
+                                                 animationCount += 1
+                                                 changes()
+                                             })
+        controller.presenter = presenter
+        controller.onInputBlockChanged = { [unowned self] blocked in reportedBlocks.append(blocked) }
+        return controller
     }
 
     override func tearDown() {
+        termsUserDefaults.removePersistentDomain(forName: termsSuiteName)
+        termsUserDefaults = nil
         sut = nil
         viewModel = nil
         presenter = nil
@@ -886,7 +900,155 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(actions.count, 2)
     }
 
+    // MARK: - Terms of Service
+
+    func test_refresh_presentsTheTermsOfServiceUntilTheyAreAccepted() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_refresh_presentsNothingOnceTheTermsAreAccepted() {
+        termsStore.recordWebReport()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.isEmpty)
+    }
+
+    /// The disclaimer is its own feature: usage warnings being off must not take it away.
+    func test_refresh_presentsTheTermsOfServiceWithoutUsageWarnings() {
+        sut = makeSUT(viewModel: nil, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_refresh_termsOfServiceOutrankAnApproachingWarning() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_showModelSwitchNotice_doesNotReplaceTheTermsOfService() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.showModelSwitchNotice(modelSwitchNotice())
+
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    /// A spent allowance blocks the send that would accept the terms, so its explanation has to show.
+    func test_refresh_aSpentAllowanceOutranksTheTermsOfService() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("Weekly usage limit reached") ?? false)
+    }
+
+    func test_setSuppressed_hidesTheTermsOfService() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.setSuppressed(true)
+
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    /// A stray close must neither hide the terms nor spend the warning waiting behind them.
+    func test_dismissCurrent_leavesTheTermsOfServiceAndTheWarningBehindThem() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.dismissCurrent()
+        termsStore.recordWebReport()
+        sut.refresh()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+    }
+
+    func test_acceptTermsIfDisclaimerShown_acceptsWhenTheDisclaimerIsOnScreen() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertTrue(termsStore.hasAccepted)
+        XCTAssertEqual(presenter.appliedMessages.last, .some(nil))
+    }
+
+    func test_acceptTermsIfDisclaimerShown_revealsTheWarningBehindTheTerms() {
+        limitsProvider.limits = weeklyUsage(50)
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertTrue(presenter.appliedMessages.last??.title.contains("50%") ?? false)
+    }
+
+    /// Resolved but still waiting for the input to expand: the user hasn't seen it.
+    func test_acceptTermsIfDisclaimerShown_acceptsNothingWhileTheCardIsOffScreen() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    /// Search mode hides the disclaimer, so a prompt sent from there leaves the web app its own card.
+    func test_acceptTermsIfDisclaimerShown_acceptsNothingWhileSuppressed() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.setSuppressed(true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    func test_acceptTermsIfDisclaimerShown_acceptsNothingWhenAnotherCardIsShowing() {
+        limitsProvider.limits = weeklyReachedWithUpsell()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    func test_resetForPoseChange_bringsTheTermsOfServiceBackOnTheNextRefresh() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.resetForPoseChange()
+
+        sut.refresh()
+
+        XCTAssertEqual(presenter.appliedMessages.count, 2)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
     // MARK: - Helpers
+
+    private var termsStore: DuckAiTermsOfServiceStore {
+        DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults)
+    }
 
     private func approachingExposure(percentBucket: Int) -> DuckAiUsageWarningExposure {
         DuckAiUsageWarningExposure(kind: .approaching, window: .weekly, percentBucket: percentBucket)

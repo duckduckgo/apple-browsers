@@ -727,6 +727,7 @@ public struct UserText {
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
     static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "VPN menu item")
+    static let actionVPNFreeTrialBadge = NSLocalizedString("action.title.vpn.free-trial-badge", value: "Try for Free", comment: "Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased.")
 
     // MARK: - Control Center Widget Education
 
@@ -2003,6 +2004,9 @@ public struct UserText {
 
     // MARK: - New Tab Page customization
 
+    public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
+    public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
+
     public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
     public static let newTabPageCustomizationAlwaysShowKeyboard = NotLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
@@ -2537,6 +2541,11 @@ public struct UserText {
     public static let utiDuckAIWarningsSubscribe = NSLocalizedString("aichat.usageWarnings.action.subscribe", value: "Subscribe", comment: "Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow")
     public static let utiDuckAIWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
     public static let utiDuckAIWarningsHighUsageModel = NSLocalizedString("aichat.usageWarnings.highUsageModel", value: "%@ uses limits up to 2-5x faster than basic models.", comment: "Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8'")
+
+    // MARK: - Duck.ai Terms of Service (unified toggle input footer)
+
+    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By sending a message, you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; sending a message accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 

@@ -89,9 +89,14 @@ public struct SitePermissionsSheetView: View {
     private var permissionSections: some View {
         VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
             if !viewModel.rows.isEmpty {
+                permissionRows
+            }
+
+            switch viewModel.state {
+            case .permissionsOnly:
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
-                    permissionRows
-                    if viewModel.state == .permissionsOnly {
+                    actionCard(includesRemove: true, includesSystemSettings: false)
+                    if !viewModel.rows.isEmpty {
                         if viewModel.hasCommittedChanges {
                             reloadCaption
                         } else {
@@ -101,11 +106,6 @@ public struct SitePermissionsSheetView: View {
                         }
                     }
                 }
-            }
-
-            switch viewModel.state {
-            case .permissionsOnly:
-                actionCard(includesRemove: true, includesSystemSettings: false)
             case .permissionsAndReminder:
                 VStack(alignment: .leading, spacing: Constants.copySpacing) {
                     actionCard(includesRemove: true, includesSystemSettings: true)

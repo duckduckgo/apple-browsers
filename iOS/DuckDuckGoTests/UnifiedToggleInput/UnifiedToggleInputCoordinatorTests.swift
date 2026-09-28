@@ -960,7 +960,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_activateFromOmnibar_withPrefilledAIChatText_selectsAllText() throws {
         let text = "test prompt"
         sut.activateFromOmnibar(prefilledText: text, inputMode: .aiChat)
-        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut.viewController.view))
+        // Scoped to the text entry: the footer card carries a text view of its own.
+        let textEntry = try XCTUnwrap(firstDescendant(of: SwitchBarTextEntryView.self, in: sut.viewController.view))
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: textEntry))
 
         XCTAssertFalse(textView.isHidden)
         assertAllTextIsSelected(in: textView, expectedLength: text.utf16.count)

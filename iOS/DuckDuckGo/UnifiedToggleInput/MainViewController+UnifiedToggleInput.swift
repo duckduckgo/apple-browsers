@@ -1437,6 +1437,13 @@ extension MainViewController: UnifiedToggleInputDelegate {
         applyEditModeChrome(isEditing)
     }
 
+    /// A new tab, like the web app's own links, so the draft and the chat stay where they were.
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
+    }
+
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
         let tab = tabManager.currentTabsModel.currentTab
         // AI tab reuses the same textView for the flanked input — populating it with the URL

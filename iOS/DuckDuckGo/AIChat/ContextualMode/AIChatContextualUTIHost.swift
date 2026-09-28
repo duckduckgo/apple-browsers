@@ -63,6 +63,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
+    var onOpenURLRequested: ((URL) -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -575,6 +576,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidRequestAppMenu() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         onEditModeChange?(isEditing)
+    }
+    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
+        onOpenURLRequested?(url)
     }
 }
 

@@ -35,7 +35,6 @@ final class BrowserToolsDebugViewController: NSViewController {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let service: AIChatBrowserToolsService
     private let ownerTabProvider: () -> Tab?
-    private let onClose: () -> Void
 
     private let targetLabel = NSTextField(labelWithString: "")
     private let toolPicker = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -48,11 +47,9 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          service: AIChatBrowserToolsService = NSApp.delegateTyped.aiChatBrowserToolsService,
-         onClose: @escaping () -> Void,
          ownerTabProvider: @escaping () -> Tab?) {
         self.windowControllersManager = windowControllersManager
         self.service = service
-        self.onClose = onClose
         self.ownerTabProvider = ownerTabProvider
         let chatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
@@ -221,10 +218,6 @@ final class BrowserToolsDebugViewController: NSViewController {
         service.permissions.setState(.ask, forToolNamed: sender.toolName)
         appendToLog(summary: "· reset permission for \(sender.toolName)", detail: nil)
         refreshPermissions()
-    }
-
-    @objc private func closePanel() {
-        onClose()
     }
 
     @objc private func resetAllPermissions() {
@@ -467,7 +460,6 @@ final class BrowserToolsDebugViewController: NSViewController {
 
     private func makeContentView() -> NSView {
         let buttons = NSStackView(views: [
-            makeButton("Show chat", #selector(closePanel)),
             makeButton("initialize", #selector(initializeSession)),
             makeButton("notifications/initialized", #selector(notifyInitialized)),
             makeButton("tools/list", #selector(listTools)),

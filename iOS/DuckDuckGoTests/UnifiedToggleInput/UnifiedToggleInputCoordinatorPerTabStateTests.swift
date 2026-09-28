@@ -68,6 +68,136 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertTrue(sut.isVoiceSessionActive)
     }
 
+    // The FE's context-limit "Start New Chat" moves to a fresh chat with no event and no
+    // navigation — only the URL's chatID disappearing marks the transition.
+    func test_bindToTab_freshChatAfterExistingChat_resetsHasSubmittedPrompt() {
+        let sut = makeSUT(stateStore: FakeInputStateStore())
+        let script = makeTestUserScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(script, hasExistingChat: true)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.bindToTab(script, hasExistingChat: false)
+
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+    }
+
+    func test_startNewChat_thenSubmitBeforeURLSettles_keepsSubmittedState() {
+        let sut = makeSUT(stateStore: FakeInputStateStore())
+        let script = makeTestUserScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(script, hasExistingChat: true)
+        sut.startNewChat()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.bindToTab(script, hasExistingChat: false)
+
+        XCTAssertTrue(sut.hasSubmittedPrompt,
+                      "the fresh-chat URL settling must not read the pre-new-chat state as a chat exit")
+    }
+
+    func test_bindToTab_freshChatAfterSubmission_keepsSubmittedState() {
+        let sut = makeSUT(stateStore: FakeInputStateStore())
+        let script = makeTestUserScript()
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        XCTAssertTrue(sut.hasSubmittedPrompt)
+
+        sut.bindToTab(script, hasExistingChat: false)
+
+        XCTAssertTrue(sut.hasSubmittedPrompt,
+                      "a just-submitted chat has no chatID in its URL yet — the sync must not clobber it")
+    }
+
+    func test_handleNavigationCommit_onActiveTab_resetsLiveAndStoredVisibility() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.aiChatInputBoxVisibility = .hidden
+
+        sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: false)
+
+        XCTAssertEqual(sut.aiChatInputBoxVisibility, .unknown)
+        XCTAssertEqual(store.states["tab-A"]?.aiChatInputBoxVisibility, .unknown)
+    }
+
+    func test_handleNavigationCommit_onBackgroundTab_resetsStoredVisibilityOnly() {
+        let store = FakeInputStateStore()
+        store.states["tab-B"] = TabInputState(aiChatInputBoxVisibility: .hidden)
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.aiChatInputBoxVisibility = .hidden
+
+        sut.handleNavigationCommit(tabUID: "tab-B", didChangeChat: false)
+
+        XCTAssertEqual(store.states["tab-B"]?.aiChatInputBoxVisibility, .unknown)
+        XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden, "a background tab's navigation must not touch the foreground tab's live state")
+    }
+
+    func test_handleNavigationCommit_chatChanged_clearsDraftLiveAndStored() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("draft for previous chat")
+
+        sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(sut.currentText, "")
+        XCTAssertEqual(store.states["tab-A"]?.text, "")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
+    func test_handleNavigationCommit_sameChat_preservesDraft() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("draft survives reload")
+
+        sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: false)
+
+        XCTAssertEqual(sut.currentText, "draft survives reload")
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft survives reload")
+    }
+
+    func test_handleNavigationCommit_resetsVoiceSessionStateLiveAndStored() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.isVoiceSessionActive = true
+
+        sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: false)
+
+        XCTAssertFalse(sut.isVoiceSessionActive)
+        XCTAssertEqual(store.states["tab-A"]?.isVoiceSessionActive, false)
+    }
+
+    func test_handleNavigationCommit_startsWithHiddenInput_appliesHiddenVisibility() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+
+        sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: false, startsWithHiddenInput: true)
+
+        XCTAssertEqual(sut.aiChatInputBoxVisibility, .hidden)
+        XCTAssertEqual(store.states["tab-A"]?.aiChatInputBoxVisibility, .hidden)
+    }
+
+    func test_handleNavigationCommit_chatChangedOnBackgroundTab_clearsStoredDraftOnly() {
+        let store = FakeInputStateStore()
+        store.states["tab-B"] = TabInputState(text: "background draft")
+        let sut = makeSUT(stateStore: store)
+        sut.activateForTab("tab-A")
+        sut.setText("foreground draft")
+
+        sut.handleNavigationCommit(tabUID: "tab-B", didChangeChat: true)
+
+        XCTAssertEqual(store.states["tab-B"]?.text, "")
+        XCTAssertEqual(sut.currentText, "foreground draft")
+    }
+
     func test_activateForTab_roundTripsModelPickerForcedVisible() {
         let store = FakeInputStateStore()
         let sut = makeSUT(stateStore: store)

@@ -105,6 +105,7 @@ final class BrowserTabViewController: NSViewController {
     private let subscriptionManager: any SubscriptionManager
     private weak var subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate?
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let permissionManager: PermissionManagerProtocol
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
 
@@ -118,6 +119,7 @@ final class BrowserTabViewController: NSViewController {
     private var keyWindowSelectedTabCancellable: AnyCancellable?
     private var contentOverlayWindowResizeCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var contextualCompletionCancellable: AnyCancellable?
 
     private weak var previouslySelectedTab: Tab?
 
@@ -185,6 +187,7 @@ final class BrowserTabViewController: NSViewController {
          subscriptionManager: any SubscriptionManager = NSApp.delegateTyped.subscriptionManager,
          subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate? = NSApp.delegateTyped.subscriptionPromoDelegate,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         permissionManager: PermissionManagerProtocol,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
          tld: TLD = NSApp.delegateTyped.tld,
@@ -215,6 +218,7 @@ final class BrowserTabViewController: NSViewController {
         self.subscriptionManager = subscriptionManager
         self.subscriptionPromoDelegate = subscriptionPromoDelegate
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.permissionManager = permissionManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
 
@@ -223,6 +227,15 @@ final class BrowserTabViewController: NSViewController {
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
+
+        contextualCompletionCancellable = onboardingDialogTypeProvider.isContextualOnboardingCompletedPublisher
+            .sink { [weak self] completed in
+                guard let self, completed,
+                      NonBlockingOnboarding(featureFlagger: self.featureFlagger).isNonBlocking,
+                      self.presentedContextualOnboardingDialogType != nil else { return }
+                self.delegate?.dismissViewHighlight()
+                self.removeExistingDialog()
+            }
     }
 
     override func loadView() {
@@ -878,14 +891,23 @@ final class BrowserTabViewController: NSViewController {
     private func handleContextualOnboardingOnManualDismiss(dialogType: ContextualDialogType) {
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingPixelReporter.measureDialogManuallyDismissed(dialogType: displayedDialogType)
-        if displayedDialogType == .subscriptionUpsell,
-           onboardingDialogTypeProvider.lastDialog == displayedDialogType {
-            onboardingDialogTypeProvider.gotItPressed()
+        let onboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
+        if onboarding.isNonBlocking {
+            onboardingPixelReporter.measureDialogDismissed(dialogType: displayedDialogType)
+            PixelKit.fire(GeneralPixel.onboardingContextualDismissed, frequency: .uniqueByName)
+            onboardingDialogTypeProvider.turnOffFeature()
+        } else {
+            if displayedDialogType == .subscriptionUpsell,
+               onboardingDialogTypeProvider.lastDialog == displayedDialogType {
+                onboardingDialogTypeProvider.gotItPressed()
+            }
+            handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
         }
-        handleContextualOnboardingOnDismiss(dialogType: displayedDialogType)
     }
 
     private func handleContextualOnboardingOnGotItPressed(dialogType: ContextualDialogType) {
+        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking,
+           onboardingDialogTypeProvider.state == .onboardingCompleted { return }
         let displayedDialogType = displayedDialogType(forRoot: dialogType)
         onboardingDialogTypeProvider.gotItPressed()
         onboardingPixelReporter.measureGotItPressed(dialogType: displayedDialogType)
@@ -1489,6 +1511,7 @@ final class BrowserTabViewController: NSViewController {
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
                 featureFlagger: featureFlagger,
+                permissionManager: permissionManager,
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
                 searchPreferences: searchPreferences,
@@ -1665,7 +1688,7 @@ extension BrowserTabViewController: TabDelegate {
         guard let index = tabCollectionViewModel.tabCollection.firstIndex(of: tab) else {
             return
         }
-        tabCollectionViewModel.remove(at: .unpinned(index))
+        tabCollectionViewModel.close(at: .unpinned(index))
     }
 
     func tab(_ tab: Tab,
@@ -2070,6 +2093,7 @@ extension BrowserTabViewController {
     }
 }
 
+#if DEBUG
 @available(macOS 14.0, *)
 #Preview {
     BrowserTabViewController(
@@ -2085,9 +2109,11 @@ extension BrowserTabViewController {
         dockPreferences: Application.appDelegate.dockPreferences,
         accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
         duckPlayer: Application.appDelegate.duckPlayer,
+        permissionManager: PermissionManagerMock(),
         pinningManager: Application.appDelegate.pinningManager
     )
 }
+#endif
 
 // MARK: - Tab Selection for AI Chat Sidebar
 

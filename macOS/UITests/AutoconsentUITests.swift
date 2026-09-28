@@ -25,7 +25,7 @@ class AutoconsentUITests: UITestCase {
     private var addressBarTextField: XCUIElement!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
 
         // Use existing extension method instead of setupSingleWindow()

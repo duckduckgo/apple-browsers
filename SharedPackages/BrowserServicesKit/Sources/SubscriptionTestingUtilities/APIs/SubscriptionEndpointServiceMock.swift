@@ -61,7 +61,9 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
     // MARK: - Purchase Confirmation
 
     public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIRequestV2Error>?
-    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> ConfirmPurchaseResponse {
+    public func confirmPurchase(accessToken: String,
+                                signature: String,
+                                experimentAttribution: PurchaseExperimentAttribution?) async throws -> ConfirmPurchaseResponse {
         switch confirmPurchaseResult! {
         case .success(let result): return result
         case .failure(let error): throw error

@@ -22,10 +22,11 @@ import Combine
 import Common
 import FoundationExtensions
 @testable import DDGSync
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
-import SharedTestUtilities
+@_spi(Testing) import SharedTestUtilities
 import Subscription
+import SubscriptionTestingUtilities
 import Testing
 import UserScript
 import WebKit
@@ -451,7 +452,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: false, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -475,15 +476,15 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric reports isOpenedFromAskDuckAiButton=true when the chat was opened from the Duck.ai button", .timeLimit(.minutes(1)))
+    @Test("didReportMetric reports the surface that opened the chat", .timeLimit(.minutes(1)))
     @MainActor
-    func testThatConversationPixelReportsOpenedFromAskDuckAiButton() async throws {
+    func testThatConversationPixelReportsTheOpeningSurface() async throws {
         // A tab-bar Duck.ai button gesture stamps the pending source just before opening the chat.
         let sourceHandler = AIChatConversationSourceHandler()
         sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(isOpenedFromAskDuckAiButton: true, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -516,7 +517,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitPromptFiresSentPromptOngoingChatPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(isOpenedFromAskDuckAiButton: false, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -537,6 +538,245 @@ struct AIChatUserScriptHandlerTests {
         }
 
         #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
+    }
+
+    /// `PixelKitMock` runs both sides through the same `parameters` code, so it can't catch a wrong
+    /// value — these read the fired parameters directly.
+    @MainActor
+    private func firedConversationParameters(source: AIChatConversationSource?,
+                                             metric: AIChatMetricName,
+                                             webView: WKWebView? = nil) async -> [String: String]? {
+        let sourceHandler = AIChatConversationSourceHandler()
+        if let source {
+            sourceHandler.setData(source)
+        }
+
+        let testPixelFiring = PixelKitMock()
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: testPixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter,
+            conversationSourceHandler: sourceHandler
+        )
+
+        // The first native-config fetch is what consumes the pending source.
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        return testPixelFiring.actualFireCalls.first?.pixel.parameters
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat with no recorded surface is attributed to 'other' rather than dropped", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelFallsBackToOtherSource() async {
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt)
+        #expect(parameters?["source"] == "unattributed")
+        #expect(parameters?["isOpenedFromAskDuckAiButton"] == "false")
+    }
+
+    /// Where duckduckgo.com redirects a prompt its homepage composer hands to Duck.ai.
+    private static let homepageFunnelChatURL = "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_"
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat the homepage handed over is attributed to it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelAttributesUnstampedChatToDuckDuckGoHomepage() async {
+        let webView = mockWebView(url: Self.homepageFunnelChatURL)
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "duckduckgo-homepage")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat without the homepage funnel marker stays unattributed", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelDoesNotAttributeAChatWithoutTheFunnelMarkerToDuckDuckGoHomepage() async {
+        let webView = mockWebView(url: "https://duck.ai/chat?ia=chat")
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A recorded surface wins over the homepage funnel marker", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelPrefersRecordedSourceOverDuckDuckGoHomepageFallback() async {
+        let webView = mockWebView(url: Self.homepageFunnelChatURL)
+        let parameters = await firedConversationParameters(source: .serp, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "serp")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ordinary duckduckgo.com page leaves a stamp pending for the chat it was meant for", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANonChatPageDoesNotConsumeAPendingStamp() async {
+        // The mailbox is app-wide, so a page that can't be a chat must not drain it — the chat it
+        // was stamped for may be loading in another tab.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        sourceHandler.setData(.tabBarButton)
+
+        let serpWebView = mockWebView(url: "https://duckduckgo.com/?q=test")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: serpWebView))
+
+        #expect(sourceHandler.consumeData() == .tabBarButton)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A source staged after an earlier, empty config fetch is picked up by the next document", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelPicksUpSourceStagedAfterAnEarlierEmptyConfigFetch() async {
+        // Mirrors the omnibar reusing a tab already on duckduckgo.com: the homepage's config fetch
+        // runs first, then the omnibar stamps the real source and navigates that same tab to Duck.ai.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        sourceHandler.setData(.omnibar)
+        testHandler.resetConversationSourceForNewDocument()
+
+        let chatWebView = mockWebView(url: "https://duck.ai/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "omnibar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving the homepage for Duck.ai in the same tab is not attributed to the homepage", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatNavigatingFromTheHomepageToDuckAIIsNotAttributedToTheHomepage() async {
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+        testHandler.resetConversationSourceForNewDocument()
+
+        let duckAIWebView = mockWebView(url: "https://duck.ai/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: duckAIWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Returning to the homepage for a second conversation drops the first conversation's source", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatASecondConversationInTheSameTabDoesNotReuseTheFirstSource() async {
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let homepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: homepageWebView))
+
+        sourceHandler.setData(.omnibar)
+        testHandler.resetConversationSourceForNewDocument()
+        let chatWebView = mockWebView(url: "https://duck.ai/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "omnibar")
+
+        // Back to the homepage in that same tab, then a fresh conversation from its toggle.
+        testHandler.resetConversationSourceForNewDocument()
+        let secondHomepageWebView = mockWebView(url: "https://duckduckgo.com/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: secondHomepageWebView))
+        testHandler.resetConversationSourceForNewDocument()
+        let funnelWebView = mockWebView(url: Self.homepageFunnelChatURL)
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: funnelWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "duckduckgo-homepage")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new chat document in the same tab derives its own source", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANewChatDocumentInTheSameTabDerivesItsOwnSource() async {
+        // e.g. picking a recent chat from the omnibar while already on a Duck.ai tab.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        sourceHandler.setData(.omnibar)
+        let chatWebView = mockWebView(url: "https://duck.ai/")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: chatWebView))
+
+        sourceHandler.setData(.omnibarRecentChat)
+        testHandler.resetConversationSourceForNewDocument()
+        let recentChatWebView = mockWebView(url: "https://duck.ai/chat?chatID=abc123")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: recentChatWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.first?.pixel.parameters?["source"] == "omnibar-recent-chat")
+        #expect(sourceHandler.consumeData() == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A chat served from a homepage-shaped duckduckgo.com URL is not attributed to the homepage", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAChatServedFromAHomepageShapedURLIsNotAttributedToTheHomepage() async {
+        let webView = mockWebView(url: "https://duckduckgo.com/?ia=chat")
+        let parameters = await firedConversationParameters(source: nil, metric: .userDidSubmitFirstPrompt, webView: webView)
+        #expect(parameters?["source"] == "unattributed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ongoing chat keeps its source within a document and leaves a later stamp alone", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatOngoingChatKeepsItsSourceAndLeavesALaterStampAlone() async {
+        // Duck.ai rewrites its own URL as a conversation proceeds and may fetch the config again;
+        // without a new document that must neither re-derive the source nor drain a stamp meant
+        // for another chat.
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+
+        let funnelWebView = mockWebView(url: Self.homepageFunnelChatURL)
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: funnelWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        sourceHandler.setData(.omnibar)
+        let rewrittenWebView = mockWebView(url: "https://duck.ai/chat?ia=chat&chatID=abc123")
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: rewrittenWebView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "duckduckgo-homepage")
+        #expect(sourceHandler.consumeData() == .omnibar)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A non-button surface is reported verbatim and leaves the legacy boolean false", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatConversationPixelReportsNonButtonSourceVerbatim() async {
+        let parameters = await firedConversationParameters(source: .contextualSummarize, metric: .userDidSubmitFirstPrompt)
+        #expect(parameters?["source"] == "contextual-summarize")
+        #expect(parameters?["isOpenedFromAskDuckAiButton"] == "false")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ongoing chat reports the surface that originally opened it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatOngoingChatPixelReportsTheOpeningSurface() async {
+        let parameters = await firedConversationParameters(source: .newTabPage, metric: .userDidSubmitPrompt)
+        #expect(parameters?["source"] == "new-tab-page")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -575,58 +815,66 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.actualFireCalls.isEmpty)
     }
 
+    // Constructing AIChatMetric from the enum can't catch a Swift
+    // name that doesn't match what Duck.ai posts. 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric fires the subscription-funnel impression pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
-        (AIChatMetricName.userDidViewAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
-        (.userDidViewActivateSubscriptionBanner, "funnel_duckai_macos__activatesubscription"),
-        (.userDidViewFreePlanBadge, "funnel_duckai_macos__freelabel"),
-        (.userDidViewFreeLimitMessage, "funnel_duckai_macos__freelimit"),
-        (.userDidViewImageGenerationLimitMessage, "funnel_duckai_macos__imagegenerationlimit"),
-        (.userDidViewPlusLimitMessage, "funnel_duckai_macos__pluslimit"),
-        (.userDidViewPromotionCard, "funnel_duckai_macos__promotioncard"),
-        (.userDidViewSettingsSubscribeButton, "funnel_duckai_macos__settings"),
-        (.userDidViewProUpgradeDisclaimerBanner, "funnel_duckai_macos__disclaimerbanner"),
-        (.userDidViewVoiceChatLimitModal, "funnel_duckai_macos__voicechatlimit"),
-        (.userDidViewVoiceChatDurationLimitModal, "funnel_duckai_macos__voicechatdurationlimit")
+    @Test("reportMetric fires the subscription-funnel impression pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        ("userDidViewAiSidebarUpgradeButton", "funnel_duckai_macos__aisidebar"),
+        ("userDidViewActivateSubscriptionBanner", "funnel_duckai_macos__activatesubscription"),
+        ("userDidViewFreePlanBadge", "funnel_duckai_macos__freelabel"),
+        ("userDidViewFreeLimitMessage", "funnel_duckai_macos__freelimit"),
+        ("userDidViewImageGenerationLimitMessage", "funnel_duckai_macos__imagegenerationlimit"),
+        ("userDidViewPlusLimitMessage", "funnel_duckai_macos__pluslimit"),
+        ("userDidViewPromotionCard", "funnel_duckai_macos__promotioncard"),
+        ("userDidViewSettingsSubscribeButton", "funnel_duckai_macos__settings"),
+        ("userDidViewProUpgradeDisclaimerBanner", "funnel_duckai_macos__disclaimerbanner"),
+        ("userDidViewVoiceChatLimitModal", "funnel_duckai_macos__voicechatlimit"),
+        ("userDidViewVoiceChatDurationLimitModal", "funnel_duckai_macos__voicechatdurationlimit"),
+        ("userDidViewModelPickerUpgrade", "funnel_duckai_macos__modelpicker"),
+        ("userDidViewReasoningDropdownUpgrade", "funnel_duckai_macos__reasoningdropdown"),
+        ("userDidViewSwitchModelUpgrade", "funnel_duckai_macos__switchmodel")
     ])
     @MainActor
-    func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+    func testFunnelImpressionMetricFiresImpressionPixelWithOrigin(metricName: String, origin: String) async {
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelImpression(origin: origin), frequency: .dailyAndCount)]
 
-        await withCheckedContinuation { continuation in
-            handler.didReportMetric(.init(metricName: metric)) {
-                continuation.resume()
-            }
-        }
+        _ = await handler.reportMetric(
+            params: ["metricName": metricName],
+            message: WKScriptMessage.mock()
+        )
 
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+        #expect(userScriptErrorEventMapper.events.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("didReportMetric fires the subscription-funnel click pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
-        (AIChatMetricName.userDidClickAiSidebarUpgradeButton, "funnel_duckai_macos__aisidebar"),
-        (.userDidClickActivateSubscriptionButton, "funnel_duckai_macos__activatesubscription"),
-        (.userDidClickFreePlanUpgradeButton, "funnel_duckai_macos__freelabel"),
-        (.userDidClickFreeLimitSubscribeLink, "funnel_duckai_macos__freelimit"),
-        (.userDidClickImageGenerationLimitSubscribeButton, "funnel_duckai_macos__imagegenerationlimit"),
-        (.userDidClickPlusLimitUpgradeLink, "funnel_duckai_macos__pluslimit"),
-        (.userDidClickPromotionCardButton, "funnel_duckai_macos__promotioncard"),
-        (.userDidClickSettingsSubscribeButton, "funnel_duckai_macos__settings"),
-        (.userDidClickProUpgradeDisclaimerBannerButton, "funnel_duckai_macos__disclaimerbanner"),
-        (.userDidClickVoiceChatLimitModalSubscribeButton, "funnel_duckai_macos__voicechatlimit"),
-        (.userDidClickVoiceChatDurationLimitModalSubscribeButton, "funnel_duckai_macos__voicechatdurationlimit")
+    @Test("reportMetric fires the subscription-funnel click pixel with the matching origin", .timeLimit(.minutes(1)), arguments: [
+        ("userDidClickAiSidebarUpgradeButton", "funnel_duckai_macos__aisidebar"),
+        ("userDidClickActivateSubscriptionButton", "funnel_duckai_macos__activatesubscription"),
+        ("userDidClickFreePlanUpgradeButton", "funnel_duckai_macos__freelabel"),
+        ("userDidClickFreeLimitSubscribeLink", "funnel_duckai_macos__freelimit"),
+        ("userDidClickImageGenerationLimitSubscribeButton", "funnel_duckai_macos__imagegenerationlimit"),
+        ("userDidClickPlusLimitUpgradeLink", "funnel_duckai_macos__pluslimit"),
+        ("userDidClickPromotionCardButton", "funnel_duckai_macos__promotioncard"),
+        ("userDidClickSettingsSubscribeButton", "funnel_duckai_macos__settings"),
+        ("userDidClickProUpgradeDisclaimerBannerButton", "funnel_duckai_macos__disclaimerbanner"),
+        ("userDidClickVoiceChatLimitModalSubscribeButton", "funnel_duckai_macos__voicechatlimit"),
+        ("userDidClickVoiceChatDurationLimitModalSubscribeButton", "funnel_duckai_macos__voicechatdurationlimit"),
+        ("userDidClickModelPickerUpgrade", "funnel_duckai_macos__modelpicker"),
+        ("userDidClickReasoningDropdownUpgrade", "funnel_duckai_macos__reasoningdropdown"),
+        ("userDidClickSwitchModelUpgrade", "funnel_duckai_macos__switchmodel")
     ])
     @MainActor
-    func testFunnelClickMetricFiresClickPixelWithOrigin(metric: AIChatMetricName, origin: String) async {
+    func testFunnelClickMetricFiresClickPixelWithOrigin(metricName: String, origin: String) async {
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSubscriptionFunnelClick(origin: origin), frequency: .dailyAndCount)]
 
-        await withCheckedContinuation { continuation in
-            handler.didReportMetric(.init(metricName: metric)) {
-                continuation.resume()
-            }
-        }
+        _ = await handler.reportMetric(
+            params: ["metricName": metricName],
+            message: WKScriptMessage.mock()
+        )
 
         #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+        #expect(userScriptErrorEventMapper.events.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -977,6 +1225,28 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("sendToSetupSync does not fire sync promo confirmed pixel when sync is already on", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatSendToSetupSyncDoesNotFireSyncPromoConfirmedWhenSyncAlreadyOn() throws {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: true)
+        let syncService = makeSyncService(authState: .active, account: SyncAccount(deviceId: "id",
+                                                                                   deviceName: "name",
+                                                                                   deviceType: "desktop",
+                                                                                   userId: "user",
+                                                                                   primaryKey: Data(),
+                                                                                   secretKey: Data(),
+                                                                                   token: nil,
+                                                                                   state: .active))
+        let testHandler = makeHandler(featureFlagger: featureFlagger, syncServiceProvider: { syncService })
+
+        let response = testHandler.sendToSetupSync(params: [String: Any](), message: WKScriptMessage.mock())
+
+        let errorResponse = try #require(response as? AIChatErrorResponse)
+        #expect(errorResponse.reason == "sync already on")
+        #expect(!pixelFiring.actualFireCalls.contains { $0.pixel.name == SyncPromoPixelKitEvent.syncPromoConfirmed.name })
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("setAIChatHistoryEnabled is notify-only and best-effort persists even when account is missing", .timeLimit(.minutes(1)))
     @MainActor
     func testThatSetAIChatHistoryEnabledBestEffortPersistsWhenAccountIsMissing() throws {
@@ -1057,6 +1327,30 @@ struct AIChatUserScriptHandlerTests {
             freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter
         )
+    }
+
+    /// For tests that stage the mailbox mid-flight, so they hold it and the pixel mock themselves.
+    @MainActor
+    private func makeHandler(sourceHandler: AIChatConversationSourceHandler,
+                             pixelFiring: PixelKitMock) -> AIChatUserScriptHandler {
+        AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter,
+            conversationSourceHandler: sourceHandler
+        )
+    }
+
+    /// Module-qualified because this test target has its own unrelated `MockWKWebView`. Bind the
+    /// result to a local — `WKScriptMessage.mock` holds the web view weakly.
+    private func mockWebView(url: String) -> WKWebView {
+        SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
     }
 
     // MARK: - Free Trial Conversion Tracking
@@ -1407,5 +1701,134 @@ struct AIChatMessageHandlerInstallInfoTests {
     func testNilInstallDateBucketsToZero() {
         let config = makeHandler(installDate: nil, installType: .new).getNativeConfigValues(isFireWindow: false)
         #expect(config.installAge == 0)
+    }
+}
+
+struct AIChatConversationSourcePixelTests {
+
+    /// Pinned so a new case can't ship without the matching `aiChatConversationSource` value in
+    /// `params_dictionary.json5` — the app would send a value the definition rejects.
+    private static let expectedRawValues = [
+        "tab-bar-button",
+        "ask-about-page",
+        "tab-bar-sidebar",
+        "tab-bar-chats",
+        "address-bar",
+        "address-bar-suggestion",
+        "address-bar-context-menu",
+        "new-tab-page",
+        "new-tab-page-view-all-chats",
+        "new-tab-page-voice",
+        "new-tab-page-recent-chat",
+        "omnibar",
+        "omnibar-view-all-chats",
+        "omnibar-voice",
+        "omnibar-recent-chat",
+        "prompt-bar",
+        "prompt-bar-voice",
+        "main-menu-file-new-chat",
+        "main-menu-sidebar",
+        "main-menu-open-duck-ai",
+        "main-menu-new-chat",
+        "main-menu-view-all-chats",
+        "main-menu-voice",
+        "main-menu-image",
+        "main-menu-recent-chat",
+        "more-options-menu-new-duck-ai-chat",
+        "more-options-menu-open-duck-ai",
+        "more-options-menu-new-chat",
+        "more-options-menu-view-all-chats",
+        "more-options-menu-voice",
+        "more-options-menu-image",
+        "more-options-menu-recent-chat",
+        "contextual-summarize",
+        "contextual-translate",
+        "contextual-attach-selection",
+        "serp",
+        "sidebar-handoff",
+        "settings",
+        "duckduckgo-homepage",
+        "unattributed"
+    ]
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Conversation source raw values match the pixel definition", .timeLimit(.minutes(1)))
+    func testConversationSourceRawValuesMatchPixelDefinition() {
+        #expect(AIChatConversationSource.allCases.map(\.rawValue) == Self.expectedRawValues)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Every source is reported verbatim by both conversation pixels", .timeLimit(.minutes(1)),
+          arguments: AIChatConversationSource.allCases)
+    func testEverySourceIsReportedVerbatim(source: AIChatConversationSource) {
+        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: source, hasPageContext: false)
+            .parameters?["source"] == source.rawValue)
+        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: source, hasPageContext: false)
+            .parameters?["source"] == source.rawValue)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A button surface with page context reports every parameter", .timeLimit(.minutes(1)))
+    func testButtonSourceWithPageContextParameters() {
+        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: .askAboutPage, hasPageContext: true).parameters == [
+            "source": "ask-about-page",
+            "isOpenedFromAskDuckAiButton": "true",
+            "hasPageContext": "true"
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each Duck.ai menu item maps to a source scoped to its own menu", .timeLimit(.minutes(1)), arguments: [
+        (AIChatMenuConversationSources.mainMenu, "main-menu"),
+        (AIChatMenuConversationSources.moreOptionsMenu, "more-options-menu")
+    ])
+    func testMenuSourcesAreScopedToTheirMenu(sources: AIChatMenuConversationSources, prefix: String) {
+        #expect(sources.openDuckAI.rawValue == "\(prefix)-open-duck-ai")
+        #expect(sources.newChat.rawValue == "\(prefix)-new-chat")
+        #expect(sources.viewAllChats.rawValue == "\(prefix)-view-all-chats")
+        #expect(sources.voice.rawValue == "\(prefix)-voice")
+        #expect(sources.image.rawValue == "\(prefix)-image")
+        #expect(sources.recentChat.rawValue == "\(prefix)-recent-chat")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The shared new-chat menu items resolve to distinct sources", .timeLimit(.minutes(1)))
+    func testSharedNewChatItemsAreDistinct() {
+        let sources = AIChatMenuConversationSources.mainMenu
+        let resolved = [AIChatMenuNewChatItem.openDuckAI, .newChat, .viewAllChats]
+            .map { sources.source(for: $0).rawValue }
+        #expect(resolved == ["main-menu-open-duck-ai", "main-menu-new-chat", "main-menu-view-all-chats"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Tab-bar New Chat and Chats use distinct sources", .timeLimit(.minutes(1)))
+    func testTabBarNewChatAndChatsAreDistinct() {
+        #expect(AIChatConversationSource.tabBarButton.rawValue == "tab-bar-button")
+        #expect(AIChatConversationSource.tabBarChats.rawValue == "tab-bar-chats")
+        #expect(AIChatConversationSource.tabBarButton != .tabBarChats)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The no-stamp fallback reports 'unattributed'", .timeLimit(.minutes(1)))
+    func testFallbackIsNamedUnattributed() {
+        #expect(AIChatConversationSource.unattributed.rawValue == "unattributed")
+        #expect(!AIChatConversationSource.unattributed.isAskDuckAiButton)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The address-bar button and its suggestion row report different sources", .timeLimit(.minutes(1)))
+    func testAddressBarButtonAndSuggestionAreDistinct() {
+        #expect(AIChatConversationSource.addressBar.rawValue == "address-bar")
+        #expect(AIChatConversationSource.addressBarSuggestion.rawValue == "address-bar-suggestion")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An unattributed chat reports every parameter", .timeLimit(.minutes(1)))
+    func testUnattributedSourceParameters() {
+        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false).parameters == [
+            "source": "unattributed",
+            "isOpenedFromAskDuckAiButton": "false",
+            "hasPageContext": "false"
+        ])
     }
 }

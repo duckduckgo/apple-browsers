@@ -59,7 +59,7 @@ extension Preferences {
                         .frame(width: 512)
                         .onAppear {
                             if !hasFiredSettingsDisplayedPixel {
-                                PixelKit.fire(GeneralPixel.duckPlayerContingencySettingsDisplayed, doNotEnforcePrefix: true)
+                                PixelKit.fire(GeneralPixel.duckPlayerContingencySettingsDisplayed)
                                 hasFiredSettingsDisplayedPixel = true
                             }
                         }

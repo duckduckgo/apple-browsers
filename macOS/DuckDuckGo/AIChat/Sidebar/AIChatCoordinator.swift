@@ -296,7 +296,10 @@ final class AIChatCoordinator: AIChatCoordinating {
             focusFloatingWindow(for: currentTabID)
             return
         }
-        guard !isSidebarOpen(for: currentTabID) else { return }
+        guard !isSidebarOpen(for: currentTabID) else {
+            sessionStore.sessions[currentTabID]?.chatViewController?.focusChatWebView()
+            return
+        }
         showSidebar(for: currentTabID, animated: true)
     }
 

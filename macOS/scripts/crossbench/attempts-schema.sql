@@ -1,12 +1,9 @@
--- DESTRUCTIVE schema cutover: run only while existing rows are disposable.
-DROP TABLE IF EXISTS native_apps.macos_browser_health_nav_to_lcp_attempts
-ON CLUSTER `ch-prod-cluster`
-SYNC;
-
 -- One row per workflow run, browser, and requested domain. This companion to
 -- native_apps.macos_browser_health_nav_to_lcp answers whether a site was
 -- eligible and measured, and why a requested site has no metrics row.
-CREATE TABLE native_apps.macos_browser_health_nav_to_lcp_attempts
+-- Existing tables require an explicit ALTER migration; this initializer never
+-- drops operational data.
+CREATE TABLE IF NOT EXISTS native_apps.macos_browser_health_nav_to_lcp_attempts
 ON CLUSTER `ch-prod-cluster`
 (
     run_id UInt64
@@ -19,9 +16,9 @@ ON CLUSTER `ch-prod-cluster`
     domain LowCardinality(String)
         COMMENT 'Requested site hostname, not a redirected or final URL',
     webview_type LowCardinality(String)
-        COMMENT 'Stable browser and harness code shared with the metrics table, such as chr-wpr',
+        COMMENT 'Browser name: chrome, safari, or ddg',
     webview_channel LowCardinality(String)
-        COMMENT 'Browser release channel, such as stable, beta, dev, or canary',
+        COMMENT 'Browser release channel: stable, beta, dev, canary, or review',
     webview_version String
         COMMENT 'Full browser version reported by the runner',
 

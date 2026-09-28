@@ -20,7 +20,7 @@
 import Foundation
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import CoreData
 import Bookmarks
 import PrivacyConfig
@@ -29,7 +29,6 @@ import History
 
 @testable import Core
 @testable import DuckDuckGo
-@testable import PersistenceTestingUtils
 
 final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
 

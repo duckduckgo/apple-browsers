@@ -19,7 +19,7 @@
 
 import Foundation
 import Testing
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @Suite("Modal Prompt Coordination - Cooldown Store")

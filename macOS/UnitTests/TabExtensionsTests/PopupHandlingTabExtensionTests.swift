@@ -26,7 +26,7 @@ import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-@testable import Navigation
+@testable import DDGNavigation
 
 final class PopupHandlingTabExtensionTests: XCTestCase {
 
@@ -1013,6 +1013,93 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // THEN - Popup should be blocked (permission denied automatically)
         wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenPopupsDefaultIsNeverAllow_ThenPopupIsBlockedWithoutQuery() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+
+        let popupCreatedExpectation = expectation(description: "Popup not created")
+        popupCreatedExpectation.isInverted = true
+
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill() // Shouldn't happen
+            return nil
+        }
+
+        // WHEN - Non-user-initiated popup
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        let result = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Blocked synchronously, and no authorization query means no "Pop-Up Blocked" popover
+        XCTAssertNil(result)
+        XCTAssertNil(mockPermissionModel.authorizationQuery)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenAllowlistedSiteHasNeverAllowDefaultThenPopupIsBlockedSilently() {
+        mockPopupBlockingConfig.allowlist = ["example.com"]
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+        popupHandlingExtension = createExtension()
+        createChildTab = { _, _, _ in
+            XCTFail("The default denial must override the compatibility allowlist")
+            return nil
+        }
+
+        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration,
+                                                for: navigationAction, windowFeatures: windowFeatures)
+
+        XCTAssertNil(mockPermissionModel.authorizationQuery)
+        XCTAssertEqual(mockPermissionModel.permissions.popups, .denied)
+    }
+
+    @MainActor
+    func testWhenAllowlistedSiteHasSavedDecisionThenItOverridesNeverAllowDefault() {
+        mockPopupBlockingConfig.allowlist = ["example.com"]
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+        popupHandlingExtension = createExtension()
+        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!)
+
+        for decision in [PersistedPermissionDecision.ask, .allow] {
+            testPermissionManager.setPermission(decision, forDomain: "example.com", permissionType: .popups)
+
+            let reason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+                for: navigationAction, windowFeatures: windowFeatures)
+
+            XCTAssertEqual(reason, .allowlistedDomain("example.com"))
+        }
+    }
+
+    @MainActor
+    func testWhenPopupsDefaultIsNeverAllowThenUserInitiatedPopupStillOpens() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+        popupHandlingExtension = createExtension()
+        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: true)
+
+        let reason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            for: navigationAction, windowFeatures: windowFeatures)
+
+        XCTAssertEqual(reason, .userInitiated(.webKitUserInitiated))
+    }
+
+    @MainActor
+    func testWhenPopupsDefaultIsNeverAllowAndSiteIsSetToAsk_ThenPopupStillPrompts() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.defaultDecisions = [.popups: .deny]
+        testPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .popups)
+
+        // WHEN - Non-user-initiated popup
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - The per-site override brings the prompt back
+        XCTAssertNotNil(mockPermissionModel.authorizationQuery)
     }
 
     @MainActor
@@ -2111,9 +2198,16 @@ class MockPopupBlockingConfiguration: PopupBlockingConfiguration {
 }
 
 class TestPermissionManager: PermissionManagerProtocol {
+    var persistedPermissionsPublisher: AnyPublisher<[WebsitePermissionEntry], Never> {
+        Empty().eraseToAnyPublisher()
+    }
+
     var persistedPermissions: [String: [PermissionType: PersistedPermissionDecision]] = [:]
 
-    var permissionPublisher: AnyPublisher<(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision), Never> {
+    /// Category defaults from Settings > Website Permissions, applied when a domain has nothing saved.
+    var defaultDecisions: [WebsitePermissionCategory: PersistedPermissionDecision] = [:]
+
+    var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         return Empty().eraseToAnyPublisher()
     }
 
@@ -2131,14 +2225,22 @@ class TestPermissionManager: PermissionManagerProtocol {
     }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
-        return persistedPermissions[domain]?[permissionType] ?? .ask
+        return persistedPermissions[domain]?[permissionType] ?? defaultDecision(for: permissionType)
+    }
+
+    func defaultDecision(for permissionType: PermissionType) -> PersistedPermissionDecision {
+        guard let category = WebsitePermissionCategory.category(for: permissionType) else { return .ask }
+        return defaultDecisions[category] ?? .ask
     }
 
     func persistedDecision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
         return persistedPermissions[domain]?[permissionType]
     }
 
-    func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
+    func setPermission(_ decision: PersistedPermissionDecision,
+                       forDomain domain: String,
+                       permissionType: PermissionType,
+                       lastModified: Date = Date()) {
         if persistedPermissions[domain] == nil {
             persistedPermissions[domain] = [:]
         }

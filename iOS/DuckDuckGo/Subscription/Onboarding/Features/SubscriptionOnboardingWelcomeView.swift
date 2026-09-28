@@ -25,21 +25,26 @@ import UIComponents
 /// An overview of the four premium protections (VPN, Identity Theft Restoration, Advanced AI Models, Personal Information Removal).
 /// Tapping a row presents that feature's  info screen (``SubscriptionOnboardingInfoView``) as a sheet; the primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
-    let onClose: () -> Void
+    /// Drops `.vpnWidget` and `.vpnTips` on top of that, since neither is a "premium protection" of its own.
+    static func displayedFeatures(entitledChecklist: [SubscriptionOnboardingChecklistItem]) -> [SubscriptionOnboardingChecklistItem] {
+        entitledChecklist.filter { $0 != .vpnWidget && $0 != .vpnTips }
+    }
+
+    var navigationButton: SubscriptionOnboardingNavigationButton?
+    var features: [SubscriptionOnboardingChecklistItem] = displayedFeatures(entitledChecklist: SubscriptionOnboardingChecklistItem.allCases)
+    var onNext: () -> Void = {}
 
     @State private var selectedFeature: SubscriptionOnboardingChecklistItem?
 
     var body: some View {
         SubscriptionOnboardingBaseView(
-            navigationButton: .close(onClose),
+            navigationButton: navigationButton,
             header: SubscriptionOnboardingHeaderView(
                 visual: .image(Image(.subscriptionDDG96)),
                 title: UserText.subscriptionOnboardingWelcomeTitle,
                 explanation: UserText.subscriptionOnboardingWelcomeExplanation),
-            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: {
-                // TODO: advance to the first section once the flow view model exists.
-            }))) {
-            WelcomeCard(onSelect: { selectedFeature = $0 })
+            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext))) {
+            WelcomeCard(features: features, onSelect: { selectedFeature = $0 })
         }
         .subscriptionOnboardingInfoSheet(item: $selectedFeature)
     }
@@ -56,10 +61,11 @@ private struct WelcomeCard: View {
         static let contentInsetVertical: CGFloat = 14
     }
 
-    private let features = SubscriptionOnboardingChecklistItem.allCases
+    private let features: [SubscriptionOnboardingChecklistItem]
     private let onSelect: (SubscriptionOnboardingChecklistItem) -> Void
 
-    init(onSelect: @escaping (SubscriptionOnboardingChecklistItem) -> Void) {
+    init(features: [SubscriptionOnboardingChecklistItem], onSelect: @escaping (SubscriptionOnboardingChecklistItem) -> Void) {
+        self.features = features
         self.onSelect = onSelect
     }
 
@@ -82,9 +88,10 @@ private extension WelcomeCard {
             trailing: .chevron(Color(designSystemColor: .iconsTertiary)))
     }
 
+    /// The widget and tips steps share VPN's presentation. Not rendered here (features only), but grouped with VPN to keep the switch exhaustive.
     static func visual(for feature: SubscriptionOnboardingChecklistItem) -> Graphic {
         switch feature {
-        case .vpn: colorIcon(DesignSystemImages.Color.Size24.vpn)
+        case .vpn, .vpnWidget, .vpnTips: colorIcon(DesignSystemImages.Color.Size24.vpn)
         case .idtr: colorIcon(DesignSystemImages.Color.Size24.identityTheftRestoration)
         case .duckAI: colorIcon(DesignSystemImages.Color.Size24.aiGeneral)
         case .pir: .image(Image(.onboardingPIRBlocked24))
@@ -97,7 +104,7 @@ private extension WelcomeCard {
 
     static func title(for feature: SubscriptionOnboardingChecklistItem) -> String {
         switch feature {
-        case .vpn: UserText.subscriptionOnboardingWelcomeVPNTitle
+        case .vpn, .vpnWidget, .vpnTips: UserText.subscriptionOnboardingWelcomeVPNTitle
         case .idtr: UserText.subscriptionOnboardingWelcomeIDTRTitle
         case .duckAI: UserText.subscriptionOnboardingWelcomeDuckAITitle
         case .pir: UserText.subscriptionOnboardingWelcomePIRTitle
@@ -106,7 +113,7 @@ private extension WelcomeCard {
 
     static func bodyText(for feature: SubscriptionOnboardingChecklistItem) -> String {
         switch feature {
-        case .vpn: UserText.subscriptionOnboardingWelcomeVPNBody
+        case .vpn, .vpnWidget, .vpnTips: UserText.subscriptionOnboardingWelcomeVPNBody
         case .idtr: UserText.subscriptionOnboardingWelcomeIDTRBody
         case .duckAI: UserText.subscriptionOnboardingWelcomeDuckAIBody
         case .pir: UserText.subscriptionOnboardingWelcomePIRBody
@@ -118,14 +125,14 @@ private extension WelcomeCard {
 
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
@@ -133,7 +140,7 @@ private extension WelcomeCard {
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)

@@ -57,20 +57,32 @@ struct PromoServiceFactory {
     }
 
     @MainActor
-    private static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
+    static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
         var promos: [Promo] = [
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
+            updateAvailable(dependencies: dependencies),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
             freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
             nextSteps,
+            cookiePopupsBlocked(delegate: dependencies.cookiePopupsBlockedPromoDelegate),
+            autofillToolbarPinning(dependencies: dependencies),
+            brokenSite(coordinator: dependencies.brokenSitePromptPresentationCoordinator),
             subscriptionPromo(delegate: dependencies.subscriptionPromoDelegate),
             defaultBrowserAndDockPopover(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockBanner(service: dependencies.defaultBrowserAndDockPromptService),
             defaultBrowserAndDockInactiveModal(service: dependencies.defaultBrowserAndDockPromptService),
             cookiePopupProtectionOptIn(dependencies: dependencies),
-            autoplayDiscoverability(dependencies: dependencies)
+            syncFavicons(dependencies: dependencies),
+            bookmarkToolbar(dependencies: dependencies),
+            autoplayDiscoverability(dependencies: dependencies),
+            quitSurvey(observer: dependencies.quitSurveyPromoObserver),
+            duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver)
         ]
+
+        if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {
+            promos.insert(browserUpdatedPromo, at: 2)
+        }
 
         if includeTestPromos {
             promos.append(contentsOf: testPromos)

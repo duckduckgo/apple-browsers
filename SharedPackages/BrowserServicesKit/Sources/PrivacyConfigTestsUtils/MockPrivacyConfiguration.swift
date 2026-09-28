@@ -62,6 +62,10 @@ public class MockPrivacyConfiguration: PrivacyConfiguration {
         subfeatureSettings
     }
 
+    public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        [:]
+    }
+
     public var exceptionsListClosure: (PrivacyFeature) -> [String] = { _ in [] }
     public var featureSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings = [:]
     public var subfeatureSettings: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings?

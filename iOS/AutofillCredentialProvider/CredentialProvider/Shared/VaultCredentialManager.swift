@@ -22,6 +22,7 @@ import AuthenticationServices
 import BrowserServicesKit
 import Core
 import SecureStorage
+import PixelKit
 
 protocol VaultCredentialManaging: AnyObject {
     func fetchCredential(for account: SecureVaultModels.WebsiteAccount) -> ASPasswordCredential
@@ -88,7 +89,7 @@ final class VaultCredentialManager: VaultCredentialManaging {
         do {
             return try vault.websiteCredentialsFor(accountId: accountId)
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
             return nil
         }
     }
@@ -104,7 +105,7 @@ final class VaultCredentialManager: VaultCredentialManaging {
                     }
                 }
             } catch {
-                Pixel.fire(pixel: .secureVaultError, error: error)
+                PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
             }
         }
     }

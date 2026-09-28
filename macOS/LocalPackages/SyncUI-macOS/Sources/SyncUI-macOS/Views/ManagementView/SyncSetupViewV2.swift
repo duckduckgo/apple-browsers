@@ -98,6 +98,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
             .labelsHidden()
             .toggleStyle(.switch)
             .accessibilityLabel(Text(UserText.syncThisDeviceTitleV2))
+            .accessibilityIdentifier("SyncSettings.syncThisDeviceToggle")
             .disabled(!model.isAccountCreationAvailable)
         }
         .padding(.horizontal, 16)

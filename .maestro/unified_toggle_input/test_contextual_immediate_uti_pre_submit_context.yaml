@@ -7,11 +7,10 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 ---
 
-# With the immediate contextual UTI flag on, the first sheet show uses UTI before
-# submit. Removing pre-submit context clears the current chip, and a real navigation
-# with auto-attach enabled attaches the current page again. After first submit, a
-# same-page reopen does not reattach; dismissed-sheet navigation still auto-attaches
-# the current page when reopened.
+# Pre-submit context lives on the floating input the address-bar menu opens. Removing the chip clears
+# it, a real navigation attaches the new page again, and the first submit promotes the floating input
+# to the sheet. After that the button reopens the sheet directly: a same-page reopen does not
+# reattach, while reopening after navigating away attaches the current page.
 
 - launchApp:
     appId: "com.duckduckgo.mobile.ios"
@@ -21,7 +20,6 @@ name: test_contextual_immediate_uti_pre_submit_context
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        ff.unifiedToggleInput: "true"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "true"
@@ -36,14 +34,13 @@ name: test_contextual_immediate_uti_pre_submit_context
 - pressKey: Enter
 - assertVisible: ".*Privacy Test Pages.*"
 
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
+
+- assertNotVisible:
     id: "AIChat.ContextualSheet"
 - assertVisible:
     id: "summarize-page"
-- assertNotVisible:
-    id: "AIChatNativeInputView.submitButton"
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"
@@ -53,9 +50,12 @@ name: test_contextual_immediate_uti_pre_submit_context
     id: "AIChat.ContextChip.RemoveButton"
 - assertNotVisible:
     id: "AIChat.ContextChip.Placeholder"
+- assertNotVisible:
+    id: "AIChat.ContextChip.AttachedTitle"
 
+# Tapping the Duck.ai button again dismisses whichever contextual surface is showing.
 - tapOn:
-    id: "AIChat.ContextualSheet.CloseButton"
+    id: "Browser.OmniBar.Button.AIChat"
 - waitForAnimationToEnd:
     timeout: 3000
 
@@ -65,15 +65,14 @@ name: test_contextual_immediate_uti_pre_submit_context
 - pressKey: Enter
 - assertVisible: ".*Address Bar Spoofing.*"
 
-- tapOn:
-    id: "Browser.OmniBar.Button.AIChat"
-- assertVisible:
-    id: "AIChat.ContextualSheet"
+- runFlow:
+    file: ../shared/open_contextual_duckai_from_address_bar.yaml
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"
     timeout: 10000
 
+# First submit hands the chat off from the floating input to the sheet.
 - tapOn:
     id: "searchEntry"
 - inputText: "First contextual UTI prompt"
@@ -82,16 +81,23 @@ name: test_contextual_immediate_uti_pre_submit_context
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml
+- extendedWaitUntil:
+    visible:
+        id: "AIChat.ContextualSheet"
+    timeout: 15000
 
 - tapOn:
     id: "AIChat.ContextualSheet.CloseButton"
 - waitForAnimationToEnd:
     timeout: 3000
 
+# A chat exists now, so the button reopens the sheet rather than offering the menu.
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
+- runFlow:
+    file: ../shared/expand_contextual_uti.yaml
 - assertNotVisible:
     id: "AIChat.ContextChip.AttachedTitle"
 - assertNotVisible:
@@ -112,6 +118,8 @@ name: test_contextual_immediate_uti_pre_submit_context
     id: "Browser.OmniBar.Button.AIChat"
 - assertVisible:
     id: "AIChat.ContextualSheet"
+- runFlow:
+    file: ../shared/expand_contextual_uti.yaml
 - extendedWaitUntil:
     visible:
         id: "AIChat.ContextChip.AttachedTitle"

@@ -67,48 +67,38 @@ final class SerpSearchTokenInterceptorTests: XCTestCase {
         XCTAssertNil(SerpSearchTokenInterceptor.signalledRequest(for: req, cohort: .treatment, token: nil))
     }
     
-    // MARK: - signalledRequest: dindextoken param
+    // MARK: - signalledRequest: X-DDG-Search-Token header
 
-    func testSignalledRequest_setsTokenParam_forTreatmentWithToken() {
-        let out = SerpSearchTokenInterceptor.signalledRequest(for: serpRequest(), cohort: .treatment, token: "abc")
-        XCTAssertEqual(out?.url?.getParameter(named: "dindextoken"), "abc")
+    func testTreatmentWithTokenSetsHeaderNotParam() throws {
+        let request = URLRequest(url: URL(string: "https://duckduckgo.com/?q=cats")!)
+        let out = try XCTUnwrap(SerpSearchTokenInterceptor.signalledRequest(for: request, cohort: .treatment, token: "TKN"))
+        XCTAssertEqual(out.value(forHTTPHeaderField: "X-DDG-Search-Token"), "TKN")
+        XCTAssertNil(out.url?.getParameter(named: "dindextoken"))
+        XCTAssertEqual(out.url?.getParameter(named: "dindexexp"), "b")
     }
 
-    func testSignalledRequest_noTokenParam_forControlEvenWithToken() {
-        let out = SerpSearchTokenInterceptor.signalledRequest(for: serpRequest(), cohort: .control, token: "abc")
-        XCTAssertNil(out?.url?.getParameter(named: "dindextoken"))
+    func testControlSetsDindexexpAOnlyNoHeader() throws {
+        let request = URLRequest(url: URL(string: "https://duckduckgo.com/?q=cats")!)
+        let out = try XCTUnwrap(SerpSearchTokenInterceptor.signalledRequest(for: request, cohort: .control, token: nil))
+        XCTAssertEqual(out.url?.getParameter(named: "dindexexp"), "a")
+        XCTAssertNil(out.value(forHTTPHeaderField: "X-DDG-Search-Token"))
     }
 
-    func testSignalledRequest_noTokenParam_forTreatmentWithoutToken() {
-        let out = SerpSearchTokenInterceptor.signalledRequest(for: serpRequest(), cohort: .treatment, token: nil)
-        XCTAssertEqual(out?.url?.getParameter(named: "dindexexp"), "b")
-        XCTAssertNil(out?.url?.getParameter(named: "dindextoken"))
+    func testControlWithTokenSetsNoHeader() throws {
+        let out = try XCTUnwrap(SerpSearchTokenInterceptor.signalledRequest(for: serpRequest(), cohort: .control, token: "abc"))
+        XCTAssertNil(out.value(forHTTPHeaderField: "X-DDG-Search-Token"))
     }
 
-    func testSignalledRequest_nilWhenBothParamsAlreadyPresent() {
-        let req = serpRequest("https://duckduckgo.com/?q=privacy&dindexexp=b&dindextoken=abc")
+    func testTreatmentWithoutTokenSetsNoHeader() throws {
+        let out = try XCTUnwrap(SerpSearchTokenInterceptor.signalledRequest(for: serpRequest(), cohort: .treatment, token: nil))
+        XCTAssertEqual(out.url?.getParameter(named: "dindexexp"), "b")
+        XCTAssertNil(out.value(forHTTPHeaderField: "X-DDG-Search-Token"))
+    }
+
+    func testNilWhenParamAndHeaderAlreadyPresent() {
+        var req = serpRequest("https://duckduckgo.com/?q=privacy&dindexexp=b")
+        req.setValue("abc", forHTTPHeaderField: "X-DDG-Search-Token")
         XCTAssertNil(SerpSearchTokenInterceptor.signalledRequest(for: req, cohort: .treatment, token: "abc"))
-    }
-
-    func testSignalledRequest_replacesStaleTokenParam() {
-        let req = serpRequest("https://duckduckgo.com/?q=privacy&dindexexp=b&dindextoken=old")
-        let out = SerpSearchTokenInterceptor.signalledRequest(for: req, cohort: .treatment, token: "new")
-        XCTAssertEqual(out?.url?.getParameter(named: "dindextoken"), "new")
-    }
-    
-    // MARK: - strippingToken
-
-    func testStrippingToken_removesTokenParam() {
-        let url = URL(string: "https://duckduckgo.com/?q=privacy&dindexexp=b&dindextoken=abc")!
-        let out = SerpSearchTokenInterceptor.strippingToken(from: url)
-        XCTAssertNil(out.getParameter(named: "dindextoken"))
-        XCTAssertEqual(out.getParameter(named: "q"), "privacy")
-        XCTAssertEqual(out.getParameter(named: "dindexexp"), "b")
-    }
-
-    func testStrippingToken_noOpWhenAbsent() {
-        let url = URL(string: "https://duckduckgo.com/?q=privacy&dindexexp=b")!
-        XCTAssertEqual(SerpSearchTokenInterceptor.strippingToken(from: url), url)
     }
 
     // MARK: - Helpers

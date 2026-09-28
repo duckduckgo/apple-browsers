@@ -25,6 +25,9 @@ import PixelKit
 import SERPSettings
 
 enum SERPSettingsPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError
@@ -85,7 +88,7 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
                 PixelKit.fire(SERPSettingsPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
             case .unrecognizedValue:
                 // Daily-only, no params: the SERP getters run on every read, so a count variant would spam.
-                DailyPixel.fire(pixel: .serpSettingsUnrecognizedValue)
+                PixelKit.fire(Pixel.Event.serpSettingsUnrecognizedValue, frequency: .legacyDailyNoSuffix)
             }
         }
     }

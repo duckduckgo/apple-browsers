@@ -88,6 +88,26 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
         XCTAssertEqual(json["supportsSuggestions"] as? Bool, false)
     }
 
+    func testConfigValuesEncodeSupportsNativeUsageWarnings() throws {
+        let json = try jsonObject(makeConfig(supportsSuggestions: false, supportsNativeUsageWarnings: true))
+        XCTAssertEqual(json["supportsNativeUsageWarnings"] as? Bool, true)
+    }
+
+    func testSupportsNativeUsageWarningsDefaultsToFalse() throws {
+        let json = try jsonObject(AIChatNativeConfigValues.defaultValues)
+        XCTAssertEqual(json["supportsNativeUsageWarnings"] as? Bool, false)
+    }
+
+    func testConfigValuesEncodeSupportsBlobSafeDataClearing() throws {
+        let json = try jsonObject(makeConfig(supportsSuggestions: false, supportsBlobSafeDataClearing: true))
+        XCTAssertEqual(json["supportsBlobSafeDataClearing"] as? Bool, true)
+    }
+
+    func testSupportsBlobSafeDataClearingDefaultsToFalse() throws {
+        let json = try jsonObject(AIChatNativeConfigValues.defaultValues)
+        XCTAssertEqual(json["supportsBlobSafeDataClearing"] as? Bool, false)
+    }
+
     func testAttachmentLimitsOmittedWhenNil() throws {
         let json = try jsonObject(makeConfig(supportsSuggestions: false))
         XCTAssertNil(json["attachmentLimits"])
@@ -106,7 +126,10 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
-    private func makeConfig(supportsSuggestions: Bool, attachmentLimits: AIChatNativeAttachmentLimits? = nil) -> AIChatNativeConfigValues {
+    private func makeConfig(supportsSuggestions: Bool,
+                            supportsNativeUsageWarnings: Bool = false,
+                            supportsBlobSafeDataClearing: Bool = false,
+                            attachmentLimits: AIChatNativeAttachmentLimits? = nil) -> AIChatNativeConfigValues {
         AIChatNativeConfigValues(
             isAIChatHandoffEnabled: false,
             supportsClosingAIChat: true,
@@ -122,6 +145,8 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
             appVersion: "1.0.0",
             supportsAIChatSync: false,
             supportsSuggestions: supportsSuggestions,
+            supportsNativeUsageWarnings: supportsNativeUsageWarnings,
+            supportsBlobSafeDataClearing: supportsBlobSafeDataClearing,
             attachmentLimits: attachmentLimits
         )
     }

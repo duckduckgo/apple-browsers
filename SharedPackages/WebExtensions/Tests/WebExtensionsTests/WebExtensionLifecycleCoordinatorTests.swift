@@ -309,6 +309,8 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var eventsListener: WebExtensionEventsListening { RecordingEventsListener() }
     var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
+    var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
+    var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { NoOpCPMMessagingHealthMonitor() }
     func installExtension(from sourceURL: URL) async throws {}
     @MainActor func uninstallExtension(identifier: String) throws {}
     @MainActor @discardableResult func uninstallAllExtensions() -> [Result<Void, Error>] { [] }

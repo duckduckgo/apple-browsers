@@ -25,12 +25,14 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     private func resolve(isContextualModeAvailable: Bool = true,
                          isFloatingInputAvailable: Bool = true,
                          isHomeTab: Bool = false,
+                         isChatHistoryAvailable: Bool = true,
                          hasChatToReopen: Bool = false,
                          isContextualSurfacePresented: Bool = false) -> DuckAIAddressBarEntry {
         DuckAIAddressBarEntry.resolve(
             isContextualModeAvailable: isContextualModeAvailable,
             isFloatingInputAvailable: isFloatingInputAvailable,
             isHomeTab: isHomeTab,
+            isChatHistoryAvailable: isChatHistoryAvailable,
             hasChatToReopen: hasChatToReopen,
             isContextualSurfacePresented: isContextualSurfacePresented
         )
@@ -44,14 +46,41 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Sheet
 
-    /// Live or restored from a previous launch — both menu actions start something new, so offering the
-    /// menu here would leave the conversation unreachable.
+    /// Live and restored conversations retain the direct route back to this tab's chat.
     func testAChatToReopenGoesStraightToTheSheet() {
         XCTAssertEqual(resolve(hasChatToReopen: true), .contextualSheet)
     }
 
     func testWebPageWithoutFloatingInputGoesStraightToTheSheet() {
         XCTAssertEqual(resolve(isFloatingInputAvailable: false), .contextualSheet)
+    }
+
+    // MARK: - iPad chrome menu button
+
+    func testIPadChromeMenuButtonShowsTheMenuWithoutTheFloatingInput() {
+        let entry = DuckAIAddressBarEntry.resolve(
+            isContextualModeAvailable: true,
+            isFloatingInputAvailable: false,
+            isIPadChromeMenuButtonAvailable: true,
+            isHomeTab: false,
+            isChatHistoryAvailable: false,
+            hasChatToReopen: false,
+            isContextualSurfacePresented: false
+        )
+        XCTAssertEqual(entry, .menu)
+    }
+
+    func testIPadChromeMenuButtonStillReopensAChatDirectly() {
+        let entry = DuckAIAddressBarEntry.resolve(
+            isContextualModeAvailable: true,
+            isFloatingInputAvailable: false,
+            isIPadChromeMenuButtonAvailable: true,
+            isHomeTab: false,
+            isChatHistoryAvailable: false,
+            hasChatToReopen: true,
+            isContextualSurfacePresented: false
+        )
+        XCTAssertEqual(entry, .contextualSheet)
     }
 
     // MARK: - Dismissal
@@ -66,8 +95,22 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
 
     // MARK: - Legacy
 
-    func testHomeTabOpensDuckAiDirectly() {
-        XCTAssertEqual(resolve(isHomeTab: true), .legacyDuckAI)
+    func testHomeTabOffersMenuWithAndWithoutContextualOrFloatingInput() {
+        for contextualMode in [false, true] {
+            for floatingInput in [false, true] {
+                XCTAssertEqual(resolve(isContextualModeAvailable: contextualMode,
+                                       isFloatingInputAvailable: floatingInput,
+                                       isHomeTab: true), .menu)
+            }
+        }
+    }
+
+    func testHomeTabWithoutHistoryOpensDuckAiDirectly() {
+        XCTAssertEqual(resolve(isHomeTab: true, isChatHistoryAvailable: false), .legacyDuckAI)
+    }
+
+    func testWebPageMenuDoesNotRequireHistory() {
+        XCTAssertEqual(resolve(isChatHistoryAvailable: false), .menu)
     }
 
     func testWithoutContextualModeOpensDuckAiDirectly() {
@@ -75,10 +118,52 @@ final class DuckAIAddressBarEntryTests: XCTestCase {
     }
 
     func testHomeTabWinsOverAnActiveChat() {
-        XCTAssertEqual(resolve(isHomeTab: true, hasChatToReopen: true), .legacyDuckAI)
+        XCTAssertEqual(resolve(isHomeTab: true, hasChatToReopen: true), .menu)
     }
 
     func testHomeTabWinsOverAPresentedSurface() {
-        XCTAssertEqual(resolve(isHomeTab: true, isContextualSurfacePresented: true), .legacyDuckAI)
+        XCTAssertEqual(resolve(isHomeTab: true, isContextualSurfacePresented: true), .menu)
+    }
+
+    // MARK: - Contextual glyph
+
+    private func showsGlyph(isContextualModeAvailable: Bool = true,
+                            isHomeTab: Bool = false,
+                            hasChatToReopen: Bool = false,
+                            isContextualSurfacePresented: Bool = false) -> Bool {
+        DuckAIAddressBarEntry.showsContextualGlyph(
+            isContextualModeAvailable: isContextualModeAvailable,
+            isHomeTab: isHomeTab,
+            hasChatToReopen: hasChatToReopen,
+            isContextualSurfacePresented: isContextualSurfacePresented
+        )
+    }
+
+    func testNoGlyphOnAWebPageWithNothingGoingOn() {
+        XCTAssertFalse(showsGlyph())
+    }
+
+    func testAChatToReopenShowsTheGlyph() {
+        XCTAssertTrue(showsGlyph(hasChatToReopen: true))
+    }
+
+    /// An open surface counts even before a prompt, so the glyph appears as soon as it does.
+    func testAPresentedSurfaceShowsTheGlyphWithoutAChat() {
+        XCTAssertTrue(showsGlyph(isContextualSurfacePresented: true))
+    }
+
+    /// Dismissing without prompting leaves neither, which is what takes the glyph away again.
+    func testDismissingWithoutAChatDropsTheGlyph() {
+        XCTAssertFalse(showsGlyph(hasChatToReopen: false, isContextualSurfacePresented: false))
+    }
+
+    func testContextualModeOffNeverShowsTheGlyph() {
+        XCTAssertFalse(showsGlyph(isContextualModeAvailable: false, hasChatToReopen: true))
+    }
+
+    /// Home-tab actions never restore a contextual session.
+    func testHomeTabNeverShowsTheGlyph() {
+        XCTAssertFalse(showsGlyph(isHomeTab: true, hasChatToReopen: true))
+        XCTAssertFalse(showsGlyph(isHomeTab: true, isContextualSurfacePresented: true))
     }
 }

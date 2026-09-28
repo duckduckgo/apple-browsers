@@ -20,9 +20,9 @@ import BrowserServicesKit
 import Combine
 import FeatureFlags_macOS
 import Persistence
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import PrivacyConfig
+@_spi(Testing) import SharedTestUtilities
 import WebExtensions
 import XCTest
 

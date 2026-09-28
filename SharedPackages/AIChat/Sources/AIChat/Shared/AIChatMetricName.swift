@@ -43,6 +43,9 @@ public enum AIChatMetricName: String, Codable {
     case userDidViewProUpgradeDisclaimerBanner
     case userDidViewVoiceChatLimitModal
     case userDidViewVoiceChatDurationLimitModal
+    case userDidViewModelPickerUpgrade
+    case userDidViewReasoningDropdownUpgrade
+    case userDidViewSwitchModelUpgrade
 
     case userDidClickAiSidebarUpgradeButton
     case userDidClickActivateSubscriptionButton
@@ -55,6 +58,9 @@ public enum AIChatMetricName: String, Codable {
     case userDidClickProUpgradeDisclaimerBannerButton
     case userDidClickVoiceChatLimitModalSubscribeButton
     case userDidClickVoiceChatDurationLimitModalSubscribeButton
+    case userDidClickModelPickerUpgrade
+    case userDidClickReasoningDropdownUpgrade
+    case userDidClickSwitchModelUpgrade
 
     // MARK: - Subscription funnel modal metrics
     // The subscribe / upgrade-to-Pro modal the funnel entry points above open. These carry `source`,

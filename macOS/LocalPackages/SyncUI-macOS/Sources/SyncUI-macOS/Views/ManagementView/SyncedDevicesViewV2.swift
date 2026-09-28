@@ -37,8 +37,7 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SyncedDevicesListV2(devices: model.devices,
-                                presentDeviceDetails: model.presentDeviceDetails,
-                                presentRemoveDevice: model.presentRemoveDevice)
+                                presentDeviceDetails: model.presentDeviceDetails)
             .onReceive(timer) { _ in
                 guard isVisible else { return }
                 model.refreshDevices()
@@ -49,6 +48,8 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
             .onDisappear {
                 isVisible = false
             }
+
+            SyncedDevicesSeparatorV2()
 
             Button {
                 Task {
@@ -67,118 +68,6 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
             .padding(8)
         }
         .syncRoundedBorder(cornerRadius: 12)
-    }
-}
-
-private struct SyncedDevicesListV2: View {
-
-    let devices: [SyncDevice]
-
-    @State var hoveredDevice: SyncDevice?
-
-    var presentDeviceDetails: ((SyncDevice) -> Void)?
-    var presentRemoveDevice: ((SyncDevice) -> Void)?
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if devices.isEmpty {
-                ProgressView()
-                    .padding()
-            }
-
-            ForEach(devices) { device in
-                if !device.isCurrent {
-                    separator
-                }
-                deviceRow(for: device)
-            }
-            separator
-        }
-    }
-
-    @ViewBuilder
-    private func deviceRow(for device: SyncDevice) -> some View {
-        SyncPreferencesRow {
-            SyncedDeviceIconV2(kind: device.kind)
-        } centerContent: {
-            HStack {
-                Text(device.name)
-                if device.isCurrent {
-                    Text("(\(UserText.thisDevice))")
-                        .foregroundColor(Color(NSColor.secondaryLabelColor))
-                }
-                Spacer()
-            }
-        } rightContent: {
-            deviceAction(for: device)
-        }
-        .onHover { hovering in
-            hoveredDevice = hovering ? device : nil
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityAction(named: Text(deviceActionTitle(for: device))) {
-            deviceActionHandler(for: device)?(device)
-        }
-    }
-
-    @ViewBuilder
-    private func deviceAction(for device: SyncDevice) -> some View {
-        let title = deviceActionTitle(for: device)
-        let action = deviceActionHandler(for: device)
-
-        if let action {
-            Button(title) {
-                action(device)
-            }
-            .accessibilityHidden(true)
-            .visibility(hoveredDevice?.id == device.id ? .visible : .gone)
-        }
-    }
-
-    private func deviceActionTitle(for device: SyncDevice) -> String {
-        device.isCurrent ? UserText.currentDeviceDetails : UserText.removeDeviceButton
-    }
-
-    private func deviceActionHandler(for device: SyncDevice) -> ((SyncDevice) -> Void)? {
-        device.isCurrent ? presentDeviceDetails : presentRemoveDevice
-    }
-
-    private var separator: some View {
-        Rectangle()
-            .fill(Color(.blackWhite10))
-            .frame(height: 1)
-            .padding(.init(top: 0, leading: 10, bottom: 0, trailing: 10))
-    }
-}
-
-struct SyncedDeviceIconV2: View {
-    var kind: SyncDevice.Kind
-
-    private var image: DesignSystemImage {
-        switch kind {
-        case .current, .desktop:
-            return DesignSystemImages.Glyphs.Size16.deviceLaptop
-        case .mobile:
-            return DesignSystemImages.Glyphs.Size16.deviceMobile
-        case .thirdParty:
-            return DesignSystemImages.Glyphs.Size16.deviceAll
-        }
-    }
-
-    private var accessibilityIdentifier: String {
-        switch kind {
-        case .current, .desktop:
-            return "SyncSettings.syncedDevice.desktop"
-        case .mobile:
-            return "SyncSettings.syncedDevice.mobile"
-        case .thirdParty:
-            return "SyncSettings.syncedDevice.thirdParty"
-        }
-    }
-
-    var body: some View {
-        Image(nsImage: image)
-            .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 

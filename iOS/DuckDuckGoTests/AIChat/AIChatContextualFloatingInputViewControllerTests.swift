@@ -65,6 +65,11 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
 
         func deactivateInput() { deactivateInputCount += 1 }
         func freezeInputPosition() { freezeInputPositionCount += 1 }
+
+        /// Set by tests: focus still held on a keyboard hide means it is only churning.
+        var isInputFirstResponder = false
+        var dictatedQueries: [String] = []
+        func applyDictatedQuery(_ query: String) { dictatedQueries.append(query) }
     }
 
     private var originatingURL: CurrentValueSubject<URL?, Never>!
@@ -166,13 +171,11 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(spy.dismissRequestCount, 1)
     }
 
-    /// The tap that dismisses must still reach the page, so whatever it hit — a link, a text field —
-    /// activates on the same tap rather than needing a second one.
-    func testThePageTapRecognizerDoesNotConsumeTheTouch() throws {
+    /// Consumption is decided per touch, so only the delay behaviour is fixed at construction.
+    func testThePageTapRecognizerDoesNotDelayTouches() throws {
         let (_, _, parent) = makeSubject()
         let recognizer = try XCTUnwrap(parent.view.gestureRecognizers?.compactMap { $0 as? UITapGestureRecognizer }.first)
 
-        XCTAssertFalse(recognizer.cancelsTouchesInView)
         XCTAssertFalse(recognizer.delaysTouchesBegan)
         XCTAssertFalse(recognizer.delaysTouchesEnded)
     }
@@ -242,18 +245,18 @@ final class AIChatContextualFloatingInputViewControllerTests: XCTestCase {
         XCTAssertEqual(host.deactivateInputCount, 1, "resigning happens once per dismissal, not on both sides")
     }
 
-    /// Resigning as the tap lands is what made the keyboard dip out and come straight back when the tap
-    /// focused a page field. Waiting leaves the choice to whatever the page does with focus.
-    func testAPageTapDefersResigningTheInputUntilTheSurfaceHasGone() async {
+    /// Deferring the resign left the keyboard up for the whole slide, so the surface sank behind it and the
+    /// keyboard only dropped afterwards. It goes down with the surface instead.
+    func testAPageTapResignsTheInputAsTheSlideStarts() async {
         let (subject, host, _, _) = makeSubjectWithHostSpy()
 
         subject.simulatePageTapForTesting()
         let slideFinished = expectation(description: "slide finished")
         subject.dismiss { slideFinished.fulfill() }
 
-        XCTAssertEqual(host.deactivateInputCount, 0, "the page has to be given the chance to take the keyboard")
+        XCTAssertEqual(host.deactivateInputCount, 1, "the keyboard has to travel with the surface, not after it")
         await fulfillment(of: [slideFinished], timeout: 3)
-        XCTAssertEqual(host.deactivateInputCount, 1, "the page declined it, so it was still ours to put away")
+        XCTAssertEqual(host.deactivateInputCount, 1, "resigning happens once per dismissal, not on both sides")
     }
 
     /// Pinned before it moves, so a keyboard that stays put or changes height cannot drag the surface

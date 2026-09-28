@@ -23,8 +23,6 @@ import PixelKit
 import PrivacyConfig
 import UIKit
 
-typealias PixelKitFiring = PixelFiring
-
 @MainActor
 protocol TabTerminationTelemetry {
     func webContentProcessDidTerminate(activeTabCount: Int)
@@ -187,7 +185,10 @@ final class TabTerminationTelemetryOccurrenceStore {
     }
 }
 
-enum TabTerminationTelemetryPixel: PixelKit.Event, PixelKitEventWithCustomPrefix {
+enum TabTerminationTelemetryPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case interactionStateFailedToRestore
     case interactionStateFailedToRestoreDaily
     case foreground
@@ -228,7 +229,7 @@ enum TabTerminationTelemetryPixel: PixelKit.Event, PixelKitEventWithCustomPrefix
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    var namePrefix: String { "" }
+    var namePrefix: PixelKitNamePrefix { .none }
 
     enum OccurrenceBucket: String {
         case one = "1"

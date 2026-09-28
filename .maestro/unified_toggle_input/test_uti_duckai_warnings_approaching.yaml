@@ -1,0 +1,99 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_uti_duckai_warnings_approaching
+
+---
+
+# The approaching-usage card behind `utiDuckAIWarnings`: what it renders, that Search mode
+# suppresses it, and that ✕ retires it for the rest of the window.
+#
+# `isInternalUser` is doing double duty — it unlocks the Debug menu that seeds the snapshot, and
+# the resolver only offers approaching warnings to internal or paid users. Without
+# `ff.aiChatNativeStorage` there is no storage bridge, so the store reports inactive and no card
+# renders at all.
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        isInternalUser: "true"
+        # Keep quoted — LaunchOptionsHandler silently ignores unquoted YAML booleans.
+        ff.utiDuckAIWarnings: "true"
+        ff.aiChatNativeStorage: "true"
+        ff.browsingMenuSheetEnabledByDefault: "true"
+
+- runFlow:
+    file: ../shared/dismiss_chat_open_modals.yaml
+
+- runFlow:
+    file: ../shared/set_search_and_duckai.yaml
+
+- runFlow:
+    file: ../shared/seed_duckai_usage_warning.yaml
+    env:
+        PRESET: "Approaching weekly limit (90%)"
+
+# The snapshot is picked up the next time the Duck.ai input opens.
+- tapOn:
+    id: "searchEntry"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# A ring rather than an alert glyph: the limit is approaching, not reached.
+- assertVisible:
+    id: "AIChat.Footer.Card"
+- assertVisible:
+    id: "AIChat.Footer.Label.Title"
+    text: "90% of weekly limit"
+# Asserted by identifier only — the reset copy depends on how the seeded 48h interval rounds as
+# the flow itself burns time.
+- assertVisible:
+    id: "AIChat.Footer.Label.Subtitle"
+- assertVisible:
+    id: "AIChat.Footer.Icon.UsageRing"
+- assertNotVisible:
+    id: "AIChat.Footer.Icon.Alert"
+- assertVisible:
+    id: "AIChat.Footer.Button.Dismiss"
+
+# Search mode has no usage limits to warn about, so the card is suppressed there.
+- tapOn:
+    id: "AddressBar.Button.Search"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "AIChat.Footer.Card"
+
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "AIChat.Footer.Card"
+
+- tapOn:
+    id: "AIChat.Footer.Button.Dismiss"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "AIChat.Footer.Card"
+
+# The dismissal is recorded against the window, so it outlives the input session.
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
+- tapOn:
+    id: "searchEntry"
+- tapOn:
+    id: "AddressBar.Button.DuckAI"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "AIChat.Footer.Card"

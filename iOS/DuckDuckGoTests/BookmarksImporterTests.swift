@@ -18,10 +18,9 @@
 //
 
 import Bookmarks
-import SwiftSoup
 import XCTest
 
-@testable import Core
+@testable import DuckDuckGo
 
 @MainActor
 class BookmarksImporterTests: XCTestCase {

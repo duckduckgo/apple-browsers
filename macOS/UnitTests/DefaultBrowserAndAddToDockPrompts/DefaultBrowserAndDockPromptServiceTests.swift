@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser

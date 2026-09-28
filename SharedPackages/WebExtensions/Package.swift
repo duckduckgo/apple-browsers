@@ -35,7 +35,10 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
     ],
@@ -43,12 +46,13 @@ let package = Package(
         .target(
             name: "WebExtensions",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
+                .product(name: "Persistence", package: "Persistence"),
                 "ZIPFoundation",
             ],
             resources: [
@@ -66,8 +70,7 @@ let package = Package(
             dependencies: [
                 "WebExtensions",
                 "WebExtensionsTestSupport",
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]
         ),

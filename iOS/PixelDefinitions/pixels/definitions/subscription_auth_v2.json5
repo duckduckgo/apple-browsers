@@ -1,0 +1,85 @@
+// Privacy Pro AuthV2 diagnostic pixels
+{
+    "m_privacy-pro_auth_account_automatically_signed_out": {
+        "description": "Fired after Privacy Pro automatically signs a user out because the backend reported an unknown account or an invalid refresh token that could not be recovered. Low-cardinality local state captured before deletion helps distinguish expected backend invalidation from client token races or inconsistent account state.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            {
+                "key": "recovery_outcome",
+                "type": "string",
+                "description": "Whether account recovery was unavailable or failed; not_applicable when recovery is not part of the sign-out path",
+                "enum": ["not_attempted", "failed", "not_applicable"]
+            },
+            {
+                "key": "had_subscription_entitlements_before",
+                "type": "string",
+                "description": "Whether the locally stored access token contained subscription entitlements immediately before the token attempt",
+                "enum": ["present", "absent", "unknown"]
+            },
+            {
+                "key": "access_token_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+            },
+            {
+                "key": "refresh_token_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+            },
+            {
+                "key": "refresh_token_age_bucket_before",
+                "type": "string",
+                "description": "Bucketed age of the locally stored refresh token immediately before the token attempt; issued_in_future can indicate clock skew",
+                "enum": ["issued_in_future", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+            },
+            {
+                "key": "cached_subscription_status_before",
+                "type": "string",
+                "description": "Status of the subscription cached in the reporting process before sign-out; absence does not mean the backend subscription was inactive",
+                "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+            },
+            {
+                "key": "cached_subscription_trial_status_before",
+                "type": "string",
+                "description": "Whether the subscription cached in the reporting process had an active free-trial offer before sign-out",
+                "enum": ["active", "not_active", "unavailable"]
+            },
+            {
+                "key": "cached_subscription_purchase_platform_before",
+                "type": "string",
+                "description": "Purchase platform of the subscription cached in the reporting process before sign-out",
+                "enum": ["app_store", "play_store", "stripe", "unknown", "unavailable"]
+            },
+            {
+                "key": "cached_subscription_time_remaining_bucket_before",
+                "type": "string",
+                "description": "Bucketed time until the cached subscription expiry or renewal date before sign-out; absence is reported per process",
+                "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown", "unavailable"]
+            },
+            {
+                "key": "stored_refresh_token_state_during_attempt",
+                "type": "string",
+                "description": "Whether the locally stored refresh token changed or disappeared between the pre-request snapshot and the failed request",
+                "enum": ["unchanged", "changed", "missing", "read_error", "unavailable_before_attempt"]
+            },
+            {
+                "key": "local_token_state_after_sign_out",
+                "type": "string",
+                "description": "Whether local authentication tokens were actually removed after the automatic sign-out completed",
+                "enum": ["present", "missing", "read_error"]
+            }
+        ]
+    }
+}

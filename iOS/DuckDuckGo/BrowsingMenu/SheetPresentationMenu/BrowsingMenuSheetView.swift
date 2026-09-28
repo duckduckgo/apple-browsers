@@ -22,6 +22,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import UIComponents
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -250,6 +251,7 @@ extension BrowsingMenuModel {
         enum Tag {
             case favorite
             case fire
+            case openBookmarks
         }
 
         enum Detail {
@@ -273,7 +275,7 @@ extension BrowsingMenuModel.Entry {
 
             return nil
 
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detailText, let detailBadge, let tag, let action):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let detailText, let detailBadge, let entryTag, let action):
             let detail: Detail? = if let detailBadge {
                 .badge(detailBadge)
             } else if let detailText {
@@ -289,7 +291,7 @@ extension BrowsingMenuModel.Entry {
                 customDotColor: customDotColor,
                 detail: detail,
                 action: action,
-                tag: tag,
+                tag: tag ?? entryTag,
             )
         }
     }
@@ -346,13 +348,7 @@ private struct MenuRowButton: View {
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textSecondary))
                     case .badge(let string):
-                        Text(string)
-                            .daxCallout()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color(singleUseColor: .fireModeAccent))
-                            .clipShape(RoundedRectangle(cornerRadius: 10.5))
+                        BadgeView(text: string)
                     }
                 }
             }

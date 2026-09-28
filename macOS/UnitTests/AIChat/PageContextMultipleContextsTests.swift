@@ -46,37 +46,63 @@ struct NavigationContextActionTests {
 
 // MARK: - isContextCollectionEnabled Logic Tests
 
+/// Exercises `PageContextTabExtension`'s real decision functions (not a mirror).
 struct ContextCollectionEnabledTests {
 
-    /// Mirrors the logic in PageContextTabExtension.isContextCollectionEnabled
+    private typealias Extension = PageContextTabExtension
+
     private func isContextCollectionEnabled(
-        shouldForceContextCollection: Bool,
-        userRemovedContext: Bool,
+        shouldForceContextCollection: Bool = false,
+        isAutoPageContextSuppressed: Bool = false,
         shouldAutomaticallySendPageContext: Bool
     ) -> Bool {
-        if shouldForceContextCollection { return true }
-        if userRemovedContext { return false }
-        return shouldAutomaticallySendPageContext
+        Extension.isContextCollectionEnabled(shouldForceContextCollection: shouldForceContextCollection,
+                                             isAutoPageContextSuppressed: isAutoPageContextSuppressed,
+                                             shouldAutomaticallySendPageContext: shouldAutomaticallySendPageContext)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Force collection overrides everything", .timeLimit(.minutes(1)))
     func forceCollectionOverrides() {
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, userRemovedContext: true, shouldAutomaticallySendPageContext: false) == true)
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, userRemovedContext: false, shouldAutomaticallySendPageContext: false) == true)
+        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, isAutoPageContextSuppressed: true, shouldAutomaticallySendPageContext: false) == true)
+        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, shouldAutomaticallySendPageContext: false) == true)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("User removed context suppresses auto-collection", .timeLimit(.minutes(1)))
-    func userRemovedSuppresses() {
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: false, userRemovedContext: true, shouldAutomaticallySendPageContext: true) == false)
+    @Test("Suppression beats the auto-send setting", .timeLimit(.minutes(1)))
+    func suppressionBeatsAutoSend() {
+        #expect(isContextCollectionEnabled(isAutoPageContextSuppressed: true, shouldAutomaticallySendPageContext: true) == false)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Auto-send setting is respected when no overrides", .timeLimit(.minutes(1)))
     func autoSendRespected() {
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: false, userRemovedContext: false, shouldAutomaticallySendPageContext: true) == true)
-        #expect(isContextCollectionEnabled(shouldForceContextCollection: false, userRemovedContext: false, shouldAutomaticallySendPageContext: false) == false)
+        #expect(isContextCollectionEnabled(shouldAutomaticallySendPageContext: true) == true)
+        #expect(isContextCollectionEnabled(shouldAutomaticallySendPageContext: false) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching a selection that opens the sidebar suppresses auto page-context", .timeLimit(.minutes(1)))
+    func selectionAttachThatOpensSidebarSuppressesPageContext() {
+        let suppressed = Extension.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: false)
+        #expect(suppressed == true)
+        // The whole point of the fix: auto-attach ON must not also attach the page.
+        #expect(isContextCollectionEnabled(isAutoPageContextSuppressed: suppressed, shouldAutomaticallySendPageContext: true) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching a selection with the sidebar already open leaves page context alone", .timeLimit(.minutes(1)))
+    func selectionAttachWithOpenSidebarKeepsPageContext() {
+        let suppressed = Extension.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: true)
+        #expect(suppressed == false)
+        #expect(isContextCollectionEnabled(isAutoPageContextSuppressed: suppressed, shouldAutomaticallySendPageContext: true) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ask About Page still forces collection after a selection attach", .timeLimit(.minutes(1)))
+    func askAboutPageOverridesSelectionSuppression() {
+        let suppressed = Extension.shouldSuppressAutoPageContextOnSelectionAttach(isSidebarVisible: false)
+        #expect(isContextCollectionEnabled(shouldForceContextCollection: true, isAutoPageContextSuppressed: suppressed, shouldAutomaticallySendPageContext: false) == true)
     }
 }
 
@@ -612,6 +638,10 @@ struct PageContextCollectionResultDeliveryTests {
         AIChatPageContextData(title: "Title", favicon: [], url: "https://example.com", content: content, truncated: false, fullContentLength: content.count)
     }
 
+    private var document: AIChatPageContextData {
+        AIChatPageContextData.document(title: "Spec", url: "https://example.com/spec.pdf", mimeType: AIChatPageContextData.pdfMIMEType, data: "JVBERi0=")
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A result with content is always delivered", .timeLimit(.minutes(1)))
     func resultWithContentIsDelivered() {
@@ -639,5 +669,53 @@ struct PageContextCollectionResultDeliveryTests {
     func forcedEmptyResultKeepsAttachedContent() {
         #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: context(content: "attached")))
         #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: context(content: "attached")))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An automatic document collect is skipped while the webview still displays the previous document", .timeLimit(.minutes(1)))
+    func documentCollectSkippedOnDocumentMismatch() {
+        let old = URL(string: "https://old.com/a.pdf")!
+        let new = URL(string: "https://new.com/b.pdf")!
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .navigation, webViewURL: old, contentURL: new) == false)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .tabContent, webViewURL: old, contentURL: new) == false)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .navigation, webViewURL: new, contentURL: new) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A user-initiated document collect proceeds regardless of document mismatch", .timeLimit(.minutes(1)))
+    func userDocumentCollectAlwaysProceeds() {
+        let old = URL(string: "https://old.com/a.pdf")!
+        let new = URL(string: "https://new.com/b.pdf")!
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .userRequest, webViewURL: old, contentURL: new) == true)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .auto, webViewURL: old, contentURL: new) == true)
+        #expect(PageContextTabExtension.shouldRunDocumentCollect(trigger: .navigation, webViewURL: nil, contentURL: new) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning auto-attach on collects afresh when the cache holds only metadata", .timeLimit(.minutes(1)))
+    func metadataOnlyCacheIsNotReused() {
+        let metadataOnly = AIChatPageContextData.document(title: "Spec", url: "https://example.com/spec.pdf", mimeType: AIChatPageContextData.pdfMIMEType, data: nil, attachable: true, attached: false)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(metadataOnly) == false)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(document) == true)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(context(content: "body")) == true)
+        #expect(PageContextTabExtension.shouldReuseCachedContext(context(content: "")) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A document result counts as an attached page even though its content is empty", .timeLimit(.minutes(1)))
+    func documentResultIsDelivered() {
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(document, wasForced: false, cached: nil))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(context(content: ""), wasForced: true, cached: document),
+                "An empty markdown result must not replace an attached document")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A document read that fails resolves the awaiting request, but never wipes an attached page", .timeLimit(.minutes(1)))
+    func failedDocumentReadRespectsAttachedContent() {
+        // The `.unavailable` branch asks this with a nil result: nothing came back to deliver.
+        #expect(PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: nil))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: true, cached: document))
+        #expect(!PageContextTabExtension.shouldDeliverCollectionResult(nil, wasForced: false, cached: nil),
+                "An unforced failure has nobody waiting on it")
     }
 }

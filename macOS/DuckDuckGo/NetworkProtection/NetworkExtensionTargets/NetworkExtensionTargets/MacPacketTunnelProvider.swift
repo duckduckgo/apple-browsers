@@ -24,6 +24,7 @@ import NetworkExtension
 import Networking
 import os.log
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import VPN
@@ -502,6 +503,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     let subscriptionManager: DefaultSubscriptionManager
     let tokenStorage: NetworkProtectionKeychainTokenStore
+    private let connectionStatusBox: ConnectionStatusBox
 
     @MainActor @objc public init() {
         Logger.networkProtection.log("[+] MacPacketTunnelProvider")
@@ -518,10 +520,17 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
         let buildType = StandardApplicationBuildType()
-        self.wideEvent = WideEvent(
+
+        let wideEvent = WideEvent(
             useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
+        self.wideEvent = wideEvent
+
+        let sessionHealth = DefaultVPNSessionHealthInstrumentation(
+            wideEvent: wideEvent,
+            extensionType: { Self.isAppex ? .app : .system }(),
+            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // MARK: - Subscription configuration
 
@@ -543,11 +552,16 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
+        let connectionStatusBox = ConnectionStatusBox()
         let authV2RefreshInstrumentation = DefaultAuthV2TokenRefreshInstrumentation(
             wideEvent: self.wideEvent,
             isFeatureEnabled: { true },
             shouldSuppressFailure: {
                 loopDetector.shouldSuppressCurrentAttemptTelemetry
+            },
+            netpIsRunningProvider: {
+                if case .connected = connectionStatusBox.value { return true }
+                return false
             })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStore,
                                             authService: authService,
@@ -580,6 +594,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         self.tokenStorage = tokenStore
         self.subscriptionManager = subscriptionManager
+        self.connectionStatusBox = connectionStatusBox
 
         // MARK: -
 
@@ -602,10 +617,17 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                    wideEvent: wideEvent,
                    entitlementCheck: entitlementsCheck,
                    loopDetector: loopDetector,
-                   heartbeatStore: heartbeatStore)
+                   heartbeatStore: heartbeatStore,
+                   sessionHealth: sessionHealth)
 
         setupPixels()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
+    }
+
+    public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
+        super.handleConnectionStatusChange(old: old, new: new)
+
+        connectionStatusBox.value = new
     }
 
     deinit {
@@ -745,6 +767,27 @@ private struct WideEventFeatureFlagProvider: WideEventFeatureFlagProviding {
     func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
         return true
+    }
+}
+
+/// Lets a synchronous, non-actor context (the AuthV2 refresh instrumentation) read the tunnel's
+/// @MainActor `connectionStatus` without hopping actors. Written from `handleConnectionStatusChange`
+/// on every change.
+private final class ConnectionStatusBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: ConnectionStatus = .default
+
+    var value: ConnectionStatus {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _value
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _value = newValue
+        }
     }
 }
 

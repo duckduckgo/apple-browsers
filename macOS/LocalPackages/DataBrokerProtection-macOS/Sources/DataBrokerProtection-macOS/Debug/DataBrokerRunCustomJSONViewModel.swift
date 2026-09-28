@@ -796,6 +796,10 @@ final class FakeStageDurationCalculator: StageDurationCalculator, DebugEventRepo
         0.0
     }
 
+    func awakeDurationSinceStartTime() -> Double {
+        0.0
+    }
+
     func fireOptOutStart() {
     }
 

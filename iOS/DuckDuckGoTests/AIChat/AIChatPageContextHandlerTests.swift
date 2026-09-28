@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import Core
+import DesignResourcesKitIcons
 import UserScript
 import WebKit
 import XCTest
@@ -417,6 +418,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         XCTAssertEqual(extractionPixels.calls.count, 1)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .markdown)
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
     }
 
@@ -594,6 +596,307 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(extractionPixels.calls.isEmpty)
     }
 
+    // MARK: - Document context (PDF)
+
+    func testWhenDocumentTabAndTabContentTriggerThenPublishesMetadataWithoutReadingBytes() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        var didReadDocument = false
+        let document = AIChatPageContextData.document(
+            title: "Spec",
+            url: pdfURL.absoluteString,
+            mimeType: AIChatPageContextData.pdfMIMEType,
+            data: "JVBERi0="
+        )
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { pdfURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in
+                didReadDocument = true
+                return .document(document)
+            }
+        )
+
+        let expectation = XCTestExpectation(description: "Metadata published")
+        var received: AIChatPageContext?
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                received = context
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertTrue(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0, "A PDF has no markup for the user script to read")
+        XCTAssertFalse(didReadDocument, "Signals-only must not read bytes")
+        XCTAssertEqual(received?.contextData.mimeType, AIChatPageContextData.pdfMIMEType)
+        XCTAssertNil(received?.contextData.data, "Bytes are deferred until an explicit attach")
+        XCTAssertEqual(received?.contextData.attached, false)
+        XCTAssertEqual(received?.title, "spec.pdf")
+        XCTAssertTrue(extractionPixels.calls.isEmpty, "Metadata-only is not an extraction")
+    }
+
+    func testWhenDocumentTabAndUserRequestThenPublishesDocumentBytes() async {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        // Non-nil favicon so enrichWithFavicon's copy path runs and must keep the document's bytes/mimeType.
+        let encodedFavicon = "data:image/png;base64,\(Self.onePixelPNGBase64)"
+        let document = AIChatPageContextData.document(
+            title: "Spec",
+            url: pdfURL.absoluteString,
+            mimeType: AIChatPageContextData.pdfMIMEType,
+            data: "JVBERi0="
+        )
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            faviconProvider: { _ in encodedFavicon },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { pdfURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in .document(document) }
+        )
+
+        let received = await waitForNextPublishedContext(from: handler) {
+            XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        }
+
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(received?.contextData.data, "JVBERi0=", "Favicon enrichment must not drop document bytes")
+        XCTAssertEqual(received?.contextData.mimeType, AIChatPageContextData.pdfMIMEType)
+        XCTAssertEqual(received?.contextData.favicon, [.init(href: encodedFavicon, rel: "icon")])
+        XCTAssertEqual(received?.favicon, DesignSystemImages.Color.Size24.filePDF, "A document chip shows the PDF icon, not the site's favicon")
+        XCTAssertEqual(received?.title, "Spec")
+        XCTAssertTrue(received?.contextData.hasAttachedPage ?? false)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
+        XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .pdf)
+    }
+
+    func testWhenDocumentTabAndUserRequestIsTooLargeThenPublishesNil() async {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { pdfURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, url, title in
+                .tooLarge(DocumentPageContextProvider.metadataContext(url: url, title: title, attachable: false))
+            }
+        )
+
+        let received = await waitForNextPublishedContext(from: handler) {
+            XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        }
+
+        XCTAssertNil(received)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented(PageContextExtractionOutcome.documentTooLargeCategory))
+    }
+
+    func testWhenDocumentTabAndUserRequestIsUnavailableThenPublishesNil() async {
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { pdfURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in .unavailable }
+        )
+
+        let received = await waitForNextPublishedContext(from: handler) {
+            XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        }
+
+        XCTAssertNil(received)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.documentUnavailable))
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .pdf)
+    }
+
+    func testWhenDocumentCollectIsInFlightAndURLChangesThenResultIsDropped() async {
+        let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        let otherURL = URL(string: "https://example.com/other.pdf")!
+        let urlHolder = URLHolder(pdfURL)
+        let gate = DocumentReadGate()
+        let document = AIChatPageContextData.document(
+            title: "Spec",
+            url: pdfURL.absoluteString,
+            mimeType: AIChatPageContextData.pdfMIMEType,
+            data: "JVBERi0="
+        )
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { urlHolder.url },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in
+                await withCheckedContinuation { continuation in
+                    gate.continuation = continuation
+                }
+            }
+        )
+
+        var received: AIChatPageContext?
+        let mustNotPublish = XCTestExpectation(description: "Navigated away — document must not attach")
+        mustNotPublish.isInverted = true
+        handler.contextPublisher
+            .dropFirst()
+            .sink { context in
+                received = context
+                mustNotPublish.fulfill()
+            }
+            .store(in: &cancellables)
+
+        XCTAssertTrue(handler.triggerContextCollection(trigger: .userRequest))
+        for _ in 0..<50 where gate.continuation == nil {
+            await Task.yield()
+        }
+        XCTAssertNotNil(gate.continuation)
+
+        urlHolder.url = otherURL
+        gate.continuation?.resume(returning: .document(document))
+
+        await fulfillment(of: [mustNotPublish], timeout: 0.3)
+        XCTAssertNil(received)
+    }
+
+    func testWhenDocumentTabThenIsCurrentPageAttachableEvenWithBlocklist() {
+        let pdfURL = URL(string: "https://example.com/spec.pdf")!
+        let handler = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { pdfURL },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+
+        XCTAssertTrue(handler.isCurrentPageAttachable())
+    }
+
+    func testWhenLocalFileThenIsCurrentPageNotAttachable() {
+        let localPDF = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+        let localPDFWithoutBlocklist = makeHandler(
+            attachabilityPolicyProvider: { nil },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            isDocumentContextEnabled: { true }
+        )
+        let localHTML = makeHandler(
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/page.html") },
+            mimeTypeProvider: { _ in "text/html" }
+        )
+
+        XCTAssertFalse(localPDF.isCurrentPageAttachable())
+        XCTAssertFalse(localPDFWithoutBlocklist.isCurrentPageAttachable(), "Local files are excluded even without the blocklist config")
+        XCTAssertFalse(localHTML.isCurrentPageAttachable())
+    }
+
+    func testWhenLocalHTMLThenCollectionIsPrevented() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/page.html") },
+            mimeTypeProvider: { _ in "text/html" },
+            extractionPixelHandler: extractionPixels
+        )
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
+    }
+
+    func testWhenLocalPDFThenCollectionIsPreventedWithoutReadingBytes() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        var didReadDocument = false
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "file:///Users/me/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { true },
+            makeDocumentContext: { _, _, _ in
+                didReadDocument = true
+                return .unavailable
+            }
+        )
+
+        let expectation = XCTestExpectation(description: "Nil context published")
+        var received: AIChatPageContext?
+        var didPublish = false
+        handler.contextPublisher
+            .dropFirst()
+            .first()
+            .sink { context in
+                received = context
+                didPublish = true
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertTrue(didPublish)
+        XCTAssertNil(received)
+        XCTAssertFalse(didReadDocument)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("localFile"))
+    }
+
+    func testWhenDocumentTabAndFlagOffThenBlocklistStillPreventsCollection() {
+        let mockScript = MockPageContextCollecting()
+        let extractionPixels = MockPageContextExtractionPixelFiring()
+        let handler = makeHandler(
+            webViewProvider: { WKWebView() },
+            userScriptProvider: { mockScript },
+            attachabilityPolicyProvider: { self.makeBlocklistPolicy() },
+            currentURLProvider: { URL(string: "https://example.com/spec.pdf") },
+            mimeTypeProvider: { _ in "application/pdf" },
+            extractionPixelHandler: extractionPixels,
+            isDocumentContextEnabled: { false }
+        )
+
+        let didTrigger = handler.triggerContextCollection(trigger: .tabContent)
+
+        XCTAssertFalse(didTrigger)
+        XCTAssertEqual(mockScript.collectCallCount, 0)
+        XCTAssertEqual(extractionPixels.calls.first?.outcome, .prevented("pdf"))
+    }
+
     func testClearResetsExtractionQueueSoLaterCollectReportsItsOwnTrigger() {
         let mockScript = MockPageContextCollecting()
         let extractionPixels = MockPageContextExtractionPixelFiring()
@@ -650,6 +953,20 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         return NSDictionary(dictionary: dictionary)
     }
 
+    private func waitForNextPublishedContext(from handler: DuckDuckGo.AIChatPageContextHandler,
+                                             trigger: () -> Void) async -> AIChatPageContext? {
+        await withCheckedContinuation { continuation in
+            handler.contextPublisher
+                .dropFirst()
+                .first()
+                .sink { context in
+                    continuation.resume(returning: context)
+                }
+                .store(in: &cancellables)
+            trigger()
+        }
+    }
+
     private func makeHandler(
         webViewProvider: WebViewProvider? = nil,
         userScriptProvider: UserScriptProvider? = nil,
@@ -658,7 +975,9 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         attachabilityPolicyProvider: @escaping AttachabilityPolicyProvider = { nil },
         currentURLProvider: PageContextURLProvider? = nil,
         mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
-        extractionPixelHandler: PageContextExtractionPixelFiring? = nil
+        extractionPixelHandler: PageContextExtractionPixelFiring? = nil,
+        isDocumentContextEnabled: @escaping () -> Bool = { false },
+        makeDocumentContext: DocumentContextMaking? = nil
     ) -> DuckDuckGo.AIChatPageContextHandler {
         DuckDuckGo.AIChatPageContextHandler(
             webViewProvider: webViewProvider ?? { nil },
@@ -668,7 +987,9 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             attachabilityPolicyProvider: attachabilityPolicyProvider,
             currentURLProvider: currentURLProvider,
             mimeTypeProvider: mimeTypeProvider,
-            extractionPixelHandler: extractionPixelHandler ?? MockPageContextExtractionPixelFiring()
+            extractionPixelHandler: extractionPixelHandler ?? MockPageContextExtractionPixelFiring(),
+            isDocumentContextEnabled: isDocumentContextEnabled,
+            makeDocumentContext: makeDocumentContext
         )
     }
 
@@ -680,6 +1001,18 @@ final class AIChatPageContextHandlerTests: XCTestCase {
     }
 }
 
+private final class URLHolder {
+    var url: URL?
+
+    init(_ url: URL?) {
+        self.url = url
+    }
+}
+
+private final class DocumentReadGate {
+    var continuation: CheckedContinuation<DocumentPageContextProvider.Result, Never>?
+}
+
 // MARK: - Mock Pixel Handler
 
 private final class MockContextualModePixelHandler: AIChatContextualModePixelFiring {
@@ -687,8 +1020,13 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var pageContextCollectionUnavailableCount = 0
 
     func fireSheetOpened() {}
-    func fireSheetDismissed() {}
+    func fireSheetDismissed(hadUnsubmittedSelections: Bool) {}
     func fireSessionRestored() {}
+    func fireSelectionAttached() {}
+    func fireSelectionLimitReached() {}
+    func fireSelectionRemoved() {}
+    func firePromptSubmittedWithSelections(count: Int) {}
+    func fireSelectionToolDeliveryTimedOut() {}
     func fireExpandButtonTapped() {}
     func fireHeaderTitleTapped() {}
     func fireNewChatButtonTapped() {}
@@ -697,9 +1035,12 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
     func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
-    func fireSuggestionsViewed(isSmart: Bool, pageType: SuggestionsPageType) {}
+    func fireSuggestionsViewed(isSmart: Bool,
+                               pageType: SuggestionsPageType,
+                               scope: ResolvePageSuggestionsInput.Scope,
+                               surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsContextCollectionTimedOut() {}
-    func fireRecentChatsPopupDisplayed() {}
+    func fireRecentChatsMenuDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
@@ -707,7 +1048,8 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireFloatingInputDismissedWithoutSubmission() {}
+    func fireAddressBarMenuRecentChatsSelected() {}
+    func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() {}
     func firePageContextUpdatedOnNavigation(url: String) {}
@@ -790,14 +1132,56 @@ private final class MockPageContextExtractionPixelFiring: PageContextExtractionP
         let outcome: PageContextExtractionOutcome
         let trigger: PageContextExtractionTrigger
         let latency: PageContextExtractionLatencyBucket?
+        let contextType: PageContextType
     }
 
     private(set) var calls: [Call] = []
 
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?) {
-        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency))
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType) {
+        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency, contextType: contextType))
+    }
+}
+
+// MARK: - Chip icon tests
+
+final class AIChatPageContextIconTests: XCTestCase {
+
+    private func context(mimeType: String) -> AIChatPageContextData {
+        AIChatPageContextData(
+            title: "Report",
+            favicon: [],
+            url: "https://example.com/report.pdf",
+            content: "",
+            truncated: false,
+            fullContentLength: 0,
+            mimeType: mimeType
+        )
+    }
+
+    func testWhenPageIsAPDFThenTheChipShowsTheDocumentIconInsteadOfTheFavicon() {
+        let siteFavicon = UIImage(systemName: "star")
+
+        let pageContext = AIChatPageContext(contextData: context(mimeType: AIChatPageContextData.pdfMIMEType), favicon: siteFavicon)
+
+        XCTAssertEqual(pageContext.favicon, DesignSystemImages.Color.Size24.filePDF)
+        XCTAssertNotEqual(pageContext.favicon, siteFavicon)
+    }
+
+    func testWhenPageIsAPDFWithoutAFaviconThenTheChipStillShowsTheDocumentIcon() {
+        let pageContext = AIChatPageContext(contextData: context(mimeType: AIChatPageContextData.pdfMIMEType), favicon: nil)
+
+        XCTAssertEqual(pageContext.favicon, DesignSystemImages.Color.Size24.filePDF)
+    }
+
+    func testWhenPageIsHTMLThenTheChipKeepsTheSiteFavicon() {
+        let siteFavicon = UIImage(systemName: "star")
+
+        let pageContext = AIChatPageContext(contextData: context(mimeType: AIChatPageContextData.htmlMIMEType), favicon: siteFavicon)
+
+        XCTAssertEqual(pageContext.favicon, siteFavicon)
     }
 }
 
@@ -807,17 +1191,29 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
 
     private func capture(_ outcome: PageContextExtractionOutcome,
                          trigger: PageContextExtractionTrigger,
-                         latency: PageContextExtractionLatencyBucket?) -> (event: Pixel.Event, params: [String: String])? {
+                         latency: PageContextExtractionLatencyBucket?,
+                         contextType: PageContextType = .markdown) -> (event: Pixel.Event, params: [String: String])? {
         var captured: (Pixel.Event, [String: String])?
         let handler = PageContextExtractionPixelHandler(firePixel: { captured = ($0, $1) })
-        handler.fire(outcome, trigger: trigger, latency: latency)
+        handler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
         return captured.map { (event: $0.0, params: $0.1) }
     }
 
-    func testWhenSuccessThenFiresSuccessPixelWithNoAdditionalParams() {
+    func testWhenSuccessThenFiresSuccessPixelWithContextTypeOnly() {
         let result = capture(.success, trigger: .navigation, latency: .under1s)
         XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_success")
-        XCTAssertEqual(result?.params, [:])
+        XCTAssertEqual(result?.params, ["context_type": "markdown"])
+    }
+
+    func testWhenSuccessForADocumentThenSuccessPixelSaysPDF() {
+        let result = capture(.success, trigger: .userRequest, latency: .under1s, contextType: .pdf)
+        XCTAssertEqual(result?.params["context_type"], "pdf")
+    }
+
+    func testWhenFailureForADocumentThenFailedPixelSaysPDF() {
+        let result = capture(.failure(.documentUnavailable), trigger: .userRequest, latency: nil, contextType: .pdf)
+        XCTAssertEqual(result?.params["context_type"], "pdf")
+        XCTAssertEqual(result?.params["reason"], "document_unavailable")
     }
 
     func testWhenFailureThenFiresFailedPixelWithReasonTriggerLatency() {
@@ -826,6 +1222,7 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(result?.params["reason"], "empty_content")
         XCTAssertEqual(result?.params["trigger"], "auto")
         XCTAssertEqual(result?.params["latency"], "1_to_5s")
+        XCTAssertEqual(result?.params["context_type"], "markdown")
     }
 
     func testWhenFailureWithoutLatencyThenOmitsLatencyParam() {
@@ -840,5 +1237,6 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(result?.params["category"], "pdf")
         XCTAssertEqual(result?.params["reason"], "non_attachable")
         XCTAssertEqual(result?.params["trigger"], "tab_content")
+        XCTAssertNil(result?.params["context_type"], "category already names the page kind")
     }
 }

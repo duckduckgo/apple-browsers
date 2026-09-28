@@ -21,15 +21,19 @@ import Combine
 import Common
 import FoundationExtensions
 import Network
-import WebKit
+import PrivacyConfig
 import UserScript
+import WebKit
 
 extension WKWebViewConfiguration {
 
     static var sharedVisitedLinkStore: WKVisitedLinkStoreWrapper?
 
     @MainActor
-    func applyStandardConfiguration(contentBlocking: some ContentBlockingProtocol, burnerMode: BurnerMode, earlyAccessHandlers: [UserScript] = []) {
+    func applyStandardConfiguration(featureFlagger: FeatureFlagger,
+                                    contentBlocking: some ContentBlockingProtocol,
+                                    burnerMode: BurnerMode,
+                                    earlyAccessHandlers: [UserScript] = []) {
         if case .burner(let websiteDataStore) = burnerMode {
             self.websiteDataStore = websiteDataStore
             // Fire Window: disable audio/video item info reporting to macOS Control Center / Lock Screen
@@ -57,12 +61,14 @@ extension WKWebViewConfiguration {
         preferences.javaScriptCanOpenWindowsAutomatically = true
         preferences.isFraudulentWebsiteWarningEnabled = false
 
+        lazy var duckHandler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
         if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
-            let featureFlagger = NSApp.delegateTyped.featureFlagger
-            setURLSchemeHandler(
-                DuckURLSchemeHandler(featureFlagger: featureFlagger),
-                forURLScheme: URL.NavigationalScheme.duck.rawValue
-            )
+            setURLSchemeHandler(duckHandler, forURLScheme: URL.NavigationalScheme.duck.rawValue)
+        }
+
+        if featureFlagger.isFeatureOn(.debugURLScheme),
+           urlSchemeHandler(forURLScheme: URL.debugURLScheme) == nil {
+            setURLSchemeHandler(duckHandler, forURLScheme: URL.debugURLScheme)
         }
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {

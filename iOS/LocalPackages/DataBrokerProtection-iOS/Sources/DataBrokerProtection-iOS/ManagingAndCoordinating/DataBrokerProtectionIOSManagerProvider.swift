@@ -23,6 +23,7 @@ import Common
 import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
+import WideEvent
 import os.log
 import Subscription
 import UserNotifications

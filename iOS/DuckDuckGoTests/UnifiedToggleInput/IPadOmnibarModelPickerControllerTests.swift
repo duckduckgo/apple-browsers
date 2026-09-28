@@ -114,6 +114,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
     }
 
     func testWhenUpdatedModelPickerIsEnabledForFreeUserThenMakeMenuBuildsUpdatedMenu() throws {
+        subscriptionManager.isEligibleForFreeTrialResult = true
         sut = makeSUTWithUpdatedModelPickerEnabled(userTier: .free)
         sut.modelStore.models = [
             makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
@@ -128,7 +129,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerTryFree)
     }
 
-    func testWhenUpdatedModelPickerIsEnabledForPlusUserThenGatedSectionUsesProTitle() throws {
+    func testWhenUpdatedModelPickerIsEnabledForPlusUserThenGatedSectionUsesProPlanExclusiveTitle() throws {
         sut = makeSUTWithUpdatedModelPickerEnabled(userTier: .plus)
         sut.modelStore.models = [
             makeModel(id: "pro", shortName: "Pro", entityHasAccess: false, accessTier: ["pro"])
@@ -137,7 +138,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         let menu = try XCTUnwrap(sut.makeMenu { _ in })
         let gatedSection = menu.children.compactMap { $0 as? UIMenu }.first
 
-        XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerAvailableWithPro)
+        XCTAssertEqual(gatedSection?.title, UserText.aiChatModelPickerProPlanExclusive)
     }
 
     @available(iOS 16.0, *)
@@ -278,6 +279,33 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(preferences.selectedModelId, "gpt-5")
     }
 
+    func testUnavailablePurchaseFiltersIPadMenuAndRefreshesWhenAvailabilityReturns() async throws {
+        sut.modelStore.models = [makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
+                                 makeModel(id: "paid", shortName: "Paid", entityHasAccess: false, accessTier: ["plus"])]
+        for available in [false, true] {
+            let refreshed = expectation(description: "iPad menu refreshed")
+            sut.onModelsUpdated = { refreshed.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [refreshed], timeout: 1)
+            let menu = try XCTUnwrap(sut.makeMenu { _ in })
+            XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.flatMap(\.children).count, available ? 2 : 1)
+            XCTAssertEqual(sut.modelStore.models.count, 2)
+        }
+    }
+
+    func testRejectedStaleModelSelectionDoesNotBecomePending() {
+        upsellPresenter.isPurchaseEligible = false
+        sut.modelStore.models = [makeModel(id: "free", shortName: "Free", accessTier: ["free"]),
+                                 makeModel(id: "paid", shortName: "Paid", entityHasAccess: false, accessTier: ["plus"])]
+        sut.handleModelSelection("free")
+        sut.handleModelSelection("paid")
+        sut.modelStore.models = [makeModel(id: "free", shortName: "Free"), makeModel(id: "paid", shortName: "Paid")]
+        sut.handleModelsUpdated()
+
+        XCTAssertEqual(sut.currentModelId, "free")
+        XCTAssertTrue(upsellPresenter.presentedPurchaseFlows.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeSUTWithUpdatedModelPickerEnabled(userTier: AIChatUserTier) -> IPadOmnibarModelPickerController {
@@ -337,8 +365,10 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
 }
 
 private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
+    var isPurchaseEligible = true
     var presentedPurchaseFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
     var presentedUpgradeFlows: [(source: SubscriptionFlowSource, isAITabState: Bool)] = []
+    var presentedOrigins: [SubscriptionFunnelOrigin] = []
 
     func presentPurchaseFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
         presentedPurchaseFlows.append((source, isAITabState))
@@ -346,6 +376,10 @@ private final class MockUpsellPresenter: DuckAISubscriptionUpselling {
 
     func presentUpgradeFlow(source: SubscriptionFlowSource, isAITabState: Bool) {
         presentedUpgradeFlows.append((source, isAITabState))
+    }
+
+    func presentPurchaseFlow(origin: SubscriptionFunnelOrigin) {
+        presentedOrigins.append(origin)
     }
 }
 

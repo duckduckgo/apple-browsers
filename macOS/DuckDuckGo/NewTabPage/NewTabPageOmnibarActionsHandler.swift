@@ -154,7 +154,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        if mode == AIChatNativePrompt.imageGenerationMode {
+        if mode == AIChatNativePrompt.imageGenerationMode || toolChoice?.contains(AIChatRAGTool.imageGeneration.rawValue) == true {
             PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         } else if mode == AIChatNativePrompt.voiceMode {
             PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)
@@ -181,7 +181,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         if mode == AIChatNativePrompt.voiceMode {
             let sourceCollection = windowControllersManager.lastKeyMainWindowController?
                 .mainViewController.tabCollectionViewModel
-            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.voice)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageVoice)
             tabOpener.openVoiceSession(inSourceCollection: sourceCollection, behavior: behavior)
             return
         }
@@ -244,7 +244,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.recentChat)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageRecentChat)
         tabOpener.openAIChatTab(with: .existingChat(chatId: chatId), behavior: behavior)
     }
 
@@ -261,8 +261,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             behavior = .newTab(selected: isShiftPressed())
         }
 
-        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPage)
-        tabOpener.openNewAIChat(in: behavior)
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.newTabPageViewAllChats)
+        tabOpener.openAIChatTab(with: .chatHistory, behavior: behavior)
     }
 
     @MainActor

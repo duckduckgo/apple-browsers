@@ -19,8 +19,7 @@
 import XCTest
 import BrowserServicesKit
 import Common
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import WideEvent
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 

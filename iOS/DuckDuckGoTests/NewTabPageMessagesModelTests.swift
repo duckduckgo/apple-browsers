@@ -17,10 +17,12 @@
 //  limitations under the License.
 //
 
+import Combine
 import Core
 import RemoteMessaging
 import XCTest
 import DDGSync
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
 
@@ -29,6 +31,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
  
     private var messagesConfiguration: HomePageMessagesConfigurationMock!
     private var notificationCenter: NotificationCenter!
+    private var pixelKitMock: PixelKitMock!
 
     private var segueToAIChatSettingsCallCount = 0
     private var segueToSettingsCallCount = 0
@@ -41,6 +44,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
         notificationCenter = NotificationCenter()
+        pixelKitMock = PixelKitMock()
         segueToAIChatSettingsCallCount = 0
         segueToSettingsCallCount = 0
         segueToSettingsGeneralCallCount = 0
@@ -51,7 +55,38 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
+    }
+
+    func testWhenRedesignedPageLoadsThenMessagesSubscribeOnceAndFollowLiveUpdates() {
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [])
+        let messages = createSUT(configuration: configuration)
+        let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
+        weak var weakPage: RedesignedNewTabPageViewController?
+
+        // Drain UIKit's temporary references before checking controller ownership.
+        autoreleasepool {
+            let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel, messagesModel: messages)
+            weakPage = page
+            page.setEscapeHatch(nil)
+            XCTAssertEqual(configuration.subscriptionCount, 0)
+
+            page.loadViewIfNeeded()
+            page.loadViewIfNeeded()
+            XCTAssertEqual(configuration.subscriptionCount, 1)
+            XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
+            XCTAssertEqual(configuration.didAppearCallCount, 0)
+
+            configuration.homeMessages = [.placeholder]
+            configuration.sendContentDidChange()
+            XCTAssertEqual(messages.homeMessageViewModels.count, 1)
+            configuration.homeMessages = []
+            configuration.sendContentDidChange()
+            XCTAssertTrue(messages.homeMessageViewModels.isEmpty)
+            XCTAssertEqual(configuration.refreshCallCount, 0)
+        }
+
+        XCTAssertNil(weakPage)
     }
 
     func testUpdatesOnNotification() {
@@ -67,6 +102,152 @@ final class NewTabPageMessagesModelTests: XCTestCase {
                                 object: nil)
 
         XCTAssertEqual(sut.homeMessageViewModels.count, 1)
+    }
+
+    func testCoordinatedLoadReadsSharedSourceWithoutRefreshingOrEagerAppearance() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+
+        sut.load()
+
+        XCTAssertEqual(configuration.refreshCallCount, 0)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        XCTAssertEqual(viewModel.acquisitionIdentity, configuration.presentationContext.acquisitionIdentity)
+    }
+
+    func testCoordinatedSignalSynchronouslyConvergesTwoModelsWithoutGlobalNotification() {
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [])
+        let first = createSUT(configuration: configuration)
+        let second = createSUT(configuration: configuration)
+        first.load()
+        second.load()
+
+        configuration.homeMessages = [.placeholder]
+        configuration.sendContentDidChange()
+
+        XCTAssertEqual(first.homeMessageViewModels.count, 1)
+        XCTAssertEqual(second.homeMessageViewModels.count, 1)
+        XCTAssertEqual(configuration.refreshCallCount, 0)
+
+        configuration.homeMessages = []
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+
+        XCTAssertEqual(first.homeMessageViewModels.count, 1)
+        XCTAssertEqual(second.homeMessageViewModels.count, 1)
+    }
+
+    func testCoordinatedCallbacksCapturePresentationContextWithoutPersistingAppearance() async throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        viewModel.onDidAppear()
+        await viewModel.onDidClose(.close)
+
+        XCTAssertNil(configuration.lastAppearedContext)
+        XCTAssertEqual(configuration.lastDismissedContext, configuration.presentationContext)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
+        XCTAssertEqual(configuration.dismissCallCount, 1)
+    }
+
+    func testMappingAloneDoesNotMarkRemoteMessageAsAppeared() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+
+        sut.load()
+
+        _ = try XCTUnwrap(sut.homeMessageViewModels.first)
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testMessageAppearanceSignalsReadinessWithoutPersistingAppearance() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        var appearanceSignalCount = 0
+        sut.onMessageVisibilityChanged = { appearanceSignalCount += 1 }
+
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        viewModel.onDidAppear()
+
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+        XCTAssertEqual(appearanceSignalCount, 1)
+        XCTAssertEqual(configuration.didAppearCallCount, 0)
+    }
+
+    func testMessageDisappearanceClearsVisibilityReadiness() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+
+        viewModel.onDidAppear()
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+
+        viewModel.onDidDisappear()
+
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testRemappingTheSameIdentityRetainsAppearanceReadiness() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        viewModel.onDidAppear()
+
+        configuration.homeMessages = [message]
+        configuration.sendContentDidChange()
+
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testRemovingMessageDropsAppearanceReadiness() throws {
+        let message = HomeMessage.mockRemote(withType: .small(titleText: "Title", descriptionText: "Description"))
+        let configuration = CoordinatedMessagesConfigurationMock(homeMessages: [message])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        let viewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        viewModel.onDidAppear()
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "foo"))
+
+        configuration.homeMessages = []
+        configuration.sendContentDidChange()
+
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "foo"))
+    }
+
+    func testReplacingMessageDoesNotReuseStaleAppearanceReadiness() throws {
+        let firstMessage = HomeMessage.mockRemote(id: "first",
+                                                   withType: .small(titleText: "First", descriptionText: "Description"))
+        let secondMessage = HomeMessage.mockRemote(id: "second",
+                                                    withType: .small(titleText: "Second", descriptionText: "Description"))
+        let configuration = HomePageMessagesConfigurationMock(homeMessages: [firstMessage])
+        let sut = createSUT(configuration: configuration)
+        sut.load()
+
+        let firstViewModel = try XCTUnwrap(sut.homeMessageViewModels.first)
+        firstViewModel.onDidAppear()
+        XCTAssertTrue(sut.hasAppearedRemoteMessage(withID: "first"))
+
+        configuration.homeMessages = [secondMessage]
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
+                                object: nil)
+
+        firstViewModel.onDidAppear()
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "first"))
+        XCTAssertFalse(sut.hasAppearedRemoteMessage(withID: "second"))
     }
 
     // MARK: Callbacks
@@ -194,8 +375,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await model.onDidClose(.close)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessageDismissed.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessageDismissed.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testFiresPixelOnAction() async throws {
@@ -208,8 +389,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.action(isShare: false))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessageActionClicked.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessageActionClicked.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testFiresPixelOnPrimaryAction() async throws {
@@ -222,8 +403,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.primaryAction(isShare: false))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessagePrimaryActionClicked.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessagePrimaryActionClicked.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testFiresPixelOnSecondaryAction() async throws {
@@ -236,8 +417,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.secondaryAction(isShare: false))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.remoteMessageSecondaryActionClicked.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, [PixelParameters.message: "foo"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.remoteMessageSecondaryActionClicked.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [PixelParameters.message: "foo"])
     }
 
     func testDoesNotFirePixelOnCloseWhenMetricsAreDisabled() async throws {
@@ -251,8 +432,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         await model.onDidClose(.close)
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     func testDoesNotFirePixelOnActionWhenMetricsAreDisabled() async throws {
@@ -265,8 +446,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.action(isShare: false))
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     func testDoesNotFirePixelOnPrimaryActionWhenMetricsAreDisabled() async throws {
@@ -279,8 +460,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.primaryAction(isShare: false))
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     func testDoesNotFirePixelOnSecondaryActionWhenMetricsAreDisabled() async throws {
@@ -293,8 +474,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         let model = try XCTUnwrap(sut.homeMessageViewModels.first)
         await model.onDidClose(.secondaryAction(isShare: false))
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
-        XCTAssertNil(PixelFiringMock.lastParams)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.pixel.name)
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters)
     }
 
     // MARK: - openedAfterIdle
@@ -329,16 +510,84 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func createSUT(isOpenedAfterIdle: Bool = false) -> NewTabPageMessagesModel {
-        let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
+        createSUT(configuration: messagesConfiguration, isOpenedAfterIdle: isOpenedAfterIdle)
+    }
+
+    private func createSUT(
+        configuration: HomePageMessagesConfiguration,
+        isOpenedAfterIdle: Bool = false
+    ) -> NewTabPageMessagesModel {
+        let remoteMessageActionHandler = RemoteMessagingActionHandler(surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher())
         remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
 
-        return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
+        return NewTabPageMessagesModel(homePageMessagesConfiguration: configuration,
                                 notificationCenter: notificationCenter,
-                                pixelFiring: PixelFiringMock.self,
+                                pixelFiring: pixelKitMock,
                                 messageActionHandler: remoteMessageActionHandler,
                                 imageLoader: MockRemoteMessagingImageLoader(),
-                                promoCoordinator: MockNewTabPagePromoCoordinator(),
                                 isOpenedAfterIdle: { isOpenedAfterIdle })
+    }
+}
+
+@MainActor
+private final class CoordinatedMessagesConfigurationMock: HomePageMessagesConfiguration {
+    let mode = PromoCoordinationMode.coordinated
+    let presentationContext: HomeMessagePresentationContext
+    var homeMessages: [HomeMessage]
+
+    private let contentDidChangeSubject = PassthroughSubject<Void, Never>()
+    private let arbiterLease: PromoQueueRemoteMessageArbiterLease
+
+    private(set) var subscriptionCount = 0
+    private(set) var refreshCallCount = 0
+    private(set) var didAppearCallCount = 0
+    private(set) var dismissCallCount = 0
+    private(set) var lastAppearedContext: HomeMessagePresentationContext?
+    private(set) var lastDismissedContext: HomeMessagePresentationContext?
+
+    var contentDidChangePublisher: AnyPublisher<Void, Never> {
+        contentDidChangeSubject
+            .handleEvents(receiveSubscription: { [weak self] _ in self?.subscriptionCount += 1 })
+            .eraseToAnyPublisher()
+    }
+
+    init(homeMessages: [HomeMessage]) {
+        self.homeMessages = homeMessages
+        let arbiter = PromoQueueLeaseArbiter()
+        guard case .acquired(let arbiterLease) = arbiter.acquireRemoteMessageLease(for: "foo") else {
+            fatalError("Expected the test arbiter to grant its first RMF acquisition")
+        }
+        self.arbiterLease = arbiterLease
+        presentationContext = HomeMessagePresentationContext(
+            messageID: "foo",
+            acquisitionIdentity: arbiterLease.acquisitionIdentity
+        )
+    }
+
+    func sendContentDidChange() {
+        contentDidChangeSubject.send(())
+    }
+
+    func refresh(openedAfterIdle: Bool) {
+        refreshCallCount += 1
+    }
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage) async {}
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) async {
+        dismissCallCount += 1
+        lastDismissedContext = presentationContext
+    }
+
+    func didAppear(_ homeMessage: HomeMessage) {}
+
+    func didAppear(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) {
+        didAppearCallCount += 1
+        lastAppearedContext = presentationContext
+    }
+
+    func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext? {
+        presentationContext
     }
 }
 
@@ -379,10 +628,12 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 }
 
 private extension HomeMessage {
-    static func mockRemote(withType type: RemoteMessageModelType, isMetricsEnabled: Bool = true) -> Self {
+    static func mockRemote(id: String = "foo",
+                           withType type: RemoteMessageModelType,
+                           isMetricsEnabled: Bool = true) -> Self {
         HomeMessage.remoteMessage(
             remoteMessage: .init(
-                id: "foo",
+                id: id,
                 surfaces: .newTabPage,
                 content: type,
                 matchingRules: [],

@@ -20,8 +20,7 @@ import Foundation
 import UserScript
 import AIChat
 import Common
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import SERPSettings
 
 final class MockSERPSettingsProvider: SERPSettingsProviding {

@@ -26,6 +26,7 @@ import PrivacyConfig
 public enum HTTPSUpgradeError: Error {
     case badUrl
     case nonHttp
+    case explicitPort
     case domainExcluded
     case featureDisabled
     case nonUpgradable(HTTPSBloomFilterSpecification?)
@@ -52,6 +53,7 @@ public actor HTTPSUpgrade {
     public func upgrade(url: URL) async -> Result<URL, HTTPSUpgradeError> {
         guard url.isHttp else { return .failure(.nonHttp) }
         guard let host = url.host else { return .failure(.badUrl) }
+        guard url.port == nil else { return .failure(.explicitPort) }
         guard shouldExcludeDomain(host) == false else { return .failure(.domainExcluded) }
         guard isFeatureEnabled(forHost: host, privacyConfig: privacyConfig) else { return .failure(.featureDisabled) }
 

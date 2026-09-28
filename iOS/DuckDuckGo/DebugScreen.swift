@@ -58,12 +58,14 @@ enum DebugScreen: Identifiable {
         let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
         let webExtensionManager: WebExtensionManaging?
         let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+        let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
+        let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
 
     }
 
     case controller(title: String, (Dependencies) -> UIViewController)
     case view(title: String, (Dependencies) -> any View)
-    case action(title: String, (Dependencies) -> Void)
+    case action(title: String, @MainActor (Dependencies) -> Void)
 
     var isAction: Bool {
         if case .action = self {

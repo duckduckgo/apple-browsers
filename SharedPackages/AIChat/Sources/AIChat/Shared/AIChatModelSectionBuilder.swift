@@ -43,38 +43,4 @@ public enum AIChatModelSectionBuilder {
         let withoutLabel = models.filter { $0.label == nil }
         return (withLabel, withoutLabel)
     }
-
-    /// PoC ordering: per-tier "recommended" first, rest keep API order. Delete when backend ships ordering (task 1216559729471554).
-    public static func orderedAccessibleModels(_ models: [AIChatModel], userTier: AIChatUserTier) -> [AIChatModel] {
-        var remaining = models
-        var recommended: [AIChatModel] = []
-        for matches in recommendedModelMatchers(for: userTier) {
-            guard let index = remaining.firstIndex(where: { matches($0.name.lowercased()) }) else { continue }
-            recommended.append(remaining.remove(at: index))
-        }
-        return recommended + remaining
-    }
-
-    /// Per-tier "recommended" matchers in display order, matched by lowercased name substring (family, not id).
-    private static func recommendedModelMatchers(for userTier: AIChatUserTier) -> [(String) -> Bool] {
-        let isFullGPT: (String) -> Bool = { $0.contains("gpt") && !$0.contains("mini") && !$0.contains("nano") }
-        switch userTier {
-        case .free:
-            return [
-                { $0.contains("nano") },
-                { $0.contains("mini") },
-                { $0.contains("claude") && $0.contains("haiku") }
-            ]
-        case .plus, .internal:
-            return [
-                isFullGPT,
-                { $0.contains("claude") && $0.contains("sonnet") }
-            ]
-        case .pro:
-            return [
-                isFullGPT,
-                { $0.contains("claude") && $0.contains("opus") }
-            ]
-        }
-    }
 }

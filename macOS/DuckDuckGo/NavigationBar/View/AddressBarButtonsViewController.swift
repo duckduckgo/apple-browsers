@@ -1494,7 +1494,7 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatMenuConfig.shouldDisplayAddressBarShortcut
         && !isChromeSidebarFeatureEnabled
         && !shouldSkipShowingAnyAIChatButton()
-        && tabViewModel?.tab.content != .onboarding
+        && (tabViewModel?.tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking)
     }
 
     private func shouldShowAskAIChatButton() -> Bool {
@@ -1600,7 +1600,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 shouldSelectNewTab: true
             )
 
-            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBarContextMenu)
             if let value = textFieldValue {
                 let query = aiChatAddressBarPromptExtractor.extractAIChatQuery(for: value)
                 aiChatTabOpener.openAIChatTab(with: query, behavior: behavior)
@@ -1617,7 +1617,7 @@ final class AddressBarButtonsViewController: NSViewController {
                                          minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAt(for: tab.uuid)?.minutesSinceNow())
                 PixelKit.fire(pixel, frequency: .dailyAndStandard)
                 if !isSidebarCurrentlyOpen {
-                    NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.contextMenu)
+                    NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBarContextMenu)
                 }
             }
 
@@ -2876,7 +2876,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         switch popover {
         case popovers.bookmarkPopover:
             if popovers.bookmarkPopover?.isNew == true {
-                NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+                NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
             }
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:
@@ -2891,7 +2891,8 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
             // treat this as a denial of the website permission to prevent the popover from re-appearing
             if !authPopover.viewController.isAuthorizationInProgress,
-               let query = authPopover.viewController.query {
+               let query = authPopover.viewController.query,
+               !query.isComplete {
                 query.handleDecision(grant: false, remember: nil)
             }
             updatePermissionCenterButtonIcon()

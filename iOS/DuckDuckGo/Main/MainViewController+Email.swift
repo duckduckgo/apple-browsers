@@ -1,0 +1,146 @@
+//
+//  MainViewController+Email.swift
+//  DuckDuckGo
+//
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import BrowserServicesKit
+import Networking
+import Core
+import PixelKit
+
+extension MainViewController {
+
+    func newEmailAddress() {
+        guard emailManager.isSignedIn else {
+            UIApplication.shared.open(URL.emailProtectionQuickLink)
+            return
+        }
+
+        var pixelParameters: [String: String] = [:]
+
+        if let cohort = emailManager.cohort {
+            pixelParameters[PixelParameters.emailCohort] = cohort
+        }
+        pixelParameters[PixelParameters.emailLastUsed] = emailManager.lastUseDate
+        emailManager.updateLastUseDate()
+
+        PixelKit.fire(Pixel.Event.emailUserCreatedAlias,
+                      options: PixelKit.Options(additionalParameters: pixelParameters, includeAppVersionParameter: false))
+
+        let emailManager = self.emailManager
+        emailManager.getAliasIfNeededAndConsume { alias, _ in
+            Task { @MainActor in
+                guard let alias = alias else {
+                    // we may want to communicate this failure to the user in the future
+                    return
+                }
+                let pasteBoard = UIPasteboard.general
+                pasteBoard.string = emailManager.emailAddressFor(alias)
+                self.recordNewTabPageSessionAction { $0.emailCopied() }
+                let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+                ActionMessageView.present(message: UserText.emailBrowsingMenuAlert,
+                                          presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
+            }
+        }
+    }
+
+}
+
+// MARK: - EmailManagerRequestDelegate
+extension MainViewController: EmailManagerRequestDelegate {
+
+    func emailManager(_ emailManager: EmailManager, requested url: URL, method: String, headers: HTTPHeaders, parameters: [String: String]?, httpBody: Data?, timeoutInterval: TimeInterval) async throws -> Data {
+        let method = APIRequest.HTTPMethod(rawValue: method) ?? .post
+        let configuration = APIRequest.Configuration(url: url,
+                                                     method: method,
+                                                     queryParameters: parameters ?? [:],
+                                                     headers: APIRequest.Headers(additionalHeaders: headers),
+                                                     body: httpBody,
+                                                     timeoutInterval: timeoutInterval)
+        let request = APIRequest(configuration: configuration, urlSession: .session())
+        return try await request.fetch().data ?? { throw AliasRequestError.noDataError }()
+    }
+}
+
+// MARK: - EmailManagerAliasPermissionDelegate
+extension MainViewController: EmailManagerAliasPermissionDelegate {
+
+    func emailManager(_ emailManager: EmailManager,
+                      didRequestPermissionToProvideAliasWithCompletion: @escaping (EmailManagerPermittedAddressType, Bool) -> Void) {
+
+        currentTab?.dismissKeyboardIfPresent()
+
+        DispatchQueue.main.async {
+            let emailAddressPromptViewController = EmailAddressPromptViewController(emailManager) { addressType, autosave in
+                didRequestPermissionToProvideAliasWithCompletion(addressType, autosave)
+            }
+
+            if let presentationController = emailAddressPromptViewController.presentationController as? UISheetPresentationController {
+                if #available(iOS 16.0, *) {
+                    presentationController.detents = [.custom(resolver: { _ in
+                        AutofillViews.emailSignupPromptMinHeight
+                    })]
+                } else {
+                    presentationController.detents = [.medium()]
+                }
+            }
+            self.present(emailAddressPromptViewController, animated: true)
+        }
+
+    }
+
+    func emailManager(_ emailManager: EmailManager, didRequestInContextSignUp completionHandler: @escaping (_ shouldContinue: Bool) -> Void) {
+
+        currentTab?.dismissKeyboardIfPresent()
+
+        let emailSignupPromptViewController = EmailSignupPromptViewController { shouldContinue in
+            if shouldContinue {
+                let signupViewController = EmailSignupViewController(privacyConfigurationManager: self.privacyConfigurationManager,
+                                                                     contentBlockingAssetsPublisher: self.contentBlockingAssetsPublisher) { shouldContinue in
+                    completionHandler(shouldContinue)
+                }
+                let signupNavigationController = UINavigationController(rootViewController: signupViewController)
+                self.present(signupNavigationController, animated: true, completion: nil)
+            } else {
+                completionHandler(shouldContinue)
+            }
+        }
+
+        if let presentationController = emailSignupPromptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.emailSignupPromptMinHeight
+                })]
+            } else {
+                presentationController.detents = [.medium()]
+            }
+        }
+
+        self.present(emailSignupPromptViewController, animated: true)
+
+    }
+
+}
+
+// MARK: - UIPopoverPresentationControllerDelegate
+extension MainViewController: UIPopoverPresentationControllerDelegate {
+
+    func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle {
+        return .none
+    }
+}

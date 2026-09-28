@@ -110,6 +110,7 @@
                 "enum": [
                     "menu",
                     "dashboard",
+                    "error_page",
                     "on_protections_off_menu",
                     "on_protections_off_dashboard_main",
                     "reload-three-times-within-20-seconds",
@@ -269,6 +270,11 @@
                 "key": "isForceDarkModeEnabled",
                 "type": "boolean",
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "isAfterTabTermination",
+                "type": "boolean",
+                "description": "Whether the report is associated with the tab termination error page. Only sent when true."
             },
             {
                 "key": "autoplayBlockingMode",
@@ -490,6 +496,7 @@
                 "enum": [
                     "menu",
                     "dashboard",
+                    "error_page",
                     "on_protections_off_menu",
                     "on_protections_off_dashboard_main",
                     "reload-three-times-within-20-seconds",
@@ -649,6 +656,11 @@
                 "key": "isForceDarkModeEnabled",
                 "type": "boolean",
                 "description": "Whether force dark mode is enabled. Only sent when value is known."
+            },
+            {
+                "key": "isAfterTabTermination",
+                "type": "boolean",
+                "description": "Whether the report is associated with the tab termination error page. Only sent when true."
             },
             {
                 "key": "autoplayBlockingMode",

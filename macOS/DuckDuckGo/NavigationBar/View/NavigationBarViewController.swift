@@ -153,6 +153,7 @@ final class NavigationBarViewController: NSViewController {
 
     private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
+    private var autofillPinningPromoCompletion: ((PromoResult) -> Void)?
 
     private var urlCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -166,6 +167,7 @@ final class NavigationBarViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    private let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating
     private let featureFlagger: FeatureFlagger
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let searchPreferences: SearchPreferences
@@ -176,6 +178,7 @@ final class NavigationBarViewController: NSViewController {
     private let tabsPreferences: TabsPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
+    private let pixelFiring: (any PixelKitFiring)?
     private let pinningManager: PinningManager
 
     let themeManager: ThemeManaging
@@ -197,8 +200,8 @@ final class NavigationBarViewController: NSViewController {
 
     private let networkProtectionButtonModel: NetworkProtectionNavBarButtonModel
 
-    private var isOnboardingFinished: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
+    private var isOnboardingReadyForPrompts: Bool {
+        Application.appDelegate.isOnboardingReadyForPrompts
     }
 
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
@@ -236,6 +239,7 @@ final class NavigationBarViewController: NSViewController {
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
+                       brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating = NSApp.delegateTyped.brokenSitePromptPresentationCoordinator,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
@@ -252,6 +256,7 @@ final class NavigationBarViewController: NSViewController {
                        accessibilityPreferences: AccessibilityPreferences,
                        pinningManager: PinningManager,
                        memoryUsageMonitor: MemoryUsageMonitor,
+                       pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -274,6 +279,7 @@ final class NavigationBarViewController: NSViewController {
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
                 featureFlagger: featureFlagger,
                 adBlockingAvailability: adBlockingAvailability,
                 searchPreferences: searchPreferences,
@@ -290,6 +296,7 @@ final class NavigationBarViewController: NSViewController {
                 accessibilityPreferences: accessibilityPreferences,
                 pinningManager: pinningManager,
                 memoryUsageMonitor: memoryUsageMonitor,
+                pixelFiring: pixelFiring,
                 showTab: showTab
             )
         }!
@@ -310,6 +317,7 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
+        brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating,
         featureFlagger: FeatureFlagger,
         adBlockingAvailability: AdBlockingAvailabilityProviding,
         searchPreferences: SearchPreferences,
@@ -326,6 +334,7 @@ final class NavigationBarViewController: NSViewController {
         accessibilityPreferences: AccessibilityPreferences,
         pinningManager: PinningManager,
         memoryUsageMonitor: MemoryUsageMonitor,
+        pixelFiring: (any PixelKitFiring)?,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -367,6 +376,7 @@ final class NavigationBarViewController: NSViewController {
         self.permissionManager = permissionManager
         self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
+        self.brokenSitePromptPresentationCoordinator = brokenSitePromptPresentationCoordinator
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
@@ -378,6 +388,7 @@ final class NavigationBarViewController: NSViewController {
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
+        self.pixelFiring = pixelFiring
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         self.memoryUsageDisplayer = MemoryUsageDisplayer(memoryUsageMonitor: memoryUsageMonitor, featureFlagger: featureFlagger)
@@ -403,6 +414,9 @@ final class NavigationBarViewController: NSViewController {
     }
 
     deinit {
+        autofillPinningPromoCompletion?(.ignored())
+        autofillPinningPromoCompletion = nil
+
 #if DEBUG
         addressBarViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         if isLazyVar(named: "downloadsProgressView", initializedIn: self) {
@@ -544,6 +558,10 @@ final class NavigationBarViewController: NSViewController {
         updateNavigationBarForCurrentWidth()
         sessionRestorePromptCoordinator.markUIReady()
         setupAsBurnerWindowIfNeeded(theme: theme)
+    }
+
+    func windowWillClose() {
+        resolveAutofillPinningPromo(with: .ignored())
     }
 
     override func viewWillLayout() {
@@ -968,11 +986,6 @@ final class NavigationBarViewController: NSViewController {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(showPasswordsAutoPinnedFeedback(_:)),
                                                name: .passwordsAutoPinned,
-                                               object: nil)
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showPasswordsPinningOption(_:)),
-                                               name: .passwordsPinningPrompt,
                                                object: nil)
 
         NotificationCenter.default.addObserver(self,
@@ -1574,22 +1587,6 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    @objc private func showPasswordsPinningOption(_ sender: Notification) {
-        guard view.window?.isKeyWindow == true else { return }
-
-        DispatchQueue.main.async {
-            self.popovers.showAutofillOnboardingPopover(from: self.passwordManagementButton,
-                                                        withDelegate: self) { [weak self] didAddShortcut in
-                guard let self else { return }
-                self.popovers.closeAutofillOnboardingPopover()
-
-                if didAddShortcut {
-                    pinningManager.pin(.autofill)
-                }
-            }
-        }
-    }
-
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
         DispatchQueue.main.async { [weak self] in
             guard self?.view.window?.isKeyWindow == true,
@@ -1611,7 +1608,7 @@ final class NavigationBarViewController: NSViewController {
     @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
         guard brokenSitePromptLimiter.shouldShowToast(),
               let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
-              isOnboardingFinished
+              isOnboardingReadyForPrompts
         else { return }
         showBrokenSitePrompt()
     }
@@ -1632,9 +1629,12 @@ final class NavigationBarViewController: NSViewController {
         },
                                                           onDismiss: {
             self.brokenSitePromptLimiter.didDismissToast()
+            // Fires from viewDidDisappear on every close path, including the CTA, so it is the promo's single hide signal.
+            self.brokenSitePromptPresentationCoordinator.promptDidHide()
         }
         )
         popoverMessage.show(onParent: self, relativeTo: privacyButton, behavior: .semitransient)
+        brokenSitePromptPresentationCoordinator.promptDidShow()
     }
 
     func toggleDownloadsPopover(keepButtonVisible: Bool) {
@@ -1813,7 +1813,7 @@ final class NavigationBarViewController: NSViewController {
             if isAIChatButtonInOverflowMenu {
                 let aiChatItem = NSMenuItem(title: ShortcutTooltip.newAIChatTab.value, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
                     .targetting(self)
-                    .withImage(.aiChat)
+                    .withImage(.aiChat, visibleOnMacOS27: true)
                 overflowButton.menu?.addItem(aiChatItem)
             }
             overflowButton.isHidden = false
@@ -1849,31 +1849,31 @@ final class NavigationBarViewController: NSViewController {
         case .autofill:
             return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage, visibleOnMacOS27: true)
         case .bookmarks:
             return NSMenuItem(title: UserText.bookmarks, action: #selector(overflowMenuRequestedBookmarkPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage, visibleOnMacOS27: true)
         case .downloads:
             return NSMenuItem(title: UserText.downloads, action: #selector(overflowMenuRequestedDownloadsPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage, visibleOnMacOS27: true)
         case .feedback:
             return NSMenuItem(title: UserText.feedbackShortcutTooltip, action: #selector(quickFeedbackButtonClicked), keyEquivalent: "")
                 .targetting(self)
-                .withImage(DesignSystemImages.Glyphs.Size16.feedback)
+                .withImage(DesignSystemImages.Glyphs.Size16.feedback, visibleOnMacOS27: true)
         case .share:
             return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.shareButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.shareButtonImage, visibleOnMacOS27: true)
         case .homeButton:
             return NSMenuItem(title: UserText.homeButtonTooltip, action: #selector(overflowMenuRequestedHomeButton), keyEquivalent: "")
                 .targetting(self)
-                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.homeButtonImage)
+                .withImage(theme.iconsProvider.navigationToolbarIconsProvider.homeButtonImage, visibleOnMacOS27: true)
         case .networkProtection:
             return NSMenuItem(title: UserText.networkProtection, action: #selector(overflowMenuRequestedNetworkProtectionPopover), keyEquivalent: "")
                 .targetting(self)
-                .withImage(networkProtectionButton.image)
+                .withImage(networkProtectionButton.image, visibleOnMacOS27: true)
         }
     }
 
@@ -1964,7 +1964,7 @@ extension NavigationBarViewController: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences)
+        let bookmarksMenu = BookmarksBarMenuFactory.makeMenuItem(NSApp.delegateTyped.appearancePreferences, visibleOnMacOS27: true)
         bookmarksMenu.isEnabled = allowsUserInteraction
         menu.addItem(bookmarksMenu)
 
@@ -1973,30 +1973,30 @@ extension NavigationBarViewController: NSMenuDelegate {
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences, pinningManager: pinningManager)
         let shareTitle = pinningManager.shortcutTitle(for: .share)
         menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
+            .withImage(DesignSystemImages.Glyphs.Size12.shareApple, visibleOnMacOS27: true)
 
         let downloadsTitle = pinningManager.shortcutTitle(for: .downloads)
         menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
-            .withImage(DesignSystemImages.Glyphs.Size12.download)
+            .withImage(DesignSystemImages.Glyphs.Size12.download, visibleOnMacOS27: true)
 
         let autofillTitle = pinningManager.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
-            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
+            .withImage(DesignSystemImages.Glyphs.Size12.keyLogin, visibleOnMacOS27: true)
 
         let bookmarksTitle = pinningManager.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
-            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks, visibleOnMacOS27: true)
 
         if !isInPopUpWindow && DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager).isVPNVisible() {
             let networkProtectionTitle = pinningManager.shortcutTitle(for: .networkProtection)
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
+                .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock, visibleOnMacOS27: true)
         }
 
         if !isInPopUpWindow && NSApp.delegateTyped.internalUserDecider.isInternalUser {
             let feedbackTitle = pinningManager.shortcutTitle(for: .feedback)
             menu.addItem(withTitle: feedbackTitle, action: #selector(toggleFeedbackPanelPinning), keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size12.feedback)
+                .withImage(DesignSystemImages.Glyphs.Size12.feedback, visibleOnMacOS27: true)
         }
     }
 
@@ -2208,7 +2208,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu) {
@@ -2220,6 +2220,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.moreMenu.rawValue]))
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .moreMenu, completion: nil)
     }
 
@@ -2280,6 +2281,14 @@ extension NavigationBarViewController: NSPopoverDelegate {
 
     /// We check references here because these popovers might be on other windows.
     func popoverDidClose(_ notification: Notification) {
+        if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
+            popovers.autofillOnboardingPopoverClosed()
+            resolveAutofillPinningPromo(with: .ignored())
+            guard view.window?.isVisible == true else { return }
+            updatePasswordManagementButton()
+            return
+        }
+
         guard view.window?.isVisible == true else { return }
         if let popover = popovers.downloadsPopover, notification.object as AnyObject? === popover {
             popovers.downloadsPopoverClosed()
@@ -2295,9 +2304,6 @@ extension NavigationBarViewController: NSPopoverDelegate {
             updatePasswordManagementButton()
         } else if let popover = popovers.savePaymentMethodPopover, notification.object as AnyObject? === popover {
             popovers.savePaymentMethodPopoverClosed()
-            updatePasswordManagementButton()
-        } else if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
-            popovers.autofillOnboardingPopoverClosed()
             updatePasswordManagementButton()
         }
     }
@@ -2461,4 +2467,51 @@ extension NavigationBarViewController: SharingMenuDelegate {
 extension Notification.Name {
     static let ToggleNetworkProtectionInMainWindow = Notification.Name("com.duckduckgo.vpn.toggle-popover-in-main-window")
     static let OpenUnifiedFeedbackForm = Notification.Name("com.duckduckgo.subscription.open-unified-feedback-form")
+}
+
+// MARK: - AutofillToolbarPinningPromoPresenting
+
+extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
+
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void) {
+        autofillPinningPromoCompletion = completion
+
+        // The trigger is posted from the save popover's `viewWillDisappear`, so that popover is still
+        // shown when we get here and `closeTransientPopovers()` would refuse. Presenting on the next
+        // run loop lets it finish closing first.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                completion(.noChange)
+                return
+            }
+            guard autofillPinningPromoCompletion != nil else { return }
+
+            let didPresent = popovers.showAutofillOnboardingPopover(from: passwordManagementButton,
+                                                                         withDelegate: self) { [weak self] didAddShortcut in
+                guard let self else { return }
+                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
+                if didAddShortcut {
+                    pinningManager.pin(.autofill)
+                }
+                popovers.closeAutofillOnboardingPopover()
+            }
+
+            if !didPresent {
+                resolveAutofillPinningPromo(with: .noChange)
+            }
+        }
+    }
+
+    func retractAutofillToolbarPinningPromo() {
+        autofillPinningPromoCompletion = nil
+        popovers.closeAutofillOnboardingPopover()
+    }
+
+    /// Both the CTA path and `popoverDidClose` funnel through here, and the completion is cleared on the
+    /// way out, so whichever fires first wins and the second is inert.
+    private func resolveAutofillPinningPromo(with result: PromoResult) {
+        let completion = autofillPinningPromoCompletion
+        autofillPinningPromoCompletion = nil
+        completion?(result)
+    }
 }

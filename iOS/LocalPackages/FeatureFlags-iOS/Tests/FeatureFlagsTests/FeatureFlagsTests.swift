@@ -25,6 +25,38 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testAddressBarRecentChatsUsesItsOwnRemoteKillSwitchAndIsEnabledByDefault() {
+        let flag = FeatureFlag.aiChatAddressBarRecentChats
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .addressBarRecentChats)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "addressBarRecentChats")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testChromeMenuButtonIPadUsesItsOwnRemoteFlagAndIsInternalOnlyByDefault() {
+        let flag = FeatureFlag.aiChatChromeMenuButtonIPad
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .iPadChromeMenuButton)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "iPadChromeMenuButton")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testWhenSubfeatureIsMissingThenProvidedDefaultValueIsReturned() {
         let configData = """
         {
@@ -46,21 +78,21 @@ final class FeatureFlagsTests: XCTestCase {
     }
 
     func testWhenReadingIOSBrowserConfigSubfeatureThenParentAndRawValueAreStable() {
-        let subfeature = iOSBrowserConfigSubfeature.searchTokenExperimentV3
+        let subfeature = iOSBrowserConfigSubfeature.searchTokenExperimentV4
 
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
-        XCTAssertEqual(subfeature.rawValue, "searchTokenExperimentV3")
+        XCTAssertEqual(subfeature.rawValue, "searchTokenExperimentV4")
     }
 
     func testWhenReadingSearchTokenFeatureFlagThenSourceAndCohortUseSearchTokenConfiguration() {
-        guard case let .remoteReleasable(subfeature) = FeatureFlag.searchTokenExperimentV3.source else {
+        guard case let .remoteReleasable(subfeature) = FeatureFlag.searchTokenExperimentV4.source else {
             XCTFail("Expected remote-releasable source")
             return
         }
 
         XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
-                       iOSBrowserConfigSubfeature.searchTokenExperimentV3.rawValue)
-        XCTAssertEqual(FeatureFlag.searchTokenExperimentV3.cohortType.map(ObjectIdentifier.init),
+                       iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue)
+        XCTAssertEqual(FeatureFlag.searchTokenExperimentV4.cohortType.map(ObjectIdentifier.init),
                        ObjectIdentifier(FeatureFlag.SearchTokenExperimentCohort.self))
     }
 
@@ -82,5 +114,37 @@ final class FeatureFlagsTests: XCTestCase {
             }
             XCTAssertTrue(flag.supportsLocalOverriding)
         }
+    }
+
+    func testSuppressShowBarsGestureRecogniserDelayIsDefaultEnabledRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.suppressShowBarsGestureRecogniserDelay
+
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
+                       iOSBrowserConfigSubfeature.suppressShowBarsGestureRecogniserDelay.rawValue)
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testLegacyDeviceRenamePatchFlagIsDefaultEnabledAndRemoteReleasable() {
+        let flag = FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+
+        XCTAssertEqual((subfeature as? SyncSubfeature)?.rawValue,
+                       SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename.rawValue)
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
     }
 }

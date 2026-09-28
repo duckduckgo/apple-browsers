@@ -18,8 +18,7 @@
 //
 
 import FeatureFlags_iOS
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfigTestsUtils
 import UIKit

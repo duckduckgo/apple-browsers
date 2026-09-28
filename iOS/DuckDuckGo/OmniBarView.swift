@@ -100,11 +100,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onDismissPressed: (() -> Void)? { get set }
     var onFirePressed: (() -> Void)? { get set }
 
-    /// Callback triggered when the AI Chat left button is tapped
-    var onAIChatLeftButtonPressed: (() -> Void)? { get set }
-
-    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
-    var onAIChatBrandingPressed: (() -> Void)? { get set }
     var longPressMenuProvider: (() -> UIMenu?)? { get set }
     var onLongPressMenuDisplayed: (() -> Void)? { get set }
 
@@ -134,15 +129,28 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func makeGlass()
     func makeOpaque()
 
-    /// Re-asserts the field's resting background for the current position. No-op unless floating UI.
+    /// Re-asserts the field's resting appearance for the current position. No-op unless floating UI.
     func restoreFloatingFieldAppearance()
 
-    /// Swaps the omnibar Duck.ai button glyph to reflect whether a contextual surface is open.
-    func updateAIChatButtonForContextualSurface(isPresented: Bool)
+    /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface
+    /// on screen, or a chat to return to once it is gone.
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool)
 
     /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
     /// keeps its glass). Pass `false` to restore the standard per-position appearance.
     func setFloatingMinimalChromeBar(_ enabled: Bool)
+}
+
+extension OmniBarView {
+    /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
+    /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
+    var restingSearchFieldSize: CGSize {
+        let size = searchContainer.bounds.size
+        if size.width > 0, size.height > 0 {
+            return size
+        }
+        return CGSize(width: frame.width, height: expectedHeight)
+    }
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.
@@ -181,7 +189,6 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
-    var isFullAIChatHidden: Bool { get set }
     var isFireButtonHidden: Bool { get set }
     var isTabSwitcherButtonHidden: Bool { get set }
     var layoutMode: OmniBarLayoutMode { get }

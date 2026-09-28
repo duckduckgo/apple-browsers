@@ -26,12 +26,29 @@ final class AIChatHeaderGlassPill: UIView {
 
     let contentView = UIView()
 
+    /// How much separation the pill needs from what is behind it.
+    struct ShadowStyle {
+        let opacity: Float
+        let dimmedOpacity: Float
+        let offset: CGSize
+        let radius: CGFloat
+
+        /// Floating over page content, which scrolls and can be any colour.
+        static let floating = ShadowStyle(opacity: 0.16, dimmedOpacity: 0.04,
+                                         offset: CGSize(width: 0, height: 8), radius: 16)
+        /// Resting on solid chrome: the floating shadow just darkens it, but glass on white needs some lift.
+        static let restingOnChrome = ShadowStyle(opacity: 0.10, dimmedOpacity: 0.03,
+                                                offset: CGSize(width: 0, height: 1), radius: 3)
+    }
+
     private let cornerRadius: CGFloat
+    private let shadowStyle: ShadowStyle
     private let clipHost = UIView()
     private var glassEffectView: UIVisualEffectView?
 
-    init(cornerRadius: CGFloat) {
+    init(cornerRadius: CGFloat, shadowStyle: ShadowStyle = .floating) {
         self.cornerRadius = cornerRadius
+        self.shadowStyle = shadowStyle
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
@@ -86,6 +103,12 @@ final class AIChatHeaderGlassPill: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Without a path the shadow rasterizes from the layer's alpha, on every pass.
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius).cgPath
+    }
+
     func refreshGlassForCurrentTraits() {
         guard #available(iOS 26, *), let glassEffectView else { return }
         glassEffectView.effect = Self.glassEffect(for: traitCollection)
@@ -93,9 +116,9 @@ final class AIChatHeaderGlassPill: UIView {
 
     func applyShadow(dimmed: Bool) {
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = dimmed ? 0.04 : 0.16
-        layer.shadowOffset = CGSize(width: 0, height: 8)
-        layer.shadowRadius = 16
+        layer.shadowOpacity = dimmed ? shadowStyle.dimmedOpacity : shadowStyle.opacity
+        layer.shadowOffset = shadowStyle.offset
+        layer.shadowRadius = shadowStyle.radius
         layer.borderWidth = 0
         layer.borderColor = nil
         clipsToBounds = false

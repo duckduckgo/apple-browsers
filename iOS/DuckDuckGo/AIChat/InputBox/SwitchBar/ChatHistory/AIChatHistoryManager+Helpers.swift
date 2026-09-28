@@ -25,11 +25,9 @@ import PrivacyConfig
 extension AIChatHistoryManager {
 
     static func makeHistoryManager(isFireTab: Bool,
-                                   isIPadExperience: Bool,
                                    featureFlagger: FeatureFlagger,
                                    privacyConfigurationManager: PrivacyConfigurationManaging,
                                    chatSyncCleaner: AIChatSyncCleaning?,
-                                   chatSettings: AIChatSettingsProvider,
                                    nativeStorageHandler: DuckAiNativeStorageHandling?) -> (AIChatHistoryManager, AIChatSuggestionsViewModel)
     {
         let suggestionsReader: AIChatSuggestionsReading = {
@@ -57,12 +55,9 @@ extension AIChatHistoryManager {
         let viewModel = AIChatSuggestionsViewModel(maxSuggestions: suggestionsReader.maxHistoryCount)
 
         let manager = AIChatHistoryManager(suggestionsReader: suggestionsReader,
-                                           aiChatSettings: chatSettings,
                                            aiChatDeleter: chatDeleter,
                                            viewModel: viewModel,
-                                           isIPadExperience: isIPadExperience,
-                                           isFireTab: isFireTab,
-                                           featureFlagger: featureFlagger)
+                                           isFireTab: isFireTab)
         return (manager, viewModel)
     }
 }

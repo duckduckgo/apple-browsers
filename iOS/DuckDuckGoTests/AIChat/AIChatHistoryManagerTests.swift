@@ -27,7 +27,6 @@ import AIChatTestingUtilities
 final class AIChatHistoryManagerTests: XCTestCase {
 
     private var mockSuggestionsReader: MockAIChatSuggestionsReader!
-    private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var viewModel: AIChatSuggestionsViewModel!
     private var mockHistoryCleaner: MockHistoryCleaner!
     private var mockChatSyncCleaner: MockAIChatSyncCleaning!
@@ -36,7 +35,6 @@ final class AIChatHistoryManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSuggestionsReader = MockAIChatSuggestionsReader()
-        mockAIChatSettings = MockAIChatSettingsProvider()
         viewModel = AIChatSuggestionsViewModel()
 
         let historyCleaner = MockHistoryCleaner()
@@ -46,7 +44,6 @@ final class AIChatHistoryManagerTests: XCTestCase {
 
         sut = AIChatHistoryManager(
             suggestionsReader: mockSuggestionsReader,
-            aiChatSettings: mockAIChatSettings,
             aiChatDeleter: AIChatDeleter(
                 historyCleanerProvider: { _, _ in historyCleaner },
                 aiChatSyncCleaner: mockChatSyncCleaner
@@ -60,7 +57,6 @@ final class AIChatHistoryManagerTests: XCTestCase {
         sut = nil
         viewModel = nil
         mockHistoryCleaner = nil
-        mockAIChatSettings = nil
         mockSuggestionsReader = nil
         mockChatSyncCleaner = nil
         super.tearDown()
@@ -107,10 +103,6 @@ final class AIChatHistoryManagerTests: XCTestCase {
     // MARK: - TearDown Tests
 
     func testTearDown_CleansUpResources() {
-        let containerView = UIView()
-        let parentVC = UIViewController()
-        sut.installInContainerView(containerView, parentViewController: parentVC)
-
         sut.tearDown()
 
         XCTAssertTrue(mockSuggestionsReader.tearDownCalled)
@@ -202,56 +194,6 @@ final class AIChatHistoryManagerTests: XCTestCase {
         cancellable.cancel()
     }
 
-    // MARK: - Installation Tests
-
-    func testInstallInContainerView_AddsViewControllerAsChild() {
-        let containerView = UIView()
-        let parentVC = UIViewController()
-
-        sut.installInContainerView(containerView, parentViewController: parentVC)
-
-        XCTAssertEqual(parentVC.children.count, 1)
-        XCTAssertEqual(containerView.subviews.count, 1)
-    }
-
-    func testInstallInContainerView_CalledTwice_DoesNotDuplicate() {
-        let containerView = UIView()
-        let parentVC = UIViewController()
-
-        sut.installInContainerView(containerView, parentViewController: parentVC)
-        sut.installInContainerView(containerView, parentViewController: parentVC)
-
-        XCTAssertEqual(parentVC.children.count, 1)
-    }
-
-    func testInstallInContainerView_ConfiguresHistoryListToDismissKeyboardOnDrag() {
-        let containerView = UIView()
-        let parentVC = UIViewController()
-
-        sut.installInContainerView(containerView, parentViewController: parentVC)
-
-        let tableView = findTableView(in: parentVC.children.first?.view)
-
-        XCTAssertEqual(tableView?.keyboardDismissMode, .onDrag)
-        XCTAssertEqual(tableView?.alwaysBounceVertical, true)
-    }
-
-    func testInstallInContainerView_FetchesSuggestionsImmediately() async {
-        let containerView = UIView()
-        let parentVC = UIViewController()
-
-        sut.installInContainerView(containerView, parentViewController: parentVC)
-
-        let predicate = NSPredicate { _, _ in
-            self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
-        }
-        let exp = expectation(for: predicate, evaluatedWith: nil)
-        await fulfillment(of: [exp], timeout: 5.0)
-
-        XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
-        XCTAssertNil(mockSuggestionsReader.lastQuery)
-    }
-
     // MARK: - SyncCleaner Tests
 
     func testRemoveChatSuggestion_RecordsDeletionWithSyncCleaner() async {
@@ -309,19 +251,4 @@ private final class MockHistoryCleaner: HistoryCleaning {
     func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> {
         .success(())
     }
-}
-
-private func findTableView(in view: UIView?) -> UITableView? {
-    guard let view else { return nil }
-    if let tableView = view as? UITableView {
-        return tableView
-    }
-
-    for subview in view.subviews {
-        if let tableView = findTableView(in: subview) {
-            return tableView
-        }
-    }
-
-    return nil
 }

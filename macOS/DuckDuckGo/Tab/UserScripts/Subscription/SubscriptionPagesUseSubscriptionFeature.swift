@@ -25,6 +25,7 @@ import UserScript
 import Subscription
 import SubscriptionUI
 import PixelKit
+import WideEvent
 import os.log
 import Freemium
 import DataBrokerProtection_macOS
@@ -315,7 +316,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
                                                          subscriptionIdentifier: subscriptionSelection.id,
                                                          freeTrialEligible: freeTrialEligible,
-                                                         funnelName: origin)
+                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin))
             self.purchaseWideEventData = data
             wideEvent.startFlow(data)
 
@@ -386,7 +387,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)
 
-            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
+            let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, experimentAttribution: nil)
 
             func completeWideEventFlow(with error: Error) {
                 guard let purchaseWideEventData = self.purchaseWideEventData else { return }
@@ -440,12 +441,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             }
         } else if subscriptionPlatform == .stripe {
             let emailAccessToken = try? EmailManager().getToken()
-            let contextName = await originFrom(originalMessage: message) ?? ""
 
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .stripe,
                                                          subscriptionIdentifier: nil, // Not available for Stripe
                                                          freeTrialEligible: true, // Always true for Stripe
-                                                         funnelName: contextName)
+                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin))
 
             wideEvent.startFlow(data)
             self.purchaseWideEventData = data
@@ -631,7 +631,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let completion: StripePaymentCompletion? = CodableHelper.decode(from: params)
         let changeType = completion?.change
-        let origin = purchaseWideEventData?.funnelName
+        let origin = subscriptionSuccessPixelHandler.origin
 
         var accountActivationDuration = WideEvent.MeasuredInterval.startingNow()
         purchaseWideEventData?.activateAccountDuration = accountActivationDuration

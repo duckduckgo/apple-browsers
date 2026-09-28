@@ -37,7 +37,6 @@ class DuckPlayerTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
 
         guard #available(macOS 15.4, *) else {
             throw XCTSkip("Duck Player settings are reached via the YouTube Ad Blocking pane, which requires macOS 15.4+")

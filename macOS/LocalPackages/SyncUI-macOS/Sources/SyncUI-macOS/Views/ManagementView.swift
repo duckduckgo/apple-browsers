@@ -56,6 +56,9 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
                 legacyContent
             }
         }
+        .onAppear {
+            model.settingsScreenDidAppear()
+        }
     }
 
     @ViewBuilder

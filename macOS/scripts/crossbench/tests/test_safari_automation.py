@@ -5,6 +5,7 @@ import importlib.util
 import io
 import pathlib
 import unittest
+import urllib.error
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
@@ -51,18 +52,43 @@ class LandingTests(unittest.TestCase):
         with mock.patch.object(
             SAFARI_AUTOMATION,
             "request",
-            return_value={"value": {"sessionId": "session"}},
+            side_effect=[
+                {"value": {"sessionId": "session"}},
+                {"value": {"width": 1366, "height": 768}},
+            ],
         ) as request:
             self.assertEqual(
                 SAFARI_AUTOMATION.new_session("8790"), "session"
             )
-        body = request.call_args.args[3]
+        body = request.call_args_list[0].args[3]
         self.assertIs(
             body["capabilities"]["alwaysMatch"]["acceptInsecureCerts"], True
         )
         self.assertEqual(
             body["capabilities"]["alwaysMatch"]["pageLoadStrategy"], "none"
         )
+
+    def test_set_window_size_requires_exact_outer_dimensions(self):
+        with mock.patch.object(
+            SAFARI_AUTOMATION,
+            "request",
+            return_value={"value": {"width": 1366, "height": 768}},
+        ) as request:
+            SAFARI_AUTOMATION.set_window_size("8790", "session", 1366, 768)
+        self.assertEqual(
+            request.call_args.args[3], {"width": 1366, "height": 768}
+        )
+
+    def test_set_window_size_rejects_clamped_dimensions(self):
+        with mock.patch.object(
+            SAFARI_AUTOMATION,
+            "request",
+            return_value={"value": {"width": 1024, "height": 768}},
+        ):
+            with self.assertRaisesRegex(RuntimeError, "window size mismatch"):
+                SAFARI_AUTOMATION.set_window_size(
+                    "8790", "session", 1366, 768
+                )
 
     def test_measurement_transport_failure_is_nonzero_with_parseable_output(self):
         stdout = io.StringIO()
@@ -225,3 +251,75 @@ class ProxyParsingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WebDriverErrorReportingTests(unittest.TestCase):
+    """A 404 alone cannot be acted on; the body says which failure it was."""
+
+    def _raise_http_error(self, body):
+        error = urllib.error.HTTPError(
+            "http://127.0.0.1:8790/session/abc/execute/async",
+            404,
+            "Not Found",
+            {},
+            io.BytesIO(body),
+        )
+        self.addCleanup(error.close)
+        return error
+
+    def test_http_error_names_the_endpoint_and_webdriver_reason(self):
+        payload = b'{"value":{"error":"no such window","message":"context died"}}'
+        with mock.patch.object(
+            SAFARI_AUTOMATION.urllib.request,
+            "urlopen",
+            side_effect=self._raise_http_error(payload),
+        ):
+            with self.assertRaises(OSError) as raised:
+                SAFARI_AUTOMATION.request(
+                    "8790", "POST", "/session/abc/execute/async", {}
+                )
+        message = str(raised.exception)
+        self.assertIn("POST /session/abc/execute/async", message)
+        self.assertIn("404", message)
+        self.assertIn("no such window", message)
+
+    def test_unreadable_body_still_reports_status_and_endpoint(self):
+        class Unreadable(io.BytesIO):
+            def read(self, *args):
+                raise OSError("stream closed")
+
+        error = urllib.error.HTTPError(
+            "http://127.0.0.1:8790/session/abc/url",
+            404,
+            "Not Found",
+            {},
+            Unreadable(b""),
+        )
+        with mock.patch.object(
+            SAFARI_AUTOMATION.urllib.request, "urlopen", side_effect=error
+        ):
+            with self.assertRaises(OSError) as raised:
+                SAFARI_AUTOMATION.request("8790", "POST", "/session/abc/url", {})
+        message = str(raised.exception)
+        self.assertIn("POST /session/abc/url", message)
+        self.assertIn("404", message)
+
+    def test_measure_surfaces_the_enriched_message_and_still_prints_output(self):
+        payload = b'{"value":{"error":"invalid session id"}}'
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(
+            SAFARI_AUTOMATION, "new_session", return_value="abc"
+        ), mock.patch.object(
+            SAFARI_AUTOMATION.urllib.request,
+            "urlopen",
+            side_effect=self._raise_http_error(payload),
+        ), mock.patch.object(
+            SAFARI_AUTOMATION, "delete_session", return_value=True
+        ), redirect_stdout(stdout), redirect_stderr(stderr):
+            status = SAFARI_AUTOMATION.measure(
+                "8790", "https://walmart.com", 0, 0
+            )
+        self.assertEqual(status, 1)
+        self.assertIn("invalid session id", stderr.getvalue())
+        self.assertIn("lcp_ms=-1", stdout.getvalue())

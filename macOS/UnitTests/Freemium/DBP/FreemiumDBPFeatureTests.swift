@@ -23,7 +23,7 @@ import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Freemium
 import Combine
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 final class FreemiumDBPFeatureTests: XCTestCase {
 

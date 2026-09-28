@@ -122,14 +122,12 @@ enum OnboardingAIModelsResolver {
             .filter(\.entityHasAccess)
             .compactMap(OnboardingAIModelOption.init)
 
-        let modelsByProvider = Dictionary(grouping: aiModels, by: \.provider)
-
-        // Grouped Dictionary has different order for keys so we maintain the order based on the Provider definition
-        let modelsToReturn = OnboardingAIProvider.allCases
-            .compactMap { modelsByProvider[$0]?.first }
+        // Keep the first model per provider, preserving the order providers first appear in the API response.
+        var seenProviders = Set<OnboardingAIProvider>()
+        let modelsToReturn = aiModels.filter { seenProviders.insert($0.provider).inserted }
 
         // Prefer the OpenAI model as default, otherwise the first model shown (display order)
-        let defaultProviderId = modelsByProvider[OnboardingAIProvider.openai]?.first?.id ?? modelsToReturn.first?.id
+        let defaultProviderId = modelsToReturn.first { $0.provider == .openai }?.id ?? modelsToReturn.first?.id
 
         return OnboardingAIModelResponse(models: modelsToReturn, defaultModelId: defaultProviderId)
     }

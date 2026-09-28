@@ -65,6 +65,10 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionPaidAIChatSettingsImpression
     case subscriptionIdentityRestorationSettings
     case subscriptionIdentityRestorationSettingsImpression
+    /// Fired when the user clicks Subscriber Offers in the DuckDuckGo Subscription section of the
+    /// settings sidebar, which opens the Partnerships Hub in a new tab. Sidebar clicks only —
+    /// routing to the pane from a `duck://settings` deep link does not fire it.
+    case subscriptionPartnerBenefitsSettings
     case subscriptionManagementEmail
     case subscriptionManagementPlanBilling
     case subscriptionManagementRemoval
@@ -86,6 +90,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionCancelPendingDowngradeClick
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
+    case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
@@ -182,6 +187,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
         case .subscriptionIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
         case .subscriptionIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
+            // `app-settings`, not the `settings` segment its neighbours use: the suffix is shared
+            // verbatim with Android and Windows, and `partner-benefits` predates the label being
+            // renamed to "Subscriber Offers".
+        case .subscriptionPartnerBenefitsSettings: return "m_mac_\(appDistribution)_privacy-pro_app-settings_partner-benefits_click"
         case .subscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
         case .subscriptionManagementPlanBilling: return "m_mac_\(appDistribution)_privacy-pro_settings_change-plan-or-billing_click"
         case .subscriptionManagementRemoval: return "m_mac_\(appDistribution)_privacy-pro_settings_remove-from-device_click"
@@ -203,6 +212,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionCancelPendingDowngradeClick: return "m_mac_\(appDistribution)_subscription_settings_cancel-pending-downgrade_click"
             // Auth
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
+        case .subscriptionAutomaticSignOut: return "m_mac_\(appDistribution)_privacy-pro_auth_account_automatically_signed_out"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
         case .subscriptionAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
@@ -286,6 +296,10 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]
+        case .subscriptionAutomaticSignOut(let data, let source, _):
+            var parameters = data.parameters
+            parameters[SubscriptionPixelsDefaults.sourceKey] = source.description
+            return parameters
         case .subscriptionActive(let authVersion):
             return [AuthVersion.key: authVersion.rawValue]
         case .freeTrialVPNActivation(let activationDay),
@@ -339,6 +353,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionPaidAIChatSettingsImpression,
                 .subscriptionIdentityRestorationSettings,
                 .subscriptionIdentityRestorationSettingsImpression,
+                .subscriptionPartnerBenefitsSettings,
                 .subscriptionManagementEmail,
                 .subscriptionManagementPlanBilling,
                 .subscriptionManagementRemoval,
@@ -349,6 +364,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionAddEmailSuccess,
                 .subscriptionWelcomeFAQClick,
                 .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionAutomaticSignOut,
                 .subscriptionInvalidRefreshTokenSignedOut,
                 .subscriptionInvalidRefreshTokenRecovered,
                 .subscriptionAuthV2GetTokensError,

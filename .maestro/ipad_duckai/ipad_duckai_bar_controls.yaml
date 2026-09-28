@@ -1,18 +1,16 @@
 # ipad_duckai_bar_controls.yaml
 #
-# Validates the iPad Duck.ai omnibar controls that are gated behind the
-# `iPadDuckAIBarControls` feature flag: the model picker, reasoning picker, tool
-# picker and attach button that appear in the expanded Duck.ai input area.
+# Validates the iPad Duck.ai omnibar controls: the model picker, reasoning
+# picker, tool picker and attach button that appear in the expanded Duck.ai
+# input area.
 #
 # Coverage:
 #   1. State gating - the four chips are hidden while the omnibar is in Search
 #      mode, and only appear once it is switched to Duck.ai mode (expanded).
-#   2. Positive     - with the flag on, switching to Duck.ai mode renders them.
+#   2. Positive     - switching to Duck.ai mode renders them.
 #
 # Requirements / notes:
 #   * Runs on iPad only (the controls require the iPad idiom).
-#   * `iPadDuckAIBarControls` defaults to .internalOnly, so `isInternalUser` must
-#     be true for the `ff.` override to take effect.
 #   * The inline Search/Duck.ai mode toggle is gated by the AI Features
 #     "Search & Duck.ai" setting, so the flow enables it first. The picker sits
 #     at the bottom of the iPad Settings form sheet, so it must be scrolled fully
@@ -39,7 +37,6 @@ tags:
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         isInternalUser: "true"
-        ff.iPadDuckAIBarControls: "true"
 
 # Enable the Search/Duck.ai mode toggle via AI Features -> "Search & Duck.ai".
 - tapOn:

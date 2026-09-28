@@ -19,8 +19,7 @@
 import AIChat
 import BrowserServicesKit
 import Combine
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
@@ -1135,6 +1134,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
         // Extract specific data based on content type
         switch trigger {
         case .newChat:
+            break
+        case .chatHistory:
             break
         case .query(let query, let shouldAutoSubmit):
             lastQuery = query

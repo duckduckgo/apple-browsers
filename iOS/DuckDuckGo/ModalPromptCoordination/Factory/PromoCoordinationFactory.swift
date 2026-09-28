@@ -20,6 +20,7 @@
 import Foundation
 import Persistence
 import SetDefaultBrowserUI
+import PixelKit
 import PrivacyConfig
 import enum Common.DevicePlatform
 import AIChat
@@ -35,6 +36,7 @@ enum PromoCoordinationFactory {
     ) -> PromoCoordinationService {
 
         let isIPad = DevicePlatform.isIpad
+        let mode: PromoCoordinationMode = dependency.featureFlagger.isFeatureOn(.promoPresentationCoordination) ? .coordinated : .legacy
 
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
@@ -59,22 +61,54 @@ enum PromoCoordinationFactory {
             featureFlagger: dependency.featureFlagger
         )
 
+        let appRatingPromptCoordinator = AppRatingPromptCoordinator(
+            appRatingPrompt: AppRatingPrompt(featureFlagger: dependency.featureFlagger),
+            coordinationPolicy: AppRatingPromptCoordinationPolicy(
+                promoCoordinationMode: mode,
+                featureFlagger: dependency.featureFlagger,
+                privacyConfigurationManager: dependency.privacyConfigurationManager
+            ),
+            store: AppRatingPromptSlotStore(keyValueStore: dependency.keyValueFileStoreService),
+            firePixel: { PixelKit.fire($0) }
+        )
+
+        let providers = ModalPromptProviders(
+            appRatingPrompt: appRatingPromptCoordinator,
+            newAddressBarPicker: newAddressBarPickerModalPromptProvider,
+            defaultBrowser: defaultBrowserModalPromptProvider,
+            winBackOffer: winBackOfferModalPromptProvider,
+            subscriptionPromo: subscriptionPromoModalPromptProvider,
+            subscriptionPromoExistingUser: subscriptionPromoExistingUserModalPromptProvider,
+            whatsNew: whatsNewModalPromptProvider,
+            cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
+        )
+        let modalPresentationStore = PromptCooldownKeyValueFilesStore(
+            keyValueStore: dependency.keyValueFileStoreService,
+            eventMapper: PromptCooldownStorePixelReporter()
+        )
+        let modalCooldownManager = PromptCooldownManager(
+            presentationStore: modalPresentationStore,
+            cooldownIntervalProvider: PromptCooldownIntervalProvider(privacyConfigManager: dependency.privacyConfigurationManager)
+        )
+        let remoteMessageHistory = PromoQueueRemoteMessageHistoryStore(keyValueStore: dependency.keyValueFileStoreService)
+        let promoQueueCooldownPolicy = PromoQueueCooldownPolicy(
+            modalPresentationStore: modalPresentationStore,
+            remoteMessageHistory: remoteMessageHistory
+        )
+        let modalPromptCoordinationManager = ModalPromptCoordinationManager(
+            providers: providers.ordered,
+            cooldownManager: modalCooldownManager,
+            onboardingStatusProvider: dependency.contextualOnboardingStatusProvider,
+            modalPromptScheduling: ModalPromptScheduler()
+        )
+
         return PromoCoordinationService(
             launchSourceManager: dependency.launchSourceManager,
-            keyValueStore: dependency.keyValueFileStoreService,
-            contextualOnboardingStatusProvider: dependency.contextualOnboardingStatusProvider,
-            privacyConfigManager: dependency.privacyConfigurationManager,
-            providers: .init(
-                newAddressBarPicker: newAddressBarPickerModalPromptProvider,
-                defaultBrowser: defaultBrowserModalPromptProvider,
-                winBackOffer: winBackOfferModalPromptProvider,
-                subscriptionPromo: subscriptionPromoModalPromptProvider,
-                subscriptionPromoExistingUser: subscriptionPromoExistingUserModalPromptProvider,
-                whatsNew: whatsNewModalPromptProvider,
-                cookiePopupProtectionOptIn: cookiePopupProtectionOptInModalPromptProvider
-            ),
-            featureFlagger: dependency.featureFlagger,
-            promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter
+            modalPromptCoordinationManager: modalPromptCoordinationManager,
+            mode: mode,
+            promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: appRatingPromptCoordinator
         )
     }
 

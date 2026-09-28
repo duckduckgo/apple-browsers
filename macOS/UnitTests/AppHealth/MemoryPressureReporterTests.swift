@@ -16,8 +16,7 @@
 //  limitations under the License.
 //
 
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

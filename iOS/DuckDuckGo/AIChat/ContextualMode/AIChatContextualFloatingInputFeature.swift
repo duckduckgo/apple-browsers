@@ -23,7 +23,7 @@ import PrivacyConfig
 
 /// Provides access to the floating contextual input availability.
 protocol AIChatContextualFloatingInputFeatureProviding {
-    /// Whether "Ask About Page" opens the floating input instead of the contextual sheet.
+    /// Whether contextual entry points open the floating input instead of the contextual sheet.
     var isAvailable: Bool { get }
 }
 

@@ -31,6 +31,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
+    var didChangeKeyWindowController = PassthroughSubject<MainWindowController?, Never>()
     var didRegisterWindowController = PassthroughSubject<(MainWindowController), Never>()
     var didUnregisterWindowController = PassthroughSubject<(MainWindowController), Never>()
 
@@ -50,7 +51,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     }
     var selectedWindowIndex: Int
     var selectedTab: Tab? {
-        allTabCollectionViewModels[selectedWindowIndex].selectedTab
+        // Matches the real WindowControllersManager: no window means nil, not a crash.
+        guard allTabCollectionViewModels.indices.contains(selectedWindowIndex) else { return nil }
+        return allTabCollectionViewModels[selectedWindowIndex].selectedTab
     }
 
     struct ShowArgs: Equatable {

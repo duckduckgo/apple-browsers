@@ -69,7 +69,7 @@ struct OnboardingStepsHelper {
         case .noAI:
             personalisationSteps = [.aiSearchSettingsSelection, .keepDuckAISelection]
         case .blockAds:
-            personalisationSteps = [.duckPlayerSelection, .searchExperienceSelection]
+            personalisationSteps = [.adBlockingPersonalization, .searchExperienceSelection]
         }
 
         return [.setDefaultBrowser] + personalisationSteps + commonSteps

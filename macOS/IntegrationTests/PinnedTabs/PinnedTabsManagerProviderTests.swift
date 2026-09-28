@@ -38,7 +38,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
     @MainActor
     private func clearSharedPinnedTabs() {
         while !Application.appDelegate.pinnedTabsManager.isEmpty {
-            _=Application.appDelegate.pinnedTabsManager.unpinTab(at: 0, published: false, firePixel: false)
+            _=Application.appDelegate.pinnedTabsManager.removePinnedTab(at: 0, published: false, firePixel: false)
         }
     }
 
@@ -90,7 +90,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         tabsPreferences.pinnedTabsMode = .separate
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
-        tabCollectionViewModel.pinnedTabsManager!.pin(Tab(content: .none))
+        tabCollectionViewModel.pinnedTabsManager!.pinTab(Tab(content: .none), from: nil)
 
         XCTAssertFalse(provider.arePinnedTabsEmpty)
     }
@@ -100,7 +100,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         tabsPreferences.pinnedTabsMode = .shared
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
-        tabCollectionViewModel.pinnedTabsManager!.pin(Tab(content: .none))
+        tabCollectionViewModel.pinnedTabsManager!.pinTab(Tab(content: .none), from: nil)
 
         XCTAssertFalse(provider.arePinnedTabsEmpty)
     }
@@ -135,7 +135,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
 
         let sharedManager = Application.appDelegate.pinnedTabsManager
         let sharedTab = Tab(content: .url(URL(string: "https://duckduckgo.com")!, source: .ui))
-        sharedManager.pin(sharedTab)
+        sharedManager.pinTab(sharedTab, from: nil)
 
         // Switch mode and get new pinned tab managers
         tabsPreferences.pinnedTabsMode = .separate
@@ -161,13 +161,13 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         let firstWindow = WindowsManager.openNewWindow(with: firstTabCollectionViewModel)
 
         let tab1 = Tab(content: .url(URL(string: "https://first.com")!, source: .ui))
-        firstTabCollectionViewModel.pinnedTabsManager!.pin(tab1)
+        firstTabCollectionViewModel.pinnedTabsManager!.pinTab(tab1, from: nil)
 
         let secondTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         let secondWindow = WindowsManager.openNewWindow(with: secondTabCollectionViewModel)
 
         let tab2 = Tab(content: .url(URL(string: "https://second.com")!, source: .ui))
-        secondTabCollectionViewModel.pinnedTabsManager!.pin(tab2)
+        secondTabCollectionViewModel.pinnedTabsManager!.pinTab(tab2, from: nil)
 
         // Switch to shared mode and trigger migration
         tabsPreferences.pinnedTabsMode = .shared

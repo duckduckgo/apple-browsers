@@ -26,6 +26,7 @@ import FoundationExtensions
 import BrowserKit
 import Persistence
 import os.log
+import PixelKit
 
 final class ImportSourceDetailViewController: UIViewController {
 
@@ -60,7 +61,7 @@ final class ImportSourceDetailViewController: UIViewController {
         super.viewDidLoad()
         title = source.detailTitle
         setupView()
-        Pixel.fire(pixel: .importHubSourceInstructionsDisplayed, withAdditionalParameters: pixelContext.parameters)
+        PixelKit.fire(Pixel.Event.importHubSourceInstructionsDisplayed, options: .parameters(pixelContext.parameters))
 
         if source == .chrome || source == .passwordsApp {
             simulatedCompletionPersistor.setCredentialExchangeInstructionsShownDate()
@@ -78,7 +79,7 @@ final class ImportSourceDetailViewController: UIViewController {
             return
         }
 
-        Pixel.fire(pixel: .importHubSourceInstructionsCancelled, withAdditionalParameters: pixelContext.parameters)
+        PixelKit.fire(Pixel.Event.importHubSourceInstructionsCancelled, options: .parameters(pixelContext.parameters))
     }
 
     private func setupView() {
@@ -100,7 +101,7 @@ final class ImportSourceDetailViewController: UIViewController {
     private func handlePrimaryAction() {
         guard source == .safari else { return }
         didProgressFromDetails = true
-        Pixel.fire(pixel: .importHubSourcePrimaryTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        PixelKit.fire(Pixel.Event.importHubSourcePrimaryTapped, options: .parameters(entryPoint.importHubEntryPointParameters))
         simulatedCompletionPersistor.setSafariFileFlowStart(entryPoint: entryPoint)
         presentSafariExportInterstitial()
     }
@@ -116,7 +117,7 @@ final class ImportSourceDetailViewController: UIViewController {
     private func triggerBrowserKitImport() {
         if #available(iOS 26.4, *) {
             let pixelParameters = entryPoint.importHubEntryPointParameters
-            Pixel.fire(pixel: .importHubBrowserkitRequested, withAdditionalParameters: pixelParameters)
+            PixelKit.fire(Pixel.Event.importHubBrowserkitRequested, options: .parameters(pixelParameters))
 
             let scene = view.window?.windowScene
             let manager = BEBrowserDataImportManager(scene: scene)
@@ -128,13 +129,13 @@ final class ImportSourceDetailViewController: UIViewController {
                     let isBrowserKitCancellation = nsError.domain == "com.apple.BrowserKit.BrowserDataExchangeError" && nsError.code == 2
 
                     if isBrowserKitCancellation {
-                        Pixel.fire(pixel: .importHubBrowserkitReturnedCancelled, withAdditionalParameters: pixelParameters)
+                        PixelKit.fire(Pixel.Event.importHubBrowserkitReturnedCancelled, options: .parameters(pixelParameters))
                     } else {
-                        Pixel.fire(pixel: .importHubBrowserkitReturnedFailure, error: error,
-                                   withAdditionalParameters: pixelParameters)
+                        PixelKit.fire(Pixel.Event.importHubBrowserkitReturnedFailure.withError(error),
+                                      options: .parameters(pixelParameters))
                     }
                 } else {
-                    Pixel.fire(pixel: .importHubBrowserkitReturnedSuccess, withAdditionalParameters: pixelParameters)
+                    PixelKit.fire(Pixel.Event.importHubBrowserkitReturnedSuccess, options: .parameters(pixelParameters))
                 }
             }
             return
@@ -147,10 +148,10 @@ final class ImportSourceDetailViewController: UIViewController {
 
     private func handleUploadFile() {
         didProgressFromDetails = true
-        Pixel.fire(pixel: .importHubSourceUploadFileTapped, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        PixelKit.fire(Pixel.Event.importHubSourceUploadFileTapped, options: .parameters(entryPoint.importHubEntryPointParameters))
 
         if let completionParameters = simulatedCompletionPersistor.consumeSafariFileCompletionParametersIfEligible() {
-            Pixel.fire(pixel: .importHubSafariFileSimulatedCompletion, withAdditionalParameters: completionParameters)
+            PixelKit.fire(Pixel.Event.importHubSafariFileSimulatedCompletion, options: .parameters(completionParameters))
         }
 
         fileUploadCoordinator.startUploadFlow(from: self, source: source)

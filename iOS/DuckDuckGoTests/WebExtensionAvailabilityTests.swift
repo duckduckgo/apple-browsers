@@ -18,6 +18,7 @@
 //
 
 import XCTest
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Core
@@ -27,6 +28,30 @@ import WebKit
 
 @available(iOS 18.4, *)
 final class WebExtensionAvailabilityTests: XCTestCase {
+
+    func testWhenAppRelaunchesThenVersionComparisonIsCachedPerSession() {
+        let store = InMemoryKeyValueStore()
+        let first = AppSessionInfo(keyValueStore: store, version: "1.0.100")
+        XCTAssertNil(first.appVersionChange)
+        let restart = AppSessionInfo(keyValueStore: store, version: "1.0.100")
+        XCTAssertNil(restart.appVersionChange)
+        let update = AppSessionInfo(keyValueStore: store, version: "1.0.101")
+        XCTAssertEqual(update.appVersionChange, .updated)
+        let nextRestart = AppSessionInfo(keyValueStore: store, version: "1.0.101")
+        XCTAssertNil(nextRestart.appVersionChange)
+        XCTAssertEqual(update.appVersionChange, .updated)
+        XCTAssertNil(first.appVersionChange)
+        XCTAssertEqual(AppSessionInfo(keyValueStore: store, version: "1.0.100").appVersionChange, .downgraded)
+    }
+
+    func testWhenAppSessionIsCreatedThenUsesGenericStorageKeyAndProvidedLaunchDate() {
+        let store = InMemoryKeyValueStore()
+        let launchDate = Date(timeIntervalSince1970: 1000)
+        let session = AppSessionInfo(keyValueStore: store, version: "1.2.3", launchDate: launchDate)
+        XCTAssertEqual(store.object(forKey: "app-session.previous-app-version") as? String, "1.2.3")
+        XCTAssertEqual(session.launchDate, launchDate)
+        XCTAssertNil(session.appVersionChange)
+    }
 
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockWebExtensionManager: MockWebExtensionManaging!

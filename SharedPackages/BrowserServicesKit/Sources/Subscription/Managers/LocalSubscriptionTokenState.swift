@@ -16,8 +16,36 @@
 //  limitations under the License.
 //
 
+import Networking
+
 public enum LocalSubscriptionTokenState: Equatable {
     case present
     case missing
     case readError
+}
+
+/// `LocalSubscriptionTokenState` plus the container itself, for callers that need to inspect the
+/// token they found rather than just whether one was there.
+public enum LocalTokenSnapshot: Equatable {
+    case present(TokenContainer)
+    case missing
+    case readError
+
+    public var tokenContainer: TokenContainer? {
+        guard case .present(let tokenContainer) = self else {
+            return nil
+        }
+        return tokenContainer
+    }
+
+    public var state: LocalSubscriptionTokenState {
+        switch self {
+        case .present:
+            return .present
+        case .missing:
+            return .missing
+        case .readError:
+            return .readError
+        }
+    }
 }

@@ -110,7 +110,9 @@ public final class DBPUIViewModel {
 extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? true
-        return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated)
+        let isUserEligibleForFreeTrial = authenticationDelegate?.isUserEligibleForFreeTrial() ?? false
+        return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated,
+                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
     }
     
     public func saveProfile() async throws {

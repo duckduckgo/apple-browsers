@@ -40,6 +40,10 @@ public enum AIChatURLParameters {
     public static let voiceModeValue = "voice"
     public static let imageModeValue = "image"
 
+    /// Funnel marker duckduckgo.com puts on the chat URL when its homepage composer hands a prompt to Duck.ai.
+    public static let originName = "origin"
+    public static let homepageFunnelOriginValue = "funnel_home_website"
+
     public static let sidebarName = "sidebar"
     public static let sidebarOpenValue = "open"
 

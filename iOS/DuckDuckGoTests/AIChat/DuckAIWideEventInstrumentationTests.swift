@@ -19,8 +19,7 @@
 
 import AIChat
 import Foundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import WideEvent
 import Testing
 @testable import DuckDuckGo
 

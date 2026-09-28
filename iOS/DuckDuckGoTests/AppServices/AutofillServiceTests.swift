@@ -19,9 +19,8 @@
 
 import Foundation
 import Testing
-import Persistence
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
-@testable import PersistenceTestingUtils
 
 final class AutofillServiceTests {
 

@@ -18,7 +18,7 @@
 
 import FeatureFlags_macOS
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard

@@ -17,57 +17,49 @@
 //  limitations under the License.
 //
 
-import Foundation
-
-enum VisiblePromoAdmissionResult {
-    /// Admitted: the caller owns the lease and must release it.
-    case acquired(PromoQueueVisiblePromoLease)
-    /// A coordinated modal attempt owns the slot.
-    case blockedByModal
-    /// The requesting surface's `(surfaceID, promoType)` slot already holds a lease; carries the occupying identity.
-    case occupiedSurfaceSlot(VisiblePromoIdentity)
-    /// The `promoPresentationCoordination` flag is off, so admission is not arbitrated.
-    case featureDisabled
-    /// A flag transition barrier is up; the caller should retry after the transition.
-    case unavailableDuringTransition
+enum PromoCoordinationMode: Equatable {
+    case legacy
+    case coordinated
 }
 
-typealias VisiblePromoAdmissionHandler = @MainActor (VisiblePromoIdentity) -> VisiblePromoAdmissionResult
-
+/// Retains one raw arbiter acquisition and connects its first valid appearance to queue history.
 @MainActor
-protocol NewTabPagePromoRetrying: AnyObject {
-    var isActiveForPromoRetry: Bool { get }
+final class PromoQueueRemoteMessageLease {
+    let messageID: String
+    let acquisitionIdentity: PromoQueueAcquisitionIdentity
 
-    /// Refreshes the retained candidate and retries it through the admission route supplied by the coordination owner.
-    ///
-    /// The handler is synchronous and nonescaping so a feature transition can grant admission only to its own retry
-    /// pass while the public admission barrier remains active.
-    func retryVisiblePromoAdmission(using admissionHandler: VisiblePromoAdmissionHandler)
-}
+    private let arbiterLease: PromoQueueRemoteMessageArbiterLease
+    private let cooldownPolicy: PromoQueueCooldownPolicying
 
-@MainActor
-final class NewTabPagePromoRetryRegistration {
-    private var deregistrationHandler: (@MainActor () -> Void)?
-
-    init(deregistrationHandler: (@MainActor () -> Void)? = nil) {
-        self.deregistrationHandler = deregistrationHandler
+    init(
+        arbiterLease: PromoQueueRemoteMessageArbiterLease,
+        cooldownPolicy: PromoQueueCooldownPolicying
+    ) {
+        messageID = arbiterLease.messageID
+        acquisitionIdentity = arbiterLease.acquisitionIdentity
+        self.arbiterLease = arbiterLease
+        self.cooldownPolicy = cooldownPolicy
     }
 
-    func deregister() {
-        let deregistrationHandler = deregistrationHandler
-        self.deregistrationHandler = nil
-        deregistrationHandler?()
+    func markShown() -> Bool {
+        guard arbiterLease.confirmAppearance() else {
+            return false
+        }
+
+        cooldownPolicy.recordConfirmedRemoteMessageAppearance()
+        return true
+    }
+
+    func release() {
+        arbiterLease.release()
     }
 }
 
+/// The source-level admission contract used by the shared NTP message configuration.
+/// Renderers do not participate in promo ownership.
 @MainActor
-protocol NewTabPagePromoCoordinating: AnyObject {
-    var promoQueueFeatureState: PromoQueueFeatureState { get }
+protocol PromoGating: AnyObject {
+    var mode: PromoCoordinationMode { get }
 
-    func admitVisiblePromo(_ identity: VisiblePromoIdentity) -> VisiblePromoAdmissionResult
-    func releaseVisiblePromoLease(_ lease: PromoQueueVisiblePromoLease)
-    func registerVisiblePromoRetry(
-        for surfaceID: UUID,
-        target: NewTabPagePromoRetrying
-    ) -> NewTabPagePromoRetryRegistration
+    func tryAcquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLease?
 }

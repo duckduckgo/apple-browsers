@@ -21,8 +21,7 @@ import Common
 import DDGSync
 import Foundation
 import GRDB
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import SecureStorage
 import SecureStorageTestsUtils
 @testable import BrowserServicesKit

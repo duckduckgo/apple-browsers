@@ -130,7 +130,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 
 // MARK: - Test Suite
 
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 final class SyncConnectionControllerTests: XCTestCase {
 

@@ -77,7 +77,7 @@ def build_report(
                 f"(observed {row['observed_repetitions']}, "
                 f"unfinalized {row['dropped_unfinalized']}, "
                 f"no metric {row['dropped_no_metric']})",
-                "Action: inspect the workflow warnings and preserved diagnostics",
+                "Diagnostics: attached to this task when available",
                 "",
             )
         )

@@ -20,6 +20,7 @@
 import Foundation
 import AIChat
 import Core
+import PixelKit
 import PrivacyConfig
 import FeatureFlags_iOS
 
@@ -38,12 +39,12 @@ extension AIChatDeepLinkHandler: AIChatDeepLinkHandling {}
 /// Wrapper for AI Chat deep link handler
 struct DuckAIDestinationHandler: CustomProductPageDestinationHandling {
     private let aiChatDeepLinkHandler: AIChatDeepLinkHandling
-    private let pixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let featureFlagger: FeatureFlagger
 
     init(
         aiChatDeepLinkHandler: AIChatDeepLinkHandling = AIChatDeepLinkHandler(),
-        pixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.aiChatDeepLinkHandler = aiChatDeepLinkHandler
@@ -54,7 +55,7 @@ struct DuckAIDestinationHandler: CustomProductPageDestinationHandling {
     func handle(url: URL, on presenter: AppStoreCustomProductPagePresenter) {
         guard featureFlagger.isFeatureOn(.customProductPageDuckAiChat) else { return }
         
-        pixelFiring.fireDailyAndCount(.customProductPageDuckAIOpenedAIChat, error: nil, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.customProductPageDuckAIOpenedAIChat, frequency: .dailyAndCount, options: .parameters([:]))
         aiChatDeepLinkHandler.handleDeepLink(url, on: presenter)
     }
 }

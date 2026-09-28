@@ -20,40 +20,42 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
+@_spi(Testing) import PixelKit
 
 final class LongPressBarMenuBuilderTests: XCTestCase {
 
     private var builder: LongPressBarMenuBuilder!
     private var supportedState: OmniBarState!
+    private var pixelKitMock: PixelKitMock!
 
     override func setUp() {
         super.setUp()
-        PixelFiringMock.tearDown()
-        builder = LongPressBarMenuBuilder(dailyPixelFiring: PixelFiringMock.self)
+        pixelKitMock = PixelKitMock()
+        builder = LongPressBarMenuBuilder(pixelFiring: pixelKitMock)
         supportedState = SmallOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(), isLoading: false)
     }
 
     func testWhenFeatureFlagDisabledThenOmniBarMenuIsNil() {
         let menu = builder.makeOmniBarMenu(context: makeOmniBarContext(isFeatureEnabled: false))
         XCTAssertNil(menu)
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     func testWhenStateUnsupportedThenOmniBarMenuIsNil() {
         let unsupportedState = DummyOmniBarState()
         let menu = builder.makeOmniBarMenu(context: makeOmniBarContext(state: unsupportedState))
         XCTAssertNil(menu)
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     func testWhenOmniBarMenuBuiltThenOpenPixelNotFired() {
         _ = builder.makeOmniBarMenu(context: makeOmniBarContext())
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     func testWhenOmniBarMenuDisplayedThenOpenPixelFired() {
         builder.fireOmniBarMenuOpenPixel()
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.longPressBarOpen.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.longPressBarOpen.name)
     }
 
     func testWhenPrivacyEnabledOnNonDuckDuckGoSiteThenCopyActionUsesCopyCleanLinkTitle() {
@@ -122,7 +124,7 @@ final class LongPressBarMenuBuilderTests: XCTestCase {
         let shareAction = flatActions(from: menu).first(where: { $0.title == UserText.actionShare })
         XCTAssertNotNil(shareAction)
         XCTAssertFalse(didShare)
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     private func makeOmniBarContext(

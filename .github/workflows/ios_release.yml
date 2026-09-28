@@ -65,7 +65,7 @@ on:
 
 jobs:
   make-release:
-    runs-on: bitrise:macos26-m4pro
+    runs-on: [image:osx-tahoe-26, m4pro]
     name: Make App Store Connect Release
 
     env:

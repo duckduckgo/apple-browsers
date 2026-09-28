@@ -29,26 +29,12 @@ extension TabViewController {
     /// Re-presents an active chat if one exists for this tab, or restores from persisted URL after app restart.
     ///
     /// - Parameter presentingViewController: The view controller to present the sheet from.
-    func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
+    func presentContextualAIChatSheet(from presentingViewController: UIViewController, attachingPage: Bool = false) {
         Task { @MainActor in
-            // Opening the sheet with text selected means the same as picking "Ask Duck.ai" from the
-            // selection menu, so treat it identically rather than silently dropping the selection.
-            let selection = isAskAIChatSelectionItemAvailable
-                ? await (webView as? WebView)?.currentSelection()
-                : nil
-
-            // Reading the selection suspends, so this tab may no longer be the visible one by the time
-            // it returns — presenting then would put this tab's chat over a different tab's page.
-            guard view.window != nil else { return }
-
-            if let selection {
-                await presentContextualAIChatSheet(withSelectedText: selection, from: presentingViewController)
-                return
-            }
-
             await aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
-                restoreURL: restoreURLForContextualSheet()
+                restoreURL: restoreURLForContextualSheet(),
+                attachingPage: attachingPage
             )
         }
     }
@@ -59,11 +45,11 @@ extension TabViewController {
         }
     }
 
-    /// Presents the sheet with `text` attached as its own context. Nothing is submitted — the selection
+    /// Presents the contextual surface with `text` attached as its own context. Nothing is submitted — the selection
     /// is there for the user to ask about, so the page is not auto-attached on top of it.
     @MainActor
-    func presentContextualAIChatSheet(withSelectedText text: String,
-                                      from presentingViewController: UIViewController) async {
+    func presentContextualAIChat(withSelectedText text: String,
+                                 from presentingViewController: UIViewController) async {
         let url = webView.url
         await aiChatContextualSheetCoordinator.handleSelectionAction(
             .ask,
@@ -123,7 +109,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
     }
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL) {
-        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: .contextualChat)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {
@@ -153,5 +139,10 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
 
     func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator) {
         delegate?.tabDidRequestNewVoiceChat(self)
+    }
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
+        delegate?.tab(self, didSubmitDuckAIPromptWithOrigin: origin)
     }
 }

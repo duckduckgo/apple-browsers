@@ -22,7 +22,7 @@ jobs:
   calculate-alpha-build-number:
     name: Calculate Alpha Build Number
 
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, m4pro]
 
     outputs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
@@ -111,7 +111,7 @@ jobs:
 
     needs: dmg-release
 
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, m4pro]
 
     defaults:
       run:

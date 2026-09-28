@@ -103,45 +103,10 @@ struct EventHubTests {
 
     // MARK: Per-tab de-duplication
 
-    @Test("same tab, same source is deduplicated")
-    func sameTabSameSourceIsDeduplicated() {
-        let f = EventHubFixture.active(Self.dayConfig)
-        let tab = EventHubTabID.new()
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        #expect(f.count(of: Self.pixel1) == 1)
-    }
-
-    @Test("navigation to a new URL resets dedup")
-    func navigationToNewURLResetsDedup() {
-        let f = EventHubFixture.active(Self.dayConfig)
-        let tab = EventHubTabID.new()
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page1")
-        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page2")
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        #expect(f.count(of: Self.pixel1) == 2)
-    }
-
-    @Test("reloading the same URL does not reset dedup")
-    func reloadSameURLDoesNotResetDedup() {
-        let f = EventHubFixture.active(Self.dayConfig)
-        let tab = EventHubTabID.new()
-        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page")
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        f.manager.onNavigationStarted(tabID: tab, url: "https://example.com/page")
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: tab)
-        #expect(f.count(of: Self.pixel1) == 1)
-    }
-
-    @Test("different tabs count independently")
-    func differentTabsCountIndependently() {
-        let f = EventHubFixture.active(Self.dayConfig)
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
-        f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
-        #expect(f.count(of: Self.pixel1) == 2)
-    }
+    // The page-scoped rules themselves (repeat, navigation, reload, per-tab independence) are the
+    // cross-platform spec's, covered as D-DEL-1 / D-NAV-1 / D-NAV-2 / D-NAV-4 in
+    // `DeduplicationSpecTests`. What remains here is Apple-specific lifecycle: tab close, and dedup
+    // surviving the period machinery.
 
     @Test("closing a tab clears its dedup state")
     func closingATabClearsItsDedupState() {
@@ -230,21 +195,6 @@ struct EventHubTests {
         let f = EventHubFixture.active(Self.dayConfig)
         f.manager.handleWebEvent(EventHubFixture.webEvent("test"), tabID: .new())
         f.advance(by: 86400 - 1)
-        #expect(f.fired.isEmpty)
-    }
-
-    @Test("skips firing when no bucket matches")
-    func skipsFiringWhenNoBucketMatches() {
-        // Buckets start at 5, so a zero count matches nothing and no pixel is fired.
-        let config = """
-        { "telemetry": { "p": {
-            "state": "enabled",
-            "trigger": { "period": { "seconds": 60 } },
-            "parameters": { "count": { "template": "counter", "source": "test", "buckets": {"5-9": {"gte": 5, "lt": 10}} } }
-        } } }
-        """
-        let f = EventHubFixture.active(config)
-        f.advance(by: 60)
         #expect(f.fired.isEmpty)
     }
 

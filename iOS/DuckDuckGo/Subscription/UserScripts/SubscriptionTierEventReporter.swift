@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import PixelKit
 
 protocol SubscriptionTierEventReporting {
     func reportTierOptionsRequested()
@@ -29,18 +30,18 @@ protocol SubscriptionTierEventReporting {
 
 final class DefaultSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     func reportTierOptionsRequested() {
-        Pixel.fire(pixel: .subscriptionTierOptionsRequested)
+        PixelKit.fire(Pixel.Event.subscriptionTierOptionsRequested)
     }
 
     func reportTierOptionsSuccess() {
-        Pixel.fire(pixel: .subscriptionTierOptionsSuccess)
+        PixelKit.fire(Pixel.Event.subscriptionTierOptionsSuccess)
     }
 
     func reportTierOptionsFailure(error: Error) {
-        Pixel.fire(pixel: .subscriptionTierOptionsFailure, error: error)
+        PixelKit.fire(Pixel.Event.subscriptionTierOptionsFailure.withError(error))
     }
 
     func reportTierOptionsUnexpectedProTier() {
-        Pixel.fire(pixel: .subscriptionTierOptionsUnexpectedProTier)
+        PixelKit.fire(Pixel.Event.subscriptionTierOptionsUnexpectedProTier)
     }
 }

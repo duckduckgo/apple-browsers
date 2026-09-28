@@ -568,6 +568,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         static let maximum: CGFloat = 240
     }
 
+    /// The Background Leading + Trailing Ramp(s) are rendered outside bounds, by design. This constant will be required for accurate frame calculations when scrolling
+    static var horizontalInset: CGFloat {
+        TabBackgroundView.Metrics.tabRampSize.width
+    }
+
     private var widthStage: TabBarItemCellView.WidthStage {
         if isPinned {
             return .pinned
@@ -1211,14 +1216,14 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addNewToTheRightMenuItem(to menu: NSMenu) {
         let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
-        newTabMenuItem.image = DesignSystemImages.Glyphs.Size12.tabNew
+        newTabMenuItem.withImage(DesignSystemImages.Glyphs.Size12.tabNew, visibleOnMacOS27: true)
         newTabMenuItem.target = self
         menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
         let duplicateMenuItem = NSMenuItem(title: UserText.duplicateTab, action: #selector(duplicateAction(_:)), keyEquivalent: "")
-        duplicateMenuItem.image = DesignSystemImages.Glyphs.Size12.windowDuplicate
+        duplicateMenuItem.withImage(DesignSystemImages.Glyphs.Size12.windowDuplicate, visibleOnMacOS27: true)
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
@@ -1234,7 +1239,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addPinMenuItem(to menu: NSMenu) {
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
-        pinMenuItem.image = isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin
+        pinMenuItem.withImage(isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin, visibleOnMacOS27: true)
         pinMenuItem.target = self
         if !isPinned {
             pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
@@ -1244,7 +1249,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addBookmarkMenuItem(to menu: NSMenu) {
         let bookmarkMenuItem = NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(bookmarkThisPageAction(_:)), keyEquivalent: "")
-        bookmarkMenuItem.image = DesignSystemImages.Glyphs.Size12.bookmarkAdd
+        bookmarkMenuItem.withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd, visibleOnMacOS27: true)
         bookmarkMenuItem.target = self
         bookmarkMenuItem.isEnabled = delegate?.tabBarViewItemCanBeBookmarked(self) ?? false
         menu.addItem(bookmarkMenuItem)
@@ -1277,7 +1282,7 @@ extension TabBarViewItem: NSMenuDelegate {
             }
             menuItem.isEnabled = true
         }
-        menuItem.image = DesignSystemImages.Glyphs.Size12.fireproof
+        menuItem.withImage(DesignSystemImages.Glyphs.Size12.fireproof, visibleOnMacOS27: true)
         menuItem.target = self
         menu.addItem(menuItem)
     }
@@ -1287,7 +1292,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
-        muteUnmuteMenuItem.image = audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute
+        muteUnmuteMenuItem.withImage(audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute, visibleOnMacOS27: true)
         muteUnmuteMenuItem.target = self
         menu.addItem(muteUnmuteMenuItem)
     }
@@ -1329,7 +1334,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
-        closeMenuItem.image = DesignSystemImages.Glyphs.Size12.close
+        closeMenuItem.withImage(DesignSystemImages.Glyphs.Size12.close, visibleOnMacOS27: true)
         closeMenuItem.target = self
         menu.addItem(closeMenuItem)
     }

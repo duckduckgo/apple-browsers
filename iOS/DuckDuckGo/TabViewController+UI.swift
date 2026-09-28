@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import FeatureFlags_iOS
 import UIKit
 
 extension TabViewController {
@@ -108,7 +109,9 @@ extension TabViewController {
         rootView.addSubview(containerStackView)
 
         let safeArea = rootView.safeAreaLayoutGuide
-        let isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        // The tab's own manager, not a fresh one: a fresh instance ignores the injected UTI feature and
+        // could disagree with the rest of the tab's floating layout.
+        let isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         // Floating UI: top/bottom pin to the screen edges so content underflows the glass chrome (via
         // WebKit obscured insets); leading/trailing pin to the safe area so landscape respects the notch.
         let containerStackViewTop = isFloatingUIEnabled
@@ -120,6 +123,7 @@ extension TabViewController {
         let containerStackViewTrailing = isFloatingUIEnabled
             ? containerStackView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
             : containerStackView.trailingAnchor.constraint(equalTo: rootView.trailingAnchor)
+        containerStackViewTopConstraint = containerStackViewTop
         NSLayoutConstraint.activate([
             containerStackViewTop,
             containerStackViewLeading,
@@ -158,6 +162,9 @@ extension TabViewController {
 
         showBarsTapGestureRecogniser = UITapGestureRecognizer(target: self, action: #selector(onBottomOfScreenTapped(_:)))
         showBarsTapGestureRecogniser.delegate = self
+        // This sits above the web view, so holding touch-end back would stall every tap on every
+        // page while waiting for a recognizer that only fires on a bottom-of-screen tap.
+        showBarsTapGestureRecogniser.delaysTouchesEnded = !featureFlagger.isFeatureOn(.suppressShowBarsGestureRecogniserDelay)
         rootView.addGestureRecognizer(showBarsTapGestureRecogniser)
     }
 

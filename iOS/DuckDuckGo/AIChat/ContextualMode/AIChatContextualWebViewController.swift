@@ -24,6 +24,7 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelKit
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -35,6 +36,7 @@ protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String)
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didPersistChatWithID chatID: String)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -67,6 +69,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
@@ -81,6 +84,10 @@ final class AIChatContextualWebViewController: UIViewController {
     /// Page context bundled with a pending prompt submission (consumed together in `submitPromptNow`).
     private var pendingPageContext: AIChatPageContextData?
     private var pendingRichPrompt: PendingRichPrompt?
+    /// Selections as they were when a queued prompt was submitted, so editing chips while the frontend
+    /// loads cannot change what that prompt carries.
+    private var pendingSelections: [AIChatSelectionContextData]?
+    private var selectionsProvider: (() -> [AIChatSelectionContextData])?
     /// Standalone page context for the "Attach Page Content" chip, buffered when WebView isn't ready yet.
     private var pendingChipContext: AIChatPageContextData?
     private var hasPendingChipContext = false
@@ -154,6 +161,7 @@ final class AIChatContextualWebViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -169,11 +177,12 @@ final class AIChatContextualWebViewController: UIViewController {
         self.userAgentManager = userAgentManager
         self.utiHostInstaller = utiHostInstaller
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
+            onboardingActivationRecorder: onboardingActivationRecorder,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             debugSettings: debugSettings,
             getPageContext: getPageContext
@@ -229,6 +238,7 @@ final class AIChatContextualWebViewController: UIViewController {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingPrompt = prompt
             pendingPageContext = pageContext
+            pendingSelections = selectionsProvider?()
         }
     }
 
@@ -253,6 +263,7 @@ final class AIChatContextualWebViewController: UIViewController {
                                                   tools: tools,
                                                   pageContext: pageContext,
                                                   reasoningEffort: reasoningEffort)
+            pendingSelections = selectionsProvider?()
             pendingPrompt = nil
             pendingPageContext = nil
         }
@@ -285,6 +296,18 @@ final class AIChatContextualWebViewController: UIViewController {
         }
     }
 
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        selectionsProvider = provider
+        aiChatContentHandler.setAttachedSelectionsProvider { [weak self] in
+            guard let self else { return [] }
+            return self.pendingSelections ?? self.selectionsProvider?() ?? []
+        }
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
+        aiChatContentHandler.setAttachedSelectionsConsumedHandler(handler)
+    }
+
     func reload() {
         isPageReady = false
         isContentHandlerReady = false
@@ -308,6 +331,7 @@ final class AIChatContextualWebViewController: UIViewController {
         pendingPrompt = nil
         pendingPageContext = nil
         pendingRichPrompt = nil
+        pendingSelections = nil
         hasPendingChipContext = false
         pendingChipContext = nil
         loadingView.startAnimating()
@@ -396,11 +420,13 @@ final class AIChatContextualWebViewController: UIViewController {
         if let richPrompt = pendingRichPrompt {
             pendingRichPrompt = nil
             submitPromptNow(richPrompt)
+            pendingSelections = nil
         } else if let prompt = pendingPrompt {
             let pageContext = pendingPageContext
             pendingPrompt = nil
             pendingPageContext = nil
             submitPromptNow(prompt, pageContext: pageContext)
+            pendingSelections = nil
         }
 
         if hasPendingChipContext {
@@ -476,6 +502,12 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
         utiHost?.bindToUserScript(userScripts.aiChatUserScript)
         if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
             utiHost?.observeChatUpdates(chatUpdatesPublisher)
+            chatPersistenceCancellable = chatUpdatesPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] chatID in
+                    guard let self else { return }
+                    self.delegate?.contextualWebViewController(self, didPersistChatWithID: chatID)
+                }
         }
 
         isContentHandlerReady = true

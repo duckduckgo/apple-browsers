@@ -25,9 +25,7 @@ struct PixelCapturedParameters {
     var headers: [String: String] = [:]
     var parameters: [String: String]?
     var error: Error?
-    var namePrefix: String?
     var reservedCharacters: CharacterSet?
     var includeAppVersion: Bool?
-    var doNotEnforcePrefix: Bool?
     var onComplete: (Bool, Error?) -> Void = { _, _ in }
 }

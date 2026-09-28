@@ -72,8 +72,6 @@ extension TabSwitcherViewController {
     
     @objc func keyboardNewTab() {
         guard !isProcessingUpdates else { return }
-        // Dismiss before requesting the new tab so OmniBarEditingStateViewController
-        // presents on MainVC rather than being dismissed with the tab switcher.
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }

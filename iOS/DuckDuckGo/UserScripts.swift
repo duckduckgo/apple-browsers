@@ -19,15 +19,19 @@
 
 import AIChat
 import BrowserServicesKit
+import Common
 import Core
 import EventHub
-import os.log
 import Foundation
+import FoundationExtensions
+import os.log
 import PrivacyConfig
 import SERPSettings
+import SitePermissions
 import SpecialErrorPages
 import Subscription
 import TrackerRadarKit
+import UIKit
 import UserScript
 import WebExtensions
 import WebKit
@@ -46,6 +50,7 @@ final class UserScripts: UserScriptsProvider {
     let serpSettingsUserScript: SERPSettingsUserScript
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
+    let internalFeedbackUserScript: InternalFeedbackUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -59,7 +64,11 @@ final class UserScripts: UserScriptsProvider {
 
     private(set) var faviconScript = FaviconUserScript()
     private(set) var findInPageScript = FindInPageUserScript()
+
+    private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
+    private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
+    private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
@@ -68,10 +77,19 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         sitePermissionsEnabled: Bool = false,
+         mediaCaptureUserScript: MediaCaptureUserScript? = nil,
+         internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
+         internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
+         geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+
+        selectionFrameScript = SelectionFrameUserScript()
+        self.mediaCaptureUserScript = mediaCaptureUserScript
+        self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
@@ -139,6 +157,10 @@ final class UserScripts: UserScriptsProvider {
         }
 
         pageContextUserScript = PageContextUserScript()
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider(tabCountProvider: internalFeedbackTabCountProvider),
+            attachmentsProvider: internalFeedbackAttachmentsProvider
+        )
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
@@ -153,6 +175,8 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
@@ -181,6 +205,9 @@ final class UserScripts: UserScriptsProvider {
         var scripts: [UserScript?] = [
             findInPageScript,
             fullScreenVideoScript,
+            mediaCaptureUserScript,
+            geolocationUserScript?.policyScript,
+            geolocationUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,
@@ -213,19 +240,123 @@ final class UserScripts: UserScriptsProvider {
     
     @MainActor
     func loadWKUserScripts() async -> [WKUserScript] {
-        return await withTaskGroup(of: WKUserScriptBox.self) { @MainActor group in
-            var wkUserScripts = [WKUserScript]()
-            userScripts.forEach { userScript in
+        return await withTaskGroup(of: (Int, WKUserScriptBox).self) { @MainActor group in
+            var indexedScripts = [(Int, WKUserScriptBox)]()
+            for (index, userScript) in userScripts.enumerated() {
                 group.addTask { @MainActor in
-                    await userScript.makeWKUserScript()
+                    (index, await userScript.makeWKUserScript())
                 }
             }
             for await result in group {
-                wkUserScripts.append(result.wkUserScript)
+                indexedScripts.append(result)
             }
 
-            return wkUserScripts
+            guard geolocationUserScript != nil else {
+                return indexedScripts.map { $0.1.wkUserScript }
+            }
+            // Keep concurrent preparation, then restore this small list's installation order:
+            // geolocation policy must precede its page adapter, which registers its frame immediately.
+            return indexedScripts.sorted { $0.0 < $1.0 }.map { $0.1.wkUserScript }
         }
     }
 
+}
+
+/// Counts open tabs for the internal feedback report.
+@MainActor
+protocol InternalFeedbackTabCounting: AnyObject {
+    /// Tabs across both normal and fire mode, whether or not they are currently loaded.
+    var openTabCount: Int { get }
+    /// Tabs holding a live web view, which is the count that bears on memory pressure.
+    /// Matches the `activeTabCount` reported by `TabTerminationTelemetry`.
+    var activeTabCount: Int { get }
+}
+
+final class InternalFeedbackTabCountProvider {
+
+    @MainActor weak var counter: (any InternalFeedbackTabCounting)?
+}
+
+private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding {
+
+    private let appVersion: AppVersion
+    private let tabCountProvider: InternalFeedbackTabCountProvider
+
+    init(appVersion: AppVersion = .shared,
+         tabCountProvider: InternalFeedbackTabCountProvider) {
+        self.appVersion = appVersion
+        self.tabCountProvider = tabCountProvider
+    }
+
+    private static var distributionChannel: String {
+        #if DEBUG
+        return "Internal"
+        #elseif ALPHA || EXPERIMENTAL
+        return "TestFlight"
+        #else
+        guard let receiptURL = Bundle.main.appStoreReceiptURL,
+              FileManager.default.fileExists(atPath: receiptURL.path) else {
+            return "Internal"
+        }
+        return receiptURL.lastPathComponent == "sandboxReceipt" ? "TestFlight" : "App Store"
+        #endif
+    }
+
+    private static var hardwareModel: String? {
+        var systemInfo = utsname()
+        guard uname(&systemInfo) == 0 else { return nil }
+
+        let identifier = Mirror(reflecting: systemInfo.machine).children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier.isEmpty ? nil : identifier
+    }
+
+    private static func string(fromByteCount byteCount: Int64, countStyle: ByteCountFormatter.CountStyle) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = countStyle
+        return formatter.string(fromByteCount: byteCount)
+    }
+
+    @MainActor
+    private var diagnostics: [String: String] {
+        var diagnostics = [String: String]()
+
+        if let counter = tabCountProvider.counter {
+            diagnostics["Tabs"] = String(counter.openTabCount)
+            diagnostics["Active Tabs"] = String(counter.activeTabCount)
+        }
+
+        if let memoryFootprint = DefaultTabTerminationTelemetry.currentMemoryFootprint() {
+            let used = Self.string(fromByteCount: Int64(memoryFootprint), countStyle: .memory)
+            let total = Self.string(fromByteCount: Int64(ProcessInfo.processInfo.physicalMemory), countStyle: .memory)
+            diagnostics["Memory"] = "\(used) used, \(total) total"
+        }
+
+        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
+        if let values = try? homeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+           let freeBytes = values.volumeAvailableCapacityForImportantUsage {
+            diagnostics["Disk"] = "\(Self.string(fromByteCount: freeBytes, countStyle: .file)) free"
+        }
+
+        return diagnostics
+    }
+
+    @MainActor
+    func deviceInfo() -> InternalFeedbackDeviceInfo {
+        InternalFeedbackDeviceInfo(
+            platform: "ios",
+            appVersion: appVersion.versionNumber,
+            osName: UIDevice.current.systemName,
+            osVersion: appVersion.osVersionMajorMinorPatch,
+            appBuild: appVersion.buildNumber,
+            formFactor: UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "mobile",
+            locale: Locale.current.localeIdentifierAsJsonFormat,
+            channel: Self.distributionChannel,
+            deviceModel: Self.hardwareModel,
+            deviceManufacturer: "Apple",
+            diagnostics: diagnostics
+        )
+    }
 }

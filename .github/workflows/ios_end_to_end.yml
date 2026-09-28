@@ -30,6 +30,7 @@ concurrency:
 jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
+    needs: setup-matrix
     runs-on: macos-26
     timeout-minutes: 30
 
@@ -81,7 +82,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.4"
+        preferred-versions: "26.5"
 
     - name: Restore Xcode Compilation Cache
       uses: actions/cache/restore@v5
@@ -153,7 +154,6 @@ jobs:
 
   setup-matrix:
     name: Resolve test matrix
-    needs: build-end-to-end-tests
     runs-on: ubuntu-latest
     defaults:
       run:

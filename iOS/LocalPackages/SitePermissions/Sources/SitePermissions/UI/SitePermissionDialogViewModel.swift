@@ -99,11 +99,13 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
         }
 
         body = self.isDuckDuckGoSERP ? UserText.PermissionDialog.duckDuckGoSERPLocationBody : nil
-        actions = [
-            ActionItem(action: .allowOnce, title: UserText.PermissionDialog.allowOnce),
-            ActionItem(action: .allowWhileUsingSite, title: UserText.PermissionDialog.allowWhileUsingSite),
-            ActionItem(action: .neverAllow, title: UserText.PermissionDialog.neverAllow)
-        ]
+        var actions = [ActionItem(action: .allowOnce, title: UserText.PermissionDialog.allowOnce)]
+        if !prompt.isFireMode {
+            actions.append(ActionItem(action: .allowWhileUsingSite, title: UserText.PermissionDialog.allowWhileUsingSite))
+        }
+        actions.append(ActionItem(action: .neverAllow,
+                                  title: prompt.isFireMode ? UserText.PermissionDialog.deny : UserText.PermissionDialog.neverAllow))
+        self.actions = actions
     }
 
     func title(domain: String) -> String {

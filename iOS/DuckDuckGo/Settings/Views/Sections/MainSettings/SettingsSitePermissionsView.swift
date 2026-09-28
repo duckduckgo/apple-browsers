@@ -100,6 +100,10 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         siteRecords[site]?[permissionType] ?? .ask
     }
 
+    func permissionTypes(for site: SitePermissionKey) -> [SitePermissionType] {
+        Self.supportedPermissionTypes.filter { siteRecords[site]?[$0] != nil }
+    }
+
     func globalDefaultBinding(for permissionType: SitePermissionType) -> Binding<GlobalSitePermissionDecision> {
         Binding(
             get: { self.globalDefault(for: permissionType) },
@@ -140,7 +144,7 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     func removeAllSitePermissions() {
         guard isEnabled() else { return }
-        let sitesToRevoke = storedSites
+        let sitesToRevoke = store.storedSites
         let images = favicons?.retainedImages(for: store.storedSites) ?? [:]
         let snapshot = store.clearSitePermissions()
         guard !snapshot.isEmpty else { return }
@@ -190,10 +194,13 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         globalDefaults = Dictionary(uniqueKeysWithValues: Self.supportedPermissionTypes.map {
             ($0, store.globalDefault(for: $0))
         })
-        storedSites = store.storedSites.sorted {
+        siteRecords = Dictionary(uniqueKeysWithValues: store.storedSites.compactMap { site in
+            let permissions = store.permissions(for: site)
+            return permissions.isEmpty ? nil : (site, permissions)
+        })
+        storedSites = siteRecords.keys.sorted {
             $0.host.localizedCaseInsensitiveCompare($1.host) == .orderedAscending
         }
-        siteRecords = Dictionary(uniqueKeysWithValues: storedSites.map { ($0, store.permissions(for: $0)) })
     }
 
     private static func openSystemSettingsDefault() {
@@ -249,6 +256,7 @@ struct SettingsSitePermissionsView: View {
                     .textCase(nil)
             } footer: {
                 Text(systemSettingsFooter)
+                    .daxFootnoteRegular()
                     .environment(\.openURL, OpenURLAction { url in
                         guard SettingsSitePermissionsFooterAction.from(url) == .systemSettings else { return .systemAction }
                         viewModel.openSystemSettings()
@@ -294,6 +302,7 @@ struct SettingsSitePermissionsView: View {
                     Button(UserText.settingsSitePermissionsRemoveAll) {
                         viewModel.removeAllSitePermissions()
                     }
+                    .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .accentPrimary))
                     .accessibilityIdentifier("Settings.SitePermissions.RemoveAll")
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
@@ -331,7 +340,7 @@ private struct SettingsSitePermissionsSiteView: View {
     var body: some View {
         List {
             Section {
-                ForEach(SettingsSitePermissionsViewModel.supportedPermissionTypes, id: \.self) { permissionType in
+                ForEach(viewModel.permissionTypes(for: site), id: \.self) { permissionType in
                     SettingsSitePermissionRow(
                         permissionType: permissionType,
                         selection: viewModel.siteDecision(for: permissionType, at: site).settingsTitle,
@@ -361,6 +370,7 @@ private struct SettingsSitePermissionsSiteView: View {
                     viewModel.removePermissions(for: site)
                     dismiss()
                 }
+                .daxBodyRegular()
                 .foregroundColor(Color(designSystemColor: .accentPrimary))
                 .accessibilityIdentifier("Settings.SitePermissions.RemoveSite")
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
@@ -370,6 +380,11 @@ private struct SettingsSitePermissionsSiteView: View {
         .sitePermissionsListLayout()
         .applySettingsListModifiers(title: site.host, displayMode: .inline, viewModel: settingsViewModel)
         .disabled(!settingsViewModel.state.sitePermissionsEnabled)
+        .onChange(of: viewModel.storedSites) { sites in
+            if !sites.contains(site) {
+                dismiss()
+            }
+        }
     }
 }
 
@@ -383,7 +398,6 @@ private struct SettingsSitePermissionRow<MenuContent: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             permissionType.settingsIcon
-                .font(.title3)
                 .frame(width: 24, height: 24)
                 .accessibilityHidden(true)
             Text(permissionType.settingsTitle)

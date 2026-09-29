@@ -269,7 +269,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             guard viewState.systemPermissionStep?.phase == .openSettings else { return }
             showSystemPermissionPhase(.request)
         case .denied, .restricted, .systemDisabled:
-            break
+            showSystemPermissionPhase(.openSettings)
         }
     }
 

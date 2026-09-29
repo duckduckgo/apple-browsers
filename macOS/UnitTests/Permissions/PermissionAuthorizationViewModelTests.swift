@@ -257,6 +257,37 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         withExtendedLifetime((viewModel, query)) {}
     }
 
+    func testWhenSystemPermissionIsDeniedElsewhereThenReturningShowsSettingsAndPreservesPendingDecision() async throws {
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
+        let query = makeQuery(permissions: [.notification])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .allowThisVisit)
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .request)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
+        appDidBecomeActive.send()
+        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .openSettings }
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep, .init(
+            phase: .openSettings,
+            message: UserText.websitePermissionsPromptSystemNotificationsOff,
+            buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
+        ))
+        XCTAssertNil(result)
+        XCTAssertEqual(finishCount, 0)
+        XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.authorized)
+        appDidBecomeActive.send()
+        await waitUntil { self.result != nil }
+
+        let output = try XCTUnwrap(try result?.get())
+        XCTAssertTrue(output.granted)
+        XCTAssertEqual(output.remember, false)
+        XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
     func testWhenSystemPermissionIsDeniedThenSettingsCanResumePendingDecision() async throws {
         let (viewModel, query) = makeViewModelWaitingForSystemPermission(decision: .alwaysAllow)
 

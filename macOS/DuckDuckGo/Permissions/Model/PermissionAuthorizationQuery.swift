@@ -27,6 +27,8 @@ struct PermissionAuthorizationQueryInfo {
     var shouldShowAlwaysAllowCheckbox: Bool = false
     var shouldShowCancelInsteadOfDeny: Bool = false
     var isSystemPermissionDisabled: Bool = false
+    /// Keep the pending system permission flow alive while its popover is hidden or reused for another request.
+    var authorizationViewModel: PermissionAuthorizationViewModel?
 }
 typealias PermissionAuthorizationQueryOutput = (granted: Bool, remember: Bool?)
 

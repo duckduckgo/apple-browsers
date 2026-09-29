@@ -64,7 +64,7 @@ extension Array where Element == PermissionType {
 
 final class PermissionAuthorizationViewController: NSViewController {
 
-    let systemPermissionManager = SystemPermissionManager()
+    let systemPermissionManager: SystemPermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
 
     private var swiftUIHostingView: NSView?
@@ -79,8 +79,9 @@ final class PermissionAuthorizationViewController: NSViewController {
         }
     }
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()) {
         self.featureFlagger = featureFlagger
+        self.systemPermissionManager = systemPermissionManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -153,17 +154,20 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func makeViewModel(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationViewModel {
-        PermissionAuthorizationViewModel(
+        let viewModel = query.parameters.authorizationViewModel ?? PermissionAuthorizationViewModel(
             query: query,
             systemPermissionManager: systemPermissionManager,
             openURL: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
             },
-            finish: { [weak self] in
-                self?.isAuthorizationInProgress = false
-                self?.dismiss()
+            finish: { [weak self, weak query] in
+                guard let self, let query, self.query === query else { return }
+                self.isAuthorizationInProgress = false
+                self.dismiss()
             }
         )
+        query.parameters.authorizationViewModel = viewModel
+        return viewModel
     }
 
     private func handleDeny() {

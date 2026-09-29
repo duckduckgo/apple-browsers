@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import ConcurrencyExtensions
 import Foundation
 import PixelKit
 
@@ -66,7 +67,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             .eraseToAnyPublisher(),
         scheduleAfter: @escaping ScheduleAfter = { delay, work in
             Task { @MainActor in
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                try? await Task.sleep(interval: delay)
                 work()
             }
         },

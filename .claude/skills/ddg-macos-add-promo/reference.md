@@ -10,13 +10,11 @@ sed -n '/^struct PromoType/,/^}/p' macOS/DuckDuckGo/Promotions/PromoTypes/PromoT
 
 The header comment of `PromoTypes/PromoType.swift` links the two canonical DDG docs — **Promo types** and **Attribute rules**. Read those links out of the file; they are the product-side source of truth for which treatment is appropriate, and this reference only covers what the code enforces.
 
-## The whole queue is behind a feature flag — and each migrated promo behind its own
+## The queue is always on — each migrated promo has its own kill switch
 
-`PromoService` is only constructed inside `if featureFlagger.isFeatureOn(.promoQueue)` in `AppDelegate.applicationDidFinishLaunching`. With the flag off there is no queue and no promo shows at all — `PromoDebugMenu` even renders "Promo Queue unavailable (feature flag off)".
+`PromoService` is constructed unconditionally in `AppDelegate.applicationDidFinishLaunching`; there is no queue-wide feature flag. (`PrivacyFeature.promoQueue` survives only as the parent of `PromoQueueSubfeature`.)
 
-`.promoQueue` is therefore all-or-nothing and is **not** a per-promo switch. A promo migrated from shipping UI carries its own flag as well — `promoQueue<Name>Promo`, `defaultValue: .enabled`, `source: .remoteReleasable(PromoQueueSubfeature.<name>Promo)` — checked inside its delegate's `isEligible`, so it can be killed remotely without taking every other promo down with it. That per-promo flag is the fallback for a migration; keeping the legacy presentation path alive is not — unless the spec explicitly asks for the promo to keep working with `.promoQueue` off, which is rare and reserved for critical promos. See "Migrating existing UI" in SKILL.md for the three files it touches.
-
-So a promo shows only when `.promoQueue` **and** its own flag are on. When debugging "it never appears", check both.
+A promo migrated from shipping UI carries its own flag — `promoQueue<Name>Promo`, `defaultValue: .enabled`, `source: .remoteReleasable(PromoQueueSubfeature.<name>Promo)` — checked inside its delegate's `isEligible` (or `isVisible` for an external promo), so it can be killed remotely. That flag is the only fallback for a migration; keeping the legacy presentation path alive is not. See "Migrating existing UI" in SKILL.md for the three files it touches. When debugging "it never appears", check that flag first.
 
 ## `Promo` protocol fields
 
@@ -99,11 +97,11 @@ Before `checkRules` is even reached, `evaluateTriggers` opens with `guard isOnbo
 
 ### The restore path bypasses every rule above
 
-`restoreVisiblePromos()` runs once at registration and calls `performShow` **without** `checkRules`, **without** `record.isEligible(asOf:)`, and **without** any permanent-dismissal check. Its only gates are: no external-activation suppression, the delegate is an `InternalPromoDelegate`, `record.lastShown != nil`, `lastDismissed == nil || lastDismissed < lastShown` ("was visible at shutdown"), and `delegate.isEligible` after a `refreshEligibility()`.
+`restoreVisiblePromos()` runs once at registration and calls `performShow` **without** `checkRules`, **without** `record.isEligible(asOf:)`, and **without** any permanent-dismissal check. Its only gates are: no external-activation suppression, the delegate is an `InternalPromoDelegate`, `record.lastShown != nil`, `lastDismissed == nil || lastDismissed < lastShown` ("was visible at shutdown"), the timeout not having elapsed, and `delegate.isEligible` after a `refreshEligibility()`.
 
-So: two restored promos can be visible together in conflicting contexts, and a permanently-dismissed promo *can* reappear this way. If the app is killed while your promo is on screen, it comes back at next launch regardless of severity, context, or cooldown.
+Timeouts are measured from the original `lastShown`, across the restart: if `timeoutInterval` elapsed while the app was closed, restore applies `timeoutResult` to history and doesn't show; otherwise the promo comes back with only its *remaining* time.
 
-If your promo must not survive a restart, make sure it resolves with a result that clears `lastShown` — `.noChange` does (`applyResult` sets `record.lastShown = nil`). Promos with short timeouts are the most likely to hit this, since the odds of being killed mid-display are highest.
+So: two restored promos can be visible together in conflicting contexts, and a permanently-dismissed promo *can* reappear this way. If the app is killed while your promo is on screen and its timeout hasn't run out (or it has none), it comes back at next launch regardless of severity, context, or cooldown. If your promo must not survive a restart, make sure every early resolution clears `lastShown` — `.noChange` and `.retired` do.
 
 External-promo visibility changes are **not** gated by `checkRules` at all — an external promo becoming visible can never be blocked. But when it becomes visible, `PromoService` retracts (`hide`s) any currently-visible *internal* promo that would now fail `checkRules` given the external promo's presence (`hideInternalPromosConflictingWithCurrentVisibility`). That retraction check is a normal `checkRules(for: internalPromo)` call, so it **does** consult `coexistingPromoIDs` mutuality against the external promo just like it would against another internal one — a mutual listing is the correct (and only) way to stop a medium/high-severity internal promo from being evicted when an external promo appears in a conflicting context. (A low-severity internal promo never needs this — it already can't be evicted, per the severity bypass above.)
 
@@ -124,14 +122,17 @@ protocol ExternalPromoDelegate: PromoDelegate {
     var isVisible: Bool { get }
     var isVisiblePublisher: AnyPublisher<Bool, Never> { get }     // must replay current value on subscribe
     var resultWhenHidden: PromoResult { get }
+    @MainActor func promoServiceDidApplyVisibility(_ isVisible: Bool)   // default no-op
 }
 ```
+
+`promoServiceDidApplyVisibility` fires after PromoService has recorded a visibility change and finished retracting any internal promos it conflicts with. Use it when the external UI must not appear until those are gone — `QuitSurveyPromoObserver.reportVisible()` awaits it before presenting its modal.
 
 ### Isolation: only `show`/`hide` are `@MainActor` — do not annotate the class
 
 Read the protocol above carefully. `show()` and `hide()` are `@MainActor`; `isEligible`, `isEligiblePublisher`, and `refreshEligibility()` deliberately are **not**, because `PromoService` reads them on its private background `stateQueue` under `dispatchPrecondition(condition: .onQueue(stateQueue))`.
 
-**Marking the whole delegate class `@MainActor` is wrong**, even though it compiles today (`SWIFT_VERSION = 5.0`, `SWIFT_STRICT_CONCURRENCY = minimal`). It makes `refreshEligibility()` and `isEligible` main-actor members that the service then reads off the main thread, and it becomes a hard error under Swift 6. All four existing `InternalPromoDelegate` implementations annotate only `show`/`hide`; follow them. (`ExternalPromoDelegate` has no `@MainActor` members at all.)
+**Marking the whole delegate class `@MainActor` is wrong**, even though it compiles today (`SWIFT_VERSION = 5.0`, `SWIFT_STRICT_CONCURRENCY = minimal`). It makes `refreshEligibility()` and `isEligible` main-actor members that the service then reads off the main thread, and it becomes a hard error under Swift 6. Existing `InternalPromoDelegate` implementations annotate only `show`/`hide`; follow them. (`ExternalPromoDelegate` has no `@MainActor` members at all.)
 
 Keep eligibility state in a `CurrentValueSubject` so it's safe to read off-main, and apply `.removeDuplicates()` to `isEligiblePublisher` (every existing delegate does).
 
@@ -141,7 +142,7 @@ Keep eligibility state in a `CurrentValueSubject` so it's safe to read off-main,
 
 `recordResultAndCleanup` cancels the `showTask` and *then* calls `hide()`. Cancelling a task suspended in `withCheckedContinuation` does **not** resume it — so if `hide()` doesn't resume, the awaiting task leaks and the promo never cleans up. Conversely `hide()` resuming can't corrupt the real result: `isResultRecorded` is first-write-wins and is set before `hide()` runs.
 
-Canonical shape (matches all four existing internal delegates):
+Canonical shape (matches the existing internal delegates):
 
 ```swift
 final class MyPromoDelegate: InternalPromoDelegate {   // NOT @MainActor at class level
@@ -174,7 +175,7 @@ final class MyPromoDelegate: InternalPromoDelegate {   // NOT @MainActor at clas
 
 Also resolve on presentation *failure* — if your `show` path can fail to present (e.g. no key window), call `resolve(with: .noChange)` rather than returning while still suspended.
 
-`force: true` on `show()` is passed only by the debug menu's "Force Show" action (bypasses all eligibility/rules, no history change) — it has no effect for external promos, which don't have a `forceShow` path at all (`PromoService.forceShow` no-ops if the delegate isn't `InternalPromoDelegate`).
+`force: true` on `show()` is passed only by the debug menu's "Force Show" action (bypasses all eligibility/rules and writes no history, but otherwise runs a real session — the `PromoType` timeout still fires) — it has no effect for external promos, which don't have a `forceShow` path at all (`PromoService.forceShow` no-ops if the delegate isn't `InternalPromoDelegate`).
 
 **`isEligiblePublisher`/`isVisiblePublisher` emitting `true` does not, by itself, cause a new show.** There are exactly two paths into `performShow`: `evaluateTriggers` (needs a matching `PromoTrigger` to have just fired, and is gated by `checkRules`) and `restoreVisiblePromos` (runs once at registration for promos whose history says they were visible at last shutdown, and is gated by **nothing** except `delegate.isEligible` — see the restore-path section above). The publisher going `true` while the promo isn't already showing does nothing on its own — it's only actively watched, via `.dropFirst()`, to *retract* an already-showing promo when it flips to `false` (`handleEligibilityLost`). A promo meant to appear reactively the instant some condition becomes true needs that condition paired with an actual `PromoTrigger` firing, not eligibility alone.
 
@@ -185,6 +186,7 @@ Also resolve on presentation *failure* — if your `show` path can fail to prese
 | `.actioned` | User engaged the CTA | **Permanent. Never eligible again, ever.** Sets `actioned = true` + `nextEligibleDate = .distantFuture` |
 | `.ignored()` (cooldown `nil`, default) | Dismissed without engaging | **Permanent.** Sets `nextEligibleDate = .distantFuture` |
 | `.ignored(cooldown: interval)` | Dismissed without engaging | Temporarily dismissed — eligible again after `interval` |
+| `.ignored(cooldown: 0)` | Dismissed; something else owns recurrence | Records a dismissal (feeds the global cooldown if `setsGlobalCooldown`) but is eligible again on the next trigger. The usual `resultWhenHidden` for an external promo with its own limiter (`BrokenSitePromptPresentationCoordinator`, `DuckPlayerOverlayObserver`), and used by `browserUpdated` |
 | `.retired` | Promo declined to offer itself to this user at all | **Permanent**, but records *no* dismissal — `timesDismissed` and `lastDismissed` are untouched, so it doesn't consume the global cooldown. Also clears `lastShown`. This is the value for "this user already saw the legacy UI" and "this user obviously knows about the feature already" |
 | `.noChange` | Retracted or errored | Clears `lastShown` (so it won't be restored after a restart); otherwise no change — eligible again on next trigger |
 
@@ -201,7 +203,7 @@ Decide explicitly which kind you have:
 | Intent | Resolve the CTA tap with |
 |---|---|
 | One-shot: "once they've done this, never ask again" (set-as-default, onboarding) | `.actioned` |
-| Recurring: should return on the next version / next occurrence / after N days | `.ignored(cooldown: <the recurrence interval>)`, or `.noChange` to re-show on the next trigger |
+| Recurring: should return on the next version / next occurrence / after N days | `.ignored(cooldown: <the recurrence interval>)`, or `.noChange` to re-show on the next trigger. `UpdateAvailablePromoDelegate` resolves its CTA, click, and close all with `.ignored(cooldown: .days(7))` |
 
 Note the trap this creates: engaging with the CTA is the path that permanently retires the promo, while *dismissing* it (`.ignored(cooldown:)`) brings it back. For anything recurring, that's backwards from what a spec usually means — a user who taps "update now" is the one you most want to reach next release. Read your resolution paths and check that the more enthusiastic user doesn't get the more permanent silence.
 
@@ -257,12 +259,14 @@ So position has three effects, all of them silent:
 Position is therefore a product decision about which promo yields to which, not a code-organization detail. Read the current order from the source rather than any list written down here:
 
 ```bash
-sed -n '/var promos: \[Promo\] = \[/,/^        \]/p' macOS/DuckDuckGo/Promotions/PromoServiceFactory.swift
+sed -n '/static func makeAllPromos/,/^    }/p' macOS/DuckDuckGo/Promotions/PromoServiceFactory.swift
 ```
+
+Read the whole function: promos can be `insert`ed after the array literal (`browserUpdated` goes in at index 2), and debug/review builds append test promos.
 
 ## Test fixtures and the id-uniqueness guard
 
-Existing helpers in `macOS/UnitTests/Promotions/`: `PromoTestHelpers.makePromo(...)`, `Mocks/MockPromoDelegate.swift`, `MockExternalPromoDelegate.swift`, `MockPromoHistoryStore.swift`, and a `PassthroughSubject`-backed trigger publisher. `AutoplayDiscoverabilityPromoDelegateTests.swift` is the model for a delegate test.
+Existing helpers in `macOS/UnitTests/Promotions/`: `PromoTestHelpers.makePromo(...)`, the mocks under `Mocks/` (`ls` it), and a `PassthroughSubject`-backed trigger publisher. Each migrated promo has a `<Name>PromoDelegateTests.swift` there; model yours on the closest one.
 
 `PromoRegistryTests.testWhenPromoServiceCreated_ThenAllStringsAreUnique` is the repo's only global id-collision guard. **It only covers promos actually present in the constructed service** — so if your factory function returns `nil` when a dependency is missing and the test passes `nil` for that dependency, your promo's id is silently excluded from the check. Pass a mock so it's included.
 

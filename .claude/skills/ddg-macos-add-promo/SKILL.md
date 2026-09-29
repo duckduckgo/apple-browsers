@@ -52,7 +52,7 @@ digraph decide {
 ```
 
 - **Default to Internal.** Use it unless you have a concrete reason not to — this is DDG's own stated guidance, and it's almost always right.
-- Use External only when a separate subsystem already, independently, decides its own show/hide (e.g. Remote Messaging Framework, Session Restore, Next Steps) and PromoService's only job is to *observe* that visibility to avoid collisions with everything else.
+- Use External only when a separate subsystem already, independently, decides its own show/hide (e.g. Remote Messaging Framework, Session Restore, Next Steps, the Broken Site prompt's own limiter, the content-scope-scripts Duck Player overlay, the quit survey during termination) and PromoService's only job is to *observe* that visibility to avoid collisions with everything else.
 
 **Language trap:** a spec that says a dependency "already knows whether it should be visible" and exposes a `Bool` sounds External. But if the spec *also* names a concrete Promo Queue trigger (an app/user event — "after visiting X three times", "on next tab page open") that should cause the promo to appear, that trigger is what PromoService needs to react to — the dependency is only supplying *eligibility*, not owning *visibility*. That's still Internal: wrap the dependency's Bool as `isEligible`/`isEligiblePublisher`, and drive `show()`/`hide()` from PromoService's own trigger evaluation. State which reading you're using and why — don't silently pick one.
 
@@ -182,18 +182,10 @@ What *is* worth a comment here is the non-obvious why the code genuinely can't e
 
 **If the UI already exists**, put the delegate next to that existing UI, not next to the promo definition. The delegate's job is to present that UI; it belongs with the thing it presents.
 
-Every shipping delegate follows this — none of them is under `Promotions/`:
+Every shipping delegate follows this — none of them is under `Promotions/`. List them:
 
-```
-macOS/DuckDuckGo/Permissions/Promo/AutoplayDiscoverabilityPromoDelegate.swift
-    ↳ presents macOS/DuckDuckGo/Permissions/View/AutoplayDiscoverabilityView.swift
-macOS/DuckDuckGo/Autoconsent/OptInDialog/CookiePopupProtectionOptInPromoDelegate.swift
-macOS/DuckDuckGo/DefaultBrowserAndAddToDockPrompts/DefaultBrowserAndDockPromoDelegate.swift
-macOS/DuckDuckGo/NewTabPage/Features/NextSteps/NextStepsCardsPromoDelegate.swift
-macOS/DuckDuckGo/RemoteMessaging/RemoteMessagePromoDelegate.swift
-macOS/DuckDuckGo/StateRestoration/SessionRestorePromoDelegate.swift
-macOS/DuckDuckGo/HomePage/View/VPNSubscriptionPromo/FireWindowSubscriptionPromoDelegate.swift
-macOS/DuckDuckGo/NewTabPage/Features/NewTabPageFreemiumDBPBannerProvider.swift
+```bash
+grep -rlE ': .*(Internal|External)PromoDelegate' macOS/DuckDuckGo --include='*.swift' | grep -v '/Promotions/'
 ```
 
 A `Promo/` subdirectory inside the feature's own directory (as Permissions does) is the convention when the feature directory is already busy. Why it matters: the promo definition is one small file that changes when *queue* semantics change; the delegate and UI change when the *feature* changes. Co-locating them under `Promotions/` puts feature code out of reach of the people who own the feature, and makes `Promotions/` grow without bound.
@@ -209,33 +201,55 @@ Pick the protocol that matches your Step 1 answer (full member list in [referenc
 - **`InternalPromoDelegate`**: provide `isEligible`/`isEligiblePublisher` (current eligibility only — don't maintain your own "was this shown/dismissed before" state, `PromoService`'s history already does this via the `PromoResult` you return), implement `show(history:force:) async -> PromoResult` (present your UI, resolve when the user acts/dismisses/it retracts), and `hide()` (must be idempotent — `PromoService` calls it unconditionally after recording any result, even if your UI is already gone). **`isEligiblePublisher` flipping to `true` does not, by itself, make the promo appear** — it's only consulted when a matching `PromoTrigger` fires (or at app-restart restore); the publisher is otherwise only watched to *retract* an already-showing promo when it flips to `false`. If the spec wants the promo to appear reactively the moment some condition becomes true, that condition needs a trigger paired with it, not just eligibility.
 - **`ExternalPromoDelegate`**: provide `isVisible`/`isVisiblePublisher` (must emit a current value immediately on subscription — back it with a `CurrentValueSubject` or equivalent) and a fixed `resultWhenHidden` applied whenever visibility flips to false — pick this over per-invocation logic; you don't get a callback distinguishing *why* it went false.
 
+**Model yours on the closest existing promo** — read its factory file, delegate, and test before writing anything:
+
+| Shape | Model on |
+|---|---|
+| Migrated popover: kill switch, legacy "already shown" → `.retired`, `KeyedStorage`, mutual Next Steps coexistence | `BookmarkToolbarPromoDelegate` + `BookmarkToolbarPromoDelegateTests` |
+| UI owned by a view controller — delegate talks to a presenter protocol the VC implements, mocked in tests | `AutofillToolbarPinningPromoDelegate` (`AutofillToolbarPinningPromoPresenting`) |
+| Eligibility computed from several feature states via `refreshEligibility()` | `CookiePopupsBlockedPromoDelegate`, `SyncFaviconsPromoDelegate` |
+| Recurring promo whose CTA must *not* retire it | `UpdateAvailablePromoDelegate` (every path → `.ignored(cooldown: .days(7))`) |
+| Popover that keeps hover-to-keep-open under the queue's timeout | `UpdateAvailablePromoDelegate.hide()` → `dismissPopoverUnlessHovering()` |
+| External, with its own limiter deciding recurrence | `BrokenSitePromptPresentationCoordinator` (`resultWhenHidden: .ignored(cooldown: 0)`) |
+| External, visibility derived from observed state, with a kill switch | `DuckPlayerOverlayObserver` |
+| External modal that must wait for conflicting promos to be retracted before it presents | `QuitSurveyPromoObserver` (`promoServiceDidApplyVisibility`) |
+
+Precedent tells you the mechanics, not the decision: a promo that exempts itself from the global cooldown or coexists with Next Steps did so with sign-off, and yours still needs its own (Step 2.2).
+
 **Three runtime rules you cannot infer from the protocol declaration. Read the "Isolation" and "continuation contract" sections of [reference.md](reference.md) before writing the class — it has the canonical skeleton to copy.** In short:
 
 1. **Annotate only `show`/`hide` as `@MainActor` — never the class.** `isEligible`/`isEligiblePublisher`/`refreshEligibility()` are read on `PromoService`'s background `stateQueue`. Class-level `@MainActor` compiles today and is wrong.
 2. **`hide()` must resume any pending continuation itself**, or the awaiting task leaks. It cannot corrupt the real result.
 3. **Resolve on presentation failure too**, or `show()` never returns.
 
-Real reference implementation — single delegate, single promo, severity matching the UI it presents. Note the definition file contains *only* the definition; the delegate and its view live under `Permissions/`:
+Real reference implementation — single delegate, single promo, severity matching the UI it presents. The definition file contains *only* the definition; the delegate lives with the bookmarks bar:
 
 ```swift
-// macOS/DuckDuckGo/Promotions/Promos/PromoServiceFactory+AutoplayDiscoverability.swift
+// macOS/DuckDuckGo/Promotions/Promos/PromoServiceFactory+BookmarkToolbar.swift
 extension PromoServiceFactory {
 
-    /// Builds an Autoplay Discoverability Promo.
-    @MainActor
-    static func autoplayDiscoverability(dependencies: PromoDependencies) -> Promo {
-        let promoType = PromoType(.featureTip, customTimeoutInterval: AutoplayDiscoverabilityPromoDelegate.displayDuration, customTimeoutResult: .ignored())
-        let identifier = "autoplay-discoverability"
-        let delegate = AutoplayDiscoverabilityPromoDelegate(featureFlagger: dependencies.featureFlagger,
-                                                            windowControllersManager: dependencies.windowControllersManager,
-                                                            isNewUserProvider: dependencies.isNewUserProvider)
+    static let bookmarkToolbarPromoID = "bookmark-toolbar"
 
-        return InternalPromo(id: identifier, triggers: [.autoplayDiscoverability], initiated: .app, promoType: promoType, context: .webPage, delegate: delegate)
+    /// Builds the Bookmark Toolbar Promo ("Show Bookmarks Bar?" popover).
+    @MainActor
+    static func bookmarkToolbar(dependencies: PromoDependencies) -> Promo {
+        InternalPromo(
+            id: bookmarkToolbarPromoID,
+            triggers: [.bookmarkAdded, .bookmarksImported],
+            initiated: .user,
+            promoType: PromoType(.semiModal),
+            context: .global,
+            coexistingPromoIDs: [PromoServiceFactory.nextSteps.id],
+            delegate: BookmarkToolbarPromoDelegate(
+                featureFlagger: dependencies.featureFlagger,
+                windowControllersManager: dependencies.windowControllersManager
+            )
+        )
     }
 }
 ```
 
-Reading it back against Step 2: `.featureTip` because it *is* a short tip explaining a feature (medium severity, so it takes part in the global rules); `.webPage` because it renders over page content; `.app` because the app picks the moment; `customTimeoutResult: .ignored()` because it's one-shot, overriding `.featureTip`'s recurring `.ignored(cooldown: .day)` default. Each value comes from its own question — none of them was chosen to dodge a conflict.
+Reading it back against Step 2: `.user` because it follows the user adding or importing a bookmark; `.semiModal` because it's a popover (medium severity, no timeout — it stays until answered); `.global` because it's anchored to browser chrome; `coexistingPromoIDs` because product signed off on it appearing alongside the Next Steps cards, and `nextSteps` lists `bookmarkToolbarPromoID` back — without that reverse entry the listing would be inert. Each value comes from its own question — none of them was chosen to dodge a conflict.
 
 **Don't reach for a low-severity `DefaultPromoType` to dodge a collision.** Severity describes the
 interruption the UI actually causes; picking `.low` for a popover misreports it, and the global rules
@@ -254,17 +268,17 @@ Either way, confirm the delegate you're passing actually conforms to the protoco
 
 Add your promo-building function to a new `PromoServiceFactory+YourPromo.swift`, add any new delegate dependencies to `PromoDependencies`, and add the promo to the array in `PromoServiceFactory.makeAllPromos(dependencies:)` — **array order is priority order** (earlier = higher priority, evaluated first on a matching trigger).
 
-**The position must be the user's explicit decision (Step 2, item 7) before you write the line.** `evaluateTriggers` walks the array in order and the first promo to claim visibility makes every later medium+ promo in a conflicting context fail `checkRules`. So appending at the end is not a neutral default — it means "loses to all ten existing promos", and a medium+ `.global` promo at the back of the queue is the most easily suppressed thing in the app. That's rarely what a migrated, previously-always-shown notification wants.
+**The position must be the user's explicit decision (Step 2, item 7) before you write the line.** `evaluateTriggers` walks the array in order and the first promo to claim visibility makes every later medium+ promo in a conflicting context fail `checkRules`. So appending at the end is not a neutral default — it means "loses to every existing promo", and a medium+ `.global` promo at the back of the queue is the most easily suppressed thing in the app. That's rarely what a migrated, previously-always-shown notification wants.
 
-Read the current order out of the file rather than trusting a list here:
+Read the current order out of the file rather than trusting a list here — the whole function, not just the array literal, because promos can be inserted after it (`browserUpdated` is `insert`ed at index 2 when the update bridge exists):
 
 ```bash
-sed -n '/var promos: \[Promo\] = \[/,/^        \]/p' macOS/DuckDuckGo/Promotions/PromoServiceFactory.swift
+sed -n '/static func makeAllPromos/,/^    }/p' macOS/DuckDuckGo/Promotions/PromoServiceFactory.swift
 ```
 
 Present that list to the user with a proposed insertion point and one line of reasoning (interruption level and urgency relative to its immediate neighbours), and wait for their answer. Record the reasoning in the PR description.
 
-**Keep `makeAllPromos` a flat, readable priority list.** If a dependency may be absent, still register the promo and return `false` from `isEligible` — don't make the factory function return `Promo?` and conditionally `append`, which hides the promo from the priority list *and* from the id-uniqueness test (see [reference.md](reference.md)).
+**Keep `makeAllPromos` a flat, readable priority list.** If a dependency may be absent, still register the promo and return `false` from `isEligible` — don't make the factory function return `Promo?` and conditionally `append`, which hides the promo from the priority list *and* from the id-uniqueness test (see [reference.md](reference.md)). `browserUpdated` does exactly this; it's an existing exception, not a pattern to copy.
 
 ## Migrating existing UI onto the queue
 
@@ -278,14 +292,14 @@ If the promo already exists as shipped UI presented by its own code (an update n
 |---|---|---|
 | Frequency cap (e.g. "once per 7 days") | `PromoResult` cooldown on each resolution path | The cap is *not* preserved by default. And a medium+ promo is additionally floored by the shared global cooldown — see `checkRules` step 5 in [reference.md](reference.md) |
 | "Should show?" gating | `isEligible` / `refreshEligibility()` | Must re-derive from current state, not from having observed an event |
-| Auto-dismiss timer | `PromoType.timeoutInterval` | Delete the old timer, don't leave both. Compare the *durations* — base-type defaults are often shorter than the legacy value. Also note `PopoverMessageViewController` pauses its own timer while the pointer is over it; `PromoService`'s timeout does not, so hover-to-keep-open is lost in the move |
+| Auto-dismiss timer | `PromoType.timeoutInterval` | Delete the old timer, don't leave both — pass `autoDismissDuration: nil` to `PopoverMessageViewController`. Compare the *durations* — base-type defaults are often shorter than the legacy value. `PromoService`'s timeout doesn't pause on hover the way the popover's own timer did; to keep hover-to-keep-open, have `hide()` skip dismissing while the pointer is over the popover (`UpdateAvailablePromoDelegate.dismissPopoverUnlessHovering()`). Know the cost: the timeout result is still recorded at the deadline, and the popover then stays up unmanaged, so a later CTA tap records nothing — acceptable when every path resolves the same way, a Flag-these-back item when the CTA path differs |
 | *(nothing — the queue adds this)* | `evaluateTriggers` hard-returns unless onboarding is complete | **A gate your legacy UI probably didn't have.** It's a bare `return`, so triggers arriving during onboarding are discarded with no retry. Note the asymmetry: `restoreVisiblePromos` has no onboarding check at all |
 | A `UserDefaults` "already shown" flag | read-only check in `show()` returning `.retired` (item 5) | Promo history starts empty — skip this and every user who saw the legacy UI sees it again. Migrate the read off `UserDefaultsWrapper`; never write the flag again |
-| *(nothing — you are adding this)* | a per-promo `FeatureFlag` kill switch gating `isEligible` (item 3) | Without it the only way to disable the promo is `.promoQueue`, which disables all of them |
+| *(nothing — you are adding this)* | a per-promo `FeatureFlag` kill switch gating `isEligible` (item 3) | The queue itself is always on and has no flag, so without this the only way to disable a misbehaving promo is a new release |
 | Presentation call site | delegate's `show()` | Delete it, don't flag it off (item 4) |
 | Pixels | delegate | Decide which move and which stay; note any that now fire at a different moment |
 
-**3. Give the promo its own kill-switch feature flag.** `.promoQueue` is all-or-nothing — turning it off to disable one migrated promo takes every other promo down with it. A promo that replaces shipping UI needs to be switchable off on its own, so add one flag per migrated promo:
+**3. Give the promo its own kill-switch feature flag.** The Promo Queue is always on — there is no queue-wide flag to fall back on. A promo that replaces shipping UI needs to be switchable off remotely, so add one flag per migrated promo (every migrated promo has one — `grep -n 'case promoQueue' macOS/LocalPackages/FeatureFlags-macOS/Sources/FeatureFlags/FeatureFlag.swift`):
 
 | Edit | File |
 |---|---|
@@ -313,16 +327,13 @@ var isEligiblePublisher: AnyPublisher<Bool, Never> {
 
 If the delegate already derives eligibility from feature state through a `CurrentValueSubject` + `refreshEligibility()` (as `SyncFaviconsPromoDelegate` does), fold the flag in as the first `guard` of that computation rather than adding a second publisher.
 
-**4. Delete the legacy presentation path in the same change.** A migration is a *full* migration: don't keep the old call site behind `!featureFlagger.isFeatureOn(.promoQueue)`, and don't leave both paths alive "until the rollout finishes". The per-promo kill switch from item 3 is the fallback; a second presentation path is not. Two live paths means two frequency caps, two sets of pixels, and states where both can present.
+For an **external** promo, gate `isVisible` instead (`DuckPlayerOverlayObserver.computeVisibility()`). Say plainly what that switch does: the external system keeps presenting its UI on its own schedule, and the flag only turns off the queue's *coordination* — other promos stop yielding to it and it stops feeding the global cooldown.
+
+**4. Delete the legacy presentation path in the same change.** A migration is a *full* migration. The kill switch off means "the promo doesn't show", not "the old code path shows instead" — don't gate the legacy call site on the flag being off, and don't leave both paths alive "until the rollout finishes". Two live paths means two frequency caps, two sets of pixels, and states where both can present. If you think a promo needs a legacy fallback, that's a "Flag these back" question, not a call you make mid-edit.
 
 Concretely: remove the observer or `showXIfNeeded()` that used to present it, remove the gating the old call site applied (its "already shown" check moves to item 5, its eligibility to `isEligible`), and post the notification the old code listened for as a `PromoTrigger` instead. The Bookmark Toolbar migration deleted `MainViewController.registerForBookmarkBarPromptNotifications()` and `showBookmarkPromptIfNeeded()` outright.
 
-**If the spec explicitly asks for a `.promoQueue`-off fallback, build one.** The predicate is the spec's own written words asking for the promo to keep working with the queue off — not your read of how critical the promo is, and not "the old code was there anyway". Expect this for a small number of critical promos and for nothing else. **A spec that is silent means delete.** If you think a promo warrants a fallback and the spec doesn't say so, that's a "Flag these back" question for the user, not a call you make mid-edit.
-
-When the spec does ask for one:
-- Quote the line that asked for it in the PR description, and gate the legacy call site on `!featureFlagger.isFeatureOn(.promoQueue)`.
-- Make the two paths mutually exclusive *by construction* — one `.promoQueue` check deciding which path gets wired, not two independent checks that can both pass. Then walk the states where they could overlap: the flag flipping at runtime, and restore-after-restart.
-- Say which path owns the legacy "already shown" flag. The legacy path still writes it; the promo path only reads it (item 5). Two writers is how you end up retiring the promo for someone who never saw it.
+(An *external* migration is the exception by definition: the owning system keeps presenting, and what you add is the observer.)
 
 **5. Retire the promo for users who already saw the legacy UI.** The old path almost always recorded "shown" in `UserDefaults` (`bookmarks.bar.prompt.shown`, `sync.did-present-favicons-fetcher-onboarding`). Promo history starts empty, so unless the promo reads that flag, **every user who already saw the legacy UI is shown it a second time.**
 
@@ -370,7 +381,7 @@ Expect at least 4 (one file ref, one group entry, two build files). Then check t
 xcodebuild -project macOS/DuckDuckGo-macOS.xcodeproj -scheme "macOS Browser" build 2>&1 | tail -20
 ```
 
-**Write behavior tests, not just configuration tests.** Asserting the factory's field values is worth doing (it pins severity, timeout, and context against silent drift), but it verifies nothing about runtime. Model a delegate test on `AutoplayDiscoverabilityPromoDelegateTests.swift` and cover:
+**Write behavior tests, not just configuration tests.** Asserting the factory's field values is worth doing (it pins severity, timeout, and context against silent drift), but it verifies nothing about runtime. Model a delegate test on the closest existing one in `macOS/UnitTests/Promotions/` (`BookmarkToolbarPromoDelegateTests.swift` for a migration) and cover:
 - the `PromoResult` produced by **each** resolution path — this is where the one-shot/recurring bug lives, and a test on the CTA path catches it
 - eligibility flipping false while showing (the retraction path)
 - `hide()` called before any resolution, and `hide()` called twice
@@ -379,7 +390,7 @@ xcodebuild -project macOS/DuckDuckGo-macOS.xcodeproj -scheme "macOS Browser" bui
 
 Also update `PromoRegistryTests` and `PromoServiceFactoryTests.makeDependencies()` for any new `PromoDependencies` field, and make sure your promo is actually *present* in the service the registry test builds (see [reference.md](reference.md)).
 
-**Then see it on screen.** The debug menu (`PromoDebugMenu`) is the manual path and answers "why isn't my promo showing": per-promo **Force Show**, **Undismiss**, **Undismiss + Clear History**; **Fire Test Trigger** (debug/review builds); **Advance Simulated Date** by hour/day/week/month to exercise cooldowns; **Reset All Promo State**. Note Force Show applies no timeout — it doesn't create a `TimedFlag` — so a promo relying on `PromoType.timeoutInterval` won't auto-dismiss under Force Show. And confirm **both** `.promoQueue` and the promo's own `promoQueue<Name>Promo` flag are on, or nothing will show at all.
+**Then see it on screen.** The debug menu (`PromoDebugMenu`) is the manual path and answers "why isn't my promo showing": per-promo **Force Show**, **Undismiss**, **Undismiss + Clear History**; **Fire Test Trigger** (debug/review builds); **Advance Simulated Date** by hour/day/week/month to exercise cooldowns (and expire active timeouts); **Reset All Promo State**. Force Show runs the real session path — timeout, eligibility retraction, and `hide()` all behave as in production — but writes no history and passes `force: true`, so it bypasses your `.retired` check and any pixels you skip under `force`. It's a no-op for external promos. If nothing shows at all, check the promo's own `promoQueue<Name>Promo` flag first.
 
 ## Step 7 — Self-review before you finish (implementation only)
 
@@ -449,7 +460,7 @@ Same model, reviewer direction — check the diff against each, and cite the spe
 14. **Are only the promo definition files under `Promotions/`?** The delegate and UI belong with the feature. A new `YourPromoDelegate.swift` under `macOS/DuckDuckGo/Promotions/` is a finding on its own.
 15. **Do the comments follow `.cursor/rules/code-style.mdc`** — WHY not WHAT, `//`/`///` not `/* */`? A doc comment that restates the signature, or that describes frequency/severity the fields already declare, is a finding: it adds nothing now and goes stale later.
 16. **Does any comment or PR sentence justify a field by the rule it avoids** ("chosen because X would suppress it", "otherwise it conflicts with Y")? Treat every one as either an unflagged rule break or a wrong value elsewhere — see the smell test. Don't accept it as documented rationale just because it's documented.
-17. **If this is a migration:** is the legacy presentation path actually *gone* — or, if it's kept behind a `.promoQueue`-off branch, does the PR quote the spec line that asked for that fallback, and are the two paths mutually exclusive by construction; does the promo have its own `promoQueue<Name>Promo` kill switch, gating `isEligible` rather than the factory; does `show()` read the legacy "already shown" flag and return `.retired` (with `force` bypassing it); is that flag read through `KeyedStorage` with the store injectable, not through the deprecated `UserDefaultsWrapper`, and is its raw string unchanged; is the old frequency cap preserved or explicitly signed off as changed; is the old auto-dismiss timer removed rather than doubled; is there dead presenter code or a now-unread `lastShown`-style property left behind; do any doc comments still describe the old behavior?
+17. **If this is a migration:** is the legacy presentation path actually *gone* (not kept behind the kill switch being off); does the promo have its own `promoQueue<Name>Promo` kill switch, gating `isEligible` rather than the factory; does `show()` read the legacy "already shown" flag and return `.retired` (with `force` bypassing it); is that flag read through `KeyedStorage` with the store injectable, not through the deprecated `UserDefaultsWrapper`, and is its raw string unchanged; is the old frequency cap preserved or explicitly signed off as changed; is the old auto-dismiss timer removed rather than doubled; is there dead presenter code or a now-unread `lastShown`-style property left behind; do any doc comments still describe the old behavior?
 
 ## Common mistakes
 
@@ -465,8 +476,8 @@ Same model, reviewer direction — check the diff against each, and cite the spe
 | Resolving a recurring promo's CTA with `.actioned` | Retires it permanently — history is keyed by `id` with no version scoping, so it never shows again for any future release. The user who engaged is the one you silence. |
 | Setting a short `customTimeoutResult` cooldown on a medium+ promo | Silently floored by the shared global cooldown (1 day for `.app`) unless `setsGlobalCooldown: false` too. |
 | Marking the delegate class `@MainActor` | Compiles under current settings, but `PromoService` reads `isEligible`/`refreshEligibility()` on a background queue. Hard error under Swift 6. |
-| Keeping the legacy presentation path alive without the spec asking for it | Two frequency caps, two sets of pixels, and states where both present. Migration is a full migration by default — the per-promo kill switch is the fallback, not the old code path. A `.promoQueue`-off fallback is built only when the spec asks for one in writing. |
-| Migrating a promo without a flag of its own | The only way left to disable it is `.promoQueue`, which takes every other promo down with it. |
+| Keeping the legacy presentation path alive (e.g. behind the kill switch being off) | Two frequency caps, two sets of pixels, and states where both present. Migration is a full migration — the kill switch turns the promo off, it doesn't turn the old path on. |
+| Migrating a promo without a flag of its own | The queue has no flag, so the only way left to disable it is a new release. |
 | Gating the promo's feature flag in the factory instead of `isEligible` | A conditionally-omitted promo vanishes from the priority list and from the id-uniqueness test. |
 | Not reading the legacy "already shown" flag when migrating | Promo history starts empty, so everyone who already saw the legacy UI is shown it a second time. |
 | Reading a legacy flag through `@UserDefaultsWrapper` | Deprecated API, and it hardcodes `UserDefaults.standard`, so tests have to mutate real defaults. Use `KeyedStorage` over a `StoringKeys` struct with the store injected. |
@@ -474,7 +485,8 @@ Same model, reviewer direction — check the diff against each, and cite the spe
 | Doc comments restating what the promo's fields already declare | Duplicates `PromoResult`/`PromoType` and goes stale on the first change. Comments explain WHY (`.cursor/rules/code-style.mdc`). |
 | Forgetting the pbxproj entries for new files | Cannot-find-type errors in files you never touched. Needs both app targets' Sources phases. |
 | Relying on a single one-shot trigger | If `checkRules` fails at that instant the promo is skipped with no retry and no log. Pair with a recurring trigger. |
-| Assuming `checkRules` gates all shows | `restoreVisiblePromos` bypasses it entirely — including permanent dismissal — for anything on screen when the app was killed. |
+| Assuming `checkRules` gates all shows | `restoreVisiblePromos` bypasses it entirely — including permanent dismissal — for anything on screen when the app was killed whose timeout hadn't yet elapsed. |
+| Reading the priority order from the array literal alone | Promos can be `insert`ed afterwards (`browserUpdated` at index 2). Read all of `makeAllPromos`. |
 | Omitting `customTimeoutInterval` to mean "no timeout" | It's a plain `??` over the base type's value — `nil` inherits the default. A `.featureTip` with no override auto-dismisses after 5s. |
 | Adding a `PromoContext` case for chrome UI (tab bar, address bar, toolbar) | That's `.global`. The new case conflicts with nothing except itself and `.global`, so the promo silently stops yielding to promos it should yield to. |
 | Picking `.user` for the 1-hour cooldown on an app-initiated promo | Misreports what caused the promo, and the shorter cooldown is then load-bearing for behavior product never approved. |

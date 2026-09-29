@@ -90,6 +90,16 @@ extension Tab: WKUIDelegate {
         self.popupHandling?.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
     }
 
+    @objc(_webView:queryPermission:forOrigin:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 queryPermission name: String,
+                 forOrigin origin: WKSecurityOrigin,
+                 completionHandler: @escaping (WKPermissionDecision) -> Void) {
+        // Modern WebKit uses this callback before system validation instead of checkUserMediaPermissionForURL.
+        permissions.queryMediaPermission(name)
+        completionHandler(.prompt)
+    }
+
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
     func webView(_ webView: WKWebView,
                  checkUserMediaPermissionFor url: NSURL?,

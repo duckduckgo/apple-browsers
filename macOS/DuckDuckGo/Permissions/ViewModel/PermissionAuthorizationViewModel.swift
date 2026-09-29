@@ -51,6 +51,11 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     /// The allow choice held back until macOS grants its own permission.
     /// Submitting it earlier would let macOS show its prompt before the user asks for it.
     private var pendingDecision: PermissionPromptDecision?
+    private var currentSystemPermission: PermissionType?
+
+    private var systemPermissions: [PermissionType] {
+        permissions.filter(\.requiresSystemPermission)
+    }
     /// The site is already set to Always allow and only the macOS permission is missing,
     /// so granting it isn't a new decision to report.
     private var isResumingStoredDecision = false
@@ -133,19 +138,13 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     // MARK: - Decisions
 
     private func allow(_ decision: PermissionPromptDecision) {
-        guard permissionType.requiresSystemPermission else {
-            submit(decision)
-            return
-        }
+        pendingDecision = decision
+        observeAppDidBecomeActive()
+        updateSystemPermissionStep(using: cachedSystemPermissionStates)
+    }
 
-        switch systemPermissionManager.cachedAuthorizationState(for: permissionType.asPermissionType) {
-        case .authorized:
-            submit(decision)
-        case .notDetermined:
-            showSystemPermissionStep(.request, holding: decision)
-        case .denied, .restricted, .systemDisabled:
-            showSystemPermissionStep(.openSettings, holding: decision)
-        }
+    private var cachedSystemPermissionStates: [PermissionType: SystemPermissionAuthorizationState] {
+        Dictionary(uniqueKeysWithValues: systemPermissions.map { ($0, systemPermissionManager.cachedAuthorizationState(for: $0)) })
     }
 
     private func submit(_ decision: PermissionPromptDecision) {
@@ -186,10 +185,26 @@ final class PermissionAuthorizationViewModel: ObservableObject {
 
     // MARK: - System permission step
 
-    private func showSystemPermissionStep(_ phase: PermissionAuthorizationViewState.SystemPermissionStep.Phase, holding decision: PermissionPromptDecision) {
-        pendingDecision = decision
-        showSystemPermissionPhase(phase)
-        observeAppDidBecomeActive()
+    private func updateSystemPermissionStep(using states: [PermissionType: SystemPermissionAuthorizationState], requestCompleted: Bool = false) {
+        guard pendingDecision != nil else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission update because there is no pending decision")
+            return
+        }
+        // Resolve blocked permissions before asking for another device, and never grant a combined request partially.
+        let blockedPermission = systemPermissions.first {
+            states[$0] == .denied || states[$0] == .restricted || states[$0] == .systemDisabled
+        }
+        guard let permission = blockedPermission ?? systemPermissions.first(where: { states[$0] != .authorized }) else {
+            submitPendingDecision()
+            return
+        }
+        let wasWaiting = currentSystemPermission == permission && viewState.systemPermissionStep?.phase == .waiting
+        currentSystemPermission = permission
+        if blockedPermission != nil {
+            showSystemPermissionPhase(.openSettings)
+        } else if !wasWaiting || requestCompleted {
+            showSystemPermissionPhase(.request)
+        }
     }
 
     private func showSystemPermissionPhase(_ phase: PermissionAuthorizationViewState.SystemPermissionStep.Phase) {
@@ -210,7 +225,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func requestSystemPermission() {
-        guard viewState.systemPermissionStep?.phase == .request else {
+        guard viewState.systemPermissionStep?.phase == .request, let currentSystemPermission else {
             Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission request outside the request phase")
             return
         }
@@ -218,9 +233,14 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         systemPermissionRequestCount += 1
         let requestCount = systemPermissionRequestCount
 
-        systemAuthorizationCancellable = systemPermissionManager.requestAuthorization(for: permissionType.asPermissionType) { [weak self] state in
+        systemAuthorizationCancellable = systemPermissionManager.requestAuthorization(for: currentSystemPermission) { [weak self] state in
             Task { @MainActor in
-                self?.systemPermissionRequestDidComplete(with: state)
+                guard let self, self.systemPermissionRequestCount == requestCount,
+                      self.currentSystemPermission == currentSystemPermission else {
+                    Logger.general.debug("PermissionAuthorizationViewModel: Ignoring completion from an earlier system permission request")
+                    return
+                }
+                self.systemPermissionRequestDidComplete(with: state)
             }
         }
         scheduleAfter(Constants.systemPermissionRequestTimeout) { [weak self] in
@@ -233,23 +253,17 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func systemPermissionRequestDidComplete(with state: SystemPermissionAuthorizationState) {
-        guard pendingDecision != nil else {
+        guard pendingDecision != nil, let currentSystemPermission else {
             Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission completion because there is no pending decision")
             return
         }
-
-        switch state {
-        case .authorized:
-            submitPendingDecision()
-        case .notDetermined:
-            guard viewState.systemPermissionStep?.phase == .waiting else {
-                Logger.general.debug("PermissionAuthorizationViewModel: Ignoring undetermined completion outside the waiting phase")
-                return
-            }
-            showSystemPermissionPhase(.request)
-        case .denied, .restricted, .systemDisabled:
-            showSystemPermissionPhase(.openSettings)
+        guard state != .notDetermined || viewState.systemPermissionStep?.phase == .waiting else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring undetermined completion outside the waiting phase")
+            return
         }
+        var states = cachedSystemPermissionStates
+        states[currentSystemPermission] = state
+        updateSystemPermissionStep(using: states, requestCompleted: true)
     }
 
     private func systemPermissionRequestDidTimeOut() {
@@ -261,11 +275,12 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func openSystemSettings() {
-        guard let url = permissionType.systemSettingsURL else {
+        guard let currentSystemPermission,
+              let url = PermissionAuthorizationType(from: [currentSystemPermission]).systemSettingsURL else {
             Logger.general.debug("PermissionAuthorizationViewModel: Cannot open System Settings because the permission has no settings URL")
             return
         }
-        pixelFiring?.fire(PermissionPixel.systemPreferencesOpened(permissionType: permissionType.asPermissionType))
+        pixelFiring?.fire(PermissionPixel.systemPreferencesOpened(permissionType: currentSystemPermission))
         openSystemSettingsURL(url)
     }
 
@@ -275,36 +290,21 @@ final class PermissionAuthorizationViewModel: ObservableObject {
 
         appDidBecomeActiveCancellable = appDidBecomeActivePublisher.sink { [weak self] in
             guard let self else { return }
-            Task { @MainActor [systemPermissionManager, permissionType] in
-                let state = await systemPermissionManager.authorizationState(for: permissionType.asPermissionType)
-                self.systemPermissionStateDidRefresh(state)
+            Task { @MainActor [systemPermissionManager, systemPermissions] in
+                let requestCount = self.systemPermissionRequestCount
+                var states: [PermissionType: SystemPermissionAuthorizationState] = [:]
+                for permission in systemPermissions {
+                    states[permission] = await systemPermissionManager.authorizationState(for: permission)
+                }
+                guard self.systemPermissionRequestCount == requestCount else { return }
+                self.updateSystemPermissionStep(using: states)
             }
-        }
-    }
-
-    private func systemPermissionStateDidRefresh(_ state: SystemPermissionAuthorizationState) {
-        guard pendingDecision != nil else {
-            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission refresh because there is no pending decision")
-            return
-        }
-
-        switch state {
-        case .authorized:
-            submitPendingDecision()
-        case .notDetermined:
-            // Location Services turned back on: macOS can ask again.
-            guard viewState.systemPermissionStep?.phase == .openSettings else {
-                Logger.general.debug("PermissionAuthorizationViewModel: Ignoring undetermined refresh outside the settings phase")
-                return
-            }
-            showSystemPermissionPhase(.request)
-        case .denied, .restricted, .systemDisabled:
-            showSystemPermissionPhase(.openSettings)
         }
     }
 
     private func stopObservingSystemPermission() {
         pendingDecision = nil
+        currentSystemPermission = nil
         systemAuthorizationCancellable = nil
         appDidBecomeActiveCancellable = nil
     }
@@ -312,23 +312,31 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     // MARK: - Copy
 
     private var systemPermissionRequiredMessage: String {
-        switch permissionType {
+        switch currentSystemPermission {
+        case .camera:
+            return UserText.websitePermissionsPromptSystemCameraRequired
+        case .microphone:
+            return UserText.websitePermissionsPromptSystemMicrophoneRequired
         case .geolocation:
             return UserText.websitePermissionsPromptSystemLocationRequired
         case .notification:
             return UserText.websitePermissionsPromptSystemNotificationsRequired
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .none, .popups, .externalScheme, .autoplayPolicy:
             return ""
         }
     }
 
     private var systemPermissionOffMessage: String {
-        switch permissionType {
+        switch currentSystemPermission {
+        case .camera:
+            return UserText.websitePermissionsPromptSystemCameraOff
+        case .microphone:
+            return UserText.websitePermissionsPromptSystemMicrophoneOff
         case .geolocation:
             return UserText.websitePermissionsPromptSystemLocationOff
         case .notification:
             return UserText.websitePermissionsPromptSystemNotificationsOff
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .none, .popups, .externalScheme, .autoplayPolicy:
             return ""
         }
     }

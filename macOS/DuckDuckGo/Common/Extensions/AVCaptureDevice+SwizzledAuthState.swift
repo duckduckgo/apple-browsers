@@ -21,6 +21,7 @@ import AVFoundation
 
 extension AVCaptureDevice {
     private static var authorizationStatusForMediaType: ((AVMediaType, inout AVAuthorizationStatus) -> Void)?
+    private static var authorizationStatusSwizzleID: UUID?
     private static var isSwizzled: Bool { authorizationStatusForMediaType != nil }
 
     private static let originalAuthorizationStatusForMediaType = {
@@ -30,23 +31,28 @@ extension AVCaptureDevice {
         class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))
     }()
 
-    static func swizzleAuthorizationStatusForMediaType(with replacement: @escaping ((AVMediaType, inout AVAuthorizationStatus) -> Void)) {
+    @discardableResult
+    static func swizzleAuthorizationStatusForMediaType(with replacement: @escaping ((AVMediaType, inout AVAuthorizationStatus) -> Void)) -> UUID? {
         dispatchPrecondition(condition: .onQueue(.main))
-        guard !self.isSwizzled else { return }
+        guard !self.isSwizzled else { return nil }
         guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
               let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType
         else {
             assertionFailure("Methods not available")
-            return
+            return nil
         }
 
         method_exchangeImplementations(originalAuthorizationStatusForMediaType, swizzledAuthorizationStatusForMediaType)
         self.authorizationStatusForMediaType = replacement
+        let identifier = UUID()
+        authorizationStatusSwizzleID = identifier
+        return identifier
     }
 
-    static func restoreAuthorizationStatusForMediaType() {
+    static func restoreAuthorizationStatusForMediaType(ifMatching identifier: UUID? = nil) {
         dispatchPrecondition(condition: .onQueue(.main))
         guard self.isSwizzled else { return }
+        guard identifier == nil || identifier == authorizationStatusSwizzleID else { return }
         guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
               let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType
         else {
@@ -56,6 +62,12 @@ extension AVCaptureDevice {
 
         method_exchangeImplementations(originalAuthorizationStatusForMediaType, swizzledAuthorizationStatusForMediaType)
         self.authorizationStatusForMediaType = nil
+        authorizationStatusSwizzleID = nil
+    }
+
+    /// App permission checks must read macOS's actual status while WebKit's preflight is intercepted.
+    static func systemAuthorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
+        isSwizzled ? swizzled_authorizationStatus(for: mediaType) : authorizationStatus(for: mediaType)
     }
 
     @objc dynamic private static func swizzled_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {

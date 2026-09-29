@@ -413,11 +413,21 @@ final class PermissionModel {
 
     // Called before requestMediaCapturePermissionFor: to validate System Permissions
     func checkUserMediaPermission(for url: URL?, mainFrameURL: URL?, decisionHandler: @escaping (String, Bool) -> Void) {
+        prepareForMediaPermissionRequest()
+        decisionHandler(/*salt - seems not used anywhere:*/ "", /*includeSensitiveMediaDeviceDetails:*/ false)
+    }
+
+    func queryMediaPermission(_ name: String) {
+        guard featureFlagger.isFeatureOn(.websitePermissionsPrompts), name == "camera" || name == "microphone" else { return }
+        prepareForMediaPermissionRequest()
+    }
+
+    private func prepareForMediaPermissionRequest() {
         // If media capture is denied in the System Preferences, reflect it in the current permissions
         // AVCaptureDevice.authorizationStatus(for:mediaType) is swizzled to determine requested media type
         // otherwise WebView won't call any other delegate methods if System Permission is denied
         var checkedPermissions = Set<PermissionType>()
-        AVCaptureDevice.swizzleAuthorizationStatusForMediaType { [weak self] mediaType, authorizationStatus in
+        let swizzleID = AVCaptureDevice.swizzleAuthorizationStatusForMediaType { [weak self] mediaType, authorizationStatus in
             let permission: PermissionType
             // media type for Camera/Microphone can be only determined separately
             switch mediaType {
@@ -426,6 +436,16 @@ final class PermissionModel {
             case .video:
                 permission = .camera
             default: return
+            }
+            if self?.featureFlagger.isFeatureOn(.websitePermissionsPrompts) == true {
+                // Let WebKit reach our website prompt before requesting or rejecting system access.
+                // The prompt checks the real macOS status and holds its decision until access is granted.
+                authorizationStatus = .authorized
+                checkedPermissions.insert(permission)
+                if checkedPermissions == [.camera, .microphone] {
+                    AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+                }
+                return
             }
             switch authorizationStatus {
             case .denied, .restricted:
@@ -440,10 +460,10 @@ final class PermissionModel {
             @unknown default: break
             }
         }
-        decisionHandler(/*salt - seems not used anywhere:*/ "", /*includeSensitiveMediaDeviceDetails:*/ false)
-        // make sure to swizzle it back after reasonable interval in case it wasn't called
+        // A permission query may only enumerate devices. Restore the hook without ending a newer request's interception.
+        guard let swizzleID else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+            AVCaptureDevice.restoreAuthorizationStatusForMediaType(ifMatching: swizzleID)
         }
     }
 
@@ -509,6 +529,10 @@ final class PermissionModel {
     /// Checks if system-level permission is disabled for the given permission type (uses cached state for sync access)
     private func isSystemPermissionDisabled(for permissionType: PermissionType) -> Bool {
         guard permissionType.requiresSystemPermission else { return false }
+        if permissionType == .camera || permissionType == .microphone,
+           !featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            return false
+        }
 
         let authState = systemPermissionManager.cachedAuthorizationState(for: permissionType)
         return authState == .denied || authState == .restricted || authState == .systemDisabled
@@ -518,6 +542,9 @@ final class PermissionModel {
     /// The decisionHandler will be called synchronously if there's a permanent (stored) permission granted or denied
     /// If no permanent decision is stored a new AuthorizationQuery will be initialized and published via $authorizationQuery
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (Bool) -> Void) {
+        if permissions.contains(.camera) || permissions.contains(.microphone) {
+            AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+        }
         guard !permissions.isEmpty else {
             assertionFailure("Unexpected permissions/domain")
             decisionHandler(false)
@@ -535,9 +562,8 @@ final class PermissionModel {
         case .none:
             // Check if this is "app=allow but system=disabled" case
             let isSystemDisabled: Bool = {
-                guard let permission = permissions.first,
-                      isSystemPermissionDisabled(for: permission) else { return false }
-                return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
+                permissions.contains(where: isSystemPermissionDisabled)
+                    && permissions.allSatisfy { self.permissionManager.permission(forDomain: domain, permissionType: $0) == .allow }
             }()
 
             if isSystemDisabled, featureFlagger.isFeatureOn(.websitePermissionsPrompts) {

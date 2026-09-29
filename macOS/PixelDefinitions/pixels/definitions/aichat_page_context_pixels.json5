@@ -37,7 +37,17 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "context_type",
+                "description": "Which carrier the page was handed over in: pdf for a document tab, markdown for a regular web page. The daily variant dedupes by pixel name, so read the pdf/markdown split from the count variant.",
+                "type": "string",
+                "enum": ["pdf", "markdown"]
+            }
+        ]
     },
     "m_mac_aichat_page_context_extraction_failed": {
         "description": "Fired when Duck.ai page-context extraction was attempted but produced no usable content",
@@ -74,6 +84,12 @@
                 "description": "Bucketed request-to-result time. Present only when a result arrived.",
                 "type": "string",
                 "enum": ["under_1s", "1_to_5s", "over_5s"]
+            },
+            {
+                "key": "context_type",
+                "description": "Which carrier the page was handed over in: pdf for a document tab, markdown for a regular web page. The daily variant dedupes by pixel name, so read the pdf/markdown split from the count variant.",
+                "type": "string",
+                "enum": ["pdf", "markdown"]
             }
         ]
     },

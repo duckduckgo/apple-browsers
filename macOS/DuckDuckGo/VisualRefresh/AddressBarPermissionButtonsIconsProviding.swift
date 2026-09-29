@@ -27,14 +27,6 @@ protocol AddressBarPermissionButtonsIconsProviding {
     var wifiIcon: NSImage { get }
 }
 
-final class LegacyAddressBarPermissionButtonIconsProvider: AddressBarPermissionButtonsIconsProviding {
-    var locationIcon: NSImage { .geolocationIcon }
-    var locationSolid: NSImage { .geolocationActive }
-    var popupsIcon: NSImage { .popupBlocked }
-    var externalSchemeIcon: NSImage { .externalAppScheme }
-    var wifiIcon: NSImage { DesignSystemImages.Glyphs.Size12.wifi }
-}
-
 final class CurrentAddressBarPermissionButtonIconsProvider: AddressBarPermissionButtonsIconsProviding {
     var locationIcon: NSImage { DesignSystemImages.Glyphs.Size16.location }
     var locationSolid: NSImage { DesignSystemImages.Glyphs.Size16.locationSolid }

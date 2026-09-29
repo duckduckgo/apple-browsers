@@ -22,11 +22,167 @@ import AIChat
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
+import UserScript
 import WebKit
 @testable import Core
 @testable import DuckDuckGo
 
 final class AIChatContextualWebViewControllerTests: XCTestCase {
+
+    @MainActor
+    func testQueuedFirstPromptKeepsItsRequestUntilFrontendIsReady() async {
+        let sut = makeAttachmentSubmissionController()
+        let script = makeTestUserScript()
+        let collected = expectation(description: "Captured request collected")
+        var collectionCount = 0
+        script.attachedTabContextsProvider = { XCTFail("Queued prompt must not read a later draft"); return nil }
+        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                         tabAttachmentRequest: .init(contexts: {
+            collectionCount += 1
+            collected.fulfill()
+            return []
+        }, didConsume: {}))
+        sut.configureContentHandler(with: script)
+        sut.webView(WKWebView(), didFinish: nil)
+        XCTAssertEqual(collectionCount, 0)
+        sut.markFrontendAsReady()
+        await fulfillment(of: [collected], timeout: 1)
+        XCTAssertEqual(collectionCount, 1)
+        sut.cancelPendingTabAttachmentPrompt()
+    }
+
+    @MainActor
+    func testCancelledQueuedPromptCannotCollectAfterReadiness() async {
+        let sut = makeAttachmentSubmissionController()
+        var cancelled = false
+        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                         tabAttachmentRequest: .init(contexts: { XCTFail("Cancelled prompt must not collect"); return [] },
+                                                     didConsume: {}, cancel: { cancelled = true }))
+        sut.cancelPendingTabAttachmentPrompt()
+        XCTAssertTrue(cancelled)
+        let script = makeTestUserScript()
+        script.attachedTabContextsProvider = { XCTFail("Cancelled prompt must not read draft"); return nil }
+        sut.configureContentHandler(with: script)
+        sut.webView(WKWebView(), didFinish: nil)
+        sut.markFrontendAsReady()
+        await Task.yield()
+    }
+
+    @MainActor
+    func testQueuedRequestIsReleasedOnControllerTeardown() async {
+        var sut: AIChatContextualWebViewController? = makeAttachmentSubmissionController()
+        let released = expectation(description: "Queued request released")
+        sut?.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+                          tabAttachmentRequest: .init(contexts: { XCTFail("Discarded request must not collect"); return [] },
+                                                      didConsume: {}, cancel: { released.fulfill() }))
+        sut = nil
+        await fulfillment(of: [released], timeout: 1)
+    }
+
+    @MainActor
+    private func makeAttachmentSubmissionController(utiHost: AIChatContextualUTIHost? = nil) -> AIChatContextualWebViewController {
+        AIChatContextualWebViewController(aiChatSettings: MockAIChatSettingsProvider(aiChatURL: URL(string: "about:blank")!),
+                                          privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                          contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
+                                          featureDiscovery: MockFeatureDiscovery(), featureFlagger: MockFeatureFlagger(),
+                                          unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: utiHost != nil),
+                                          downloadHandler: StubDownloadHandler(), getPageContext: nil,
+                                          pixelHandler: StubContextualModePixelHandler(),
+                                          onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
+                                          utiHostInstaller: { _ in utiHost })
+    }
+
+    @MainActor
+    func testWhenTabContextIsPendingThenRichPromptDeliveryIsReportedOnlyAfterDispatch() async {
+        for queued in [false, true] {
+            await assertRichPromptDelivery(queued: queued, outcome: .dispatched)
+        }
+    }
+
+    @MainActor
+    func testWhenPendingTabContextSubmissionIsCancelledThenRichPromptDeliveryIsNotReported() async {
+        for queued in [false, true] {
+            await assertRichPromptDelivery(queued: queued, outcome: .cancelled)
+        }
+    }
+
+    @MainActor
+    func testWhenBridgeIsUnavailableThenRichPromptDeliveryIsNotReported() async {
+        for queued in [false, true] {
+            await assertRichPromptDelivery(queued: queued, outcome: .unavailableBridge)
+        }
+    }
+
+    private enum SubmissionOutcome {
+        case dispatched, cancelled, unavailableBridge
+    }
+
+    @MainActor
+    private func assertRichPromptDelivery(queued: Bool, outcome: SubmissionOutcome,
+                                          file: StaticString = #filePath, line: UInt = #line) async {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let host = AIChatContextualUTIHost(originatingURLPublisher: Empty<URL?, Never>().eraseToAnyPublisher(),
+                                           initialAttachedContext: nil, hasActiveChat: { true },
+                                           isAutoAttachEnabled: { false }, isFireTab: false,
+                                           duckAIWideEventInstrumentation: instrumentation)
+        let sut = makeAttachmentSubmissionController(utiHost: host)
+        sut.loadViewIfNeeded()
+        let script = makeTestUserScript()
+        let broker = UserScriptMessageBroker(context: "test", requiresRunInPageContentWorld: true)
+        script.with(broker: broker)
+        sut.configureContentHandler(with: script)
+        sut.webView(WKWebView(), didFinish: nil)
+        if !queued {
+            sut.markFrontendAsReady()
+        }
+
+        let collecting = expectation(description: "Collecting tab context")
+        let finished = expectation(description: "Pending submission finished")
+        if outcome == .cancelled {
+            finished.isInverted = true
+            instrumentation.onPromptDeliveryUpdated = { didSendBridgeMessage in
+                if didSendBridgeMessage == true { finished.fulfill() }
+            }
+        }
+        var continuation: CheckedContinuation<[AIChatPageContextData], Never>?
+        var consumed = false
+        let request = MultiTabAttachmentRequest(contexts: {
+            await withCheckedContinuation {
+                continuation = $0
+                collecting.fulfill()
+            }
+        }, didConsume: { consumed = true }, cancel: {
+            // Cancellation also releases the request before its suspended task finishes.
+            if outcome != .cancelled { finished.fulfill() }
+        })
+        sut.submitPrompt("prompt", images: nil, files: nil, modelId: nil, tools: nil,
+                         reasoningEffort: nil, tabAttachmentRequest: request)
+        if queued {
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, 1, file: file, line: line)
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.wasQueued, true, file: file, line: line)
+            XCTAssertNil(instrumentation.promptDeliveryUpdates.first?.didSendBridgeMessage, file: file, line: line)
+            sut.markFrontendAsReady()
+        }
+        await fulfillment(of: [collecting], timeout: 1)
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, queued ? 1 : 0, file: file, line: line)
+
+        switch outcome {
+        case .dispatched: break
+        case .cancelled: sut.cancelPendingTabAttachmentPrompt()
+        case .unavailableBridge: script.broker = nil
+        }
+        continuation?.resume(returning: [])
+        await fulfillment(of: [finished], timeout: outcome == .cancelled ? 0.1 : 1)
+
+        let dispatched = outcome == .dispatched
+        XCTAssertEqual(consumed, dispatched, file: file, line: line)
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, (queued ? 1 : 0) + (dispatched ? 1 : 0), file: file, line: line)
+        if dispatched {
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.last?.didSendBridgeMessage, true, file: file, line: line)
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.last?.wasQueued, queued ? nil : false, file: file, line: line)
+        }
+        withExtendedLifetime(broker) {}
+    }
 
     // MARK: - Tests
 

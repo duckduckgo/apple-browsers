@@ -23,6 +23,7 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
     case allowOnce
     case allowWhileUsingSite
     case neverAllow
+    case dismissed
 
     public var promptDecision: SitePermissionPromptDecision {
         switch self {
@@ -32,6 +33,8 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
             return .allowWhileUsingSite
         case .neverAllow:
             return .neverAllow
+        case .dismissed:
+            return .denyOnce
         }
     }
 
@@ -43,6 +46,8 @@ public enum SitePermissionDialogAction: Hashable, Sendable {
             return .allowAlways
         case .neverAllow:
             return .never
+        case .dismissed:
+            return .dismissed
         }
     }
 }
@@ -94,11 +99,13 @@ public struct SitePermissionDialogViewModel: Equatable, Sendable {
         }
 
         body = self.isDuckDuckGoSERP ? UserText.PermissionDialog.duckDuckGoSERPLocationBody : nil
-        actions = [
-            ActionItem(action: .allowOnce, title: UserText.PermissionDialog.allowOnce),
-            ActionItem(action: .allowWhileUsingSite, title: UserText.PermissionDialog.allowWhileUsingSite),
-            ActionItem(action: .neverAllow, title: UserText.PermissionDialog.neverAllow)
-        ]
+        var actions = [ActionItem(action: .allowOnce, title: UserText.PermissionDialog.allowOnce)]
+        if !prompt.isFireMode {
+            actions.append(ActionItem(action: .allowWhileUsingSite, title: UserText.PermissionDialog.allowWhileUsingSite))
+        }
+        actions.append(ActionItem(action: .neverAllow,
+                                  title: prompt.isFireMode ? UserText.PermissionDialog.deny : UserText.PermissionDialog.neverAllow))
+        self.actions = actions
     }
 
     func title(domain: String) -> String {

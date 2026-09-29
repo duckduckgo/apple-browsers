@@ -201,7 +201,9 @@ class TabSwitcherViewController: UIViewController {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
-        self.floatingUIManager = floatingUIManager ?? FloatingUIManager(featureFlagger: featureFlagger)
+        self.floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+        )
         self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager

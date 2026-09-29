@@ -112,7 +112,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
-         floatingUIManager: FloatingUIManaging = FloatingUIManager(),
+         floatingUIManager: FloatingUIManaging = FloatingUIManager(
+            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+         ),
          appWidthObserver: AppWidthObserver = .shared,
          notificationCenter: NotificationCenter = .default,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),

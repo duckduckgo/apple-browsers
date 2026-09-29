@@ -68,7 +68,9 @@ class BlankSnapshotViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.mobileCustomization = mobileCustomization
-        self.floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        self.floatingUIManager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+        )
         super.init(nibName: nil, bundle: nil)
     }
     

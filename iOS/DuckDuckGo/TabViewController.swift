@@ -292,8 +292,10 @@ class TabViewController: UIViewController {
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
     private var contextualOnboardingTopInset: CGFloat = 0
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
-    lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
-                                                   unifiedToggleInputFeature: unifiedToggleInputFeature)
+    lazy var floatingUIManager = FloatingUIManager(
+        isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch,
+        unifiedToggleInputFeature: unifiedToggleInputFeature
+    )
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,

@@ -27,7 +27,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -38,7 +38,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIIsEnabledButUnifiedToggleInputIsUnavailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
@@ -49,7 +49,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIIsDisabledAndUnifiedToggleInputIsAvailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isFloatingUIFeatureEnabled: false,
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -60,7 +60,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPadThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { true },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -71,7 +71,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenOSIsUnsupportedThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { false },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -82,7 +82,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenAugustFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { false },
             isTabSwitcherSupportedOSProvider: { true },
@@ -95,7 +95,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenAugustFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isFloatingUIFeatureEnabled: false,
             isPadProvider: { false },
             isTabSwitcherSupportedOSProvider: { true }
         )
@@ -105,7 +105,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenAugustFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { true },
             isTabSwitcherSupportedOSProvider: { true }
         )
@@ -115,7 +115,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenTabSwitcherOSIsUnsupportedThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isTabSwitcherSupportedOSProvider: { false }
         )

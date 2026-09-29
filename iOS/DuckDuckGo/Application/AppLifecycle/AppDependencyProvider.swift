@@ -47,6 +47,7 @@ protocol DependencyProvider {
     var variantManager: VariantManager { get }
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
+    var isFloatingUIFeatureEnabledForCurrentLaunch: Bool { get }
     var isSitePermissionsEnabled: Bool { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
@@ -124,6 +125,7 @@ final class AppDependencyProvider: DependencyProvider {
     let variantManager: VariantManager = DefaultVariantManager()
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
+    let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     let isSitePermissionsEnabled: Bool
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
@@ -236,6 +238,8 @@ final class AppDependencyProvider: DependencyProvider {
             self.featureFlagger = defaultFeatureFlagger
             featureFlagger = defaultFeatureFlagger
         }
+
+        isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.floatingUIAugust2026)
 
         // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
         isSitePermissionsEnabled = featureFlagger.isFeatureOn(.sitePermissions)

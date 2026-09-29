@@ -156,6 +156,8 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        permissionController?.trustedInstallations.insert(identifier)
+        defer { permissionController?.trustedInstallations.remove(identifier) }
         if requiresExtraction {
             // Unzipping on the main thread risks the watchdog (Dark Reader has ~140 files).
             let storageProvider = storageProvider

@@ -21,6 +21,7 @@ import WebKit
 import Core
 import BrowserServicesKit
 import PrivacyDashboard
+import SitePermissions
 
 enum TabClosingBehavior {
     case createEmptyTabAtSamePosition
@@ -188,6 +189,10 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: TabViewController)
 
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>)
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController)
+
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController)
     
     func tab(_ tab: TabViewController, didRequestPresentingAlert alert: UIAlertController)
@@ -221,6 +226,10 @@ protocol TabDelegate: AnyObject {
 }
 
 extension TabDelegate {
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {}
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {}
 
     func tabDidRequestClose(_ tab: TabViewController) {
         tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)

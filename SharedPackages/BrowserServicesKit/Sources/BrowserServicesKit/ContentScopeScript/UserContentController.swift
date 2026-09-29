@@ -128,14 +128,17 @@ final public class UserContentController: WKUserContentController {
     @MainActor
     private var assetsPublisherCancellables: Set<AnyCancellable>?
     @MainActor
-    private let scriptMessageHandler = PermanentScriptMessageHandler()
+    private let scriptMessageHandler: PermanentScriptMessageHandler
 
     /// if earlyAccessHandlers (WKScriptMessageHandlers) are provided they are installed without waiting for contentBlockingAssets to be loaded if.
+    /// Opt into `replyToUnavailableHandlers` to reject late replies after handler teardown; existing callers retain their behavior.
     @MainActor
-    public init<Pub, Content>(assetsPublisher: Pub, privacyConfigurationManager: PrivacyConfigurationManaging, earlyAccessHandlers: [UserScript] = [])
+    public init<Pub, Content>(assetsPublisher: Pub, privacyConfigurationManager: PrivacyConfigurationManaging, earlyAccessHandlers: [UserScript] = [],
+                              replyToUnavailableHandlers: Bool = false)
     where Pub: Publisher, Content: UserContentControllerNewContent, Pub.Output == Content, Pub.Failure == Never {
 
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.scriptMessageHandler = PermanentScriptMessageHandler(replyToUnavailableHandlers: replyToUnavailableHandlers)
         super.init()
 
         // Install initial WKScriptMessageHandlers if any. Currently, no WKUserScript are provided at initialization.
@@ -377,12 +380,18 @@ public extension UserContentController {
 }
 
 /// Script Message Handler only added once per UserScriptController for all the Message Names (to avoid race conditions for re-added User Scripts)
-private class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
+final class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
 
     private struct WeakScriptMessageHandlerBox {
         weak var handler: WKScriptMessageHandler?
     }
     private var registeredMessageHandlers = [String: WeakScriptMessageHandlerBox]()
+    private let replyToUnavailableHandlers: Bool
+
+    init(replyToUnavailableHandlers: Bool = false) {
+        self.replyToUnavailableHandlers = replyToUnavailableHandlers
+        super.init()
+    }
 
     var registeredMessageNames: [String] {
         Array(registeredMessageHandlers.keys)
@@ -418,11 +427,23 @@ private class PermanentScriptMessageHandler: NSObject, WKScriptMessageHandler, W
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let box = self.registeredMessageHandlers[message.messageName] else {
-            assertionFailure("no registered message handler for \(message.messageName)")
+            if replyToUnavailableHandlers {
+                replyHandler(nil, "Script message handler is unavailable")
+            } else {
+                assertionFailure("no registered message handler for \(message.messageName)")
+            }
             return
         }
         guard let handler = box.handler else {
-            assertionFailure("handler for \(message.messageName) has been unregistered")
+            if replyToUnavailableHandlers {
+                replyHandler(nil, "Script message handler is unavailable")
+            } else {
+                assertionFailure("handler for \(message.messageName) has been unregistered")
+            }
+            return
+        }
+        if replyToUnavailableHandlers, !(handler is WKScriptMessageHandlerWithReply) {
+            replyHandler(nil, "Script message handler does not support replies")
             return
         }
         assert(handler is WKScriptMessageHandlerWithReply)

@@ -22,6 +22,25 @@ import DesignResourcesKitIcons
 
 enum OmniBarMetrics {
     static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+
+    /// The size of the omnibar's controls and leading icon slot.
+    static let itemSize: CGFloat = 44
+    /// The space between the field edge and its content.
+    static let contentHorizontalInset: CGFloat = 2
+    /// The notification lozenge's equal top, leading, and bottom gaps from the field edge.
+    static let notificationLozengeInset: CGFloat = 3
+
+    static var leadingItemCenterFromFieldEdge: CGFloat {
+        contentHorizontalInset + itemSize / 2
+    }
+
+    static var notificationLozengeHeight: CGFloat {
+        itemSize - 2 * notificationLozengeInset
+    }
+
+    static func notificationIconLeadingPadding(forIconWidth width: CGFloat) -> CGFloat {
+        leadingItemCenterFromFieldEdge - notificationLozengeInset - width / 2
+    }
 }
 
 enum OmniBarLayoutMode {

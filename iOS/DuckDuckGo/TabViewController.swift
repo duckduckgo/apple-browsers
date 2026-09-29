@@ -139,6 +139,42 @@ enum WebViewScrollViewInsetUpdater {
     }
 }
 
+/// Tracks whether the page currently being committed is the one an HTTPS upgrade produced, so that
+/// `upgradedHttps` on a breakage report describes that page and nothing that follows it.
+///
+/// Deliberately separate from `TabViewController.lastUpgradedURL`, which outlives a single navigation
+/// on purpose: it stops us re-upgrading a URL the server bounced straight back to HTTP. Reusing that
+/// value for reporting made one upgrade flag every later page on the same registrable domain.
+struct HTTPSUpgradeNavigationTracker {
+
+    private var upgradedURL: URL?
+
+    /// Records the upgraded URL that is about to be requested.
+    ///
+    /// Must be the URL actually handed to the web view, not the raw output of the upgrader: link
+    /// protection can strip tracking parameters or swap an AMP link for its canonical in between.
+    mutating func didUpgrade(to url: URL) {
+        upgradedURL = url
+    }
+
+    /// Forgets the upgrade as soon as the main frame heads anywhere other than the upgraded URL.
+    mutating func willNavigate(mainFrameTo url: URL?) {
+        if upgradedURL != url {
+            upgradedURL = nil
+        }
+    }
+
+    mutating func reset() {
+        upgradedURL = nil
+    }
+
+    /// Whether `committedURL` is the page the upgrade produced.
+    func isHTTPSForced(committedURL: URL?) -> Bool {
+        guard let upgradedURL, let committedURL else { return false }
+        return upgradedURL == committedURL
+    }
+}
+
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -332,6 +368,7 @@ class TabViewController: UIViewController {
         return handler
     }()
     private var lastUpgradedURL: URL?
+    private var httpsUpgradeTracker = HTTPSUpgradeNavigationTracker()
     private var httpsUpgradeTask: Task<Void, Never>?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
@@ -632,6 +669,7 @@ class TabViewController: UIViewController {
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                                   sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -671,6 +709,7 @@ class TabViewController: UIViewController {
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
+                                 sitePermissionsEnabled: sitePermissionsEnabled,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
@@ -764,15 +803,28 @@ class TabViewController: UIViewController {
     let autoplaySettings: AutoplaySettings
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    let isSitePermissionsEnabled: Bool
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
+    var sitePermissionsNavigationTimeout: TimeInterval = 10
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
 
-    lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let pageContextHandler = AIChatPageContextHandler(
+    var tabAttachmentSource: MultiTabAttachmentSource?
+
+    private var pageContextNavigationID = UUID()
+    private var pageContextLoadedNavigationID: UUID?
+    private var pageContextNavigationInProgress = false
+    private var pageContextInitialRequestPending = false
+    private var pageContextRestoredPageNeedsLoad = false
+    private var pageContextProcessTerminated = false
+    private let pageContextPageChanges = PassthroughSubject<Void, Never>()
+    private let pageContextProcessTerminations = PassthroughSubject<Void, Never>()
+
+    private func makePageContextHandler() -> AIChatPageContextHandler {
+        AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
             userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
             faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
@@ -780,6 +832,43 @@ class TabViewController: UIViewController {
             mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
             isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
         )
+    }
+
+    func makeMultiTabAttachmentPage() -> MultiTabAttachmentPage? {
+        guard let webView else { return nil }
+        return MultiTabAttachmentPage(state: { [weak self] in
+            guard let self, let webView = self.webView else { return nil }
+            return .init(identity: .init(webView: ObjectIdentifier(webView), navigation: self.pageContextNavigationID),
+                         url: webView.url,
+                         isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
+                         isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
+                         isAttachable: self.makePageContextHandler().isCurrentPageAttachable(),
+                         hasTerminatedProcess: self.pageContextProcessTerminated)
+        }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
+                                     webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
+        collect: { [weak self] url, isValid in
+            guard let handler = self?.makePageContextHandler() else { return .unavailable }
+            return await handler.collectContext(for: url, isValid: isValid)
+        }, loadIfNeeded: { [weak self] in
+            self?.loadPageForTabAttachmentIfNeeded()
+        }, processTerminations: pageContextProcessTerminations.eraseToAnyPublisher())
+    }
+
+    private func loadPageForTabAttachmentIfNeeded() {
+        guard pageContextRestoredPageNeedsLoad || pageContextProcessTerminated, !pageContextInitialRequestPending,
+              !pageContextNavigationInProgress, let webView, !webView.isLoading,
+              webView.url != nil, pageContextLoadedNavigationID != pageContextNavigationID else { return }
+        pageContextRestoredPageNeedsLoad = false
+        pageContextProcessTerminated = false
+        pageContextInitialRequestPending = true
+        if webView.reload() == nil {
+            pageContextInitialRequestPending = false
+        }
+        pageContextPageChanges.send()
+    }
+
+    lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
+        let pageContextHandler = makePageContextHandler()
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
             aiChatSettings: aiChatSettings,
@@ -794,8 +883,10 @@ class TabViewController: UIViewController {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
-            selectionJourneyScopeID: tabModel.uid
+            selectionJourneyScopeID: tabModel.uid,
+            tabAttachmentSource: tabAttachmentSource
         )
+        coordinator.tabProvider = { [weak self] in self?.tabModel }
         coordinator.delegate = self
         return coordinator
     }()
@@ -845,6 +936,7 @@ class TabViewController: UIViewController {
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
@@ -901,6 +993,7 @@ class TabViewController: UIViewController {
         self.autoplaySettings = autoplaySettings
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
@@ -915,8 +1008,6 @@ class TabViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(nibName: nil, bundle: nil)
-
-        subscribeToSitePermissionsChanges()
 
         // Reload AI Chat when subscription state changes
         subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
@@ -990,6 +1081,7 @@ class TabViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setSitePermissionsGeolocationActive(true)
         
         registerForResignActive()
         registerForKeyboardNotifications()
@@ -997,6 +1089,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        setSitePermissionsGeolocationActive(false)
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
@@ -1354,12 +1447,19 @@ class TabViewController: UIViewController {
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
+        pageContextNavigationID = UUID()
+        pageContextLoadedNavigationID = nil
+        pageContextNavigationInProgress = false
+        pageContextInitialRequestPending = request != nil
+        pageContextRestoredPageNeedsLoad = false
+        pageContextProcessTerminated = false
         let isReplacingWebView = webView != nil
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
             privacyConfigurationManager: privacyConfigurationManager,
-            earlyAccessHandlers: [mediaCaptureUserScript]
+            earlyAccessHandlers: [mediaCaptureUserScript],
+            replyToUnavailableHandlers: isSitePermissionsEnabled
         )
         userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
@@ -1416,6 +1516,8 @@ class TabViewController: UIViewController {
         }
 
         let didRestoreWebViewState = restoreInteractionStateToWebView(interactionStateData)
+        pageContextRestoredPageNeedsLoad = didRestoreWebViewState && pageContextLoadedNavigationID == nil
+        pageContextInitialRequestPending = request != nil && (consumeCookies || !didRestoreWebViewState)
 
         instrumentation.didPrepareWebView()
 
@@ -1519,6 +1621,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -1530,6 +1633,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
         dismissJSAlertIfNeeded()
@@ -1541,6 +1645,7 @@ class TabViewController: UIViewController {
     private func load(url: URL, didUpgradeURL: Bool) {
         if !didUpgradeURL {
             lastUpgradedURL = nil
+            httpsUpgradeTracker.reset()
             privacyInfo?.connectionUpgradedTo = nil
         }
 
@@ -1560,6 +1665,12 @@ class TabViewController: UIViewController {
                                    onStartExtracting: { showProgressIndicator() },
                                    onFinishExtracting: { },
                                    completion: { [weak self] url in
+            // Arm the report here, not in `upgradeToHttps`: link protection may have stripped tracking
+            // parameters or resolved an AMP link, and the tracker has to hold the URL we actually
+            // request or the navigation that follows won't match it.
+            if didUpgradeURL {
+                self?.httpsUpgradeTracker.didUpgrade(to: url)
+            }
             self?.load(urlRequest: .userInitiated(url))
         })
     }
@@ -1568,6 +1679,7 @@ class TabViewController: UIViewController {
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
+        prepareSitePermissionsForDataClearing()
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
         delegate = nil
@@ -1776,6 +1888,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserReload()
@@ -1792,6 +1905,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
 
@@ -1864,6 +1978,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
 
@@ -2174,6 +2289,7 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
         chromeDelegate?.omniBar.cancelAllAnimations()
@@ -2340,6 +2456,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         webView.stopLoading()
         wasLoadingStoppedExternally = true
@@ -2462,27 +2579,12 @@ extension TabViewController: WKNavigationDelegate {
         if isAITab {
             delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
         }
-        let tld = storageCache.tld
-        let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
-        onWebpageDidStartLoading(httpsForced: httpsForced)
+        onWebpageDidStartLoading(httpsForced: httpsUpgradeTracker.isHTTPSForced(committedURL: webView.url))
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
-    }
-
-    /// Whether the committed page was reached via an HTTPS upgrade.
-    ///
-    /// Needs both an upgrade on record and an HTTPS commit: `lastUpgradedURL` isn't reset across
-    /// same-domain navigations, so without the scheme check a later HTTP commit on the same domain
-    /// would be mis-flagged. Mirrors macOS's `connectionUpgradedTo != nil`.
-    static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
-        guard let lastUpgradedURL, let currentURL, currentURL.isHttps else { return false }
-        guard let upgradedDomain = tld.domain(lastUpgradedURL.host) else {
-            return lastUpgradedURL.host == currentURL.host
-        }
-        return upgradedDomain == tld.domain(currentURL.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -2512,6 +2614,10 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if webView === self.webView {
+            captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,
+                                                     isForMainFrame: navigationResponse.isForMainFrame)
+        }
         let httpResponse = navigationResponse.response as? HTTPURLResponse
         let didMarkAsInternal = internalUserDecider.markUserAsInternalIfNeeded(forUrl: webView.url, response: httpResponse)
         if didMarkAsInternal {
@@ -2647,6 +2753,13 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        pageContextProcessTerminated = false
+        pageContextInitialRequestPending = false
+        pageContextRestoredPageNeedsLoad = false
+        pageContextNavigationID = UUID()
+        pageContextNavigationInProgress = true
+        pageContextPageChanges.send()
+
         // iOS receives the raw WebKit callbacks and has no Navigation redirect history, so the
         // marker is read here and cleared at commit. A provisional load replaced before it commits
         // raises this callback again, and that replacement is still the same logical restoration —
@@ -2692,6 +2805,10 @@ extension TabViewController: WKNavigationDelegate {
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
+        pageContextLoadedNavigationID = pageContextNavigationID
+        pageContextInitialRequestPending = false
+        pageContextNavigationInProgress = false
+        pageContextPageChanges.send()
         didFinishURLSubject.send(webView.url)
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
@@ -2828,9 +2945,7 @@ extension TabViewController: WKNavigationDelegate {
                                                   afterScreenUpdates: Bool) -> WKSnapshotConfiguration {
         let configuration = WKSnapshotConfiguration()
         configuration.rect = rect
-        if featureFlagger.isFeatureOn(.tabPreviewPerformanceOptimization) {
-            configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
-        }
+        configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
         configuration.afterScreenUpdates = afterScreenUpdates
         return configuration
     }
@@ -3126,6 +3241,10 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        pageContextInitialRequestPending = false
+        pageContextNavigationInProgress = false
+        pageContextPageChanges.send()
+
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
         }
@@ -3176,6 +3295,10 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        pageContextInitialRequestPending = false
+        pageContextNavigationInProgress = false
+        pageContextPageChanges.send()
+
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabModel.uid))
         }
@@ -3275,6 +3398,12 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        if webView === self.webView,
+           navigationAction.isTargetingMainFrame,
+           isSitePermissionsEnabled {
+            sitePermissionsState.cancelContentBlockingWaits()
+        }
+
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
         // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
         // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
@@ -3319,14 +3448,13 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         if let url = navigationAction.request.url,
-           !url.isDuckDuckGoSearch,
-           true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] in
-               guard let self = self else {
+           true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] shouldContinue in
+               guard shouldContinue, let self = self else {
                    wrappedHandler(.cancel)
                    return
                }
                self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
-           }) {
+           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
@@ -3534,24 +3662,83 @@ extension TabViewController: WKNavigationDelegate {
     }
     // swiftlint:enable cyclomatic_complexity
 
-    private func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor () -> Void) -> Bool {
+    func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor (Bool) -> Void,
+                                                for url: URL,
+                                                isMainFrame: Bool = true) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
-        if userContentController.contentBlockingAssetsInstalled
-            || !privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
+        let shouldWait = Self.shouldWaitForContentBlockingAssets(
+            assetsInstalled: userContentController.contentBlockingAssetsInstalled,
+            contentBlockingEnabled: privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
+            sitePermissionsEnabled: isSitePermissionsEnabled,
+            geolocationScriptInstalled: userScripts?.geolocationUserScript != nil,
+            isDuckDuckGoSearch: url.isDuckDuckGoSearch
+        )
+        if !shouldWait {
 
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
         }
 
-        Task {
-            rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
-            showProgressIndicator()
-            await userContentController.awaitContentBlockingAssetsInstalled()
-            rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+        guard isSitePermissionsEnabled else {
+            // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
+            Task {
+                rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+                showProgressIndicator()
+                await userContentController.awaitContentBlockingAssetsInstalled()
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                completion(true)
+            }
+            return true
+        }
 
-            await MainActor.run(body: completion)
+        // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
+        // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
+        rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
+        showProgressIndicator()
+        let waitID = UUID()
+        let timeout = sitePermissionsNavigationTimeout
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, userContentController, rulesCompilationMonitor, tabID = tabModel.uid] in
+            defer {
+                state?.contentBlockingWaitTasks[waitID] = nil
+                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+            }
+            guard !Task.isCancelled else {
+                completion(false)
+                return
+            }
+            // Only readiness may reset the deadline; unrelated asset updates must not extend it.
+            let readiness = userContentController.$contentBlockingAssets
+                .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
+                .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
+                .first()
+            var isReady = false
+            for await _ in readiness.values {
+                isReady = true
+                break
+            }
+            // Remove before completion: success re-enters the navigation policy delegate.
+            let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
+            guard !Task.isCancelled, isCurrentWait else {
+                completion(false)
+                return
+            }
+            if !isReady, isMainFrame {
+                self?.showSitePermissionsAssetsTimeout(for: url)
+            }
+            completion(isReady)
         }
         return true
+    }
+
+    private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
+        let error = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: failedURL])
+        lastError = error
+        pendingNativeLoadURL = nil
+        shouldReloadOnError = false
+        url = failedURL
+        hideProgressIndicator()
+        showError(message: error.localizedDescription)
+        webpageDidFailToLoad()
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -3565,6 +3752,10 @@ extension TabViewController: WKNavigationDelegate {
         
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
         recentNavigationActionShouldPerformDownloadURL = navigationAction.shouldPerformDownload ? navigationAction.request.url : nil
+
+        if navigationAction.isTargetingMainFrame {
+            httpsUpgradeTracker.willNavigate(mainFrameTo: navigationAction.request.url)
+        }
 
         if navigationAction.isTargetingMainFrame
             && tld.domain(navigationAction.request.mainDocumentURL?.host) != tld.domain(lastUpgradedURL?.host) {
@@ -4273,6 +4464,15 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        pageContextProcessTerminated = true
+        pageContextLoadedNavigationID = nil
+        pageContextNavigationID = UUID()
+        pageContextInitialRequestPending = false
+        pageContextNavigationInProgress = false
+        pageContextRestoredPageNeedsLoad = false
+        pageContextProcessTerminations.send()
+        pageContextPageChanges.send()
+
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.webContentProcessTerminated(tabIdentifier: tabModel.uid))
         }
@@ -4515,6 +4715,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
+        configureSitePermissionsGeolocation(with: userScripts.geolocationUserScript)
         
         userScripts.aiChatUserScript.setFireModeProvider { [weak self] in self?.tabModel.fireTab ?? false }
         userScripts.aiChatUserScript.setFocusChatInputHandler { [weak self] in

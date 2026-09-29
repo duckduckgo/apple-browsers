@@ -35,7 +35,7 @@ extension VPNUpsellVisibilityManager {
 extension VPNUpsellVisibilityManager {
     enum State: Equatable {
         case uninitialized // Initial state, before setup is called
-        case notEligible // User is not new, or already subscribed, or feature flag is off
+        case notEligible // User is not new, is subscribed, or can't purchase
         case waitingForConditions // 1st launch: waiting for the user to finish contextual onboarding and set default browser
         case waitingForTimer // 1st launch: waiting for the timer to complete after meeting conditions
         case eligible // User is eligible for the upsell; the Promo Queue decides when to show it

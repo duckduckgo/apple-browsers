@@ -20,7 +20,7 @@ import Combine
 import Foundation
 import PrivacyConfig
 
-/// Shows the notification dot on the VPN upsell toolbar button through the promo queue.
+/// Promo delegate that shows the notification dot on the VPN upsell toolbar button.
 final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
 
     private let featureFlagger: FeatureFlagger
@@ -85,6 +85,7 @@ final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
+        // Users who already opened the legacy upsell popover have seen what the dot points to.
         if !force, persistor.legacyPopoverViewed || persistor.isLegacyUpsellFinished(asOf: dateProvider()) {
             return .retired
         }

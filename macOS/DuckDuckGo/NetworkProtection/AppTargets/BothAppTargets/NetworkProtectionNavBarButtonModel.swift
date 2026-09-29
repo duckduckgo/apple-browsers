@@ -163,6 +163,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
 
+        // The dot is drawn on the upsell button, so it only shows while both promos are showing.
         Publishers.CombineLatest(vpnUpsellToolbarButtonPromoDelegate.isShowingPublisher,
                                  vpnUpsellDotBadgePromoDelegate.isShowingPublisher)
             .map { $0 && $1 }

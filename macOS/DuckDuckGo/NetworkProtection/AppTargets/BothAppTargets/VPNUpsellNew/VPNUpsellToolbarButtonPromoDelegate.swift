@@ -22,7 +22,7 @@ import PixelKit
 import PrivacyConfig
 import Subscription
 
-/// Shows the VPN upsell toolbar button through the promo queue.
+/// Promo delegate that shows the VPN upsell button in the toolbar.
 final class VPNUpsellToolbarButtonPromoDelegate: InternalPromoDelegate, VPNUpsellDismissing {
 
     private let featureFlagger: FeatureFlagger

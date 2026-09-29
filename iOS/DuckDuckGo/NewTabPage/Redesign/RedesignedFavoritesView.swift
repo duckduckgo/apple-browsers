@@ -143,6 +143,7 @@ struct RedesignedFavoritesView: View {
         let expandButtonID = overflow ? allFavorites[Metrics.collapsedCount - 1].id : nil
         return ReorderableForEach(allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
                           onDragActivityChanged: { isDraggingFavorite = $0 },
+                          itemSizeCacheKey: { AnyHashable($0) },
                           isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
             Button {
@@ -255,6 +256,8 @@ private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Anim
                 .frame(height: headerHeight * progress, alignment: .top)
                 .clipped()
             grid
+                // Keep the grid's layout proposal constant while only its viewport changes.
+                .frame(height: max(expandedGridHeight, collapsedGridHeight), alignment: .top)
                 .frame(height: revealedGridHeight, alignment: .top)
                 .clipped()
         }

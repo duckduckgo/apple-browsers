@@ -151,10 +151,10 @@ enum AIChatPixel: PixelKit.Event {
     // MARK: - Page Context Extraction
 
     /// Event Trigger: Page-context extraction produced usable content.
-    case aiChatPageContextExtractionSuccess
+    case aiChatPageContextExtractionSuccess(contextType: String)
 
     /// Event Trigger: Page-context extraction was attempted but produced no usable content.
-    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?)
+    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?, contextType: String)
 
     /// Event Trigger: Page-context extraction was skipped because the page is not attachable (blocklisted media type or special page).
     case aiChatPageContextExtractionPrevented(category: String, trigger: String)
@@ -914,7 +914,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatAttachSelection,
-                .aiChatPageContextExtractionSuccess,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -1060,8 +1059,10 @@ enum AIChatPixel: PixelKit.Event {
             return ["fileCount": String(fileCount)]
         case .aiChatAddressBarFileValidationFailed(let reason):
             return ["reason": reason]
-        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency):
-            var params = ["reason": reason, "trigger": trigger]
+        case .aiChatPageContextExtractionSuccess(let contextType):
+            return ["context_type": contextType]
+        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency, let contextType):
+            var params = ["reason": reason, "trigger": trigger, "context_type": contextType]
             if let latency {
                 params["latency"] = latency
             }

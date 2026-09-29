@@ -410,6 +410,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         return button
     }()
 
+    var inputSuggestionsTopAnchor: NSLayoutYAxisAnchor { contentContainerView.topAnchor }
+
     private lazy var contentContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = .clear
@@ -1508,6 +1510,9 @@ private extension AIChatContextualSheetViewController {
         }
 
         let utiView = persistentUTIHost.mount(in: self)
+        persistentUTIHost.onTabMentionVisibilityChanged = { [weak self] isVisible in
+            self?.contextualInputViewController.view.isHidden = isVisible
+        }
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
         contentContainerBottomConstraint?.isActive = false
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)

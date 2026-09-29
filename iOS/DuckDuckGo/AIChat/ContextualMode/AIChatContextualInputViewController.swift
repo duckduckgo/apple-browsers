@@ -243,7 +243,7 @@ final class AIChatContextualInputViewController: UIViewController {
     /// Whether `point`, expressed in `view`'s coordinate space, lands on a chip rather than the gaps
     /// around them. Lets a host pass taps in the empty areas through to whatever sits behind.
     func containsStartAction(at point: CGPoint, from view: UIView) -> Bool {
-        quickActionsView.containsChip(at: point, from: view)
+        !self.view.isHidden && quickActionsView.containsChip(at: point, from: view)
     }
 
     func setStartActionsDimmed(_ dimmed: Bool) {

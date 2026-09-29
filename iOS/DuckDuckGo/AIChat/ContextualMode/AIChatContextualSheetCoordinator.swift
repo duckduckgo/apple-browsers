@@ -398,6 +398,9 @@ final class AIChatContextualSheetCoordinator {
         controller.delegate = self
         floatingInputViewController = controller
         controller.install(in: presentingViewController)
+        host.onTabMentionVisibilityChanged = { [weak chips] isVisible in
+            chips?.view.isHidden = isVisible
+        }
         observeViewStateForFloatingChips()
         host.activateInput()
         controller.playEntrance()

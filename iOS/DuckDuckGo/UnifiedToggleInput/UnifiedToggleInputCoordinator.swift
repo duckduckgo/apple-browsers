@@ -221,6 +221,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var isSynchronizingTabAttachments = false
     private var tabAttachmentSource: MultiTabAttachmentSource?
     private var tabAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding?
+    private var tabMentionController: MultiTabMentionController?
+    private var tabMentionCandidatesCancellable: AnyCancellable?
+    var onTabMentionSuggestionsChanged: (([MultiTabMentionController.Suggestion]?) -> Void)?
     var isCurrentPageSelected: (() -> Bool)?
     var onPageContextRemoveRequested: (() -> Void)?
 
@@ -1043,6 +1046,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController?.presenter = viewController
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
+            self?.tabMentionController?.refresh()
         }
 
         // Also what brings a message back after the user has acted on the previous one.
@@ -1754,13 +1758,44 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func configureTabAttachments(source: MultiTabAttachmentSource?, feature: AIChatContextualAttachMoreTabsFeatureProviding) {
+        tabMentionController?.dismiss()
+        tabMentionController = nil
+        tabMentionCandidatesCancellable = nil
+        viewController.mentionHandler = nil
         tabAttachmentPreparations.values.forEach { $0.cancel() }
         tabAttachmentPreparations.removeAll()
         tabAttachmentSource = source
         tabAttachmentFeature = feature
         tabAttachmentContext = MultiTabAttachmentContext(source: source, feature: feature)
+        if source != nil, case .available = feature.state {
+            let mentionController = MultiTabMentionController(environment: .init(
+                isEnabled: { [weak self] in
+                    guard let self else { return false }
+                    return self.attachmentController.canUseTabAttachments && self.inputMode == .aiChat
+                        && !self.viewController.isGenerating && !self.viewController.isInputBlockedByUsageLimit
+                },
+                tabs: { [weak self] in self?.attachmentController.tabAttachmentCandidates ?? [] },
+                attachedTabIds: { [weak self] in self?.attachmentPolicy.selectedTabIDs ?? [] },
+                canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
+                toggleAttachment: { [weak self] in self?.attachmentController.toggleTabAttachment($0) ?? false }
+            ))
+            mentionController.onSuggestionsChanged = { [weak self] in self?.onTabMentionSuggestionsChanged?($0) }
+            tabMentionController = mentionController
+            viewController.mentionHandler = mentionController
+            tabMentionCandidatesCancellable = source?.tabsPublisher?
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in self?.tabMentionController?.refresh() }
+        }
         synchronizeTabAttachmentPreparations()
         updateImageButtonVisibility()
+    }
+
+    func dismissTabMentions() {
+        tabMentionController?.dismiss()
+    }
+
+    func selectTabMention(_ candidate: MultiTabAttachmentCandidate) {
+        tabMentionController?.accept(candidate)
     }
 
     private func synchronizeTabAttachmentPreparations() {
@@ -1856,6 +1891,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func updateImageButtonVisibility() {
         attachmentController.updateAttachButtonPresentation()
+        tabMentionController?.refresh()
     }
 
 }
@@ -2408,6 +2444,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func updateImageButtonEnabledState() {
         attachmentController.updateAttachButtonPresentation()
+        tabMentionController?.refresh()
     }
 
     /// Reasoning mode to report in submit-time pixels.

@@ -66,7 +66,7 @@ struct RemoteMessagingDebugRootView: View {
             } header: {
                 Text(verbatim: "Install Date")
             } footer: {
-                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
+                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Delete All”, then “Refresh Config” to re-evaluate.")
             }
 
             Section {
@@ -198,7 +198,7 @@ struct RemoteMessagingDebugRootView: View {
             } header: {
                 Text(verbatim: "OS Upgrade Capability")
             } footer: {
-                Text(verbatim: "Overrides canUpgradeOS for message matching. Only honoured in debug builds. Tap “Refresh Config” afterwards to re-evaluate.")
+                Text(verbatim: "Overrides canUpgradeOS for message matching. Only honoured in debug builds. Tap “Delete All”, then “Refresh Config” to re-evaluate.")
             }
         }
         .navigationTitle(Text(verbatim: "Remote Messaging Debug"))

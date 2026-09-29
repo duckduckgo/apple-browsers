@@ -24,7 +24,6 @@ import SwiftUI
 struct RedesignedFavoritesView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var model: FavoritesViewModel
-    @State private var isExpanded = false
     @State private var isDraggingFavorite = false
     @State private var gridHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
@@ -32,6 +31,8 @@ struct RedesignedFavoritesView: View {
     @State private var expandButtonHeight: CGFloat = 0
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
     private let haptics = UIImpactFeedbackGenerator()
+
+    private var isExpanded: Bool { model.expansionState.isExpanded }
 
     private var hasOverflow: Bool { model.allFavorites.count > Metrics.collapsedCount }
 
@@ -112,7 +113,7 @@ struct RedesignedFavoritesView: View {
             Spacer()
             Button {
                 guard !isDraggingFavorite else { return }
-                isExpanded = false
+                model.expansionState.isExpanded = false
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size12.chevronUp)
                     .frame(width: Metrics.collapseIconSize, height: Metrics.collapseIconSize)
@@ -213,7 +214,7 @@ struct RedesignedFavoritesView: View {
     private func expansionButton(expands: Bool) -> some View {
         Button {
             guard !isDraggingFavorite else { return }
-            isExpanded = expands
+            model.expansionState.isExpanded = expands
         } label: {
             VStack(spacing: Metrics.iconToTitleSpacing) {
                 Image(uiImage: expands ? DesignSystemImages.Glyphs.Size24.chevronDownSmall : DesignSystemImages.Glyphs.Size24.chevronUpSmall)

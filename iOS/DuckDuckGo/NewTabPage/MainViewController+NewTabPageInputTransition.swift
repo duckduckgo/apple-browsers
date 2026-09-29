@@ -183,13 +183,15 @@ extension MainViewController {
             didDraw = page.view.drawHierarchy(in: bounds, afterScreenUpdates: true)
         }
         guard didDraw else { return }
-        restingNewTabPageSnapshot = (image, page.view.convert(bounds, to: view), view.bounds.size)
+        let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false
+        restingNewTabPageSnapshot = (image, page.view.convert(bounds, to: view), view.bounds.size, favoritesExpanded)
     }
 
     private func makeRestingNewTabPageSnapshot() -> UIView? {
         guard let cached = restingNewTabPageSnapshot else { return nil }
-        // Rotation or resizing invalidates the captured layout; use the live-page handoff instead.
-        guard cached.viewportSize == view.bounds.size else {
+        // Layout or expansion changes invalidate the captured page; hand off to the current live page instead.
+        let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false
+        guard cached.viewportSize == view.bounds.size, cached.favoritesExpanded == favoritesExpanded else {
             restingNewTabPageSnapshot = nil
             return nil
         }

@@ -58,7 +58,7 @@ struct NewTabPageBuilder {
                         openedAfterIdle: Bool,
                         daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         if usesRedesignedPage(for: tab) {
-            return makeRedesignedNewTabPage(openedAfterIdle: openedAfterIdle)
+            return makeRedesignedNewTabPage(tab: tab, openedAfterIdle: openedAfterIdle)
         }
 
         return makeCurrentNewTabPage(tab: tab,
@@ -71,7 +71,7 @@ struct NewTabPageBuilder {
         !tab.fireTab && redesignFeature.isAvailable
     }
 
-    private func makeRedesignedNewTabPage(openedAfterIdle: Bool) -> any NewTabPage {
+    private func makeRedesignedNewTabPage(tab: Tab, openedAfterIdle: Bool) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
         let searchInputView = NewTabPageSearchInputView(
@@ -109,6 +109,7 @@ struct NewTabPageBuilder {
             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: favoritesInteractionModel),
             faviconLoader: faviconLoader,
             faviconsCache: faviconsCache)
+        favoritesModel.expansionState = tab.favoritesExpansionState
         favoritesModel.onFavoriteURLSelected = { [internalUserCommands] favorite in
             guard let newTabPage else { return }
             if let url = favorite.url.flatMap(URL.init(string:)), internalUserCommands.handle(url: url) {

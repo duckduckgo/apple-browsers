@@ -163,7 +163,17 @@ final class UnifiedSuggestionsHost {
     }
 
     /// Resets the dismiss/morph state on each focus.
-    func prepareForActivation() {
+    func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
+        if let favoritesExpansionState,
+           let model = favoritesPresentation.viewController?.favoritesModel,
+           model.expansionState !== favoritesExpansionState {
+            // This host survives tab changes. Bind to the selected tab without animating from the previous tab's state.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                model.expansionState = favoritesExpansionState
+            }
+        }
         viewModel.prepareForActivation()
     }
 

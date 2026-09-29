@@ -292,7 +292,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
-            unifiedSuggestionsHost?.prepareForActivation()
+            unifiedSuggestionsHost?.prepareForActivation(
+                favoritesExpansionState: suggestionTrayDependencies?.tabsModelProvider().currentTab?.favoritesExpansionState)
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
             activationResolveTrigger.send(())
@@ -815,6 +816,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             internalUserCommands: ntpDeps.internalUserCommands,
             floatingUIManager: floatingUIManager
         )
+        if let tab = dependencies.tabsModelProvider().currentTab {
+            controller.favoritesModel.expansionState = tab.favoritesExpansionState
+        }
         controller.hideBorderView()
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).

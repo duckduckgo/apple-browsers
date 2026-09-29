@@ -77,6 +77,8 @@ struct PromoServiceFactory {
             bookmarkToolbar(dependencies: dependencies),
             autoplayDiscoverability(dependencies: dependencies),
             quitSurvey(observer: dependencies.quitSurveyPromoObserver),
+            vpnUpsellToolbarButton(delegate: dependencies.vpnUpsellToolbarButtonPromoDelegate),
+            vpnUpsellDotBadge(delegate: dependencies.vpnUpsellDotBadgePromoDelegate),
             duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver)
         ]
 

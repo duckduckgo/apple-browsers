@@ -146,6 +146,25 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesVPNUpsellPromosWithCorrectConfiguration() {
+        let buttonPromo = PromoServiceFactory.vpnUpsellToolbarButton(delegate: dependencies.vpnUpsellToolbarButtonPromoDelegate)
+        let dotPromo = PromoServiceFactory.vpnUpsellDotBadge(delegate: dependencies.vpnUpsellDotBadgePromoDelegate)
+
+        for promo in [buttonPromo, dotPromo] {
+            XCTAssertEqual(promo.triggers, [.vpnUpsellBecameEligible, .appLaunched])
+            XCTAssertEqual(promo.initiated, .app)
+            XCTAssertEqual(promo.context, .global)
+            XCTAssertEqual(promo.promoType.severity, .low)
+            XCTAssertEqual(promo.promoType.timeoutResult, .ignored())
+            XCTAssertNotNil(promo.delegate)
+        }
+
+        XCTAssertEqual(buttonPromo.id, "vpn-upsell-toolbar-button")
+        XCTAssertEqual(buttonPromo.promoType.timeoutInterval, .days(7))
+        XCTAssertEqual(dotPromo.id, "vpn-upsell-dot-badge")
+        XCTAssertEqual(dotPromo.promoType.timeoutInterval, .days(3))
+    }
+
     func testWhenVPNUpsellBecameEligibleNotificationPostedThenPromoTriggerFires() {
         let expectation = expectation(description: "trigger fired")
         let cancellable = PromoTrigger.triggerPublisher
@@ -224,7 +243,17 @@ extension PromoServiceFactoryTests {
             updateController: nil,
             updateNotificationBridge: nil,
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
-            quitSurveyPromoObserver: QuitSurveyPromoObserver()
+            quitSurveyPromoObserver: QuitSurveyPromoObserver(),
+            vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            )
         )
     }
 }

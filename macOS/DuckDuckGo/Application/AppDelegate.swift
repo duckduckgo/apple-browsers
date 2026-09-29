@@ -1551,7 +1551,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateController: updateController,
             updateNotificationBridge: updateNotificationPromoBridge,
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-            quitSurveyPromoObserver: quitSurveyPromoObserver
+            quitSurveyPromoObserver: quitSurveyPromoObserver,
+            vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

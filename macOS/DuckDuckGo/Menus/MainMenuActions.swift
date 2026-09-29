@@ -1050,6 +1050,8 @@ extension AppDelegate {
         vpnUpsellUserDefaultsPersistor.legacyFirstPinnedDate = nil
         // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
         vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval = 10
+        promoService?.undismiss(promoId: PromoServiceFactory.vpnUpsellToolbarButtonPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.vpnUpsellDotBadgePromoID, clearHistory: true)
     }
 }
 

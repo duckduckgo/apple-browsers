@@ -956,6 +956,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Permissions") {
                 NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectPermissions(_:))).withAccessibilityIdentifier("MainMenu.inspectPermissions")
             }
+            NSMenuItem(title: "Show Page Signals", action: #selector(MainViewController.debugShowPageSignals))
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])

@@ -3644,7 +3644,9 @@
 		B6F1B0222BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F1B0212BCE5658005E863C /* BrokenSiteInfoTabExtension.swift */; };
 		B6F1B0232BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F1B0212BCE5658005E863C /* BrokenSiteInfoTabExtension.swift */; };
 		5A6E1D102F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */; };
+		5A6E1D132F8A4C1100C0FFEE /* PageSignalsAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D122F8A4C1100C0FFEE /* PageSignalsAlert.swift */; };
 		5A6E1D112F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */; };
+		5A6E1D142F8A4C1100C0FFEE /* PageSignalsAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6E1D122F8A4C1100C0FFEE /* PageSignalsAlert.swift */; };
 		B6F1B0262BCE5A50005E863C /* TabContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F1B0252BCE5A50005E863C /* TabContent.swift */; };
 		B6F1B0272BCE5A50005E863C /* TabContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F1B0252BCE5A50005E863C /* TabContent.swift */; };
 		B6F1B02A2BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F1B0292BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift */; };
@@ -6927,6 +6929,7 @@
 		B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TestsServer.xcconfig; sourceTree = "<group>"; };
 		B6F1B0212BCE5658005E863C /* BrokenSiteInfoTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSiteInfoTabExtension.swift; sourceTree = "<group>"; };
 		5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSignalsTabExtension.swift; sourceTree = "<group>"; };
+		5A6E1D122F8A4C1100C0FFEE /* PageSignalsAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSignalsAlert.swift; sourceTree = "<group>"; };
 		B6F1B0252BCE5A50005E863C /* TabContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContent.swift; sourceTree = "<group>"; };
 		B6F1B0292BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionControllerTabExtension.swift; sourceTree = "<group>"; };
 		B6F1B02D2BCE6B47005E863C /* TunnelControllerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelControllerProvider.swift; sourceTree = "<group>"; };
@@ -12623,6 +12626,7 @@
 				B6C00ECA292F839D009C73A6 /* AutofillTabExtension.swift */,
 				B6F1B0212BCE5658005E863C /* BrokenSiteInfoTabExtension.swift */,
 				5A6E1D0F2F8A4C1100C0FFEE /* PageSignalsTabExtension.swift */,
+				5A6E1D122F8A4C1100C0FFEE /* PageSignalsAlert.swift */,
 				B6D574B12947224C008ED1B6 /* ContentBlockingTabExtension.swift */,
 				B6DA06E32913ECEE00225DE2 /* ContextMenuManager.swift */,
 				B6685E4129A61C460043D2EE /* DownloadsTabExtension.swift */,
@@ -17033,6 +17037,7 @@
 				37B904722E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
 				B6F1B0232BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */,
 				5A6E1D112F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */,
+				5A6E1D142F8A4C1100C0FFEE /* PageSignalsAlert.swift in Sources */,
 				BB046FF72F6D873B007F7107 /* PromoServiceFactory+FreemiumDBP.swift in Sources */,
 				3706FC85293F65D500E42796 /* ShadowView.swift in Sources */,
 				3706FC86293F65D500E42796 /* FeedbackSender.swift in Sources */,
@@ -18919,6 +18924,7 @@
 				EED4D3D82C874AE200C79EEA /* PopoverInfoViewController.swift in Sources */,
 				B6F1B0222BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */,
 				5A6E1D102F8A4C1100C0FFEE /* PageSignalsTabExtension.swift in Sources */,
+				5A6E1D132F8A4C1100C0FFEE /* PageSignalsAlert.swift in Sources */,
 				4B975BFF2E431FD40019F757 /* VPNUpsellPopover.swift in Sources */,
 				84E720652EAA198F002618BD /* FileDownloadManagerMock.swift in Sources */,
 				4B975C002E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */,

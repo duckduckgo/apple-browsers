@@ -241,6 +241,40 @@ final class DataClearingWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.clear_tabs_status"] as? String, "SUCCESS")
     }
 
+    func testJSONParameters_listsActionsThatStartedButNeverFinished() {
+        // Given
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        let base = Date()
+        eventData.clearTabsDuration = WideEvent.MeasuredInterval(start: base, end: base.addingTimeInterval(0.1))
+        eventData.clearAIChatHistoryDuration = WideEvent.MeasuredInterval(start: base, end: nil)
+        eventData.clearAllHistoryDuration = WideEvent.MeasuredInterval(start: base, end: nil)
+
+        // When
+        let params = eventData.jsonParameters()
+
+        // Then
+        XCTAssertEqual(params["feature.data.ext.interrupted_actions"] as? String, "clear_all_history,clear_aiChat_history")
+    }
+
+    func testJSONParameters_omitsInterruptedActionsWhenEveryStartedActionFinished() {
+        // Given
+        let eventData = DataClearingWideEventData(
+            trigger: .manualFire,
+            contextData: WideEventContextData(name: "test-context")
+        )
+        let base = Date()
+        eventData.clearTabsDuration = WideEvent.MeasuredInterval(start: base, end: base.addingTimeInterval(0.1))
+
+        // When
+        let params = eventData.jsonParameters()
+
+        // Then
+        XCTAssertNil(params["feature.data.ext.interrupted_actions"])
+    }
+
     func testJSONParameters_includesAIChatRetryAndPhaseTimings() {
         // Given
         let eventData = DataClearingWideEventData(
@@ -893,7 +927,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         #elseif os(macOS)
         XCTAssertEqual(DataClearingWideEventData.metadata.type, "macos-data-clearing")
         #endif
-        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.2")
+        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.3")
     }
 
     func testClearingTimeout_is15Minutes() {

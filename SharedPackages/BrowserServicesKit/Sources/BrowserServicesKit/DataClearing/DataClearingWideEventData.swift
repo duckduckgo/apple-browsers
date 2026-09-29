@@ -38,7 +38,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.1.2"
+        version: "1.1.3"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)
@@ -502,6 +502,7 @@ extension DataClearingWideEventData {
             (WideEventParameter.DataClearingFeature.source, source?.rawValue),
             (WideEventParameter.DataClearingFeature.path, path?.rawValue),
             (WideEventParameter.DataClearingFeature.includedDomains, includedDomains),
+            (WideEventParameter.DataClearingFeature.interruptedActions, interruptedActions),
             (WideEventParameter.DataClearingFeature.aiChatRetried, clearAIChatHistoryRetried),
             (WideEventParameter.DataClearingFeature.aiChatPageLoad, clearAIChatHistoryPageLoadMilliseconds.map(processedDuration)),
             (WideEventParameter.DataClearingFeature.aiChatScriptReady, clearAIChatHistoryScriptReadyMilliseconds.map(processedDuration)),
@@ -523,6 +524,15 @@ extension DataClearingWideEventData {
 // MARK: - Private Helpers
 
 private extension DataClearingWideEventData {
+
+    /// Actions that started but never finished, so an orphaned journey shows where it got stuck.
+    var interruptedActions: String? {
+        let interrupted = Action.allCases.filter { action in
+            let duration = self[keyPath: action.durationPath]
+            return duration?.start != nil && duration?.end == nil
+        }
+        return interrupted.isEmpty ? nil : interrupted.map(\.rawValue).joined(separator: ",")
+    }
 
     /// Processes duration for pixel reporting: rounds to 10ms precision and caps at 10 seconds.
     ///
@@ -605,6 +615,7 @@ extension WideEventParameter {
         static let source = "feature.data.ext.source"
         static let path = "feature.data.ext.path"
         static let includedDomains = "feature.data.ext.included_domains"
+        static let interruptedActions = "feature.data.ext.interrupted_actions"
         static let aiChatRetried = "feature.data.ext.clear_aiChat_history_retried"
         static let aiChatFirstAttempt = "clear_aiChat_history_first_attempt"
         static let aiChatPageLoad = "feature.data.ext.clear_aiChat_history_page_load_ms"

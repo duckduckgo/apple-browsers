@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-data-clearing",
-            "version": "1.2"
+            "version": "1.3"
         },
         "feature": {
             "name": "data-clearing",
@@ -79,6 +79,10 @@
                         "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
                     },
                     "clear_aiChat_history_error": "dataClearingActionError",
+                    "interrupted_actions": {
+                        "type": "string",
+                        "description": "Comma-separated actions that started but never finished. Only set on journeys resolved as UNKNOWN (e.g. clear_aiChat_history when that step got stuck)."
+                    },
                     "clear_aiChat_history_retried": {
                         "type": "boolean",
                         "description": "Whether the Duck.ai clear was retried once after a transient failure. The final status is the retry's."

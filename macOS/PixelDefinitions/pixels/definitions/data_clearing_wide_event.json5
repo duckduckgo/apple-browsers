@@ -92,6 +92,11 @@
                 "description": "Duration from start of clearing attempt to end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
             },
 
+            {
+                "key": "feature.data.ext.interrupted_actions",
+                "type": "string",
+                "description": "Comma-separated actions that started but never finished. Only set on journeys resolved as UNKNOWN."
+            },
             // Duck.ai clear retry and phase timings
             {
                 "key": "feature.data.ext.clear_aiChat_history_retried",

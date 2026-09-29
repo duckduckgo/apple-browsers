@@ -74,8 +74,7 @@ struct DeleteAccountViewV2: View {
 
 #if DEBUG
 #Preview("Two Devices") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return DeleteAccountViewV2(devices: [
+    DeleteAccountViewV2(devices: [
         SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"),
         SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device")
     ])
@@ -83,8 +82,7 @@ struct DeleteAccountViewV2: View {
 }
 
 #Preview("Many Devices") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return DeleteAccountViewV2(devices: [
+    DeleteAccountViewV2(devices: [
         SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"),
         SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"),
         SyncDevice(kind: .desktop, name: "Home iMac", id: "desktop-device"),

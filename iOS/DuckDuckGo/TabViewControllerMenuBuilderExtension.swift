@@ -361,6 +361,7 @@ extension TabViewController {
         return .regular(
             name: UserText.sitePermissions,
             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.options : DesignSystemImages.Glyphs.Size24.options,
+            tag: .sitePermissions,
             action: { [weak self] in
                 self?.presentSitePermissionsManagement()
             }

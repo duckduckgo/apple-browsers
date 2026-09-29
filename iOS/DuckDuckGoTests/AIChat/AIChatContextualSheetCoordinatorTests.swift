@@ -621,7 +621,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.isFloatingInputPresented)
         let url = URL(string: "https://duckduckgo.com/duckai/privacy-terms")!
 
-        sut.openURLLeavingCurrentSurface(url)
+        sut.openInNewTabLeavingCurrentSurface(url)
 
         XCTAssertFalse(sut.isFloatingInputPresented)
         XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])

@@ -51,19 +51,11 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
     }
 
     var suffixTextColor: NSColor {
-        guard themeManager.isAppRebranded else {
-            return accentPrimaryColor
-        }
-
-        return themeManager.theme.colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
+        themeManager.theme.colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
     }
 
     var suffixSelectedTextColor: NSColor {
-        guard themeManager.isAppRebranded else {
-            return selectedTintColor
-        }
-
-        return themeManager.theme.colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
+        themeManager.theme.colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
     }
 }
 
@@ -76,12 +68,9 @@ final class AIChatSuggestionRowView: NSView {
 
     private enum Constants {
         static let rowHeight: CGFloat = 34
-        static let legacyRowHeight: CGFloat = 32
         static let horizontalPadding: CGFloat = 14
-        static let legacyHorizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 8
-        static let legacyIconTitleSpacing: CGFloat = 6
 
         // Colors matching SuggestionTableCellView
         static let iconColor: NSColor = .suggestionIcon
@@ -89,8 +78,6 @@ final class AIChatSuggestionRowView: NSView {
     }
 
     // MARK: - UI Components
-
-    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -157,7 +144,6 @@ final class AIChatSuggestionRowView: NSView {
 
     init(suggestion: AIChatSuggestion, isBurner: Bool = false, themeManager: ThemeManaging = NSApp.delegateTyped.themeManager, themeProvider: SuggestionRowThemeProviding? = nil) {
         self.suggestion = suggestion
-        self.themeManager = themeManager
         self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
@@ -185,23 +171,19 @@ final class AIChatSuggestionRowView: NSView {
         addSubview(titleLabel)
         addSubview(deleteButton)
 
-        let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
-        let iconPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
-        let titlePadding = themeManager.isAppRebranded ? Constants.iconTitleSpacing : Constants.legacyIconTitleSpacing
-
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: rowHeight),
+            heightAnchor.constraint(equalToConstant: Constants.rowHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconPadding),
+            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: titlePadding),
-            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -titlePadding),
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
+            titleLabel.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -iconPadding),
+            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
             deleteButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             deleteButton.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             deleteButton.heightAnchor.constraint(equalToConstant: Constants.iconSize),

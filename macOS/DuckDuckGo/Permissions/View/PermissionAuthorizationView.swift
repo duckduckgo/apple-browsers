@@ -24,6 +24,9 @@ struct PermissionAuthorizationView: View {
         static let width: CGFloat = 252
         static let buttonHeight: CGFloat = 32
         static let closeButtonSize: CGFloat = 20
+        static let systemPermissionIconSize: CGFloat = 24
+        static let systemPermissionButtonHeight: CGFloat = 28
+        static let systemPermissionCornerRadius: CGFloat = 16
     }
 
     @ObservedObject
@@ -50,23 +53,27 @@ struct PermissionAuthorizationView: View {
                 .accessibilityIdentifier(viewModel.viewState.closeButtonAccessibilityIdentifier)
             }
 
-            VStack(spacing: 8) {
-                ForEach(viewModel.viewState.decisionButtons) { button in
-                    decisionButton(button)
+            if let step = viewModel.viewState.systemPermissionStep {
+                systemPermissionStep(step)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(viewModel.viewState.decisionButtons) { button in
+                        decisionButton(button)
+                    }
                 }
-            }
 
-            if let learnMore = viewModel.viewState.learnMore {
-                Button(action: { viewModel.send(action: .learnMore) }) {
-                    Text(learnMore.title)
-                        .font(.system(size: 13))
-                        .foregroundColor(Color(designSystemColor: .accentTextPrimary))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                if let learnMore = viewModel.viewState.learnMore {
+                    Button(action: { viewModel.send(action: .learnMore) }) {
+                        Text(learnMore.title)
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .cursor(.pointingHand)
+                    .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .cursor(.pointingHand)
-                .frame(maxWidth: .infinity)
             }
         }
         .padding(20)
@@ -91,13 +98,72 @@ struct PermissionAuthorizationView: View {
         .buttonStyle(PlainButtonStyle())
         .accessibilityIdentifier(button.accessibilityIdentifier)
     }
+
+    private func systemPermissionStep(_ step: PermissionAuthorizationViewState.SystemPermissionStep) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size24.exclamationRecolorableInvert)
+                .resizable()
+                .frame(width: Constants.systemPermissionIconSize, height: Constants.systemPermissionIconSize)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text(step.message)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                systemPermissionButton(step)
+            }
+            .padding(.top, 4)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
+                .fill(Color(designSystemColor: .permissionWarningBackground))
+        )
+    }
+
+    private func systemPermissionButton(_ step: PermissionAuthorizationViewState.SystemPermissionStep) -> some View {
+        let isEnabled = step.buttonAction != nil
+
+        return Button(action: {
+            guard let action = step.buttonAction else { return }
+            viewModel.send(action: action)
+        }) {
+            Text(step.buttonTitle)
+                .font(.system(size: 13))
+                .foregroundColor(isEnabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textPrimary))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .frame(height: Constants.systemPermissionButtonHeight)
+                .background(isEnabled ? Color(designSystemColor: .accentPrimary) : Color(designSystemColor: .controlsFillPrimary))
+                .clipShape(Capsule())
+                .contentShape(Capsule())
+                .opacity(isEnabled ? 1 : 0.4)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .disabled(!isEnabled)
+        .accessibilityIdentifier(step.buttonAccessibilityIdentifier)
+    }
 }
 
 #if DEBUG
 @MainActor
-private func previewViewModel(domain: String, permissions: [PermissionType]) -> PermissionAuthorizationViewModel {
+private func previewViewModel(
+    domain: String,
+    permissions: [PermissionType],
+    initialState: PermissionAuthorizationViewState = .init()
+) -> PermissionAuthorizationViewModel {
     let query = PermissionAuthorizationQuery(domain: domain, url: URL(string: "https://\(domain)"), permissions: permissions) { _ in }
-    return PermissionAuthorizationViewModel(query: query, pixelFiring: nil, openURL: { _ in }, finish: {})
+    return PermissionAuthorizationViewModel(
+        initialState: initialState,
+        query: query,
+        systemPermissionManager: SystemPermissionManager(notificationService: UserNotificationAuthorizationService()),
+        pixelFiring: nil,
+        openURL: { _ in },
+        finish: {}
+    )
 }
 
 #Preview("Notifications - Light") {
@@ -112,5 +178,66 @@ private func previewViewModel(domain: String, permissions: [PermissionType]) -> 
 
 #Preview("Camera and Microphone") {
     PermissionAuthorizationView(viewModel: previewViewModel(domain: "meet.example.com", permissions: [.camera, .microphone]))
+}
+
+#Preview("Notifications - Request system permission") {
+    PermissionAuthorizationView(viewModel: previewViewModel(
+        domain: "microsoft.ai",
+        permissions: [.notification],
+        initialState: .init(systemPermissionStep: .init(
+            phase: .request,
+            message: UserText.websitePermissionsPromptSystemNotificationsRequired,
+            buttonTitle: UserText.websitePermissionsPromptRequestSystemPermission
+        ))
+    ))
+}
+
+#Preview("Notifications - Waiting for system permission") {
+    PermissionAuthorizationView(viewModel: previewViewModel(
+        domain: "microsoft.ai",
+        permissions: [.notification],
+        initialState: .init(systemPermissionStep: .init(
+            phase: .waiting,
+            message: UserText.websitePermissionsPromptSystemNotificationsRequired,
+            buttonTitle: UserText.websitePermissionsPromptWaitingForSystemPermission
+        ))
+    ))
+}
+
+#Preview("Notifications - Open System Settings") {
+    PermissionAuthorizationView(viewModel: previewViewModel(
+        domain: "microsoft.ai",
+        permissions: [.notification],
+        initialState: .init(systemPermissionStep: .init(
+            phase: .openSettings,
+            message: UserText.websitePermissionsPromptSystemNotificationsOff,
+            buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
+        ))
+    ))
+}
+
+#Preview("Location - Request system permission") {
+    PermissionAuthorizationView(viewModel: previewViewModel(
+        domain: "maps.example.com",
+        permissions: [.geolocation],
+        initialState: .init(systemPermissionStep: .init(
+            phase: .request,
+            message: UserText.websitePermissionsPromptSystemLocationRequired,
+            buttonTitle: UserText.websitePermissionsPromptRequestSystemPermission
+        ))
+    ))
+}
+
+#Preview("Location - Open System Settings - Dark") {
+    PermissionAuthorizationView(viewModel: previewViewModel(
+        domain: "maps.example.com",
+        permissions: [.geolocation],
+        initialState: .init(systemPermissionStep: .init(
+            phase: .openSettings,
+            message: UserText.websitePermissionsPromptSystemLocationOff,
+            buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
+        ))
+    ))
+    .preferredColorScheme(.dark)
 }
 #endif

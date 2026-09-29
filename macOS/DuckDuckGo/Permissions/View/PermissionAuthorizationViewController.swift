@@ -155,6 +155,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     private func makeViewModel(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationViewModel {
         PermissionAuthorizationViewModel(
             query: query,
+            systemPermissionManager: systemPermissionManager,
             openURL: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
             },

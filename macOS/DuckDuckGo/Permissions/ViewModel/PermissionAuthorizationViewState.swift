@@ -21,6 +21,8 @@ import Foundation
 struct PermissionAuthorizationViewState: Equatable {
     var title = ""
     var learnMore: LearnMore?
+    /// Shown instead of the decision buttons after an allow choice, while macOS hasn't granted its own permission.
+    var systemPermissionStep: SystemPermissionStep?
     var closeButtonAccessibilityIdentifier = "PermissionAuthorizationView.closeButton"
     var decisionButtons: [DecisionButton] = [
         DecisionButton(
@@ -53,5 +55,33 @@ extension PermissionAuthorizationViewState {
         let accessibilityIdentifier: String
 
         var id: String { accessibilityIdentifier }
+    }
+
+    struct SystemPermissionStep: Equatable {
+        enum Phase: Equatable {
+            /// macOS hasn't asked yet: the button shows the macOS prompt.
+            case request
+            /// The macOS prompt is open: the button is disabled.
+            case waiting
+            /// macOS denied, the prompt timed out, or the permission is off system-wide: the button opens System Settings.
+            case openSettings
+        }
+
+        let phase: Phase
+        let message: String
+        let buttonTitle: String
+        let buttonAccessibilityIdentifier = "PermissionAuthorizationView.systemPermissionButton"
+
+        /// `nil` while waiting, which disables the button.
+        var buttonAction: PermissionAuthorizationViewModel.Action? {
+            switch phase {
+            case .request:
+                return .requestSystemPermission
+            case .waiting:
+                return nil
+            case .openSettings:
+                return .openSystemSettings
+            }
+        }
     }
 }

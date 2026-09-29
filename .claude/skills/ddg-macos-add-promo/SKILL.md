@@ -28,7 +28,7 @@ Full field/table reference: [reference.md](reference.md).
 ## Which phase are you in?
 
 - **Writing a technical design.** Work through Steps 1–2 (including 2.1 and 2.2) below and write up their answers with rationale — that *is* the design. Skip Steps 3–7 (implementation detail), except the file-placement table at the top of Step 3, which the design should state. Write "Flag these back" items as open questions/risks for engineering and product to resolve before implementation starts, rather than resolving them yourself.
-- **Implementing.** Work through Steps 1–2 first, ending with the Step 2.2 guidance check. The moment any "Flag these back" trigger applies, stop — see that section, it's a hard gate, not an FYI. Once every open item from Steps 1–2 has an explicit answer *from the user*, work through Steps 3–5 in order, then Step 6 (verify) and Step 7 (self-review) before calling it done.
+- **Implementing.** Work through Steps 1–2 first, ending with the Step 2.2 guidance check. The moment any "Flag these back" trigger applies, stop — see that section, it's a hard gate, not an FYI. Once every open item from Steps 1–2 has an explicit answer *from the user*, do Step 2.3: present the implementation plan and the inline-vs-subagents choice, and wait for the user's answer. Then work through Steps 3–5 in order, then Step 6 (verify) and Step 7 (self-review) before calling it done.
 - **Migrating UI that already ships** (an existing notification, popover, or banner presented by its own code) rather than adding something new: do all of the above **plus** "Migrating existing UI onto the queue". Read that section before you start editing — the largest failure mode in this system is treating a migration as a plain addition and silently changing frequency, priority, and who has already seen it along the way.
 - **Reviewing someone else's implementation or PR.** Skip straight to "Reviewing an implementation" near the end — treat each step above as something to verify against the actual diff, not something to newly decide.
 
@@ -139,6 +139,39 @@ The design-side catalog of treatments lives outside this repo and you can't read
 | "don't show to users who've seen \<other promo\>" | No cross-promo history query in the model | Needs either a shared eligibility source or a product rethink |
 
 **Escalation wording.** When you flag one of these, say what the spec asks for, which rule it runs into, and that it needs product/design input — then stop. Don't pair the flag with an implementation of your best guess (see the red flags under "Flag these back"). If the user makes the call themselves in the moment, that's a valid answer; record it in the PR description, not just in a code comment.
+
+## Step 2.3 — Present the plan and how to implement it (adding or migrating)
+
+When every open question has an answer from the user, your next message is the plan. It comes before your first edit, even if the user said "go ahead" when answering. If writing it turns up a new open question, ask that question first; the plan goes out only when nothing is open.
+
+**The plan message has these parts, in this order:**
+
+1. **Promo definition**: the `InternalPromo`/`ExternalPromo` call with every field, plus its position in `makeAllPromos` (named neighbours).
+2. **Decisions**: one line per decision the user made in Steps 1–2.2, stated as it will be built.
+3. **Changes, by file**: every file you'll create, edit, or delete, with one line on what changes. An edit to existing code names the type and method it touches: read the code to find it. If you can't name it without the user's input, that's an open question to ask before the plan. Group the files into these tasks, and leave out any task that doesn't apply:
+   - **A. Shared enums and flags**: `PromoTrigger` case and publisher, `PromoContext` case, kill-switch flag (`FeatureFlag.swift`, `PrivacyFeature.swift`)
+   - **B. Delegate and UI**: in the feature's own directory
+   - **C. Wiring**: `PromoServiceFactory+<Name>.swift`, `PromoDependencies`, `makeAllPromos`, the code that posts the trigger notification
+   - **D. Legacy removal** (migrations only): the old presentation path, the old timer, the legacy flag moved onto `KeyedStorage`, dead code
+   - **E. Tests**: delegate tests, `PromoRegistryTests`, `PromoServiceFactoryTests`
+   - **F. Project and verification**: the pbxproj entries for both targets, the build, the tests, and the Step 7 self-review
+4. **Not changing**: anything a reader might expect to change but won't (e.g. "the legacy pixels keep their names"). Each entry is a plain statement. If you'd want to add "tell me if you want X", X is an open question to ask before the plan.
+5. **How to implement**: offer both options and wait for the user's pick.
+   - **Inline**: you make every change in this session, in task order.
+   - **Subagents**: one subagent per task, run in order A → E, with you reviewing each result before starting the next. You do F yourself.
+
+**If the user picks subagents:**
+- Each subagent's prompt contains:
+  - the path to this skill;
+  - the promo definition and the decisions from parts 1–2, verbatim;
+  - its task's file list from part 3;
+  - this instruction: "If you hit a decision this plan doesn't answer, stop and report it back; don't choose."
+- Run them one at a time. Tasks A–E touch overlapping files (`PromoDependencies`, the test setup), so they can't safely run in parallel.
+- Keep every pbxproj edit in F. Parallel edits to `project.pbxproj` corrupt it.
+- After each subagent returns, check its diff against its task's lines in the plan before starting the next one. A question a subagent reports back goes to the user, the same way as a Flag-these-back item.
+- If `superpowers:subagent-driven-development` is available, you can use it to run the tasks, keeping these rules.
+
+**If the plan changes during implementation** (a file you didn't list, a decision that turns out not to work), say what changed and get the user's OK before you continue.
 
 ## The rationalizing-comment smell test
 
@@ -420,6 +453,7 @@ This holds even when you're confident, even when the spec's own wording leans on
 - Drafting the "flags" section of your final report before the user has answered any of them
 - Justifying any field by the rule it avoids rather than the thing it describes (see "The rationalizing-comment smell test")
 - Appending the promo to the end of `makeAllPromos` without having asked where it belongs
+- Making your first edit before the user has seen the Step 2.3 plan and picked inline or subagents
 
 **Triggers:**
 

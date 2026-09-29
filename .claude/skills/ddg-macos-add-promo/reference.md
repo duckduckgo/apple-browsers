@@ -14,7 +14,7 @@ The header comment of `PromoTypes/PromoType.swift` links the two canonical DDG d
 
 `PromoService` is constructed unconditionally in `AppDelegate.applicationDidFinishLaunching`; there is no queue-wide feature flag. (`PrivacyFeature.promoQueue` survives only as the parent of `PromoQueueSubfeature`.)
 
-A promo migrated from shipping UI carries its own flag — `promoQueue<Name>Promo`, `defaultValue: .enabled`, `source: .remoteReleasable(PromoQueueSubfeature.<name>Promo)` — checked inside its delegate's `isEligible` (or `isVisible` for an external promo), so it can be killed remotely. That flag is the only fallback for a migration; keeping the legacy presentation path alive is not. See "Migrating existing UI" in SKILL.md for the three files it touches. When debugging "it never appears", check that flag first.
+A promo migrated from shipping UI carries its own flag — `promoQueue<Name>Promo`, `defaultValue: .enabled`, `source: .remoteReleasable(PromoQueueSubfeature.<name>Promo)` — checked inside its delegate's `isEligible` (or `isVisible` for an external promo), so it can be killed remotely. That flag is the only fallback for a migration; keeping the legacy presentation path alive is not. See task A in implementing.md for the three files it touches. When debugging "it never appears", check that flag first.
 
 ## `Promo` protocol fields
 
@@ -217,7 +217,7 @@ Do not trust a list of cases written down here; read them:
 grep -n 'case ' macOS/DuckDuckGo/Promotions/PromoTypes/PromoTrigger.swift
 ```
 
-To add a new trigger: add the case, then merge the corresponding notification/publisher into `triggerPublisher`. This is a shared-file edit, not something you can express purely inside a new `PromoServiceFactory+*.swift` file — flag it as a required change up front, and see "Step 2.1" in SKILL.md for the full process.
+To add a new trigger: add the case, then merge the corresponding notification/publisher into `triggerPublisher`. This is a shared-file edit, not something you can express purely inside a new `PromoServiceFactory+*.swift` file — flag it as a required change up front (SKILL.md Step 2, item 1), and see task A in implementing.md for the edits.
 
 **Triggers fire once; a missed trigger is not retried.** `evaluateTriggers` reacts to the event as it arrives. If `checkRules` fails at that instant (another promo visible, global cooldown active, external-activation suppression window), the promo is simply skipped — nothing re-queues it, and nothing is logged. A one-shot trigger paired with a medium+ `.global` promo is therefore easy to lose entirely for a session. Pair such triggers with a recurring one (`.windowBecameKey` is what all three `defaultBrowserAndDock` promos use precisely to get retries), or have the posting code re-post while the condition holds.
 

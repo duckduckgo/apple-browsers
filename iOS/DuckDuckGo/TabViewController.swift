@@ -139,6 +139,42 @@ enum WebViewScrollViewInsetUpdater {
     }
 }
 
+/// Tracks whether the page currently being committed is the one an HTTPS upgrade produced, so that
+/// `upgradedHttps` on a breakage report describes that page and nothing that follows it.
+///
+/// Deliberately separate from `TabViewController.lastUpgradedURL`, which outlives a single navigation
+/// on purpose: it stops us re-upgrading a URL the server bounced straight back to HTTP. Reusing that
+/// value for reporting made one upgrade flag every later page on the same registrable domain.
+struct HTTPSUpgradeNavigationTracker {
+
+    private var upgradedURL: URL?
+
+    /// Records the upgraded URL that is about to be requested.
+    ///
+    /// Must be the URL actually handed to the web view, not the raw output of the upgrader: link
+    /// protection can strip tracking parameters or swap an AMP link for its canonical in between.
+    mutating func didUpgrade(to url: URL) {
+        upgradedURL = url
+    }
+
+    /// Forgets the upgrade as soon as the main frame heads anywhere other than the upgraded URL.
+    mutating func willNavigate(mainFrameTo url: URL?) {
+        if upgradedURL != url {
+            upgradedURL = nil
+        }
+    }
+
+    mutating func reset() {
+        upgradedURL = nil
+    }
+
+    /// Whether `committedURL` is the page the upgrade produced.
+    func isHTTPSForced(committedURL: URL?) -> Bool {
+        guard let upgradedURL, let committedURL else { return false }
+        return upgradedURL == committedURL
+    }
+}
+
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -332,6 +368,7 @@ class TabViewController: UIViewController {
         return handler
     }()
     private var lastUpgradedURL: URL?
+    private var httpsUpgradeTracker = HTTPSUpgradeNavigationTracker()
     private var httpsUpgradeTask: Task<Void, Never>?
     private var lastError: Error?
     private var lastHttpStatusCode: Int?
@@ -631,6 +668,7 @@ class TabViewController: UIViewController {
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
+                                   webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                                    sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
@@ -673,6 +711,7 @@ class TabViewController: UIViewController {
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
                                  sitePermissionsEnabled: sitePermissionsEnabled,
+                                 webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
 
@@ -686,6 +725,9 @@ class TabViewController: UIViewController {
 
     let eventHub: EventHubManaging
     let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
+    private let webExtensionNavigationGate = WebExtensionNavigationGate()
+    private var webExtensionNavigationTask: Task<Void, Never>?
 
     /// This tab's EventHub identity. Derived from the tab model's UUID string, so it is stable for the
     /// tab's lifetime and unique per tab — which is what EventHub's per-tab web-event dedup keys off.
@@ -900,6 +942,7 @@ class TabViewController: UIViewController {
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
         self.tabModel = tabModel
@@ -962,6 +1005,7 @@ class TabViewController: UIViewController {
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
         self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
 
         // Captured by value so the handler's provider closure doesn't retain the controller.
         let eventHubTabID = EventHubTabID(rawValue: UUID(uuidString: tabModel.uid) ?? UUID())
@@ -1409,6 +1453,7 @@ class TabViewController: UIViewController {
                        consumeCookies: Bool,
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
+        cancelWebExtensionNavigationWait()
         instrumentation.willPrepareWebView()
         pageContextNavigationID = UUID()
         pageContextLoadedNavigationID = nil
@@ -1584,6 +1629,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserNavigation()
@@ -1596,6 +1642,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -1608,6 +1655,7 @@ class TabViewController: UIViewController {
     private func load(url: URL, didUpgradeURL: Bool) {
         if !didUpgradeURL {
             lastUpgradedURL = nil
+            httpsUpgradeTracker.reset()
             privacyInfo?.connectionUpgradedTo = nil
         }
 
@@ -1627,11 +1675,18 @@ class TabViewController: UIViewController {
                                    onStartExtracting: { showProgressIndicator() },
                                    onFinishExtracting: { },
                                    completion: { [weak self] url in
+            // Arm the report here, not in `upgradeToHttps`: link protection may have stripped tracking
+            // parameters or resolved an AMP link, and the tracker has to hold the URL we actually
+            // request or the navigation that follows won't match it.
+            if didUpgradeURL {
+                self?.httpsUpgradeTracker.didUpgrade(to: url)
+            }
             self?.load(urlRequest: .userInitiated(url))
         })
     }
 
     func prepareForDataClearing() {
+        cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
@@ -1645,6 +1700,7 @@ class TabViewController: UIViewController {
     }
     
     private func load(urlRequest: URLRequest) {
+        cancelWebExtensionNavigationWait()
         loadViewIfNeeded()
 
         if let url = urlRequest.url, !shouldReissueSearch(for: url) {
@@ -1844,6 +1900,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
@@ -1861,6 +1918,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -1934,6 +1992,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -2412,6 +2471,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         webView.stopLoading()
@@ -2435,6 +2495,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
@@ -2535,27 +2596,12 @@ extension TabViewController: WKNavigationDelegate {
         if isAITab {
             delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
         }
-        let tld = storageCache.tld
-        let httpsForced = Self.isHTTPSForced(lastUpgradedURL: lastUpgradedURL, currentURL: webView.url, tld: tld)
-        onWebpageDidStartLoading(httpsForced: httpsForced)
+        onWebpageDidStartLoading(httpsForced: httpsUpgradeTracker.isHTTPSForced(committedURL: webView.url))
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
         
         // Check cache for instant logo display during back navigation
         checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
 
-    }
-
-    /// Whether the committed page was reached via an HTTPS upgrade.
-    ///
-    /// Needs both an upgrade on record and an HTTPS commit: `lastUpgradedURL` isn't reset across
-    /// same-domain navigations, so without the scheme check a later HTTP commit on the same domain
-    /// would be mis-flagged. Mirrors macOS's `connectionUpgradedTo != nil`.
-    static func isHTTPSForced(lastUpgradedURL: URL?, currentURL: URL?, tld: TLD) -> Bool {
-        guard let lastUpgradedURL, let currentURL, currentURL.isHttps else { return false }
-        guard let upgradedDomain = tld.domain(lastUpgradedURL.host) else {
-            return lastUpgradedURL.host == currentURL.host
-        }
-        return upgradedDomain == tld.domain(currentURL.host)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -3369,10 +3415,11 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
-        if webView === self.webView,
-           navigationAction.isTargetingMainFrame,
-           isSitePermissionsEnabled {
-            sitePermissionsState.cancelContentBlockingWaits()
+        if webView === self.webView, navigationAction.isTargetingMainFrame {
+            cancelWebExtensionNavigationWait()
+            if isSitePermissionsEnabled {
+                sitePermissionsState.cancelContentBlockingWaits()
+            }
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3393,6 +3440,45 @@ extension TabViewController: WKNavigationDelegate {
             }
             decisionHandler(policy)
         }
+
+        // Wait on the shared startup gate. The post-gate helper is also used by the
+        // Content Blocking retry below, so that retry does not wait on extension startup twice.
+        if #available(iOS 18.4, *),
+           navigationAction.isTargetingMainFrame,
+           let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
+            webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
+                guard !Task.isCancelled else {
+                    wrappedHandler(.cancel)
+                    return
+                }
+                await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isTargetingMainFrame,
+                                                              url: navigationAction.request.url,
+                                                              initialLoadWaiter: initialLoadWaiter)
+                guard !Task.isCancelled, let self, webView === self.webView else {
+                    wrappedHandler(.cancel)
+                    return
+                }
+                webExtensionNavigationTask = nil
+                decidePolicyAfterWebExtensionInitialLoad(webView,
+                                                         navigationAction: navigationAction,
+                                                         decisionHandler: wrappedHandler)
+            }
+            return
+        }
+
+        decidePolicyAfterWebExtensionInitialLoad(webView,
+                                                 navigationAction: navigationAction,
+                                                 decisionHandler: wrappedHandler)
+    }
+
+    func cancelWebExtensionNavigationWait() {
+        webExtensionNavigationTask?.cancel()
+        webExtensionNavigationTask = nil
+    }
+
+    private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
+                                                          navigationAction: WKNavigationAction,
+                                                          decisionHandler wrappedHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
         // There is an `isUserInitiated` var on navigationAction that uses private API
         //  but this approach is public API.  Unfortunately this means that on iOS 17 and older
@@ -3424,7 +3510,9 @@ extension TabViewController: WKNavigationDelegate {
                    wrappedHandler(.cancel)
                    return
                }
-               self.webView(webView, decidePolicyFor: navigationAction, decisionHandler: wrappedHandler)
+               self.decidePolicyAfterWebExtensionInitialLoad(webView,
+                                                             navigationAction: navigationAction,
+                                                             decisionHandler: wrappedHandler)
            }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
             // will wait for Content Blocking to load and re-call on completion
             return
@@ -3723,6 +3811,10 @@ extension TabViewController: WKNavigationDelegate {
         
         // If WKNavigationAction requests to shouldPerformDownload prepare for handling it in decidePolicyFor:navigationResponse:
         recentNavigationActionShouldPerformDownloadURL = navigationAction.shouldPerformDownload ? navigationAction.request.url : nil
+
+        if navigationAction.isTargetingMainFrame {
+            httpsUpgradeTracker.willNavigate(mainFrameTo: navigationAction.request.url)
+        }
 
         if navigationAction.isTargetingMainFrame
             && tld.domain(navigationAction.request.mainDocumentURL?.host) != tld.domain(lastUpgradedURL?.host) {

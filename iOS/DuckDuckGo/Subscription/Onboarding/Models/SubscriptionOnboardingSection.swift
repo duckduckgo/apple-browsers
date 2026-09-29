@@ -38,9 +38,7 @@ enum SubscriptionOnboardingSection: CaseIterable {
     var kind: Kind {
         switch self {
         case .orderConfirmation, .welcome: .overview
-        case .vpnActivation: .activation(.vpn)
-        case .vpnWidget: .activation(.vpnWidget)
-        case .vpnTips: .activation(.vpnTips)
+        case .vpnActivation, .vpnWidget, .vpnTips: .activation(.vpn)
         case .idtr: .activation(.idtr)
         case .duckAI: .activation(.duckAI)
         case .progress: .progressTracker

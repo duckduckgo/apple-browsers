@@ -28,7 +28,6 @@ let package = Package(
     products: [
         .library(name: "NoARCObjCTestUtilities", targets: ["NoARCObjCTestUtilities"]),
         .library(name: "SharedTestUtilities", targets: ["SharedTestUtilities"]),
-        .library(name: "SharedSandboxTestUtilities", targets: ["SharedSandboxTestUtilities"]),
     ],
     dependencies: [
         .package(path: "../Utilities"),
@@ -70,11 +69,6 @@ let package = Package(
                 .product(name: "Utilities", package: "Utilities"),
             ]
         ),
-        .target(
-            name: "SharedSandboxTestUtilities",
-            dependencies: [
-            ]
-        )
     ],
     swiftLanguageVersions: [.v5]
 )

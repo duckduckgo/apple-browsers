@@ -597,6 +597,9 @@ class FireExecutor: FireExecuting {
         await dataStoreWarmupWorker.ensureNormalStoreIsReady()
         let cleaner = historyCleanerProvider(nil, false)
         let result = await cleaner.cleanAIChatHistory()
+        if let report = cleaner.lastClearingReport {
+            dataClearingWideEventService?.recordAIChatClearing(report)
+        }
         switch result {
         case .success:
             await recordAIChatsClearDate(trigger: trigger)

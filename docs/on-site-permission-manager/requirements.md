@@ -140,6 +140,7 @@ When a website requests camera, microphone, or location and no applicable stored
 - Semantics: **Allow Once** = ephemeral in-memory grant for the current page — it ends on reload or any non-same-document navigation, and is never persisted (§4.3, OQ-9); **Allow While Using Site** = persistent per-site allow ("Always Allow" in pickers); **Never Allow** = persistent per-site deny.
 - No combined camera+microphone request dialogue is designed. **Working default (DRI, 2026-08-28):** one combined dialog titled `“<domain>” website wants to access your camera and microphone`, no body, the standard three buttons — string marked for later copy review (OQ-2).
 - Copy note: the main task and older docs say "Always Allow / Allow Once / Never Allow"; **the Figma copy is the source of truth** (peer-review decision).
+- **Dismissible (decided 2026-09-09):** tapping outside the dialog cancels it. Cancel behaves like a one-time deny: the request is declined, the site is not re-asked on this page load, nothing is persisted and no Settings record is created.
 
 ### FR-2: Dialogue ordering (site first, system second)
 
@@ -169,7 +170,7 @@ Clarifications: an explicit "Ask Each Time" entry (set by the user in the manage
   2. **Permissions + Reminder:** rows, then a group with `Remove Permissions` + `Go to System Settings` (grouped together, per the design), then the reminder footer.
   3. **Reminder only:** just `Go to System Settings` + footer.
 - **Row anatomy:** type icon + label (`Location` / `Camera` / `Microphone`) + current state (`Ask Each Time` / `Always Allow` / `Never Allow`) + picker chevrons.
-- **Per-site picker options:** `Ask Each Time` / `Always Allow` / `Never Allow`; while an ephemeral grant is active the picker shows `Allow This Time` (checked) / `Always Allow` / `Never Allow` (Figma 870:21926).
+- **Per-site picker options:** `Ask Each Time` / `Always Allow` / `Never Allow`. An active Allow Once shows as `Ask Each Time` with the in-use indicator — decided by design during the Build 2 review (2026-09-09); this supersedes the earlier `Allow This Time` picker variant (Figma 870:21926), which is no longer used.
 - **Icon states (Figma set 443:36250 / 442:113096):** outline = Ask Each Time; outline + blocked badge = Never Allow; solid = Always Allow (not in use); **solid red ("Status-Red": Light `EB102D` / Dark `FF545A`) = currently in use** (applies to both Always and Ask-Each-Time grants). Accessibility (kick-off 2026-08-28, resolving OQ-14): **no visible design changes** — VoiceOver labels convey the state (the row's state text already provides a non-color signal for sighted users). `.muted` capture maps to paused and is **not** shown as in-use (OQ-19, macOS model).
 - **Reminder footer copy** (multi-permission, dynamic bracketed list): `DuckDuckGo needs to access your camera, [location, and microphone], if you want to use related features on this site.` Single-permission variants exist in two phrasings (see Open Questions OQ-4).
 - Changes to a permission that the page is currently using may require a page reload to take effect — hence the caption and the "Reload" step in the recovery flow (Figma flow C).
@@ -255,7 +256,7 @@ No Asana or Figma task defines a pixel list for this project. The closest source
 | # | Pixel | When |
 |---|---|---|
 | 1 | `permission_dialog_impression_<type>` | our 3-option dialog shows (`type`: camera / microphone / camera_and_microphone / geolocation) |
-| 2 | `permission_dialog_click_<type>_<allow_once\|allow_always\|never>` | site-dialog selection (intent, separate from OS outcome) |
+| 2 | `permission_dialog_click_<type>_<allow_once\|allow_always\|never\|dismissed>` | site-dialog selection (intent, separate from OS outcome); `dismissed` = tapped outside the dialog (added 2026-09-09) |
 | 3 | `permission_system_prompt_result_<type>_<granted\|denied>` | the OS prompt outcome after a site allow (funnel with #2) |
 | 4 | `permission_reminder_dialog_<type>_<shown\|settings\|cancel>` | Case B recovery dialog interactions |
 | 5 | `permission_center_opened` | on-site sheet opened from the menu |

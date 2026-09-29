@@ -2065,7 +2065,7 @@ cd iOS && npm run validate-pixel-defs
 | Menu entry present/absent | shown with a stored record (incl. explicit Ask) or active state; **hidden** with no record; hidden with the flag off — **in both menu layouts** |
 | **Dynamic detent** | the count tracks Open Bookmarks' real position: with the new row present, with it absent, with the YouTube Ad Block section present, and with optional entries missing. **These tests do not exist today — you are creating the first ones.** |
 | Sheet states | all three render; membership is `stored ∪ active ∪ requested-this-visit`; a globally-denied type with no record adds **no** row |
-| Sheet picker | 3 options normally; `Allow This Time` (checked) replaces `Ask Each Time` while an ephemeral grant is active |
+| Sheet picker | 3 options: `Ask Each Time` · `Always Allow` · `Never Allow`; an active Allow Once shows as `Ask Each Time` with the in-use indicator (design decision, Build 2 review 2026-09-09 — no `Allow This Time` variant) |
 | Immediate revocation | deny → capture stops **now**; Remove → capture stops **now**; **grant → capture does not change until reload** |
 | Settings entry | present when the flag is on, **absent** when off; locale sorting unaffected |
 | Global pickers | **two** options only (`Ask Each Time` / `Never Allow`) — assert a third is not representable |
@@ -2100,15 +2100,13 @@ Note the label/token split: the UI says **Location**, the persisted value and pi
 
 **Per-site picker options:**
 
-- Normally: `Ask Each Time` · `Always Allow` · `Never Allow`
-- **While an ephemeral grant is active** (Figma 870:21926): `Allow This Time` (checked) ·
-  `Always Allow` · `Never Allow`
+- Always: `Ask Each Time` · `Always Allow` · `Never Allow` — in every state.
+- **While an ephemeral grant is active**, the row still reads `Ask Each Time` and carries the in-use
+  indicator. **Design decision (Build 2 review, 2026-09-09):** the earlier `Allow This Time` picker
+  variant (Figma 870:21926) is retired — remove that string and any code path that showed it.
 
-`Allow This Time` is its **own distinct string** — not `Allow Once` (the dialog button) and not
-`Ask Each Time` (the option it replaces while a grant is live). Four strings, four meanings, four
-`UserText` entries: `Allow Once`, `Allow While Using Site`, `Ask Each Time`, `Allow This Time`.
-`Allow This Time` appears **only** in this picker, only while a grant is live, and it is always
-the checked one.
+Three strings, three meanings, three `UserText` entries: `Allow Once` (dialog button only),
+`Allow While Using Site` (dialog button only), `Ask Each Time` (picker/row state).
 
 **Three states:**
 

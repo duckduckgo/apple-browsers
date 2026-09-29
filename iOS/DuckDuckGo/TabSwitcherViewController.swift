@@ -698,6 +698,7 @@ class TabSwitcherViewController: UIViewController {
 
         super.dismiss(animated: animated) {
             completion?()
+            self.delegate?.tabSwitcherDidDismiss(self)
         }
     }
 }

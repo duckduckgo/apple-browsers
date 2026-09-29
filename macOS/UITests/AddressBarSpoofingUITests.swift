@@ -133,7 +133,7 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete
-        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        let navigationCompleted = app.webViews["Example Domain"]
         XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
@@ -154,7 +154,7 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        let navigationCompleted = app.webViews["Example Domain"]
         XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
@@ -173,7 +173,7 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        let navigationCompleted = app.webViews["Example Domain"]
         XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
@@ -213,8 +213,12 @@ class AddressBarSpoofingUITests: UITestCase {
         XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         runButton.click()
 
-        // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        // JavaScript execution should complete within a reasonable timeframe
+        // A completed download can open a popover that intercepts Cmd+L and address bar clicks.
+        let downloadsPopover = app.popovers.containing(.table, identifier: "DownloadsViewController.table").firstMatch
+        if downloadsPopover.waitForExistence(timeout: 2) {
+            app.typeKey(.escape, modifierFlags: [])
+            XCTAssertFalse(downloadsPopover.exists, "Downloads popover should close before inspecting the address bar")
+        }
 
         // Verify address bar state after exploit attempt
         let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""

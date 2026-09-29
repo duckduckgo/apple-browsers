@@ -18,7 +18,7 @@
 
 import XCTest
 import Combine
-import Navigation
+import DDGNavigation
 @testable import DuckDuckGo_Privacy_Browser
 
 private final class TabMock: LazyLoadable {

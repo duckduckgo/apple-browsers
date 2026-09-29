@@ -19,15 +19,32 @@
 import XCTest
 @testable import AIChat
 
-/// The invoker owns every reason a call can be refused.
+/// The invoker owns every reason a call can be refused, and the consent step between them.
 @MainActor
 final class BrowserToolInvokerTests: XCTestCase {
+
+    private var permissions: InMemoryPermissionStore!
+    private var elicitations: AIChatElicitationCoordinator!
+
+    override func setUp() {
+        super.setUp()
+        permissions = InMemoryPermissionStore()
+        elicitations = AIChatElicitationCoordinator(timeout: 5)
+    }
+
+    override func tearDown() {
+        permissions = nil
+        elicitations = nil
+        super.tearDown()
+    }
+
+    // MARK: - Gating
 
     func testWhenParentFeatureIsDisabledThenCallIsUnavailableAndToolDoesNotRun() async {
         let tool = SpyBrowserTool(name: "alpha")
         let invoker = makeInvoker(tools: [tool], isEnabled: false, enabledToolNames: ["alpha"])
 
-        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context())
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: nil)
 
         XCTAssertEqual(result, .failure(.unavailable))
         XCTAssertFalse(tool.didExecute)
@@ -36,7 +53,7 @@ final class BrowserToolInvokerTests: XCTestCase {
     func testWhenToolIsUnknownThenCallIsUnavailable() async {
         let invoker = makeInvoker(tools: [SpyBrowserTool(name: "alpha")], enabledToolNames: ["alpha"])
 
-        let result = await invoker.invoke(toolNamed: "nope", arguments: nil, context: context())
+        let result = await invoker.invoke(toolNamed: "nope", arguments: nil, context: context(), elicitationPusher: nil)
 
         XCTAssertEqual(result, .failure(.unavailable))
     }
@@ -46,7 +63,7 @@ final class BrowserToolInvokerTests: XCTestCase {
         let tool = SpyBrowserTool(name: "alpha")
         let invoker = makeInvoker(tools: [tool], enabledToolNames: [])
 
-        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context())
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: nil)
 
         XCTAssertEqual(result, .failure(.unavailable))
         XCTAssertFalse(tool.didExecute)
@@ -58,17 +75,32 @@ final class BrowserToolInvokerTests: XCTestCase {
         let tool = SpyBrowserTool(name: "alpha")
         let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
 
-        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(isBurner: true))
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(isBurner: true), elicitationPusher: nil)
 
         XCTAssertEqual(result, .failure(.unavailable))
         XCTAssertFalse(tool.didExecute)
     }
 
+    /// Fire is checked before consent, so a burner window can never leave a decision behind.
+    func testWhenAskToolIsCalledInAFireWindowThenNoPromptIsPushedAndNothingIsPersisted() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "alwaysAllow"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(isBurner: true), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertNil(pusher.pushedParams)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    // MARK: - Execution
+
     func testWhenToolIsEnabledThenItRunsAndItsResultIsReturned() async {
         let tool = SpyBrowserTool(name: "alpha", result: .success(["switched": true]))
         let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
 
-        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "abc"], context: context())
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "abc"], context: context(), elicitationPusher: nil)
 
         XCTAssertEqual(result, .success(["switched": true]))
         XCTAssertTrue(tool.didExecute)
@@ -79,7 +111,7 @@ final class BrowserToolInvokerTests: XCTestCase {
         let tool = SpyBrowserTool(name: "alpha", result: .failure(.invalidArguments))
         let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
 
-        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context())
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: nil)
 
         XCTAssertEqual(result, .failure(.invalidArguments))
     }
@@ -94,11 +126,192 @@ final class BrowserToolInvokerTests: XCTestCase {
                                              isBurner: false,
                                              supportsElicitationForm: true)
 
-        _ = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context)
+        _ = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context, elicitationPusher: nil)
 
         XCTAssertEqual(tool.receivedContext?.ownerWindowToken, "window-1")
         XCTAssertEqual(tool.receivedContext?.ownerTabID, "owner-tab")
     }
+
+    // MARK: - Permissions
+
+    /// An `auto` tool ignores the store entirely — even a stray stored deny.
+    func testWhenToolIsAutoThenItRunsWithoutPromptingRegardlessOfStoredDecisions() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .auto)
+        permissions.setState(.deny, forToolNamed: "alpha")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success([:]))
+        XCTAssertNil(pusher.pushedParams)
+    }
+
+    func testWhenAskToolHasStoredAllowThenItRunsWithoutPrompting() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        permissions.setState(.allow, forToolNamed: "alpha")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success([:]))
+        XCTAssertNil(pusher.pushedParams)
+    }
+
+    func testWhenAskToolHasStoredDenyThenCallIsDeniedWithoutPrompting() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        permissions.setState(.deny, forToolNamed: "alpha")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.denied))
+        XCTAssertNil(pusher.pushedParams)
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenAskToolIsCalledWithoutElicitationSupportThenItIsUnsupportedAndNoPromptIsPushed() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(supportsElicitationForm: false), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.elicitationUnsupported))
+        XCTAssertNil(pusher.pushedParams)
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenAskToolIsCalledThenThePromptCarriesTheToolReasonAndTheChoiceSchema() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, permissionReason: "Duck.ai wants alpha.")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        _ = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(pusher.pushedParams?.mode, "form")
+        XCTAssertEqual(pusher.pushedParams?.message, "Duck.ai wants alpha.")
+        XCTAssertEqual(pusher.pushedParams?.requestedSchema, BrowserToolPermissionElicitation.choiceSchema)
+    }
+
+    func testWhenPromptIsCancelledThenCallIsCancelledAndToolDoesNotRun() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    func testWhenPromptIsDeclinedThenCallIsDeniedAndNothingIsPersisted() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .decline)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.denied))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    func testWhenPromptIsAcceptedWithAllowOnceThenToolRunsAndNothingIsPersisted() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, result: .success(["ran": true]))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success(["ran": true]))
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    func testWhenPromptIsAcceptedWithAlwaysAllowThenToolRunsAndAllowIsPersisted() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, result: .success(["ran": true]))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "alwaysAllow"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success(["ran": true]))
+        XCTAssertEqual(permissions.storedDecisions, ["alpha": .allow])
+    }
+
+    func testWhenPromptIsAcceptedWithNeverAllowThenCallIsDeniedAndDenyIsPersisted() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "neverAllow"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.denied))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertEqual(permissions.storedDecisions, ["alpha": .deny])
+    }
+
+    func testWhenPromptIsAcceptedWithoutChoiceThenCallIsInvalidArguments() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: MCPElicitationResult(action: .accept, content: [:]))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.invalidArguments))
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenPromptIsAcceptedWithUnknownChoiceThenCallIsInvalidPermissionChoice() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "maybe"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.invalidPermissionChoice))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    /// A shape the invoker does not recognise fails closed, as a cancellation.
+    func testWhenPromptAnswerHasUnknownActionThenCallIsCancelled() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let unknown = try? JSONDecoder().decode(MCPElicitationResult.self, from: Data(#"{ "action": "shrug" }"#.utf8))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: unknown ?? .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenPromptCannotBeDeliveredThenCallIsCancelled() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: nil)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenThereIsNoPusherThenAskToolCallIsCancelled() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: nil)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    // MARK: - Envelope
 
     func testWhenCallSucceedsThenItMapsOntoTheMCPEnvelopeWithoutError() {
         let result = BrowserToolResult.success(["ok": true]).callToolResult
@@ -122,14 +335,16 @@ final class BrowserToolInvokerTests: XCTestCase {
                              enabledToolNames: Set<String>) -> BrowserToolInvoker {
         let configuration = StubConfiguration(isEnabled: isEnabled, enabledToolNames: enabledToolNames)
         return BrowserToolInvoker(catalog: BrowserToolCatalog(tools: tools, configuration: configuration),
-                                  configuration: configuration)
+                                  configuration: configuration,
+                                  permissions: permissions,
+                                  elicitations: elicitations)
     }
 
-    private func context(isBurner: Bool = false) -> BrowserToolCallContext {
+    private func context(isBurner: Bool = false, supportsElicitationForm: Bool = true) -> BrowserToolCallContext {
         BrowserToolCallContext(ownerTabID: "owner-tab",
                                ownerWindowToken: "window-1",
                                isBurner: isBurner,
-                               supportsElicitationForm: true)
+                               supportsElicitationForm: supportsElicitationForm)
     }
 }
 
@@ -153,7 +368,8 @@ private final class SpyBrowserTool: BrowserTool {
     let name: String
     var title: String { "Spy" }
     var description: String { "Spy tool" }
-    let permissionMode = BrowserToolPermissionMode.auto
+    let permissionMode: BrowserToolPermissionMode
+    let permissionReason: String
     var inputSchema: JSONValue { ["type": "object"] }
 
     private(set) var didExecute = false
@@ -161,8 +377,13 @@ private final class SpyBrowserTool: BrowserTool {
     private(set) var receivedContext: BrowserToolCallContext?
     private let result: BrowserToolResult
 
-    init(name: String, result: BrowserToolResult = .success([:])) {
+    init(name: String,
+         permissionMode: BrowserToolPermissionMode = .auto,
+         permissionReason: String = "Duck.ai wants to use a browser tool.",
+         result: BrowserToolResult = .success([:])) {
         self.name = name
+        self.permissionMode = permissionMode
+        self.permissionReason = permissionReason
         self.result = result
     }
 
@@ -171,5 +392,52 @@ private final class SpyBrowserTool: BrowserTool {
         receivedArguments = arguments
         receivedContext = context
         return result
+    }
+}
+
+private final class InMemoryPermissionStore: BrowserToolPermissionStoring {
+    private(set) var storedDecisions: [String: BrowserToolPermissionState] = [:]
+
+    func state(forToolNamed name: String) -> BrowserToolPermissionState {
+        storedDecisions[name] ?? .ask
+    }
+
+    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {
+        if state == .ask {
+            storedDecisions.removeValue(forKey: name)
+        } else {
+            storedDecisions[name] = state
+        }
+    }
+
+    func clearAll() {
+        storedDecisions.removeAll()
+    }
+}
+
+/// Answers the prompt the moment it is pushed. `answer: nil` means delivery fails.
+private final class ScriptedPusher: AIChatElicitationPushing {
+    private let elicitations: AIChatElicitationCoordinator
+    private let answer: MCPElicitationResult?
+    private(set) var pushedParams: MCPElicitationCreateParams?
+
+    init(elicitations: AIChatElicitationCoordinator, answer: MCPElicitationResult?) {
+        self.elicitations = elicitations
+        self.answer = answer
+    }
+
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        pushedParams = params
+        guard let answer else { return false }
+        elicitations.complete(id: params.id, result: answer)
+        return true
+    }
+}
+
+private extension MCPElicitationResult {
+    static let decline = MCPElicitationResult(action: .decline)
+
+    static func accept(choice: String) -> MCPElicitationResult {
+        MCPElicitationResult(action: .accept, content: ["choice": .string(choice)])
     }
 }

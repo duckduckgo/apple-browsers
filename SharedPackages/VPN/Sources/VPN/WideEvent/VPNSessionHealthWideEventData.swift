@@ -144,7 +144,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
 
 extension VPNSessionHealthWideEventData {
 
-    public var hasEnded: Bool { endedAt != nil }
+    private var hasEnded: Bool { endedAt != nil }
 
     public var canTrackOutageTime: Bool {
         !isPaused && !hasEnded && connectionMonitorsActive && connectionTestDidReport
@@ -154,11 +154,7 @@ extension VPNSessionHealthWideEventData {
 
     public var connectionTestFailureActive: Bool { activeOutageFailedCheckCount > 0 }
 
-    public var outcome: EventOutcome? {
-        guard hasEnded else {
-            return nil
-        }
-
+    func completedOutcome() -> EventOutcome {
         if let failureReason {
             return .failure(failureReason)
         }

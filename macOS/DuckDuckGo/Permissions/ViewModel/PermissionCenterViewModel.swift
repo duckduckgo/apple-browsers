@@ -136,6 +136,7 @@ enum PopupDecision: Hashable {
     case allowForThisVisit
     case notify
     case alwaysAllow
+    case neverAllow
 
 }
 
@@ -200,6 +201,10 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether "Only allow pop-ups for this visit" option should be shown (based on feature flags)
     var showAllowPopupsForThisVisitOption: Bool {
         featureFlagger.isFeatureOn(.popupBlocking)
+    }
+
+    var showPopupsNeverAllowOption: Bool {
+        permissionManager.defaultDecision(for: .popups) == .deny
     }
 
     // MARK: - Initialization
@@ -394,6 +399,10 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
+        case .neverAllow:
+            permissionManager.removePermission(forDomain: domain, permissionType: .popups)
+            resetTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = false
         }
     }
 
@@ -404,6 +413,8 @@ final class PermissionCenterViewModel: ObservableObject {
             return .allowForThisVisit
         } else if persistedValue == .allow {
             return .alwaysAllow
+        } else if persistedValue == .deny {
+            return .neverAllow
         } else {
             return .notify
         }
@@ -451,13 +462,26 @@ final class PermissionCenterViewModel: ObservableObject {
         displaysAutoplayDiscovery && permissionItems.contains { $0.permissionType == .autoplayPolicy }
     }
 
-    /// Opens the General settings pane, scrolled to the Permissions section where the all-sites autoplay preference lives
+    /// Where the all-sites autoplay preference lives: its own category in Website Permissions once
+    /// that pane exists, and the Permissions section of General preferences otherwise.
+    private var autoplaySettingsDestination: PreferencesDestination {
+        featureFlagger.isFeatureOn(.websitePermissionsSettings) ? .websitePermission(.autoplay) : .generalPermissions
+    }
+
+    /// The disclaimer's link text, which names the destination and so has to follow it.
+    var autoplaySettingsLinkTitle: String {
+        featureFlagger.isFeatureOn(.websitePermissionsSettings)
+            ? UserText.permissionCenterAutoplayDisclaimerWebsitePermissionsLink
+            : UserText.permissionCenterAutoplayDisclaimerSettingsLink
+    }
+
+    /// Opens the settings pane holding the all-sites autoplay preference
     func openAutoplaySettings() {
         if displaysAutoplayDiscovery {
             pixelFiring?.fire(AutoplayPromoPixel.settingsLinkClicked)
         }
 
-        openSettings?(.generalPermissions)
+        openSettings?(autoplaySettingsDestination)
         dismissPopover()
     }
 

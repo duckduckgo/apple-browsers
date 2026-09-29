@@ -39,9 +39,23 @@ final class FocusRingView: NSView {
 
     private var stroke = false
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpLayers()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpLayers()
+    }
+
+    private func setUpLayers() {
         wantsLayer = true
 
         addSublayers()

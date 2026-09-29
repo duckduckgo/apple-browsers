@@ -36,6 +36,9 @@ public protocol BrowserTool: AnyObject {
     /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
     var permissionMode: BrowserToolPermissionMode { get }
 
+    /// Shown to the user when an `ask` tool needs consent. Not localized, mirroring Windows.
+    var permissionReason: String { get }
+
     var inputSchema: JSONValue { get }
 
     /// Emitted only when the result shape is known.
@@ -51,6 +54,7 @@ public protocol BrowserTool: AnyObject {
 
 public extension BrowserTool {
     var outputSchema: JSONValue? { nil }
+    var permissionReason: String { "Duck.ai wants to use a browser tool." }
     var annotations: MCPToolAnnotations? { nil }
 
     /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and

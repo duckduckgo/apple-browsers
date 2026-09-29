@@ -186,7 +186,7 @@ final class SubscriptionPromoViewModel: ObservableObject {
     /// - en_US locale only
     /// - Non-subscriber only
     /// - Fire Tab visited >= 3 times
-    /// - Not dismissed or CTA actioned within the 28-day cooldown (fallback when PromoQueue is off; PromoService handles this via `resultWhenHidden` when on)
+    /// - Not dismissed or CTA actioned within the 28-day cooldown (enforced here for external promos; `PromoService` handles queue-driven promos via `resultWhenHidden`)
     /// - Not shown more than 4 times in any given 28-day rolling window
     private func evaluatePromoVisibility() {
         var shouldShow = false

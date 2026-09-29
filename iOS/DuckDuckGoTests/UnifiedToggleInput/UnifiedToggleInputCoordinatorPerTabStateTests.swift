@@ -40,6 +40,61 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         )
     }
 
+    func testSameTabReexpandRestoresRetainedAttachmentBeforeAddingAnother() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModel(id: "file-model", access: true, supportedFileTypes: ["application/pdf"])]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.setText("keep this draft")
+        sut.addFileAttachment(makeFileAttachment(fileName: "first.pdf"))
+        let originalID = sut.viewController.currentAttachments.first?.id
+        XCTAssertNotNil(originalID)
+        let tabAttachment = UnifiedToggleInputAttachment.tab(.init(tabId: "page-tab", title: "Page",
+                                                                    url: URL(string: "https://example.com")!))
+        sut.viewController.addAttachment(tabAttachment)
+        XCTAssertTrue(sut.completeOmnibarDeactivation())
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.id, originalID)
+        XCTAssertEqual(sut.viewController.currentAttachments.last?.id, tabAttachment.id)
+        XCTAssertEqual(sut.currentText, "keep this draft")
+        sut.addFileAttachment(makeFileAttachment(fileName: "second.pdf"))
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 3)
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 3)
+        XCTAssertEqual(store.states["tab-A"]?.attachments.first?.id, originalID)
+    }
+
+    func testOmnibarDismissalAndLaterPersistPreserveAttachmentsWithoutCrossTabLeak() {
+        let store = FakeInputStateStore()
+        let sut = makeSUT(stateStore: store)
+        sut.modelStore.models = [makeModel(id: "file-model", access: true, supportedFileTypes: ["application/pdf"])]
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.activateForTab("tab-A")
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "draft to keep")
+        sut.addFileAttachment(makeFileAttachment())
+        let attachmentID = sut.viewController.currentAttachments.first?.id
+        XCTAssertNotNil(attachmentID)
+
+        XCTAssertTrue(sut.completeOmnibarDeactivation())
+        sut.setText("draft to keep")
+        XCTAssertEqual(store.states["tab-A"]?.attachments.first?.id, attachmentID)
+        XCTAssertEqual(store.states["tab-A"]?.text, "draft to keep")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+
+        sut.activateForTab("tab-B")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.viewController.currentAttachments.first?.id, attachmentID)
+        sut.clearAttachments()
+        XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
+    }
+
     func test_activateForTab_appliesStoredText() {
         let store = FakeInputStateStore()
         store.states["tab-A"] = TabInputState(text: "remembered")

@@ -212,7 +212,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .toolsList:
             return handler.mcpToolsList
         case .toolsCall:
-            return handler.mcpToolsCall
+            // The script is the pusher: a prompt raised by this call goes back to the page that made it.
+            return { [weak self] params, message in
+                guard let self else { return nil }
+                return await self.handler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
+            }
+        case .elicitationResponse:
+            return handler.mcpElicitationResponse
 
         case .reportMetric:
             return handler.reportMetric
@@ -253,5 +259,15 @@ final class AIChatUserScript: NSObject, Subfeature {
         default:
             return nil
         }
+    }
+}
+
+extension AIChatUserScript: AIChatElicitationPushing {
+
+    @MainActor
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        guard let webView, let broker else { return false }
+        broker.push(method: AIChatUserScriptMessages.elicitationCreate.rawValue, params: params, for: self, into: webView)
+        return true
     }
 }

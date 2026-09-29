@@ -20,7 +20,7 @@ import CoreData
 import Foundation
 import PixelKit
 
-enum PersistedPermissionDecision {
+enum PersistedPermissionDecision: String {
     case deny
     case allow
     case ask
@@ -33,6 +33,52 @@ enum PersistedPermissionDecision {
             return UserText.permissionCenterAlwaysAllow
         case .deny:
             return UserText.permissionCenterNeverAllow
+        }
+    }
+
+    var websitePermissionsTitle: String {
+        switch self {
+        case .ask:
+            return UserText.websitePermissionsAskEachTime
+        case .allow:
+            return UserText.permissionCenterAlwaysAllow
+        case .deny:
+            return UserText.permissionCenterNeverAllow
+        }
+    }
+
+    /// Autoplay stores the same three decisions, but they say which media may start on its own
+    /// rather than whether a site was granted something, so they are named after the blocking modes.
+    /// `.ask` never prompts here: it is the middle state, muting autoplaying video.
+    var autoplayTitle: String {
+        switch self {
+        case .ask:
+            return UserText.autoplayModeBlockAudio
+        case .allow:
+            return UserText.autoplayModeAllowAll
+        case .deny:
+            return UserText.autoplayModeBlockAll
+        }
+    }
+
+    /// Copy for this decision shown against `permissionType` in Settings > Website Permissions.
+    func websitePermissionsTitle(for permissionType: PermissionType) -> String {
+        permissionType == .autoplayPolicy ? autoplayTitle : websitePermissionsTitle
+    }
+
+    init(_ autoplayBlockingMode: AutoplayBlockingMode) {
+        switch autoplayBlockingMode {
+        case .allowAll: self = .allow
+        case .blockAudio: self = .ask
+        case .blockAll: self = .deny
+        }
+    }
+
+    var autoplayBlockingMode: AutoplayBlockingMode {
+        switch self {
+        case .allow: return .allowAll
+        case .ask: return .blockAudio
+        case .deny: return .blockAll
         }
     }
 

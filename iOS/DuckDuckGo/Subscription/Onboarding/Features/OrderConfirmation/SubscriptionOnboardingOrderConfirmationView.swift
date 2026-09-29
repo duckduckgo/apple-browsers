@@ -43,6 +43,7 @@ struct SubscriptionOnboardingOrderConfirmationView: View {
             header: header,
             footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton) { viewModel.proceed() }),
             scrollsContent: false,
+            footerBlur: true,
             pageBackground: { illustration }) {
             content
         }

@@ -35,7 +35,7 @@ private enum Metrics {
     static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
     static let sectionSpacing: CGFloat = 16
     static let footerSpacing: CGFloat = 8
-    static let footerBlurFadeHeight: CGFloat = 40
+    static let footerBlurFadeHeight: CGFloat = 20
 }
 
 /// The navigation bar's leading button: either a back button or a close button. Both render as a
@@ -151,6 +151,13 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         Color(designSystemColor: .surfaceTertiary)
     }
 
+    /// Whether the footer actually floats over content — `footerBlur` only has an effect when there's a
+    /// footer to float; with no footer, both branches render nothing, so this keeps every caller (and the
+    /// content's bottom padding below) from having to special-case a nil footer themselves.
+    private var isFooterFloating: Bool {
+        footerBlur && footer != nil
+    }
+
     var body: some View {
         let page = pageWithFooter
 
@@ -168,7 +175,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
             .background { pageBackground }
             .background(pageBackgroundColor.ignoresSafeArea())
 
-        if footerBlur {
+        if isFooterFloating {
             page
                 .overlay(alignment: .bottom) { blurredFooterView }
                 .onPreferenceChange(FooterBlockHeightKey.self) { footerBlockHeight = $0 }
@@ -209,7 +216,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         }
         .padding(.top, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
-        .padding(.bottom, footerBlur ? footerBlockHeight : Metrics.contentVerticalPadding)
+        .padding(.bottom, isFooterFloating ? footerBlockHeight : Metrics.contentVerticalPadding)
     }
 }
 

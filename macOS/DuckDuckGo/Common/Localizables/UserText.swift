@@ -976,8 +976,8 @@ struct UserText {
         let message = NSLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
         return String(format: message, modelShortName)
     }
-    static let aiChatAttachmentPrivacyDisclosure = NSLocalizedString("aichat.attachment-privacy.disclosure", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention.", comment: "Privacy disclosure shown in the Duck.ai input drawer while a file or image is attached")
-    static let aiChatAttachmentPrivacyLearnMore = NSLocalizedString("aichat.attachment-privacy.learn-more", value: "Learn more", comment: "Inline link at the end of the Duck.ai attachment privacy disclosure. Opens the Duck.ai privacy help page.")
+    static let aiChatAttachmentPrivacyDisclosure = NotLocalizedString("aichat.attachment-privacy.disclosure", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention.", comment: "Privacy disclosure shown in the Duck.ai input drawer while a file or image is attached")
+    static let aiChatAttachmentPrivacyLearnMore = NotLocalizedString("aichat.attachment-privacy.learn-more", value: "Learn more", comment: "Inline link at the end of the Duck.ai attachment privacy disclosure. Opens the Duck.ai privacy help page.")
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
         let message = NSLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)

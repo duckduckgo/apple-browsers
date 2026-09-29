@@ -37,6 +37,7 @@ final class UnifiedSuggestionsHost {
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchTopInset: CGFloat = 0
+    private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
     let favoritesPresentation: FocusedFavoritesPresentation
@@ -46,6 +47,16 @@ final class UnifiedSuggestionsHost {
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
+
+    var isShowingRedesignedSearchModules: Bool {
+        hostingController?.rootView.showsRedesignedSearchModules ?? false
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        guard escapeHatch !== model else { return }
+        escapeHatch = model
+        rebuildRootView()
+    }
 
     func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
         favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
@@ -86,7 +97,8 @@ final class UnifiedSuggestionsHost {
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
-            showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false)
+            showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
+            escapeHatch: escapeHatch)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
@@ -118,6 +130,7 @@ final class UnifiedSuggestionsHost {
                 .sink { [weak self] showsSearchModules in
                     // Use the emitted value: @Published sends before the stored value changes.
                     self?.rebuildRootView(showsRedesignedSearchModules: showsSearchModules)
+                    self?.onContentChanged?()
                 }
         } else {
             redesignedSearchPresentation = nil
@@ -239,7 +252,8 @@ final class UnifiedSuggestionsHost {
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
-            showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false)
+            showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false,
+            escapeHatch: escapeHatch)
         NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }
 }

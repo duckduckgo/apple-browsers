@@ -23,15 +23,21 @@ import SwiftUI
 struct RedesignedFocusedSearchModulesView: View {
     let favoritesModel: FavoritesViewModel?
     let messagesModel: NewTabPageMessagesModel?
+    var escapeHatch: EscapeHatchModel?
 
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
+                    RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+                    if let escapeHatch {
+                        EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 16)
+                    }
                     if let messagesModel {
                         RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
                     }
-                    RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
                 }
                 .padding(.leading, geometry.safeAreaInsets.leading)
                 .padding(.trailing, geometry.safeAreaInsets.trailing)

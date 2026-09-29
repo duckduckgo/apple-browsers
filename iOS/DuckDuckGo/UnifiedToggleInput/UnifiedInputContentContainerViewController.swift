@@ -364,8 +364,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
+        unifiedSuggestionsHost?.setEscapeHatch(model)
         unifiedSuggestionsHost?.updateOpenedAfterIdle(sessionOpenedAfterIdle)
-        // The chrome (hatch + sync-promo) is pinned to the bar (see below), not rendered in the host.
+        // Redesigned Search renders the hatch after favorites; other states keep it pinned to the bar.
         updatePinnedChrome()
         updateSingleHostTopOffset()
         // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
@@ -443,6 +444,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// resolver so it never diverges from the host's content (e.g. a pre-filled, unedited URL).
     private var shouldShowPinnedHatch: Bool {
         escapeHatchModel != nil
+            && !(unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false)
             && !switchBarHandler.isFireTab
             && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                         hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
@@ -666,8 +668,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         let host = UnifiedSuggestionsHost(config: config)
+        host.setEscapeHatch(escapeHatchModel)
         host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in
+            self?.updatePinnedChrome()
             self?.refreshVisibleContent(animateContentUpdates: true)
         }
 

@@ -28,12 +28,10 @@ struct RedesignedNewTabPageEscapeHatchView: View {
             EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, Metrics.horizontalPadding)
-                .padding(.top, Metrics.topPadding)
         }
     }
 }
 
 private enum Metrics {
     static let horizontalPadding: CGFloat = 16
-    static let topPadding: CGFloat = 20
 }

@@ -28,6 +28,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var removeSuggestionHandler: ((String) -> Void)?
     var openCustomizeResponsesHandler: (() -> Void)?
     var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
+    private(set) var openAttachmentPrivacyLearnMoreCallCount = 0
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -80,5 +81,10 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     @MainActor
     func setCustomizeResponsesActive(_ active: Bool) {
         setCustomizeResponsesActiveHandler?(active)
+    }
+
+    @MainActor
+    func openAttachmentPrivacyLearnMore() {
+        openAttachmentPrivacyLearnMoreCallCount += 1
     }
 }

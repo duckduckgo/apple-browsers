@@ -46,6 +46,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case setImageGenerationActive = "omnibar_setImageGenerationActive"
         case dismissCreateImageModelSwitch = "omnibar_dismissCreateImageModelSwitch"
         case dismissUsageLimits = "omnibar_dismissUsageLimits"
+        case attachmentPrivacyDisclaimerShown = "omnibar_attachmentPrivacyDisclaimerShown"
+        case openAttachmentPrivacyLearnMore = "omnibar_openAttachmentPrivacyLearnMore"
         case selectUsageLimitsCta = "omnibar_selectUsageLimitsCta"
     }
 
@@ -89,7 +91,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.isAIChatDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isSearchSuggestionDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -138,6 +141,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.setImageGenerationActive.rawValue: { [weak self] in try await self?.setImageGenerationActive(params: $0, original: $1) },
             MessageName.dismissCreateImageModelSwitch.rawValue: { [weak self] in try await self?.dismissCreateImageModelSwitch(params: $0, original: $1) },
             MessageName.dismissUsageLimits.rawValue: { [weak self] in try await self?.dismissUsageLimits(params: $0, original: $1) },
+            MessageName.attachmentPrivacyDisclaimerShown.rawValue: { [weak self] in try await self?.attachmentPrivacyDisclaimerShown(params: $0, original: $1) },
+            MessageName.openAttachmentPrivacyLearnMore.rawValue: { [weak self] in try await self?.openAttachmentPrivacyLearnMore(params: $0, original: $1) },
             MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) }
         ])
     }
@@ -174,6 +179,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
+            showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer(requestingWebView: original.webView),
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits()
@@ -236,7 +242,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     @MainActor
     private func notifyConfigUpdated() {
         let customize = configProvider.customizeResponsesState(requestingWebView: nil)
-        let config = NewTabPageDataModel.OmnibarConfig(
+        var config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
@@ -264,7 +270,13 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits()
         )
-        pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
+        // Pushed per window rather than broadcast, because a Fire Window counts its displays on its
+        // own and one shared value would hand every NTP the key window's answer.
+        actionsManager?.userScripts.forEach { userScript in
+            guard let webView = userScript.webView else { return }
+            config.showAttachmentPrivacyDisclaimer = configProvider.showAttachmentPrivacyDisclaimer(requestingWebView: webView)
+            pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config, to: webView)
+        }
     }
 
     /// Strips `reasoningEfforts` when the feature is off, so the web hides the picker with no
@@ -374,6 +386,23 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private func dismissUsageLimits(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         configProvider.dismissUsageLimits()
         notifyConfigUpdated()
+        return nil
+    }
+
+    /// The provider spends the display, which moves the count and re-pushes the config through
+    /// `attachmentPrivacyDisclaimerPublisher`.
+    @MainActor
+    private func attachmentPrivacyDisclaimerShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        configProvider.attachmentPrivacyDisclaimerShown(kind: action.kind, requestingWebView: original.webView)
+        return nil
+    }
+
+    @MainActor
+    private func openAttachmentPrivacyLearnMore(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openAttachmentPrivacyLearnMore()
         return nil
     }
 

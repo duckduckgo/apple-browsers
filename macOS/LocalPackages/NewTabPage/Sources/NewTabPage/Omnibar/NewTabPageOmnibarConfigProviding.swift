@@ -87,6 +87,21 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// snapshot, or the user settles a message, keeping an open NTP in sync without a reload.
     var usageLimitsPublisher: AnyPublisher<Void, Never> { get }
 
+    /// Whether this surface may still show the file-upload privacy disclaimer. Resolved per window,
+    /// since a Fire Window counts on its own.
+    @MainActor
+    func showAttachmentPrivacyDisclaimer(requestingWebView: WKWebView?) -> Bool
+
+    /// The page rendered the disclaimer, once for this prompt draft. Native spends a display and
+    /// fires the pixel.
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind,
+                                          requestingWebView: WKWebView?)
+
+    /// Fires when the display count changes on any surface, so the client re-pushes the config and
+    /// an open NTP stops offering the disclaimer once the cap is reached.
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

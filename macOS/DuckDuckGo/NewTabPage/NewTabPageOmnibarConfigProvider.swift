@@ -99,6 +99,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
+    private let attachmentPrivacyCountStoreProvider: (BurnerMode) -> AttachmentPrivacyDisplayCountStoring
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
@@ -106,9 +107,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     private let usageLimitsChangedSubject = PassthroughSubject<Void, Never>()
+    private let attachmentPrivacyChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
     private var customizeResponsesChangeObserver: NSObjectProtocol?
+    private var attachmentPrivacyChangeObserver: NSObjectProtocol?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -117,6 +120,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
+         attachmentPrivacyCountStoreProvider: @escaping (BurnerMode) -> AttachmentPrivacyDisplayCountStoring =
+             { [store = InMemoryAttachmentPrivacyDisplayCountStore()] _ in store },
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -128,6 +133,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
+        self.attachmentPrivacyCountStoreProvider = attachmentPrivacyCountStoreProvider
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -144,11 +150,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         ) { [weak self] _ in
             self?.notifyCustomizeResponsesChanged()
         }
+
+        // Any surface spending a display moves the shared count, so an open NTP has to re-read it.
+        attachmentPrivacyChangeObserver = NotificationCenter.default.addObserver(
+            forName: .attachmentPrivacyDisplayCountDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.attachmentPrivacyChangedSubject.send(())
+        }
     }
 
     deinit {
         if let customizeResponsesChangeObserver {
             NotificationCenter.default.removeObserver(customizeResponsesChangeObserver)
+        }
+        if let attachmentPrivacyChangeObserver {
+            NotificationCenter.default.removeObserver(attachmentPrivacyChangeObserver)
         }
     }
 
@@ -464,6 +482,46 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     func notifyCustomizeResponsesChanged() {
         customizeResponsesChangedSubject.send(())
+    }
+
+    /// The count and the kill switch. The flag needs its own leg: every other config publisher
+    /// dedupes on its own flag, so a flip of this one alone would never reach an open NTP.
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> {
+        Publishers.Merge(
+            attachmentPrivacyChangedSubject,
+            featureFlagger.updatesPublisher
+                .compactMap { [weak self] in self?.isAttachmentPrivacyDisclosureEnabled }
+                .prepend(isAttachmentPrivacyDisclosureEnabled)
+                .removeDuplicates()
+                .dropFirst()
+                .map { _ in () }
+        ).eraseToAnyPublisher()
+    }
+
+    private var isAttachmentPrivacyDisclosureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
+    }
+
+    @MainActor
+    func showAttachmentPrivacyDisclaimer(requestingWebView: WKWebView?) -> Bool {
+        attachmentPrivacyCounter(requestingWebView: requestingWebView)?.canDisplay ?? false
+    }
+
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind,
+                                          requestingWebView: WKWebView?) {
+        attachmentPrivacyCounter(requestingWebView: requestingWebView)?.consumeDisplay()
+    }
+
+    /// Built per call: the burner mode comes from the requesting webview, and the counter is a thin
+    /// wrapper over the store the registry owns.
+    @MainActor
+    private func attachmentPrivacyCounter(requestingWebView: WKWebView?) -> AttachmentPrivacyDisplayCounter? {
+        guard let windowControllersManager else { return nil }
+        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
+        return AttachmentPrivacyDisplayCounter(store: attachmentPrivacyCountStoreProvider(burnerMode),
+                                               webKeySource: duckAiStorageHandlerProvider(burnerMode),
+                                               featureFlagger: featureFlagger)
     }
 
     var isAttachTabsEnabled: Bool {

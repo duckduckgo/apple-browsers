@@ -854,6 +854,49 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.createImageModelSwitch)
     }
 
+    // MARK: - attachment privacy disclaimer
+
+    @MainActor
+    func testTheProvidersAttachmentPrivacyAnswerIsIncludedInConfig() async throws {
+        configProvider.showAttachmentPrivacyDisclaimerResult = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, true)
+    }
+
+    @MainActor
+    func testWhenTheProviderRefusesThenConfigSaysSo() async throws {
+        configProvider.showAttachmentPrivacyDisclaimerResult = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyDisclaimerShownForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown(kind: .image)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown, parameters: action)
+
+        XCTAssertEqual(configProvider.attachmentPrivacyDisclaimerShownKinds, [.image])
+    }
+
+    @MainActor
+    func testWhenTheKindIsUnrecognisedThenNoDisplayIsSpent() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue(configProvider.attachmentPrivacyDisclaimerShownKinds.isEmpty)
+    }
+
+    @MainActor
+    func testOpenAttachmentPrivacyLearnMoreIsForwardedToTheActionHandler() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreCallCount, 1)
+    }
+
     // MARK: - usage limits
 
     @MainActor

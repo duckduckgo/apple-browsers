@@ -295,6 +295,9 @@ public extension NewTabPageDataModel {
         let enableAiChatDeletion: Bool?
         /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
         let enableSearchSuggestionDeletion: Bool?
+        /// Whether this surface may still show the file-upload privacy disclaimer. Native owns the
+        /// device-wide display count; false or `nil` means the omnibar renders nothing.
+        var showAttachmentPrivacyDisclaimer: Bool?
         /// Enables the native-driven Create Image model-switch flow in the web omnibar.
         var enableUpdatedCreateImage: Bool?
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
@@ -304,6 +307,23 @@ public extension NewTabPageDataModel {
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - omnibar_attachmentPrivacyDisclaimerShown
+
+    struct OmnibarAttachmentPrivacyDisclaimerShown: Codable, Equatable {
+
+        /// Which attachment triggered the disclaimer. Native never sees the attach, so the page
+        /// has to say, for the pixel.
+        public enum Kind: String, Codable {
+            case image, file
+        }
+
+        public let kind: Kind
+
+        public init(kind: Kind) {
+            self.kind = kind
+        }
     }
 
     // MARK: - omnibar_selectUsageLimitsCta

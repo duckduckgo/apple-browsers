@@ -24,6 +24,11 @@ import os.log
 import Persistence
 import PrivacyConfig
 
+extension Notification.Name {
+    /// Surfaces that cache the answer — the NTP omnibar config — re-read on this.
+    static let attachmentPrivacyDisclosureDidChange = Notification.Name("attachmentPrivacyDisclosureDidChange")
+}
+
 // MARK: - Storage
 
 protocol AttachmentPrivacyDisclosureStoring: AnyObject {
@@ -95,12 +100,14 @@ final class AttachmentPrivacyDisclosure {
         guard !hasBeenShown() else { return false }
 
         store.markShown()
+        NotificationCenter.default.post(name: .attachmentPrivacyDisclosureDidChange, object: nil)
         return true
     }
 
     func reset() {
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
+        NotificationCenter.default.post(name: .attachmentPrivacyDisclosureDidChange, object: nil)
     }
 
     private var isEnabled: Bool {

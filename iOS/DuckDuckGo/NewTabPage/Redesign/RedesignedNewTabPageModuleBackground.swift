@@ -1,5 +1,5 @@
 //
-//  RedesignedNewTabPageEscapeHatchView.swift
+//  RedesignedNewTabPageModuleBackground.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,23 +17,19 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
 
-/// Renders the same eligible return-to-tab model as the production resting page.
-struct RedesignedNewTabPageEscapeHatchView: View {
-    @ObservedObject var pageModel: NewTabPageViewModel
+/// Frosted surface shared by redesigned NTP modules, independent of the search input's raised card.
+struct RedesignedNewTabPageModuleBackground: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        if let escapeHatch = pageModel.escapeHatch {
-            EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, Metrics.horizontalPadding)
-                .padding(.top, Metrics.topPadding)
+        let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+        if reduceTransparency {
+            shape.fill(Color(designSystemColor: .surfaceSecondary))
+        } else {
+            shape.fill(.thinMaterial)
         }
     }
-}
-
-private enum Metrics {
-    static let horizontalPadding: CGFloat = 16
-    static let topPadding: CGFloat = 20
 }

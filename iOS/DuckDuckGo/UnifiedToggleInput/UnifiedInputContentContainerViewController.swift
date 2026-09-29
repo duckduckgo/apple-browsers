@@ -455,7 +455,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
         } else if shouldShowPinnedHatch {
-            let cardPadding = usesRedesignedNewTabPageLayout ? FocusedChromeView.Metrics.raisedHatchPadding * 2 : 0
+            let cardPadding = usesRedesignedNewTabPageLayout ? EscapeHatchView.materialPadding * 2 : 0
             return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
         } else {
             return 0

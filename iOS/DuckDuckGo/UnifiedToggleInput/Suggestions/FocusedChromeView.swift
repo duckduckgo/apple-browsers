@@ -50,13 +50,7 @@ struct FocusedChromeView: View {
         if hasContent {
             VStack(spacing: Metrics.interCardSpacing) {
                 if let hatchModel {
-                    EscapeHatchView(model: hatchModel)
-                        .padding(usesRaisedEscapeHatch ? Metrics.raisedHatchPadding : 0)
-                        .background {
-                            if usesRaisedEscapeHatch {
-                                RedesignedNewTabPageCardBackground()
-                            }
-                        }
+                    EscapeHatchView(model: hatchModel, usesMaterialBackground: usesRaisedEscapeHatch)
                 }
                 if let syncPromo {
                     syncPromo
@@ -75,7 +69,6 @@ struct FocusedChromeView: View {
     }
 
     enum Metrics {
-        static let raisedHatchPadding: CGFloat = 8
         /// Kept in step with `SuggestionsListView`'s cell edge so the hatch aligns with the rows.
         static let horizontalMargin: CGFloat = 16
         static let bottomInset: CGFloat = 16

@@ -22,6 +22,10 @@ import WebKit
 /// Protocol defining the interface for managing web extensions.
 public protocol WebExtensionManaging: AnyObject {
 
+    /// Shared Chrome Web Store service, available only when installation is supported.
+    @available(macOS 15.4, iOS 18.4, *)
+    var chromeWebStore: ChromeWebStoreManaging? { get }
+
     /// The set of currently loaded extension contexts.
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
@@ -193,6 +197,8 @@ public struct ScriptletDebugInfo: Identifiable {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+
+    var chromeWebStore: ChromeWebStoreManaging? { nil }
 
     /// Whether the embedded autoconsent web extension is loaded and active.
     var isAutoconsentExtensionLoaded: Bool {

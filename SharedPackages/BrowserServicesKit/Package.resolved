@@ -1,13 +1,13 @@
 {
-  "originHash" : "6881fc79cc02aec1aec4e4d0d6ef027440a783d199b5d61e2b3fcd4047b5e353",
+  "originHash" : "a77403a2837b4fc31b25c83c9b7dfc27d2df09b6a7bc64582b55b3ff18305a82",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "a214261ab72f7002242d5626ae5cb1b97b7968da",
-        "version" : "17.13.0"
+        "branch" : "pr-releases/dominik/chrome-web-store-macos",
+        "revision" : "f21b3c354c8bf2944e6724067965e4ddcf2be77c"
       }
     },
     {

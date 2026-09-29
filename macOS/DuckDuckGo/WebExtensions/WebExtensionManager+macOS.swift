@@ -121,6 +121,11 @@ enum WebExtensionManagerFactory {
         )
 
         internalSiteHandler.dataSource = manager
+        manager.chromeWebStore = ChromeWebStoreService(
+            manager: manager,
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+            presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        )
 
         return manager
     }

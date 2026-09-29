@@ -34,6 +34,7 @@ final class BookmarksBarViewController: NSViewController {
         static let barHeight: CGFloat = 24
         static let separatorHeight: CGFloat = 1
         static let horizontalInset: CGFloat = 8
+        static let importBookmarksLeadingSpacing: CGFloat = 2
         static let iconSize: CGFloat = 16
         static let iconLeadingInset: CGFloat = 4
         static let syncIconLeadingInset: CGFloat = 6
@@ -241,7 +242,7 @@ final class BookmarksBarViewController: NSViewController {
 
         clippedItemsIndicator = MouseOverButton(frame: .zero)
         clippedItemsIndicator.translatesAutoresizingMaskIntoConstraints = false
-        clippedItemsIndicator.setButtonType(.momentaryChange)
+        clippedItemsIndicator.setButtonType(.momentaryPushIn)
         clippedItemsIndicator.bezelStyle = .rounded
         clippedItemsIndicator.isBordered = false
         clippedItemsIndicator.image = .chevronDoubleRight16
@@ -311,7 +312,8 @@ final class BookmarksBarViewController: NSViewController {
                                                           constant: Constants.horizontalInset),
 
             importBookmarksButton.topAnchor.constraint(equalTo: bookmarksBarCollectionView.topAnchor),
-            importBookmarksButton.leadingAnchor.constraint(equalTo: syncButton.trailingAnchor, constant: 2),
+            importBookmarksButton.leadingAnchor.constraint(equalTo: syncButton.trailingAnchor,
+                                                           constant: Constants.importBookmarksLeadingSpacing),
 
             syncButton.leadingAnchor.constraint(equalTo: backgroundColorView.leadingAnchor,
                                                 constant: Constants.horizontalInset),

@@ -107,6 +107,26 @@ final class PermissionAuthorizationViewController: NSViewController {
         view.subviews.forEach { $0.removeFromSuperview() }
         swiftUIHostingView = nil
 
+        let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            NSHostingView(rootView: PermissionAuthorizationView(viewModel: makeViewModel(for: query)))
+        } else {
+            makeLegacyHostingView(for: query)
+        }
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        swiftUIHostingView = hostingView
+        isAuthorizationInProgress = true
+    }
+
+    private func makeLegacyHostingView(for query: PermissionAuthorizationQuery) -> NSView {
         let permissionType = PermissionAuthorizationType(from: query.permissions)
         let showsTwoStepUI = permissionType.requiresSystemPermission
             && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
@@ -132,24 +152,7 @@ final class PermissionAuthorizationViewController: NSViewController {
             } : nil,
             systemPermissionManager: systemPermissionManager
         )
-
-        let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
-            NSHostingView(rootView: PermissionAuthorizationView(viewModel: makeViewModel(for: query)))
-        } else {
-            NSHostingView(rootView: swiftUIView)
-        }
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(hostingView)
-
-        NSLayoutConstraint.activate([
-            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
-            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        swiftUIHostingView = hostingView
-        isAuthorizationInProgress = true
+        return NSHostingView(rootView: swiftUIView)
     }
 
     private func makeViewModel(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationViewModel {

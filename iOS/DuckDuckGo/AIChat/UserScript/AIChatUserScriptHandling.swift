@@ -204,6 +204,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
+    // duckduckgo.com homepage chat suggestions
+    @MainActor func getHomepageAiChats(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openHomepageAiChat(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -230,6 +234,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
+    private let aiChatURLProvider: () -> URL
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -259,7 +265,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
-         }) {
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+         aiChatURLProvider: @escaping () -> URL = { AIChatSettings().aiChatURL }) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -273,6 +281,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
+        self.aiChatURLProvider = aiChatURLProvider
         setUpSyncStatusObserver()
     }
 
@@ -447,9 +457,43 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
-            supportsNativeTermsOfService: supportsNativeTermsOfService
+            supportsNativeTermsOfService: supportsNativeTermsOfService,
+            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message)
         )
         return config
+    }
+
+    // MARK: - Homepage chat suggestions
+
+    private func supportsHomePageChatSuggestions(for message: UserScriptMessage) -> Bool {
+        HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost) && homepageAiChatsProvider?.isSupported == true
+    }
+
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    /// Answered from native storage only (see `HomepageAiChatsProvider`).
+    @MainActor
+    func getHomepageAiChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
+    }
+
+    /// Posted by the duckduckgo.com homepage when the user picks one of its listed chats. Opens the
+    /// chat in the homepage's tab, the same `chatID` URL the address bar's chat suggestions open.
+    @MainActor
+    func openHomepageAiChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              homepageAiChatsProvider?.isSupported == true,
+              let request: HomepageOpenAiChatRequest = DecodableHelper.decode(from: params),
+              !request.chatId.isEmpty,
+              let webView = message.messageWebView else {
+            return nil
+        }
+        webView.load(URLRequest(url: aiChatURLProvider().withChatID(request.chatId)))
+        return nil
     }
 
     @MainActor

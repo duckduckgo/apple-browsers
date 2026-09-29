@@ -497,6 +497,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
 
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats (read from native storage)
+    /// under its chat box, via the `getAiChats` / `openAiChat` aiChat messages.
+    case homepageChatSuggestions
+
     /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
     /// auto-grants per-site mic permission at launch, locks the Permission Center row,
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and

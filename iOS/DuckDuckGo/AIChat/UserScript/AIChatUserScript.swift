@@ -175,6 +175,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         if let debugHostname = debugSettings.messagePolicyHostname {
             rules.append(.exact(hostname: debugHostname))
         }
+#if DEBUG
+        // Developer servers (<user>.duckduckgo.com, *.duckduck.com) serve the homepage under test,
+        // e.g. its Duck.ai chat suggestions. Messages only; nothing is pushed to these hosts.
+        rules.append(.exactOrSubdomain(hostname: "duckduckgo.com"))
+        rules.append(.exactOrSubdomain(hostname: "duckduck.com"))
+#endif
         return rules
     }
 
@@ -218,6 +224,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
+        case .getHomepageAiChats:
+            return handler.getHomepageAiChats
+        case .openHomepageAiChat:
+            return handler.openHomepageAiChat
         case .getAIChatNativePrompt:
             return handler.getAIChatNativePrompt
         case .getAIChatNativeHandoffData:

@@ -556,6 +556,14 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     func customizeResponsesModalClosed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
+
+    func getHomepageAiChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func openHomepageAiChat(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
 }
 // swiftlint:enable inclusive_language
 

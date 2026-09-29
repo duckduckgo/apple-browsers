@@ -368,11 +368,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return termsOfServiceStore.hasAccepted
     }
 
-    /// Only where a native input shows the disclaimer: the UTI on iPhone, and on iPad the address bar,
-    /// whose prompts land in the full tab, and the contextual sheet's input.
+    /// iPhone only. iPad's address bar and contextual sheet show the disclaimer too, but duck.ai on iPad
+    /// keeps its own Terms of Service, so its prompts carry no marker.
     private var supportsNativeTermsOfService: Bool {
         featureFlagger.isFeatureOn(.duckAINativeTermsOfService)
-            && (nativeModeSupport.supportsNativeChatInput || iPadDuckAIControlsFeature.isAvailable)
+            && devicePlatform.isIphone
+            && nativeModeSupport.supportsNativeChatInput
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) async -> Encodable? {

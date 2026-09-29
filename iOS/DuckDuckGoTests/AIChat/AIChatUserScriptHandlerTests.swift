@@ -1205,34 +1205,23 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
     }
 
-    /// iPad has no UTI: its address bar and contextual sheet input show the disclaimer instead.
-    func testWhenNativeTermsOfServiceFlagIsOnAndDeviceIsIPadThenConfigAdvertisesSupportInEveryDisplayMode() {
+    /// duck.ai on iPad keeps its own Terms of Service, even though the iPad inputs show the disclaimer.
+    func testWhenNativeTermsOfServiceFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupportInAnyDisplayMode() {
         mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
         MockDevicePlatform.isIphone = false
         mockIPadDuckAIControlsFeature.isAvailable = true
         mockAIChatContextualModeFeature.isAvailable = true
-        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 
         for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
             aiChatUserScriptHandler.displayMode = displayMode
-            XCTAssertEqual(configValues()?.supportsNativeChatInput, false, "\(displayMode)")
-            XCTAssertEqual(configValues()?.supportsNativeTermsOfService, true, "\(displayMode)")
+            XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false, "\(displayMode)")
         }
     }
 
-    func testWhenNativeTermsOfServiceFlagIsOffAndDeviceIsIPadThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        MockDevicePlatform.isIphone = false
-        mockIPadDuckAIControlsFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
-        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker())
-    }
-
-    /// The address bar's prompts land in a full tab, so they must carry the acceptance there.
-    func testWhenAcceptedInTheIPadAddressBarThenFullTabPromptCarriesTheMarker() {
+    /// An acceptance in the iPad address bar or sheet stays native; duck.ai still asks on its own.
+    func testWhenAcceptedInAnIPadInputThenPulledPromptCarriesNoMarker() {
         mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
         MockDevicePlatform.isIphone = false
         mockIPadDuckAIControlsFeature.isAvailable = true
@@ -1243,7 +1232,9 @@ extension AIChatUserScriptHandlerTests {
 
         let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
 
-        XCTAssertEqual(prompt?.termsAccepted, true)
+        XCTAssertNotNil(prompt)
+        XCTAssertNil(prompt?.termsAccepted)
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker())
     }
 
     func testWhenNativeTermsOfServiceIsUnsupportedThenPromptsCarryNoMarker() {

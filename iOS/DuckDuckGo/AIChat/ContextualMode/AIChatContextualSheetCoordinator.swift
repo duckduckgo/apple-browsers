@@ -1239,6 +1239,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL) {}
 }
 
 // MARK: - AIChatContextualSheetViewControllerDelegate

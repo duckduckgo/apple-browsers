@@ -176,7 +176,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+        termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+            feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
+        )
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
@@ -1061,6 +1064,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
         handleChipRemoved()
     }
+
+    /// Opens in a new tab once the sheet is down; the draft stays for when the user comes back.
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
+    }
 }
 
 // MARK: - VoiceSearchViewControllerDelegate
@@ -1303,6 +1311,8 @@ private extension AIChatContextualSheetViewController {
     }
 
     func submitPromptFromNativeInput(_ prompt: String) {
+        // Ahead of delivery, which stamps the prompt with the acceptance.
+        contextualInputViewController.acceptTermsIfDisclaimerShown()
         beginWaitingForInitialPromptResponseStateIfNeeded()
         delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
     }

@@ -6222,6 +6222,13 @@ extension MainViewController: OmniBarDelegate {
         suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: true)
     }
 
+    /// A new tab, like the iPhone input's links, so the chat behind the bar stays where it was.
+    func onOmniBarFooterLinkTapped(_ url: URL) {
+        performCancel(animated: false)
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
+    }
+
     private func duckAIPopoverTopInset() -> CGFloat {
         guard let searchContainer = viewCoordinator.omniBar.barView.searchContainer else {
             return 0

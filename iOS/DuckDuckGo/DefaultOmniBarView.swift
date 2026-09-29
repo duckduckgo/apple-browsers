@@ -514,6 +514,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
     var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
+    var onFooterLinkTapped: ((URL) -> Void)?
 
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
@@ -643,13 +644,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return strip
     }()
 
-    private let createImageModelSwitchCard: UTIFooterCardView = {
+    /// One slot below the expanded Duck.ai input, shared by the Terms of Service disclaimer and the
+    /// Create Image model switch notice.
+    private let footerCard: UTIFooterCardView = {
         let card = UTIFooterCardView()
         card.translatesAutoresizingMaskIntoConstraints = false
         card.alpha = 0
         card.isHidden = true
         return card
     }()
+
+    /// `nil` whenever the footer card is off screen, including while the input is collapsed.
+    private(set) var visibleFooterMessage: UTIFooterMessage?
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -1050,7 +1056,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
         leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
-        searchAreaAlignmentView.addSubview(createImageModelSwitchCard)
+        searchAreaAlignmentView.addSubview(footerCard)
         searchAreaAlignmentView.addSubview(searchAreaContainerView)
 
         if isFloatingUIEnabled {
@@ -1076,8 +1082,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
-        createImageModelSwitchCard.onDismissTap = { [weak self] in
+        // Only the model switch notice carries a close button; the disclaimer is required.
+        footerCard.onDismissTap = { [weak self] in
             self?.onCreateImageModelSwitchNoticeDismissed?()
+        }
+        footerCard.onLinkTap = { [weak self] url in
+            self?.onFooterLinkTapped?(url)
         }
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
@@ -1154,10 +1164,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             // centerX constraint below keep it centered within the available width.
             searchAreaContainerView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
 
-            createImageModelSwitchCard.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            createImageModelSwitchCard.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            createImageModelSwitchCard.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
-                                                            constant: -UTIFooterCardView.overlap),
+            footerCard.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            footerCard.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            footerCard.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
+                                            constant: -UTIFooterCardView.overlap),
 
             fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
@@ -1518,7 +1528,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             attachButton,
             attachmentsStripView,
             aiChatTextView,
-            createImageModelSwitchCard
+            footerCard
         ]
         return candidates.first { candidate in
             guard !candidate.isHidden, candidate.alpha > 0 else { return false }
@@ -1910,18 +1920,19 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView {
 
-    func setCreateImageModelSwitchFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
+    func setFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
         guard let message, isSearchAreaExpanded else {
-            hideCreateImageModelSwitchCard(animated: animated)
+            hideFooterCard(animated: animated)
             return
         }
 
-        createImageModelSwitchCard.configure(with: message, animateIcon: false)
-        createImageModelSwitchCard.isHidden = false
-        searchAreaAlignmentView.sendSubviewToBack(createImageModelSwitchCard)
+        footerCard.configure(with: message, animateIcon: false)
+        footerCard.isHidden = false
+        visibleFooterMessage = message
+        searchAreaAlignmentView.sendSubviewToBack(footerCard)
 
         guard animated else {
-            createImageModelSwitchCard.alpha = 1
+            footerCard.alpha = 1
             layoutIfNeeded()
             return
         }
@@ -1929,25 +1940,26 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.createImageModelSwitchCard.alpha = 1
+            self.footerCard.alpha = 1
             self.layoutIfNeeded()
         }
     }
 
     func expandedContentMaxY(in view: UIView) -> CGFloat {
-        let isCardVisible = !createImageModelSwitchCard.isHidden && createImageModelSwitchCard.alpha > 0
-        let bottomView = isCardVisible ? createImageModelSwitchCard : searchAreaContainerView
+        let isCardVisible = !footerCard.isHidden && footerCard.alpha > 0
+        let bottomView = isCardVisible ? footerCard : searchAreaContainerView
         return bottomView.convert(bottomView.bounds, to: view).maxY
     }
 
-    private func hideCreateImageModelSwitchCard(animated: Bool) {
-        guard !createImageModelSwitchCard.isHidden else { return }
+    private func hideFooterCard(animated: Bool) {
+        visibleFooterMessage = nil
+        guard !footerCard.isHidden else { return }
 
         let completion: () -> Void = {
-            self.createImageModelSwitchCard.isHidden = true
+            self.footerCard.isHidden = true
         }
         guard animated else {
-            createImageModelSwitchCard.alpha = 0
+            footerCard.alpha = 0
             completion()
             return
         }
@@ -1955,7 +1967,7 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.createImageModelSwitchCard.alpha = 0
+            self.footerCard.alpha = 0
         } completion: { finished in
             guard finished else { return }
             completion()

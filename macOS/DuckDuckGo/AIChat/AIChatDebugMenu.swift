@@ -20,6 +20,7 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import ConcurrencyExtensions
 import os.log
 import Persistence
 
@@ -288,7 +289,7 @@ final class AIChatDebugMenu: NSMenu {
     override func update() {
         updateWebUIMenuItemsState()
         // Main thread only, and the title must be right before the menu draws, so not a Task.
-        MainActor.assumeIsolated {
+        MainActor.assumeMainThread {
             updateAttachmentPrivacyMenuItemTitle()
         }
     }

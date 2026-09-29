@@ -157,7 +157,7 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when the native input shows the Terms of Service disclaimer itself, so the FE can trust
     /// a prompt's `termsAccepted` marker instead of showing its own card.
     public let supportsNativeTermsOfService: Bool
-    /// `true` when the duckduckgo.com homepage may request the user's chats (`getAiChats`) to list
+    /// `true` when the duckduckgo.com homepage may request the user's chats (`getAIChats`) to list
     /// under its chat box. Only set when native storage can answer, so the homepage never waits on
     /// a request an older or unmigrated build cannot serve.
     public let supportsHomePageChatSuggestions: Bool

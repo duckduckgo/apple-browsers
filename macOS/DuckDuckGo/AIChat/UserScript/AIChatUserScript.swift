@@ -262,10 +262,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.dictationStartFailed
         case .customizeResponsesModalClosed:
             return handler.customizeResponsesModalClosed
-        case .getHomepageAiChats:
-            return handler.getHomepageAiChats
-        case .openHomepageAiChat:
-            return handler.openHomepageAiChat
+        case .getAIChats:
+            return handler.getAIChats
         default:
             return nil
         }

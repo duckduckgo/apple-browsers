@@ -152,17 +152,23 @@ final class HomepageAiChatsProviderTests: XCTestCase {
 
     // MARK: - Wire format
 
-    func testRequestsDecodeFromHomepageParams() throws {
+    func testRequestDecodesFromHomepageParams() throws {
         let request = try JSONDecoder().decode(HomepageAiChatsRequest.self, from: Data(#"{"maxChats":5}"#.utf8))
         XCTAssertEqual(request, HomepageAiChatsRequest(query: nil, maxChats: 5))
-
-        let open = try JSONDecoder().decode(HomepageOpenAiChatRequest.self, from: Data(#"{"chatId":"abc","isPinned":true}"#.utf8))
-        XCTAssertEqual(open, HomepageOpenAiChatRequest(chatId: "abc", isPinned: true))
     }
 
-    func testMessageNamesMatchTheHomepageContract() {
-        XCTAssertEqual(AIChatUserScriptMessages.getHomepageAiChats.rawValue, "getAiChats")
-        XCTAssertEqual(AIChatUserScriptMessages.openHomepageAiChat.rawValue, "openAiChat")
+    func testOpenAIChatChatIdIsReadOnlyWhenPresentAndNonEmpty() {
+        XCTAssertEqual(AIChatOpenChatParams.chatId(from: ["chatId": "abc"]), "abc")
+        XCTAssertEqual(AIChatOpenChatParams.chatId(from: ["chatId": " abc "]), "abc")
+        XCTAssertNil(AIChatOpenChatParams.chatId(from: ["chatId": "  "]))
+        XCTAssertNil(AIChatOpenChatParams.chatId(from: ["aiChatPayload": ["query": "hi"]]))
+        XCTAssertNil(AIChatOpenChatParams.chatId(from: ["chatId": 42]))
+        XCTAssertNil(AIChatOpenChatParams.chatId(from: "nope"))
+    }
+
+    func testMessageNameMatchesTheHomepageContract() {
+        XCTAssertEqual(AIChatUserScriptMessages.getAIChats.rawValue, "getAIChats")
+        XCTAssertEqual(AIChatUserScriptMessages.openAIChat.rawValue, "openAIChat")
     }
 
     // MARK: - Helpers

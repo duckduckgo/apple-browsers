@@ -20,7 +20,7 @@ import Foundation
 
 // MARK: - Wire types
 
-/// `getAiChats` params from the duckduckgo.com homepage.
+/// `getAIChats` params from the duckduckgo.com homepage.
 public struct HomepageAiChatsRequest: Decodable, Equatable {
     public let query: String?
     public let maxChats: Int?
@@ -31,18 +31,19 @@ public struct HomepageAiChatsRequest: Decodable, Equatable {
     }
 }
 
-/// `openAiChat` params from the duckduckgo.com homepage.
-public struct HomepageOpenAiChatRequest: Decodable, Equatable {
-    public let chatId: String
-    public let isPinned: Bool?
+/// The optional `chatId` in `openAIChat` params. Present when the page asks to reopen one of the
+/// user's chats (the homepage's chat suggestions) instead of starting one from a handoff payload.
+public enum AIChatOpenChatParams {
+    public static let chatIdKey = "chatId"
 
-    public init(chatId: String, isPinned: Bool? = nil) {
-        self.chatId = chatId
-        self.isPinned = isPinned
+    public static func chatId(from params: Any) -> String? {
+        guard let chatId = (params as? [String: Any])?[chatIdKey] as? String else { return nil }
+        let trimmed = chatId.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
-/// `getAiChats` response. Pinned chats come first, then recent ones by last edit.
+/// `getAIChats` response. Pinned chats come first, then recent ones by last edit.
 /// Carries no message content: the homepage only lists titles.
 public struct HomepageAiChatsResponse: Encodable, Equatable {
     public struct Chat: Encodable, Equatable {

@@ -206,8 +206,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
 
     // duckduckgo.com homepage chat suggestions
-    @MainActor func getHomepageAiChats(params: Any, message: UserScriptMessage) async -> Encodable?
-    @MainActor func openHomepageAiChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -293,8 +292,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Invoked by the front-end code when it intends to open the AI Chat interface.
     /// The front-end can provide a payload that will be used the next time the AI Chat view is displayed.
     /// This function stores the payload and triggers a notification to handle the AI Chat opening process.
+    /// With a `chatId` (the duckduckgo.com homepage's chat suggestions), reopens that chat in the
+    /// requesting tab via the same `chatID` URL the address bar's chat suggestions open.
     @MainActor
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let chatId = AIChatOpenChatParams.chatId(from: params) {
+            message.messageWebView?.load(URLRequest(url: aiChatURLProvider().withChatID(chatId)))
+            return nil
+        }
+
         var payload: AIChatPayload?
         if let paramsDict = params as? AIChatPayload {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
@@ -472,28 +478,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     /// Answered from native storage only (see `HomepageAiChatsProvider`).
     @MainActor
-    func getHomepageAiChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+    func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
               let homepageAiChatsProvider else {
             return HomepageAiChatsResponse.empty
         }
         let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
         return await homepageAiChatsProvider.chats(for: request)
-    }
-
-    /// Posted by the duckduckgo.com homepage when the user picks one of its listed chats. Opens the
-    /// chat in the homepage's tab, the same `chatID` URL the address bar's chat suggestions open.
-    @MainActor
-    func openHomepageAiChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
-              homepageAiChatsProvider?.isSupported == true,
-              let request: HomepageOpenAiChatRequest = DecodableHelper.decode(from: params),
-              !request.chatId.isEmpty,
-              let webView = message.messageWebView else {
-            return nil
-        }
-        webView.load(URLRequest(url: aiChatURLProvider().withChatID(request.chatId)))
-        return nil
     }
 
     @MainActor

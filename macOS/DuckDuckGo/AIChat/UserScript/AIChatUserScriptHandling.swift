@@ -169,9 +169,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable?
 
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
-    @MainActor func getHomepageAiChats(params: Any, message: UserScriptMessage) async -> Encodable?
-    /// Posted by the duckduckgo.com homepage when the user picks one of those chats.
-    @MainActor func openHomepageAiChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -314,26 +312,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     // MARK: - Homepage chat suggestions
 
     /// Answered from native storage only (see `HomepageAiChatsProvider`); duck.ai itself gets nothing.
-    @MainActor public func getHomepageAiChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+    @MainActor public func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
               let homepageAiChatsProvider else {
             return HomepageAiChatsResponse.empty
         }
         let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
         return await homepageAiChatsProvider.chats(for: request)
-    }
-
-    /// Opens the picked chat in the homepage's tab, the same way the New Tab Page's recent chats do.
-    @MainActor public func openHomepageAiChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
-              homepageAiChatsProvider?.isSupported == true,
-              let request: HomepageOpenAiChatRequest = DecodableHelper.decode(from: params),
-              !request.chatId.isEmpty else {
-            return nil
-        }
-        conversationSourceHandler.setData(.duckduckgoHomepage)
-        aiChatTabOpenerProvider().openAIChatTab(with: .existingChat(chatId: request.chatId), behavior: .currentTab)
-        return nil
     }
 
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a
@@ -437,8 +422,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return SelectionContextResponse(selections: messageHandling.getSelectionContexts())
     }
 
+    /// With a `chatId` (the duckduckgo.com homepage's chat suggestions), reopens that chat in the
+    /// requesting tab, the same way the New Tab Page's recent chats do.
     @MainActor
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let chatId = AIChatOpenChatParams.chatId(from: params) {
+            if HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost) {
+                conversationSourceHandler.setData(.duckduckgoHomepage)
+            }
+            aiChatTabOpenerProvider().openAIChatTab(with: .existingChat(chatId: chatId), behavior: .currentTab)
+            return nil
+        }
+
         var payload: AIChatPayload?
         if let paramsDict = params as? AIChatPayload {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload

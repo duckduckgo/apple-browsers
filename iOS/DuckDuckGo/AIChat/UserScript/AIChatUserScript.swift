@@ -224,10 +224,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
-        case .getHomepageAiChats:
-            return handler.getHomepageAiChats
-        case .openHomepageAiChat:
-            return handler.openHomepageAiChat
+        case .getAIChats:
+            return handler.getAIChats
         case .getAIChatNativePrompt:
             return handler.getAIChatNativePrompt
         case .getAIChatNativeHandoffData:

@@ -557,11 +557,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getHomepageAiChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
-        return nil
-    }
-
-    func openHomepageAiChat(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+    func getAIChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 }

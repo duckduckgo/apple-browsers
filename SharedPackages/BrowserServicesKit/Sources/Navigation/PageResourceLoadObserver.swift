@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import FoundationExtensions
 import WebKit
 
 /// The owner must retain this observer for the lifetime of its attachment; WebKit keeps a weak delegate.
@@ -64,7 +65,7 @@ public final class PageResourceLoadObserver: NSObject {
     @objc(webView:resourceLoad:didSendRequest:)
     private func webView(_ webView: WKWebView, resourceLoad: NSObject, didSendRequest request: URLRequest) {
         guard self.webView === webView,
-              let resourceID: UInt64 = PageSignalValue.read("resourceLoadID", from: resourceLoad) else { return }
+              let resourceID: UInt64 = resourceLoad.ddgValueIfAvailable(forKey: "resourceLoadID") else { return }
         activeResourceIDs.insert(resourceID)
     }
 
@@ -73,9 +74,9 @@ public final class PageResourceLoadObserver: NSObject {
         // Require a start observed since the last commit. Completions without a matching start (including
         // some cache loads) cannot be safely attributed to the current page.
         guard self.webView === webView,
-              let resourceID: UInt64 = PageSignalValue.read("resourceLoadID", from: resourceLoad),
+              let resourceID: UInt64 = resourceLoad.ddgValueIfAvailable(forKey: "resourceLoadID"),
               activeResourceIDs.remove(resourceID) != nil else { return }
-        guard let url: URL = PageSignalValue.read("originalURL", from: resourceLoad),
+        guard let url: URL = resourceLoad.ddgValueIfAvailable(forKey: "originalURL"),
               let loadError = PageResourceLoadError(error: error, response: response) else { return }
         onError(url, loadError)
     }

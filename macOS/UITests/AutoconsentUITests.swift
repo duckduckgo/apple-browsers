@@ -104,8 +104,10 @@ class AutoconsentUITests: UITestCase {
         for reproductionIndex in 1...reproductionCount {
             XCTContext.runActivity(named: "Reproduce initial background load race \(reproductionIndex)") { _ in
                 app.menuItems[XCUIApplication.AccessibilityIdentifiers.quitMenuItem].tap()
-                XCTAssertTrue(app.wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence),
-                              "App should quit before reproduction \(reproductionIndex)")
+                guard app.wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence) else {
+                    XCTFail("App should quit before reproduction \(reproductionIndex)")
+                    return
+                }
 
                 do {
                     try clearPersistedBackgroundListeners()
@@ -334,14 +336,10 @@ class AutoconsentUITests: UITestCase {
         // embedded extension rebuild its background listeners while the saved tab is restoring.
         let webKitDirectory = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/WebKit", isDirectory: true)
-        let bundleIdentifiers = [
-            "com.duckduckgo.macos.browser",
-            "com.duckduckgo.macos.browser.debug",
-            "com.duckduckgo.macos.browser.review"
-        ]
-        let stateFileURLs = bundleIdentifiers.flatMap { bundleIdentifier in
-            webExtensionStateFileURLs(in: webKitDirectory.appendingPathComponent(bundleIdentifier, isDirectory: true))
-        }
+        let bundleIdentifier = try XCTUnwrap(app.bundleID, file: file, line: line)
+        let stateFileURLs = webExtensionStateFileURLs(
+            in: webKitDirectory.appendingPathComponent(bundleIdentifier, isDirectory: true)
+        )
         var updatedStateFileCount = 0
 
         for stateFileURL in stateFileURLs {

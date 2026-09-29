@@ -36,7 +36,6 @@ final class WebExtensionNavigationGateTests: XCTestCase {
                                 initialLoadWaiter: { didWait = true })
 
         XCTAssertTrue(didWait)
-        XCTAssertEqual(WebExtensionNavigationGate.defaultInitialLoadTimeout, 5)
     }
 
     func testSubframeHTTPNavigationDoesNotWaitForInitialExtensionLoad() async {
@@ -55,22 +54,6 @@ final class WebExtensionNavigationGateTests: XCTestCase {
         await gate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
                                 url: navigationAction.url,
                                 initialLoadWaiter: { XCTFail("Non-HTTP navigation must not wait") })
-    }
-
-    func testMainFrameHTTPNavigationFailsOpenWhenInitialExtensionLoadHangs() async {
-        let gate = WebExtensionNavigationGate(initialLoadTimeout: 0.01)
-        let start = Date()
-
-        let navigationAction = makeNavigationAction(url: URL(string: "https://example.com")!, isForMainFrame: true)
-        await gate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
-                                url: navigationAction.url,
-                                initialLoadWaiter: {
-            while !Task.isCancelled {
-                await Task.yield()
-            }
-        })
-
-        XCTAssertLessThan(Date().timeIntervalSince(start), 1)
     }
 
     private func makeNavigationAction(url: URL, isForMainFrame: Bool) -> NavigationAction {

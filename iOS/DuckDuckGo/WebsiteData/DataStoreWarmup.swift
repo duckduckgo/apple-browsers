@@ -18,7 +18,6 @@
 //
 
 import Core
-import Combine
 import WebKit
 import PixelKit
 
@@ -35,56 +34,58 @@ public class DataStoreWarmup {
 
     public init() { }
 
+    /// - Returns: `true` when the page reported back, `false` when it timed out. A timed-out
+    /// warm-up leaves the data store in an unknown state, so the caller must not record it as done.
     @MainActor
-    public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async {
+    public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async -> Bool {
         PixelKit.fire(Pixel.Event.webkitWarmupStart(appState: applicationState.rawValue))
-        await BlockingNavigationDelegate(fireMode: fireMode).loadInBackgroundWebView(url: URL(string: "about:blank")!)
-        PixelKit.fire(Pixel.Event.webkitWarmupFinished(appState: applicationState.rawValue))
+        let completed = await BlockingNavigationDelegate(fireMode: fireMode).loadInBackgroundWebView(url: URL(string: "about:blank")!)
+
+        // Only a real completion fires the finished pixel.
+        if completed {
+            PixelKit.fire(Pixel.Event.webkitWarmupFinished(appState: applicationState.rawValue))
+        }
+        return completed
     }
 
 }
 
 public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
-    
-    private let fireMode: Bool
-    
-    public init(fireMode: Bool) {
-        self.fireMode = fireMode
-    }
 
-    var finished: PassthroughSubject? = PassthroughSubject<Void, Never>()
+    private let fireMode: Bool
+
+    /// Upper bound on the warm-up load.
+    private let timeout: TimeInterval
+
+    /// Resumes the pending `loadInBackgroundWebView` wait.
+    private var completion: ((_ completed: Bool) -> Void)?
+    private var timeoutWorkItem: DispatchWorkItem?
+
+    public init(fireMode: Bool, timeout: TimeInterval = 10) {
+        self.fireMode = fireMode
+        self.timeout = timeout
+    }
 
     public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         return .allow
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if let finished {
-            finished.send()
-            self.finished = nil
-        } else {
+        if completion == nil {
             PixelKit.fire(Pixel.Event.webKitWarmupUnexpectedDidFinish)
         }
+        finish(completed: true)
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         PixelKit.fire(Pixel.Event.webKitDidTerminateDuringWarmup)
 
-        if let finished {
-            finished.send()
-            self.finished = nil
-        } else {
+        if completion == nil {
             PixelKit.fire(Pixel.Event.webKitWarmupUnexpectedDidTerminate)
         }
-    }
-
-    var cancellable: AnyCancellable?
-    public func waitForLoad() async {
-        await withCheckedContinuation { continuation in
-            cancellable = finished?.sink { _ in
-                continuation.resume()
-            }
-        }
+        // Reported back, so the warm-up is not retried. Matches the behaviour before the timeout
+        // existed, keeping the historical start/finished baseline comparable.
+        finish(completed: true)
     }
 
     @MainActor
@@ -96,11 +97,38 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 
     @MainActor
-    public func loadInBackgroundWebView(url: URL) async {
+    /// - Returns: `true` when the navigation reported back, `false` when the timeout fired.
+    @discardableResult
+    public func loadInBackgroundWebView(url: URL) async -> Bool {
         let webView = prepareWebView()
-        let request = URLRequest(url: url)
-        webView.load(request)
-        await waitForLoad()
+
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            // Registered before the load starts, so a `didFinish` delivered on a later run loop
+            // turn always finds a completion to call.
+            completion = { continuation.resume(returning: $0) }
+
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self, self.completion != nil else { return }
+
+                Logger.general.error("Timed out warming up the website data store after \(self.timeout, privacy: .public)s")
+                PixelKit.fire(DataClearingTimeoutPixels.warmupNavigationTimedOut, frequency: .dailyAndStandard)
+                self.finish(completed: false)
+            }
+            timeoutWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: workItem)
+
+            webView.load(URLRequest(url: url))
+        }
+    }
+
+    /// Resumes the pending wait, at most once.
+    private func finish(completed: Bool) {
+        timeoutWorkItem?.cancel()
+        timeoutWorkItem = nil
+
+        let completion = self.completion
+        self.completion = nil
+        completion?(completed)
     }
 
 }

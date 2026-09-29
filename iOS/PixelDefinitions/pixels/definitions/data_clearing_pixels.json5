@@ -63,6 +63,14 @@
         "parameters": ["appVersion"]
     },
 
+    "fire_warmup-navigation_timed-out": {
+        "description": "Fired when the hidden WebKit warm-up page loaded at the start of a data clearing operation does not report back before its deadline. The burn stops waiting and continues, rather than hanging indefinitely and blocking every later Fire button press until the app is relaunched",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
     "data-clearing_single-tab-time-": {
         "description": "Fires when website data clearing completes for a single-tab (limited scope) burn, reporting how long the operation took. Tracked separately from the all-tabs timing because clearing a single tab must enumerate and selectively delete per-domain, making it inherently slower.",
         "owners": ["hassaanelgarem"],

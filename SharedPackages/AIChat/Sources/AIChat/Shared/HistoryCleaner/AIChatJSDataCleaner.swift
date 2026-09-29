@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Foundation
 import os.log
 import PrivacyConfig
 import UserScript
@@ -37,14 +38,19 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         case webViewNotInitialized
         case scriptNotInitialized
         case operationInProgress
+        case navigationTimedOut
     }
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfigurationManaging
     private let websiteDataStore: WKWebsiteDataStore
 
+    /// Upper bound on each domain's load.
+    private let navigationTimeout: TimeInterval
+
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
     private var navigationContinuation: CheckedContinuation<Result<Void, Error>, Never>?
+    private var navigationTimeoutWorkItem: DispatchWorkItem?
     private var webView: WKWebView?
     private var coordinator: Coordinator?
     private var contentScopeUserScript: ContentScopeUserScript?
@@ -52,10 +58,12 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
 
     public init(featureFlagger: FeatureFlagger,
                 privacyConfig: PrivacyConfigurationManaging,
-                websiteDataStore: WKWebsiteDataStore) {
+                websiteDataStore: WKWebsiteDataStore,
+                navigationTimeout: TimeInterval = 10) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
         self.websiteDataStore = websiteDataStore
+        self.navigationTimeout = navigationTimeout
     }
 
     @MainActor
@@ -184,12 +192,29 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         return await withCheckedContinuation { continuation in
             self.navigationContinuation = continuation
 
+            let workItem = DispatchWorkItem { [weak self] in
+                // Hops to the main actor rather than asserting isolation, which needs iOS 17.
+                Task { @MainActor in
+                    guard let self, self.navigationContinuation != nil else { return }
+
+                    Logger.aiChat.error("Timed out loading \(requestURL.absoluteString, privacy: .public) to clear Duck.ai data")
+                    self.completeNavigation(with: .failure(CleanerError.navigationTimedOut))
+                }
+            }
+            navigationTimeoutWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + navigationTimeout, execute: workItem)
+
             webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
         }
     }
 
+    /// Resumes the pending navigation wait, at most once. Both the delegate callbacks and the
+    /// timeout funnel through here, so whichever arrives first wins and the other is a no-op.
     @MainActor
     private func completeNavigation(with result: Result<Void, Error>) {
+        navigationTimeoutWorkItem?.cancel()
+        navigationTimeoutWorkItem = nil
+
         navigationContinuation?.resume(returning: result)
         navigationContinuation = nil
     }

@@ -48,17 +48,18 @@ actor DataStoreWarmupWorker: FireExecutorWorker {
     }
     
     private func ensureNormalStoreIsReady() async {
-        // This needs to happen only once per app launch
-        if let normalDataStoreWarmup {
-            await normalDataStoreWarmup.ensureReady(applicationState: applicationState, fireMode: false)
+        // Only needs to succeed once per app launch. A warm-up that timed out left the data store
+        // in an unknown state, so it is kept and retried by the next burn rather than discarded.
+        guard let normalDataStoreWarmup else { return }
+        if await normalDataStoreWarmup.ensureReady(applicationState: applicationState, fireMode: false) {
             self.normalDataStoreWarmup = nil
         }
     }
     
     private func ensureFireModeStoreIsReady() async {
-        // This needs to happen only once per app launch
-        if let fireModeDataStoreWarmup {
-            await fireModeDataStoreWarmup.ensureReady(applicationState: applicationState, fireMode: true)
+        // See `ensureNormalStoreIsReady`.
+        guard let fireModeDataStoreWarmup else { return }
+        if await fireModeDataStoreWarmup.ensureReady(applicationState: applicationState, fireMode: true) {
             self.fireModeDataStoreWarmup = nil
         }
     }

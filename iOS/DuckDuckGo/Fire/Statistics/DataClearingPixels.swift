@@ -138,3 +138,39 @@ extension DataClearingCompletionPixels: PixelKit.Event {
         return nil
     }
 }
+
+// MARK: - Data Clearing Timeouts
+
+/// Timeouts that bound the hidden page loads a burn performs. Kept separate from
+/// `DataClearingPixels` because that type freezes a legacy signature (`.legacyOmitted`), which a
+/// new pixel must not adopt; these use the current PixelKit defaults instead.
+enum DataClearingTimeoutPixels {
+
+    /// The WebKit warm-up page did not report back before its deadline, so the burn gave up
+    /// waiting on it rather than hanging indefinitely.
+    case warmupNavigationTimedOut
+}
+
+// MARK: - PixelKit.Event Protocol
+
+extension DataClearingTimeoutPixels: PixelKit.Event {
+
+    var name: String {
+        switch self {
+        case .warmupNavigationTimedOut:
+            return "fire_warmup-navigation_timed-out"
+        }
+    }
+
+    var parameters: [String: String]? {
+        return nil
+    }
+
+    var error: NSError? {
+        return nil
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        return [.pixelSource]
+    }
+}

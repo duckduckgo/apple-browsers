@@ -95,6 +95,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
+    case webExtensionStateRestorationGate
+
     /// Failsafe for Web Extensions background-process diagnostics observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
@@ -682,6 +686,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate), category: .webExtensions)
         case .cpmBackgroundDelegateProxy:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
         case .cpmDiagnosticsRecorder:

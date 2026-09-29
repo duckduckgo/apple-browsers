@@ -4397,6 +4397,10 @@
 		CD41B001000000000001000C /* VPNUpsellToolbarButtonPromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B001000000000001000A /* VPNUpsellToolbarButtonPromoDelegateTests.swift */; };
 		CD41B001000000000002000B /* VPNUpsellDotBadgePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B001000000000002000A /* VPNUpsellDotBadgePromoDelegateTests.swift */; };
 		CD41B001000000000002000C /* VPNUpsellDotBadgePromoDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B001000000000002000A /* VPNUpsellDotBadgePromoDelegateTests.swift */; };
+		CD41B00200000000000B0001 /* VPNUpsellPromoSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B00200000000000A0001 /* VPNUpsellPromoSession.swift */; };
+		CD41B00200000000000B0002 /* VPNUpsellPromoSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B00200000000000A0001 /* VPNUpsellPromoSession.swift */; };
+		CD41B00200000000000C0001 /* VPNUpsellPromoSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B00200000000000A0002 /* VPNUpsellPromoSessionTests.swift */; };
+		CD41B00200000000000C0002 /* VPNUpsellPromoSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD41B00200000000000A0002 /* VPNUpsellPromoSessionTests.swift */; };
 		CD89DD612C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
 		CD89DD622C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */; };
 		CDCC672B44CC6EA9370CAAA1 /* AutofillToolbarPinningPromoDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C1BB14B301D4C3ED9BF09B /* AutofillToolbarPinningPromoDelegate.swift */; };
@@ -7288,6 +7292,8 @@
 		CD41A0010000000000100010 /* AutoplayPromoPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPromoPixel.swift; sourceTree = "<group>"; };
 		CD41B001000000000001000A /* VPNUpsellToolbarButtonPromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellToolbarButtonPromoDelegateTests.swift; sourceTree = "<group>"; };
 		CD41B001000000000002000A /* VPNUpsellDotBadgePromoDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellDotBadgePromoDelegateTests.swift; sourceTree = "<group>"; };
+		CD41B00200000000000A0001 /* VPNUpsellPromoSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPromoSession.swift; sourceTree = "<group>"; };
+		CD41B00200000000000A0002 /* VPNUpsellPromoSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPromoSessionTests.swift; sourceTree = "<group>"; };
 		CD89DD5D2C89E08D0080F9AF /* MaliciousSiteProtectionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionTests.swift; sourceTree = "<group>"; };
 		CDE248A32C821FFE00F9399D /* phishingHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = phishingHashPrefixes.json; sourceTree = "<group>"; };
 		CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionManager.swift; sourceTree = "<group>"; };
@@ -9757,6 +9763,7 @@
 				4B975BFE2E431FD40019F757 /* VPNUpsellVisibilityManager.swift */,
 				0296BDF634EBF8DAB658CEBE /* VPNUpsellDotBadgePromoDelegate.swift */,
 				CE372B4C9F7B74B7A89D80D1 /* VPNUpsellToolbarButtonPromoDelegate.swift */,
+				CD41B00200000000000A0001 /* VPNUpsellPromoSession.swift */,
 			);
 			path = VPNUpsellNew;
 			sourceTree = "<group>";
@@ -13487,6 +13494,7 @@
 				CD41A001000000000010000A /* AutoplayDiscoverabilityPromoDelegateTests.swift */,
 				CD41B001000000000002000A /* VPNUpsellDotBadgePromoDelegateTests.swift */,
 				CD41B001000000000001000A /* VPNUpsellToolbarButtonPromoDelegateTests.swift */,
+				CD41B00200000000000A0002 /* VPNUpsellPromoSessionTests.swift */,
 				27B6B4FE3B30C39AE8212F19 /* AutofillToolbarPinningPromoDelegateTests.swift */,
 				CCB2EBDE2F62001600C65813 /* Mocks */,
 				CCB2EBCC2F62000C00C65813 /* PromoHistoryStoreTests.swift */,
@@ -16353,6 +16361,7 @@
 				4B975C052E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */,
 				65961B243BFC44484B8093D5 /* VPNUpsellDotBadgePromoDelegate.swift in Sources */,
 				1DE433297570B7C0096D1785 /* VPNUpsellToolbarButtonPromoDelegate.swift in Sources */,
+				CD41B00200000000000B0001 /* VPNUpsellPromoSession.swift in Sources */,
 				4B975C062E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */,
 				4B975C072E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */,
 				4B975C082E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */,
@@ -17279,6 +17288,7 @@
 				CD41A001000000000010000B /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */,
 				CD41B001000000000002000B /* VPNUpsellDotBadgePromoDelegateTests.swift in Sources */,
 				CD41B001000000000001000B /* VPNUpsellToolbarButtonPromoDelegateTests.swift in Sources */,
+				CD41B00200000000000C0001 /* VPNUpsellPromoSessionTests.swift in Sources */,
 				3F2BB6FE74EBC0C4E2D2E3D0 /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */,
 				AC0AC7AE1E7A467B93B0F2CB /* UpdateAvailablePromoDelegateTests.swift in Sources */,
 				A4503D26CBDF43A6A2C983A1 /* BrowserUpdatedPromoDelegateTests.swift in Sources */,
@@ -18943,6 +18953,7 @@
 				4B975C002E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */,
 				6765163B67FAFB28A2CC4C48 /* VPNUpsellDotBadgePromoDelegate.swift in Sources */,
 				2B1D2AE11F2D04F4BE9291DC /* VPNUpsellToolbarButtonPromoDelegate.swift in Sources */,
+				CD41B00200000000000B0002 /* VPNUpsellPromoSession.swift in Sources */,
 				4B975C012E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */,
 				4B975C022E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */,
 				4B975C032E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */,
@@ -19722,6 +19733,7 @@
 				CD41A001000000000010000C /* AutoplayDiscoverabilityPromoDelegateTests.swift in Sources */,
 				CD41B001000000000002000C /* VPNUpsellDotBadgePromoDelegateTests.swift in Sources */,
 				CD41B001000000000001000C /* VPNUpsellToolbarButtonPromoDelegateTests.swift in Sources */,
+				CD41B00200000000000C0002 /* VPNUpsellPromoSessionTests.swift in Sources */,
 				EA4E2D3161EACC0CF28D704E /* AutofillToolbarPinningPromoDelegateTests.swift in Sources */,
 				AC0AC7AE1E7A467B93B0F2CD /* UpdateAvailablePromoDelegateTests.swift in Sources */,
 				DF972165A0014016907984C2 /* BrowserUpdatedPromoDelegateTests.swift in Sources */,

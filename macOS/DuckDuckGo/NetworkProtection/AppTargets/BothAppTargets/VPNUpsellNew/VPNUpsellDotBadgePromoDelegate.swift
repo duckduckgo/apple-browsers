@@ -23,64 +23,40 @@ import PrivacyConfig
 /// Promo delegate that shows the notification dot on the VPN upsell toolbar button.
 final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
 
-    private let featureFlagger: FeatureFlagger
-    private let visibilityManager: VPNUpsellVisibilityManager
+    private let session: VPNUpsellPromoSession
     private let persistor: VPNUpsellUserDefaultsPersisting
     private let dateProvider: () -> Date
-    private let eligibilitySubject = CurrentValueSubject<Bool, Never>(false)
-    private let isShowingSubject = CurrentValueSubject<Bool, Never>(false)
-    private var resultContinuation: CheckedContinuation<PromoResult, Never>?
-    private var cancellables = Set<AnyCancellable>()
 
     init(featureFlagger: FeatureFlagger,
          visibilityManager: VPNUpsellVisibilityManager,
          persistor: VPNUpsellUserDefaultsPersisting,
          dateProvider: @escaping () -> Date = Date.init) {
-        self.featureFlagger = featureFlagger
-        self.visibilityManager = visibilityManager
+        self.session = VPNUpsellPromoSession(featureFlagger: featureFlagger, visibilityManager: visibilityManager)
         self.persistor = persistor
         self.dateProvider = dateProvider
-
-        let isFlagOn = { featureFlagger.isFeatureOn(.promoQueueVPNUpsellPromo) }
-        Publishers.CombineLatest(
-            featureFlagger.updatesPublisher.map { _ in isFlagOn() }.prepend(isFlagOn()),
-            visibilityManager.$state.map { $0 == .eligible }
-        )
-        .map { $0 && $1 }
-        .removeDuplicates()
-        .sink { [eligibilitySubject] in eligibilitySubject.send($0) }
-        .store(in: &cancellables)
     }
 
     var isEligible: Bool {
-        eligibilitySubject.value
+        session.isEligible
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        eligibilitySubject.removeDuplicates().eraseToAnyPublisher()
+        session.isEligiblePublisher
     }
 
     var isShowingPublisher: AnyPublisher<Bool, Never> {
-        isShowingSubject.removeDuplicates().eraseToAnyPublisher()
+        session.isShowingPublisher
     }
 
     @MainActor
     func hide() {
-        isShowingSubject.send(false)
-        resume(with: .noChange)
+        session.end()
     }
 
     @MainActor
     func handlePinningChange(isPinned: Bool) {
-        guard resultContinuation != nil, !isPinned else { return }
-        resume(with: .ignored())
-    }
-
-    private func resume(with result: PromoResult) {
-        isShowingSubject.send(false)
-        guard let continuation = resultContinuation else { return }
-        resultContinuation = nil
-        continuation.resume(returning: result)
+        guard !isPinned else { return }
+        session.resolve(.ignored())
     }
 
     @MainActor
@@ -90,16 +66,11 @@ final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
             return .retired
         }
 
-        isShowingSubject.send(true)
-
-        return await withCheckedContinuation { continuation in
-            resultContinuation = continuation
-        }
+        return await session.begin()
     }
 
     @MainActor
     func buttonClicked() {
-        guard resultContinuation != nil else { return }
-        resume(with: .actioned)
+        session.resolve(.actioned)
     }
 }

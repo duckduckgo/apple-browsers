@@ -94,59 +94,6 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
         return task
     }
 
-    private func waitForEligibility(_ expected: Bool) {
-        let expectation = expectation(description: "eligibility becomes \(expected)")
-        sut.isEligiblePublisher
-            .first { $0 == expected }
-            .sink { _ in expectation.fulfill() }
-            .store(in: &cancellables)
-        waitForExpectations(timeout: 2)
-    }
-
-    // MARK: - Eligibility
-
-    func testWhenFlagOnAndManagerEligibleThenIsEligible() {
-        XCTAssertEqual(manager.state, .eligible)
-        XCTAssertTrue(sut.isEligible)
-    }
-
-    func testWhenFlagOffThenIsNotEligible() {
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = false
-        sut = makeSUT()
-
-        XCTAssertFalse(sut.isEligible)
-    }
-
-    func testWhenManagerIsNotEligibleThenIsNotEligible() {
-        manager = makeManager(isNewUser: false)
-        sut = makeSUT()
-
-        XCTAssertEqual(manager.state, .notEligible)
-        XCTAssertFalse(sut.isEligible)
-    }
-
-    func testWhenManagerBecomesNotEligibleThenEligibilityPublisherEmitsFalse() {
-        XCTAssertTrue(sut.isEligible)
-        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-
-        notificationCenter.post(name: .entitlementsDidChange, object: nil)
-
-        waitForEligibility(false)
-        XCTAssertFalse(sut.isEligible)
-    }
-
-    func testWhenFlagIsTurnedOffAtRuntimeThenEligibilityPublisherEmitsFalse() {
-        XCTAssertTrue(sut.isEligible)
-        var values: [Bool] = []
-        sut.isEligiblePublisher.sink { values.append($0) }.store(in: &cancellables)
-
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = false
-        featureFlagger.triggerUpdate()
-
-        XCTAssertEqual(values, [true, false])
-        XCTAssertFalse(sut.isEligible)
-    }
-
     // MARK: - Legacy retirement
 
     func testWhenLegacyPopoverWasViewedThenShowRetires() async {
@@ -226,38 +173,8 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
 
         XCTAssertTrue(isShowing)
         sut.hide()
-        _ = await task.value
-    }
-
-    func testWhenHiddenWhileShowingThenNoChange() async {
-        let task = await startShow()
-
-        sut.hide()
-
         let result = await task.value
         XCTAssertEqual(result, .noChange)
-        XCTAssertFalse(isShowing)
-    }
-
-    func testWhenHiddenTwiceThenItIsSafe() async {
-        let task = await startShow()
-
-        sut.hide()
-        sut.hide()
-
-        let result = await task.value
-        XCTAssertEqual(result, .noChange)
-    }
-
-    func testWhenHiddenAfterResolutionThenResultIsUnchanged() async {
-        let task = await startShow()
-        sut.buttonClicked()
-
-        sut.hide()
-
-        let result = await task.value
-        XCTAssertEqual(result, .actioned)
-        XCTAssertFalse(isShowing)
     }
 
     func testWhenNotShowingThenHideUnpinAndButtonClickDoNothing() async {

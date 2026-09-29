@@ -25,68 +25,43 @@ import Subscription
 /// Promo delegate that shows the VPN upsell button in the toolbar.
 final class VPNUpsellToolbarButtonPromoDelegate: InternalPromoDelegate, VPNUpsellDismissing {
 
-    private let featureFlagger: FeatureFlagger
-    private let visibilityManager: VPNUpsellVisibilityManager
+    private let session: VPNUpsellPromoSession
     private let persistor: VPNUpsellUserDefaultsPersisting
     private let dateProvider: () -> Date
     private let pixelHandler: (SubscriptionPixel) -> Void
-
-    private let eligibilitySubject = CurrentValueSubject<Bool, Never>(false)
-    private let isShowingSubject = CurrentValueSubject<Bool, Never>(false)
-    private var resultContinuation: CheckedContinuation<PromoResult, Never>?
-    private var cancellables = Set<AnyCancellable>()
 
     init(featureFlagger: FeatureFlagger,
          visibilityManager: VPNUpsellVisibilityManager,
          persistor: VPNUpsellUserDefaultsPersisting,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) },
          dateProvider: @escaping () -> Date = Date.init) {
-        self.featureFlagger = featureFlagger
-        self.visibilityManager = visibilityManager
+        self.session = VPNUpsellPromoSession(featureFlagger: featureFlagger, visibilityManager: visibilityManager)
         self.persistor = persistor
         self.pixelHandler = pixelHandler
         self.dateProvider = dateProvider
-
-        let isFlagOn = { featureFlagger.isFeatureOn(.promoQueueVPNUpsellPromo) }
-        Publishers.CombineLatest(
-            featureFlagger.updatesPublisher.map { _ in isFlagOn() }.prepend(isFlagOn()),
-            visibilityManager.$state.map { $0 == .eligible }
-        )
-        .map { $0 && $1 }
-        .removeDuplicates()
-        .sink { [eligibilitySubject] in eligibilitySubject.send($0) }
-        .store(in: &cancellables)
     }
 
     var isEligible: Bool {
-        eligibilitySubject.value
+        session.isEligible
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        eligibilitySubject.removeDuplicates().eraseToAnyPublisher()
+        session.isEligiblePublisher
     }
 
     var isShowingPublisher: AnyPublisher<Bool, Never> {
-        isShowingSubject.removeDuplicates().eraseToAnyPublisher()
+        session.isShowingPublisher
     }
 
     @MainActor
     func hide() {
-        isShowingSubject.send(false)
-        resume(with: .noChange)
+        session.end()
     }
 
     @MainActor
     func handlePinningChange(isPinned: Bool) {
-        guard resultContinuation != nil, !isPinned else { return }
-        resume(with: .ignored())
-    }
-
-    private func resume(with result: PromoResult) {
-        isShowingSubject.send(false)
-        guard let continuation = resultContinuation else { return }
-        resultContinuation = nil
-        continuation.resume(returning: result)
+        guard !isPinned else { return }
+        session.resolve(.ignored())
     }
 
     @MainActor
@@ -96,20 +71,15 @@ final class VPNUpsellToolbarButtonPromoDelegate: InternalPromoDelegate, VPNUpsel
             return .retired
         }
 
-        isShowingSubject.send(true)
-
         if !force {
             pixelHandler(.subscriptionToolbarButtonShown)
         }
 
-        return await withCheckedContinuation { continuation in
-            resultContinuation = continuation
-        }
+        return await session.begin()
     }
 
     @MainActor
     func dismissUpsell() {
-        guard resultContinuation != nil else { return }
-        resume(with: .ignored())
+        session.resolve(.ignored())
     }
 }

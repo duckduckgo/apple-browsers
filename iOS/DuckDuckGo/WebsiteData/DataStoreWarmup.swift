@@ -32,18 +32,23 @@ public class DataStoreWarmup {
         case unknown
     }
 
-    public init() { }
+    private let pixelFiring: (any PixelKitFiring)?
+
+    public init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
 
     /// - Returns: `true` when the page reported back, `false` when it timed out. A timed-out
     /// warm-up leaves the data store in an unknown state, so the caller must not record it as done.
     @MainActor
     public func ensureReady(applicationState: ApplicationState, fireMode: Bool) async -> Bool {
-        PixelKit.fire(Pixel.Event.webkitWarmupStart(appState: applicationState.rawValue))
-        let completed = await BlockingNavigationDelegate(fireMode: fireMode).loadInBackgroundWebView(url: URL(string: "about:blank")!)
+        pixelFiring?.fire(Pixel.Event.webkitWarmupStart(appState: applicationState.rawValue))
+        let completed = await BlockingNavigationDelegate(fireMode: fireMode,
+                                                        pixelFiring: pixelFiring).loadInBackgroundWebView(url: URL(string: "about:blank")!)
 
         // Only a real completion fires the finished pixel.
         if completed {
-            PixelKit.fire(Pixel.Event.webkitWarmupFinished(appState: applicationState.rawValue))
+            pixelFiring?.fire(Pixel.Event.webkitWarmupFinished(appState: applicationState.rawValue))
         }
         return completed
     }
@@ -61,9 +66,14 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
     private var completion: ((_ completed: Bool) -> Void)?
     private var timeoutWorkItem: DispatchWorkItem?
 
-    public init(fireMode: Bool, timeout: TimeInterval = 10) {
+    private let pixelFiring: (any PixelKitFiring)?
+
+    public init(fireMode: Bool,
+                timeout: TimeInterval = 10,
+                pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.fireMode = fireMode
         self.timeout = timeout
+        self.pixelFiring = pixelFiring
     }
 
     public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
@@ -72,16 +82,16 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         if completion == nil {
-            PixelKit.fire(Pixel.Event.webKitWarmupUnexpectedDidFinish)
+            pixelFiring?.fire(Pixel.Event.webKitWarmupUnexpectedDidFinish)
         }
         finish(completed: true)
     }
 
     public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        PixelKit.fire(Pixel.Event.webKitDidTerminateDuringWarmup)
+        pixelFiring?.fire(Pixel.Event.webKitDidTerminateDuringWarmup)
 
         if completion == nil {
-            PixelKit.fire(Pixel.Event.webKitWarmupUnexpectedDidTerminate)
+            pixelFiring?.fire(Pixel.Event.webKitWarmupUnexpectedDidTerminate)
         }
         // Reported back, so the warm-up is not retried. Matches the behaviour before the timeout
         // existed, keeping the historical start/finished baseline comparable.
@@ -111,7 +121,7 @@ public class BlockingNavigationDelegate: NSObject, WKNavigationDelegate {
                 guard let self, self.completion != nil else { return }
 
                 Logger.general.error("Timed out warming up the website data store after \(self.timeout, privacy: .public)s")
-                PixelKit.fire(DataClearingTimeoutPixels.warmupNavigationTimedOut, frequency: .dailyAndStandard)
+                self.pixelFiring?.fire(DataClearingTimeoutPixels.warmupNavigationTimedOut, frequency: .dailyAndStandard)
                 self.finish(completed: false)
             }
             timeoutWorkItem = workItem

@@ -57,11 +57,15 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
+    private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
-    public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
+    public init(storageProvider: WebExtensionStorageProviding,
+                isInspectable: Bool = false,
+                permissionController: WebExtensionPermissionController? = nil) {
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
+        self.permissionController = permissionController
     }
 
     @MainActor
@@ -89,12 +93,17 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
 
-        let context = makeContext(for: webExtension, identifier: identifier)
+        let context = try await makeContext(for: webExtension, identifier: identifier)
 
         // Notify delegate before loading to allow handler registration
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try controller.load(context)
+        do {
+            try controller.load(context)
+        } catch {
+            permissionController?.didUnload(identifier)
+            throw error
+        }
 
         return WebExtensionLoadResult(
             identifier: identifier,
@@ -130,12 +139,17 @@ public final class WebExtensionLoader: WebExtensionLoading {
     public func reloadWebExtension(_ webExtension: WKWebExtension,
                                    identifier: String,
                                    into controller: WKWebExtensionController) async throws {
-        let context = makeContext(for: webExtension, identifier: identifier)
+        let context = try await makeContext(for: webExtension, identifier: identifier)
 
         // Notify delegate before loading to allow handler registration.
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try controller.load(context)
+        do {
+            try controller.load(context)
+        } catch {
+            permissionController?.didUnload(identifier)
+            throw error
+        }
     }
 
     public func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
@@ -150,10 +164,17 @@ public final class WebExtensionLoader: WebExtensionLoading {
         try controller.unload(context)
     }
 
-    private func makeContext(for webExtension: WKWebExtension, identifier: String) -> WKWebExtensionContext {
+    @MainActor
+    private func makeContext(for webExtension: WKWebExtension, identifier: String) async throws -> WKWebExtensionContext {
         let context = WKWebExtensionContext(for: webExtension)
 
         context.uniqueIdentifier = identifier
+        context.isInspectable = isInspectable
+
+        if let permissionController {
+            try await permissionController.prepare(context)
+            return context
+        }
 
         let matchPatterns = webExtension.allRequestedMatchPatterns
         for pattern in matchPatterns {
@@ -164,7 +185,6 @@ public final class WebExtensionLoader: WebExtensionLoading {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        context.isInspectable = isInspectable
         context.hasAccessToPrivateData = true
         return context
     }

@@ -35,4 +35,6 @@ public enum NetworkProtectionOptionKey {
     public static let tunnelMemoryCrashSimulation = "tunnelMemoryCrashSimulation"
     public static let connectionTesterEnabled = "connectionTesterEnabled"
     public static let settings = "settings"
+    /// One-shot: skips this start's notification-permission request.
+    public static let suppressNotificationAuthorizationRequest = "suppressNotificationAuthorizationRequest"
 }

@@ -120,10 +120,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             openSystemSettings()
 
         case .dismiss:
-            stopObservingSystemPermission()
-            query?.wasDismissed = true
-            query?.cancel()
-            finish()
+            onDismiss()
 
         case .learnMore:
             guard let url = viewState.learnMore?.url else { return }
@@ -151,8 +148,12 @@ final class PermissionAuthorizationViewModel: ObservableObject {
 
     private func submit(_ decision: PermissionPromptDecision) {
         stopObservingSystemPermission()
-        defer { finish() }
-        guard let query else { return }
+        guard let query else {
+            finish()
+            return
+        }
+        // Completion removes the query from the model. Keep it alive for the presenter's identity check when dismissing.
+        defer { withExtendedLifetime(query) { finish() } }
 
         let output = decision.output
         if !isResumingStoredDecision {
@@ -161,6 +162,15 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             }
         }
         query.handleDecision(grant: output.granted, remember: output.remember)
+    }
+
+    private func onDismiss() {
+        withExtendedLifetime(query) {
+            stopObservingSystemPermission()
+            query?.wasDismissed = true
+            query?.cancel()
+            finish()
+        }
     }
 
     private func submitPendingDecision() {

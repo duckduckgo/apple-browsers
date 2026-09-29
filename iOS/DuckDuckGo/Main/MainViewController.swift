@@ -181,6 +181,8 @@ class MainViewController: UIViewController {
         featureFlagger: featureFlagger,
         appearanceProvider: { [weak self] in self?.daxGreetingAppearance })
 
+    private lazy var newTabPageControllerStore = NewTabPageControllerStore(builder: newTabPageBuilder)
+
     private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
                                                            homePageMessagesConfiguration: homePageConfiguration,
                                                            subscriptionDataReporting: subscriptionDataReporter,
@@ -2354,9 +2356,10 @@ class MainViewController: UIViewController {
             && !daxDialogsManager.subscriptionPromotionPending
             && !chatPathCompletionPending
 
-        let controller = newTabPageBuilder.makeNewTabPage(tab: tabModel,
-                                                          openedAfterIdle: hatch != nil,
-                                                          daxDialogFactory: newTabDaxDialogFactory)
+        let controller = newTabPageControllerStore.page(for: tabModel,
+                                                       isNewTab: isNewTab,
+                                                       openedAfterIdle: hatch != nil,
+                                                       daxDialogFactory: newTabDaxDialogFactory)
 
         controller.delegate = self
         controller.chromeDelegate = self
@@ -2938,6 +2941,8 @@ class MainViewController: UIViewController {
     }
 
     private func attachTab(tab: TabViewController) {
+        // Navigating away from the NTP ends this page's lifetime; switching to another tab does not.
+        newTabPageControllerStore.removePage(for: tab.tabModel)
         reportDuckAISessionVisibleTab(tab.tabModel)
         // The user moved on to an existing tab, so whatever New Tab Page they reach later is not the
         // page a burn landed them on.
@@ -7504,6 +7509,7 @@ extension MainViewController: TabSwitcherDelegate {
         recordDuckAISessionCloseIfNeeded(closingTabs: tabs)
         discardNewTabPageSessionIfHostingTabClosed(tabs)
 
+        newTabPageControllerStore.removePages(for: tabs)
         for tab in tabs {
             reportDuckAITabClosedIfNeeded(tab)
         }
@@ -7519,6 +7525,7 @@ extension MainViewController: TabSwitcherDelegate {
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true,
                   refreshInPlace: Bool = false) {
+        newTabPageControllerStore.removePage(for: tab)
         recordDuckAISessionCloseIfNeeded(closingTabs: [tab])
 
         func replaceTabWith(newTab: Tab) {
@@ -8008,6 +8015,9 @@ extension MainViewController: FireExecutorDelegate {
     }
     
     func willStartBurningTabs(fireRequest: FireRequest) {
+        if fireRequest.options.contains(.tabs) {
+            newTabPageControllerStore.removePages(for: tabsClearedByFireButton(fireRequest.scope))
+        }
         omniBar.endEditing()
         findInPageView?.done()
         reportDuckAIFireButtonClearedTabsIfNeeded(fireRequest)

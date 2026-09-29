@@ -57,15 +57,18 @@ struct NewTabPageBuilder {
     func makeNewTabPage(tab: Tab,
                         openedAfterIdle: Bool,
                         daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
-        // Fire tabs are excluded because their empty state is drawn elsewhere and would cover the
-        // page.
-        if !tab.fireTab, redesignFeature.isAvailable {
+        if usesRedesignedPage(for: tab) {
             return makeRedesignedNewTabPage(openedAfterIdle: openedAfterIdle)
         }
 
         return makeCurrentNewTabPage(tab: tab,
                                      openedAfterIdle: openedAfterIdle,
                                      daxDialogFactory: daxDialogFactory)
+    }
+
+    func usesRedesignedPage(for tab: Tab) -> Bool {
+        // Fire tabs draw their empty state elsewhere.
+        !tab.fireTab && redesignFeature.isAvailable
     }
 
     private func makeRedesignedNewTabPage(openedAfterIdle: Bool) -> any NewTabPage {

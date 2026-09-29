@@ -49,6 +49,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
+    private var detachedContentOffset: CGPoint?
 
     private let backgroundImageView = UIImageView(image: UIImage(named: "background-pond-light"))
 
@@ -140,6 +141,15 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         updateBackgroundAppearance()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Reattachment passes through the outgoing tab's bounds and safe area before NTP chrome settles.
+        // Keep those temporary layouts from changing the loaded page's scroll position.
+        if let detachedContentOffset, scrollView.contentOffset != detachedContentOffset {
+            scrollView.setContentOffset(detachedContentOffset, animated: false)
+        }
+    }
+
     private func updateBackgroundAppearance() {
         // Keep the dark surface until matching dark artwork is available.
         backgroundImageView.isHidden = traitCollection.userInterfaceStyle == .dark
@@ -159,6 +169,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        finishRestoringScrollPosition()
         isRemoteMessageSurfacePresented = true
         notifyRemoteMessageSurfaceChanged()
 
@@ -172,6 +183,18 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         }
         entranceAnimator = animator
         animator.startAnimation()
+    }
+
+    private func finishRestoringScrollPosition() {
+        guard let savedOffset = detachedContentOffset else { return }
+        detachedContentOffset = nil
+        view.layoutIfNeeded()
+        // Favorites or messages may have been removed while this page was detached.
+        // Clamp only after reattachment, once the final viewport and content size are available.
+        let minimumY = -scrollView.adjustedContentInset.top
+        let maximumY = max(minimumY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
+        let restoredY = min(max(savedOffset.y, minimumY), maximumY)
+        scrollView.setContentOffset(CGPoint(x: savedOffset.x, y: restoredY), animated: false)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -270,6 +293,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     func dismiss() {
+        detachedContentOffset = scrollView.contentOffset
         delegate = nil
         chromeDelegate = nil
 

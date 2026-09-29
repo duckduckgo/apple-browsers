@@ -27,6 +27,7 @@ struct PermissionAuthorizationView: View {
         static let systemPermissionIconSize: CGFloat = 24
         static let systemPermissionButtonHeight: CGFloat = 28
         static let systemPermissionCornerRadius: CGFloat = 16
+        static let systemPermissionBackground = Color(red: 1, green: 230 / 255, blue: 153 / 255).opacity(0.32)
     }
 
     @ObservedObject
@@ -109,7 +110,7 @@ struct PermissionAuthorizationView: View {
                 Text(step.message)
                     .font(.system(size: 12))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .lineSpacing(5)
+                    .lineSpacing(6)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -120,7 +121,11 @@ struct PermissionAuthorizationView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
-                .fill(Color(designSystemColor: .permissionWarningBackground))
+                .fill(Constants.systemPermissionBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Constants.systemPermissionCornerRadius)
+                        .strokeBorder(Constants.systemPermissionBackground, lineWidth: 1)
+                )
         )
     }
 
@@ -137,14 +142,27 @@ struct PermissionAuthorizationView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: Constants.systemPermissionButtonHeight)
-                .background(isEnabled ? Color(designSystemColor: .accentPrimary) : Color(designSystemColor: .controlsFillPrimary))
-                .clipShape(Capsule())
+                .background(systemPermissionButtonBackground(isEnabled: isEnabled))
                 .contentShape(Capsule())
                 .opacity(isEnabled ? 1 : 0.4)
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(!isEnabled)
         .accessibilityIdentifier(step.buttonAccessibilityIdentifier)
+    }
+
+    /// Accent capsule when enabled; a standard macOS button (raised fill, hairline border, soft shadow) while waiting.
+    @ViewBuilder
+    private func systemPermissionButtonBackground(isEnabled: Bool) -> some View {
+        if isEnabled {
+            Capsule()
+                .fill(Color(designSystemColor: .accentPrimary))
+        } else {
+            Capsule()
+                .fill(Color(designSystemColor: .controlsRaisedFillPrimary))
+                .overlay(Capsule().strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.2), radius: 0.5, y: 1)
+        }
     }
 }
 

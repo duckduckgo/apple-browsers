@@ -63,6 +63,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private var defaultBrowserPollingTimer: Timer?
     private var timer: Timer?
     private var defaultBrowserPollingCount = 0
+    private var canPurchase = false
 
     init(isNewUser: Bool,
          subscriptionManager: any SubscriptionManager,
@@ -93,6 +94,8 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     }
 
     private func handleCanPurchase(_ canPurchase: Bool, isFirstLaunch: Bool, isOnboardingFinished: Bool) {
+        self.canPurchase = canPurchase
+
         guard canPurchase else {
             updateState(.notEligible)
             return
@@ -277,7 +280,8 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
-        guard isUserEligible else {
+        // Listeners started under an earlier can-purchase value can outlive it, so re-check here.
+        guard isUserEligible, canPurchase else {
             state = .notEligible
             return
         }

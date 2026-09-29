@@ -334,6 +334,80 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .eligible)
     }
 
+    func testWhenAppStoreProductsBecomeUnavailableWhileWaitingForOnboarding_ItStaysNotEligibleAfterOnboardingCompletes() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        var postCount = 0
+        notificationCenter.publisher(for: .vpnUpsellBecameEligible)
+            .sink { _ in postCount += 1 }
+            .store(in: &cancellables)
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: false, contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher())
+        XCTAssertEqual(sut.state, .waitingForConditions)
+
+        // When
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        XCTAssertEqual(sut.state, .notEligible)
+        onboardingSubject.send(true)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+        XCTAssertEqual(postCount, 0)
+    }
+
+    func testWhenAppStoreProductsRemainAvailableWhileWaitingForOnboarding_ItBecomesEligibleAfterOnboardingCompletes() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: false, contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher())
+        XCTAssertEqual(sut.state, .waitingForConditions)
+        let expectation = expectation(description: "state becomes eligible")
+        sut.$state
+            .first { $0 == .eligible }
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        // When
+        onboardingSubject.send(true)
+
+        // Then
+        waitForExpectations(timeout: 1)
+        XCTAssertEqual(sut.state, .eligible)
+    }
+
+    func testWhenAppStoreProductsBecomeUnavailableWhileWaitingForTimer_ItStaysNotEligibleAfterTimerCompletes() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockDefaultBrowserProvider.isDefault = true
+        var postCount = 0
+        notificationCenter.publisher(for: .vpnUpsellBecameEligible)
+            .sink { _ in postCount += 1 }
+            .store(in: &cancellables)
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        sut = createUpsellManager(isFirstLaunch: true, isNewUser: true, isOnboardingFinished: false, contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher())
+        XCTAssertEqual(sut.state, .waitingForConditions)
+        let timerStarted = expectation(description: "timer starts")
+        sut.$state
+            .first { $0 == .waitingForTimer }
+            .sink { _ in timerStarted.fulfill() }
+            .store(in: &cancellables)
+        onboardingSubject.send(true)
+        notificationCenter.post(name: .defaultBrowserPromptPresented, object: nil)
+        waitForExpectations(timeout: 3)
+
+        // When
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+        XCTAssertEqual(postCount, 0)
+    }
+
     // MARK: - Became Eligible Notification
 
     func testWhenTransitioningToEligible_ItPostsBecameEligibleNotification() {
@@ -411,13 +485,14 @@ extension VPNUpsellVisibilityManagerTests {
     private func createUpsellManager(
         isFirstLaunch: Bool,
         isNewUser: Bool,
-        isOnboardingFinished: Bool
+        isOnboardingFinished: Bool,
+        contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()
     ) -> VPNUpsellVisibilityManager {
         let manager = VPNUpsellVisibilityManager(
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
-            contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
+            contextualOnboardingPublisher: contextualOnboardingPublisher,
             timerDuration: 0.01,
             notificationCenter: notificationCenter
         )

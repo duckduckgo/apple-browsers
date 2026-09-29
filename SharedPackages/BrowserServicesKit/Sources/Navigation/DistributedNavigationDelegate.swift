@@ -1162,6 +1162,7 @@ extension DistributedNavigationDelegate {
 
 }
 
+#if PRIVATE_PAGE_SIGNALS_ENABLED
 // MARK: - Page signals
 
 extension DistributedNavigationDelegate {
@@ -1177,3 +1178,4 @@ extension DistributedNavigationDelegate {
     }
 
 }
+#endif

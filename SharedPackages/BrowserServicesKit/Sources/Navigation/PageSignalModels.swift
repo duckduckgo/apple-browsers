@@ -32,9 +32,13 @@ public struct ContentRuleListAction {
 
     /// Decodes _WKContentRuleListAction without requiring private WebKit headers.
     public init(webKitAction: NSObject) {
+#if PRIVATE_PAGE_SIGNALS_ENABLED
         blockedLoad = PageSignalValue.read("blockedLoad", from: webKitAction)
         blockedCookies = PageSignalValue.read("blockedCookies", from: webKitAction)
         modifiedHeaders = PageSignalValue.read("modifiedHeaders", from: webKitAction)
+#else
+        self.init(blockedLoad: nil, blockedCookies: nil, modifiedHeaders: nil)
+#endif
     }
 }
 
@@ -86,6 +90,7 @@ public enum PageResourceLoadError: Error, Hashable {
     }
 }
 
+#if PRIVATE_PAGE_SIGNALS_ENABLED
 /// Checking the getter first avoids undefined-key exceptions when an SPI field is absent.
 enum PageSignalValue {
     static func read<Value>(_ key: String, from object: NSObject) -> Value? {
@@ -93,3 +98,4 @@ enum PageSignalValue {
         return object.value(forKey: key) as? Value
     }
 }
+#endif

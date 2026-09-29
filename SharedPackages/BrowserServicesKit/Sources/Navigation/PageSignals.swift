@@ -102,7 +102,9 @@ public final class PageSignalsCollector {
     }
 
     public func recordRenderingProgress(_ events: UInt) {
+#if PRIVATE_PAGE_SIGNALS_ENABLED
         signals.renderMilestones = (signals.renderMilestones ?? 0) | events
+#endif
     }
 
     private func domain(_ host: String) -> String {

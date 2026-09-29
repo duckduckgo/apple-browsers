@@ -30,14 +30,18 @@ public final class PageResourceLoadObserver: NSObject {
         self.onError = onError
     }
 
-    /// Returns nil if the SPI is unavailable or another resource-load delegate is already attached.
+    /// Returns nil if private page signals are disabled, the SPI is unavailable, or another resource-load delegate is already attached.
     public static func attach(to webView: WKWebView,
                               onError: @escaping (URL, PageResourceLoadError) -> Void) -> PageResourceLoadObserver? {
+#if PRIVATE_PAGE_SIGNALS_ENABLED
         guard webView.isResourceLoadDelegateSupported, webView.resourceLoadDelegate == nil else { return nil }
 
         let observer = PageResourceLoadObserver(webView: webView, onError: onError)
         webView.resourceLoadDelegate = observer
         return observer
+#else
+        return nil
+#endif
     }
 
     /// Discards pending loads from the previous page. Uncommitted navigations leave collection untouched.
@@ -48,12 +52,15 @@ public final class PageResourceLoadObserver: NSObject {
     public func detach() {
         activeResourceIDs.removeAll()
         guard let webView else { return }
+#if PRIVATE_PAGE_SIGNALS_ENABLED
         if webView.resourceLoadDelegate === self {
             webView.resourceLoadDelegate = nil
         }
+#endif
         self.webView = nil
     }
 
+#if PRIVATE_PAGE_SIGNALS_ENABLED
     @objc(webView:resourceLoad:didSendRequest:)
     private func webView(_ webView: WKWebView, resourceLoad: NSObject, didSendRequest request: URLRequest) {
         guard self.webView === webView,
@@ -73,8 +80,10 @@ public final class PageResourceLoadObserver: NSObject {
         onError(url, loadError)
     }
 
+#endif
 }
 
+#if PRIVATE_PAGE_SIGNALS_ENABLED
 private extension WKWebView {
 
     enum ResourceLoadDelegateSelector {
@@ -108,3 +117,4 @@ private extension WKWebView {
         }
     }
 }
+#endif

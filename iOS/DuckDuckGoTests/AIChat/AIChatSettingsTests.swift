@@ -135,12 +135,12 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
     }
 
-    func testPromotionDateRequiresValidTimestampAndDoesNotAffectTabLimit() {
+    func testPromotionDateRequiresValidTimestampAndDoesNotAffectTabLimit() throws {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
-        let config = mockPrivacyConfigurationManager.privacyConfig as! PrivacyConfigurationMock
+        let config = try XCTUnwrap(mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
         XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
         for value in ["null", "42", "\"invalid\"", "\"2026-09-28\""] {
             config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
@@ -150,12 +150,12 @@ class AIChatSettingsTests: XCTestCase {
         }
     }
 
-    func testPromotionDateUpdatesWithoutRecreatingSettingsAndIgnoresInvalidTabLimit() {
+    func testPromotionDateUpdatesWithoutRecreatingSettingsAndIgnoresInvalidTabLimit() throws {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
                                       keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
-        let config = mockPrivacyConfigurationManager.privacyConfig as! PrivacyConfigurationMock
+        let config = try XCTUnwrap(mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
         config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
             #"{"promotionStartDate":"2026-09-28T00:00:00Z","aiChatAttachMoreTabsLimit":"invalid"}"#
         let firstDate = ISO8601DateFormatter().date(from: "2026-09-28T00:00:00Z")

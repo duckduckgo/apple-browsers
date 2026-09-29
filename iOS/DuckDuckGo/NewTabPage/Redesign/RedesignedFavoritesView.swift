@@ -63,9 +63,9 @@ struct RedesignedFavoritesView: View {
                 progress: isExpanded ? 1 : 0,
                 collapsedGridHeight: hasOverflow ? collapsedHeight : gridHeight,
                 expandedGridHeight: gridHeight,
-                headerHeight: max(headerHeight, Metrics.collapseIconBackgroundSize) + Metrics.headerSpacing,
+                headerHeight: max(headerHeight, Metrics.collapseIconBackgroundSize) + Metrics.headerToGridSpacing,
                 header: header
-                    .padding(.bottom, Metrics.headerSpacing)
+                    .padding(.bottom, Metrics.headerToGridSpacing)
                     .allowsHitTesting(isExpanded)
                     .accessibilityHidden(!isExpanded),
                 grid: favoritesGrid
@@ -296,6 +296,7 @@ private enum Metrics {
     static let expansionDuration: TimeInterval = 0.3
     static let contentPadding: CGFloat = 16
     static let headerSpacing: CGFloat = 8
+    static let headerToGridSpacing: CGFloat = 12
     static let headerIconSize: CGFloat = 16
     static let collapseIconSize: CGFloat = 12
     static let collapseIconBackgroundSize: CGFloat = 20

@@ -22,6 +22,7 @@ import UIKit
 import DesignResourcesKit
 import os.log
 import PixelKit
+import Common
 
 // MARK: - Presentation
 
@@ -110,8 +111,9 @@ final class SubscriptionOnboardingViewCoordinator: UIViewController {
 
 /// Named subclass so `supportedInterfaceOrientations` can be a plain override
 private final class SubscriptionOnboardingPortraitHostingController<Content: View>: UIHostingController<Content> {
+    /// Portrait-locked on iPhone only. iPad defers to the default
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        .portrait
+        DevicePlatform.isIpad ? super.supportedInterfaceOrientations : .portrait
     }
 }
 

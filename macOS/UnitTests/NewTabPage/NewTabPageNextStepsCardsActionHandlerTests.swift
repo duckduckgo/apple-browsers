@@ -159,7 +159,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
             let flags = MockFeatureFlagger(resolveCohortStub: cohort)
             flags.allActiveExperiments = [
-                MacOSBrowserConfigSubfeature.onboardingNonBlockingOct2026.rawValue: ExperimentData(
+                MacOSBrowserConfigSubfeature.onboardingNonBlockingV2.rawValue: ExperimentData(
                     parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
                     cohortID: cohort.rawValue, enrollmentDate: Date())
             ]

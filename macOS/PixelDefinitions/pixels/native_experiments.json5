@@ -61,7 +61,7 @@
                 }
             }
         },
-        "onboardingNonBlockingOct2026": {
+        "onboardingNonBlockingV2": {
             "cohorts": ["control", "treatment"],
             "metrics": {
                 "importRequested": {

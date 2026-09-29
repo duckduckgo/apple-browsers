@@ -194,7 +194,7 @@ private extension OnboardingNonBlockingExperimentTests {
                                 featureFlagger: MockFeatureFlagger,
                                 enrollmentDate: Date = Date()) {
         if let cohort {
-            let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlockingOct2026.rawValue
+            let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlockingV2.rawValue
             featureFlagger.allActiveExperiments = [
                 subfeatureID: ExperimentData(
                     parentID: PrivacyFeature.macOSBrowserConfig.rawValue,

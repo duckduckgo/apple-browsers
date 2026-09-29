@@ -215,7 +215,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case onboardingAsync
 
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlockingOct2026
+    case onboardingNonBlockingV2
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the

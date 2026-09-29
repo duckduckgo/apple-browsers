@@ -18,9 +18,11 @@
 
 import AppKit
 import Combine
+import Common
 import ConcurrencyExtensions
 import Foundation
 import PixelKit
+import os.log
 
 @MainActor
 final class PermissionAuthorizationViewModel: ObservableObject {
@@ -149,6 +151,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     private func submit(_ decision: PermissionPromptDecision) {
         stopObservingSystemPermission()
         guard let query else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Cannot submit decision because the query was released")
             finish()
             return
         }
@@ -174,7 +177,10 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func submitPendingDecision() {
-        guard let pendingDecision else { return }
+        guard let pendingDecision else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring submission because there is no pending decision")
+            return
+        }
         submit(pendingDecision)
     }
 
@@ -204,7 +210,10 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func requestSystemPermission() {
-        guard viewState.systemPermissionStep?.phase == .request else { return }
+        guard viewState.systemPermissionStep?.phase == .request else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission request outside the request phase")
+            return
+        }
         showSystemPermissionPhase(.waiting)
         systemPermissionRequestCount += 1
         let requestCount = systemPermissionRequestCount
@@ -215,19 +224,28 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             }
         }
         scheduleAfter(Constants.systemPermissionRequestTimeout) { [weak self] in
-            guard self?.systemPermissionRequestCount == requestCount else { return }
+            guard self?.systemPermissionRequestCount == requestCount else {
+                Logger.general.debug("PermissionAuthorizationViewModel: Ignoring timeout for request \(requestCount): newer request or released view model")
+                return
+            }
             self?.systemPermissionRequestDidTimeOut()
         }
     }
 
     private func systemPermissionRequestDidComplete(with state: SystemPermissionAuthorizationState) {
-        guard pendingDecision != nil else { return }
+        guard pendingDecision != nil else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission completion because there is no pending decision")
+            return
+        }
 
         switch state {
         case .authorized:
             submitPendingDecision()
         case .notDetermined:
-            guard viewState.systemPermissionStep?.phase == .waiting else { return }
+            guard viewState.systemPermissionStep?.phase == .waiting else {
+                Logger.general.debug("PermissionAuthorizationViewModel: Ignoring undetermined completion outside the waiting phase")
+                return
+            }
             showSystemPermissionPhase(.request)
         case .denied, .restricted, .systemDisabled:
             showSystemPermissionPhase(.openSettings)
@@ -235,12 +253,18 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func systemPermissionRequestDidTimeOut() {
-        guard pendingDecision != nil, viewState.systemPermissionStep?.phase == .waiting else { return }
+        guard pendingDecision != nil, viewState.systemPermissionStep?.phase == .waiting else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring timeout because there is no pending decision or the prompt is not waiting")
+            return
+        }
         showSystemPermissionPhase(.openSettings)
     }
 
     private func openSystemSettings() {
-        guard let url = permissionType.systemSettingsURL else { return }
+        guard let url = permissionType.systemSettingsURL else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Cannot open System Settings because the permission has no settings URL")
+            return
+        }
         pixelFiring?.fire(PermissionPixel.systemPreferencesOpened(permissionType: permissionType.asPermissionType))
         openSystemSettingsURL(url)
     }
@@ -259,14 +283,20 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     }
 
     private func systemPermissionStateDidRefresh(_ state: SystemPermissionAuthorizationState) {
-        guard pendingDecision != nil else { return }
+        guard pendingDecision != nil else {
+            Logger.general.debug("PermissionAuthorizationViewModel: Ignoring system permission refresh because there is no pending decision")
+            return
+        }
 
         switch state {
         case .authorized:
             submitPendingDecision()
         case .notDetermined:
             // Location Services turned back on: macOS can ask again.
-            guard viewState.systemPermissionStep?.phase == .openSettings else { return }
+            guard viewState.systemPermissionStep?.phase == .openSettings else {
+                Logger.general.debug("PermissionAuthorizationViewModel: Ignoring undetermined refresh outside the settings phase")
+                return
+            }
             showSystemPermissionPhase(.request)
         case .denied, .restricted, .systemDisabled:
             showSystemPermissionPhase(.openSettings)

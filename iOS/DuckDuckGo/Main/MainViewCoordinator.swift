@@ -139,6 +139,7 @@ class MainViewCoordinator {
         applyNavigationBarContainerVisibility(updatesInteraction: true)
         applyContentContainerTopAnchorForCurrentState()
         updateStatusBackgroundAnchors()
+        applyResolvedStatusBackgroundColor()
     }
 
     private func setNavigationBarContainerHidden(_ hidden: Bool, updatesAlpha: Bool = true) {
@@ -916,6 +917,10 @@ class MainViewCoordinator {
     }
 
     private func resolvedStatusBackgroundColor() -> UIColor {
+        if !newTabPageInputPresentation.reservesAddressBarSpace, statusBackgroundPresentation == .standard {
+            return .clear
+        }
+
         if isFloatingUIEnabled {
             // The floating omnibar is self-contained glass, so the status strip behind it must stay
             // clear to let content underflow it. The unified toggle input (the floating search bar)
@@ -1030,7 +1035,8 @@ class MainViewCoordinator {
     private func activateBaseContentContainerTopAnchor() {
         // A hidden container still reserves space when used as the content anchor.
         guard newTabPageInputPresentation.reservesAddressBarSpace else {
-            setContentContainerTopAnchorMode(.safeArea)
+            // The redesigned page owns its safe-area content insets; its wallpaper reaches the screen edge.
+            setContentContainerTopAnchorMode(.floatingBehindBar)
             return
         }
 

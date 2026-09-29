@@ -50,6 +50,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
 
+    private let backgroundImageView = UIImageView(image: UIImage(named: "background-pond-light"))
+
     private let contentContainerView: UIView = {
         let view = UIView()
         // Clip scrolling content at the page bounds, rather than at the horizontal safe-area edges.
@@ -111,6 +113,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         super.viewDidLoad()
 
         view.backgroundColor = UIColor(designSystemColor: .background)
+        view.clipsToBounds = true
+        updateBackgroundAppearance()
         addSubviews()
         installBlocks()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
@@ -122,6 +126,23 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
         let isLandscape = view.bounds.width > view.bounds.height
         contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+
+        // The square artwork fills the page without stretching, with its pond anchored to the bottom.
+        let backgroundSize = max(view.bounds.width, view.bounds.height)
+        backgroundImageView.frame = CGRect(x: (view.bounds.width - backgroundSize) / 2,
+                                           y: view.bounds.height - backgroundSize,
+                                           width: backgroundSize,
+                                           height: backgroundSize)
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateBackgroundAppearance()
+    }
+
+    private func updateBackgroundAppearance() {
+        // Keep the dark surface until matching dark artwork is available.
+        backgroundImageView.isHidden = traitCollection.userInterfaceStyle == .dark
     }
 
     @objc private func customizeButtonTapped() {
@@ -190,6 +211,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     private func addSubviews() {
+        view.addSubview(backgroundImageView)
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
@@ -206,7 +228,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            scrollView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor),

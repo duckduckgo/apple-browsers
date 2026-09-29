@@ -25,8 +25,9 @@ import WebKit
 /// Used to trigger Save PDF
 ///
 /// Before macOS 27 the HUD is an Obj-C `WKPDFHUDView` drawing its controls with CALayers and toggling visibility with `_setVisible:`.
-/// Since macOS 27 (WebKit 309541@main) the HUD is a Swift `WKDefaultPDFHUDView` (or `WKAlternatePDFHUDView`) using NSButtons;
-/// `WKPDFHUDView` became a protocol and `_setVisible:` was replaced with `show`.
+/// Since macOS 27 (WebKit 309541@main) the HUD is a Swift view using NSButtons and `_setVisible:` was replaced with `show`.
+/// It is still named `WKPDFHUDView` until WebKit 318196@main, which renames it to `WKDefaultPDFHUDView` (adding `WKAlternatePDFHUDView`)
+/// and turns `WKPDFHUDView` into a protocol, so both namings exist across macOS 27 builds.
 struct WKPDFHUDViewWrapper {
 
     static let hudViewClasses: [AnyClass] = ["WKPDFHUDView", "WKDefaultPDFHUDView", "WKAlternatePDFHUDView"].compactMap(NSClassFromString)

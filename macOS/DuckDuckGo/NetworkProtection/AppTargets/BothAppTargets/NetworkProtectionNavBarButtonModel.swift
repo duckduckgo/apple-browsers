@@ -191,6 +191,13 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
                 return
             }
 
+            // The promo can be restored while awaiting; unpinning then would silently dismiss the upsell.
+            if shouldShowUpsell {
+                pinNetworkProtectionToNavBarIfNeverPinnedBefore()
+                showVPNButton = true
+                return
+            }
+
             if canStartVPN {
                 pinNetworkProtectionToNavBarIfNeverPinnedBefore()
             } else {

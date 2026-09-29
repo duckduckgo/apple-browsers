@@ -20,6 +20,8 @@
 import PrivacyConfig
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    case pageSignals
+
     public var parent: PrivacyFeature {
         .iOSBrowserConfig
     }

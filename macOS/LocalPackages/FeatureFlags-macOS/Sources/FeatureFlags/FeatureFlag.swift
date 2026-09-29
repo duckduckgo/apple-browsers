@@ -20,6 +20,10 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlag: String, CaseIterable {
+
+    /// In-memory WebKit page signal collection.
+    case pageSignals
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715841970
     case maliciousSiteProtection
 
@@ -635,6 +639,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     private var config: Config {
         switch self {
+        case .pageSignals:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         case .maliciousSiteProtection:
             Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:

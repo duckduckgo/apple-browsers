@@ -97,6 +97,10 @@ public protocol NavigationResponder {
     @MainActor
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?)
 
+    /// Private WebKit content-rule actions, forwarded independently of navigation policy decisions.
+    @MainActor
+    func navigationDidPerformContentRuleListAction(_ action: ContentRuleListAction, forURL url: URL, ruleListIdentifier identifier: String)
+
     // MARK: - Private
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
     @MainActor
@@ -160,6 +164,8 @@ public extension NavigationResponder {
     func navigationResponse(_ navigationResponse: NavigationResponse, didBecome download: WebKitDownload) {}
 
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {}
+
+    func navigationDidPerformContentRuleListAction(_ action: ContentRuleListAction, forURL url: URL, ruleListIdentifier identifier: String) {}
 
     @MainActor
     func webViewWillPerformClientRedirect(to url: URL, withDelay delay: TimeInterval) {}

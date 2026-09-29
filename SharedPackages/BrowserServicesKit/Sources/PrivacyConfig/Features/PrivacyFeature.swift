@@ -101,6 +101,8 @@ public protocol PrivacySubfeature: RawRepresentable where RawValue == String {
 // MARK: Subfeature definitions
 
 public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    case pageSignals
+
     public var parent: PrivacyFeature {
         .macOSBrowserConfig
     }

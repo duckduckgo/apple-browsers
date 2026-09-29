@@ -286,6 +286,9 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
+    private(set) lazy var pageSignalsController = PageSignalsController(
+        featureFlagger: featureFlagger,
+        tld: storageCache.tld)
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
@@ -679,7 +682,6 @@ class TabViewController: UIViewController {
     private var userContentController: UserContentController {
         (webView.configuration.userContentController as? UserContentController)!
     }
-
 
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
@@ -1434,6 +1436,7 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        pageSignalsController.attach(to: webView)
         sitePermissionsDidAttachWebView(replacingWebView: isReplacingWebView)
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
@@ -1635,6 +1638,7 @@ class TabViewController: UIViewController {
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
+        pageSignalsController.detach()
         prepareSitePermissionsForDataClearing()
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
@@ -2038,7 +2042,6 @@ class TabViewController: UIViewController {
                                                name: AppUserDefaults.Notifications.textZoomChange,
                                                object: nil)
     }
-
 
     private func subscribeToEmailProtectionSignOutNotification() {
         emailProtectionSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
@@ -2509,6 +2512,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        pageSignalsController.didCommitNavigation(url: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
         userScripts?.selectionFrameScript.reset()
@@ -2773,6 +2777,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        pageSignalsController.didFinishNavigation()
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
@@ -4898,7 +4903,6 @@ extension TabViewController: AutoconsentUserScriptDelegate {
         privacyInfo?.cookieConsentManaged = consentStatus
     }
 }
-
 
 @available(iOS 18.4, *)
 extension PrivacyInfo {

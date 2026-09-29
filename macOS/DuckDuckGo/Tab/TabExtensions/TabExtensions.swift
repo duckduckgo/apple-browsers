@@ -184,6 +184,13 @@ extension TabExtensionsBuilder {
                                        contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated))
         }
 
+        if dependencies.featureFlagger.isFeatureOn(.pageSignals) {
+            add {
+                PageSignalsTabExtension(webViewPublisher: args.webViewFuture,
+                                        tld: dependencies.privacyFeatures.contentBlocking.tld)
+            }
+        }
+
         if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
             add {
                 WebNotificationsTabExtension(

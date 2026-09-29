@@ -43,6 +43,7 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
+            .weak(nullable: self.pageSignals),
 
             // redirect to SERP for non-valid domains entered by user
             // should be before `self` to avoid Tab presenting an error screen

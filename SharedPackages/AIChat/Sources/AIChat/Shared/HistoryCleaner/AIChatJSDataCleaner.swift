@@ -27,7 +27,7 @@ import WebKit
 /// `duck-ai-data-clearing` feature.
 public protocol AIChatJSDataCleaning {
     @MainActor func clearJSData(chatID: String?) async -> Result<Void, Error>
-    /// Clears a specific set of chats, reusing one web view session (one navigation per domain).
+    /// Clears a specific set of chats, reusing one web view session.
     @MainActor func clearJSData(chatIDs: [String]) async -> Result<Void, Error>
 }
 
@@ -35,7 +35,6 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
 
     enum CleanerError: Error {
         case webViewNotInitialized
-        case scriptNotInitialized
         case operationInProgress
     }
 
@@ -77,7 +76,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     }
 
     /// - Parameter chatIDs: `nil` clears all chats; otherwise the specific ids, cleared within a
-    ///   single web view session (each domain is navigated once, then the clear message is sent per id).
+    ///   single web view session.
     @MainActor
     private func clear(chatIDs: [String]?) async -> Result<Void, Error> {
         guard webView == nil else {
@@ -94,32 +93,29 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
 
     @MainActor
     private func processAllDomains(chatIDs: [String]?) async {
+        let script: AIChatDataClearingUserScript
         do {
-            try setupWebView()
-            for domain in URL.aiChatDomains {
-                let navigationResult = await launchClearingWebView(requestURL: domain)
-
-                guard case .success = navigationResult else {
-                    finish(result: navigationResult)
-                    return
-                }
-
-                let clearingResult = await executeClearingScript(chatIDs: chatIDs)
-
-                guard case .success = clearingResult else {
-                    finish(result: clearingResult)
-                    return
-                }
-            }
-
-            finish(result: .success(()))
+            script = try setupWebView()
         } catch {
             finish(result: .failure(error))
+            return
         }
+
+        let sequence = AIChatClearingSequence(
+            origins: URL.aiChatDomains,
+            loadOrigin: { [weak self] origin in
+                await self?.launchClearingWebView(requestURL: origin) ?? .failure(CleanerError.webViewNotInitialized)
+            },
+            clear: { chatID in
+                await script.clearAIChatDataAsync(chatID: chatID)
+            },
+            mayReplyLate: { ($0 as? AIChatDataClearingUserScript.ClearError) == .timeout }
+        )
+        finish(result: await sequence.run(chatIDs: chatIDs))
     }
 
     @MainActor
-    private func setupWebView() throws {
+    private func setupWebView() throws -> AIChatDataClearingUserScript {
         let aiChatDataClearing = AIChatDataClearingUserScript()
 
         let features = ContentScopeFeatureToggles(
@@ -173,6 +169,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         self.coordinator = coordinator
         self.contentScopeUserScript = contentScope
         self.aiChatDataClearingUserScript = aiChatDataClearing
+        return aiChatDataClearing
     }
 
     @MainActor
@@ -192,24 +189,6 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     private func completeNavigation(with result: Result<Void, Error>) {
         navigationContinuation?.resume(returning: result)
         navigationContinuation = nil
-    }
-
-    /// Sends the clear message for the already-navigated domain: once for all (`nil`), or once per id.
-    @MainActor
-    private func executeClearingScript(chatIDs: [String]?) async -> Result<Void, Error> {
-        guard let script = aiChatDataClearingUserScript else {
-            return .failure(CleanerError.scriptNotInitialized)
-        }
-
-        guard let chatIDs else {
-            return await script.clearAIChatDataAsync(chatID: nil, timeout: 5)
-        }
-
-        for chatID in chatIDs {
-            let result = await script.clearAIChatDataAsync(chatID: chatID, timeout: 5)
-            guard case .success = result else { return result }
-        }
-        return .success(())
     }
 
     @MainActor

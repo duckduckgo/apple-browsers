@@ -20,6 +20,12 @@ import Foundation
 import FoundationExtensions
 
 public struct ContentRuleListAction {
+    private enum Keys {
+        static let blockedLoad = "blockedLoad"
+        static let blockedCookies = "blockedCookies"
+        static let modifiedHeaders = "modifiedHeaders"
+    }
+
     // nil means this WebKit version does not expose the field.
     public let blockedLoad: Bool?
     public let blockedCookies: Bool?
@@ -34,9 +40,9 @@ public struct ContentRuleListAction {
     /// Decodes _WKContentRuleListAction without requiring private WebKit headers.
     public init(webKitAction: NSObject) {
 #if PRIVATE_PAGE_SIGNALS_ENABLED
-        blockedLoad = webKitAction.ddgValueIfAvailable(forKey: "blockedLoad")
-        blockedCookies = webKitAction.ddgValueIfAvailable(forKey: "blockedCookies")
-        modifiedHeaders = webKitAction.ddgValueIfAvailable(forKey: "modifiedHeaders")
+        blockedLoad = webKitAction.ddgValueIfAvailable(forKey: Keys.blockedLoad)
+        blockedCookies = webKitAction.ddgValueIfAvailable(forKey: Keys.blockedCookies)
+        modifiedHeaders = webKitAction.ddgValueIfAvailable(forKey: Keys.modifiedHeaders)
 #else
         self.init(blockedLoad: nil, blockedCookies: nil, modifiedHeaders: nil)
 #endif

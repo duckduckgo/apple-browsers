@@ -22,6 +22,10 @@ import DDGNavigation
 /// Debug alert that displays a tab's page signals, and copies them on request.
 @MainActor
 struct PageSignalsAlert {
+    private enum Constants {
+        static let reportColumnWidth = 18
+    }
+
     let signals: PageSignals?
 
     func runModal() {
@@ -54,7 +58,7 @@ struct PageSignalsAlert {
 
     private static func report(for signals: PageSignals) -> String {
         func row(_ title: String, _ value: String) -> String {
-            title.padding(toLength: 18, withPad: " ", startingAt: 0) + value
+            title.padding(toLength: Constants.reportColumnWidth, withPad: " ", startingAt: 0) + value
         }
 
         let blankPage = signals.isBlankPage.map { $0 ? "Yes" : "No" } ?? "Unknown"

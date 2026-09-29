@@ -22,6 +22,11 @@ import WebKit
 /// The owner must retain this observer for the lifetime of its attachment; WebKit keeps a weak delegate.
 @MainActor
 public final class PageResourceLoadObserver: NSObject {
+    private enum Keys {
+        static let resourceLoadID = "resourceLoadID"
+        static let originalURL = "originalURL"
+    }
+
     private weak var webView: WKWebView?
     private var activeResourceIDs = Set<UInt64>()
     private let onError: (URL, PageResourceLoadError) -> Void
@@ -65,7 +70,7 @@ public final class PageResourceLoadObserver: NSObject {
     @objc(webView:resourceLoad:didSendRequest:)
     private func webView(_ webView: WKWebView, resourceLoad: NSObject, didSendRequest request: URLRequest) {
         guard self.webView === webView,
-              let resourceID: UInt64 = resourceLoad.ddgValueIfAvailable(forKey: "resourceLoadID") else { return }
+              let resourceID: UInt64 = resourceLoad.ddgValueIfAvailable(forKey: Keys.resourceLoadID) else { return }
         activeResourceIDs.insert(resourceID)
     }
 
@@ -74,9 +79,9 @@ public final class PageResourceLoadObserver: NSObject {
         // Require a start observed since the last commit. Completions without a matching start (including
         // some cache loads) cannot be safely attributed to the current page.
         guard self.webView === webView,
-              let resourceID: UInt64 = resourceLoad.ddgValueIfAvailable(forKey: "resourceLoadID"),
+              let resourceID: UInt64 = resourceLoad.ddgValueIfAvailable(forKey: Keys.resourceLoadID),
               activeResourceIDs.remove(resourceID) != nil else { return }
-        guard let url: URL = resourceLoad.ddgValueIfAvailable(forKey: "originalURL"),
+        guard let url: URL = resourceLoad.ddgValueIfAvailable(forKey: Keys.originalURL),
               let loadError = PageResourceLoadError(error: error, response: response) else { return }
         onError(url, loadError)
     }

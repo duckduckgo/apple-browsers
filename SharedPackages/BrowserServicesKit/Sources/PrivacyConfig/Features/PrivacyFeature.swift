@@ -84,6 +84,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case pageContext
     case webExtensions
+    case chromeWebstorePatching
+    case extensionManagement
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension

@@ -32,6 +32,7 @@ import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
@@ -39,6 +40,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
+    let chromeWebStoreUserScript: Subfeature?
     let hoverUserScript = HoverUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
@@ -75,6 +77,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
+        if #available(macOS 15.4, *) {
+            chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
+                NSApp.delegateTyped.webExtensionManager?.chromeWebStore
+            })
+        } else {
+            chromeWebStoreUserScript = nil
+        }
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
@@ -161,7 +170,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            let pageWorldFeatures = [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue]
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: pageWorldFeatures, privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
@@ -229,6 +239,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
+        if let chromeWebStoreUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
+        }
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)

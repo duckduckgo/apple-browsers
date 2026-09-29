@@ -269,6 +269,52 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
     }
 
+    @MainActor
+    func testStoreExtensionRemovalNotifiesWithStoreIDAfterStateUpdate() throws {
+        let manager = makeManager()
+        let storeID = String(repeating: "a", count: 32)
+        let store = installedExtensionStoringMock!
+        store.installedExtensions = [InstalledWebExtension(uniqueIdentifier: "local-id", filename: "extension.zip",
+                                                          name: nil, version: nil, storeIdentity: .init(store: .chromeWebStore, id: storeID))]
+        let removed = expectation(forNotification: .chromeWebStoreExtensionRemoved, object: manager) { notification in
+            XCTAssertEqual(notification.userInfo?["extensionId"] as? String, storeID)
+            XCTAssertTrue(store.installedExtensions.isEmpty)
+            return true
+        }
+
+        try manager.uninstallExtension(identifier: "local-id")
+
+        wait(for: [removed], timeout: 1)
+    }
+
+    @MainActor
+    func testNonStoreExtensionRemovalDoesNotSendStoreNotification() throws {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "local-id")]
+        let removed = expectation(forNotification: .chromeWebStoreExtensionRemoved, object: manager)
+        removed.isInverted = true
+
+        try manager.uninstallExtension(identifier: "local-id")
+
+        wait(for: [removed], timeout: 0.01)
+    }
+
+    @MainActor
+    func testFailedStoreExtensionRemovalDoesNotSendSuccessNotification() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "local-id", filename: "extension.zip", name: nil, version: nil,
+                                  storeIdentity: .init(store: .chromeWebStore, id: String(repeating: "a", count: 32)))
+        ]
+        storageProvidingMock.mockRemoveError = NSError(domain: "test", code: 1)
+        let removed = expectation(forNotification: .chromeWebStoreExtensionRemoved, object: manager)
+        removed.isInverted = true
+
+        XCTAssertThrowsError(try manager.uninstallExtension(identifier: "local-id"))
+
+        wait(for: [removed], timeout: 0.01)
+    }
+
     // MARK: - Uninstall All Extensions Tests
 
     @MainActor

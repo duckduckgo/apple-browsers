@@ -58,7 +58,7 @@ enum SubscriptionOnboardingExperiment {
 
     /// Enrolls in whichever ABN test matches trial status, unless already assigned to either.
     /// - Returns: The device's cohort (`nil` if neither experiment is active for this device), and whether
-    ///   this call is the one that freshly enrolled it (`false` for a read of an existing assignment).
+    ///   this call is the one that freshly enrolled it (`false` for a read of an existing assignment). 
     static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> (cohort: Cohort?, isFreshlyEnrolled: Bool) {
         if let assigned = assignedCohort(using: featureFlagger) {
             return (assigned, false)

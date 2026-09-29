@@ -34,6 +34,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var firedPixels: [SubscriptionPixel] = []
 
+    var notificationCenter: NotificationCenter!
     var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -43,6 +44,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         firedPixels = []
+        notificationCenter = NotificationCenter()
         cancellables = Set<AnyCancellable>()
 
     }
@@ -55,6 +57,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         firedPixels = []
         cancellables?.removeAll()
         cancellables = nil
+        notificationCenter = nil
         super.tearDown()
     }
 
@@ -65,7 +68,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
 
         // Then
-        XCTAssertEqual(sut.state, .visible)
+        XCTAssertEqual(sut.state, .eligible)
     }
 
     func testWhenOnboardingIsPending_ItDoesNotShowTheUpsell() {
@@ -95,108 +98,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
     }
 
-    func testWhenUserIsEligible_ItFiresPixelOnTransitionToVisible() {
-        // Given
-        let expectation = XCTestExpectation(description: "Pixel should be fired")
-        // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true) { [weak self] pixel in
-            self?.firedPixels.append(pixel)
-            if pixel.name == SubscriptionPixel.subscriptionToolbarButtonShown.name {
-                expectation.fulfill()
-            }
-        }
-
-        // Then
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(sut.state, .visible)
-        XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonShown.name)
-    }
-
-    // MARK: - Manual Unpinning Tests
-
-    func testWhenUserManuallyUnpinsButton_ItDismissesTheUpsell() {
-        // Given
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
-
-        let expectation = XCTestExpectation(description: "State should change to dismissed")
-
-        sut.$state
-            .sink { state in
-                if state == .dismissed {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        // When
-        sut.handlePinningChange(isPinned: false)
-
-        // Then
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(sut.state, .dismissed)
-        XCTAssertTrue(mockPersistor.vpnUpsellDismissed)
-    }
-
-    func testWhenUserPinsButton_ItStoresFirstPinnedDate() {
-        // Given
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
-
-        // When
-        sut.handlePinningChange(isPinned: true)
-
-        // Then
-        XCTAssertNotNil(mockPersistor.vpnUpsellFirstPinnedDate)
-    }
-
-    func testWhenUserPinsButtonAgain_ItDoesNotOverwriteFirstPinnedDate() {
-        // Given
-        let originalDate = Date().addingTimeInterval(-3600)
-        mockPersistor.vpnUpsellFirstPinnedDate = originalDate
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
-
-        // When
-        sut.handlePinningChange(isPinned: true)
-
-        // Then
-        XCTAssertEqual(mockPersistor.vpnUpsellFirstPinnedDate, originalDate)
-    }
-
-    func testWhenSevenDaysHavePassedSincePinning_ItDismissesTheUpsell() {
-        // Given
-        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
-        mockPersistor.vpnUpsellFirstPinnedDate = eightDaysAgo
-
-        // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true, autoDismissDays: 7)
-
-        // Then
-        XCTAssertEqual(sut.state, .dismissed)
-    }
-
-    func testWhenSixDaysHavePassedSincePinning_ItShowsTheUpsell() {
-        // Given
-        let sixDaysAgo = Date().addingTimeInterval(-6 * 24 * 60 * 60)
-        mockPersistor.vpnUpsellFirstPinnedDate = sixDaysAgo
-
-        // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true, autoDismissDays: 7)
-
-        // Then
-        XCTAssertEqual(sut.state, .visible)
-    }
-
-    func testWhenManuallyDismissed_ItDismissesTheUpsell() {
-        // Given
-        mockPersistor.vpnUpsellDismissed = true
-
-        // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
-
-        // Then
-        XCTAssertEqual(sut.state, .dismissed)
-    }
-
     func testWhenUserBecomesAuthenticated_ItDoesNotShowTheUpsell() {
         // Given
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
@@ -213,7 +114,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
+        notificationCenter.post(name: .entitlementsDidChange, object: nil)
 
         // Then
         wait(for: [expectation], timeout: 1.0)
@@ -234,9 +135,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
-            persistor: mockPersistor,
             timerDuration: 0.1,
-            pixelHandler: { _ in }
+            notificationCenter: notificationCenter
         )
 
         sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
@@ -264,9 +164,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
-            persistor: mockPersistor,
             timerDuration: 10,
-            pixelHandler: { _ in }
+            notificationCenter: notificationCenter
         )
 
         sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
@@ -283,7 +182,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         onboardingSubject.send(true)
-        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
+        notificationCenter.post(name: .defaultBrowserPromptPresented, object: nil)
 
         // Then
         wait(for: [expectation], timeout: 3.0)
@@ -300,9 +199,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
-            persistor: mockPersistor,
             timerDuration: 0.1,
-            pixelHandler: { _ in }
+            notificationCenter: notificationCenter
         )
 
         sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
@@ -311,7 +209,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         sut.$state
             .sink { state in
-                if state == .visible {
+                if state == .eligible {
                     expectation.fulfill()
                 }
             }
@@ -319,11 +217,11 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         onboardingSubject.send(true)
-        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
+        notificationCenter.post(name: .defaultBrowserPromptPresented, object: nil)
 
         // Then
         wait(for: [expectation], timeout: 3.0)
-        XCTAssertEqual(sut.state, .visible)
+        XCTAssertEqual(sut.state, .eligible)
     }
 
     // MARK: - Edge Cases
@@ -357,9 +255,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
-            persistor: mockPersistor,
             timerDuration: 0.1,
-            pixelHandler: { _ in }
+            notificationCenter: notificationCenter
         )
 
         sut.setup(isFirstLaunch: true, isOnboardingFinished: false)
@@ -368,7 +265,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         sut.$state
             .sink { state in
-                if state == .visible {
+                if state == .eligible {
                     expectation.fulfill()
                 }
             }
@@ -376,20 +273,33 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         onboardingSubject.send(true)
-        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
+        notificationCenter.post(name: .defaultBrowserPromptPresented, object: nil)
 
         // Then
         wait(for: [expectation], timeout: 3.0)
-        XCTAssertEqual(sut.state, .visible)
+        XCTAssertEqual(sut.state, .eligible)
     }
 
     // MARK: - Purchase Eligibility Tests
 
-    func testWhenUserCannotPurchaseSubscription_ItDoesNotShowTheUpsell() {
+    func testWhenAppStoreProductsAreAvailableAtSetup_ItIsEligibleSynchronously() {
         // Given
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+
+        // When
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
-        XCTAssertEqual(sut.state, .notEligible)
+
+        // Then: no publisher emission is needed
+        XCTAssertEqual(sut.state, .eligible)
+    }
+
+    func testWhenAppStoreProductsBecomeUnavailable_ItBecomesNotEligible() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
+        XCTAssertEqual(sut.state, .eligible)
 
         // When
         mockSubscriptionManager.hasAppStoreProductsAvailable = false
@@ -398,9 +308,22 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
     }
 
-    func testWhenUserCanPurchaseSubscription_ItShowsTheUpsell() {
+    func testWhenAppStoreProductsAreUnavailableAtSetup_ItIsNotEligible() {
         // Given
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    func testWhenAppStoreProductsBecomeAvailableAfterSetup_ItBecomesEligible() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
         XCTAssertEqual(sut.state, .notEligible)
 
@@ -408,7 +331,77 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         mockSubscriptionManager.hasAppStoreProductsAvailable = true
 
         // Then
-        XCTAssertEqual(sut.state, .visible)
+        XCTAssertEqual(sut.state, .eligible)
+    }
+
+    // MARK: - Became Eligible Notification
+
+    func testWhenTransitioningToEligible_ItPostsBecameEligibleNotification() {
+        // Given
+        var postCount = 0
+        notificationCenter.publisher(for: .vpnUpsellBecameEligible)
+            .sink { _ in postCount += 1 }
+            .store(in: &cancellables)
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .eligible)
+        XCTAssertEqual(postCount, 1)
+    }
+
+    func testWhenEligibleIsEmittedAgain_ItDoesNotPostAgain() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        var postCount = 0
+        notificationCenter.publisher(for: .vpnUpsellBecameEligible)
+            .sink { _ in postCount += 1 }
+            .store(in: &cancellables)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
+        XCTAssertEqual(postCount, 1)
+
+        // When: a repeated value that maps to eligible again
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+
+        // Then
+        XCTAssertEqual(sut.state, .eligible)
+        XCTAssertEqual(postCount, 1)
+    }
+
+    func testWhenNotEligible_ItDoesNotPostBecameEligibleNotification() {
+        // Given
+        var postCount = 0
+        notificationCenter.publisher(for: .vpnUpsellBecameEligible)
+            .sink { _ in postCount += 1 }
+            .store(in: &cancellables)
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: false, isOnboardingFinished: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+        XCTAssertEqual(postCount, 0)
+    }
+
+    func testWhenUserSubscribes_ItBecomesNotEligible() {
+        // Given
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, isOnboardingFinished: true)
+        XCTAssertEqual(sut.state, .eligible)
+        let expectation = expectation(description: "state becomes notEligible")
+        sut.$state
+            .first { $0 == .notEligible }
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        // When
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        notificationCenter.post(name: .entitlementsDidChange, object: nil)
+
+        // Then
+        waitForExpectations(timeout: 1)
+        XCTAssertEqual(sut.state, .notEligible)
     }
 }
 
@@ -418,19 +411,15 @@ extension VPNUpsellVisibilityManagerTests {
     private func createUpsellManager(
         isFirstLaunch: Bool,
         isNewUser: Bool,
-        isOnboardingFinished: Bool,
-        autoDismissDays: Int = 7,
-        pixelHandler: @escaping (SubscriptionPixel) -> Void = { _ in }
+        isOnboardingFinished: Bool
     ) -> VPNUpsellVisibilityManager {
         let manager = VPNUpsellVisibilityManager(
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            persistor: mockPersistor,
             timerDuration: 0.01,
-            autoDismissDays: autoDismissDays,
-            pixelHandler: pixelHandler
+            notificationCenter: notificationCenter
         )
 
         manager.setup(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)

@@ -21,6 +21,7 @@ import Combine
 import VPN
 import NetworkProtectionUI
 import BrowserServicesKit
+import PrivacyConfig
 import SubscriptionTestingUtilities
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
@@ -33,15 +34,24 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var mockSubscriptionManager: SubscriptionManagerMock!
     var cancellable: AnyCancellable?
+    private var buttonDelegate: VPNUpsellToolbarButtonPromoDelegate!
+    private var dotDelegate: VPNUpsellDotBadgePromoDelegate!
+    private var showTasks: [Task<PromoResult, Never>] = []
 
     override func setUp() {
         super.setUp()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         mockSubscriptionManager = SubscriptionManagerMock()
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        showTasks = []
     }
 
     override func tearDown() {
+        buttonDelegate?.hide()
+        dotDelegate?.hide()
+        showTasks = []
+        buttonDelegate = nil
+        dotDelegate = nil
         sut = nil
         cancellable?.cancel()
         cancellable = nil
@@ -50,178 +60,150 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenUpsellManagerNeedsToShowVPNButton_ItShowsButton() {
+    func testWhenUpsellManagerNeedsToShowVPNButton_ItShowsButton() async {
         // Given
-        let upsellManager = createUpsellManager(shouldShowUpsell: true)
-        sut = createButtonModel(with: upsellManager)
-        let expectation = XCTestExpectation(description: "showVPNButton should become true")
-
-        cancellable = sut.$showVPNButton
-            .dropFirst()
-            .sink { showButton in
-                if showButton {
-                    expectation.fulfill()
-                }
-            }
+        sut = createButtonModel()
+        await settleInitialVisibilityUpdate()
 
         // When
-        sut.updateVisibility()
+        await showButtonPromo()
 
         // Then
-        wait(for: [expectation], timeout: 2.0)
+        await waitUntil(sut.$showVPNButton, equals: true)
         XCTAssertTrue(sut.showVPNButton)
     }
 
-    func testWhenUpsellManagerDoesNotNeedToShowVPNButton_ItFallsBackToRegularLogic() {
+    func testWhenUpsellManagerDoesNotNeedToShowVPNButton_ItFallsBackToRegularLogic() async {
         // Given
-        let upsellManager = createUpsellManager(shouldShowUpsell: false)
-        sut = createButtonModel(with: upsellManager)
-        let expectation = XCTestExpectation(description: "showVPNButton should become false")
-
-        cancellable = sut.$showVPNButton
-            .dropFirst()
-            .sink { showButton in
-                if !showButton {
-                    expectation.fulfill()
-                }
-            }
+        sut = createButtonModel()
 
         // When
         sut.updateVisibility()
 
         // Then
-        wait(for: [expectation], timeout: 2.0)
+        await waitUntil(sut.$showVPNButton, equals: false)
         XCTAssertFalse(sut.showVPNButton)
     }
 
-    func testWhenUpsellButtonIsUnpinned_ItHidesTheButton() {
+    func testWhenUpsellButtonIsUnpinned_ItHidesTheButton() async {
         // Given
-        let upsellManager = createUpsellManager(shouldShowUpsell: true)
-        sut = createButtonModel(with: upsellManager)
-
-        var receivedValues: [Bool] = []
-
-        let expectation = XCTestExpectation(description: "Button should be hidden after upsell dismissal")
-
-        cancellable = sut.$showVPNButton
-            .dropFirst()
-            .sink { showButton in
-                receivedValues.append(showButton)
-                if receivedValues.count > 1 {
-                    expectation.fulfill()
-                }
-            }
-
-        sut.updateVisibility()
+        sut = createButtonModel()
+        await settleInitialVisibilityUpdate()
+        await showButtonPromo()
+        await waitUntil(sut.$showVPNButton, equals: true)
 
         // When
-        upsellManager.handlePinningChange(isPinned: false)
+        buttonDelegate.handlePinningChange(isPinned: false)
 
         // Then
-        wait(for: [expectation], timeout: 2.0)
-        XCTAssertTrue(receivedValues.first!)
-        XCTAssertFalse(receivedValues.last!)
+        await waitUntil(sut.$showVPNButton, equals: false)
+        XCTAssertFalse(sut.showVPNButton)
+        XCTAssertFalse(sut.shouldShowUpsell)
     }
 
-    func testWhenUpsellButtonIsAutoDismissed_ItHidesTheButton() {
+    func testWhenUpsellIsDismissed_ItHidesTheButton() async {
         // Given
-        mockPersistor.vpnUpsellFirstPinnedDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
-
-        let upsellManager = createUpsellManager(shouldShowUpsell: false)
-        sut = createButtonModel(with: upsellManager)
-
-        let expectation = XCTestExpectation(description: "Button should be hidden due to auto-dismiss")
-
-        cancellable = sut.$showVPNButton
-            .dropFirst()
-            .sink { showButton in
-                if !showButton {
-                    expectation.fulfill()
-                }
-            }
+        sut = createButtonModel()
+        await settleInitialVisibilityUpdate()
+        await showButtonPromo()
+        await waitUntil(sut.$showVPNButton, equals: true)
 
         // When
-        sut.updateVisibility()
+        buttonDelegate.dismissUpsell()
 
         // Then
-        wait(for: [expectation], timeout: 2.0)
+        await waitUntil(sut.$showVPNButton, equals: false)
         XCTAssertFalse(sut.showVPNButton)
     }
 
-    func testWhenUserBecomesAuthenticated_ItHidesTheButton() {
+    func testWhenButtonPromoIsHidden_ItHidesTheButton() async {
         // Given
-        let upsellManager = createUpsellManager(shouldShowUpsell: true)
-        sut = createButtonModel(with: upsellManager)
-
-        sut.updateVisibility()
-
-        let expectation = XCTestExpectation(description: "Button should be hidden after authentication")
-
-        cancellable = sut.$showVPNButton
-            .dropFirst()
-            .sink { showButton in
-                if !showButton {
-                    expectation.fulfill()
-                }
-            }
+        sut = createButtonModel()
+        await settleInitialVisibilityUpdate()
+        await showButtonPromo()
+        await waitUntil(sut.$showVPNButton, equals: true)
 
         // When
-        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
+        buttonDelegate.hide()
 
         // Then
-        wait(for: [expectation], timeout: 2.0)
+        await waitUntil(sut.$showVPNButton, equals: false)
         XCTAssertFalse(sut.showVPNButton)
     }
 
-    func testWhenUpsellButtonIsDismissed_ItRemainsHidden() {
+    func testWhenOnlyButtonPromoIsShowing_NotificationDotIsHidden() async {
         // Given
-        mockPersistor.vpnUpsellDismissed = true
-
-        let upsellManager = createUpsellManager(shouldShowUpsell: false)
-        sut = createButtonModel(with: upsellManager)
+        sut = createButtonModel()
 
         // When
-        sut.updateVisibility()
+        await showButtonPromo()
+        await waitUntil(sut.$shouldShowUpsell, equals: true)
 
         // Then
-        XCTAssertFalse(sut.showVPNButton)
-    }
-
-    func testWhenFeatureFlagIsDisabled_ItDoesNotAffectTheButton() {
-        // Given
-        let upsellManager = createUpsellManager(shouldShowUpsell: false)
-        sut = createButtonModel(with: upsellManager)
-
-        // When
-        upsellManager.handlePinningChange(isPinned: false)
-
-        // Then
-        XCTAssertFalse(mockPersistor.vpnUpsellDismissed)
-        XCTAssertFalse(sut.showVPNButton)
-    }
-
-    func testItUpdatesBlueDotVisibility() {
-        // Given
-        let upsellManager = createUpsellManager(shouldShowUpsell: true)
-        sut = createButtonModel(with: upsellManager)
-
-        let expectation = XCTestExpectation(description: "shouldShowNotificationDot should become false")
-
-        cancellable = sut.$shouldShowNotificationDot
-            .dropFirst()
-            .sink { shouldShowNotificationDot in
-                if !shouldShowNotificationDot {
-                    expectation.fulfill()
-                }
-            }
-
-        // When
-        upsellManager.dismissNotificationDot()
-
-        // Then
-        wait(for: [expectation], timeout: 2.0)
+        XCTAssertTrue(sut.shouldShowUpsell)
         XCTAssertFalse(sut.shouldShowNotificationDot)
+    }
+
+    func testWhenOnlyDotPromoIsShowing_NotificationDotIsHidden() async {
+        // Given
+        sut = createButtonModel()
+
+        // When
+        await showDotPromo()
+        await Task.yield()
+        await Task.yield()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpsell)
+        XCTAssertFalse(sut.shouldShowNotificationDot)
+    }
+
+    func testWhenButtonAndDotPromosAreShowing_NotificationDotIsShown() async {
+        // Given
+        sut = createButtonModel()
+
+        // When
+        await showButtonPromo()
+        await showDotPromo()
+
+        // Then
+        await waitUntil(sut.$shouldShowNotificationDot, equals: true)
+        XCTAssertTrue(sut.shouldShowNotificationDot)
+    }
+
+    func testWhenDotPromoResolves_NotificationDotIsHiddenButButtonRemains() async {
+        // Given
+        sut = createButtonModel()
+        await settleInitialVisibilityUpdate()
+        await showButtonPromo()
+        await showDotPromo()
+        await waitUntil(sut.$shouldShowNotificationDot, equals: true)
+
+        // When
+        dotDelegate.buttonClicked()
+
+        // Then
+        await waitUntil(sut.$shouldShowNotificationDot, equals: false)
+        XCTAssertFalse(sut.shouldShowNotificationDot)
+        XCTAssertTrue(sut.shouldShowUpsell)
+        XCTAssertTrue(sut.showVPNButton)
+    }
+
+    func testWhenButtonPromoHides_NotificationDotIsHiddenEvenIfDotPromoIsStillShowing() async {
+        // Given
+        sut = createButtonModel()
+        await settleInitialVisibilityUpdate()
+        await showButtonPromo()
+        await showDotPromo()
+        await waitUntil(sut.$shouldShowNotificationDot, equals: true)
+
+        // When
+        buttonDelegate.hide()
+
+        // Then
+        await waitUntil(sut.$shouldShowNotificationDot, equals: false)
+        XCTAssertFalse(sut.shouldShowNotificationDot)
+        XCTAssertFalse(sut.shouldShowUpsell)
     }
 
 }
@@ -229,29 +211,47 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
 // MARK: - Helpers
 
 extension NetworkProtectionNavBarButtonModelTests {
-    private func createUpsellManager(
-        shouldShowUpsell: Bool
-    ) -> VPNUpsellVisibilityManager {
-        let mockDefaultBrowserProvider = MockDefaultBrowserProvider()
-        mockDefaultBrowserProvider.isDefault = true
-
-        let manager = VPNUpsellVisibilityManager(
-            isNewUser: shouldShowUpsell,
-            subscriptionManager: mockSubscriptionManager,
-            defaultBrowserProvider: mockDefaultBrowserProvider,
-            contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            persistor: mockPersistor,
-            timerDuration: 0.01
-        )
-
-        manager.setup(isFirstLaunch: false, isOnboardingFinished: true)
-
-        return manager
+    private func showButtonPromo() async {
+        let delegate = buttonDelegate!
+        showTasks.append(Task { await delegate.show(history: PromoHistoryRecord(id: "vpn-upsell-toolbar-button"), force: true) })
+        await Task.yield()
     }
 
-    private func createButtonModel(
-        with upsellManager: VPNUpsellVisibilityManager
-    ) -> NetworkProtectionNavBarButtonModel {
+    private func showDotPromo() async {
+        let delegate = dotDelegate!
+        showTasks.append(Task { await delegate.show(history: PromoHistoryRecord(id: "vpn-upsell-dot-badge"), force: true) })
+        await Task.yield()
+    }
+
+    /// The model kicks off `updateVisibility()` on init from its status subscriptions. Let those in-flight
+    /// updates finish so they can't overwrite the state a test is about to arrange.
+    private func settleInitialVisibilityUpdate() async {
+        for _ in 0..<20 {
+            await Task.yield()
+        }
+    }
+
+    private func waitUntil<P: Publisher>(_ publisher: P, equals expected: Bool, file: StaticString = #filePath, line: UInt = #line) async where P.Output == Bool, P.Failure == Never {
+        let expectation = expectation(description: "value becomes \(expected)")
+        // @Published emits in willSet, so hop to the next run loop turn to observe the stored value.
+        let cancellable = publisher.first { $0 == expected }.receive(on: DispatchQueue.main).sink { _ in expectation.fulfill() }
+        await fulfillment(of: [expectation], timeout: 2.0)
+        cancellable.cancel()
+    }
+
+    private func createButtonModel() -> NetworkProtectionNavBarButtonModel {
+        let upsellManager = VPNUpsellVisibilityManager(isNewUser: false,
+                                                       subscriptionManager: mockSubscriptionManager,
+                                                       defaultBrowserProvider: MockDefaultBrowserProvider(),
+                                                       contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
+                                                       notificationCenter: NotificationCenter())
+        buttonDelegate = VPNUpsellToolbarButtonPromoDelegate(featureFlagger: MockFeatureFlagger(),
+                                                             visibilityManager: upsellManager,
+                                                             persistor: mockPersistor)
+        dotDelegate = VPNUpsellDotBadgePromoDelegate(featureFlagger: MockFeatureFlagger(),
+                                                     visibilityManager: upsellManager,
+                                                     persistor: mockPersistor)
+
         let popoverManager = NetPPopoverManagerMock()
         let pinningManager = TestPinningManager()
         let vpnGatekeeper = MockVPNFeatureGatekeeper(
@@ -269,7 +269,8 @@ extension NetworkProtectionNavBarButtonModelTests {
             vpnGatekeeper: vpnGatekeeper,
             statusReporter: statusReporter,
             themeManager: themeManager,
-            vpnUpsellVisibilityManager: upsellManager
+            vpnUpsellToolbarButtonPromoDelegate: buttonDelegate,
+            vpnUpsellDotBadgePromoDelegate: dotDelegate
         )
     }
 }

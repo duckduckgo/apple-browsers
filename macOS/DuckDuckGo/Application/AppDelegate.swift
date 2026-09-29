@@ -351,7 +351,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
-        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+        buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
 
@@ -399,10 +399,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            persistor: vpnUpsellUserDefaultsPersistor,
             timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
     }()
+
+    lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate(
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
+
+    lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate(
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)

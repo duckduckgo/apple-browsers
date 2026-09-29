@@ -31,7 +31,8 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
     private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
-    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
+    private let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
 
     // MARK: - Subscriptions
 
@@ -83,7 +84,8 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
          vpnGatekeeper: VPNFeatureGatekeeper,
          statusReporter: NetworkProtectionStatusReporter,
          themeManager: ThemeManaging,
-         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
+         vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
+         vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate) {
 
         let iconsProvider = themeManager.theme.iconsProvider
 
@@ -93,7 +95,8 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
         self.iconPublisher = NetworkProtectionIconPublisher(statusReporter: networkProtectionStatusReporter, iconProvider: iconsProvider.vpnNavigationIconsProvider)
         self.pinningManager = pinningManager
         self.shortcutTitle = pinningManager.shortcutTitle(for: .networkProtection)
-        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.vpnUpsellToolbarButtonPromoDelegate = vpnUpsellToolbarButtonPromoDelegate
+        self.vpnUpsellDotBadgePromoDelegate = vpnUpsellDotBadgePromoDelegate
 
         isHavingConnectivityIssues = networkProtectionStatusReporter.connectivityIssuesObserver.recentValue
         buttonImage = .image(for: iconPublisher.icon)
@@ -148,19 +151,21 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     }
 
     private func setupUpsellSubscription() {
-        vpnUpsellVisibilityManager.$state
+        vpnUpsellToolbarButtonPromoDelegate.isShowingPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
+            .sink { [weak self] isShowing in
                 guard let self else { return }
 
                 MainActor.assumeMainThread {
-                    self.shouldShowUpsell = state == .visible
+                    self.shouldShowUpsell = isShowing
                     self.updateVisibility()
                 }
             }
             .store(in: &cancellables)
 
-        vpnUpsellVisibilityManager.$shouldShowNotificationDot
+        Publishers.CombineLatest(vpnUpsellToolbarButtonPromoDelegate.isShowingPublisher,
+                                 vpnUpsellDotBadgePromoDelegate.isShowingPublisher)
+            .map { $0 && $1 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] shouldShowNotificationDot in
                 guard let self else { return }

@@ -21,7 +21,6 @@ import Combine
 import Common
 import FoundationExtensions
 import Foundation
-import PixelKit
 import Subscription
 import VPN
 
@@ -30,7 +29,6 @@ extension VPNUpsellVisibilityManager {
         static let defaultBrowserPollingCount = 60
         static let defaultBrowserPollingInterval = 1.0
         static let timeIntervalBeforeShowingUpsell = 600.0
-        static let autoDismissDays = 7
     }
 }
 
@@ -38,19 +36,18 @@ extension VPNUpsellVisibilityManager {
     enum State: Equatable {
         case uninitialized // Initial state, before setup is called
         case notEligible // User is not new, or already subscribed, or feature flag is off
-        case dismissed // User has dismissed the upsell, or it has been auto-dismissed
         case waitingForConditions // 1st launch: waiting for the user to finish contextual onboarding and set default browser
         case waitingForTimer // 1st launch: waiting for the timer to complete after meeting conditions
-        case visible // User is eligible and the upsell should be shown
+        case eligible // User is eligible for the upsell; the Promo Queue decides when to show it
     }
 }
 
-/// Manages the visibility and state of VPN upsell messaging based on user onboarding flow.
+/// Manages whether the user is eligible for VPN upsell messaging based on the onboarding flow.
+/// Presentation is owned by the VPN upsell promo delegates and the Promo Queue.
 ///
 final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Output
     @Published private(set) var state: State = .uninitialized
-    @Published private(set) var shouldShowNotificationDot: Bool = false
 
     // MARK: - Dependencies
     private let isNewUser: Bool
@@ -58,13 +55,10 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
     private let timerDuration: TimeInterval
-    private let autoDismissDays: Int
-    private var persistor: VPNUpsellUserDefaultsPersisting
-    private let pixelHandler: (SubscriptionPixel) -> Void
+    private let notificationCenter: NotificationCenter
 
     // MARK: - State
     private let isDefaultBrowserSubject = PassthroughSubject<Bool, Never>()
-    private let canUserPurchaseSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
     private var defaultBrowserPollingTimer: Timer?
     private var timer: Timer?
@@ -74,18 +68,14 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          subscriptionManager: any SubscriptionManager,
          defaultBrowserProvider: DefaultBrowserProvider,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
-         persistor: VPNUpsellUserDefaultsPersisting,
          timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
-         autoDismissDays: Int = Constants.autoDismissDays,
-         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
+         notificationCenter: NotificationCenter = .default) {
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
         self.defaultBrowserProvider = defaultBrowserProvider
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
         self.timerDuration = timerDuration
-        self.autoDismissDays = autoDismissDays
-        self.persistor = persistor
-        self.pixelHandler = pixelHandler
+        self.notificationCenter = notificationCenter
     }
 
     public func setup(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
@@ -99,28 +89,29 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
-        canUserPurchaseSubject
-            .sink { [weak self] canPurchase in
-                guard let self else { return }
-                guard canPurchase else {
-                    self.updateState(.notEligible)
-                    return
-                }
+        checkPurchaseEligibility(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
+    }
 
-                self.start(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
-            }
-            .store(in: &cancellables)
+    private func handleCanPurchase(_ canPurchase: Bool, isFirstLaunch: Bool, isOnboardingFinished: Bool) {
+        guard canPurchase else {
+            updateState(.notEligible)
+            return
+        }
 
-        checkPurchaseEligibility()
+        start(isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
     }
 
     private func start(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
+        guard state == .notEligible else {
+            return
+        }
+
         if isFirstLaunch {
             monitorFirstLaunchConditions()
         } else if !isOnboardingFinished {
             monitorOnboardingOnly()
         } else {
-            updateState(.visible)
+            updateState(.eligible)
         }
         monitorSubscriptionChanges()
     }
@@ -131,28 +122,20 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         isNewUser && !subscriptionManager.isUserAuthenticated
     }
 
-    private var shouldDismiss: Bool {
-        shouldDismissAutomatically || persistor.vpnUpsellDismissed
-    }
-
-    private var shouldDismissAutomatically: Bool {
-        guard let firstPinnedDate = persistor.vpnUpsellFirstPinnedDate else {
-            return false
-        }
-
-        return firstPinnedDate.daysSinceNow() >= autoDismissDays
-    }
-
-    private func checkPurchaseEligibility() {
+    private func checkPurchaseEligibility(isFirstLaunch: Bool, isOnboardingFinished: Bool) {
         switch subscriptionManager.currentEnvironment.purchasePlatform {
         case .appStore:
+            // Seed synchronously so returning users are eligible before PromoService restores visible promos
+            // at launch. Otherwise the promo is hidden and its timeout restarts on every launch.
             subscriptionManager.hasAppStoreProductsAvailablePublisher
+                .prepend(subscriptionManager.hasAppStoreProductsAvailable)
+                .removeDuplicates()
                 .sink { [weak self] canPurchase in
-                    self?.canUserPurchaseSubject.send(canPurchase)
+                    self?.handleCanPurchase(canPurchase, isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
                 }
                 .store(in: &cancellables)
         case .stripe:
-            canUserPurchaseSubject.send(true)
+            handleCanPurchase(true, isFirstLaunch: isFirstLaunch, isOnboardingFinished: isOnboardingFinished)
         }
     }
 
@@ -194,13 +177,13 @@ final class VPNUpsellVisibilityManager: ObservableObject {
                     return
                 }
 
-                self.updateState(.visible)
+                self.updateState(.eligible)
             }
             .store(in: &cancellables)
     }
 
     private func monitorSubscriptionChanges() {
-        NotificationCenter.default
+        notificationCenter
             .publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -210,26 +193,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     }
 
     // MARK: - Event Handling
-
-    public func handlePinningChange(isPinned: Bool) {
-        guard state == .visible else {
-            return
-        }
-
-        guard isPinned else {
-            dismissUpsell()
-            return
-        }
-
-        if persistor.vpnUpsellFirstPinnedDate == nil {
-            persistor.vpnUpsellFirstPinnedDate = Date()
-        }
-    }
-
-    public func dismissNotificationDot() {
-        persistor.vpnUpsellPopoverViewed = true
-        shouldShowNotificationDot = false
-    }
 
     private func startTimerIfNeeded() {
         guard state == .waitingForConditions else {
@@ -250,7 +213,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
-        updateState(.visible)
+        updateState(.eligible)
     }
 
     private func handleSubscriptionChange() {
@@ -262,23 +225,13 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         updateState(.notEligible)
     }
 
-    func dismissUpsell() {
-        guard state == .visible else {
-            return
-        }
-
-        persistor.vpnUpsellDismissed = true
-
-        updateState(.dismissed)
-    }
-
     // MARK: - Default Browser Polling
 
     private func monitorDefaultBrowserChanges() {
         guard state == .waitingForConditions else {
             return
         }
-        NotificationCenter.default.publisher(for: .defaultBrowserPromptPresented)
+        notificationCenter.publisher(for: .defaultBrowserPromptPresented)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.defaultBrowserPromptPresented()
@@ -316,15 +269,10 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         defaultBrowserPollingCount = 0
     }
 
-    // MARK: - Upsell Visibility
+    // MARK: - Eligibility State
 
     private func updateState(_ newState: State) {
-        guard !shouldDismiss else {
-            state = .dismissed
-            return
-        }
-
-        guard newState == .visible else {
+        guard newState == .eligible else {
             state = newState
             return
         }
@@ -335,32 +283,15 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         }
 
         let previousState = state
-
-        // Fire pixel when transitioning to visible state
-        if previousState != .visible {
-            pixelHandler(.subscriptionToolbarButtonShown)
-        }
-
         state = newState
 
-        shouldShowNotificationDot = !persistor.vpnUpsellPopoverViewed
+        if previousState != .eligible {
+            notificationCenter.post(name: .vpnUpsellBecameEligible, object: nil)
+        }
     }
 
     deinit {
         timer?.invalidate()
         defaultBrowserPollingTimer?.invalidate()
-    }
-}
-
-// MARK: - Debug Menu
-/// These methods are triggered from the VPN Debug Menu (Debug > VPN > Upsell)
-/// They explicitly set the state, bypassing all eligibility checks.
-extension VPNUpsellVisibilityManager {
-    func makeVisible() {
-        state = .visible
-    }
-
-    func makeNotEligible() {
-        state = .notEligible
     }
 }

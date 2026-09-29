@@ -231,6 +231,7 @@ private final class PreviewAIChatSettings: AIChatSettingsProvider {
     var aiChatURL: URL { URL(string: "https://duckduckgo.com")! }
     var isAIChatEnabled: Bool { true }
     var sessionTimerInMinutes: Int { 0 }
+    var aiChatAttachMoreTabsLimit: Int { 3 }
     var isAIChatAddressBarUserSettingsEnabled: Bool { false }
     var isAIChatSearchInputUserSettingsEnabled: Bool { false }
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool { false }

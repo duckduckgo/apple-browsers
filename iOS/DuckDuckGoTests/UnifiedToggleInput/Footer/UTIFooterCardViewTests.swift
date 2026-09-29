@@ -34,7 +34,6 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
-    /// The card grows to fit the message instead of cutting it off.
     func test_cardHeight_growsWithAWrappedTitle() {
         let sut = UTIFooterCardView()
 
@@ -380,7 +379,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: title,
                          subtitle: subtitle,
                          primaryAction: primaryAction,
-                         isDismissible: isDismissible)
+                         isDismissible: isDismissible,
+                         link: nil)
     }
 
     /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
@@ -391,7 +391,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "Now using 5.6 Luna",
                          subtitle: subtitle,
                          primaryAction: nil,
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 
     private func makeNotice(title: String = "Opus 4.8 uses limits up to 2-5x faster than basic models.") -> UTIFooterMessage {
@@ -399,7 +400,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: title,
                          subtitle: nil,
                          primaryAction: nil,
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 
     /// The blocked card as shipped: a short title beside a CTA wide enough to compress it, and no
@@ -409,7 +411,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "Daily limit reached",
                          subtitle: "Resets in 5 hours",
                          primaryAction: .init(title: "Start Using Weekly Limit"),
-                         isDismissible: false)
+                         isDismissible: false,
+                         link: nil)
     }
 
     private func makeIconlessMessage() -> UTIFooterMessage {
@@ -417,6 +420,7 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "90% of weekly limit",
                          subtitle: "Resets in 2 days",
                          primaryAction: .init(title: "Switch Model"),
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 }

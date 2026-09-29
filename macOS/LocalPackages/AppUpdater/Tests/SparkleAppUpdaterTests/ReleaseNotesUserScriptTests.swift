@@ -19,7 +19,7 @@
 import AppUpdaterShared
 import Combine
 import Common
-import Navigation
+import DDGNavigation
 import PixelKit
 import UserScript
 import WebKit

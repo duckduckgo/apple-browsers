@@ -69,6 +69,7 @@ final class SitePermissionsEventTests: XCTestCase {
         XCTAssertEqual(SitePermissionsEvent.DialogSelection.allowOnce.rawValue, "allow_once")
         XCTAssertEqual(SitePermissionsEvent.DialogSelection.allowAlways.rawValue, "allow_always")
         XCTAssertEqual(SitePermissionsEvent.DialogSelection.never.rawValue, "never")
+        XCTAssertEqual(SitePermissionsEvent.DialogSelection.dismissed.rawValue, "dismissed")
         XCTAssertEqual(SitePermissionsEvent.SystemPromptResult.granted.rawValue, "granted")
         XCTAssertEqual(SitePermissionsEvent.SystemPromptResult.denied.rawValue, "denied")
         XCTAssertEqual(SitePermissionsEvent.ReminderDialogAction.shown.rawValue, "shown")

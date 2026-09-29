@@ -19,6 +19,7 @@
 import AIChat
 import FeatureFlags_macOS
 import Foundation
+import Persistence
 import PrivacyConfig
 
 /// Owns the MCP sessions, the tool catalog and their gating. App-wide rather than per web view,
@@ -33,6 +34,8 @@ final class AIChatBrowserToolsService {
     let sessions = AIChatMCPSessionStore()
     let catalog: BrowserToolCatalog
     let invoker: BrowserToolInvoker
+    let permissions: BrowserToolPermissionStoring
+    let elicitations: AIChatElicitationCoordinator
 
     private let configuration: AIChatBrowserToolsConfiguration
 
@@ -43,18 +46,27 @@ final class AIChatBrowserToolsService {
     /// - Parameter tools: overridable so tests can register their own catalog.
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
+         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
          tools: [any BrowserTool]? = nil) {
         let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
         let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager),
                                          configuration: configuration)
+        let permissions = BrowserToolPermissionStore(storage: permissionStorage)
+        let elicitations = AIChatElicitationCoordinator()
         self.configuration = configuration
         self.catalog = catalog
-        self.invoker = BrowserToolInvoker(catalog: catalog, configuration: configuration)
+        self.permissions = permissions
+        self.elicitations = elicitations
+        self.invoker = BrowserToolInvoker(catalog: catalog,
+                                          configuration: configuration,
+                                          permissions: permissions,
+                                          elicitations: elicitations)
     }
 
     /// Registration order is the order the front end sees in `tools/list`.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol) -> [any BrowserTool] {
         [
+            ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
             SwitchToTabBrowserTool(windowControllersManager: windowControllersManager)
         ]
     }

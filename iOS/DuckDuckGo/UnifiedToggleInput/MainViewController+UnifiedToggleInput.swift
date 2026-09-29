@@ -87,7 +87,8 @@ extension MainViewController {
             aiChatSyncCleaner: aiChatSyncCleaner,
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
-            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            tabProvider: { [weak self] in self?.tabManager.currentTabsModel.currentTab }
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -971,6 +972,7 @@ extension MainViewController {
     }
 
     func applyTopChromeState(renderState: UTIRenderState, isOnAITab: Bool, coordinator: UnifiedToggleInputCoordinator) {
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: isOnAITab)
         if isOnAITab, viewCoordinator.isNavigationChromeHidden {
             let chromeBackgroundState = aiTabChromeBackgroundState(for: renderState)
             applyUnifiedInputChromeBackground(chromeBackgroundState, updateWebView: false)
@@ -1042,6 +1044,13 @@ extension MainViewController {
             contentVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         contentVC.didMove(toParent: self)
+        updateUnifiedInputContentPresentation(presentation: newTabPageInputPresentation, isOnAITab: currentTab?.isAITab == true)
+    }
+
+    /// Selects presentation only. The content controller and its view stay installed for the session.
+    func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
+        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
+            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
     }
 
     func installFloatingReturnKeyViewController() {
@@ -1427,6 +1436,15 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         applyEditModeChrome(isEditing)
+    }
+
+    /// Deliberately not `loadUrlRespectingAIBoundary`: that only spawns a tab when the navigation
+    /// crosses the AI/web boundary, so from the address bar it would load in place and take the
+    /// user's pending attachment with it.
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {

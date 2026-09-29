@@ -152,25 +152,31 @@ extension VPNSessionHealthWideEventData {
 
     // MARK: - Termination
 
-    /// Records a first error if needed for failure stops or user stops during an active outage.
-    func markingStopped(_ endReason: EventEndReason, at now: Date) -> Self {
-        applying { next in
+    /// Records a first error if needed for failure stops or user stops during an active outage, then returns the ended event and its outcome.
+    func finalized(for endReason: EventEndReason, at now: Date) -> (event: Self, outcome: EventOutcome) {
+        if endedAt != nil {
+            return (self, completedOutcome())
+        }
+
+        let event = applying { next in
             if endReason.isFailure || (endReason == .stoppedByUser && connectionTestFailureActive) {
                 next.markFirstErrorDetectedIfNeeded(at: now)
             }
 
             next.markEnded(endReason, at: now)
         }
+
+        return (event, event.completedOutcome())
     }
 
-    func markingCancelledWithError(at now: Date) -> Self {
-        markingStopped(.cancelledWithError, at: now)
+    func finalizedAfterCancellation(at now: Date) -> (event: Self, outcome: EventOutcome) {
+        finalized(for: .cancelledWithError, at: now)
     }
 
-    func markingOrphanedSessionEnded(at now: Date) -> Self {
+    func finalizedAfterOrphanRecovery(at now: Date) -> (event: Self, outcome: EventOutcome) {
         // This API is part of the Orphans Collection mechanism.
         // We'll backdate the termination event with the last observation timestamp.
-        markingStopped(.processDied, at: min(now, lastObservedAt))
+        finalized(for: .processDied, at: min(now, lastObservedAt))
     }
 }
 

@@ -27,7 +27,7 @@ import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
 import PDFKit
-import Navigation
+import DDGNavigation
 import PixelKit
 import os.log
 import PrivacyConfig

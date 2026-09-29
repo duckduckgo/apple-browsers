@@ -109,9 +109,12 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///
     /// This property checks:
     /// - If the feature flag is enabled
+    /// - Whether the user is eligible for a free trial, so we only promote a trial we can honour
     /// - Whether the user has reached their limit for the promotion
     private var shouldDisplayPromo: Bool {
-        featureFlagger.isFeatureOn(.vpnMenuItem) && !freeTrialBadgePersistor.hasReachedViewLimit
+        featureFlagger.isFeatureOn(.vpnMenuItem)
+            && subscriptionManager.isUserEligibleForFreeTrial()
+            && !freeTrialBadgePersistor.hasReachedViewLimit
     }
 
     /// Provides the URL components for subscribing as part of the promotion.

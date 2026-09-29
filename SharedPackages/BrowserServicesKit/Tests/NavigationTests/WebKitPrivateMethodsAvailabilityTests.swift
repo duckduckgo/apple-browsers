@@ -21,7 +21,7 @@ import Foundation
 import WebKit
 import XCTest
 
-@testable import Navigation
+@testable import DDGNavigation
 @testable import Common
 
 @available(iOS 15.0, *)

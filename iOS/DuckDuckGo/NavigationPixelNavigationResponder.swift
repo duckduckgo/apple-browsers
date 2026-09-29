@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import PrivacyDashboard
 import WebKit

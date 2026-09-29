@@ -727,6 +727,7 @@ public struct UserText {
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
     static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "VPN menu item")
+    static let actionVPNFreeTrialBadge = NSLocalizedString("action.title.vpn.free-trial-badge", value: "Try for Free", comment: "Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased.")
 
     // MARK: - Control Center Widget Education
 
@@ -1824,6 +1825,7 @@ public struct UserText {
     public static let settingsPProDBPSubTitle = NSLocalizedString("settings.subscription.DBP.subtitle", value: "Remove your info from sites that sell it", comment: "Data Broker protection cell subtitle for privacy pro")
     public static let settingsPProITRTitle = NSLocalizedString("settings.subscription.ITR.title", value: "Identity Theft Restoration", comment: "Identity theft restoration cell title for privacy pro")
     public static let settingsPProITRSubTitle = NSLocalizedString("settings.subscription.ITR.subtitle", value: "If your identity is stolen, we'll help restore it", comment: "Identity theft restoration cell subtitle for privacy pro")
+    public static let settingsPProSubscriberOffersTitle = NotLocalizedString("settings.subscription.subscriberOffers.title", value: "Subscriber Offers", comment: "Title of a settings cell in the DuckDuckGo Subscription section. Opens a web page listing exclusive offers from partner companies that are available to subscribers.")
 
     public static let settingsPProActivationPendingDescription = NSLocalizedString("settings.subscription.activation.pending.description", value: "This is taking longer than usual, please check back later.", comment: "Subscription activation pending description")
 
@@ -2001,6 +2003,9 @@ public struct UserText {
         comment: "English-only Dax greeting on the New Tab page.")
 
     // MARK: - New Tab Page customization
+
+    public static let newTabPageFavoritesSeeAll = NotLocalizedString("new-tab-page.favorites.see-all", value: "See All", comment: "Button that expands the New Tab Page favorites grid to show all favorites")
+    public static let newTabPageFavoritesSeeLess = NotLocalizedString("new-tab-page.favorites.see-less", value: "See Less", comment: "Button that collapses the New Tab Page favorites grid to show fewer favorites")
 
     public static let newTabPageCustomizationTitle = NotLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NotLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
@@ -2447,6 +2452,48 @@ public struct UserText {
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutDocument = NotLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Top-level attachment menu option to attach the current document content to an AI chat message")
     public static let aiChatAttachmentOptionContinueInDuckAi = NotLocalizedString("aichat.attachment.option.continue.in.duckAI", value: "Continue in Duck.ai", comment: "Top-level attachment menu option to attach the continue with the prompt in duck.ai")
+    public static let aiChatAttachmentOptionAddTabs = NotLocalizedString(
+        "aichat.attachment.option.add.tabs",
+        value: "Add Tabs",
+        comment: "attachment-menu option that opens the Choose Tabs picker")
+    public static let aiChatAttachmentRecentTabsSectionTitle = NotLocalizedString(
+        "aichat.attachment.recent-tabs.section-title",
+        value: "Recent Tabs",
+        comment: "attachment-menu section title for recently viewed tabs")
+    public static let aiChatChooseTabsTitle = NotLocalizedString(
+        "aichat.choose-tabs.title",
+        value: "Add tabs",
+        comment: "title of the tab attachment picker")
+    public static func aiChatChooseTabsPrompt(attachmentLimit: Int) -> String {
+        let format = NotLocalizedString(
+            "aichat.choose-tabs.prompt",
+            value: "Pick up to %d tabs",
+            comment: "Instruction above the tab attachment list. Parameter is the configured maximum number of tabs.")
+        return String(format: format, attachmentLimit)
+    }
+    public static let aiChatChooseTabsSearchPlaceholder = NotLocalizedString(
+        "aichat.choose-tabs.search.placeholder",
+        value: "Search",
+        comment: "placeholder in the tab attachment search field")
+    public static let aiChatChooseTabsNoMatches = NotLocalizedString(
+        "aichat.choose-tabs.no-matches",
+        value: "No matching tabs",
+        comment: "empty state shown when no tabs match the search query")
+    public static func aiChatChooseTabsSelectionCount(_ selectedCount: Int, attachmentLimit: Int) -> String {
+        let format = NotLocalizedString(
+            "aichat.choose-tabs.selection-count",
+            value: "%1$d of %2$d",
+            comment: "tab attachment selection count. First parameter is selected count; second is attachment limit.")
+        return String(format: format, selectedCount, attachmentLimit)
+    }
+    public static let aiChatChooseTabsCloseAccessibilityLabel = NotLocalizedString(
+        "aichat.choose-tabs.close.accessibility-label",
+        value: "Close",
+        comment: "accessibility label for closing the tab attachment picker without applying changes")
+    public static let aiChatChooseTabsConfirmAccessibilityLabel = NotLocalizedString(
+        "aichat.choose-tabs.confirm.accessibility-label",
+        value: "Attach selected tabs",
+        comment: "accessibility label for applying the tab attachment selection")
     public static let duckAiAddressBarMenuNewChat = NSLocalizedString("duckai.address.bar.menu.new.chat", value: "New Chat", comment: "Address bar Duck.ai menu option that opens a fresh chat with no page context")
     public static func aiChatAttachmentFileTooLarge(maxFileSizeMB: Int) -> String {
         let message = NSLocalizedString("aichat.attachment.file.too.large", value: "This file is too large. The maximum file size is %d MB.", comment: "Error message displayed when the user tries to attach a file that exceeds the maximum allowed size. Parameter is the backend-provided size limit in megabytes.")
@@ -2517,6 +2564,8 @@ public struct UserText {
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
     public static let aiChatHeaderEditMessageTitle = NSLocalizedString("aichat.header.editMessage", value: "Edit Message", comment: "Title shown in the Duck.ai tab header while editing a previously sent message")
     public static let aiChatEditReplaceResponseDisclaimer = NSLocalizedString("aichat.edit.replaceResponseDisclaimer", value: "Editing will replace the response with a new one.", comment: "Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response")
+    public static let aiChatAttachmentPrivacyNoticeFormat = NotLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
+    public static let aiChatAttachmentPrivacyNoticeLearnMore = NotLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
     public static let aiChatHeaderRecentChatsAccessibilityLabel = NotLocalizedString("aichat.header.recentChats.a11y", value: "Recent chats", comment: "Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header")
     public static let aiChatHeaderCloseTabAccessibilityLabel = NotLocalizedString("aichat.header.closeTab.a11y", value: "Close tab", comment: "Accessibility label for the close-tab button in the Duck.ai tab header")
     public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
@@ -2536,6 +2585,11 @@ public struct UserText {
     public static let utiDuckAIWarningsSubscribe = NSLocalizedString("aichat.usageWarnings.action.subscribe", value: "Subscribe", comment: "Button in the Duck.ai input footer warning taking a user who has already used their free trial to the subscription flow")
     public static let utiDuckAIWarningsDismissAccessibilityLabel = NSLocalizedString("aichat.usageWarnings.dismiss.a11y", value: "Dismiss", comment: "Accessibility label for the button that dismisses the Duck.ai input footer warning")
     public static let utiDuckAIWarningsHighUsageModel = NSLocalizedString("aichat.usageWarnings.highUsageModel", value: "%@ uses limits up to 2-5x faster than basic models.", comment: "Duck.ai input footer notice shown while a costly model is selected. %@ is the model's short name, such as 'Opus 4.8'")
+
+    // MARK: - Duck.ai Terms of Service (unified toggle input footer)
+
+    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By sending a message, you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; sending a message accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 

@@ -20,6 +20,16 @@ import Cocoa
 
 internal class AddressBarButton: MouseOverButton {
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        wantsLayer = true
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 

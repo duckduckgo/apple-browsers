@@ -308,7 +308,7 @@ extension TabViewController {
         entries.append(buildDownloadsEntry())
 
         if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable {
-            entries.append(buildVPNEntry())
+            entries.append(buildVPNEntry(showPromoBadge: false))
         }
 
         entries.append(buildSettingsEntry())
@@ -361,6 +361,7 @@ extension TabViewController {
         return .regular(
             name: UserText.sitePermissions,
             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.options : DesignSystemImages.Glyphs.Size24.options,
+            tag: .sitePermissions,
             action: { [weak self] in
                 self?.presentSitePermissionsManagement()
             }
@@ -957,7 +958,10 @@ extension TabViewController {
         })
     }
 
-    private func buildVPNEntry(useSmallIcon: Bool = true, showStatusStringInDetail: Bool = false) -> BrowsingMenuEntry {
+    /// Only the sheet menu can render badges; the legacy popover cell falls back to the notification dot.
+    private func buildVPNEntry(useSmallIcon: Bool = true,
+                               showStatusStringInDetail: Bool = false,
+                               showPromoBadge: Bool) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
         let promoStatus = vpnPromoHelper.subscriptionPromoStatus
         var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
@@ -965,10 +969,16 @@ extension TabViewController {
         var customDotColor: UIColor?
         var accessibilityLabel: String?
         var detailText: String?
+        var detailBadge: String?
 
         switch promoStatus {
         case .promo:
             vpnPromoHelper.subscriptionPromoWasShown()
+            if showPromoBadge {
+                showNotificationDot = false
+                detailBadge = UserText.actionVPNFreeTrialBadge
+                accessibilityLabel = "\(UserText.actionVPN), \(UserText.actionVPNFreeTrialBadge)"
+            }
             PixelKit.fire(Pixel.Event.subscriptionEntryAppMenuImpression)
         case .noPromo:
             showNotificationDot = false
@@ -991,7 +1001,8 @@ extension TabViewController {
                                          image: image,
                                          showNotificationDot: showNotificationDot,
                                          customDotColor: customDotColor,
-                                         detailText: showStatusStringInDetail ? detailText : nil) { [weak self] in
+                                         detailText: showStatusStringInDetail ? detailText : nil,
+                                         detailBadge: detailBadge) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
             PixelKit.fire(Pixel.Event.browsingMenuVPN)
             switch promoStatus {
@@ -1151,7 +1162,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
               AppDependencyProvider.shared.subscriptionManager.hasAppStoreProductsAvailable else {
             return nil
         }
-        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true)
+        return buildVPNEntry(useSmallIcon: false, showStatusStringInDetail: true, showPromoBadge: true)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {

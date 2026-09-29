@@ -965,7 +965,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let permissionManager = PermissionManagerMock()
         let pageWebView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
         pageWebView.urlValue = URL(string: "https://example.com")!
-        mockPermissionModel = PermissionModel(webView: pageWebView, permissionManager: permissionManager)
+        mockPermissionModel = PermissionModel(webView: pageWebView, permissionManager: permissionManager, featureFlagger: mockFeatureFlagger)
         popupHandlingExtension = createExtension()
         permissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .popups)
         popupHandlingExtension.setPopupAllowanceForCurrentPage()

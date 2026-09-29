@@ -650,6 +650,9 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         let coordinator = makeCoordinator(syncService: syncService, messageExchanger: messageExchanger)
 
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
+
         let payload = try await coordinator.startPresenting()
         messageExchanger.fetchMessagesError = PairingV2Error.relayChannelUnavailable
 
@@ -657,6 +660,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             try await coordinator.pollOnce()
         }
 
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
         XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterPollOwnChannel, kind: .unavailable))
         XCTAssertEqual(messageExchanger.fetchMessagesCalls.map(\.channelID), [payload.channelId])
         XCTAssertEqual(messageExchanger.closeChannelCalls, [payload.channelId])

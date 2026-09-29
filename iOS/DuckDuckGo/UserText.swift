@@ -3217,6 +3217,8 @@ public struct UserText {
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value: "Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
     public static let dataImportHubTitle = NSLocalizedString("data.import.hub.title", value: "Bring to DuckDuckGo", comment: "Title for the data import hub screen")
+    public static let dataImportSafariUnavailableInBuildTitle = NotLocalizedString("data.import.safari.unavailable.build.title", value: "Safari Import Unavailable in the Alpha app", comment: "Internal only — not localized")
+    public static let dataImportSafariUnavailableInBuildMessage = NotLocalizedString("data.import.safari.unavailable.build.message", value: "To test this flow, use the main DuckDuckGo app. Apple only grants the entitlement required for importing from Safari to the App Store app.", comment: "Internal only — not localized")
     public static let importSourceSectionImportFrom = NSLocalizedString("data.import.source.section.import-from", value: "Import From", comment: "Section header for password import sources on the hub screen")
     public static let importSourceSectionSyncFrom = NSLocalizedString("data.import.source.section.sync-from", value: "Sync From", comment: "Section header for sync-based import sources on the hub screen")
     public static let importSourcePasswordsApp = NSLocalizedString("data.import.source.passwords-app", value: "Passwords App", comment: "Row title for importing from the Apple Passwords app")

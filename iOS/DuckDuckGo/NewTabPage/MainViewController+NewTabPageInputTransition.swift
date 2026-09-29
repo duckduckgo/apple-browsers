@@ -69,9 +69,7 @@ extension MainViewController {
         contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
         let duration = UIAccessibility.isReduceMotionEnabled ? 0 : Constants.omnibarTransitionDuration(
             isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-        UIView.animate(withDuration: duration,
-                       delay: 0,
-                       options: [.beginFromCurrentState, .curveEaseInOut, .allowUserInteraction], animations: { [weak self] in
+        let animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut) { [weak self] in
             inputContainer.transform = .identity
             self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
             self?.viewCoordinator.focusedStateBackground.alpha = 1
@@ -79,10 +77,12 @@ extension MainViewController {
             contentContainer.transform = .identity
             restingSnapshot?.alpha = 0
             restingSnapshot?.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
-        }, completion: { [weak self] _ in
+        }
+        animator.addCompletion { [weak self] _ in
             restingSnapshot?.removeFromSuperview()
             self?.refreshFloatingToolbarBackdrop()
-        })
+        }
+        animator.startAnimation()
     }
 
     func dismissInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator,
@@ -103,37 +103,53 @@ extension MainViewController {
             contentContainer.transform = .identity
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
         }
-        guard animated else {
+        guard animated && !UIAccessibility.isReduceMotionEnabled else {
             coordinator.viewController.deactivateInput()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss()
             finish()
             return
         }
 
+        // Resigning the input can change the live host's safe area and scroll layout.
+        // Keep the outgoing page in its current screen position while those updates settle.
+        // Both page snapshots share one overlay so interruption removes them together.
+        let transitionSnapshot = UIView(frame: view.bounds)
+        transitionSnapshot.isUserInteractionEnabled = false
+        transitionSnapshot.accessibilityElementsHidden = true
+        let focusedSnapshot = contentContainer.snapshotView(afterScreenUpdates: false)
+        if let focusedSnapshot {
+            focusedSnapshot.frame = contentContainer.convert(contentContainer.bounds, to: view)
+            transitionSnapshot.addSubview(focusedSnapshot)
+            contentContainer.alpha = 0
+        }
+        let outgoingContent = focusedSnapshot ?? contentContainer
         let restingSnapshot = makeRestingNewTabPageSnapshot()
         if let restingSnapshot {
             restingSnapshot.alpha = 0
             restingSnapshot.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
-            view.insertSubview(restingSnapshot, aboveSubview: viewCoordinator.unifiedInputContentContainer)
+            transitionSnapshot.addSubview(restingSnapshot)
         }
+        view.insertSubview(transitionSnapshot, aboveSubview: contentContainer)
 
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             transition: .inlineInput,
-            contentSnapshot: restingSnapshot,
-            additionalAnimations: { [weak self] in
+            contentSnapshot: transitionSnapshot,
+            additionalAnimations: {
                 inputContainer.transform = restingTransform
-                self?.viewCoordinator.unifiedInputContentContainer.alpha = 0
-                contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
-                restingSnapshot?.alpha = 1
+                outgoingContent.transform = CGAffineTransform(translationX: 0, y: contentOffset)
                 restingSnapshot?.transform = .identity
+            },
+            inlineInputHandoffAnimations: {
+                outgoingContent.alpha = 0
+                restingSnapshot?.alpha = 1
                 if restingSnapshot == nil {
                     // Appearance or size changes invalidate the cached page. Reveal the live
-                    // input during the crossfade while keeping its editing interaction state.
+                    // input during the final handoff while keeping its editing interaction state.
                     source?.alpha = 1
                 }
             },
             interruptCleanup: { [weak self] in
-                restingSnapshot?.removeFromSuperview()
+                transitionSnapshot.removeFromSuperview()
                 inputContainer.transform = .identity
                 contentContainer.transform = .identity
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
@@ -147,7 +163,7 @@ extension MainViewController {
             },
             completion: {
                 finish()
-                restingSnapshot?.removeFromSuperview()
+                transitionSnapshot.removeFromSuperview()
             })
     }
 

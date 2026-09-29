@@ -23,6 +23,7 @@ import UIKit
 class MainViewCoordinator {
 
     enum Constants {
+        static let inlineInputDismissHandoffStart: CGFloat = 0.65
         static let tabBarContainerHeight: CGFloat = 40
         // Aligns top chrome with window controls.
         static let windowControlsRowTopSpacing: CGFloat = 4
@@ -593,6 +594,7 @@ class MainViewCoordinator {
                                        transition: NewTabPageInputPresentation.Transition = .omnibar,
                                        contentSnapshot: UIView? = nil,
                                        additionalAnimations: (() -> Void)? = nil,
+                                       inlineInputHandoffAnimations: (() -> Void)? = nil,
                                        interruptCleanup: (() -> Void)? = nil,
                                        resigningInput: (() -> Void)? = nil,
                                        completion: (() -> Void)? = nil) {
@@ -615,9 +617,17 @@ class MainViewCoordinator {
             case .omnibar:
                 self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             case .inlineInput:
-                self?.unifiedToggleInputContainer.alpha = 0
+                break
             }
             additionalAnimations?()
+        }
+        if transition == .inlineInput {
+            // Keep the moving input solid, then briefly blend into its resting counterpart.
+            // A full-duration page fade exposes both favorites grids throughout the movement.
+            animator.addAnimations({ [weak self] in
+                self?.unifiedToggleInputContainer.alpha = 0
+                inlineInputHandoffAnimations?()
+            }, delayFactor: Constants.inlineInputDismissHandoffStart)
         }
         animator.addCompletion { [weak self] position in
             guard let self else { return }

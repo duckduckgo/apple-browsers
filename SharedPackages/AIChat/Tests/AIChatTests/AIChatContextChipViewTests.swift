@@ -86,7 +86,7 @@ final class AIChatContextChipViewTests: XCTestCase {
 
     // MARK: - Suggested state
 
-    func testSuggestedStateWrapsThePageTitleInTheAttachOffer() {
+    func testSuggestedStateShowsTheFixedOfferRatherThanThePageTitle() {
         // Given
         let sut = AIChatContextChipView()
         let pageTitle = "Magnetic confinement fusion"
@@ -96,9 +96,19 @@ final class AIChatContextChipViewTests: XCTestCase {
 
         // Then
         let label = sut.accessibilityLabel
-        XCTAssertEqual(label, UserText.askAboutPage(title: pageTitle))
-        XCTAssertEqual(label?.contains(pageTitle), true)
-        XCTAssertNotEqual(label, pageTitle)
+        XCTAssertEqual(label, UserText.askAboutPage)
+        XCTAssertEqual(label?.contains(pageTitle), false)
+    }
+
+    func testSuggestedStateOffersNoRemoveAction() {
+        // Given
+        let sut = AIChatContextChipView()
+
+        // When
+        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
+
+        // Then — nothing is attached, so there is nothing to dismiss.
+        XCTAssertNil(sut.accessibilityCustomActions)
     }
 
     func testUpdateIsIgnoredInTheSuggestedState() {
@@ -114,10 +124,22 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertEqual(sut.accessibilityLabel, offerBefore)
     }
 
-    func testChipTapIsNotReceivedOverTheRemoveButton() {
+    func testChipTapIsReceivedAcrossTheWholeSuggestedChip() {
         // Given
         let sut = AIChatContextChipView()
         sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
+        sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
+        sut.layoutIfNeeded()
+
+        // Then — no remove button is shown, so its former region accepts the offer like the rest.
+        XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
+        XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
+    }
+
+    func testChipTapIsNotReceivedOverTheRemoveButtonWhenAttached() {
+        // Given
+        let sut = AIChatContextChipView()
+        sut.configure(state: .attached(title: "Magnetic confinement fusion", favicon: nil))
         sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
         sut.layoutIfNeeded()
 

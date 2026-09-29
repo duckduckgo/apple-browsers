@@ -38,7 +38,6 @@ public final class AIChatContextChipView: UIView {
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
-        static let suggestedFillAlpha: CGFloat = 0.4
         static let suggestedBorderAlpha: CGFloat = 0.16
         static let suggestedDashPattern: [NSNumber] = [5, 7]
 
@@ -84,6 +83,7 @@ public final class AIChatContextChipView: UIView {
 
     private var fixedWidthConstraint: NSLayoutConstraint!
     private var titleTrailingToRemoveButtonConstraint: NSLayoutConstraint!
+    private var titleTrailingToContentConstraint: NSLayoutConstraint!
 
     // MARK: - Properties
 
@@ -202,8 +202,10 @@ public final class AIChatContextChipView: UIView {
     }
 
     /// Without this the recogniser, which spans the pill, would swallow taps on the remove button.
+    /// A hidden button keeps its frame, so its region stays tappable when it isn't shown.
     func shouldReceiveChipTap(at point: CGPoint) -> Bool {
-        !removeButtonHitRect.contains(point)
+        guard !removeButton.isHidden else { return true }
+        return !removeButtonHitRect.contains(point)
     }
 
     private var removeButtonHitRect: CGRect {
@@ -264,6 +266,7 @@ private extension AIChatContextChipView {
             applyBorder(color: UIColor(designSystemColor: .lines))
             fixedWidthConstraint.isActive = false
             titleTrailingToRemoveButtonConstraint.isActive = false
+            titleTrailingToContentConstraint.isActive = false
             showLoadingView()
             isUserInteractionEnabled = false
             chipTapRecognizer.isEnabled = false
@@ -272,8 +275,10 @@ private extension AIChatContextChipView {
             accessibilityLabel = UserText.askAboutPage
             accessibilityTraits = .none
 
-        case .suggested(let title, let favicon):
-            let offer = UserText.askAboutPage(title: title)
+        case .suggested(_, let favicon):
+            // A fixed label rather than the page title: nothing to truncate, and it echoes the menu
+            // entry that opens the sheet.
+            let offer = UserText.askAboutPage
             isHidden = false
             titleLabel.text = offer
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
@@ -281,30 +286,22 @@ private extension AIChatContextChipView {
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
-            applyPillLayout()
-            removeButton.isHidden = false
-            removeButton.tintColor = UIColor(designSystemColor: .icons)
-            removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+            applyPillLayout(withRemoveButton: false)
+            // Nothing is attached yet, so there is nothing to remove; the outline alone carries the
+            // difference from the attached chip.
+            removeButton.isHidden = true
             faviconView.tintColor = UIColor(designSystemColor: .accentPrimary)
             faviconView.image = favicon ?? fallbackFavicon()
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            backgroundColor = UIColor(designSystemColor: .accentAltGlowPrimary)
-                .withAlphaComponent(Constants.suggestedFillAlpha)
+            backgroundColor = .clear
             // The chip itself is the button, so VoiceOver activate accepts the offer (a UILabel marked
-            // as a button cannot be activated). Making the chip an element hides the X, so dismissal is
-            // offered as a custom action instead.
+            // as a button cannot be activated).
             isAccessibilityElement = true
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer
             accessibilityTraits = .button
-            accessibilityCustomActions = [
-                UIAccessibilityCustomAction(name: removeButton.accessibilityLabel ?? "Remove") { [weak self] _ in
-                    self?.onRemove?()
-                    return true
-                }
-            ]
             applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary)
                 .withAlphaComponent(Constants.suggestedBorderAlpha))
             isUserInteractionEnabled = true
@@ -318,7 +315,7 @@ private extension AIChatContextChipView {
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
-            applyPillLayout()
+            applyPillLayout(withRemoveButton: true)
             removeButton.isHidden = false
             removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
             faviconView.tintColor = UIColor(designSystemColor: .textSecondary)
@@ -338,10 +335,13 @@ private extension AIChatContextChipView {
         }
     }
 
-    /// `.loading` drops the fixed geometry, so the pill states have to put it back.
-    func applyPillLayout() {
+    /// `.loading` drops the fixed geometry, so the pill states have to put it back. Without a remove
+    /// button the title runs to the trailing edge instead of stopping short of a hidden one.
+    func applyPillLayout(withRemoveButton hasRemoveButton: Bool) {
         fixedWidthConstraint.isActive = true
-        titleTrailingToRemoveButtonConstraint.isActive = true
+        titleTrailingToRemoveButtonConstraint.isActive = false
+        titleTrailingToContentConstraint.isActive = false
+        (hasRemoveButton ? titleTrailingToRemoveButtonConstraint : titleTrailingToContentConstraint).isActive = true
     }
 
     func applyDashedBorder(color: UIColor) {
@@ -367,6 +367,7 @@ private extension AIChatContextChipView {
 
         // Dropped by `.loading`, which hugs its spinner instead.
         titleTrailingToRemoveButtonConstraint = titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing)
+        titleTrailingToContentConstraint = titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: chipContentView.trailingAnchor, constant: -Constants.contentSpacing)
 
         NSLayoutConstraint.activate([
             width,

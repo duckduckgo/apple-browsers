@@ -90,6 +90,7 @@ final class DataClearingWideEventService {
     /// - Parameter action: The action that is about to execute.
     func start(_ action: DataClearingWideEventData.Action) {
         eventData?[keyPath: action.durationPath] = .startingNow()
+        persist()
     }
 
     /// Updates the wide event with an action result.
@@ -109,6 +110,13 @@ final class DataClearingWideEventService {
             eventData?[keyPath: action.statusPath] = .failure
             eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error, description: (error as? DataClearingWideEventError)?.description)
         }
+        persist()
+    }
+
+    /// Saves the event as it progresses, so an orphaned journey still shows how far it got.
+    private func persist() {
+        guard let eventData else { return }
+        wideEvent.updateFlow(eventData)
     }
 
     /// Records how the Duck.ai clear went beyond its status: whether it was retried, and where the first attempt spent its time.

@@ -267,6 +267,7 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(iconImageView)
         addSubview(ringView)
         addSubview(titleLabel)
+        disclosureTextView.setAccessibilityIdentifier("AIChatUsageWarningCardView.disclosureTextView")
         addSubview(disclosureTextView)
         addSubview(actionButton)
         addSubview(closeButton)

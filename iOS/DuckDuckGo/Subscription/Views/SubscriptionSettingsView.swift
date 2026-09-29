@@ -67,6 +67,7 @@ struct SubscriptionSettingsViewV2: View {
     // MARK: - Onboarding state
 
     @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
+    @State private var onboardingViewCoordinator = SubscriptionOnboardingViewCoordinator()
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
 
@@ -480,7 +481,7 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(item: $onboardingFlow, onDismiss: {
+        .subscriptionOnboardingCover(item: $onboardingFlow, viewCoordinator: onboardingViewCoordinator, onDismiss: {
             Task { await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable) }
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
@@ -696,7 +697,10 @@ extension SubscriptionSettingsViewV2 {
                 persistor: viewModel.onboardingPersistor,
                 isPIRAvailable: isPIRAvailable,
                 subscriptionManager: settingsViewModel.subscriptionManager,
-                onFinish: { onboardingFlow = nil },
+                onFinish: {
+                    onboardingFlow = nil
+                    onboardingViewCoordinator.finish()
+                },
                 onRequestDuckAIChat: settingsViewModel.onRequestOnboardingDuckAIChat,
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = flow

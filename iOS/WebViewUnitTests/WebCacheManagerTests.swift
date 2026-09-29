@@ -185,6 +185,22 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertFalse(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "OtherCookie" })
     }
 
+    func test_WhenClearingData_ThenFireproofableStepListsOnlyTheTypesItDeletes() async {
+        let dataStore = MockWebsiteDataStore()
+
+        await makeWebCacheManager().clear(dataStore: dataStore)
+
+        XCTAssertEqual(dataStore.requestedDataRecordTypes.last, WebCacheManager.fireproofableDataTypesExceptCookies)
+    }
+
+    func test_WhenClearingForDomains_ThenFireproofableStepListsOnlyTheTypesItDeletes() async {
+        let dataStore = MockWebsiteDataStore()
+
+        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["example.com"])
+
+        XCTAssertEqual(dataStore.requestedDataRecordTypes.last, WebCacheManager.fireproofableDataTypesExceptCookies)
+    }
+
     // MARK: - Domain-Specific Clearing Tests
 
     func test_WhenClearingForDomains_ThenOnlySpecifiedDomainsAreCleared() async {

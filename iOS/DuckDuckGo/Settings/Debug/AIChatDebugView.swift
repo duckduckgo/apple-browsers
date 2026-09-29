@@ -37,6 +37,7 @@ struct AIChatDebugView: View {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
 #if DEBUG || ALPHA
+            AIChatAttachmentPrivacySection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatTermsOfServiceSection()
 #endif
@@ -372,7 +373,7 @@ private struct AIChatUsageWarningsSection: View {
             Button {
                 clearDismissals()
             } label: {
-                Text(verbatim: "Clear dismissals")
+                Text(verbatim: "Reset footer messages")
             }
             .foregroundColor(.primary)
 
@@ -444,14 +445,14 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Brings back a message dismissed with its close button, one whose CTA has been run, and the
-    /// high-usage notice, which is otherwise dismissed once per model for good.
+    /// Resets usage dismissals and the normal-browsing attachment disclosure display cap.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
         DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
-        status = "Dismissals cleared."
+        UTIAttachmentPrivacyNoticeDisplayStore().reset()
+        status = "Dismissals and attachment disclosure display count reset. Fire Tabs keep their own counts."
     }
 
     private func clear() {
@@ -564,3 +565,25 @@ private final class StorageServerState: ObservableObject {
 #Preview {
     AIChatDebugView()
 }
+
+#if DEBUG || ALPHA
+private struct AIChatAttachmentPrivacySection: View {
+    @State private var status = ""
+
+    var body: some View {
+        Section {
+            Button {
+                UTIAttachmentPrivacyNoticeDisplayStore().reset()
+                status = "Normal browsing count reset. Open a new Fire Tab to test a fresh Fire count."
+            } label: {
+                Text(verbatim: "Reset attachment disclosure display count")
+            }
+            if !status.isEmpty { Text(verbatim: status) }
+        } header: {
+            Text(verbatim: "Unified input footer")
+        } footer: {
+            Text(verbatim: "Resets the attachment disclosure in normal browsing. Each Fire Tab has its own display count.")
+        }
+    }
+}
+#endif

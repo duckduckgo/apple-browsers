@@ -44,6 +44,7 @@ public struct CardItemList: View {
     private let items: [CardItem]
     private let dividerLeadingInset: CGFloat?
     private let contentInset: ContentInset
+    private let accessibilityIdentifier: (Int) -> String?
     private let onSelect: (Int) -> (() -> Void)?
 
     /// - Parameters:
@@ -59,10 +60,12 @@ public struct CardItemList: View {
     public init(_ items: [CardItem],
                 dividerLeadingInset: CGFloat? = nil,
                 contentInset: ContentInset = .zero,
+                accessibilityIdentifier: @escaping (Int) -> String? = { _ in nil },
                 onSelect: @escaping (Int) -> (() -> Void)? = { _ in nil }) {
         self.items = items
         self.dividerLeadingInset = dividerLeadingInset
         self.contentInset = contentInset
+        self.accessibilityIdentifier = accessibilityIdentifier
         self.onSelect = onSelect
     }
 
@@ -94,6 +97,9 @@ private extension CardItemList {
                 padded.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .ifLet(accessibilityIdentifier(index)) { view, identifier in
+                view.accessibilityIdentifier(identifier)
+            }
         } else {
             padded
         }

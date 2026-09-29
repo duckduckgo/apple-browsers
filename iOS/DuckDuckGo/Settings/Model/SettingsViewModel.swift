@@ -189,6 +189,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
     let isSitePermissionsEnabled: Bool
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
+    @MainActor private var sitePermissionsFavicons: SitePermissionsFaviconStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
     @MainActor private var sitePermissionsRevocationHandler: (SitePermissionKey, Set<SitePermissionType>) -> Void = { _, _ in }
 
@@ -196,6 +197,7 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
         isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
+        favicons: sitePermissionsFavicons,
         callbacks: makeSitePermissionsCallbacks()
     )
 
@@ -291,6 +293,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
+    private weak var voiceSearchPermissionReminder: UIViewController?
     @Published var shouldShowEmailAlert: Bool = false
 
     @Published var shouldShowRecentlyVisitedSites: Bool = true
@@ -933,7 +936,7 @@ final class SettingsViewModel: ObservableObject {
                     self?.voiceSearchHelper.enableVoiceSearch(true)
                     if !result {
                         // Permission is denied
-                        self?.shouldShowNoMicrophonePermissionAlert = true
+                        self?.showNoMicrophonePermissionAlert()
                     }
                 }
             }
@@ -941,6 +944,28 @@ final class SettingsViewModel: ObservableObject {
             voiceSearchHelper.enableVoiceSearch(false)
             state.voiceSearchEnabled = false
         }
+    }
+
+    @MainActor
+    private func showNoMicrophonePermissionAlert() {
+        guard isSitePermissionsEnabled else {
+            shouldShowNoMicrophonePermissionAlert = true
+            return
+        }
+        let actionHandler = VoiceSearchPermissionPromptActionHandler(
+            eventHandler: sitePermissionsEventHandler,
+            disableVoiceSearch: { },
+            dismiss: { [weak self] completion in
+                self?.voiceSearchPermissionReminder?.dismiss(animated: true, completion: completion)
+            },
+            openSystemSettings: { [weak self] in
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                self?.urlOpener.open(url)
+            })
+        let reminder = NoMicPermissionAlert.buildReminder(viewModel: .voiceSearchSettings, onAction: actionHandler.handle)
+        voiceSearchPermissionReminder = reminder
+        presentViewController(reminder, modal: false)
+        actionHandler.didShow()
     }
 
     var longPressBinding: Binding<Bool> {
@@ -1125,9 +1150,11 @@ final class SettingsViewModel: ObservableObject {
 
     @MainActor
     func configureSitePermissions(store: SitePermissionsStore,
+                                  favicons: SitePermissionsFaviconStore? = nil,
                                   eventHandler: @escaping (SitePermissionsEvent) -> Void,
                                   revocationHandler: @escaping (SitePermissionKey, Set<SitePermissionType>) -> Void) {
         sitePermissionsStore = store
+        sitePermissionsFavicons = favicons
         sitePermissionsEventHandler = eventHandler
         sitePermissionsRevocationHandler = revocationHandler
     }

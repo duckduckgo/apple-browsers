@@ -23,7 +23,8 @@ import PixelKit
 protocol PageContextExtractionPixelFiring {
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?)
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType)
 }
 
 final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring {
@@ -36,13 +37,18 @@ final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring 
 
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?) {
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType) {
         switch outcome {
         case .success:
-            firePixel(.aiChatPageContextExtractionSuccess)
+            firePixel(.aiChatPageContextExtractionSuccess(contextType: contextType.rawValue))
         case .failure(let reason):
-            firePixel(.aiChatPageContextExtractionFailed(reason: reason.rawValue, trigger: trigger.rawValue, latency: latency?.rawValue))
+            firePixel(.aiChatPageContextExtractionFailed(reason: reason.rawValue,
+                                                         trigger: trigger.rawValue,
+                                                         latency: latency?.rawValue,
+                                                         contextType: contextType.rawValue))
         case .prevented(let category):
+            // `documentTooLarge` already implies PDF; the other categories never reach Duck.ai as either kind.
             firePixel(.aiChatPageContextExtractionPrevented(category: category, trigger: trigger.rawValue))
         }
     }

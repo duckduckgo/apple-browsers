@@ -500,8 +500,8 @@ final class SitePermissionsXCUITests: XCTestCase {
 
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.RemovePermissions"))
-        XCTAssertTrue(element("SitePermissions.Sheet").waitForNonExistence(timeout: timeout))
-        tap(element("SitePermissions.Toast.Undo"))
+        // The Undo toast lasts three seconds, including the sheet dismissal animation.
+        app.buttons["SitePermissions.Toast.Undo"].tap()
         XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
         assertSheetDecision("Geolocation", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
@@ -590,9 +590,8 @@ final class SitePermissionsXCUITests: XCTestCase {
         openPermissionPage()
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.RemovePermissions"))
-        XCTAssertTrue(element("SitePermissions.Sheet").waitForNonExistence(timeout: timeout))
-
-        tap(element("SitePermissions.Toast.Undo"))
+        // Tap Undo before other waits consume the toast's three-second lifetime.
+        app.buttons["SitePermissions.Toast.Undo"].tap()
 
         XCTAssertTrue(element("SitePermissions.Sheet").waitForExistence(timeout: timeout))
         XCTAssertEqual(element("SitePermissions.Sheet.Title").label, "Permissions for “127.0.0.1”")
@@ -670,7 +669,9 @@ final class SitePermissionsXCUITests: XCTestCase {
         let fireproofHost = "fireproof.lvh.me"
         let clearedHost = "clear.localtest.me"
         let decisions = "{ camera = allow; microphone = deny; geolocation = allow; }"
-        launchApp(seedPermissions: "{ \"\(fireproofHost)\" = \(decisions); \"\(clearedHost)\" = \(decisions); }")
+        // Keep the post-Fire keyboard from covering the menu used to inspect the remaining permissions.
+        launchApp(seedPermissions: "{ \"\(fireproofHost)\" = \(decisions); \"\(clearedHost)\" = \(decisions); }",
+                  additionalArguments: ["-com.duckduckgo.ios.keyboard.newtab", "false"])
         openPermissionPage(host: fireproofHost)
         openMenu()
         let fireproofButton = app.buttons["Fireproof This Site"]
@@ -690,9 +691,6 @@ final class SitePermissionsXCUITests: XCTestCase {
             format: "identifier IN %@", ["alert.forget-data.confirm", "Fire.Confirmation.Button.Delete"])).firstMatch
         tap(confirm)
         XCTAssertTrue(confirm.waitForNonExistence(timeout: timeout))
-        // Fire does not always focus the search field; enter editing before dismissing it.
-        tap(element("searchEntry"))
-        tap(element("UnifiedToggleInput.Button.Dismiss"))
         openPermissionSettings()
         XCTAssertTrue(element("Settings.SitePermissions.Site.\(fireproofHost)").exists)
         XCTAssertFalse(element("Settings.SitePermissions.Site.\(clearedHost)").exists)
@@ -875,6 +873,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             "-isOnboardingCompleted", "true",
             "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIAugust2026", "true",
+            // Disable the unrelated address-bar context menu that intercepted taps in CI.
+            "-ff.omniBarLongPressMenu", "false",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
@@ -892,8 +892,8 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     private func openPermissionPage(host: String = "127.0.0.1", path: String = "/camera") {
-        tap(element("searchEntry"))
-        let searchField = app.textFields.matching(identifier: "searchEntry").firstMatch
+        tap(searchField)
+        XCTAssertTrue(element("UnifiedToggleInput.Button.Dismiss").waitForHittable(timeout: timeout))
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         searchField.typeText("http://\(host):\(port)\(path)\r")
         XCTAssertTrue(app.staticTexts["Permissions fixture"].waitForExistence(timeout: timeout), app.debugDescription)
@@ -1211,6 +1211,11 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func element(_ identifier: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    private var searchField: XCUIElement {
+        let fields = app.descendants(matching: .any).matching(identifier: "searchEntry")
+        return fields.allElementsBoundByIndex.first(where: { $0.isHittable }) ?? fields.firstMatch
     }
 
     private func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {

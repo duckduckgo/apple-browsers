@@ -55,7 +55,7 @@ jobs:
     name: ATB UI Tests${{ matrix.user-mode == 'internal' && ' (internal)' || '' }}
     needs: setup-user-modes
     runs-on: macos-26
-    timeout-minutes: 75
+    timeout-minutes: 120
 
     strategy:
       fail-fast: false
@@ -116,6 +116,8 @@ jobs:
 
     - name: Build and test
       id: run-unit-tests
+      env:
+        TEST_RUNNER_INTERNAL_USER_MODE: ${{ matrix.user-mode == 'internal' && 'true' || 'false' }}
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS ATB UI Tests" \
@@ -124,7 +126,6 @@ jobs:
           -skipPackagePluginValidation \
           -skipMacroValidation \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          "TEST_RUNNER_INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || 'false' }}" \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 

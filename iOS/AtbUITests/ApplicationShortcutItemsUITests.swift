@@ -89,7 +89,9 @@ final class ApplicationShortcutItemsUITests: XCTestCase {
 
         for attempt in 1...quickActionsMenuAttemptCount {
             let iconExpectation = XCTNSPredicateExpectation(predicate: iconIsHittable, object: appIcon)
-            guard XCTWaiter.wait(for: [iconExpectation], timeout: timeout) == .completed else {
+            // The first SpringBoard snapshot can consume most of the timeout on CI.
+            guard appIcon.waitForExistence(timeout: timeout),
+                  XCTWaiter.wait(for: [iconExpectation], timeout: timeout) == .completed else {
                 recordSpringboardDiagnostics()
                 XCTFail("DuckDuckGo app icon did not become hittable.", file: file, line: line)
                 return false

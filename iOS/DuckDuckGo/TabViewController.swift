@@ -690,6 +690,7 @@ class TabViewController: UIViewController {
     let webExtensionManagerProvider: () -> WebExtensionManaging?
     private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
     private let webExtensionNavigationGate = WebExtensionNavigationGate()
+    private var webExtensionNavigationTask: Task<Void, Never>?
 
     /// This tab's EventHub identity. Derived from the tab model's UUID string, so it is stable for the
     /// tab's lifetime and unique per tab — which is what EventHub's per-tab web-event dedup keys off.
@@ -1365,6 +1366,7 @@ class TabViewController: UIViewController {
                        consumeCookies: Bool,
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
+        cancelWebExtensionNavigationWait()
         instrumentation.willPrepareWebView()
         let isReplacingWebView = webView != nil
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
@@ -1532,6 +1534,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
         addressBarURLFilter.beginUserNavigation()
@@ -1544,6 +1547,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         webView.stopLoading()
@@ -1580,6 +1584,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
@@ -1593,6 +1598,7 @@ class TabViewController: UIViewController {
     }
     
     private func load(urlRequest: URLRequest) {
+        cancelWebExtensionNavigationWait()
         loadViewIfNeeded()
 
         if let url = urlRequest.url, !shouldReissueSearch(for: url) {
@@ -1792,6 +1798,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         wasLoadingStoppedExternally = false
@@ -1809,6 +1816,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -1882,6 +1890,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
         dismissJSAlertIfNeeded()
@@ -2360,6 +2369,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
         webView.stopLoading()
@@ -2383,6 +2393,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
                 webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: id))
@@ -3300,10 +3311,11 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
-        if webView === self.webView,
-           navigationAction.isTargetingMainFrame,
-           isSitePermissionsEnabled {
-            sitePermissionsState.cancelContentBlockingWaits()
+        if webView === self.webView, navigationAction.isTargetingMainFrame {
+            cancelWebExtensionNavigationWait()
+            if isSitePermissionsEnabled {
+                sitePermissionsState.cancelContentBlockingWaits()
+            }
         }
 
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
@@ -3328,15 +3340,21 @@ extension TabViewController: WKNavigationDelegate {
         // Wait on the shared startup gate. The post-gate helper is also used by the
         // Content Blocking retry below, so that retry does not wait on extension startup twice.
         if #available(iOS 18.4, *),
+           navigationAction.isTargetingMainFrame,
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
-            Task { @MainActor [weak self, webView] in
-                guard let self else {
+            webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
+                guard !Task.isCancelled else {
                     wrappedHandler(.cancel)
                     return
                 }
                 await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isTargetingMainFrame,
                                                               url: navigationAction.request.url,
                                                               initialLoadWaiter: initialLoadWaiter)
+                guard !Task.isCancelled, let self, webView === self.webView else {
+                    wrappedHandler(.cancel)
+                    return
+                }
+                webExtensionNavigationTask = nil
                 decidePolicyAfterWebExtensionInitialLoad(webView,
                                                          navigationAction: navigationAction,
                                                          decisionHandler: wrappedHandler)
@@ -3347,6 +3365,11 @@ extension TabViewController: WKNavigationDelegate {
         decidePolicyAfterWebExtensionInitialLoad(webView,
                                                  navigationAction: navigationAction,
                                                  decisionHandler: wrappedHandler)
+    }
+
+    func cancelWebExtensionNavigationWait() {
+        webExtensionNavigationTask?.cancel()
+        webExtensionNavigationTask = nil
     }
 
     private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
@@ -4392,6 +4415,9 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        if webView === self.webView {
+            cancelWebExtensionNavigationWait()
+        }
         if #available(iOS 18.4, *) {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.webContentProcessTerminated(tabIdentifier: tabModel.uid))
         }

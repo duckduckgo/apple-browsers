@@ -94,10 +94,11 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
     private func startShow(force: Bool = false) async -> Task<PromoResult, Never> {
         let task = Task { await sut.show(history: PromoHistoryRecord(id: "vpn-upsell-toolbar-button"), force: force) }
         await Task.yield()
+        XCTAssertTrue(isShowing, "show() did not reach its suspension point")
         return task
     }
 
-    private func waitForEligibility(_ expected: Bool, file: StaticString = #filePath, line: UInt = #line) {
+    private func waitForEligibility(_ expected: Bool) {
         let expectation = expectation(description: "eligibility becomes \(expected)")
         sut.isEligiblePublisher
             .first { $0 == expected }
@@ -277,12 +278,20 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         XCTAssertFalse(isShowing)
     }
 
-    func testWhenNotShowingThenHideUnpinAndDismissDoNothing() {
+    func testWhenNotShowingThenHideUnpinAndDismissDoNothing() async {
         sut.hide()
         sut.handlePinningChange(isPinned: false)
         sut.dismissUpsell()
-
         XCTAssertFalse(isShowing)
-        XCTAssertTrue(firedPixels.isEmpty)
+
+        let task = await startShow()
+
+        // The earlier calls must not have left state behind that resolves or blocks the next show.
+        XCTAssertTrue(isShowing)
+        sut.dismissUpsell()
+        let result = await task.value
+        XCTAssertEqual(result, .ignored())
+        XCTAssertFalse(isShowing)
+        XCTAssertEqual(firedPixels.map(\.name), [SubscriptionPixel.subscriptionToolbarButtonShown.name])
     }
 }

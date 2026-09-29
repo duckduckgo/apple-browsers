@@ -90,6 +90,7 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
     private func startShow(force: Bool = false) async -> Task<PromoResult, Never> {
         let task = Task { await sut.show(history: PromoHistoryRecord(id: "vpn-upsell-dot-badge"), force: force) }
         await Task.yield()
+        XCTAssertTrue(isShowing, "show() did not reach its suspension point")
         return task
     }
 
@@ -259,11 +260,19 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
         XCTAssertFalse(isShowing)
     }
 
-    func testWhenNotShowingThenHideUnpinAndButtonClickDoNothing() {
+    func testWhenNotShowingThenHideUnpinAndButtonClickDoNothing() async {
         sut.hide()
         sut.handlePinningChange(isPinned: false)
         sut.buttonClicked()
+        XCTAssertFalse(isShowing)
 
+        let task = await startShow()
+
+        // The earlier calls must not have left state behind that resolves or blocks the next show.
+        XCTAssertTrue(isShowing)
+        sut.buttonClicked()
+        let result = await task.value
+        XCTAssertEqual(result, .actioned)
         XCTAssertFalse(isShowing)
     }
 }

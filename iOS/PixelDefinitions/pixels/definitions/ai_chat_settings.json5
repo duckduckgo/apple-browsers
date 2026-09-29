@@ -7,7 +7,7 @@
         "parameters": ["appVersion"]
     },
     "m_aichat_history_delete_failed": {
-        "description": "Fired when Duck.ai chat history fails to be deleted (single chat, multi-select, or delete-all). The error parameters identify the failure cause (e.g. no storage space)",
+        "description": "Fired when Duck.ai chat history fails to be deleted (single chat, multi-select, or delete-all). The error parameters identify the failure cause (e.g. no storage space). When the Duck.ai web data clear fails, errorDomain is com.duckduckgo.aiChatDataClearing and errorCode is: 1 clearing script unavailable, 2 script listening but no reply, 3 script reported a failure (underlyingErrorDomain com.duckduckgo.aiChatDataClearing.script, underlyingErrorCode = stage 100 localStorage / 200 IndexedDB / 300 unexpected + error name 1 UnknownError, 2 QuotaExceededError, 3 InvalidStateError, 4 AbortError, 5 NotFoundError, 6 VersionError, 7 DataError, 8 TransactionInactiveError, 9 SecurityError, 10 TypeError, 11 SyntaxError; 0 when the script sends no reason), 4 script never became ready, 5 page never finished loading, 6 web content process terminated. The clear is retried once before failing.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

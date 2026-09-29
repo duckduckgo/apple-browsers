@@ -1,5 +1,5 @@
 //
-//  NewPermissionAuthorizationViewState.swift
+//  PermissionAuthorizationViewState.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,37 +18,37 @@
 
 import Foundation
 
-struct NewPermissionAuthorizationViewState: Equatable {
+struct PermissionAuthorizationViewState: Equatable {
     var title = ""
     var learnMore: LearnMore?
-    var closeButtonAccessibilityIdentifier = "NewPermissionAuthorizationSwiftUIView.closeButton"
+    var closeButtonAccessibilityIdentifier = "PermissionAuthorizationView.closeButton"
     var decisionButtons: [DecisionButton] = [
         DecisionButton(
             action: .allowThisVisit,
             title: UserText.websitePermissionsPromptAllowThisVisit,
-            accessibilityIdentifier: "NewPermissionAuthorizationSwiftUIView.allowThisVisitButton"
+            accessibilityIdentifier: "PermissionAuthorizationView.allowThisVisitButton"
         ),
         DecisionButton(
             action: .alwaysAllow,
             title: UserText.permissionCenterAlwaysAllow,
-            accessibilityIdentifier: "NewPermissionAuthorizationSwiftUIView.alwaysAllowButton"
+            accessibilityIdentifier: "PermissionAuthorizationView.alwaysAllowButton"
         ),
         DecisionButton(
             action: .neverAllow,
             title: UserText.permissionCenterNeverAllow,
-            accessibilityIdentifier: "NewPermissionAuthorizationSwiftUIView.neverAllowButton"
+            accessibilityIdentifier: "PermissionAuthorizationView.neverAllowButton"
         ),
     ]
 }
 
-extension NewPermissionAuthorizationViewState {
+extension PermissionAuthorizationViewState {
     struct LearnMore: Equatable {
         let title: String
         let url: URL
     }
 
     struct DecisionButton: Identifiable, Equatable {
-        let action: NewPermissionAuthorizationViewModel.Action
+        let action: PermissionAuthorizationViewModel.Action
         let title: String
         let accessibilityIdentifier: String
 

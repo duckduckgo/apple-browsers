@@ -111,7 +111,7 @@ final class PermissionAuthorizationViewController: NSViewController {
         let showsTwoStepUI = permissionType.requiresSystemPermission
             && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
 
-        let swiftUIView = PermissionAuthorizationSwiftUIView(
+        let swiftUIView = LegacyPermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
             showsTwoStepUI: showsTwoStepUI,
@@ -134,7 +134,7 @@ final class PermissionAuthorizationViewController: NSViewController {
         )
 
         let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
-            NSHostingView(rootView: NewPermissionAuthorizationSwiftUIView(viewModel: makeNewPermissionViewModel(for: query)))
+            NSHostingView(rootView: PermissionAuthorizationView(viewModel: makeViewModel(for: query)))
         } else {
             NSHostingView(rootView: swiftUIView)
         }
@@ -152,8 +152,8 @@ final class PermissionAuthorizationViewController: NSViewController {
         isAuthorizationInProgress = true
     }
 
-    private func makeNewPermissionViewModel(for query: PermissionAuthorizationQuery) -> NewPermissionAuthorizationViewModel {
-        NewPermissionAuthorizationViewModel(
+    private func makeViewModel(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationViewModel {
+        PermissionAuthorizationViewModel(
             query: query,
             openURL: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)

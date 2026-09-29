@@ -31,10 +31,10 @@ final class PermissionAuthorizationViewControllerTests: XCTestCase {
 
         featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = false
         viewController.query = query
-        XCTAssertTrue(viewController.view.subviews.first is NSHostingView<PermissionAuthorizationSwiftUIView>)
+        XCTAssertTrue(viewController.view.subviews.first is NSHostingView<LegacyPermissionAuthorizationSwiftUIView>)
 
         featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
         viewController.query = query
-        XCTAssertTrue(viewController.view.subviews.first is NSHostingView<NewPermissionAuthorizationSwiftUIView>)
+        XCTAssertTrue(viewController.view.subviews.first is NSHostingView<PermissionAuthorizationView>)
     }
 }

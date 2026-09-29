@@ -1,5 +1,5 @@
 //
-//  NewPermissionAuthorizationSwiftUIView.swift
+//  PermissionAuthorizationView.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import DesignResourcesKitIcons
 import SwiftUI
 
-struct NewPermissionAuthorizationSwiftUIView: View {
+struct PermissionAuthorizationView: View {
     private enum Constants {
         static let width: CGFloat = 252
         static let buttonHeight: CGFloat = 32
@@ -27,7 +27,7 @@ struct NewPermissionAuthorizationSwiftUIView: View {
     }
 
     @ObservedObject
-    var viewModel: NewPermissionAuthorizationViewModel
+    var viewModel: PermissionAuthorizationViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -77,7 +77,7 @@ struct NewPermissionAuthorizationSwiftUIView: View {
         }
     }
 
-    private func decisionButton(_ button: NewPermissionAuthorizationViewState.DecisionButton) -> some View {
+    private func decisionButton(_ button: PermissionAuthorizationViewState.DecisionButton) -> some View {
         Button(action: { viewModel.send(action: button.action) }) {
             Text(button.title)
                 .font(.system(size: 13))
@@ -95,22 +95,22 @@ struct NewPermissionAuthorizationSwiftUIView: View {
 
 #if DEBUG
 @MainActor
-private func previewViewModel(domain: String, permissions: [PermissionType]) -> NewPermissionAuthorizationViewModel {
+private func previewViewModel(domain: String, permissions: [PermissionType]) -> PermissionAuthorizationViewModel {
     let query = PermissionAuthorizationQuery(domain: domain, url: URL(string: "https://\(domain)"), permissions: permissions) { _ in }
-    return NewPermissionAuthorizationViewModel(query: query, pixelFiring: nil, openURL: { _ in }, finish: {})
+    return PermissionAuthorizationViewModel(query: query, pixelFiring: nil, openURL: { _ in }, finish: {})
 }
 
 #Preview("Notifications - Light") {
-    NewPermissionAuthorizationSwiftUIView(viewModel: previewViewModel(domain: "microsoft.ai", permissions: [.notification]))
+    PermissionAuthorizationView(viewModel: previewViewModel(domain: "microsoft.ai", permissions: [.notification]))
         .preferredColorScheme(.light)
 }
 
 #Preview("Location - Dark") {
-    NewPermissionAuthorizationSwiftUIView(viewModel: previewViewModel(domain: "maps.example.com", permissions: [.geolocation]))
+    PermissionAuthorizationView(viewModel: previewViewModel(domain: "maps.example.com", permissions: [.geolocation]))
         .preferredColorScheme(.dark)
 }
 
 #Preview("Camera and Microphone") {
-    NewPermissionAuthorizationSwiftUIView(viewModel: previewViewModel(domain: "meet.example.com", permissions: [.camera, .microphone]))
+    PermissionAuthorizationView(viewModel: previewViewModel(domain: "meet.example.com", permissions: [.camera, .microphone]))
 }
 #endif

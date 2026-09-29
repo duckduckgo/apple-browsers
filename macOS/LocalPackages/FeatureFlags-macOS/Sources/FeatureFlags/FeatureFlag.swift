@@ -274,10 +274,11 @@ public enum FeatureFlag: String, CaseIterable {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
 
     /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
-    /// https://app.asana.com/1/137249556945/project/1208671677432066/task/1218095845454218?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
     case websitePermissionsPrompts
 
     /// Shows a survey when quitting the app for the first time in a determined period

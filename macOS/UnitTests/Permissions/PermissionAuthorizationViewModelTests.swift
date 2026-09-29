@@ -1,5 +1,5 @@
 //
-//  NewPermissionAuthorizationViewModelTests.swift
+//  PermissionAuthorizationViewModelTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
-final class NewPermissionAuthorizationViewModelTests: XCTestCase {
+final class PermissionAuthorizationViewModelTests: XCTestCase {
 
     private var pixelFiring: PixelKitMock!
     private var result: PermissionAuthorizationQuery.CallbackResult?
@@ -46,7 +46,7 @@ final class NewPermissionAuthorizationViewModelTests: XCTestCase {
     // MARK: - View state
 
     func testInitialStateIsUsedUntilViewAppears() {
-        let initialState = NewPermissionAuthorizationViewState(title: "Initial")
+        let initialState = PermissionAuthorizationViewState(title: "Initial")
 
         let viewModel = makeViewModel(query: makeQuery(permissions: [.camera]), initialState: initialState)
 
@@ -161,7 +161,7 @@ final class NewPermissionAuthorizationViewModelTests: XCTestCase {
 
     // Duck.ai camera and microphone, so the legacy Duck.ai "always remember" rule can't leak in.
     private func assertDecision(
-        _ action: NewPermissionAuthorizationViewModel.Action,
+        _ action: PermissionAuthorizationViewModel.Action,
         granted: Bool,
         remember: Bool,
         pixel: PermissionPixel.AuthorizationDecision
@@ -190,9 +190,9 @@ final class NewPermissionAuthorizationViewModelTests: XCTestCase {
 
     private func makeViewModel(
         query: PermissionAuthorizationQuery,
-        initialState: NewPermissionAuthorizationViewState = .init()
-    ) -> NewPermissionAuthorizationViewModel {
-        NewPermissionAuthorizationViewModel(
+        initialState: PermissionAuthorizationViewState = .init()
+    ) -> PermissionAuthorizationViewModel {
+        PermissionAuthorizationViewModel(
             initialState: initialState,
             query: query,
             pixelFiring: pixelFiring,

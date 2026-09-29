@@ -1,5 +1,5 @@
 //
-//  NewPermissionAuthorizationViewModel.swift
+//  PermissionAuthorizationViewModel.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,9 +21,9 @@ import Foundation
 import PixelKit
 
 @MainActor
-final class NewPermissionAuthorizationViewModel: ObservableObject {
+final class PermissionAuthorizationViewModel: ObservableObject {
     @Published
-    private(set) var viewState: NewPermissionAuthorizationViewState
+    private(set) var viewState: PermissionAuthorizationViewState
 
     private weak var query: PermissionAuthorizationQuery?
     private let domain: String
@@ -34,7 +34,7 @@ final class NewPermissionAuthorizationViewModel: ObservableObject {
     private let finish: () -> Void
 
     init(
-        initialState: NewPermissionAuthorizationViewState? = .init(),
+        initialState: PermissionAuthorizationViewState? = .init(),
         query: PermissionAuthorizationQuery,
         pixelFiring: PixelFiring? = PixelKit.shared,
         openURL: @escaping (URL) -> Void,
@@ -57,7 +57,7 @@ final class NewPermissionAuthorizationViewModel: ObservableObject {
         case .onAppear:
             viewState.title = makeTitle()
             viewState.learnMore = permissionType.learnMoreURL.map {
-                NewPermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+                PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
             }
 
         case .allowThisVisit:
@@ -112,7 +112,7 @@ final class NewPermissionAuthorizationViewModel: ObservableObject {
     }
 }
 
-extension NewPermissionAuthorizationViewModel {
+extension PermissionAuthorizationViewModel {
     enum Action {
         case onAppear
         case allowThisVisit

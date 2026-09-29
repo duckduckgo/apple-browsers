@@ -42,7 +42,9 @@ public enum PageResourceLoadError: Error, Hashable {
     case dns
     case certificate
     case connection
-    /// HTTP 5xx response; 4xx is not recorded.
+    /// HTTP 4xx response.
+    case client
+    /// HTTP 5xx response.
     case server
 
     /// Returns nil for successful or unclassified loads.
@@ -52,11 +54,18 @@ public enum PageResourceLoadError: Error, Hashable {
             return
         }
 
-        guard let response = response as? HTTPURLResponse, (500...599).contains(response.statusCode) else {
+        guard let response = response as? HTTPURLResponse else {
             return nil
         }
 
-        self = .server
+        switch response.statusCode {
+        case 400...499:
+            self = .client
+        case 500...599:
+            self = .server
+        default:
+            return nil
+        }
     }
 
     private init?(error: NSError) {

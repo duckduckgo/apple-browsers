@@ -64,9 +64,7 @@ private extension SubscriptionOnboardingOrderConfirmationView {
 
     var content: some View {
         VStack(spacing: Metrics.contentSpacing) {
-            // iPad's calendar card doesn't fit the layout
-            // suppressed regardless of trial state.
-            if let freeTrialCard = viewModel.freeTrialCard, UIDevice.current.userInterfaceIdiom != .pad {
+            if let freeTrialCard = viewModel.freeTrialCard {
                 SubscriptionOnboardingFreeTrialCalendarCard(model: freeTrialCard)
             }
 

@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import HangMetrics
 import Persistence
 import SERPSettings
 import PixelKit
@@ -166,6 +167,7 @@ struct Foreground: ForegroundHandling {
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
         services.launchTimeMetricsService.resume()
+        services.hangMetricsService.resume()
         services.defaultBrowserPromptService.resume()
         services.dbpService.resume()
         services.inactivityNotificationSchedulerService.resume()

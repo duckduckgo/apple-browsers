@@ -3628,5 +3628,10 @@ final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding 
 }
 
 private final class MentionAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
     var state: AIChatContextualAttachMoreTabsState = .available(maximumTabAttachmentCount: 3)
 }

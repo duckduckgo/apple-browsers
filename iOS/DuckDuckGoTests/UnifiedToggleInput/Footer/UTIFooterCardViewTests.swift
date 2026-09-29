@@ -34,6 +34,28 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
+    func testSwitchingFromPromotionToPlainTitleRestoresOriginalPresentation() throws {
+        for message in [makeMessage(), makeNotice()] {
+            let sut = UTIFooterCardView()
+            sut.configure(with: UTIFooterMessageMapper().multiTabPromotionMessage(), animateIcon: false)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let reference = UTIFooterCardView()
+            reference.configure(with: message, animateIcon: false)
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let referenceLabel = try XCTUnwrap(titleLabel(in: reference))
+            XCTAssertEqual(label.text, message.title)
+            XCTAssertEqual(label.font, referenceLabel.font)
+            XCTAssertNil(label.accessibilityLabel)
+            if let title = label.attributedText {
+                title.enumerateAttribute(.attachment, in: NSRange(location: 0, length: title.length)) { value, _, _ in
+                    XCTAssertNil(value)
+                }
+            }
+        }
+    }
+
     func test_cardHeight_growsWithAWrappedTitle() {
         let sut = UTIFooterCardView()
 

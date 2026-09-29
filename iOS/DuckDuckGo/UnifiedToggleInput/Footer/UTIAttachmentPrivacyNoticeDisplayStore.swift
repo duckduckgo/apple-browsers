@@ -20,13 +20,13 @@
 import Foundation
 import Persistence
 
-protocol UTIAttachmentPrivacyNoticeDisplayStoring {
+protocol UTIFooterDisplayStoring {
     var displayCount: Int { get }
     func recordDisplay()
     func reset()
 }
 
-struct UTIAttachmentPrivacyNoticeDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring {
+struct UTIAttachmentPrivacyNoticeDisplayStore: UTIFooterDisplayStoring {
     static let displayLimit = 3
 
     /// Registry confirmation is tracked in Asana 1217505446430505.

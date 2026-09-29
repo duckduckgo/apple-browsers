@@ -388,6 +388,7 @@ final class AIChatContextualSheetCoordinator {
 
         guard let host = makePersistentUTIHostIfNeeded(start: .expandedPreSubmit) else { return }
 
+        host.beginPresentation()
         let chips = makeChipsViewController()
         chips.delegate = self
         chips.useGlassStartActionBackgrounds()
@@ -489,6 +490,7 @@ final class AIChatContextualSheetCoordinator {
 
     func dismissFloatingInput(_ dismissal: FloatingInputDismissal = .userInitiated) {
         guard let controller = floatingInputViewController else { return }
+        persistentUTIHost?.endPresentation()
         // Released before the animation ends: the address bar reads this, and a surface on its way out
         // is no longer one to dismiss. `unmount(from:)` keeps a late removal off a newer surface.
         floatingInputViewController = nil
@@ -690,6 +692,7 @@ final class AIChatContextualSheetCoordinator {
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
+        persistentUTIHost?.endPresentation()
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
@@ -810,6 +813,7 @@ private extension AIChatContextualSheetCoordinator {
         // UIKit silently drops present() if the presenter already has a presentedViewController;
         // bail so isSheetPresented doesn't get stuck true.
         guard presentingVC.presentedViewController == nil else { return }
+        persistentUTIHost?.beginPresentation()
         sheetVC.prepareForPresentation()
         presentingVC.present(sheetVC, animated: true)
         isSheetPresented = true
@@ -823,6 +827,7 @@ private extension AIChatContextualSheetCoordinator {
             ? makePersistentUTIHostIfNeeded(start: sheetContextualInputStart)
             : nil
 
+        persistentUTIHost?.beginPresentation()
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
             aiChatSettings: aiChatSettings,
@@ -925,6 +930,7 @@ private extension AIChatContextualSheetCoordinator {
             self?.openInNewTabLeavingCurrentSurface(url)
         }
         self.persistentUTIHost = host
+        if isSheetPresented { host.beginPresentation() }
         return host
     }
 

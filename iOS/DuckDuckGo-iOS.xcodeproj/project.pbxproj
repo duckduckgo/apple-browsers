@@ -95,7 +95,6 @@
 		3192F4582E6F1E5500FC2A95 /* LaunchSourceManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3192F4572E6F1E5500FC2A95 /* LaunchSourceManagerTests.swift */; };
 		319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319A37162829C8AD0079FBCE /* UITableViewExtension.swift */; };
 		319BE1092D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */; };
-		DA1E70510000000000000002 /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */; };
 		31B0B2BF2D390CF400A702D4 /* QuickActionsSmallWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B0B2BE2D390CF000A702D4 /* QuickActionsSmallWidget.swift */; };
 		31B524572715BB23002225AB /* WebJSAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B524562715BB23002225AB /* WebJSAlert.swift */; };
 		31BB23A42D3A661E00809ABF /* ControlWidgetConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */; };
@@ -1469,11 +1468,11 @@
 		C177D9F62CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C177D9F52CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift */; };
 		C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */; };
 		C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */; };
+		C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */; };
+		C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */; };
 		C18390E12F5099D8001939B9 /* MultiTabAttachmentCandidateFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390E02F5099D8001939B9 /* MultiTabAttachmentCandidateFilterTests.swift */; };
 		C18390E32F5099D8001939B9 /* MultiTabMentionControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390E22F5099D8001939B9 /* MultiTabMentionControllerTests.swift */; };
 		C18390E52F5099D8001939B9 /* MultiTabMentionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390E42F5099D8001939B9 /* MultiTabMentionTokenTests.swift */; };
-		C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */; };
-		C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */; };
 		C185ED672BD43DA100BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */; };
 		C1935A222C89CA9F001AD72D /* AutofillSurveyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A212C89CA9F001AD72D /* AutofillSurveyManagerTests.swift */; };
 		C1935A242C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */; };
@@ -1670,6 +1669,7 @@
 		D6E0C1852B7A2B9400D5E1E9 /* DesktopDownloadPlatformConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0C1842B7A2B9400D5E1E9 /* DesktopDownloadPlatformConstants.swift */; };
 		D6E0C1892B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E0C1882B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift */; };
 		DA19AC9ABF6B4AD98E1887EE /* LegacyPixelStateMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CDC8DDC4354433A6952FF0 /* LegacyPixelStateMigration.swift */; };
+		DA1E70510000000000000002 /* DuckAiTermsOfServiceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */; };
 		DA46CDBDABEE6B9945F597C3 /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 3C12C8760D7AF6C888DAD36A /* AIChatDebugServer */; };
 		DA6A00012026091600000001 /* DaxGreetingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6A00012026091600000002 /* DaxGreetingServiceTests.swift */; };
 		DA6A00012026091600000003 /* DaxGreetingActivityStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6A00012026091600000004 /* DaxGreetingActivityStoreTests.swift */; };
@@ -1862,6 +1862,7 @@
 		FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */; };
 		FC7EF0040000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */; };
 		FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */; };
+		FC7EF0040000000000000102 /* UTIMultiTabPromotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7EF0030000000000000102 /* UTIMultiTabPromotionTests.swift */; };
 		FCFC00031F00000000010001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000010001 /* DDGError */; };
 		FCFC00031F00000000020001 /* DDGError in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000020001 /* DDGError */; };
 		FCFC00031F00000000030001 /* URLPredictor in Frameworks */ = {isa = PBXBuildFile; productRef = FCFC00021F00000000030001 /* URLPredictor */; };
@@ -2104,7 +2105,6 @@
 		3192F4572E6F1E5500FC2A95 /* LaunchSourceManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSourceManagerTests.swift; sourceTree = "<group>"; };
 		319A37162829C8AD0079FBCE /* UITableViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITableViewExtension.swift; sourceTree = "<group>"; };
 		319BE1082D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
-		DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceStoreTests.swift; sourceTree = "<group>"; };
 		31B0B2BE2D390CF000A702D4 /* QuickActionsSmallWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsSmallWidget.swift; sourceTree = "<group>"; };
 		31B524562715BB23002225AB /* WebJSAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebJSAlert.swift; sourceTree = "<group>"; };
 		31BB23A32D3A661A00809ABF /* ControlWidgetConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlWidgetConfigurable.swift; sourceTree = "<group>"; };
@@ -3389,11 +3389,11 @@
 		C180CAFB2D0863E500ADB0FE /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandlerTests.swift; sourceTree = "<group>"; };
 		C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinatorTests.swift; sourceTree = "<group>"; };
+		C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
+		C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputImageEncoderTests.swift; sourceTree = "<group>"; };
 		C18390E02F5099D8001939B9 /* MultiTabAttachmentCandidateFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabAttachmentCandidateFilterTests.swift; sourceTree = "<group>"; };
 		C18390E22F5099D8001939B9 /* MultiTabMentionControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabMentionControllerTests.swift; sourceTree = "<group>"; };
 		C18390E42F5099D8001939B9 /* MultiTabMentionTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabMentionTokenTests.swift; sourceTree = "<group>"; };
-		C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
-		C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputImageEncoderTests.swift; sourceTree = "<group>"; };
 		C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandlerTests.swift; sourceTree = "<group>"; };
 		C18D7C412D08620D00FB3F87 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C18D7C422D08620D00FB3F87 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -3622,6 +3622,7 @@
 		D6E0C1842B7A2B9400D5E1E9 /* DesktopDownloadPlatformConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopDownloadPlatformConstants.swift; sourceTree = "<group>"; };
 		D6E0C1882B7A2E0D00D5E1E9 /* DesktopDownloadViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopDownloadViewModel.swift; sourceTree = "<group>"; };
 		D9978912B1022C989EF9C224 /* IPadOmnibarAttachmentControllerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IPadOmnibarAttachmentControllerTests.swift; sourceTree = "<group>"; };
+		DA1E70510000000000000001 /* DuckAiTermsOfServiceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiTermsOfServiceStoreTests.swift; sourceTree = "<group>"; };
 		DA35D7D938024631AF5D5BE6 /* SitePermissions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SitePermissions; sourceTree = "<group>"; };
 		DA6A00012026091600000002 /* DaxGreetingServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxGreetingServiceTests.swift; sourceTree = "<group>"; };
 		DA6A00012026091600000004 /* DaxGreetingActivityStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxGreetingActivityStoreTests.swift; sourceTree = "<group>"; };
@@ -3839,6 +3840,7 @@
 		FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageLimitsStoreTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiUsageWarningPixelAdapterTests.swift; sourceTree = "<group>"; };
 		FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIFooterCardViewTests.swift; sourceTree = "<group>"; };
+		FC7EF0030000000000000102 /* UTIMultiTabPromotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIMultiTabPromotionTests.swift; sourceTree = "<group>"; };
 		FDEC1A2B30260001000000F2 /* IOSMonthlyFreeTrialDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSMonthlyFreeTrialDeciderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -8206,6 +8208,7 @@
 				FC7EF0030000000000000101 /* UTIFooterCardViewTests.swift */,
 				FC7EF0030000000000000002 /* UTIFooterMessageMapperTests.swift */,
 				FC7EF0030000000000000003 /* UTIFooterControllerTests.swift */,
+				FC7EF0030000000000000102 /* UTIMultiTabPromotionTests.swift */,
 				FC7EF0030000000000000004 /* DuckAiUsageLimitsStoreTests.swift */,
 				FC7EF0030000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift */,
 			);
@@ -10207,6 +10210,7 @@
 				FC7EF0040000000000000101 /* UTIFooterCardViewTests.swift in Sources */,
 				FC7EF0040000000000000002 /* UTIFooterMessageMapperTests.swift in Sources */,
 				FC7EF0040000000000000003 /* UTIFooterControllerTests.swift in Sources */,
+				FC7EF0040000000000000102 /* UTIMultiTabPromotionTests.swift in Sources */,
 				FC7EF0040000000000000005 /* DuckAiUsageWarningPixelAdapterTests.swift in Sources */,
 				FC7EF0040000000000000004 /* DuckAiUsageLimitsStoreTests.swift in Sources */,
 				AABB00010001000100010101 /* UnifiedToggleInputViewTests.swift in Sources */,

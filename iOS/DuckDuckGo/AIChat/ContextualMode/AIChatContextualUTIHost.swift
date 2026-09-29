@@ -135,7 +135,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.onPageContextRemoveRequested = { [weak chipViewModel] in
             chipViewModel?.tapToRemove()
         }
-        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature)
+        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature, hasActiveChat: hasActiveChat)
         coordinator.onTabMentionSuggestionsChanged = { [weak self] in self?.showTabMentionSuggestions($0) }
         coordinator.didPressStopGeneratingButton
             .sink { [weak self] in self?.contextualChatViewController?.cancelPendingTabAttachmentPrompt() }
@@ -437,6 +437,14 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         viewController.willMove(toParent: nil)
         viewController.view.removeFromSuperview()
         viewController.removeFromParent()
+    }
+
+    func beginPresentation() {
+        coordinator.beginContextualInputPresentation()
+    }
+
+    func endPresentation() {
+        coordinator.endContextualInputPresentation()
     }
 
     func activateInput() {

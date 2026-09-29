@@ -343,6 +343,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var footerController: UTIFooterController?
     private let tabProvider: () -> Tab?
     private var attachmentPrivacyNoticeSource: UTIFooterAttachmentPrivacyNoticeSource?
+    private var multiTabPromotionSource: UTIFooterMultiTabPromotionSource?
+    private var contextualChatHasActiveConversation: () -> Bool = { false }
 
     // MARK: - Initialization
 
@@ -564,7 +566,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     footerController?.refresh()
                 },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
-                updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() }
+                updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
+                onTabAttached: { [weak self] in
+                    self?.tabAttachmentFeature?.recordTabAttachment()
+                }
             )
         )
         viewController.attachmentPasteHandler = attachmentPasteEnabled ? attachmentController.pasteHandler : nil
@@ -1033,10 +1038,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 return viewController.handler.isFireTab ? .fireTab(nil) : .normal
             }
         )
+        if host == .contextualChat {
+            multiTabPromotionSource = UTIFooterMultiTabPromotionSource(
+                feature: { [weak self] in self?.tabAttachmentFeature },
+                isEligible: { [weak self] in
+                    guard let self else { return false }
+                    return self.isContextualChatState && self.tabAttachmentSource != nil
+                        && !self.hasSubmittedPrompt && !self.contextualChatHasActiveConversation()
+                }
+            )
+        }
         footerController = UTIFooterController(viewModel: viewModel,
                                               termsOfServiceStore: termsOfServiceStore,
                                               highUsageNotice: viewModel == nil ? nil : makeHighUsageNoticeSource(),
                                               attachmentPrivacyNotice: attachmentPrivacyNoticeSource,
+                                              multiTabPromotion: multiTabPromotionSource,
                                               measurement: makeUsageWarningMeasurement(),
                                               highUsageMeasurement: makeUsageWarningMeasurement(),
                                               createImagePixelFiring: createImagePixelFiring,
@@ -1606,6 +1622,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
         attachmentController.resetPasteConversation()
         isNewChatPending = true
+        multiTabPromotionSource?.startNewChat()
         hasSubmittedPrompt = false
         // The context is a fresh chat now — a leftover `true` would read the settling
         // chatID-less URL as a chat exit and reset a prompt submitted in the meantime.
@@ -1757,7 +1774,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         return count
     }
 
-    func configureTabAttachments(source: MultiTabAttachmentSource?, feature: AIChatContextualAttachMoreTabsFeatureProviding) {
+    func beginContextualInputPresentation() {
+        multiTabPromotionSource?.beginPresentation()
+        footerController?.refreshMultiTabPromotion()
+    }
+
+    func endContextualInputPresentation() {
+        multiTabPromotionSource?.endPresentation()
+        footerController?.refreshMultiTabPromotion()
+    }
+
+    func configureTabAttachments(source: MultiTabAttachmentSource?,
+                                 feature: AIChatContextualAttachMoreTabsFeatureProviding,
+                                 hasActiveChat: @escaping () -> Bool = { false }) {
+        contextualChatHasActiveConversation = hasActiveChat
         tabMentionController?.dismiss()
         tabMentionController = nil
         tabMentionCandidatesCancellable = nil
@@ -2306,13 +2336,16 @@ private extension UnifiedToggleInputCoordinator {
             hasSubmittedPrompt = true
             modelSelector.updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
+            footerController?.refreshMultiTabPromotion()
         } else if !hasExistingChat, lastSyncedHasExistingChat == true, hasSubmittedPrompt {
             // The page left a chat with an ID for a fresh chat without announcing it (e.g. the
             // context-limit banner's Start New Chat). A just-submitted prompt can't hit this:
             // its URL never had a chatID yet, so there is no true → false transition to see.
             hasSubmittedPrompt = false
+            multiTabPromotionSource?.startNewChat()
             modelSelector.updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
+            footerController?.refreshMultiTabPromotion()
         }
     }
 

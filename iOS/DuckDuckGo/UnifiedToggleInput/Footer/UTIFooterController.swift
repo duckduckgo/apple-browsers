@@ -39,6 +39,7 @@ final class UTIFooterController {
     private let viewModel: DuckAiUsageWarningViewModel?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource?
+    private let multiTabPromotion: UTIFooterMultiTabPromotionSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
     private let highUsageMeasurement: DuckAiUsageWarningMeasurement
@@ -64,6 +65,7 @@ final class UTIFooterController {
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource? = nil,
+         multiTabPromotion: UTIFooterMultiTabPromotionSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          highUsageMeasurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
@@ -74,6 +76,7 @@ final class UTIFooterController {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.attachmentPrivacyNotice = attachmentPrivacyNotice
+        self.multiTabPromotion = multiTabPromotion
         self.mapper = mapper
         self.measurement = measurement
         self.highUsageMeasurement = highUsageMeasurement
@@ -85,6 +88,11 @@ final class UTIFooterController {
     func refresh() {
         viewModel?.refresh()
         highUsageNotice?.refresh()
+        applyCurrentState()
+    }
+
+    func refreshMultiTabPromotion() {
+        guard multiTabPromotion?.isPresented == true || applicableIDs.contains(.multiTabPromotion) else { return }
         applyCurrentState()
     }
 
@@ -149,6 +157,8 @@ final class UTIFooterController {
         case .usageWarning:
             measurement.warningDismissed()
             viewModel?.dismiss()
+        case .multiTabPromotion:
+            multiTabPromotion?.dismiss()
         case .highUsage:
             highUsageMeasurement.warningDismissed()
             highUsageNotice?.dismissCurrent()
@@ -160,6 +170,9 @@ final class UTIFooterController {
         let next = Set(ids).intersection(currentMessages.map(\.id))
         let entered = next.subtracting(visibleIDs)
         visibleIDs = next
+        if entered.contains(.multiTabPromotion) {
+            multiTabPromotion?.recordDisplay()
+        }
         if entered.contains(.attachmentPrivacy) {
             _ = attachmentPrivacyNotice?.recordDisplay()
         }
@@ -179,6 +192,7 @@ final class UTIFooterController {
     }
 
     func recordPromptSubmitted() {
+        multiTabPromotion?.recordPromptSubmitted()
         measurement.promptSubmitted()
         highUsageMeasurement.promptSubmitted()
         modelSwitchNotice = nil
@@ -288,6 +302,9 @@ final class UTIFooterController {
             }
         }
         if let notice = highUsageNotice?.notice { items.append(.init(id: .highUsage, message: mapper.message(for: notice))) }
+        if multiTabPromotion?.isPresented == true {
+            items.append(.init(id: .multiTabPromotion, message: mapper.multiTabPromotionMessage()))
+        }
         return items
     }
 
@@ -320,7 +337,7 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     private let displayScope: () -> DisplayScope
     private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
-    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private let displayStore: UTIFooterDisplayStoring
     private var displayedScope: DisplayScope?
 
     private(set) var isPresented = false
@@ -329,7 +346,7 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
          displayScope: @escaping () -> DisplayScope = { .normal },
-         displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
+         displayStore: UTIFooterDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
         self.displayScope = displayScope
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled

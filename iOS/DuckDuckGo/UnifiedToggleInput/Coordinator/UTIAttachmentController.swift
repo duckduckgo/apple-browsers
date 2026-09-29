@@ -73,6 +73,7 @@ final class UTIAttachmentController {
         let onDraftChanged: () -> Void
         let onExpandIfNeeded: () -> Void
         let updateFloatingReturnKey: () -> Void
+        var onTabAttached: () -> Void = {}
     }
 
     let pasteHandler = UnifiedToggleInputPasteHandler()
@@ -478,6 +479,7 @@ final class UTIAttachmentController {
                                                                         title: currentCandidate.title,
                                                                         url: currentCandidate.url,
                                                                         favicon: favicon)))
+                callbacks.onTabAttached()
             }
         } else if candidate.tabId == source.currentTabID {
             guard let remove = environment.pageContextRemoveHandler() else { return false }

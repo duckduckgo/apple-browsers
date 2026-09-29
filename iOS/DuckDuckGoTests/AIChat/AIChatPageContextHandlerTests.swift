@@ -1588,5 +1588,10 @@ private final class AttachedPageScript: PageContextCollecting {
 }
 
 private struct AttachedPageFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
     let state: AIChatContextualAttachMoreTabsState
 }

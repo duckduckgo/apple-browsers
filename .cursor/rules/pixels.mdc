@@ -294,7 +294,7 @@ Each JSON5 file defines a map of `pixel_name` to metadata. Use `TEMPLATE.json5` 
     "feature_action": {
         "description": "Describe when the pixel fires and its purpose",
         "owners": ["github-username"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["first_daily_count", "platform"],
         "parameters": ["appVersion"],
     }
@@ -304,7 +304,7 @@ Each JSON5 file defines a map of `pixel_name` to metadata. Use `TEMPLATE.json5` 
 Key fields:
 - `description`: Clear explanation of the pixel’s purpose and timing.
 - `owners`: GitHub usernames responsible for the pixel.
-- `triggers`: One or more trigger categories used by validation.
+- `triggers`: One or more trigger categories used by validation. Classify by the event that causes the pixel to fire — never default to `["other"]`; see the decision procedure in `pixel-definitions.mdc`.
 - `suffixes`: Either shared suffix keys from `suffixes_dictionary.json5` or inline suffix definitions.
 - `parameters`: Either shared parameter keys from `params_dictionary.json5` or inline parameter definitions.
 - `expires` (optional): Date for temporary pixels; omit for permanent pixels.

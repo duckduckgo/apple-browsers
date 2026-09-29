@@ -25,7 +25,7 @@ Each `.json5` file is a JSON5 object where keys are pixel names and values descr
     "pixel_name_here": {
         "description": "When and why this pixel fires",
         "owners": ["githubUsername"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"], // see "Trigger Values" below — never default to "other"
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain"],
         // Only for temporary pixels — omit for permanent ones
@@ -52,9 +52,56 @@ Each `.json5` file is a JSON5 object where keys are pixel names and values descr
 
 ### Trigger Values
 
-Valid trigger values: `"other"`, `"scheduled"`, `"startup"`, `"page_load"`, `"new_tab"`, `"exception"`, `"user_submitted"`, `"search_ddg"`.
+Valid trigger values: `"user_interaction"`, `"user_submitted"`, `"impression"`, `"feature_lifecycle"`, `"scheduled"`, `"web_detection"`, `"exception"`, `"startup"`, `"page_load"`, `"new_tab"`, `"search_ddg"`, `"other"`.
 
-Most pixels use `"other"`. Use `"scheduled"` for daily/periodic pixels, `"startup"` for app-launch pixels, and `"page_load"` for navigation-related pixels.
+Never default to `"other"` — classify with this procedure (full definitions and worked examples in the [trigger classification guide](https://github.com/duckduckgo/pixel-schema/blob/main/docs/trigger-classification.md)):
+
+```
+Classify by the EVENT THAT CAUSES THE PIXEL TO FIRE — never by dedupe cadence
+("daily"/"unique" suffixes) or the delivery mechanism.
+
+1. Deliberate user action (tap, click, toggle, menu selection, swipe, gesture,
+   prompt/query submission)?  → user_interaction
+   • A surface shown 1:1 because of a gesture (menu on tap, dialog behind a
+     button, screen entered from an explicit flow) is user_interaction.
+   • user_submitted ONLY for consent-scoped submission of the user's own data
+     (breakage report, feedback). The opener button is user_interaction.
+2. Surface displayed WITHOUT the user asking? → impression
+   • Litmus: display code has an eligibility gate (feature flag, subscription
+     state, view-count threshold, cooldown) → impression. Only gate is "user
+     navigated here" → user_interaction.
+3. Injected scripts detected page content (captcha, adwall, CMP, ads)?
+   → web_detection
+4. Automatic feature operation runs / completes / changes state (migration,
+   sync cycle, job engine, token refresh, update detection, state observer)?
+   → feature_lifecycle
+   • Async completion of a user-initiated flow that can outlive the UI or be
+     driven by a non-user party (billing observer, remote sync peer, retrying
+     backend call) → feature_lifecycle. Synchronous completion inside the
+     user's action → user_interaction.
+5. A timer or scheduled/delayed job literally fires it (rollup, sampler,
+   watchdog, absence-of-event check)? → scheduled
+   • If the timer merely DETECTS something, classify by what was detected:
+     anomaly → exception; a user toggle noticed by a poll → user_interaction.
+6. Error/crash → exception. Launch or foreground → startup. Page loaded →
+   page_load. New tab → new_tab. DDG search → search_ddg.
+7. One pixel name covering several events (e.g. an event=shown|clicked param)?
+   → list every applicable trigger; triggers is an array.
+
+Store-and-forward: when counters are recorded at event time and transmitted
+later by a worker, classify by the RECORDED event, never the flusher.
+
+Use "other" only when nothing above fits, and say why in the description.
+```
+
+Apple-specific worked examples:
+
+- `m_mac_aichat_addressbar_mention_picker_shown` — picker shown 1:1 by typing "@" → `user_interaction` (step 1).
+- `m_mac_privacy-pro_toolbar_button_shown` — upsell state machine decides to show → `impression`; its sibling `*_popover_shown` pixels (shown on the user's click) → `user_interaction` (step 2).
+- `webTelemetry_captcha_*` (immediate EventHub pixels) — injected-script content detection → `web_detection`; the `*_day`/`*_week` rollups of the same signals are fired by the period timer → `scheduled` (steps 3, 5).
+- `m_ios_dbp_optout_stage_*` — PIR job-engine stage events → `feature_lifecycle` (step 4).
+- `m_mac_settings_auto-clear_on` — daily snapshot on `applicationDidBecomeActive` → `startup` (step 6).
+- `m_ios_onboarding_*` pixels multiplexing shown/clicked in a parameter → `["impression", "user_interaction"]` (step 7).
 
 ## Determining Parameters from Swift Code
 
@@ -298,7 +345,7 @@ npm run pixel-lint.fix
 
 1. Determine the pixel name and parameters from the iOS/macOS codebase
 2. Find or create the appropriate `.json5` file in `{platform}/PixelDefinitions/pixels/definitions/`
-3. Add your pixel entry with `description`, `owners`, `triggers`
+3. Add your pixel entry with `description`, `owners`, `triggers` — choose triggers with the decision procedure in "Trigger Values" above; never default to `["other"]`
 4. Add `suffixes` and `parameters` — reuse dictionary entries wherever possible
 5. Check whether the pixel should be temporary, and if so then add `"expires": "YYYY-MM-DD"`
 6. Run `npm run validate-pixel-defs` from the platform directory

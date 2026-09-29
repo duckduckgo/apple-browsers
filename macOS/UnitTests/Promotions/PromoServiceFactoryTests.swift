@@ -146,6 +146,18 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testWhenVPNUpsellBecameEligibleNotificationPostedThenPromoTriggerFires() {
+        let expectation = expectation(description: "trigger fired")
+        let cancellable = PromoTrigger.triggerPublisher
+            .filter { $0 == .vpnUpsellBecameEligible }
+            .sink { _ in expectation.fulfill() }
+
+        NotificationCenter.default.post(name: .vpnUpsellBecameEligible, object: nil)
+
+        waitForExpectations(timeout: 1)
+        cancellable.cancel()
+    }
+
 }
 
 extension PromoServiceFactoryTests {

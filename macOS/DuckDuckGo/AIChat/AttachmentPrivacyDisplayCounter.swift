@@ -200,11 +200,11 @@ final class AttachmentPrivacyDisplayCounter {
     }
 }
 
-// MARK: - Composition gate
+// MARK: - Display gate
 
-/// Once per prompt draft, per tab. Swapping the attachment does not end a composition; only a
-/// submit does.
-final class AttachmentPrivacyCompositionGate {
+/// One display per continuous attachment session, per tab. Emptying the attachments ends it, so
+/// re-attaching spends another — matching iOS.
+final class AttachmentPrivacyDisplayGate {
 
     private static let tablessKey = "no-tab"
 
@@ -216,10 +216,12 @@ final class AttachmentPrivacyCompositionGate {
     }
 
     func shouldShow(hasStagedAttachment: Bool, tabID: String?) -> Bool {
-        // The grant is kept: re-attaching must not spend another display.
-        guard hasStagedAttachment else { return false }
-
         let key = tabID ?? Self.tablessKey
+        guard hasStagedAttachment else {
+            grants[key] = nil
+            return false
+        }
+
         if let granted = grants[key] {
             return granted
         }
@@ -228,7 +230,7 @@ final class AttachmentPrivacyCompositionGate {
         return granted
     }
 
-    func compositionEnded(tabID: String?) {
+    func displayEnded(tabID: String?) {
         grants[tabID ?? Self.tablessKey] = nil
     }
 }

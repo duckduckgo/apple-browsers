@@ -198,15 +198,15 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
     }
 }
 
-final class AttachmentPrivacyCompositionGateTests: XCTestCase {
+final class AttachmentPrivacyDisplayGateTests: XCTestCase {
 
     private var store: InMemoryAttachmentPrivacyDisplayCountStore!
-    private var gate: AttachmentPrivacyCompositionGate!
+    private var gate: AttachmentPrivacyDisplayGate!
 
     override func setUp() {
         super.setUp()
         store = InMemoryAttachmentPrivacyDisplayCountStore()
-        gate = AttachmentPrivacyCompositionGate(
+        gate = AttachmentPrivacyDisplayGate(
             counter: AttachmentPrivacyDisplayCounter(
                 store: store,
                 webKeySource: nil,
@@ -233,7 +233,7 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    func testResolvingRepeatedlyInOneCompositionSpendsOne() {
+    func testResolvingRepeatedlyWhileStagedSpendsOne() {
         for _ in 0..<5 {
             XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         }
@@ -241,24 +241,24 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    /// Reported as feeling broken: changing the file mid-flow must not cost a display.
-    func testRemovingAndReattachingKeepsTheSameDisplay() {
+    /// Emptying the attachments ends the display, so the next one is a new display — as on iOS.
+    func testRemovingAndReattachingSpendsAnotherDisplay() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
-
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertEqual(store.count, 1)
-    }
-
-    func testANewPromptAfterSubmittingSpendsAnother() {
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        gate.compositionEnded(tabID: "A")
 
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         XCTAssertEqual(store.count, 2)
     }
 
-    func testDifferentTabsAreDifferentPrompts() {
+    func testAttachingAgainAfterSubmittingSpendsAnother() {
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        gate.displayEnded(tabID: "A")
+
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 2)
+    }
+
+    func testDifferentTabsAreDifferentDisplays() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
 
@@ -273,17 +273,17 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, 2)
     }
 
-    func testSubmittingInOneTabLeavesAnotherTabsDraftAlone() {
+    func testSubmittingInOneTabLeavesAnotherTabsDisplayAlone() {
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
 
-        gate.compositionEnded(tabID: "A")
+        gate.displayEnded(tabID: "A")
 
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
         XCTAssertEqual(store.count, 2)
     }
 
-    func testASurfaceWithoutATabIsOneComposition() {
+    func testASurfaceWithoutATabIsOneDisplay() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
 
@@ -299,7 +299,7 @@ final class AttachmentPrivacyCompositionGateTests: XCTestCase {
         XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
     }
 
-    func testADeniedCompositionIsRememberedToo() {
+    func testADeniedDisplayIsRememberedWhileStaged() {
         for tab in ["A", "B", "C"] {
             _ = gate.shouldShow(hasStagedAttachment: true, tabID: tab)
         }

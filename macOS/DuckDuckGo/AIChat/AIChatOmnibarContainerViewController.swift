@@ -211,7 +211,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    private lazy var attachmentPrivacyGate = AttachmentPrivacyCompositionGate(
+    private lazy var attachmentPrivacyGate = AttachmentPrivacyDisplayGate(
         counter: AttachmentPrivacyDisplayCounter(
             store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
             webKeySource: duckAiNativeStorageHandler
@@ -1205,7 +1205,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             self?.openAttachmentPrivacyLearnMore()
         }
         omnibarController.onPromptSubmitted = { [weak self] in
-            self?.resetAttachmentPrivacyComposition()
+            self?.endAttachmentPrivacyDisplay()
         }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
@@ -1288,8 +1288,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                                          tabID: omnibarController.currentTabUUID)
     }
 
-    private func resetAttachmentPrivacyComposition() {
-        attachmentPrivacyGate.compositionEnded(tabID: omnibarController.currentTabUUID)
+    /// Emptying the attachments already ends the display; this covers the submit that clears them.
+    private func endAttachmentPrivacyDisplay() {
+        attachmentPrivacyGate.displayEnded(tabID: omnibarController.currentTabUUID)
     }
 
     /// A new tab, so the staged attachment and the draft survive.

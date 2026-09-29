@@ -54,7 +54,6 @@ final class StatisticsLoader {
     static let experimentsExcludedFromDuckAISearchMetric: Set<SubfeatureID> = [
         MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
         AutoconsentSubfeature.heuristicAction.rawValue,
-        AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue,
         PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment.rawValue
     ]
 
@@ -93,8 +92,7 @@ final class StatisticsLoader {
     static func fireLegacySearchRetentionExperimentPixels() {
         let inProgressExperiments = [
             MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
-            AutoconsentSubfeature.heuristicAction.rawValue,
-            AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
+            AutoconsentSubfeature.heuristicAction.rawValue
         ]
         for subfeatureID in inProgressExperiments {
             for threshold in [4, 6, 11, 21, 30] {

@@ -42,6 +42,7 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let featureFlagProvider: AIChatFeatureFlagProviding?
     private let jsDataCleaner: AIChatJSDataCleaning
+    private let indexedDBBlobCleaner: AIChatIndexedDBBlobCleaning
 
     /// Creates a history cleaner that clears Duck.ai data from both native storage and the JS layer.
     ///
@@ -49,19 +50,25 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     /// with migration done, chats and files are deleted from native storage. The JS clearing path
     /// (localStorage + IndexedDB) always runs, since JS-side data is kept in sync regardless of whether
     /// native storage is in use — without it, fire button cleanup leaves traces behind.
+    ///
+    /// A full clear additionally removes the IndexedDB blob files WebKit leaves on disk after the JS
+    /// `clear()`; see `AIChatIndexedDBBlobCleaner`.
     public init(featureFlagger: FeatureFlagger,
                 privacyConfig: PrivacyConfigurationManaging,
                 websiteDataStore: WKWebsiteDataStore? = nil,
                 nativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                 featureFlagProvider: AIChatFeatureFlagProviding? = nil,
-                jsDataCleaner: AIChatJSDataCleaning? = nil) {
+                jsDataCleaner: AIChatJSDataCleaning? = nil,
+                indexedDBBlobCleaner: AIChatIndexedDBBlobCleaning? = nil) {
+        let websiteDataStore = websiteDataStore ?? .default()
         self.nativeStorageHandler = nativeStorageHandler
         self.featureFlagProvider = featureFlagProvider
         self.jsDataCleaner = jsDataCleaner ?? WebViewAIChatJSDataCleaner(
             featureFlagger: featureFlagger,
             privacyConfig: privacyConfig,
-            websiteDataStore: websiteDataStore ?? .default()
+            websiteDataStore: websiteDataStore
         )
+        self.indexedDBBlobCleaner = indexedDBBlobCleaner ?? AIChatIndexedDBBlobCleaner(websiteDataStore: websiteDataStore)
     }
 
     /// Clears all Duck.ai chat history (chats and files, not settings).
@@ -105,9 +112,20 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
         clearLocalStorageIfAvailable(chatID: chatID)
     }
 
+    /// Clears the JS layer and, for a full clear (`nil`), the IndexedDB blob files the JS `clear()` leaves behind.
+    /// Blob files are left alone after a single-chat delete because the remaining chats' images are still live.
     @MainActor
     public func clearJSData(chatID: String?) async -> Result<Void, Error> {
-        await jsDataCleaner.clearJSData(chatID: chatID)
+        let jsResult = await jsDataCleaner.clearJSData(chatID: chatID)
+        guard chatID == nil, case .success = jsResult else {
+            return jsResult
+        }
+
+        let blobResult = await indexedDBBlobCleaner.removeAllBlobFiles()
+        if case .failure(let error) = blobResult {
+            Logger.aiChat.error("HistoryCleaner: Failed to remove IndexedDB blob files: \(error.localizedDescription)")
+        }
+        return blobResult
     }
 
     private func clearLocalStorageIfAvailable(chatID: String?) -> Result<Void, Error>? {

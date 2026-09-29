@@ -691,6 +691,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             format: "identifier IN %@", ["alert.forget-data.confirm", "Fire.Confirmation.Button.Delete"])).firstMatch
         tap(confirm)
         XCTAssertTrue(confirm.waitForNonExistence(timeout: timeout))
+        // Fire keeps a touch-blocking overlay until WebKit finishes clearing website data.
+        XCTAssertTrue(element("Browser.Toolbar.Button.Menu").waitForHittable(timeout: 60))
         openPermissionSettings()
         XCTAssertTrue(element("Settings.SitePermissions.Site.\(fireproofHost)").exists)
         XCTAssertFalse(element("Settings.SitePermissions.Site.\(clearedHost)").exists)
@@ -808,13 +810,35 @@ final class SitePermissionsXCUITests: XCTestCase {
     private func openVoiceSearchSettings() {
         openSettings()
         let accessibility = app.buttons.matching(identifier: "Accessibility").firstMatch
-        // Use overlapping viewports: a full-screen swipe can jump past this row near the top of Main Settings.
-        for _ in 0..<12 {
-            if accessibility.exists && accessibility.isHittable && app.frame.contains(accessibility.frame) { break }
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
-                .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+        var rowCenter: CGVector?
+        var canScroll = false
+        // iOS can report invalid activation points during Settings updates. Wait for valid frames,
+        // then tap the cached row center without asking the button for its activation point.
+        let visibleRow = NSPredicate { [self] _, _ in
+            let appFrame = app.frame
+            canScroll = !appFrame.isEmpty && [appFrame.minX, appFrame.minY, appFrame.maxX, appFrame.maxY].allSatisfy(\.isFinite)
+            guard canScroll, accessibility.exists else { return false }
+            let rowFrame = accessibility.frame
+            guard !rowFrame.isEmpty,
+                  [rowFrame.minX, rowFrame.minY, rowFrame.maxX, rowFrame.maxY].allSatisfy(\.isFinite),
+                  appFrame.contains(rowFrame) else { return false }
+            rowCenter = CGVector(dx: rowFrame.midX - appFrame.minX, dy: rowFrame.midY - appFrame.minY)
+            return true
         }
-        tap(accessibility)
+        // Use overlapping viewports: a full-screen swipe can jump past this row near the top of Main Settings.
+        for attempt in 0...12 {
+            let expectation = XCTNSPredicateExpectation(predicate: visibleRow, object: nil)
+            if XCTWaiter.wait(for: [expectation], timeout: 2) == .completed { break }
+            if canScroll && attempt < 12 {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                    .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+            }
+        }
+        guard let rowCenter else {
+            XCTFail("Accessibility row did not become fully visible with valid geometry")
+            return
+        }
+        app.coordinate(withNormalizedOffset: .zero).withOffset(rowCenter).tap()
         XCTAssertTrue(app.navigationBars["Accessibility"].waitForExistence(timeout: timeout))
         XCTAssertTrue(app.staticTexts["Private Voice Search"].exists)
         XCTAssertTrue(voiceSearchSwitch.waitForHittable(timeout: timeout))

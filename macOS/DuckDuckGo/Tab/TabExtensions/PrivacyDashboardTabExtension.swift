@@ -39,6 +39,9 @@ final class PrivacyDashboardTabExtension {
     private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
     private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
     private let webExtensionNavigationGate: WebExtensionNavigationGate
+
+    var shouldDisableLongDecisionMakingChecks: Bool { true }
+
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?

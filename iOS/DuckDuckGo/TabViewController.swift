@@ -3325,19 +3325,16 @@ extension TabViewController: WKNavigationDelegate {
             decisionHandler(policy)
         }
 
-        // Gate only the first main-frame web navigation. The post-gate helper is also used by the
+        // Wait on the shared startup gate. The post-gate helper is also used by the
         // Content Blocking retry below, so that retry does not wait on extension startup twice.
         if #available(iOS 18.4, *),
-           navigationAction.isTargetingMainFrame,
-           let scheme = navigationAction.request.url?.scheme?.lowercased(),
-           scheme == "http" || scheme == "https",
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
             Task { @MainActor [weak self, webView] in
                 guard let self else {
                     wrappedHandler(.cancel)
                     return
                 }
-                await webExtensionNavigationGate.waitIfNeeded(isMainFrame: true,
+                await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isTargetingMainFrame,
                                                               url: navigationAction.request.url,
                                                               initialLoadWaiter: initialLoadWaiter)
                 decidePolicyAfterWebExtensionInitialLoad(webView,

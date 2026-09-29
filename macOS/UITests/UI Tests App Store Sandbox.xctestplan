@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "3B3274F0-3353-49A0-B607-6F17F519C2E2",
+      "id" : "6E4E0014-A56B-44EE-846C-B6234029EB25",
       "name" : "Test Scheme Action",
       "options" : {
 
@@ -29,20 +29,14 @@
     ],
     "targetForVariableExpansion" : {
       "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
-      "identifier" : "AA585D7D248FD31100E9A3E2",
-      "name" : "DuckDuckGo Privacy Browser"
+      "identifier" : "3706FA6A293F65D500E42796",
+      "name" : "DuckDuckGo Privacy Browser App Store"
     }
   },
   "testTargets" : [
     {
-      "skippedTests" : [
-        "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
-        "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
-        "AppStoreSandboxUITests",
-        "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
-        "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
-        "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
-        "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()"
+      "selectedTests" : [
+        "AppStoreSandboxUITests"
       ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",

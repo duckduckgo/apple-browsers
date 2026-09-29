@@ -34,17 +34,19 @@ struct RedesignedFavoritesView: View {
 
     private var isExpanded: Bool { model.expansionState.isExpanded }
 
-    private var hasOverflow: Bool { model.allFavorites.count > Metrics.collapsedCount }
+    private var collapsedCapacity: Int { columns.count * Metrics.collapsedRowCount }
+
+    private var hasOverflow: Bool { model.allFavorites.count > collapsedCapacity }
 
     private var collapsedFavoriteIDs: Set<Favorite.ID> {
-        Set(model.allFavorites.prefix(Metrics.collapsedCount - 1).map(\.id))
+        Set(model.allFavorites.prefix(collapsedCapacity - 1).map(\.id))
     }
 
     private var collapsedHeight: CGFloat {
-        let rowCount = Metrics.collapsedCount / Metrics.columnCount
+        let rowCount = Metrics.collapsedRowCount
         let estimatedRowHeight = Metrics.tileSize + Metrics.iconToTitleSpacing + UIFont.daxCaption1().lineHeight * 2
         return (0..<rowCount).reduce(CGFloat(0)) { height, row in
-            let favorites = model.allFavorites.dropFirst(row * Metrics.columnCount).prefix(Metrics.columnCount)
+            let favorites = model.allFavorites.dropFirst(row * columns.count).prefix(columns.count)
             let itemHeight = favorites.compactMap { collapsedItemHeights[$0.id] }.max() ?? estimatedRowHeight
             let rowHeight = row == rowCount - 1 ? max(itemHeight, expandButtonHeight) : itemHeight
             return height + rowHeight
@@ -139,9 +141,9 @@ struct RedesignedFavoritesView: View {
     private var favorites: some View {
         let allFavorites = model.allFavorites
         let collapsedIDs = collapsedFavoriteIDs
-        let measuredIDs = Set(allFavorites.prefix(Metrics.collapsedCount).map(\.id))
+        let measuredIDs = Set(allFavorites.prefix(collapsedCapacity).map(\.id))
         let overflow = hasOverflow
-        let expandButtonID = overflow ? allFavorites[Metrics.collapsedCount - 1].id : nil
+        let expandButtonID = overflow ? allFavorites[collapsedCapacity - 1].id : nil
         return ReorderableForEach(allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
                           onDragActivityChanged: { isDraggingFavorite = $0 },
                           itemSizeCacheKey: { AnyHashable($0) },
@@ -298,7 +300,7 @@ private enum Metrics {
     static let collapseIconSize: CGFloat = 12
     static let collapseIconBackgroundSize: CGFloat = 20
     static let columnCount = 5
-    static let collapsedCount = 10
+    static let collapsedRowCount = 1
     static let columnSpacing: CGFloat = 8
     static let rowSpacing: CGFloat = 20
     static let iconToTitleSpacing: CGFloat = 6

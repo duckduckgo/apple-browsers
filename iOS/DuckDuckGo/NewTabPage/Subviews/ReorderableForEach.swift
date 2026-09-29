@@ -34,6 +34,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let onMove: (_ from: IndexSet, _ to: Int) -> Void
     private let onMoveFinished: () -> Void
     private let onDragActivityChanged: ((Bool) -> Void)?
+    private var isItemReorderingEnabled: (Data) -> Bool = { _ in true }
 
     @State private var movedItem: Data?
     @State private var didMove = false
@@ -57,6 +58,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
          id: KeyPath<Data, ID>,
          isReorderingEnabled: Bool = true,
          onDragActivityChanged: ((Bool) -> Void)? = nil,
+         isItemReorderingEnabled: @escaping (Data) -> Bool = { _ in true },
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void,
@@ -65,6 +67,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.id = id
         self.isReorderingEnabled = isReorderingEnabled
         self.onDragActivityChanged = onDragActivityChanged
+        self.isItemReorderingEnabled = isItemReorderingEnabled
         self.content = content
         self.preview = preview
         self.onMove = onMove
@@ -84,6 +87,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         case .movable(let metadata) where isReorderingEnabled:
             if let onDragActivityChanged, let preview {
                 ReorderDragSource(content: content(item), preview: preview(item), itemProvider: metadata.itemProvider,
+                                  isEnabled: isItemReorderingEnabled(item),
                                   onBegin: { sessionID in
                     activeDragSessionID = sessionID
                     movedItem = item
@@ -134,6 +138,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private func dropDelegate(for item: Data) -> ReorderDropDelegate<Data> {
         ReorderDropDelegate(data: data,
                             item: item,
+                            isEnabled: isItemReorderingEnabled(item),
                             onMove: onMove,
                             onMoveFinished: onMoveFinished,
                             movedItem: $movedItem,
@@ -147,6 +152,7 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
     let content: Content
     let preview: Preview
     let itemProvider: NSItemProvider
+    let isEnabled: Bool
     let onBegin: (ObjectIdentifier) -> Void
     let onEnd: (ObjectIdentifier) -> Void
 
@@ -158,7 +164,7 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
         let controller = UIHostingController(rootView: content)
         controller.view.backgroundColor = .clear
         let interaction = UIDragInteraction(delegate: context.coordinator)
-        interaction.isEnabled = true
+        interaction.isEnabled = isEnabled
         controller.view.addInteraction(interaction)
         return controller
     }
@@ -166,6 +172,7 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
     func updateUIViewController(_ controller: UIHostingController<Content>, context: Context) {
         context.coordinator.source = self
         controller.rootView = content
+        controller.view.interactions.compactMap { $0 as? UIDragInteraction }.forEach { $0.isEnabled = isEnabled }
         controller.view.invalidateIntrinsicContentSize()
     }
 
@@ -224,6 +231,7 @@ private struct ReorderDropDelegate<Data: Reorderable>: DropDelegate {
 
     let data: [Data]
     let item: Data
+    let isEnabled: Bool
     let onMove: (_ from: IndexSet, _ to: Int) -> Void
     let onMoveFinished: () -> Void
 
@@ -231,7 +239,7 @@ private struct ReorderDropDelegate<Data: Reorderable>: DropDelegate {
     @Binding var didMove: Bool
 
     func dropEntered(info: DropInfo) {
-        guard item != movedItem,
+        guard isEnabled, item != movedItem,
               let current = movedItem,
               let from = data.firstIndex(of: current),
               let to = data.firstIndex(of: item)
@@ -246,10 +254,11 @@ private struct ReorderDropDelegate<Data: Reorderable>: DropDelegate {
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
+        DropProposal(operation: isEnabled ? .move : .cancel)
     }
 
     func performDrop(info: DropInfo) -> Bool {
+        guard isEnabled else { return false }
         movedItem = nil
 
         if didMove {

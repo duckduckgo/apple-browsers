@@ -402,10 +402,9 @@ final class DuckPlayerNativeUIPresenter {
         hostingController.rootView = updatedContainer
     }
 
-    /// Resets the webView constraint to its default value
     @MainActor
     private func resetWebViewConstraint() {
-        guard hostView != nil else { return }
+        guard hostView != nil, !floatingUIManager.isFloatingUIEnabled else { return }
         constraintUpdatePublisher.send(.reset)
     }
 

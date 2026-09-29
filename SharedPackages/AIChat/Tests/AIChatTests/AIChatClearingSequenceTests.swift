@@ -35,7 +35,7 @@ final class AIChatClearingSequenceTests: XCTestCase {
     private var currentOrigin: String?
     private var failingLoads: Set<String> = []
     private var failingClears: Set<String> = []
-    private var failuresMayReplyLate = true
+    private var failuresRequireReload = true
 
     override func setUp() {
         super.setUp()
@@ -43,7 +43,7 @@ final class AIChatClearingSequenceTests: XCTestCase {
         currentOrigin = nil
         failingLoads = []
         failingClears = []
-        failuresMayReplyLate = true
+        failuresRequireReload = true
     }
 
     private func makeSequence() -> AIChatClearingSequence {
@@ -60,7 +60,7 @@ final class AIChatClearingSequenceTests: XCTestCase {
                 steps.append("clear \(step)")
                 return failingClears.contains(step) ? .failure(TestError.clearFailed(step)) : .success(())
             },
-            mayReplyLate: { [unowned self] _ in failuresMayReplyLate }
+            requiresReload: { [unowned self] _ in failuresRequireReload }
         )
     }
 
@@ -92,7 +92,7 @@ final class AIChatClearingSequenceTests: XCTestCase {
         XCTAssertThrowsError(try result.get()) { XCTAssertEqual($0 as? TestError, .clearFailed("first.example all")) }
     }
 
-    func testWhenChatFailsAndMayReplyLateThenOriginIsReloadedAndRemainingChatsAreStillCleared() async {
+    func testWhenChatFailureRequiresReloadThenOriginIsReloadedAndRemainingChatsAreStillCleared() async {
         failingClears = ["first.example chat1"]
 
         let result = await makeSequence().run(chatIDs: ["chat1", "chat2"])
@@ -103,9 +103,9 @@ final class AIChatClearingSequenceTests: XCTestCase {
         XCTAssertThrowsError(try result.get()) { XCTAssertEqual($0 as? TestError, .clearFailed("first.example chat1")) }
     }
 
-    func testWhenChatFailsAndCannotReplyLateThenRemainingChatsAreClearedWithoutReload() async {
+    func testWhenChatFailureDoesNotRequireReloadThenRemainingChatsAreClearedWithoutReload() async {
         failingClears = ["first.example chat1"]
-        failuresMayReplyLate = false
+        failuresRequireReload = false
 
         _ = await makeSequence().run(chatIDs: ["chat1", "chat2"])
 

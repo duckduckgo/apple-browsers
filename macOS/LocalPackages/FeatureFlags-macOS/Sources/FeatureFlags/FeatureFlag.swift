@@ -322,10 +322,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// A/B experiment cohorts for the Cookie Pop-up Protection opt-in dialog
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216573422000546?focus=true
-    case cookiePopupOptInDialogExperiment
-
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
@@ -588,11 +584,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
         case control
@@ -820,8 +811,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .cookiePopupOptInDialogExperiment:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialogExperiment), cohortType: CookiePopupOptInDialogCohort.self, category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
             Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:

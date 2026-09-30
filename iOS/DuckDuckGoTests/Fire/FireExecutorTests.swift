@@ -18,6 +18,7 @@
 //
 
 import XCTest
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 @testable import Core
 import AIChat
@@ -394,6 +395,40 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(cleanedChatsWhileHeld, true)
         XCTAssertEqual(backgroundTask.calls, ["begin", "end"])
+    }
+
+    func testWhenAppIsBackgroundedDuringBurnThenBackgroundedPixelFiresOnce() {
+        let pixelFiring = PixelKitMock()
+        let notificationCenter = NotificationCenter()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: notificationCenter, isInBackground: { false })
+
+        backgroundTask.begin()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        backgroundTask.end()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStartsInTheBackgroundThenBackgroundedPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { true })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStaysInTheForegroundThenNoBackgroundPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { false })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {

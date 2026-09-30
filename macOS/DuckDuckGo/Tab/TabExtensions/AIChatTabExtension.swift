@@ -46,7 +46,7 @@ final class AIChatTabExtension {
     private let featureFlagger: FeatureFlagger
     private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
     private let fireModeStorageProvider: () -> DuckAiFireModeStorage
-    private let attachmentPrivacyCounterProvider: () -> AttachmentPrivacyDisplayCounter?
+    private let attachmentPrivacyDisclosureProvider: () -> AttachmentPrivacyDisclosure
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -74,9 +74,9 @@ final class AIChatTabExtension {
             .resolve(isFireMode: burnerMode.isBurner,
                      handler: burnerDuckAiStorageRegistry?.handler(for: burnerMode))
         }
-        self.attachmentPrivacyCounterProvider = {
-            AttachmentPrivacyDisplayCounter(
-                store: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
+        self.attachmentPrivacyDisclosureProvider = {
+            AttachmentPrivacyDisclosure(
+                store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
                 webKeySource: duckAiNativeStorageHandler,
                 featureFlagger: featureFlagger
             )
@@ -104,8 +104,8 @@ final class AIChatTabExtension {
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
                 }
-                if let counterProvider = self?.attachmentPrivacyCounterProvider {
-                    self?.aiChatUserScript?.handler.attachmentPrivacyCounterProvider = counterProvider
+                if let disclosureProvider = self?.attachmentPrivacyDisclosureProvider {
+                    self?.aiChatUserScript?.handler.attachmentPrivacyDisclosureProvider = disclosureProvider
                 }
                 if let provider = self?.fireModeStorageProvider {
                     scripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = provider

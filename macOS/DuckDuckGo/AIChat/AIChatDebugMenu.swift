@@ -31,16 +31,16 @@ final class AIChatDebugMenu: NSMenu {
 
     private var storageDebugServer: DuckAiStorageDebugServer?
     @MainActor
-    private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
-        AttachmentPrivacyDisplayCounter(
-            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure {
+        AttachmentPrivacyDisclosure(
+            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
             webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler
         )
     }
 
     private lazy var attachmentPrivacyMenuItem = NSMenuItem(
         title: "",
-        action: #selector(resetAttachmentPrivacyDisplayCount),
+        action: #selector(resetAttachmentPrivacyDisclosure),
         target: self
     )
 
@@ -160,17 +160,15 @@ final class AIChatDebugMenu: NSMenu {
     // MARK: - Attachment privacy disclosure
 
     @MainActor
-    @objc private func resetAttachmentPrivacyDisplayCount() {
-        attachmentPrivacyCounter.reset()
+    @objc private func resetAttachmentPrivacyDisclosure() {
+        attachmentPrivacyDisclosure.reset()
         updateAttachmentPrivacyMenuItemTitle()
     }
 
     @MainActor
     private func updateAttachmentPrivacyMenuItemTitle() {
-        // Not `canDisplay`: that is false with the flag off, which isn't the same as shown.
-        let shown = attachmentPrivacyCounter.displayCount > 0
         attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
-            + (shown ? "(shown)" : "(not shown)")
+            + (attachmentPrivacyDisclosure.hasShown ? "(shown)" : "(not shown)")
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {

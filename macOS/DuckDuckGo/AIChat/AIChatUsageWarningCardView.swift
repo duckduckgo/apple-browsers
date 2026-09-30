@@ -169,8 +169,6 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
-    /// A text view, not the label: AppKit hit-tests a `.link` attribute, which a label would need
-    /// measured by hand.
     private lazy var disclosureTextView: NSTextView = {
         let view = NSTextView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -510,14 +508,12 @@ final class AIChatUsageWarningCardView: NSView {
                                                attributes: bodyAttributes)
 
         var linkAttributes = bodyAttributes
-        // Only the delegate's signal; the host decides how to open it.
         linkAttributes[.link] = URL.aiChatPrivacy
         result.append(NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore,
                                          attributes: linkAttributes))
         return result
     }
 
-    /// A text view lays out from its top edge, so padding the container is what centres it.
     override func layout() {
         super.layout()
         centreDisclosureText()
@@ -531,7 +527,7 @@ final class AIChatUsageWarningCardView: NSView {
         layoutManager.ensureLayout(for: container)
         let textHeight = layoutManager.usedRect(for: container).height
         let inset = max(0, (disclosureTextView.bounds.height - textHeight) / 2)
-        // Setting the inset triggers another pass.
+        // Setting the inset lays out again, so stop once it is centred.
         guard abs(disclosureTextView.textContainerInset.height - inset) > Constants.disclosureInsetTolerance else { return }
 
         disclosureTextView.textContainerInset = NSSize(width: 0, height: inset)

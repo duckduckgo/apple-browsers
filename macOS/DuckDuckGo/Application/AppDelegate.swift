@@ -240,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
-    let attachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplayCountStoring = AttachmentPrivacyDisplayCountStore()
+    let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring = AttachmentPrivacyDisclosureStore()
 
     private var updateProgressCancellable: AnyCancellable?
 

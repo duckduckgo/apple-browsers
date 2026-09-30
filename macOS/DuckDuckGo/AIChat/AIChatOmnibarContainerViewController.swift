@@ -211,9 +211,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    private lazy var attachmentPrivacyGate = AttachmentPrivacyDisplayGate(
-        counter: AttachmentPrivacyDisplayCounter(
-            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
+    private lazy var attachmentPrivacyGate = AttachmentPrivacyDisclosureGate(
+        disclosure: AttachmentPrivacyDisclosure(
+            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
             webKeySource: duckAiNativeStorageHandler
         )
     )
@@ -1288,7 +1288,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                                          tabID: omnibarController.currentTabUUID)
     }
 
-    /// Emptying the attachments already ends the display; this covers the submit that clears them.
     private func endAttachmentPrivacyDisplay() {
         attachmentPrivacyGate.displayEnded(tabID: omnibarController.currentTabUUID)
     }

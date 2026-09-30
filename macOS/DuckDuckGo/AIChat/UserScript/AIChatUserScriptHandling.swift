@@ -118,9 +118,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var messageHandling: AIChatMessageHandling { get }
 
     var isFireWindowProvider: (() -> Bool)? { get set }
-    /// Set by the tab extension: only it knows the tab's burner mode, and a Fire Window must not
-    /// spend persistent displays.
-    var attachmentPrivacyCounterProvider: (() -> AttachmentPrivacyDisplayCounter?)? { get set }
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
@@ -208,7 +206,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let browserTools: AIChatBrowserToolsService
 
     var isFireWindowProvider: (() -> Bool)?
-    var attachmentPrivacyCounterProvider: (() -> AttachmentPrivacyDisplayCounter?)?
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
 
     /// Surface that opened this chat, consumed once per document and retained for its pixels.
     private var conversationSource: AIChatConversationSource?
@@ -303,7 +301,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
-        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyCounterProvider?()?.consumeDisplay() ?? false)
+        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosureProvider?().claim() ?? false)
     }
 
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a

@@ -173,6 +173,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let privacyStats: PrivacyStatsProviding
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private var webExtensionManager: WebExtensionManaging?
+    private var webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter? = { nil }
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
@@ -337,6 +338,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
     }
+
+    func setWebExtensionInitialLoadWaiterProvider(_ provider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?) {
+        webExtensionInitialLoadWaiterProvider = provider
+    }
     
     @MainActor
     func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource) {
@@ -470,6 +475,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              webExtensionInitialLoadWaiterProvider: { [weak self] in
+                                                                  self?.webExtensionInitialLoadWaiterProvider()
+                                                              },
                                                               sitePermissionsEnabled: isSitePermissionsEnabled,
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies
@@ -614,6 +622,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               adBlockingAvailability: adBlockingAvailability,
                                                               eventHub: eventHub,
                                                               webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              webExtensionInitialLoadWaiterProvider: { [weak self] in
+                                                                  self?.webExtensionInitialLoadWaiterProvider()
+                                                              },
                                                               sitePermissionsEnabled: isSitePermissionsEnabled,
                                                               sitePermissionsDependenciesProvider: { [weak self] in
                                                                   self?.sitePermissionsDependencies

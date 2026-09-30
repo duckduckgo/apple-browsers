@@ -32,6 +32,78 @@ import XCTest
 @MainActor
 final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
+    func testWhenOSAndFlagDetermineLaunchAvailabilityThenOrdinaryAndFireTabsKeepTheirPermissionFlow() async throws {
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
+        for isSupportedOS in [false, true] {
+            for flagEnabled in [false, true] {
+                for fireTab in [false, true] {
+                    let expectedEnabled = isSupportedOS && flagEnabled
+                    let scenario = "Supported OS: \(isSupportedOS), flag: \(flagEnabled), Fire: \(fireTab)"
+                    let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagEnabled ? [.sitePermissions] : [])
+                    let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+                    store.resetDecision(for: .camera, at: site)
+                    store.resetDecision(for: .microphone, at: site)
+                    store.setPersistentDecision(.deny, for: .location, at: site)
+                    store.setGlobalDefault(.deny, for: .location)
+                    let savedDecisions = store.permissions(for: site)
+                    let sut = makeSUT(fireTab: fireTab,
+                                      featureFlagger: featureFlagger,
+                                      isSupportedOSProvider: { isSupportedOS },
+                                      store: store)
+                    defer { sut.closeSitePermissions() }
+                    var prompts = [SitePermissionPrompt]()
+                    sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+                        prompts.append(prompt)
+                        completion(.denyOnce)
+                    }
+
+                    XCTAssertEqual(sut.isSitePermissionsEnabled, expectedEnabled, scenario)
+                    XCTAssertEqual(sut.isMediaCapturePermissionHandlingEnabled, expectedEnabled, scenario)
+                    XCTAssertEqual(sut.isSitePermissionsManagementAvailable, expectedEnabled, scenario)
+                    XCTAssertEqual(sut.makeSitePermissionsEntry() != nil, expectedEnabled, scenario)
+                    if !expectedEnabled {
+                        sut.presentSitePermissionsManagement()
+                        XCTAssertNil(sut.presentedViewController, scenario)
+                    }
+                    for captureType in [WKMediaCaptureType.camera, .microphone, .cameraAndMicrophone] {
+                        sut.sitePermissionsDidStartProvisionalNavigation(sut.webView, navigation: nil)
+                        sut.sitePermissionsDidCommit(sut.webView, navigation: nil)
+                        let bridgeDecision = await requestPermissionThroughBridge(on: sut,
+                                                                                   originHost: site.host,
+                                                                                   captureType: captureType)
+                        XCTAssertEqual(bridgeDecision, expectedEnabled ? .deny : .bypass, scenario)
+                        var nativeDecision: WKPermissionDecision?
+                        requestPermission(on: sut, originHost: site.host, captureType: captureType) { nativeDecision = $0 }
+                        XCTAssertEqual(nativeDecision, expectedEnabled ? .deny : .prompt, scenario)
+                    }
+                    XCTAssertEqual(prompts.count, expectedEnabled ? 3 : 0, scenario)
+                    XCTAssertTrue(prompts.allSatisfy { $0.isFireMode == fireTab }, scenario)
+                    let geolocationScript = GeolocationUserScript(installImmediately: true)
+                    sut.configureSitePermissionsGeolocation(with: geolocationScript)
+                    XCTAssertEqual(geolocationScript.delegate is GeolocationProvider, expectedEnabled, scenario)
+                    XCTAssertEqual(sut.sitePermissionsState.coordinator != nil, expectedEnabled, scenario)
+
+                    featureFlagger.enabledFeatureFlags = flagEnabled ? [] : [.sitePermissions]
+                    featureFlagger.triggerUpdate()
+                    sut.sitePermissionsDidStartProvisionalNavigation(sut.webView, navigation: nil)
+                    sut.sitePermissionsDidCommit(sut.webView, navigation: nil)
+                    let decisionAfterFlagChange = await requestPermissionThroughBridge(on: sut,
+                                                                                       originHost: site.host,
+                                                                                       captureType: .camera)
+                    XCTAssertEqual(sut.isSitePermissionsEnabled, expectedEnabled, scenario)
+                    XCTAssertEqual(decisionAfterFlagChange, expectedEnabled ? .deny : .bypass, scenario)
+                    XCTAssertEqual(prompts.count, expectedEnabled ? 4 : 0, scenario)
+                    XCTAssertEqual(sut.isSitePermissionsManagementAvailable, expectedEnabled, scenario)
+                    XCTAssertEqual(sut.makeSitePermissionsEntry() != nil, expectedEnabled, scenario)
+                    XCTAssertEqual(geolocationScript.delegate is GeolocationProvider, expectedEnabled, scenario)
+                    XCTAssertEqual(sut.sitePermissionsState.coordinator != nil, expectedEnabled, scenario)
+                    XCTAssertEqual(store.permissions(for: site), savedDecisions, scenario)
+                    XCTAssertEqual(store.globalDefault(for: .location), .deny, scenario)
+                }
+            }
+        }
+    }
+
     func testWhenPermissionRemovalUndoOutlivesPageThenOnlySavedDecisionsAreRestored() throws {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for fireTab in [false, true] {
@@ -2029,6 +2101,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     private func makeSUT(featureEnabled: Bool = true,
                          fireTab: Bool = false,
                          featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
+                         isSupportedOSProvider: () -> Bool = { true },
                          hasCommittedMainFrame: Bool = true,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
                          systemPermissionClient: SystemPermissionClient? = nil,
@@ -2044,7 +2117,9 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            sitePermissionsEnabled: AppDependencyProvider.sitePermissionsEnabledAtLaunch(
+                featureFlagger: featureFlagger,
+                isSupportedOSProvider: isSupportedOSProvider),
             fireTab: fireTab
         )
         let dependencies = SitePermissionsDependencies(

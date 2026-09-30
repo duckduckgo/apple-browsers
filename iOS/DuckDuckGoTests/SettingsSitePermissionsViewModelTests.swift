@@ -80,6 +80,44 @@ final class SettingsSitePermissionsViewModelTests: XCTestCase {
         XCTAssertTrue(builder.shouldShowSitePermissions(state: state))
     }
 
+    func testWhenLaunchAvailabilityIsCapturedThenSettingsKeepsOSAndFlagDecisionAfterFlagUpdates() throws {
+        let builder = SettingsMainSettingsView.SettingsViewBuilder()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        for isSupportedOS in [false, true] {
+            for flagEnabled in [false, true] {
+                let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagEnabled ? [.sitePermissions] : [])
+                let enabledAtLaunch = AppDependencyProvider.sitePermissionsEnabledAtLaunch(
+                    featureFlagger: featureFlagger,
+                    isSupportedOSProvider: { isSupportedOS })
+                let expectedEnabled = isSupportedOS && flagEnabled
+                var state = SettingsState.defaults
+                state.sitePermissionsEnabled = enabledAtLaunch
+                let store = makeStore()
+                store.setPersistentDecision(.allow, for: .camera, at: site)
+                store.setPersistentDecision(.deny, for: .microphone, at: site)
+                store.resetDecision(for: .location, at: site)
+                let original = store.permissions(for: site)
+                var openCount = 0
+                var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+                callbacks.didOpen = { openCount += 1 }
+                let sut = makeSUT(store: store, isEnabled: { enabledAtLaunch }, callbacks: callbacks)
+
+                for (updateIndex, updatedFlagEnabled) in [flagEnabled, !flagEnabled].enumerated() {
+                    featureFlagger.enabledFeatureFlags = updatedFlagEnabled ? [.sitePermissions] : []
+                    featureFlagger.triggerUpdate()
+                    sut.didOpen()
+                    XCTAssertEqual(builder.shouldShowSitePermissions(state: state), expectedEnabled)
+                    XCTAssertEqual(openCount, expectedEnabled ? updateIndex + 1 : 0)
+                    if !expectedEnabled {
+                        sut.removeAllSitePermissions()
+                        sut.siteDecisionBinding(for: .camera, at: site).wrappedValue = .ask
+                    }
+                    XCTAssertEqual(store.permissions(for: site), original)
+                }
+            }
+        }
+    }
+
     func testGlobalDefaultBindingPersistsSelectionAndReportsChange() {
         let store = makeStore()
         var changes = [(SitePermissionType, GlobalSitePermissionDecision)]()

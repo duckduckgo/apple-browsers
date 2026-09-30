@@ -71,6 +71,47 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertFalse(element("Settings.SitePermissions").exists)
     }
 
+    func testWhenFlagOverrideIsOnThenAvailabilityRequiresIOS16ForOrdinaryAndFireTabs() {
+        for fireMode in [false, true] {
+            app.terminate()
+            app.resetAuthorizationStatus(for: .camera)
+            launchApp(flagEnabled: true,
+                      seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
+                      additionalArguments: ["-ff.fireMode", String(fireMode)])
+            if fireMode {
+                openNewPermissionTab(fireMode: true)
+            } else {
+                openPermissionPage()
+            }
+            request("camera")
+
+            if #available(iOS 16.0, *) {
+                assertSiteDialog(fireMode: fireMode)
+                tap(element("SitePermissions.Dialog.AllowOnce"))
+                answerSystemAlert(for: "camera", allow: true)
+                assertResult("success 1")
+                openPermissionsSheet()
+                assertSheetDecision("Camera", contains: "Ask Each Time")
+                tap(element("SitePermissions.Sheet.Close"))
+                openPermissionSettings()
+                XCTAssertTrue(element("Settings.SitePermissions.Site.127.0.0.1").waitForExistence(timeout: timeout))
+            } else {
+                denyWebKitPrompt(for: "camera")
+                assertResult("NotAllowedError 1")
+                openMenu()
+                XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
+                XCTAssertFalse(element("SitePermissions.Sheet").exists)
+                tap(app.buttons["Settings"])
+                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+                for _ in 0..<6 {
+                    XCTAssertFalse(element("Settings.SitePermissions").exists)
+                    app.swipeUp()
+                }
+                XCTAssertFalse(element("Settings.SitePermissions").exists)
+            }
+        }
+    }
+
     func testWhenCameraIsAllowedThenSiteDialogPrecedesSystemPromptAndDecisionPersists() {
         launchApp()
         openPermissionPage()

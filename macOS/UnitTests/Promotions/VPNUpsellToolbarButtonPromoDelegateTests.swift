@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import Foundation
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
@@ -36,7 +37,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
     private var subscriptionManager: SubscriptionManagerMock!
     private var persistor: MockVPNUpsellUserDefaultsPersistor!
     private var manager: VPNUpsellVisibilityManager!
-    private var firedPixels: [SubscriptionPixel] = []
+    private var pixelKit: PixelKitMock!
     private var isShowing = false
     private var cancellables = Set<AnyCancellable>()
     private var sut: VPNUpsellToolbarButtonPromoDelegate!
@@ -49,7 +50,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         persistor = MockVPNUpsellUserDefaultsPersistor()
-        firedPixels = []
+        pixelKit = PixelKitMock()
         isShowing = false
         manager = makeManager(isNewUser: true)
         sut = makeSUT()
@@ -63,7 +64,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         subscriptionManager = nil
         notificationCenter = nil
         featureFlagger = nil
-        firedPixels = []
+        pixelKit = nil
         super.tearDown()
     }
 
@@ -82,7 +83,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         let sut = VPNUpsellToolbarButtonPromoDelegate(featureFlagger: featureFlagger,
                                                       visibilityManager: manager,
                                                       persistor: persistor,
-                                                      pixelHandler: { [unowned self] in self.firedPixels.append($0) },
+                                                      pixelFiring: pixelKit,
                                                       dateProvider: { Self.now })
         sut.isShowingPublisher
             .sink { [unowned self] in self.isShowing = $0 }
@@ -107,7 +108,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
 
         XCTAssertEqual(result, .retired)
         XCTAssertFalse(isShowing)
-        XCTAssertTrue(firedPixels.isEmpty)
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
     func testWhenButtonWasFirstPinnedSevenDaysAgoThenShowRetires() async {
@@ -146,7 +147,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         let task = await startShow()
 
         XCTAssertTrue(isShowing)
-        XCTAssertEqual(firedPixels.map(\.name), [SubscriptionPixel.subscriptionToolbarButtonShown.name])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), [SubscriptionPixel.subscriptionToolbarButtonShown.name])
         sut.hide()
         _ = await task.value
     }
@@ -155,7 +156,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         let task = await startShow(force: true)
 
         XCTAssertTrue(isShowing)
-        XCTAssertTrue(firedPixels.isEmpty)
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
         sut.hide()
         _ = await task.value
     }
@@ -207,6 +208,6 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         let result = await task.value
         XCTAssertEqual(result, .ignored())
         XCTAssertFalse(isShowing)
-        XCTAssertEqual(firedPixels.map(\.name), [SubscriptionPixel.subscriptionToolbarButtonShown.name])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), [SubscriptionPixel.subscriptionToolbarButtonShown.name])
     }
 }

@@ -28,16 +28,16 @@ final class VPNUpsellToolbarButtonPromoDelegate: InternalPromoDelegate, VPNUpsel
     private let session: VPNUpsellPromoSession
     private let persistor: VPNUpsellUserDefaultsPersisting
     private let dateProvider: () -> Date
-    private let pixelHandler: (SubscriptionPixel) -> Void
+    private let pixelFiring: (any PixelKitFiring)?
 
     init(featureFlagger: FeatureFlagger,
          visibilityManager: VPNUpsellVisibilityManager,
          persistor: VPNUpsellUserDefaultsPersisting,
-         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) },
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          dateProvider: @escaping () -> Date = Date.init) {
         self.session = VPNUpsellPromoSession(featureFlagger: featureFlagger, visibilityManager: visibilityManager)
         self.persistor = persistor
-        self.pixelHandler = pixelHandler
+        self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
     }
 
@@ -72,7 +72,7 @@ final class VPNUpsellToolbarButtonPromoDelegate: InternalPromoDelegate, VPNUpsel
         }
 
         if !force {
-            pixelHandler(.subscriptionToolbarButtonShown)
+            pixelFiring?.fire(SubscriptionPixel.subscriptionToolbarButtonShown)
         }
 
         return await session.begin()

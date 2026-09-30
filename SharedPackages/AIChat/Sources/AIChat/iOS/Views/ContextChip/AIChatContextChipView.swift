@@ -38,7 +38,9 @@ public final class AIChatContextChipView: UIView {
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
-        static let suggestedBorderAlpha: CGFloat = 0.16
+        /// The offer is faded as a whole rather than part by part, so its outline, glyphs and label
+        /// keep one relationship to each other.
+        static let suggestedOpacity: CGFloat = 0.5
         static let suggestedDashPattern: [NSNumber] = [8, 4]
 
         static let faviconSize: CGFloat = 28
@@ -202,9 +204,10 @@ public final class AIChatContextChipView: UIView {
     }
 
     /// Without this the recogniser, which spans the pill, would swallow taps on the remove button.
-    /// A hidden button keeps its frame, so its region stays tappable when it isn't shown.
+    /// A button that is hidden, or shown only as an affordance, keeps its frame, so its region has
+    /// to stay tappable.
     func shouldReceiveChipTap(at point: CGPoint) -> Bool {
-        guard !removeButton.isHidden else { return true }
+        guard !removeButton.isHidden, removeButton.isUserInteractionEnabled else { return true }
         return !removeButtonHitRect.contains(point)
     }
 
@@ -255,6 +258,7 @@ private extension AIChatContextChipView {
         removeButton.backgroundColor = .clear
         dashedBorderLayer.isHidden = true
         accessibilityCustomActions = nil
+        alpha = 1
 
         switch state {
         case .loading:
@@ -275,23 +279,30 @@ private extension AIChatContextChipView {
             accessibilityLabel = UserText.askAboutPage
             accessibilityTraits = .none
 
-        case .suggested(_, let favicon):
+        case .suggested:
             // A fixed label rather than the page title: nothing to truncate, and it echoes the menu
             // entry that opens the sheet.
             let offer = UserText.askAboutPage
+            let tint = UIColor(designSystemColor: .accentPrimary)
             isHidden = false
+            alpha = Constants.suggestedOpacity
             titleLabel.text = offer
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
-            titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+            titleLabel.textColor = tint
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
-            applyPillLayout(withRemoveButton: false)
-            // Nothing is attached yet, so there is nothing to remove; the outline alone carries the
-            // difference from the attached chip.
-            removeButton.isHidden = true
-            faviconView.tintColor = UIColor(designSystemColor: .accentPrimary)
-            faviconView.image = favicon ?? fallbackFavicon()
+            applyPillLayout(withRemoveButton: true)
+            // The plus is an affordance, not its own control: the whole pill accepts the offer, so
+            // the button is left out of the touch handling entirely.
+            removeButton.isHidden = false
+            removeButton.isUserInteractionEnabled = false
+            removeButton.setImage(DesignSystemImages.Glyphs.Size16.add.withRenderingMode(.alwaysTemplate), for: .normal)
+            removeButton.tintColor = tint
+            removeButton.backgroundColor = UIColor(designSystemColor: .accentGlowPrimary)
+            // No site is named yet, so the generic glyph stands in rather than a page's own favicon.
+            faviconView.tintColor = tint
+            faviconView.image = fallbackFavicon()
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
@@ -302,8 +313,7 @@ private extension AIChatContextChipView {
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer
             accessibilityTraits = .button
-            applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary)
-                .withAlphaComponent(Constants.suggestedBorderAlpha))
+            applyDashedBorder(color: tint)
             isUserInteractionEnabled = true
             chipTapRecognizer.isEnabled = true
 
@@ -317,6 +327,8 @@ private extension AIChatContextChipView {
             titleLabel.accessibilityTraits = .none
             applyPillLayout(withRemoveButton: true)
             removeButton.isHidden = false
+            removeButton.isUserInteractionEnabled = true
+            removeButton.setImage(DesignSystemImages.Glyphs.Size16.close.withRenderingMode(.alwaysTemplate), for: .normal)
             removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
             faviconView.tintColor = UIColor(designSystemColor: .textSecondary)
             faviconView.image = favicon ?? fallbackFavicon()

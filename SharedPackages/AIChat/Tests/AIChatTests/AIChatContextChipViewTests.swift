@@ -124,16 +124,49 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertEqual(sut.accessibilityLabel, offerBefore)
     }
 
-    func testChipTapIsReceivedAcrossTheWholeSuggestedChip() {
+    func testTheWholeSuggestedChipAcceptsTheOffer() {
         // Given
         let sut = AIChatContextChipView()
         sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
         sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
         sut.layoutIfNeeded()
 
-        // Then — no remove button is shown, so its former region accepts the offer like the rest.
+        // Then — the plus is only an affordance, so its region is not carved out of the chip.
         XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
         XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
+    }
+
+    func testTheRemoveButtonRegionIsRestoredWhenTheChipBecomesAttached() {
+        // Given
+        let sut = AIChatContextChipView()
+        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
+        sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
+        sut.layoutIfNeeded()
+
+        // When
+        sut.configure(state: .attached(title: "Magnetic confinement fusion", favicon: nil))
+        sut.layoutIfNeeded()
+
+        // Then
+        XCTAssertFalse(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
+    }
+
+    func testAccessibilityActivationAcceptsTheOffer() {
+        // Given
+        let sut = AIChatContextChipView()
+        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
+        var attachedCount = 0
+        var removedCount = 0
+        sut.onTap = { attachedCount += 1 }
+        sut.onRemove = { removedCount += 1 }
+
+        // When
+        let handled = sut.accessibilityActivate()
+
+        // Then
+        XCTAssertTrue(handled)
+        XCTAssertEqual(attachedCount, 1)
+        XCTAssertEqual(removedCount, 0)
     }
 
     func testChipTapIsNotReceivedOverTheRemoveButtonWhenAttached() {

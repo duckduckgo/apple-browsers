@@ -115,6 +115,9 @@ protocol OmniBarDelegate: AnyObject {
     /// attachment is added or removed), so an anchored popover can be repositioned to follow it.
     func onOmniBarExpandedContentSizeChanged()
 
+    /// A link in the expanded input's footer card, such as the Terms of Service disclaimer.
+    func onOmniBarFooterLinkTapped(_ url: URL)
+
     /// Called when text changes in the AI Chat text view (iPad tab mode), for filtering chat history suggestions.
     func onAIChatQueryUpdated(_ query: String)
 
@@ -242,6 +245,8 @@ extension OmniBarDelegate {
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
 
     func onOmniBarExpandedContentSizeChanged() {}
+
+    func onOmniBarFooterLinkTapped(_ url: URL) {}
 
     func onAIChatQueryUpdated(_ query: String) {}
 

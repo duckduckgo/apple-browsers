@@ -45,13 +45,13 @@ jobs:
   performance-tests:
     name: Performance Tests
     needs: create-notarized-app
-    runs-on: [image:osx-goldengate, ui-tests]
+    runs-on: [image:osx-27-edge, ui-tests]
 
     timeout-minutes: 60
 
     env:
-      RUNS_ON: image:osx-goldengate,ui-tests  # keep this in sync with runs-on above
-      RUNNER_NAME: image-osx-goldengate,ui-tests
+      RUNS_ON: image:osx-27-edge,ui-tests  # keep this in sync with runs-on above
+      RUNNER_NAME: image-osx-27-edge,ui-tests
 
     steps:
     - name: Register SSH keys for private repos

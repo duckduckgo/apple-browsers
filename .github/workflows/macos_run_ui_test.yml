@@ -14,7 +14,7 @@ on:
     inputs:
       runner:
         # A workflow_call input cannot be an array, so the caller passes toJSON of its label list.
-        description: "JSON array of runner labels, as a string. Examples: '[\"macos-26-xlarge\"]', '[\"image:osx-goldengate\",\"ui-tests\"]'."
+        description: "JSON array of runner labels, as a string. Examples: '[\"macos-26-xlarge\"]', '[\"image:osx-27-edge\",\"ui-tests\"]'."
         required: true
         type: string
       xcode-version:

@@ -26,9 +26,7 @@ import os.log
 /// but it is unforgiving: a throw at the top level of the worker aborts its registration outright,
 /// so `loadBackgroundContent()` never completes and `WKWebExtensionContext` reports error code 6. A
 /// background page running the same script survives the same throw and keeps whatever the script
-/// managed to set up before it. Extension vendors work around the same brittleness in Safari the
-/// same way — 1Password's Safari build, for instance, ships the very same worker code as a
-/// background page.
+/// managed to set up before it.
 ///
 /// The conversion therefore buys two things:
 /// - a top-level exception in a Chrome build becomes survivable rather than fatal;

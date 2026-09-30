@@ -872,46 +872,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName) === firstRunRetained")
     }
 
-    // MARK: - ServiceWorker Clients
-
-    func testWhenClientsGlobalIsMissing_ThenAMinimalStubIsInstalled() throws {
-        try evaluateStubScript()
-
-        try assertTrue("typeof globalThis.clients === 'object'")
-        try assertTrue("typeof clients.matchAll === 'function'")
-
-        context.evaluateScript("""
-        var matchAllResult = 'pending';
-        clients.matchAll().then(function(result) { matchAllResult = result; });
-        var claimResolved = false;
-        clients.claim().then(function() { claimResolved = true; });
-        var openWindowResult = 'pending';
-        clients.openWindow('https://example.com').then(function(result) { openWindowResult = result; });
-        var getResult = 'pending';
-        clients.get('id').then(function(result) { getResult = result; });
-        """)
-        try assertNoExceptions()
-
-        try assertTrue("Array.isArray(matchAllResult) && matchAllResult.length === 0")
-        try assertTrue("claimResolved === true")
-        try assertTrue("openWindowResult === null")
-        try assertTrue("getResult === undefined")
-    }
-
-    func testWhenClientsGlobalAlreadyExists_ThenItIsNotReplaced() throws {
-        context.evaluateScript("var clients = { matchAll: function() { return Promise.resolve(['native']); } };")
-        context.evaluateScript("var originalClients = clients;")
-        try assertNoExceptions()
-
-        try evaluateStubScript()
-
-        try assertTrue("clients === originalClients")
-
-        context.evaluateScript("var matchAllResult = null; clients.matchAll().then(function(r) { matchAllResult = r; });")
-        try assertNoExceptions()
-        try assertTrue("matchAllResult.length === 1 && matchAllResult[0] === 'native'")
-    }
-
     // MARK: - Logging and Idempotency
 
     func testWhenSomethingIsStubbed_ThenASingleSummaryIsLogged() throws {
@@ -923,7 +883,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("consoleMessages[0].indexOf('webNavigation.onCreatedNavigationTarget') !== -1")
         try assertTrue("consoleMessages[0].indexOf('webNavigation.onHistoryStateUpdated') !== -1")
         try assertTrue("consoleMessages[0].indexOf('storage.managed') !== -1")
-        try assertTrue("consoleMessages[0].indexOf('clients') !== -1")
     }
 
     func testWhenScriptIsEvaluatedTwice_ThenNothingChangesAndNothingIsLoggedAgain() throws {
@@ -949,7 +908,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertNoExceptions()
         XCTAssertTrue(bareContext.evaluateScript("typeof chrome === 'undefined'")?.toBool() == true)
-        XCTAssertTrue(bareContext.evaluateScript("typeof clients === 'undefined'")?.toBool() == true)
         let retentionProperty = WebExtensionAPIStubScript.retentionPropertyName
         XCTAssertTrue(bareContext.evaluateScript("globalThis.\(retentionProperty) === undefined")?.toBool() == true)
     }

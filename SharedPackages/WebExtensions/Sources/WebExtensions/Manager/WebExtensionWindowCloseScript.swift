@@ -22,8 +22,8 @@ import WebKit
 /// JavaScript injected at document start into every page an extension owns, which reports a
 /// `window.close()` call to the browser before WebKit acts on it.
 ///
-/// An action popup closes itself with `window.close()` once it has done its job — 1Password does
-/// so after "Open & Fill" and after "Lock". Chrome then dismisses the popup. WebKit reacts too, but
+/// An action popup closes itself with `window.close()` once it has done its job — Bitwarden does
+/// so after it fills a login from the popup. Chrome then dismisses the popup. WebKit reacts too, but
 /// only on its own terms: `WKWebExtension.Action` closes the popover *it* would have shown and
 /// unloads the popup web view. A browser that hosts that web view in a panel of its own, as the
 /// macOS app does, is not told, and is left with an empty panel. The public API offers no

@@ -24,9 +24,9 @@ import XCTest
 @available(macOS 15.4, iOS 18.4, *)
 final class WKWebExtensionChromeIdentifierTests: XCTestCase {
 
-    /// The identifier Chrome derives from the 1Password key the patcher restores, and the one
-    /// 1Password's host manifest lists in `allowed_origins`.
-    private static let onePasswordIdentifier = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+    /// The identifier Chrome derives from the Bitwarden key the patcher restores, and the one
+    /// Bitwarden's host manifest lists in `allowed_origins`.
+    private static let bitwardenIdentifier = "nngceckbapebfimnlniiiahkandclblb"
 
     private var createdExtensionURLs: [URL] = []
 
@@ -40,11 +40,11 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
 
     // MARK: - chromeExtensionIdentifier
 
-    func testWhenManifestHasOnePasswordKey_ThenIdentifierMatchesChromeWebStoreIdentifier() async throws {
-        let onePasswordKey = try XCTUnwrap(WebExtensionManifestKeyPatcher.knownPublicKeys["1Password"])
-        let webExtension = try await makeExtension(manifest: manifest(key: onePasswordKey))
+    func testWhenManifestHasBitwardenKey_ThenIdentifierMatchesChromeWebStoreIdentifier() async throws {
+        let bitwardenKey = try XCTUnwrap(WebExtensionManifestKeyPatcher.knownPublicKeys["Bitwarden"])
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
 
-        XCTAssertEqual(webExtension.chromeExtensionIdentifier, Self.onePasswordIdentifier)
+        XCTAssertEqual(webExtension.chromeExtensionIdentifier, Self.bitwardenIdentifier)
     }
 
     func testWhenManifestHasNoKey_ThenIdentifierIsNil() async throws {
@@ -67,11 +67,11 @@ final class WKWebExtensionChromeIdentifierTests: XCTestCase {
 
     // MARK: - chromeExtensionOrigin
 
-    func testWhenManifestHasOnePasswordKey_ThenOriginIsChromeExtensionOrigin() async throws {
-        let onePasswordKey = try XCTUnwrap(WebExtensionManifestKeyPatcher.knownPublicKeys["1Password"])
-        let webExtension = try await makeExtension(manifest: manifest(key: onePasswordKey))
+    func testWhenManifestHasBitwardenKey_ThenOriginIsChromeExtensionOrigin() async throws {
+        let bitwardenKey = try XCTUnwrap(WebExtensionManifestKeyPatcher.knownPublicKeys["Bitwarden"])
+        let webExtension = try await makeExtension(manifest: manifest(key: bitwardenKey))
 
-        XCTAssertEqual(webExtension.chromeExtensionOrigin, "chrome-extension://\(Self.onePasswordIdentifier)/")
+        XCTAssertEqual(webExtension.chromeExtensionOrigin, "chrome-extension://\(Self.bitwardenIdentifier)/")
     }
 
     // MARK: - Helpers

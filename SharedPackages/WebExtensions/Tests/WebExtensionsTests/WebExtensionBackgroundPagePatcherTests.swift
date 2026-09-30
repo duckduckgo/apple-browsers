@@ -248,21 +248,6 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: manifestURL(in: extensionDirectory)), originalManifest)
     }
 
-    func testWhenShortNameIsAnotherKnownExtension_ThenItsKeyResolves() throws {
-        let extensionDirectory = try makeExtensionDirectory(manifest: """
-        {
-            "manifest_version": 3,
-            "name": "__MSG_extName__",
-            "short_name": "1Password"
-        }
-        """)
-
-        XCTAssertTrue(patcher.patchIfNeeded(installedExtensionURL: extensionDirectory))
-
-        let manifest = try loadManifest(in: extensionDirectory)
-        XCTAssertEqual(manifest["key"] as? String, WebExtensionManifestKeyPatcher.knownPublicKeys["1Password"])
-    }
-
     func testWhenKnownExtensionAlreadyHasKey_ThenManifestIsUntouched() throws {
         let extensionDirectory = try makeExtensionDirectory(manifest: """
         {

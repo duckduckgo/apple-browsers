@@ -26,7 +26,7 @@ import os.log
 /// derives the extension's identifier from it (see `WKWebExtension.chromeExtensionIdentifier`). The
 /// release zips vendors publish themselves are built before that step, so they carry no `key` at
 /// all: there is nothing to derive an identifier from, and a native messaging host that gates
-/// callers on `allowed_origins` — Bitwarden's and 1Password's both do — rejects the extension
+/// callers on `allowed_origins` — Bitwarden's does — rejects the extension
 /// outright. Putting the store's key back restores the identifier the host expects.
 ///
 /// The extension is recognized by name, which is what a user sees and what a vendor keeps stable
@@ -35,9 +35,8 @@ import os.log
 ///
 /// A manifest carries more than one name, though, and which one is the vendor's plain product name
 /// varies: Bitwarden's `name` is the store listing "Bitwarden Password Manager" while its
-/// `short_name` is "Bitwarden", and 1Password's `name` is "1Password – Password Manager". Both
-/// candidates are therefore tried in turn — a literal `name`, then `short_name` — and the first one
-/// the table knows wins. That keeps the table keyed on short vendor names, which are far less
+/// `short_name` is "Bitwarden". Both candidates are therefore tried in turn — a literal `name`,
+/// then `short_name` — and the first one the table knows wins. That keeps the table keyed on short vendor names, which are far less
 /// volatile than store listing titles.
 struct WebExtensionManifestKeyPatcher {
 
@@ -55,14 +54,6 @@ struct WebExtensionManifestKeyPatcher {
         AUGYocUYBNDOP5QAhImxXyQ1qG8+goXs93v9GzrNJETdVuCEhqBggC4/DFabryJZDiKvZ2Jl0DM7MsWdoybZPwrj70V3aJ/nVNOMkf868sc\
         NTMliwitCqqjT5baTANsG0DkZWQExD4lSXzSZHH9MEO8q0iZ7RRlNuGRBAkZgNV8FwZRsPKm/rwQ9dy3VpgLcmLp5GiMt+kAEncqKAkuRYn\
         hVXXBsKqIyYTMjHSLkLnpfFySyOPLBdS617i/PGNiP/MT6Xy6z//v5NozUgaAZ4gJQIDAQAB
-        """,
-        // Derives to aeblfdkhhhdcdjpifhhbdiojplfjncoa, the id 1Password's
-        // `com.1password.1password` host manifest lists in `allowed_origins`.
-        "1Password": """
-        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnHpaUll4uWujpAdbIXOQY2WE6hk8PllsYsnoUaj5qHXwv4IB6A9pONqGaTL2KL\
-        20u6E6XVhncY6Ae6SQSBQqiIkgjPsiG0NDNsDlju/kzBnfimKFC/bpzOrqFqbhswQHifnet5uHlpG97whTzLO3ka0M5aqB9V9mD/0qVXvN\
-        gAVVnSTULH254YqpeCcAhmsKiFZSL6OrOZmCp8kZ/OeOUK9iYWYylL7VcOXVrZf10EPrlaCNXzVk7K35dPuQ7svhA0Pgju3kngB4RLa5Ioj\
-        hw3IT+B5+m8pisjOSd1oKMrRmhGs7rDhF5IEtAiVxqVp7uOOMPQj3vrbMDAzf7vqLtQIDAQAB
         """
     ]
 

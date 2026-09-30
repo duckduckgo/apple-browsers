@@ -28,7 +28,7 @@ import Foundation
 /// missing too — `storage.managed` and `webNavigation.onCreatedNavigationTarget`, for instance.
 ///
 /// Chrome builds routinely touch those APIs at the top level of their background script — the
-/// 1Password extension calls `chrome.notifications.onClicked.addListener(...)` while wiring up its
+/// Bitwarden extension calls `chrome.notifications.onClicked.addListener(...)` while wiring up its
 /// listeners — and a missing namespace makes that a `TypeError` on the very first statement, which
 /// aborts the whole startup: no listeners are registered and the extension never initializes.
 ///
@@ -91,15 +91,12 @@ import Foundation
 /// an extension that relies on `onHistoryStateUpdated` to follow single-page navigation still gets
 /// no events, it just no longer crashes.
 ///
-/// Two behaviors of the host are worth calling out, both established by measurement on macOS 26.6.2:
+/// One behavior of the host is worth calling out, established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
 ///   discards once JavaScript stops referencing them, taking any property we added with them: an
 ///   event stub installed on `chrome.webNavigation` vanished within about half a second. The script
 ///   therefore parks every object it decorates in a retention array on `globalThis`, which kept the
 ///   stubs alive for the lifetime of the background page.
-/// - A Manifest V3 background page still reports itself as MV3 Chromium to extensions that sniff
-///   for it, so 1Password reaches for the ServiceWorker `clients` global, which a page does not
-///   have. A minimal `clients` stub keeps that path from throwing on every use.
 ///
 /// Note that stubs are only installed for names that are actually missing, so a future WebKit that
 /// implements one of them wins automatically.
@@ -840,7 +837,6 @@ public enum WebExtensionAPIStubScript {
 
         var stubbedNamespaces = [];
         var stubbedMembers = [];
-        var stubbedGlobals = [];
         var wrappedNamespaces = [];
 
         missingNamespaces.forEach(function(namespace) {
@@ -899,32 +895,6 @@ public enum WebExtensionAPIStubScript {
             console.info("[DuckDuckGo] Could not wrap chrome.permissions: " + error);
         }
 
-        // An MV3 background page is not a service worker, but extensions that detect MV3 Chromium
-        // assume it is and reach for the ServiceWorker `clients` global.
-        try {
-            if (globalThis.clients === undefined) {
-                var clients = {
-                    claim: function() {
-                        return Promise.resolve();
-                    },
-                    get: function() {
-                        return Promise.resolve(undefined);
-                    },
-                    matchAll: function() {
-                        return Promise.resolve([]);
-                    },
-                    openWindow: function() {
-                        return Promise.resolve(null);
-                    }
-                };
-                if (define(globalThis, "clients", clients)) {
-                    stubbedGlobals.push("clients");
-                }
-            }
-        } catch (error) {
-            console.info("[DuckDuckGo] Could not stub clients: " + error);
-        }
-
         // An extension page loaded in an iframe inside a website runs in that website's web
         // process. iCloud Passwords' completion list is one: it is the "Enable Password AutoFill"
         // prompt under a login field. A call to `action.openPopup()` from such a frame is a
@@ -954,11 +924,11 @@ public enum WebExtensionAPIStubScript {
             console.info("[DuckDuckGo] Could not hide chrome.action.openPopup: " + error);
         }
 
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || stubbedGlobals.length > 0
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0
             || wrappedNamespaces.length > 0 || hiddenMembers.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], globals: [" + stubbedGlobals.join(", ") + "], wrapped: ["
+                + "], wrapped: ["
                 + wrappedNamespaces.join(", ") + "], hidden: [" + hiddenMembers.join(", ") + "]");
         }
     })();

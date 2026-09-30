@@ -26,13 +26,12 @@ struct SyncSuccessViewV2: View {
     @EnvironmentObject private var model: ManagementDialogModel
 
     let code: String?
-    var joiningDeviceName: String?
 
     @State private var showCopyConfirmation = false
 
     private var title: String {
         UserText.syncSuccessTitleV2(
-            deviceName: joiningDeviceName ?? model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceNameV2
+            deviceName: model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceNameV2
         )
     }
 
@@ -153,7 +152,8 @@ struct SyncSuccessViewV2: View {
 
 #Preview("Pairing Host") {
     let model = ManagementDialogModel()
-    return SyncSuccessViewV2(code: nil, joiningDeviceName: "Dax’s iPhone")
+    model.thisDeviceName = "Dax’s MacBook Pro"
+    return SyncSuccessViewV2(code: nil)
         .environmentObject(model)
 }
 #endif

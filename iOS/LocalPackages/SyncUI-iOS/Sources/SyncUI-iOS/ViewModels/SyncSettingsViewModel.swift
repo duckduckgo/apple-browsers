@@ -200,7 +200,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
     public enum SuccessDestination: Equatable {
-        case host(joiningDeviceName: String)
+        case host
         case joiner(isRecovery: Bool)
     }
 

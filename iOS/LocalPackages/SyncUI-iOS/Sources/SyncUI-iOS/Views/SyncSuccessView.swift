@@ -79,8 +79,8 @@ struct SyncSuccessView: View {
 
     private var title: String {
         switch destination {
-        case .host(let joiningDeviceName):
-            UserText.simplifiedDeviceAddedTitle(joiningDeviceName)
+        case .host:
+            UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
         case .joiner(let isRecovery):
             isRecovery
                 ? UserText.simplifiedRecoveryCompleteTitle
@@ -211,6 +211,7 @@ struct SyncSuccessView_Previews: PreviewProvider {
 
     enum State {
         case deviceAdded
+        case deviceAddedHost
         case deviceAddedNoAutoRestore
         case recoveryComplete
     }
@@ -222,6 +223,7 @@ struct SyncSuccessView_Previews: PreviewProvider {
     static let snapshots = PreviewSnapshots<State>(
         configurations: [
             .init(name: "Device Added", state: .deviceAdded),
+            .init(name: "Device Added – Host", state: .deviceAddedHost, scope: .previews),
             .init(name: "Device Added – No Auto-Restore", state: .deviceAddedNoAutoRestore, scope: .previews),
             .init(name: "Recovery Complete", state: .recoveryComplete, scope: .previews)
         ],
@@ -230,6 +232,8 @@ struct SyncSuccessView_Previews: PreviewProvider {
                 switch state {
                 case .deviceAdded:
                     SyncSuccessView(model: .syncSuccessPreview(), destination: .joiner(isRecovery: false))
+                case .deviceAddedHost:
+                    SyncSuccessView(model: .syncSuccessPreview(), destination: .host)
                 case .deviceAddedNoAutoRestore:
                     SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .joiner(isRecovery: false))
                 case .recoveryComplete:

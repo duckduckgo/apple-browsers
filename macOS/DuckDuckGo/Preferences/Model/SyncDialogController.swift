@@ -109,7 +109,6 @@ final class SyncDialogController {
     private var syncPromoSource: String?
     private var authenticationCancelledPromptContinuation: (@MainActor () -> Void)?
     private var pairingV2PeerKind: PairingV2DeviceKind?
-    private var confirmedPairingV2PeerName: String?
     private var pairingV2ConfirmationRequest: PendingPairingConfirmation?
     private var pairingV2ConfirmationWasDismissedByController = false
     private var displayedCodeSetupSource: SyncSetupSource?
@@ -228,8 +227,13 @@ final class SyncDialogController {
 
     @MainActor
     private func presentDialog(for currentDialog: ManagementDialogKind) {
-        if case .saveRecoveryCode = currentDialog, managementDialogModel.isSimplifiedSyncSetupV2Enabled {
-            managementDialogModel.thisDeviceName = deviceNameProvider()
+        if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            switch currentDialog {
+            case .pairingSuccess, .saveRecoveryCode:
+                managementDialogModel.thisDeviceName = deviceNameProvider()
+            default:
+                break
+            }
         }
         managementDialogModel.currentDialog = currentDialog
     }
@@ -269,10 +273,7 @@ final class SyncDialogController {
     }
 
     private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool) {
-        let joiningDeviceName = confirmedPairingV2PeerName ?? UserText.syncPairingV2UnknownPeerName
-        confirmedPairingV2PeerName = nil
-
-        let successDialog = ManagementDialogKind.pairingSuccess(joiningDeviceName: joiningDeviceName)
+        let successDialog = ManagementDialogKind.pairingSuccess
         let complete: (SyncDialogController) -> Void = { controller in
             controller.completeAfterPreparingToSyncAnimation(successDialog)
         }
@@ -299,7 +300,6 @@ final class SyncDialogController {
     private func startPollingForRecoveryKey(isRecovery: Bool) {
         cancelHostDeviceWait()
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -429,7 +429,6 @@ final class SyncDialogController {
     private func startPollingForPublicKey() {
         cancelHostDeviceWait()
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -775,7 +774,6 @@ extension SyncDialogController: ManagementDialogModelDelegate {
 
     func didEndFlow() {
         cancelHostDeviceWait()
-        confirmedPairingV2PeerName = nil
         pendingSyncSuccessDialog = nil
         managementDialogModel.isPreparingToSyncAnimationPaused = false
         let controller = self.connectionController
@@ -984,9 +982,6 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             managementDialogModel.endFlow()
         } else if isConfirmed {
             pairingV2PeerKind = peerKind
-            if case .sharer = setupRole {
-                confirmedPairingV2PeerName = peerName
-            }
             if let dialog = Self.postPairingConfirmationDialog(
                 isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled,
                 setupRole: setupRole

@@ -1191,6 +1191,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
         let peerKeyPair = try makePeerKeyPair()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -1218,6 +1220,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         } catch {
             XCTFail("Expected PairingV2Error.accountCreationFailed, got \(error)")
         }
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(coordinator.state, .failed(.accountCreationFailed))
         XCTAssertEqual(accountManager.createAccountCalls.map(\.deviceName), ["Mac"])
@@ -1244,6 +1247,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
         let peerKeyPair = try makePeerKeyPair()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         let coordinator = makeCoordinator(syncService: syncService,
                                           messageExchanger: messageExchanger,
@@ -1272,6 +1277,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
             try await coordinator.pollOnce()
             try await settlePendingConfirmation(in: coordinator)
         }
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(failure?.context, PairingV2FailureContext(stage: .presenterSendRecoveryUnavailable, kind: .networkError))
         XCTAssertEqual((failure?.underlyingError as? URLError)?.code, .notConnectedToInternet)
@@ -1340,6 +1346,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
         let peerKeyPair = try makePeerKeyPair()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         confirmationDelegate.shouldAllowPeerToJoin = false
         let coordinator = makeCoordinator(syncService: syncService,
@@ -1362,6 +1370,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
         try await coordinator.pollOnce()
         try await settlePendingConfirmation(in: coordinator)
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(confirmationDelegate.allowPeerToJoinCalls.map { $0.peerName }, ["Peer"])
         XCTAssertEqual(confirmationDelegate.allowPeerToJoinCalls.map { $0.peerKind }, [.ddg])
@@ -1883,6 +1892,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         let messageCrypto = PairingV2MessageCrypto()
         let peerKeyPair = try makePeerKeyPair()
+        let closeChannelExpectation = expectation(description: "Local channel closed")
+        messageExchanger.closeChannelHandler = { _ in closeChannelExpectation.fulfill() }
         let confirmationDelegate = PairingV2ConfirmationDelegateMock()
         confirmationDelegate.shouldJoinPeer = false
         let coordinator = PairingV2Coordinator(syncService: syncService,
@@ -1921,6 +1932,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
                     senderChannelID: peerKeyPair.channelID).payload)
         ]
         try await coordinator.pollOnce()
+        await fulfillment(of: [closeChannelExpectation], timeout: 2)
 
         XCTAssertEqual(confirmationDelegate.joinPeerCalls.map { $0.peerName }, ["Peer"])
         XCTAssertEqual(confirmationDelegate.joinPeerCalls.map { $0.peerKind }, [.thirdParty])

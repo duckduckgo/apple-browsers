@@ -189,7 +189,10 @@ struct ManageDeviceView: View {
 private extension SyncSettingsViewModel.Device {
 
     var syncedIllustrationName: String {
-        type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"
+        if isThirdParty || isUnknownType {
+            return "Browser-V2-Synced-Feature-128"
+        }
+        return type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"
     }
 }
 

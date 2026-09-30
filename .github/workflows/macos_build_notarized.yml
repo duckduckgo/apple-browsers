@@ -469,6 +469,29 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
+        # Capture the mount lookup without changing create-dmg's output or exit status.
+        export DMG_DIAGNOSTICS_DIR="${RUNNER_TEMP}/dmg-mount-diagnostics"
+        diagnostics_bin="${RUNNER_TEMP}/dmg-diagnostics-bin"
+        mkdir -p "${DMG_DIAGNOSTICS_DIR}" "${diagnostics_bin}"
+        cat > "${diagnostics_bin}/hdiutil" <<'HDIUTIL'
+        #!/bin/bash
+        case "${1:-}" in
+          attach|info)
+            capture=$(mktemp "${DMG_DIAGNOSTICS_DIR}/hdiutil-${1}.XXXXXX")
+            printf '%q ' /usr/bin/hdiutil "$@" > "${capture}.command"
+            printf '\n' >> "${capture}.command"
+            /usr/bin/hdiutil "$@" \
+              2> >(tee "${capture}.stderr" >&2) | tee "${capture}.stdout"
+            hdiutil_status=${PIPESTATUS[0]}
+            printf '%s\n' "${hdiutil_status}" > "${capture}.exit-status"
+            exit "${hdiutil_status}"
+            ;;
+          *) exec /usr/bin/hdiutil "$@" ;;
+        esac
+        HDIUTIL
+        chmod +x "${diagnostics_bin}/hdiutil"
+        export PATH="${diagnostics_bin}:${PATH}"
+
         app_name="${{ env.app-name }}"
         app_name="${app_name// /-}" # replace spaces with hyphens
         app_name="$(echo "$app_name" | tr '[:upper:]' '[:lower:]')" # lowercase
@@ -484,6 +507,38 @@ jobs:
             --app-drop-link 430 160 "${dmg}" \
             "dmg"
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
+
+    - name: Collect DMG mount diagnostics
+      if: failure() && steps.create-dmg.outcome == 'failure'
+      run: |
+        diagnostics="${RUNNER_TEMP}/dmg-mount-diagnostics"
+        mkdir -p "${diagnostics}"
+        date -u > "${diagnostics}/collected-at.txt"
+        /usr/bin/hdiutil info > "${diagnostics}/info-after-failure.txt" 2>&1 || true
+        /usr/bin/hdiutil info -plist > "${diagnostics}/info-after-failure.plist" 2> "${diagnostics}/info-after-failure.stderr" || true
+        /usr/sbin/diskutil list -plist > "${diagnostics}/disk-list.plist" 2> "${diagnostics}/disk-list.stderr" || true
+        /sbin/mount > "${diagnostics}/mounts.txt" 2>&1 || true
+
+        for attach_output in "${diagnostics}"/hdiutil-attach.*.stdout; do
+          [[ -f "${attach_output}" ]] || continue
+          while IFS= read -r device; do
+            /usr/sbin/diskutil info -plist "${device}" \
+              > "${diagnostics}/${device##*/}.plist" \
+              2> "${diagnostics}/${device##*/}.stderr" || true
+          done < <(awk '/^\/dev\// { print $1 }' "${attach_output}")
+        done
+
+        sleep 2
+        date -u > "${diagnostics}/delayed-collected-at.txt"
+        /usr/bin/hdiutil info -plist > "${diagnostics}/info-delayed.plist" 2> "${diagnostics}/info-delayed.stderr" || true
+
+    - name: Upload DMG mount diagnostics
+      if: always() && steps.create-dmg.outcome != 'skipped'
+      uses: actions/upload-artifact@v6
+      with:
+        name: dmg-mount-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/dmg-mount-diagnostics/
+        if-no-files-found: warn
 
     - name: Validate release DMG
       if: env.release-type == 'release' && env.upload-to == 's3'

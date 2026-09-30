@@ -1001,6 +1001,21 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
+    func testDismissingFloatingPillDoesNotResetWebViewConstraint() {
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+        var receivedUpdates: [DuckPlayerConstraintUpdate] = []
+        sut.constraintUpdates.sink { update in
+            receivedUpdates.append(update)
+        }.store(in: &cancellables)
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        sut.dismissPill(reset: false, animated: false, programatic: true)
+
+        XCTAssertTrue(receivedUpdates.isEmpty)
+    }
+
+    @MainActor
     func testAddressBarPositionChanged_WithNilBottomConstraint_HandlesGracefully() {
         // Given - no pill presented, so no bottom constraint exists
         mockAppSettings.currentAddressBarPosition = .bottom

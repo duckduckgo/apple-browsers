@@ -194,6 +194,7 @@ final class FireExecutorTests: XCTestCase {
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil,
         dataStoreWarmUp: @escaping DataStoreWarmupWorker.WarmUp = { _, _ in true },
+        backgroundTask: FireBackgroundTasking = MockFireBackgroundTask(),
         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
     ) -> FireExecutor {
         let executor = FireExecutor(
@@ -221,6 +222,7 @@ final class FireExecutorTests: XCTestCase {
             aiChatSyncCleaner: mockAIChatSyncCleaner,
             wideEvent: wideEventMock,
             dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
+            backgroundTask: backgroundTask,
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
@@ -378,6 +380,20 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
 
         XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    // MARK: - Background time
+
+    func testWhenBurningThenBackgroundTimeIsHeldForTheWholeBurn() async {
+        let backgroundTask = MockFireBackgroundTask()
+        var cleanedChatsWhileHeld: Bool?
+        mockHistoryCleaner.onCleanAIChatHistory = { cleanedChatsWhileHeld = backgroundTask.isHeld }
+        let executor = makeFireExecutor(backgroundTask: backgroundTask)
+
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+
+        XCTAssertEqual(cleanedChatsWhileHeld, true)
+        XCTAssertEqual(backgroundTask.calls, ["begin", "end"])
     }
 
     func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
@@ -1216,4 +1232,15 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
     }
+}
+
+@MainActor
+final class MockFireBackgroundTask: FireBackgroundTasking {
+    private(set) var calls: [String] = []
+    var isHeld: Bool { calls.last == "begin" }
+
+    nonisolated init() {}
+
+    func begin() { calls.append("begin") }
+    func end() { calls.append("end") }
 }

@@ -144,6 +144,7 @@ class FireExecutor: FireExecuting {
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
     private let dataStoreWarmupWorker: DataStoreWarmupWorker
+    private let backgroundTask: FireBackgroundTasking
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
@@ -175,9 +176,11 @@ class FireExecutor: FireExecuting {
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
          dataStoreWarmupWorker: DataStoreWarmupWorker = DataStoreWarmupWorker(),
+         backgroundTask: FireBackgroundTasking = FireBackgroundTask(),
          clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
              await AppSwitcherSnapshotCleaner().clearSnapshots()
          }) {
+        self.backgroundTask = backgroundTask
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.favicons = favicons
@@ -260,7 +263,10 @@ class FireExecutor: FireExecuting {
 
         burnInProgress = true
         pixelsReporter.burnDidStart()
+        // Leaving the app mid-Fire would otherwise suspend it with the burn half done.
+        backgroundTask.begin()
         defer {
+            backgroundTask.end()
             burnInProgress = false
         }
 
@@ -665,4 +671,32 @@ class FireExecutor: FireExecuting {
 private enum SingleTabClosingBehavior {
     case openNewChat
     case navigateToHomepage
+}
+
+/// Asks iOS for background time while a burn runs.
+@MainActor
+protocol FireBackgroundTasking {
+    func begin()
+    func end()
+}
+
+@MainActor
+final class FireBackgroundTask: FireBackgroundTasking {
+
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+
+    nonisolated init() {}
+
+    func begin() {
+        end()
+        identifier = UIApplication.shared.beginBackgroundTask(withName: "Fire") { [weak self] in
+            self?.end()
+        }
+    }
+
+    func end() {
+        guard identifier != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
+    }
 }

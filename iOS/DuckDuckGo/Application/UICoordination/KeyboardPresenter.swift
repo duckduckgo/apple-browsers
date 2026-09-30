@@ -60,6 +60,13 @@ struct NewTabPageKeyboardPolicy {
         onNewTabPage ? onNewTab : onAppLaunch
     }
 
+    /// After Fire, New Tab decides. A burned Duck.ai chat reopens as a new chat that owns its input,
+    /// and the Search & Duck.ai address bar holds the keyboard back only during onboarding,
+    /// the step its suppression was added for.
+    func showsKeyboardAfterFire(onDuckAITab: Bool, searchInputToggleOn: Bool, stillOnboarding: Bool) -> Bool {
+        onNewTab && !onDuckAITab && !(searchInputToggleOn && stillOnboarding)
+    }
+
 }
 
 extension NewTabPageKeyboardPolicy {

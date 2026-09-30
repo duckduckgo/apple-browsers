@@ -524,6 +524,39 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
     }
 
+    struct AfterFireCase: Sendable {
+        let onNewTab: Bool
+        let onDuckAITab: Bool
+        let searchInputToggleOn: Bool
+        let stillOnboarding: Bool
+        let showsKeyboard: Bool
+    }
+
+    @Test(
+        "After Fire New Tab decides, except on a Duck.ai tab or with Search & Duck.ai during onboarding",
+        arguments: [
+            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: true),
+            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: true),
+            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: true, showsKeyboard: true),
+            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: true, onDuckAITab: true, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: true, onDuckAITab: true, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: false)
+        ]
+    )
+    func whenFireLandsOnNewTabPageThenKeyboardFollowsTheAfterFireTable(_ testCase: AfterFireCase) {
+        // App Launch plays no part after Fire, so it's on here to prove that.
+        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: true)
+
+        let showsKeyboard = policy.showsKeyboardAfterFire(
+            onDuckAITab: testCase.onDuckAITab,
+            searchInputToggleOn: testCase.searchInputToggleOn,
+            stillOnboarding: testCase.stillOnboarding)
+
+        #expect(showsKeyboard == testCase.showsKeyboard)
+    }
+
 }
 
 @MainActor

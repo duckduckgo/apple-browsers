@@ -655,6 +655,7 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testV21AccountSwitchKeepsFlowOpenUntilReportFinishes() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = false
         setUpWithSingleDevice(id: "1")
         managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
         ddgSyncing.stubLogin = [RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
@@ -674,6 +675,35 @@ final class SyncDialogControllerTests: XCTestCase {
 
         await fulfillment(of: [cancelCalled], timeout: 5.0)
         XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testV21AccountSwitchWithSimplifiedUICompletesAnimationBeforeShowingJoinerSuccess() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        setUpWithSingleDevice(id: "1")
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        ddgSyncing.stubLogin = [RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+
+        let didSwitchAccounts = await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.exchange, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: true)
+
+        XCTAssertTrue(didSwitchAccounts)
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.controllerDidFinishReportingAccountSwitch(didSucceed: true)
+
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.preparingToSyncAnimationDidFinish()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertEqual(syncDialogController.devices.count, 1)
     }
 
     func testV21AccountSwitchReportFailureKeepsPresentedError() {

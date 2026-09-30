@@ -61,13 +61,13 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
       with:
-        xcode-version: "26.6"
+        xcode-version: "27.0"
 
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5,26.6"
+        preferred-versions: "27.0"
 
     - name: Checkout shared web tests
       uses: actions/checkout@v6

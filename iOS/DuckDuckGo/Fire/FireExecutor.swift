@@ -603,10 +603,10 @@ class FireExecutor: FireExecuting {
         switch result {
         case .success:
             await recordAIChatsClearDate(trigger: trigger)
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -647,7 +647,11 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnTabAIHistory(tabViewModel: TabViewModel) async -> Result<Void, Error> {
         if let chatID = tabViewModel.currentAIChatId {
-            return await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: tabViewModel.tab.fireTab)
+            let result = await aiChatDeleter.deleteChat(chatID: chatID, isFireMode: tabViewModel.tab.fireTab)
+            if let report = aiChatDeleter.lastClearingReport {
+                dataClearingWideEventService?.recordAIChatClearing(report)
+            }
+            return result
         } else {
             Logger.aiChat.debug("No chatID found for tab, skipping single chat deletion")
             return .success(())

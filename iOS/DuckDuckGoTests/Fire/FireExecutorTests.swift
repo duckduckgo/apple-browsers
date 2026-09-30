@@ -1062,6 +1062,23 @@ final class FireExecutorTests: XCTestCase {
     
     // MARK: - Legacy AI Chats Setting Tests
     
+    func testWhenTabAIChatClearWasRetriedThenWideEventRecordsTheRetry() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 6),
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 500)
+        )
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "test-chat-id-123")
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.code, 6)
+        XCTAssertEqual(eventData.clearAIChatHistoryPageLoadMilliseconds, 500)
+    }
+
     func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
         // Given
         mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear

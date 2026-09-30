@@ -185,11 +185,7 @@ final class AddressBarViewController: NSViewController {
 
     /// True when the nav bar should render at its tall / focused height
     var shouldUseTallAddressBarLayout: Bool {
-        guard themeManager.isAppRebranded else {
-            return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
-        }
-
-        return selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
+        selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
     }
 
     let themeManager: ThemeManaging
@@ -970,7 +966,7 @@ final class AddressBarViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
-        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset(isAppRebranded: themeManager.isAppRebranded)
+        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset
         frame.origin.y += offset
         frame.size.height -= offset
 

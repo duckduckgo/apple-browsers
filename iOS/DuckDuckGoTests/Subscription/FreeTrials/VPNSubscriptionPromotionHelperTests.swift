@@ -77,6 +77,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
     func testWhenSubscriptionIsNotActive_AndBadgeLimitIsNotReached_subscriptionPromoStatusIsPromo() {
         // When
         mockSubscriptionManager.resultSubscription = .none
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
         mockFeatureFlagger.enabledFeatureFlags = [.vpnMenuItem]
         mockKeyValueStore.set(0, forKey: persistenceKey)
 
@@ -87,6 +88,7 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
     func testWhenSubscriptionIsNotActive_AndFeatureFlaggerIsDisabled_subscriptionPromoStatusIsNoPromo() {
         // When
         mockSubscriptionManager.resultSubscription = .none
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
         mockFeatureFlagger.enabledFeatureFlags = []
         mockKeyValueStore.set(0, forKey: persistenceKey)
 
@@ -97,8 +99,20 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
     func testWhenSubscriptionIsNotActive_AndBadgeLimitIsReached_subscriptionPromoStatusIsNoPromo() {
         // When
         mockSubscriptionManager.resultSubscription = .none
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
         mockFeatureFlagger.enabledFeatureFlags = [.vpnMenuItem]
         mockKeyValueStore.set(4, forKey: persistenceKey)
+
+        // Then
+        XCTAssertEqual(sut.subscriptionPromoStatus, .noPromo)
+    }
+
+    func testWhenSubscriptionIsNotActive_AndUserIsNotEligibleForFreeTrial_subscriptionPromoStatusIsNoPromo() {
+        // When
+        mockSubscriptionManager.resultSubscription = .none
+        mockSubscriptionManager.isEligibleForFreeTrialResult = false
+        mockFeatureFlagger.enabledFeatureFlags = [.vpnMenuItem]
+        mockKeyValueStore.set(0, forKey: persistenceKey)
 
         // Then
         XCTAssertEqual(sut.subscriptionPromoStatus, .noPromo)

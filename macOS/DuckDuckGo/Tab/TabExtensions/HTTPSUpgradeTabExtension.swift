@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
-import Navigation
+import DDGNavigation
 
 final class HTTPSUpgradeTabExtension {
 

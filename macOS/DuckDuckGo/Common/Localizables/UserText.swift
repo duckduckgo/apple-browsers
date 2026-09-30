@@ -19,7 +19,7 @@
 import Common
 import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import BrowserServicesKit
 
 struct UserText {
@@ -1464,10 +1464,12 @@ struct UserText {
     static let permissionCenterAutoplayDisclaimerTitle = NSLocalizedString("permission.center.autoplay.disclaimer.title", value: "Video autoplay", comment: "Title of the informational card explaining autoplay blocking in the Permission Center")
     static let permissionCenterAutoplayDisclaimerMessage = NSLocalizedString("permission.center.autoplay.disclaimer.message", value: "DuckDuckGo stops videos with sound from autoplaying on most sites. You can change settings for this site here, and for all sites in", comment: "Explains the Autoplay behavior the Permission Center")
     static let permissionCenterAutoplayDisclaimerSettingsLink = NSLocalizedString("permission.center.autoplay.disclaimer.settings.link", value: "Settings → General → Permissions.", comment: "Clickable label in the autoplay disclaimer UI that opens the General settings pane")
+    static let permissionCenterAutoplayDisclaimerWebsitePermissionsLink = NotLocalizedString("permission.center.autoplay.disclaimer.website-permissions.link", value: "Settings → Website Permissions → Autoplay.", comment: "Clickable label in the autoplay disclaimer UI that opens the Website Permissions settings pane")
 
     static let permissionsSection = NSLocalizedString("preferences.permissions.section", value: "Permissions", comment: "Section header for the Permissions section in General preferences")
     static let autoplayLabel = NSLocalizedString("preferences.autoplay.label", value: "Autoplay website media", comment: "Label for the autoplay blocking preference picker in General preferences")
     static let autoplayCaption = NSLocalizedString("preferences.autoplay.caption", value: "Doesn't apply to videos opened in Duck Player when 'Autoplay videos when opened in Duck Player' is on.", comment: "Caption for the autoplay blocking preference picker in General preferences")
+    static let autoplayMovedCaption = NotLocalizedString("preferences.autoplay.moved.caption", value: "Autoplay settings moved to %@.", comment: "Caption in General preferences telling the user where the autoplay setting now lives, %@ is the name of the Website Permissions settings pane and is a link to it")
     static let autoplayModeAllowAll = NSLocalizedString("preferences.autoplay.mode.allow-all", value: "Video and audio", comment: "Autoplay mode: allow all media to autoplay")
     static let autoplayModeBlockAudio = NSLocalizedString("preferences.autoplay.mode.block-audio", value: "Stop videos with sound", comment: "Autoplay mode: allow video but block audio autoplay (default)")
     static let autoplayModeBlockAll = NSLocalizedString("preferences.autoplay.mode.block-all", value: "Never", comment: "Autoplay mode: block all media autoplay")
@@ -1554,6 +1556,13 @@ struct UserText {
     static let websitePermissionsNoResults = NotLocalizedString("preferences.website-permissions.no-results", value: "No matches. Try a different search term.", comment: "Search result when no website permission matches the search query")
     static let websitePermissionsDecisionAccessibilityLabel = NotLocalizedString("preferences.website-permissions.decision.accessibility", value: "Permission for %@", comment: "Accessibility label for a website permission decision menu, %@ is the domain")
     static let websitePermissionsRemovePermissionAccessibilityLabel = NotLocalizedString("preferences.website-permissions.remove.accessibility", value: "Remove permission for %@", comment: "Accessibility label for a button that removes a website permission, %@ is the domain")
+    static let websitePermissionsDefaultSection = NotLocalizedString("preferences.website-permissions.default", value: "Default", comment: "Header above the radio group choosing the default behavior for a website permission")
+    static let websitePermissionsAskEachTime = NotLocalizedString("preferences.website-permissions.decision.ask-each-time", value: "Ask each time", comment: "Website permission option that prompts on every request")
+    static let websitePermissionsDefaultAccessibilityLabel = NotLocalizedString("preferences.website-permissions.default.accessibility", value: "Default behavior for %@", comment: "Accessibility label for the default behavior radio group, %@ is the permission name")
+    static let websitePermissionsPromptAllowThisVisit = NotLocalizedString("permission.prompt.allow-this-visit", value: "Allow this visit", comment: "Permission prompt button that grants a website permission until the page is reloaded or closed")
+    static let websitePermissionsPromptLocationFormat = NotLocalizedString("permission.prompt.location.format", value: "“%@” wants to know your location", comment: "Permission prompt title, %@ is the domain asking for the user's location")
+    static let websitePermissionsPromptDeviceFormat = NotLocalizedString("permission.prompt.device.format", value: "“%1$@” wants to use your %2$@", comment: "Permission prompt title, %1$@ is the domain and %2$@ is camera, microphone, or camera and microphone")
+    static let websitePermissionsPromptNotificationsFormat = NotLocalizedString("permission.prompt.notifications.format", value: "“%@” wants to send you notifications", comment: "Permission prompt title, %@ is the domain asking to send notifications")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")

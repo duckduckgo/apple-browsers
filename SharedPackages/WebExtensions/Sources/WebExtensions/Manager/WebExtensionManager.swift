@@ -128,6 +128,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
     /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
+    /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
+    private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
 
     // MARK: - AsyncStream
 
@@ -155,6 +157,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
+                isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil) {
@@ -172,6 +175,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.pixelFiring = pixelFiring
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
+        self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.scriptletConfiguration = scriptletConfiguration
@@ -198,6 +202,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.diagnosticsProvider = cpmDiagnosticsRecorder
             cpmDiagnosticsRecorder.nativeMessageHandlerCheck = { [weak self] context in
                 self?.messageRouter.hasHandler(for: context.uniqueIdentifier, featureName: "autoconsent") ?? false
+            }
+        }
+
+        if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+            healthMonitor.onConfirmedHang = { [weak self] in
+                Task { @MainActor [weak self] in
+                    await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
+                }
             }
         }
     }
@@ -477,6 +489,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public func loadEmbeddedExtensionBackgroundContent() async {
+        guard let context = controller.extensionContexts.first(where: {
+            $0.webExtension.duckDuckGoWebExtensionType == .embedded
+        }), context.webExtension.hasBackgroundContent else { return }
+
+        // Explicitly await WebKit's background startup so restored tabs cannot navigate before the
+        // Web Extension has registered the listeners and scripts needed for that first document.
+        do {
+            try await context.loadBackgroundContent()
+        } catch {
+            Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
     private func loadInstalledExtensions(lifecycle: InstalledExtensionsLoadLifecycle) async {
 
         isLoadingInstalledExtensions = true
@@ -664,6 +691,25 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
         lifecycleEventsContinuation?.yield(event)
         cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))
+    }
+
+    @MainActor
+    private func reloadEmbeddedExtensionAfterCPMMessagingHang() async {
+        guard isCPMMessagingHangRecoveryEnabled() else {
+            Logger.webExtensions.info("[CPM Health Monitor] Skipping embedded extension reload after a confirmed hang because cpmMessagingHangRecovery is disabled")
+            return
+        }
+
+        guard let installedExtension = installedEmbeddedExtension(for: .embedded) else {
+            Logger.webExtensions.warning("[CPM Health Monitor] Cannot reload the embedded extension after a confirmed hang because it is not installed")
+            return
+        }
+
+        do {
+            try await reloadExtension(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
+        } catch {
+            Logger.webExtensions.error("[CPM Health Monitor] Failed to reload the embedded extension after a confirmed hang: \(error.localizedDescription)")
+        }
     }
 
     func notifyUpdate() {

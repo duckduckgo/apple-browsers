@@ -201,11 +201,10 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
     }
 
-    func test_WhenBloomFilterExclusionsPersistenceFails_ThenNotModifiedRefreshRetriesCachedData() async {
+    func test_WhenBloomFilterExclusionsPersistenceFails_ThenNotModifiedRefreshDoesNotRetryCachedData() async {
         mockFetcher.fetchAllResult = []
         mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .updated
         mockStore.data = Data(#"{"data":["example.com"]}"#.utf8)
-        mockStore.etag = "etag"
         mockHTTPSUpgradeStore.persistExcludedDomainsError = ConfigurationHTTPSUpgradeStoreMock.Error.persistenceFailed
 
         await configManager.refreshNow()
@@ -217,7 +216,7 @@ final class ConfigurationManagerTests: XCTestCase {
 
         await configManager.refreshNow()
 
-        XCTAssertEqual(mockHTTPSUpgradeStore.persistExcludedDomainsCallCount, 2)
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistExcludedDomainsCallCount, 1)
     }
 
 }

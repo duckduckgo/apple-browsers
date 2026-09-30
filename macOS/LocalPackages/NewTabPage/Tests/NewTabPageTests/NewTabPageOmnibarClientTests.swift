@@ -854,6 +854,69 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.createImageModelSwitch)
     }
 
+    // MARK: - usage limits
+
+    @MainActor
+    func testUsageLimitsFromTheProviderAreIncludedInConfig() async throws {
+        let drawer = NewTabPageDataModel.OmnibarUsageLimits(
+            message: "75% of weekly limit",
+            secondaryText: " \u{00B7} Resets in 2d",
+            dismissible: true,
+            icon: .ring,
+            percent: 75,
+            severity: .warning,
+            cta: .init(label: "Switch to Haiku 4.5", leadingIcon: .convert, primaryModelId: "haiku", showMenu: false)
+        )
+        configProvider.usageLimitsResult = drawer
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.usageLimits, drawer)
+    }
+
+    @MainActor
+    func testWhenThereIsNoUsageMessageThenConfigOmitsTheDrawer() async throws {
+        configProvider.usageLimitsResult = nil
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.usageLimits)
+    }
+
+    @MainActor
+    func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
+
+        XCTAssertEqual(configProvider.dismissUsageLimitsCallCount, 1)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaForwardsThePickedModel() async throws {
+        let action = NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction(modelId: "claude-haiku-4-5")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: action)
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, ["claude-haiku-4-5"])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaWithNoModelForwardsNil() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, [nil])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testWhenTheProviderAsksForAnUpsellThenTheDialogIsPresented() async throws {
+        configProvider.selectUsageLimitsCtaOutcome = .requiresSubscriptionUpsell
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .usageLimit)
+    }
+
     // MARK: - attach tabs (config)
 
     @MainActor

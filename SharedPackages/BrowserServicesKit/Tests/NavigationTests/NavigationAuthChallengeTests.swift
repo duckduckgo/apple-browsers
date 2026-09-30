@@ -24,7 +24,7 @@ import Swifter
 import WebKit
 import XCTest
 
-@testable import Navigation
+@testable import DDGNavigation
 
 @available(iOS 15.0, *)
 class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {

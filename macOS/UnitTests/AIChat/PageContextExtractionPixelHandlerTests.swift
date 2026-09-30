@@ -25,21 +25,36 @@ struct PageContextExtractionPixelHandlerTests {
 
     private func capture(_ outcome: PageContextExtractionOutcome,
                          trigger: PageContextExtractionTrigger = .navigation,
-                         latency: PageContextExtractionLatencyBucket? = nil) -> AIChatPixel? {
+                         latency: PageContextExtractionLatencyBucket? = nil,
+                         contextType: PageContextType = .markdown) -> AIChatPixel? {
         var fired: AIChatPixel?
         let handler = PageContextExtractionPixelHandler(firePixel: { fired = $0 })
-        handler.fire(outcome, trigger: trigger, latency: latency)
+        handler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
         return fired
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("success maps to the extraction-success pixel with no extra params", .timeLimit(.minutes(1)))
+    @Test("success maps to the extraction-success pixel with only context_type", .timeLimit(.minutes(1)))
     func successMapsToSuccessPixel() {
         let pixel = capture(.success, trigger: .navigation, latency: .under1s)
         #expect(pixel?.name == "aichat_page_context_extraction_success")
-        #expect(pixel?.parameters?["reason"] == nil)
-        #expect(pixel?.parameters?["trigger"] == nil)
-        #expect(pixel?.parameters?["latency"] == nil)
+        #expect(pixel?.parameters == ["context_type": "markdown"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("success for a document reports context_type pdf", .timeLimit(.minutes(1)))
+    func documentSuccessReportsPDF() {
+        let pixel = capture(.success, trigger: .userRequest, latency: .under1s, contextType: .pdf)
+        #expect(pixel?.parameters?["context_type"] == "pdf")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("failure for a document reports context_type pdf", .timeLimit(.minutes(1)))
+    func documentFailureReportsPDF() {
+        let pixel = capture(.failure(.documentUnavailable), trigger: .userRequest, contextType: .pdf)
+        #expect(pixel?.name == "aichat_page_context_extraction_failed")
+        #expect(pixel?.parameters?["reason"] == "document_unavailable")
+        #expect(pixel?.parameters?["context_type"] == "pdf")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -50,6 +65,7 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["reason"] == "empty_content")
         #expect(pixel?.parameters?["trigger"] == "auto")
         #expect(pixel?.parameters?["latency"] == "1_to_5s")
+        #expect(pixel?.parameters?["context_type"] == "markdown")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -74,5 +90,6 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["category"] == "pdf")
         #expect(pixel?.parameters?["reason"] == "non_attachable")
         #expect(pixel?.parameters?["trigger"] == "tab_content")
+        #expect(pixel?.parameters?["context_type"] == nil)
     }
 }

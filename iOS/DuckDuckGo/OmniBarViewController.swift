@@ -528,6 +528,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
                             // Update to final icon state after animation completes
                             self.barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+                            self.barView.privacyInfoContainer.privacyIcon.resetToRestingFrame()
 
                             // Animation complete, process next in queue
                             self.completeCurrentAnimation()

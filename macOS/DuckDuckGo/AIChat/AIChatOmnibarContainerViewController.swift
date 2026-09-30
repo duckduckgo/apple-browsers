@@ -121,11 +121,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private enum Constants {
         static let clipMaskBottomOffset: CGFloat = 14
         static let shadowOverlapHeight: CGFloat = 21
-        static let legacyShadowOverlapHeight: CGFloat = 12
         static let submitButtonSize: CGFloat = 28
         static let submitButtonCornerRadius: CGFloat = 14
         static let submitButtonTrailingInset: CGFloat = 8
-        static let legacySubmitButtonTrailingInset: CGFloat = 13
         static let submitButtonBottomInset: CGFloat = 8
         static let toolButtonSize: CGFloat = 28
         static let toolButtonLeadingInset: CGFloat = 11
@@ -149,11 +147,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         static let attachmentsCarouselBottomAnchorOffset: CGFloat = -(attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
         /// Total panel height the carousel + below-spacing reserves when populated.
         static let attachmentsCarouselTotalPanelReservation: CGFloat = AIChatAttachmentsCarouselView.expandedHeight + (attachmentsCarouselBottomSpacing - AIChatAttachmentsCarouselView.shadowMargin)
-        static let suggestionsBottomPadding: CGFloat = 4
         static let containerTopPadding: CGFloat = 5
-        static let legacyContainerTopPadding: CGFloat = 0
         static let contentLeadingInset: CGFloat = 2
-        static let legacyContentLeadingInset: CGFloat = 0
         /// Also the difference between the two borders' radii — see `innerBorderCornerRadius(for:)`.
         static let innerBorderInset: CGFloat = 1
         /// Slack past the corner radius, so the card's top edge doesn't land where the arc ends.
@@ -234,15 +229,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             + Constants.usageWarningOverlapMargin
     }
 
-    /// Zero when rebranded: hosts size the panel from the list's own height, so a gap reserved out
-    /// here is height the panel never got. The expanded gap lives inside the list instead.
-    private var suggestionsBottomPadding: CGFloat {
-        themeManager.isAppRebranded ? 0 : Constants.suggestionsBottomPadding
-    }
-
     /// Exposed so hosts budget for the row instead of restating these anchors.
     var controlsRowHeight: CGFloat {
-        Constants.toolButtonSize + Constants.toolButtonBottomInset + suggestionsBottomPadding
+        Constants.toolButtonSize + Constants.toolButtonBottomInset
     }
 
     /// Unified attachments carousel height constraint — 0 when both image and tab attachment
@@ -399,8 +388,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Extra height needed beyond text and suggestions for dynamic content like attachments.
     /// This must be added to the container height calculation by the parent.
     var additionalContentHeight: CGFloat {
-        let containerTopPadding = themeManager.isAppRebranded ? Constants.containerTopPadding : Constants.legacyContainerTopPadding
-        return attachmentRowReservation + containerTopPadding + usageWarningReservation
+        attachmentRowReservation + Constants.containerTopPadding + usageWarningReservation
     }
 
     /// Calculates the total height that should be passthrough for the text container view.
@@ -408,9 +396,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var totalPassthroughHeight: CGFloat {
         // Without the card's region the text container overlay swallows clicks meant for it.
         var height = suggestionsHeight + usageWarningReservation
-        if suggestionsHeight > 0 {
-            height += suggestionsBottomPadding
-        }
         if omnibarController.isOmnibarToolsEnabled || !imageUploadButton.isHidden {
             // Add tool buttons area: button size + spacing above suggestions
             height += Constants.toolButtonSize + Constants.toolButtonBottomInset
@@ -553,6 +538,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func updateSubmitButtonState(for text: String) {
         let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasContent = hasText || omnibarController.hasSendableAttachments
         let canSendImages = omnibarController.isImageGenerationMode || omnibarController.selectedModelSupportsImageUpload
         let imageBlockingExcess = canSendImages && omnibarController.hasExcessActiveTabImageAttachments
         let fileBlockingExcess = omnibarController.selectedModelSupportsFileUpload && hasExcessFileAttachments
@@ -562,7 +548,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Voice-chat mode only kicks in when the input is empty, the feature flag is on, and we
         // aren't in image-generation mode (where the button must keep its image-flow semantics).
         // Otherwise the button keeps its original arrow/disabled-when-empty behavior.
-        if !hasText && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
+        if !hasContent && omnibarController.isVoiceChatAccessEnabled && !omnibarController.isImageGenerationMode {
             submitButtonMode = .voice
             submitButton.image = DesignSystemImages.Glyphs.Size16.voice
             submitButton.toolTip = UserText.aiChatVoiceChatButtonTooltip
@@ -577,7 +563,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.setAccessibilityLabel(UserText.aiChatSendButtonTooltip)
             // Enter on the textarea handles submit; skip the button in tab order.
             submitButton.refusesFirstResponder = true
-            applySubmitButtonAppearance(enabled: hasText && !hasBlockingExcess)
+            applySubmitButtonAppearance(enabled: hasContent && !hasBlockingExcess)
         }
     }
 
@@ -889,7 +875,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         toolsButton.target = self
         toolsButton.action = #selector(toolsButtonClicked)
         toolsButton.image = DesignSystemImages.Glyphs.Size16.options
-        toolsButton.keepIconLeadingAligned = !themeManager.isAppRebranded
+        toolsButton.keepIconLeadingAligned = false
         toolsButton.label = UserText.aiChatToolsButtonLabel
         toolsButton.toolTip = UserText.aiChatToolsButtonLabel
         toolsButton.setAccessibilityLabel(UserText.aiChatToolsButtonLabel)
@@ -985,10 +971,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // this point, so seed manually from whatever the active tab already has.
         applyPanelAttachmentsFromSharedState(omnibarController.activePanelAttachments)
 
-        let isAppRebranded = themeManager.isAppRebranded
-        let contentLeadingInset = isAppRebranded ? Constants.contentLeadingInset : Constants.legacyContentLeadingInset
-        let submitButtonTrailingInset = isAppRebranded ? Constants.submitButtonTrailingInset : Constants.legacySubmitButtonTrailingInset
-
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -1004,7 +986,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -submitButtonTrailingInset),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
             // Bottom constraint is set in setupSuggestionsView() to be above suggestions
             submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
@@ -1015,7 +997,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
             reasoningPickerButton.trailingAnchor.constraint(equalTo: modelPickerButton.leadingAnchor, constant: -Constants.toolButtonSpacing),
 
-            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + contentLeadingInset),
+            imageUploadButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + Constants.contentLeadingInset),
             imageUploadButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.toolButtonSize),
             imageUploadButton.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
 
@@ -1033,7 +1015,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             // The unified attachments carousel sits directly above the tools row. It contains the
             // image attachments view (leading) and the tab cards (trailing) — both flow into one
             // horizontally-scrollable strip.
-            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset + contentLeadingInset),
+            attachmentsCarouselView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.attachmentsLeadingInset + Constants.contentLeadingInset),
             attachmentsCarouselView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.attachmentsLeadingInset),
             // The carousel's bottom shadow-margin band already accounts for part of the visual
             // gap to the tools row; the constraint adds the remainder so the visible card-to-tools
@@ -1067,8 +1049,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let heightConstraint = suggestionsView.heightAnchor.constraint(equalToConstant: 0)
         suggestionsHeightConstraint = heightConstraint
 
-        let bottomConstraint = suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor,
-                                                                      constant: -suggestionsBottomPadding)
+        let bottomConstraint = suggestionsView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
 
         NSLayoutConstraint.activate([
             suggestionsView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
@@ -1090,9 +1071,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // Tools button chains after image upload button, or aligns to container when upload is hidden.
         // The container is edge to edge, so re-apply the leading inset here to match imageUploadButton.
-        let contentLeadingInset = themeManager.isAppRebranded ? Constants.contentLeadingInset : Constants.legacyContentLeadingInset
         toolsLeadingToUploadButton = toolsButton.leadingAnchor.constraint(equalTo: imageUploadButton.trailingAnchor, constant: Constants.toolButtonSpacing)
-        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + contentLeadingInset)
+        toolsLeadingToContainer = toolsButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.toolButtonLeadingInset + Constants.contentLeadingInset)
         toolsLeadingToUploadButton?.isActive = true
         toolsLeadingToContainer?.isActive = false
 
@@ -1502,7 +1482,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let viewFrame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        let overlap = themeManager.isAppRebranded ? Constants.shadowOverlapHeight : Constants.legacyShadowOverlapHeight
+        let overlap = Constants.shadowOverlapHeight
         let band = usageWarningReservation
 
         /// The whole silhouette, card band included, as one rounded rect. Two boxes cannot meet
@@ -2245,7 +2225,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // Resolved once and passed on: `modelPickerItems` records a free-trial badge impression, so
         // asking for it twice per open would burn through the badge's view cap at double speed.
         let items = omnibarController.modelPickerItems(selectedModelId: selectedModelId,
-                                                       freeModelsOnly: freeModelsOnly)
+                                                       freeModelsOnly: freeModelsOnly,
+                                                       hidesGatedModels: raisedFromUsageCard)
         // Only a picker that actually shows a gated row is a subscription-funnel impression.
         if items.contains(where: { if case .gatedModel = $0 { return true } else { return false } }) {
             omnibarController.pixelHandler.fire(.modelPickerShown)
@@ -2472,6 +2453,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         dialog.onHaveSubscription = { [weak self] in
             self?.omnibarController.presentSubscriptionActivationFlow()
         }
+        omnibarController.pixelHandler.fire(.gatedRowClick(origin: origin.rawValue))
         omnibarController.pixelHandler.fire(.subscriptionUpsellShown(origin: origin.rawValue))
         dialog.show()
     }
@@ -2535,18 +2517,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func applyTheme(theme: ThemeStyleProviding) {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
-        let isAppRebranding = themeManager.isAppRebranded
 
         // Painted transparent rather than skipped: `applyTheme` re-runs on appearance changes and
         // would otherwise restore what `setupUI` set.
         backgroundView.backgroundColor = hostDrawsChrome ? .clear : colorsProvider.activeAddressBarBackgroundColor(isBurner: burnerMode.isBurner)
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
-        if isAppRebranding {
-            backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
-        } else {
-            backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
-        }
+        backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
 
         if let borderColor = NSColor(named: "AddressBarBorderColor"), !hostDrawsChrome {
             backgroundView.borderColor = borderColor
@@ -2598,9 +2575,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
         )
 
-        if isAppRebranding {
-            innerBorderView.roundedCorners = [.bottomLeft, .bottomRight]
-        }
+        innerBorderView.roundedCorners = [.bottomLeft, .bottomRight]
 
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions

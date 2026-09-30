@@ -48,6 +48,7 @@ final class PreferencesSidebarModel: ObservableObject {
     @Published private(set) var sections: [PreferencesSection] = []
 
     @Published private(set) var scrollTarget: PreferencesScrollAnchor?
+    @Published private(set) var websitePermissionTarget: WebsitePermissionCategory?
 
     @Published var selectedTabIndex: Int = 0
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser {
@@ -264,6 +265,12 @@ final class PreferencesSidebarModel: ObservableObject {
         let duckPlayerFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .duckPlayer)
         let aiChatFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .aiChat)
         let youTubeAdBlockingFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .adBlockingExtension)
+        let websitePermissionsFeatureFlagDidChange = featureFlagger.updatesPublisher
+            .map { [weak featureFlagger] in featureFlagger?.isFeatureOn(.websitePermissionsSettings) == true }
+            .prepend(featureFlagger.isFeatureOn(.websitePermissionsSettings))
+            .removeDuplicates()
+            .dropFirst()
+            .asVoid()
 
         let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
             .removeDuplicates()
@@ -272,6 +279,7 @@ final class PreferencesSidebarModel: ObservableObject {
         Publishers.Merge(duckPlayerFeatureFlagDidChange, syncFeatureFlagsDidChange)
             .merge(with: aiChatFeatureFlagDidChange)
             .merge(with: youTubeAdBlockingFeatureFlagDidChange)
+            .merge(with: websitePermissionsFeatureFlagDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.refreshSections()
@@ -605,6 +613,7 @@ final class PreferencesSidebarModel: ObservableObject {
         guard identifier != .partnershipsHub else { return }
 
         resetScrollRequest()
+        resetWebsitePermissionRequest()
 
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
@@ -634,11 +643,15 @@ final class PreferencesSidebarModel: ObservableObject {
     @MainActor
     func navigate(to destination: PreferencesDestination) {
         selectPane(destination.pane)
-        guard let anchor = destination.scrollAnchor, destination.pane == selectedPane else {
-            return
-        }
+        guard destination.pane == selectedPane else { return }
 
-        scrollTarget = anchor
+        websitePermissionTarget = destination.websitePermissionCategory
+        scrollTarget = destination.scrollAnchor
+    }
+
+    @MainActor
+    func resetWebsitePermissionRequest() {
+        websitePermissionTarget = nil
     }
 
     @MainActor

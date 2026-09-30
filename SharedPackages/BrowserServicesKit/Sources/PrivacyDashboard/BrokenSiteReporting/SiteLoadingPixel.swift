@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 
 /// Measures site loading success rates and rendering performance from navigation outcomes.

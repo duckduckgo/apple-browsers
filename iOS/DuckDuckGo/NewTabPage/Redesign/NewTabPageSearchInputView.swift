@@ -43,23 +43,8 @@ struct NewTabPageSearchInputView: View {
                                         onVoiceSearch: onVoiceSearch)
                 .frame(height: Metrics.fieldHeight)
         }
-        .background(cardBackground)
+        .background(RedesignedNewTabPageCardBackground())
         .padding(.horizontal, Metrics.horizontalMargin)
-    }
-
-    private var cardBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: Metrics.cardCornerRadius, style: .continuous)
-        return shape
-            .fill(Color(designSystemColor: .surfaceSecondary))
-            .overlay(shape.strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 1))
-            .overlay(
-                shape
-                    .inset(by: 0.5)
-                    .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: 1)
-                    .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center))
-            )
-            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, y: 2)
-            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 16, y: 8)
     }
 }
 
@@ -157,7 +142,6 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let cardPadding: CGFloat = 8
-    static let cardCornerRadius: CGFloat = 28
     static let fieldHeight: CGFloat = 64
     static let toggleHeight: CGFloat = 40
 }

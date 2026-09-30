@@ -120,4 +120,23 @@ final class AIChatClearingSequenceTests: XCTestCase {
 
         XCTAssertEqual(steps.last, "clear second.example chat2")
     }
+
+    func testWhenTwoChatsInARowGetNoAnswerThenTheRestOfThatOriginIsSkipped() async {
+        failingClears = ["first.example chat1", "first.example chat2", "first.example chat3"]
+
+        _ = await makeSequence().run(chatIDs: ["chat1", "chat2", "chat3"])
+
+        XCTAssertEqual(steps, ["load first.example", "clear first.example chat1",
+                               "load first.example", "clear first.example chat2",
+                               "load second.example", "clear second.example chat1", "clear second.example chat2", "clear second.example chat3"])
+    }
+
+    func testWhenAnsweredChatSitsBetweenUnansweredOnesThenTheOriginIsNotSkipped() async {
+        failingClears = ["first.example chat1", "first.example chat3"]
+
+        _ = await makeSequence().run(chatIDs: ["chat1", "chat2", "chat3"])
+
+        XCTAssertEqual(steps.filter { $0.hasPrefix("clear first.example") },
+                       ["clear first.example chat1", "clear first.example chat2", "clear first.example chat3"])
+    }
 }

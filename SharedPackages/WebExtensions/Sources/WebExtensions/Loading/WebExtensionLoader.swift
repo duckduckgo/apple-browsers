@@ -90,7 +90,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
         // Every install path (installExtension(from:), installEmbeddedExtension) funnels into this
         // method, so patching here covers all of them — and does so after the files have landed but
-        // before WKWebExtension reads the manifest.
+        // before WKWebExtension reads the manifest. The patcher leaves our own extensions alone.
         backgroundPagePatcher.patchIfNeeded(installedExtensionURL: extensionURL)
 
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
@@ -170,12 +170,14 @@ public final class WebExtensionLoader: WebExtensionLoading {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        // Optional API permissions are granted up front too. The manager's `promptForPermissions` delegate already approves every
-        // runtime request, so this only removes the need for the extension to ask, and it keeps behavior consistent for extensions
-        // that check `permissions.contains` before asking (and bail out when it returns false).
+        // Optional API permissions are granted up front too, for third-party extensions only. The manager's `promptForPermissions`
+        // delegate already approves every runtime request, so this only removes the need for the extension to ask, and it keeps
+        // behavior consistent for extensions that check `permissions.contains` before asking (and bail out when it returns false).
         // Optional host permissions are deliberately left ungranted — host access is unchanged.
-        for permission in webExtension.optionalPermissions {
-            context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
+        if context.needsChromeCompatibility {
+            for permission in webExtension.optionalPermissions {
+                context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
+            }
         }
 
         context.isInspectable = isInspectable

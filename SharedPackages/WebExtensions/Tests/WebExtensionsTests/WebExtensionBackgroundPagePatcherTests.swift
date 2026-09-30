@@ -336,6 +336,22 @@ final class WebExtensionBackgroundPagePatcherTests: XCTestCase {
         """)
     }
 
+    func testWhenManifestIsADuckDuckGoExtensionWithServiceWorker_ThenManifestIsUntouched() throws {
+        try assertManifestIsUntouched("""
+        {
+            "manifest_version": 3,
+            "name": "Content Blocker",
+            "browser_specific_settings": {
+                "duckduckgo": { "id": "com.duckduckgo.content-blocker-extension" }
+            },
+            "background": {
+                "service_worker": "background.js",
+                "type": "module"
+            }
+        }
+        """)
+    }
+
     func testWhenManifestHasNoBackgroundKey_ThenManifestIsUntouched() throws {
         try assertManifestIsUntouched("""
         {

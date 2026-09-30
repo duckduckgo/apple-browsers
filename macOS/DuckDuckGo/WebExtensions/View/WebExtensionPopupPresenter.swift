@@ -26,7 +26,7 @@ import WebKit
 ///
 /// Used in place of `WKWebExtensionAction.popupPopover` so the visible shape stays under our
 /// control. On macOS 26 the popover chrome draws its own rounded corners that we cannot clip
-/// from outside, and extension popups such as Dark Reader paint a square page over them, which
+/// from outside, and many extension popups paint a square page over them, which
 /// leaves the frame corners showing around the page. This panel draws square corners instead.
 final class WebExtensionPopupPanel: NSPanel {
 

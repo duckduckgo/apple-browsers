@@ -94,14 +94,13 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     // MARK: - Buttons
 
     private func updateLoadedExtensions() {
-        // Only extensions that declare a toolbar action get a button. Our own embedded
-        // extensions (even though most of them declare none) are forced out of the
-        // navigation bar by the logic in `declaresToolbarAction`.
+        // Only third-party extensions that declare a toolbar action get a button. Our own
+        // extensions stay out of the navigation bar, even Dark Reader, which declares an action popup.
         //
         // `loadedExtensions` is a set, so sort the contexts to keep the button order
         // the same between updates and between app launches.
         let contexts = webExtensionManager.loadedExtensions
-            .filter(\.declaresToolbarAction)
+            .filter { $0.needsChromeCompatibility && $0.declaresToolbarAction }
             .sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
 
         removeButtons(forExtensionsRemovedFrom: contexts)

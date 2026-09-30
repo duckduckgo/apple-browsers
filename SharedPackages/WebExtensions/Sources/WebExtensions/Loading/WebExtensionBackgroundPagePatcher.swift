@@ -37,9 +37,12 @@ import os.log
 ///   can be served without editing the extension's own sources.
 ///
 /// The patch is deliberately generic and conservative:
+/// - it never touches one of our own extensions (a manifest with a recognized
+///   `browser_specific_settings.duckduckgo.id`), whatever its background looks like — the content
+///   blocker, for one, declares a service worker;
 /// - it only applies when `background.service_worker` is the *only* background declaration, so a
-///   manifest that already uses `background.scripts` or `background.page` (our embedded extensions,
-///   such as Dark Reader) is left byte-for-byte untouched;
+///   manifest that already uses `background.scripts` or `background.page` is left byte-for-byte
+///   untouched;
 /// - it is idempotent, because a patched manifest no longer declares a service worker.
 ///
 /// For a classic (non-module) worker the generated page also loads `WebExtensionImportScriptsShim`
@@ -95,6 +98,12 @@ struct WebExtensionBackgroundPagePatcher {
             let manifestData = try Data(contentsOf: manifestURL)
 
             guard var manifest = try JSONSerialization.jsonObject(with: manifestData) as? [String: Any] else {
+                return false
+            }
+
+            // Only third-party extensions get the Chrome-compatibility rewrite. This runs before a
+            // `WKWebExtension` exists, so it reads the raw manifest the way `needsChromeCompatibility` does.
+            guard !declaresDuckDuckGoSettings(inManifest: manifest) else {
                 return false
             }
 

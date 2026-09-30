@@ -132,6 +132,11 @@ extension WebExtensionManager {
         do {
             extensionMessage = try parseMessage(message, extensionContext: extensionContext)
         } catch {
+            guard extensionContext.needsChromeCompatibility else {
+                Logger.webExtensions.error("❌ Message parsing failed: \(error.localizedDescription)")
+                return ["error": error.localizedDescription]
+            }
+
             // A message we cannot parse belongs to a third-party extension, not to us. Such an
             // extension expects its own native host, so pass the message on unchanged.
             Logger.webExtensions.debug("📬 Message is not ours, so it goes to the native host: \(error.localizedDescription)")
@@ -149,6 +154,11 @@ extension WebExtensionManager {
             Logger.webExtensions.error("❌ Message handling failed: \(error.localizedDescription)")
             return nil
         case .noHandler:
+            guard extensionContext.needsChromeCompatibility else {
+                Logger.webExtensions.error("❌ No handler registered for feature: \(extensionMessage.featureName)")
+                return nil
+            }
+
             Logger.webExtensions.debug("📬 No handler for \(extensionMessage.featureName), so it goes to the native host")
             return try await sendToNativeHost(message,
                                               applicationIdentifier: applicationIdentifier,
@@ -205,6 +215,14 @@ extension WebExtensionManager {
                                        for extensionContext: WKWebExtensionContext,
                                        completionHandler: @escaping (Error?) -> Void) {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
+
+        // Our own extensions have no native host: the port stays unsupported.
+        guard extensionContext.needsChromeCompatibility else {
+            Logger.webExtensions.debug("🔗 Connected to extension: \(displayName)")
+            completionHandler(nil)
+            return
+        }
+
         let applicationIdentifier = port.applicationIdentifier ?? "(none)"
         Logger.webExtensions.debug("🔗 \(displayName) opens a port to \(applicationIdentifier, privacy: .public)")
 

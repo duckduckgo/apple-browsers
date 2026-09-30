@@ -129,6 +129,19 @@ public enum WebExtensionAPIStubScript {
             return;
         }
 
+        // Our own extensions (autoconsent, content blocker, Dark Reader, …) declare
+        // `browser_specific_settings.duckduckgo` and need no Chrome shims. Keep in sync with
+        // `WKWebExtension.needsChromeCompatibility`.
+        try {
+            var settings = api.runtime && typeof api.runtime.getManifest === "function"
+                ? api.runtime.getManifest().browser_specific_settings : undefined;
+            if (settings && settings.duckduckgo) {
+                return;
+            }
+        } catch (error) {
+            // A page that cannot read its manifest is treated like any other extension page.
+        }
+
         // The script also runs in tabs (the app installs it as a tab user script, so it reaches
         // extension pages embedded in websites), and there it must leave ordinary web content
         // alone: some websites define their own `window.chrome` object to look like Chrome, and

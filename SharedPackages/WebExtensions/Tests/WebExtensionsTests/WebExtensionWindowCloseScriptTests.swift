@@ -92,6 +92,30 @@ final class WebExtensionWindowCloseScriptTests: XCTestCase {
         try assertTrue("close === originalClose")
     }
 
+    func testWhenManifestIsADuckDuckGoExtension_ThenCloseIsLeftAlone() throws {
+        installHandler()
+        context.evaluateScript("""
+        var chrome = { runtime: { getManifest: function() {
+            return { browser_specific_settings: { duckduckgo: { id: "org.duckduckgo.web-extension.darkreader" } } };
+        } } };
+        var originalClose = close;
+        """)
+        context.evaluateScript(WebExtensionWindowCloseScript.source)
+
+        try assertTrue("close === originalClose")
+    }
+
+    func testWhenManifestIsThirdParty_ThenCloseIsReported() throws {
+        installHandler()
+        context.evaluateScript("""
+        var chrome = { runtime: { getManifest: function() { return { name: "Third party" }; } } };
+        var originalClose = close;
+        """)
+        context.evaluateScript(WebExtensionWindowCloseScript.source)
+
+        try assertTrue("close !== originalClose")
+    }
+
     // MARK: - Helpers
 
     private func installHandler(throwing: Bool = false) {

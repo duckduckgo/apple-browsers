@@ -207,6 +207,21 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenDuckDuckGoExtensionDeclaresOptionalPermissions_ThenTheyAreNotGranted() async throws {
+        let identifier = "test-extension-id"
+        let extensionURL = try createTestWebExtensionWithPermissions(
+            optionalPermissions: ["nativeMessaging"],
+            duckDuckGoExtensionId: DuckDuckGoWebExtensionType.embedded.rawValue
+        )
+        storageProvider.resolvedExtensionURL = extensionURL
+
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+
+        let context = try XCTUnwrap(delegateMock.willLoadContext)
+        XCTAssertFalse(context.hasPermission(.nativeMessaging))
+    }
+
+    @MainActor
     func testWhenExtensionDeclaresOnlyRequiredPermissions_ThenOptionalPermissionIsNotGranted() async throws {
         let identifier = "test-extension-id"
         let extensionURL = try createTestWebExtensionWithPermissions(
@@ -246,7 +261,8 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
         permissions: [String] = [],
         hostPermissions: [String] = [],
         optionalPermissions: [String] = [],
-        optionalHostPermissions: [String] = []
+        optionalHostPermissions: [String] = [],
+        duckDuckGoExtensionId: String? = nil
     ) throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
@@ -267,6 +283,10 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
             "optional_host_permissions": [\(optionalHostPermissions.map { "\"\($0)\"" }.joined(separator: ", "))],
         """
 
+        let browserSpecificSettingsJSON = duckDuckGoExtensionId.map { """
+            "browser_specific_settings": { "duckduckgo": { "id": "\($0)" } },
+        """ } ?? ""
+
         let manifest = """
         {
             "manifest_version": 3,
@@ -276,6 +296,7 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
             \(hostPermissionsJSON)
             \(optionalPermissionsJSON)
             \(optionalHostPermissionsJSON)
+            \(browserSpecificSettingsJSON)
             "description": "Minimal test extension for unit tests"
         }
         """

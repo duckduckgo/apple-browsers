@@ -104,6 +104,7 @@ struct Foreground: ForegroundHandling {
                                                  featureFlagger: appDependencies.featureFlagger),
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnEvaluator: idleReturnEvaluator,
+            featureFlagger: appDependencies.featureFlagger,
             idleReturnDelegate: appDependencies.mainCoordinator
         )
         interactionManager = UIInteractionManager(

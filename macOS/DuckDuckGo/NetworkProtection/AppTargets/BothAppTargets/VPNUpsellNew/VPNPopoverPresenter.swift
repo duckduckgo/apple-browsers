@@ -37,7 +37,7 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
     private var popover: VPNUpsellPopover?
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
-    private let buttonDelegate: VPNUpsellToolbarButtonPromoDelegate
+    private let buttonDelegate: VPNUpsellToolbarButtonPromoDelegate // swiftlint:disable:this weak_delegate
     private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(subscriptionManager: any SubscriptionManager,

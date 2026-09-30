@@ -403,13 +403,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate(
+    lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate( // swiftlint:disable:this weak_delegate
         featureFlagger: featureFlagger,
         visibilityManager: vpnUpsellVisibilityManager,
         persistor: vpnUpsellUserDefaultsPersistor
     )
 
-    lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate(
+    lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate( // swiftlint:disable:this weak_delegate
         featureFlagger: featureFlagger,
         visibilityManager: vpnUpsellVisibilityManager,
         persistor: vpnUpsellUserDefaultsPersistor

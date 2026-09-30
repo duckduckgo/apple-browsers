@@ -126,8 +126,10 @@ final class NavigationBarViewController: NSViewController {
     private let fireproofDomains: FireproofDomains
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
+    // swiftlint:disable weak_delegate
     private let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
     private let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
+    // swiftlint:enable weak_delegate
 
     private var subscriptionManager: SubscriptionManager {
         Application.appDelegate.subscriptionManager

@@ -31,8 +31,10 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
     private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
+    // swiftlint:disable weak_delegate
     private let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
     private let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
+    // swiftlint:enable weak_delegate
 
     // MARK: - Subscriptions
 

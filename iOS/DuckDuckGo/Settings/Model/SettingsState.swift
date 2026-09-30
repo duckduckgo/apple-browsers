@@ -1,0 +1,192 @@
+//
+//  SettingsState.swift
+//  DuckDuckGo
+//
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import BrowserServicesKit
+import Subscription
+import Networking
+import WebExtensions
+
+struct SettingsState {
+    
+    enum SubscriptionStatus {
+        case active, inactive, unknown
+    }
+    
+    struct AddressBar {
+        var enabled: Bool
+        var position: AddressBarPosition
+    }
+    
+    struct TextZoom {
+        var level: TextZoomLevel
+    }
+
+    struct Subscription: Codable {
+        var hasAppStoreProductsAvailable: Bool
+        var isSignedIn: Bool
+        var hasSubscription: Bool
+        var hasActiveSubscription: Bool
+        var isRestoring: Bool
+        var shouldDisplayRestoreSubscriptionError: Bool
+        var subscriptionFeatures: [SubscriptionEntitlement]
+        var entitlements: [SubscriptionEntitlement]
+        var platform: DuckDuckGoSubscription.Platform
+        var isShowingStripeView: Bool
+        var isActiveTrialOffer: Bool
+        /// Whether the user is eligible for a free trial subscription offer
+        var isEligibleForTrialOffer: Bool
+        /// Whether the user is eligible to re-subscribe using the win-back offer
+        var isWinBackEligible: Bool
+    }
+
+    struct SyncSettings {
+        var enabled: Bool
+        var title: String
+    }
+    
+    // Appearance properties
+    var appThemeStyle: ThemeStyle
+    var appIcon: AppIcon
+    var textZoom: TextZoom
+    var addressBar: AddressBar
+    var showsFullURL: Bool
+    var showTrackersBlockedAnimation: Bool
+    var refreshButtonPosition: RefreshButtonPosition
+    var mobileCustomization: MobileCustomization.State
+    var forceWebsiteDarkMode: Bool
+
+    // Privacy properties
+    var sendDoNotSell: Bool
+    var cookiePopupPreference: CookiePopupPreference
+    var autoClearAIChatHistory: Bool
+    var applicationLock: Bool
+
+    // Customization properties
+    var autocomplete: Bool
+    var recentlyVisitedSites: Bool
+    var longPressPreviews: Bool
+    var allowUniversalLinks: Bool
+
+    // Logins properties
+    var activeWebsiteAccount: SecureVaultModels.WebsiteAccount?
+    var activeWebsiteCreditCard: SecureVaultModels.CreditCard?
+    var autofillSource: AutofillSettingsSource?
+    var showCreditCardManagement: Bool
+    var showSettingsScreen: AutofillSettingsDestination?
+
+    // About properties
+    var version: String
+    var crashCollectionOptInStatus: CrashCollectionOptInStatus
+
+    // Features
+    var debugModeEnabled: Bool
+    var voiceSearchEnabled: Bool
+    var speechRecognitionAvailable: Bool // Returns if the device has speech recognition available
+    var loginsEnabled: Bool
+    var sitePermissionsEnabled: Bool
+    
+    // Network Protection properties
+    var networkProtectionConnected: Bool
+
+    // Subscriptions Properties
+    var subscription: Subscription
+    
+    // Sync Properties
+    var sync: SyncSettings
+    var syncSource: String?
+
+    // Duck Player Mode
+    var duckPlayerEnabled: Bool
+    var duckPlayerMode: DuckPlayerMode?
+    var duckPlayerOpenInNewTab: Bool
+    var duckPlayerOpenInNewTabEnabled: Bool
+    
+    // Duck Player Native UI
+    var duckPlayerAutoplay: Bool
+    var duckPlayerNativeUISERPEnabled: Bool
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
+
+    // Autoplay
+    var autoplayBlockingMode: AutoplayBlockingMode
+  
+    // YouTube Ad Blocking
+    var youTubeAdBlockingAvailable: Bool
+    var youTubeAdBlockingEnabled: Bool
+    var youTubeAdBlockingDisclosureHidden: Bool
+
+    static var defaults: SettingsState {
+        return SettingsState(
+            appThemeStyle: .systemDefault,
+            appIcon: AppIconManager.shared.appIcon,
+            textZoom: TextZoom(level: .percent100),
+            addressBar: AddressBar(enabled: false, position: .top),
+            showsFullURL: false,
+            showTrackersBlockedAnimation: true,
+            refreshButtonPosition: .addressBar,
+            mobileCustomization: .default,
+            forceWebsiteDarkMode: false,
+            sendDoNotSell: true,
+            cookiePopupPreference: .default,
+            autoClearAIChatHistory: false,
+            applicationLock: false,
+            autocomplete: true,
+            recentlyVisitedSites: true,
+            longPressPreviews: true,
+            allowUniversalLinks: true,
+            activeWebsiteAccount: nil,
+            activeWebsiteCreditCard: nil,
+            autofillSource: nil,
+            showCreditCardManagement: false,
+            version: "0.0.0.0",
+            crashCollectionOptInStatus: .undetermined,
+            debugModeEnabled: false,
+            voiceSearchEnabled: false,
+            speechRecognitionAvailable: false,
+            loginsEnabled: false,
+            sitePermissionsEnabled: false,
+            networkProtectionConnected: false,
+            subscription: Subscription(hasAppStoreProductsAvailable: false,
+                                       isSignedIn: false,
+                                       hasSubscription: false,
+                                       hasActiveSubscription: false,
+                                       isRestoring: false,
+                                       shouldDisplayRestoreSubscriptionError: false,
+                                       subscriptionFeatures: [],
+                                       entitlements: [],
+                                       platform: .unknown,
+                                       isShowingStripeView: false,
+                                       isActiveTrialOffer: false,
+                                       isEligibleForTrialOffer: false,
+                                       isWinBackEligible: false),
+            sync: SyncSettings(enabled: false, title: ""),
+            syncSource: nil,
+            duckPlayerEnabled: false,
+            duckPlayerMode: .alwaysAsk,
+            duckPlayerOpenInNewTab: true,
+            duckPlayerOpenInNewTabEnabled: false,
+            duckPlayerAutoplay: true,
+            duckPlayerNativeUISERPEnabled: true,
+            duckPlayerNativeYoutubeMode: .ask,
+            autoplayBlockingMode: .blockAudio,
+            youTubeAdBlockingAvailable: false,
+            youTubeAdBlockingEnabled: false,
+            youTubeAdBlockingDisclosureHidden: false
+        )
+    }
+}

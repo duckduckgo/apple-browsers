@@ -37,6 +37,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     case loaded
     case loadError(error: Error)
+    case reloadError(parameters: [String: String])
 
     // MARK: - Embedded Extensions
 
@@ -82,10 +83,13 @@ enum WebExtensionPixel: PixelKit.Event {
     case darkReaderNotLoaded
     case adBlockingExtensionNotLoaded
     case adBlockingScriptletsNotFetched(extensionLoaded: Bool)
-
     // MARK: - Daily State
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
+
+    // MARK: - Debug
+
+    case debugCPM(CPMWebExtensionPixelMetadata)
 
     // MARK: - PixelKit.Event
 
@@ -107,6 +111,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "m_mac_web_extension_loaded"
         case .loadError:
             return "m_mac_web_extension_load_error"
+        case .reloadError:
+            return "debug_web_extension_reload_failed"
         case .embeddedInstalled:
             return "m_mac_web_extension_embedded_installed"
         case .embeddedUpgraded:
@@ -167,6 +173,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
+        case .debugCPM(let metadata):
+            return metadata.name
         }
     }
 
@@ -198,8 +206,21 @@ enum WebExtensionPixel: PixelKit.Event {
             ]
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
+        case .debugCPM(let metadata):
+            return metadata.parameters
+        case .reloadError(let parameters):
+            return parameters
         default:
             return nil
+        }
+    }
+
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .debugCPM, .reloadError:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 
@@ -255,6 +276,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
+        let frequency: PixelKit.Frequency
         switch event {
         case .installed:
             pixel = .installed
@@ -272,6 +294,14 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .loaded
         case .loadError(let error):
             pixel = .loadError(error: error)
+        case .reloadError(let type, let trigger, let phase, let error):
+            let metadata = WebExtensionReloadErrorPixelMetadata(
+                type: type,
+                trigger: trigger,
+                phase: phase,
+                error: error
+            )
+            pixel = .reloadError(parameters: metadata.parameters)
         case .embeddedInstalled(let type):
             guard let macPixel = type.installedPixel else { return }
             pixel = macPixel
@@ -298,7 +328,30 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
+        case .cpmInitializationFailed,
+             .cpmMessagingStuck,
+             .cpmMessagingRecoveredWithoutExtensionReload,
+             .cpmMessagingRecoveredAfterExtensionReload,
+             .cpmMessagingExtensionReloadFailed:
+            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+            pixel = .debugCPM(metadata)
         }
-        PixelKit.fire(pixel, frequency: .dailyAndStandard)
+        if case .reloadError = event {
+            frequency = .dailyAndCount
+        } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+            frequency = metadata.frequency.pixelKitFrequency
+        } else {
+            frequency = .dailyAndStandard
+        }
+        PixelKit.fire(pixel, frequency: frequency)
+    }
+}
+
+private extension CPMWebExtensionPixelFrequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .daily: return .daily
+        case .dailyAndCount: return .dailyAndCount
+        }
     }
 }

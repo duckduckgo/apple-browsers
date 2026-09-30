@@ -34,6 +34,10 @@ public final class SubscriptionFeatureFlagMapping: FeatureFlaggerMapping<Subscri
                 return (internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+            case .useSubscriptionNoProductsOverride:
+                return (internalUserDecider.isInternalUser &&
+                        subscriptionEnvironment.serviceEnvironment == .staging &&
+                        subscriptionUserDefaults.noSubscriptionProductsOverride)
             }
         }
     }

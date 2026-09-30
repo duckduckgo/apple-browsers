@@ -25,6 +25,8 @@ import Common
 import FoundationExtensions
 import Combine
 import Core
+import UniformTypeIdentifiers
+import PixelKit
 
 protocol CredentialProviderListDetailsViewModelDelegate: AnyObject {
     func credentialProviderListDetailsViewModelShowActionMessage(message: String)
@@ -47,6 +49,7 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
     var account: SecureVaultModels.WebsiteAccount?
 
     private let tld: TLD
+    private let clipboardExpirationInterval: TimeInterval
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
     private let autofillDomainNameUrlSort = AutofillDomainNameUrlSort()
 
@@ -85,9 +88,11 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
     internal init(account: SecureVaultModels.WebsiteAccount? = nil,
                   tld: TLD,
                   emailManager: EmailManager = EmailManager(),
-                  shouldProvideTextToInsert: Bool) {
+                  shouldProvideTextToInsert: Bool,
+                  clipboardExpirationInterval: TimeInterval = .minutes(1)) {
         self.account = account
         self.tld = tld
+        self.clipboardExpirationInterval = clipboardExpirationInterval
         self.headerViewModel = CredentialProviderListDetailsHeaderViewModel()
         self.shouldProvideTextToInsert = shouldProvideTextToInsert
         if let account = account {
@@ -114,11 +119,12 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
         case .username:
             message = UserText.credentialProviderDetailsCopyToastUsernameCopied
             UIPasteboard.general.string = username
-            Pixel.fire(pixel: .autofillManagementCopyUsername)
+            PixelKit.fire(Pixel.Event.autofillManagementCopyUsername)
         case .password:
             message = UserText.credentialProviderDetailsCopyToastPasswordCopied
-            UIPasteboard.general.string = password
-            Pixel.fire(pixel: .autofillManagementCopyPassword)
+            UIPasteboard.general.setItems([[UTType.utf8PlainText.identifier: password]],
+                                         options: [.expirationDate: Date().addingTimeInterval(clipboardExpirationInterval)])
+            PixelKit.fire(Pixel.Event.autofillManagementCopyPassword)
         case .address:
             message = UserText.credentialProviderDetailsCopyToastAddressCopied
             UIPasteboard.general.string = address
@@ -155,12 +161,12 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Pixel.fire(pixel: .secureVaultError, error: error)
+            PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
         }
     }
 
     private func handleSecureVaultError(_ error: Error) {
-        Pixel.fire(pixel: .secureVaultError, error: error)
+        PixelKit.fire(Pixel.Event.secureVaultError.withError(error))
     }
 }
 

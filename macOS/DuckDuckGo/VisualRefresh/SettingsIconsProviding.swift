@@ -38,37 +38,13 @@ protocol SettingsIconsProviding {
     var dataClearingIcon: NSImage { get }
     var duckPlayerIcon: NSImage { get }
     var youTubeAdBlockingIcon: NSImage { get }
+    var websitePermissionsIcon: NSImage { get }
     var duckAIIcon: NSImage { get }
     var aiGeneralIcon: NSImage { get }
     var paidAIChatIcon: NSImage { get }
     var aboutIcon: NSImage { get }
     var otherPlatformsIcon: NSImage { get }
-}
-
-final class LegacySettingsIconProvider: SettingsIconsProviding {
-    var aiGeneralIcon: NSImage = .aiGeneralColor16
-    var defaultBrowserIcon: NSImage = .defaultBrowser
-    var privateSearchIcon: NSImage = .privateSearchIcon
-    var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
-    var threatProtectionIcon: NSImage = .radarColor16
-    var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
-    var emailProtectionIcon: NSImage = .emailProtectionIconLegacy
-    var subscriptionIcon: NSImage = .privacyProLegacy
-    var vpnIcon: NSImage = .VPN
-    var personalInformationRemovalIcon: NSImage = .personalInformationRemovalMulticolor16
-    var identityTheftRestorationIcon: NSImage = .identityTheftRestorationMulticolor16
-    var generalIcon: NSImage = .generalIcon
-    var syncAndBackupIcon: NSImage = .sync
-    var appearanceIcon: NSImage = .appearance
-    var passwordsAndAutoFillIcon: NSImage = .autofill
-    var accessibilityIcon: NSImage = .accessibility
-    var dataClearingIcon: NSImage = .fireSettings
-    var duckPlayerIcon: NSImage = .duckPlayerSettings
-    var youTubeAdBlockingIcon: NSImage = .duckPlayerSettings
-    var duckAIIcon: NSImage = .aiChatPreferencesLegacy
-    var paidAIChatIcon: NSImage = .duckAiPaidColor16
-    var aboutIcon: NSImage = .about
-    var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
+    var subscriberOffersIcon: NSImage { get }
 }
 
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
@@ -91,8 +67,10 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
     var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo
     var otherPlatformsIcon: NSImage = DesignSystemImages.Color.Size16.downloads
+    var subscriberOffersIcon: NSImage = .subscriptionGift
 }

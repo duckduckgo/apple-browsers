@@ -30,6 +30,7 @@ import PrivacyConfig
 import Subscription
 import TipKit
 import FeatureFlags_iOS
+import PixelKit
 
 struct NetworkProtectionLocationStatusModel {
     enum LocationIcon {
@@ -658,7 +659,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         let defaultDuration: TimeInterval = .minutes(20)
         snoozeRequestPending = true
         try? await activeSession.sendProviderMessage(.startSnooze(defaultDuration))
-        DailyPixel.fire(pixel: .networkProtectionSnoozeEnabledFromStatusMenu)
+        PixelKit.fire(Pixel.Event.networkProtectionSnoozeEnabledFromStatusMenu, frequency: .legacyDailyNoSuffix)
 
         if #available(iOS 17.0, *) {
             await VPNSnoozeLiveActivityManager().start(endDate: Date().addingTimeInterval(defaultDuration))
@@ -673,7 +674,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
         snoozeRequestPending = true
         try? await activeSession.sendProviderMessage(.cancelSnooze)
-        DailyPixel.fire(pixel: .networkProtectionSnoozeDisabledFromStatusMenu)
+        PixelKit.fire(Pixel.Event.networkProtectionSnoozeDisabledFromStatusMenu, frequency: .legacyDailyNoSuffix)
 
         if #available(iOS 17.0, *) {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()

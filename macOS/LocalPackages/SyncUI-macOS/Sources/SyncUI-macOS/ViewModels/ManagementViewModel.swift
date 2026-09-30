@@ -27,7 +27,6 @@ public protocol ManagementViewModel: ObservableObject {
     var isAccountRecoveryAvailable: Bool { get }
     var isAppVersionNotSupported: Bool { get }
     var isAIChatSyncEnabled: Bool { get }
-    var isAppRebranded: Bool { get }
     var isSimplifiedSyncSetupV2Enabled: Bool { get }
 
     var isSyncEnabled: Bool { get }
@@ -66,8 +65,8 @@ public protocol ManagementViewModel: ObservableObject {
     var isFaviconsFetchingEnabled: Bool { get set }
     var isUnifiedFavoritesEnabled: Bool { get set }
 
-    func presentDeleteAccount()
-    func presentDeviceDetails(_ device: SyncDevice)
+    func presentDeleteAccount() async
+    func presentDeviceDetails(_ device: SyncDevice) async
     func presentRemoveDevice(_ device: SyncDevice)
 
     func saveRecoveryPDF()
@@ -78,6 +77,7 @@ public protocol ManagementViewModel: ObservableObject {
     func manageCreditCards()
     func manageIdentities()
 
+    func settingsScreenDidAppear()
     func syncWithAnotherDevicePressed() async
     func syncWithServerPressed() async
     func recoverDataPressed() async

@@ -41,6 +41,9 @@ protocol TabCollectionViewModelDelegate: AnyObject {
                                 andSelectTabAt selectionIndex: Int?)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didMoveTab tab: Tab,
+                                fromWebExtensionIndex oldIndex: Int)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
 }
@@ -636,6 +639,14 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    func close(at index: TabIndex, forceChange: Bool = false) {
+        guard changesEnabled || (forceChange && index.isUnpinnedTab), let tab = tab(at: index) else { return }
+        if case .loaded(let tab) = tab {
+            tab.onClose?()
+        }
+        remove(at: index, forceChange: forceChange)
+    }
+
     func remove(at index: TabIndex, published: Bool = true, forceChange: Bool = false) {
         switch index {
         case .unpinned(let i):
@@ -664,7 +675,7 @@ final class TabCollectionViewModel: NSObject {
         defer {
             shouldBlockPinnedTabsManagerUpdates = false
         }
-        guard let removedTab = pinnedTabsManager?.unpinTab(at: index, published: published) else { return }
+        guard let removedTab = pinnedTabsManager?.removePinnedTab(at: index, published: published) else { return }
 
         didRemoveTab(removedTab, at: .pinned(index), withParent: nil)
     }
@@ -735,6 +746,8 @@ final class TabCollectionViewModel: NSObject {
         assert(self !== otherViewModel)
         guard changesEnabled else { return }
 
+        let oldWebExtensionIndex = webExtensionIndex(for: fromIndex)
+
         guard let sourceCollection = tabCollection(for: fromIndex), let targetCollection = otherViewModel.tabCollection(for: toIndex) else {
             return
         }
@@ -745,22 +758,35 @@ final class TabCollectionViewModel: NSObject {
 
         let parentTab = movedTab.parentTab
 
-        // Same Tab, new window — suppress the destination's open so its identity is preserved.
-        Self.withWebExtensionTabLifecycleEventsSuppressed {
-            guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
-                return
-            }
+        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
+            return
+        }
 
-            didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
+        didRemoveTab(movedTab, at: fromIndex, withParent: parentTab)
 
-            // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
-            otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
-            otherViewModel.selectWithoutResettingState(at: toIndex)
+        // Notify the delegate before updating selection — see `insert(_:at:selected:)`.
+        otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
+        otherViewModel.selectWithoutResettingState(at: toIndex)
+
+        if case .loaded(let tab) = movedTab, let oldWebExtensionIndex {
+            notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
+        }
+    }
+
+    /// Notifies only tabs being closed, preserving the snapshot during callbacks.
+    private func notifyTabsWillClose(keepingIndices keptIndices: Set<Int> = []) {
+        let removed = tabCollection.tabs.enumerated()
+            .filter { !keptIndices.contains($0.offset) }
+            .map(\.element)
+        for case .loaded(let tab) in removed {
+            tab.onClose?()
         }
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
+
+        notifyTabsWillClose(keepingIndices: exceptionIndex.map { [$0] } ?? [])
 
         if let exceptionTab = exceptionIndex.flatMap({ tabCollection.tabs[$0] }) {
             tabCollection.removeAll(andAppend: exceptionTab)
@@ -783,6 +809,8 @@ final class TabCollectionViewModel: NSObject {
     func removeAllTabs(andAppend tab: Tab, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        notifyTabsWillClose()
+
         shouldReturnToPreviousActiveTab = true
         tabCollection.removeAll(andAppend: tab)
         handleNewTabPageSideEffects(for: tab)
@@ -793,6 +821,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(before index: Int) {
         guard changesEnabled else { return }
 
+        notifyTabsWillClose(keepingIndices: Set(index..<tabCollection.tabs.count))
         tabCollection.removeTabs(before: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab {
@@ -809,6 +838,7 @@ final class TabCollectionViewModel: NSObject {
     func removeTabs(after index: Int) {
         guard changesEnabled else { return }
 
+        notifyTabsWillClose(keepingIndices: Set(0...index))
         tabCollection.removeTabs(after: index)
 
         if let currentSelection = selectionIndex, currentSelection.isUnpinnedTab, !tabCollection.tabs.indices.contains(currentSelection.item) {
@@ -818,7 +848,7 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeSelected(forceChange: Bool = false) -> Result<Void, Error> {
+    func closeSelected(forceChange: Bool = false) -> Result<Void, Error> {
         guard changesEnabled || forceChange else { return .success(()) }
 
         guard let selectionIndex else {
@@ -826,7 +856,7 @@ final class TabCollectionViewModel: NSObject {
             return .failure(TabCollectionViewModelError.noTabSelected)
         }
 
-        remove(at: selectionIndex, forceChange: forceChange)
+        close(at: selectionIndex, forceChange: forceChange)
         return .success(())
     }
 
@@ -840,12 +870,6 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
-            guard let loadedTab = materialize(at: tabIndex) else { return }
-            redirectOpenOutsidePopup(loadedTab)
-            return
-        }
-
         let tabCopy = Tab(
             content: tab.content.loadedFromCache(),
             title: tab.title,
@@ -854,6 +878,13 @@ final class TabCollectionViewModel: NSObject {
             shouldLoadInBackground: true,
             burnerMode: tab.burnerMode
         )
+
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            guard let loadedTab = materialize(at: tabIndex) else { return }
+            redirectOpenOutsidePopup(tabCopy, parentTab: loadedTab.parentTab)
+            return
+        }
+
         let newIndex = tabIndex.makeNext()
 
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)
@@ -874,12 +905,13 @@ final class TabCollectionViewModel: NSObject {
         // Materialize if unloaded — pinned tabs must always be loaded
         guard let tab = materialize(at: .unpinned(index)) else { return }
 
-        // Report the move as a single `.pinned` change (emitted by `pin`) rather than a close + reopen.
-        Self.withWebExtensionTabLifecycleEventsSuppressed {
-            pinnedTabsManager?.pin(tab)
-            removeUnpinnedTab(at: index, published: false)
-        }
+        let movedTab = AnyTab.loaded(tab)
+        let parentTab = movedTab.parentTab
+        guard let oldWebExtensionIndex = webExtensionIndex(for: .unpinned(index)) else { return }
+        guard pinnedTabsManager?.pinTab(tab, from: tabCollection) == true else { return }
+        didRemoveTab(movedTab, at: .unpinned(index), withParent: parentTab)
         selectPinnedTab(at: pinnedTabsCollection.tabs.count - 1)
+        notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
     }
 
     func unpinTab(at index: Int) {
@@ -889,12 +921,15 @@ final class TabCollectionViewModel: NSObject {
             shouldBlockPinnedTabsManagerUpdates = false
         }
 
-        Self.withWebExtensionTabLifecycleEventsSuppressed {
-            guard let tab = pinnedTabsManager?.unpinTab(at: index, published: false) else {
-                Logger.tabLazyLoading.error("Unable to unpin a tab")
-                return
-            }
-            insert(tab, at: .unpinned(0))
+        guard let oldWebExtensionIndex = webExtensionIndex(for: .pinned(index)) else { return }
+        guard let movedTab = pinnedTabsManager?.unpinTab(at: index, movingTo: tabCollection, at: 0) else {
+            Logger.tabLazyLoading.error("Unable to unpin a tab")
+            return
+        }
+        delegate?.tabCollectionViewModelDidInsert(self, at: .unpinned(0), selected: true)
+        select(at: .unpinned(0))
+        if case .loaded(let tab) = movedTab {
+            notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
         }
     }
 
@@ -953,12 +988,21 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func moveTab(at index: TabIndex, to newIndex: TabIndex) {
-        guard changesEnabled, index.isInSameSection(as: newIndex), let tabCollection = tabCollection(for: index) else { return }
+        guard changesEnabled,
+              index != newIndex,
+              index.isInSameSection(as: newIndex),
+              let tabCollection = tabCollection(for: index) else { return }
+
+        let oldWebExtensionIndex = webExtensionIndex(for: index)
+        let movedTab = tabCollection.tabs[safe: index.item]
 
         tabCollection.moveTab(at: index.item, to: newIndex.item)
         selectWithoutResettingState(at: newIndex)
 
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
+        if case .loaded(let tab) = movedTab, let oldWebExtensionIndex {
+            notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
+        }
     }
 
     func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false, keepHistory: Bool = true) -> Result<Void, Error> {
@@ -1066,6 +1110,34 @@ final class TabCollectionViewModel: NSObject {
 }
 
 extension TabCollectionViewModel {
+
+    func webExtensionIndex(for index: TabIndex) -> Int? {
+        guard let collection = tabCollection(for: index),
+              collection.tabs.indices.contains(index.item),
+              case .loaded = collection.tabs[index.item] else { return nil }
+
+        let loadedTabsBeforeIndex = collection.tabs[..<index.item].reduce(into: 0) { count, tab in
+            if case .loaded = tab {
+                count += 1
+            }
+        }
+
+        switch index {
+        case .pinned:
+            return loadedTabsBeforeIndex
+        case .unpinned:
+            return (pinnedTabsCollection?.loadedTabs.count ?? 0) + loadedTabsBeforeIndex
+        }
+    }
+
+    func webExtensionIndex(of tab: Tab) -> Int? {
+        guard let index = indexInAllTabs(of: tab) else { return nil }
+        return webExtensionIndex(for: index)
+    }
+
+    func notifyWebExtensionTabMoved(_ tab: Tab, from oldIndex: Int) {
+        delegate?.tabCollectionViewModel(self, didMoveTab: tab, fromWebExtensionIndex: oldIndex)
+    }
 
     private func tabCollection(for selection: TabIndex) -> TabCollection? {
         switch selection {

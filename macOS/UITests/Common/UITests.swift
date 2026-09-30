@@ -21,20 +21,17 @@ import Foundation
 import ObjectiveC
 import os.log
 import SharedTestUtilities
+@_exported import UITestingSupport
 import XCTest
 
 /// Helper values for the UI tests
 enum UITests {
     /// Timeout constants for different test requirements
     enum Timeouts {
-        /// Mostly, we use timeouts to wait for element existence. This is about 3x longer than needed, for CI resilience
-        static let elementExistence: Double = 5.0
-        /// The fire animation time has environmental dependencies, so we want to wait for completion so we don't try to type into it
-        static let fireAnimation: Double = 30.0
-        /// Navigation timeout for page loads and network requests
-        static let navigation: Double = 30.0
-        /// Local test server timeout for localhost connections
-        static let localTestServer: Double = 15.0
+        static let elementExistence = UITestTimeouts.elementExistence
+        static let fireAnimation = UITestTimeouts.fireAnimation
+        static let navigation = UITestTimeouts.navigation
+        static let localTestServer = UITestTimeouts.localTestServer
     }
 
     /// A page simple enough to test favorite, bookmark, and history storage
@@ -69,33 +66,11 @@ enum UITests {
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
         let app = XCUIApplication.setUp()
-
-        let settings = app.menuItems["MainMenu.preferencesMenuItem"]
-        XCTAssertTrue(
-            settings.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-
-        settings.click()
-        let generalPreferencesButton = app.buttons["PreferencesSidebar.generalButton"]
-        let autocompleteToggle = app.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
-        XCTAssertTrue(
-            generalPreferencesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The user settings appearance section button didn't become available in a reasonable timeframe."
-        )
-        generalPreferencesButton.click(forDuration: 0.5, thenDragTo: generalPreferencesButton)
-
-        let currentToggleState = try? XCTUnwrap(
-            autocompleteToggle.value as? Bool,
-            "It wasn't possible to get the \"Autocomplete\" value as a Bool"
-        )
-
-        switch (requestedToggleState, currentToggleState) { // Click autocomplete toggle if it is different than our request
-        case (false, true), (true, false):
-            autocompleteToggle.click()
-        default:
-            break
-        }
+        // Settings opens as a tab, so it needs a browser window to host it
+        app.enforceSingleWindow()
+        app.openGeneralPreferences()
+        let autocompleteToggle = app.preferencesWindow.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
+        autocompleteToggle.toggleCheckboxIfNeeded(to: requestedToggleState, validate: true, ensureHittable: app.ensureHittable)
         app.terminate()
     }
 

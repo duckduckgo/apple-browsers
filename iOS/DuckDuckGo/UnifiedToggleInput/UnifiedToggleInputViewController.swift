@@ -45,9 +45,10 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didDismissFooter id: UTIFooterItem.ID)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility ids: [UTIFooterItem.ID])
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterLink url: URL, messageID: UTIFooterItem.ID)
 }
 
 // MARK: - View Controller
@@ -67,6 +68,10 @@ final class UnifiedToggleInputViewController: UIViewController {
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
+    func inputCardFrame(in view: UIView) -> CGRect {
+        inputBarView.cardFrame(in: view)
+    }
+
     var inputCardTopAnchor: NSLayoutYAxisAnchor { inputBarView.cardTopAnchor }
     var inputCardLeadingAnchor: NSLayoutXAxisAnchor { inputBarView.cardLeadingAnchor }
     var inputCardTrailingAnchor: NSLayoutXAxisAnchor { inputBarView.cardTrailingAnchor }
@@ -106,6 +111,16 @@ final class UnifiedToggleInputViewController: UIViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        inputBarView.setFooterPresentationActive(true)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        inputBarView.setFooterPresentationActive(false)
+        super.viewWillDisappear(animated)
     }
 
     var text: String {
@@ -177,6 +192,16 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
     }
 
+    /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
+    /// controls that would offer one.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard isInputBlockedByUsageLimit != oldValue else { return }
+            handler.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
+            inputBarView.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit
+        }
+    }
+
     var isGenerating: Bool = false {
         didSet {
             guard isGenerating != oldValue else { return }
@@ -218,6 +243,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
         get { inputBarView.attachmentPasteHandler }
         set { inputBarView.attachmentPasteHandler = newValue }
+    }
+
+    weak var mentionHandler: TextEntryMentionHandling? {
+        get { inputBarView.mentionHandler }
+        set { inputBarView.mentionHandler = newValue }
     }
 
     var reasoningPickerMenu: UIMenu? {
@@ -385,10 +415,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.selectAllText()
     }
 
-    func moveCaretToStart() {
-        inputBarView.moveCaretToStart()
-    }
-
     var placeholderWindowX: CGFloat? { inputBarView.placeholderWindowX }
 
     var defaultPlaceholderColor: UIColor { inputBarView.defaultPlaceholderColor }
@@ -467,17 +493,21 @@ final class UnifiedToggleInputViewController: UIViewController {
             guard let self else { return }
             delegate?.unifiedToggleInputVCDidTapAIChatShortcut(self)
         }
-        barView.onFooterPrimaryTapped = { [weak self] in
+        barView.onFooterPrimaryTapped = { [weak self] id in
             guard let self else { return }
-            delegate?.unifiedToggleInputVCDidTapFooterPrimaryAction(self)
+            delegate?.unifiedToggleInputVC(self, didTapFooterPrimaryAction: id)
         }
-        barView.onFooterDismissTapped = { [weak self] in
+        barView.onFooterDismissTapped = { [weak self] id in
             guard let self else { return }
-            delegate?.unifiedToggleInputVCDidDismissFooter(self)
+            delegate?.unifiedToggleInputVC(self, didDismissFooter: id)
         }
-        barView.onFooterVisibilityChanged = { [weak self] isVisible in
+        barView.onFooterLinkTapped = { [weak self] id, url in
             guard let self else { return }
-            delegate?.unifiedToggleInputVC(self, didChangeFooterVisibility: isVisible)
+            delegate?.unifiedToggleInputVC(self, didTapFooterLink: url, messageID: id)
+        }
+        barView.onFooterVisibilityChanged = { [weak self] ids in
+            guard let self else { return }
+            delegate?.unifiedToggleInputVC(self, didChangeFooterVisibility: ids)
         }
         let containerView = UnifiedToggleInputContainerView(inputView: barView)
         containerView.cardPosition = barView.cardPosition
@@ -496,8 +526,8 @@ final class UnifiedToggleInputViewController: UIViewController {
 
 extension UnifiedToggleInputViewController: UTIFooterPresenting {
 
-    func applyFooterMessage(_ message: UTIFooterMessage?) {
-        guard inputBarView.setFooterMessage(message) else { return }
+    func applyFooterMessages(_ messages: [UTIFooterItem]) {
+        guard inputBarView.setFooterMessages(messages) else { return }
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] pushing new bar height to host")
         delegate?.unifiedToggleInputVCDidChangeHeight(self)
         view.superview?.layoutIfNeeded()

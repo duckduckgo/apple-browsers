@@ -41,6 +41,15 @@ function sortRows(rows) {
         if (k === "type") { r = cmp(a.permissionType, b.permissionType); }
         else if (k === "allow") { r = cmp(a.allow ? 0 : 1, b.allow ? 0 : 1); }
         else if (k === "isRemoved") { r = cmp(a.isRemoved ? 0 : 1, b.isRemoved ? 0 : 1); }
+        else if (k === "lastModified") {
+            // Rows with no timestamp sort last whichever way the column is sorted, so flipping
+            // direction moves between oldest-first and newest-first rather than shuffling blanks in.
+            if (!a.lastModified && !b.lastModified) { r = 0; }
+            else if (!a.lastModified) { return 1; }
+            else if (!b.lastModified) { return -1; }
+            // ISO-8601 strings compare chronologically, so no Date parsing is needed here.
+            else { r = cmp(a.lastModified, b.lastModified); }
+        }
         else if (k === "effective") { r = cmp(a.effective, b.effective); }
         else if (k === "fireproof") { r = cmp(a.isFireproof ? 0 : 1, b.isFireproof ? 0 : 1); }
         else { r = a.domainEncrypted.localeCompare(b.domainEncrypted); }
@@ -130,6 +139,32 @@ function boolCell(value) {
     return td;
 }
 
+function lastModifiedCell(row) {
+    var td = el("td");
+    td.className = "date";
+    if (!row.lastModified) {
+        var missing = el("span", "—");
+        missing.className = "missing";
+        missing.title = "No timestamp: saved before the lastModified column existed.";
+        td.appendChild(missing);
+        return td;
+    }
+    var parsed = new Date(row.lastModified);
+    if (isNaN(parsed.getTime())) {
+        td.appendChild(el("span", row.lastModified));
+        return td;
+    }
+    // Always rendered in UTC: a debug page shouldn't shift a stored instant into whatever
+    // timezone the machine happens to be in, or two people would read the same row differently.
+    var span = el("span", parsed.toISOString().replace("T", " ").replace(/\.\d+Z$/, ""));
+    span.title = row.lastModified;
+    var zone = el("span", " UTC");
+    zone.className = "tz";
+    td.appendChild(span);
+    td.appendChild(zone);
+    return td;
+}
+
 function effectiveCell(row) {
     var td = el("td");
     td.className = "effective derived";
@@ -181,6 +216,7 @@ function render() {
 
         tr.appendChild(boolCell(row.allow));
         tr.appendChild(boolCell(row.isRemoved));
+        tr.appendChild(lastModifiedCell(row));
 
         tr.appendChild(effectiveCell(row));
 

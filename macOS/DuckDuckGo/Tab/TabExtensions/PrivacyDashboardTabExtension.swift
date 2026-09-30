@@ -23,7 +23,7 @@ import FoundationExtensions
 import ContentBlocking
 import Foundation
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
@@ -35,6 +35,13 @@ final class PrivacyDashboardTabExtension {
     private let contentBlocking: any ContentBlockingProtocol
     private let certificateTrustEvaluator: CertificateTrustEvaluating
     private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    private let tabIdentifier: String
+    private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+    private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
+    private let webExtensionNavigationGate: WebExtensionNavigationGate
+
+    var shouldDisableLongDecisionMakingChecks: Bool { true }
+
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?
@@ -45,7 +52,10 @@ final class PrivacyDashboardTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(contentBlocking: some ContentBlockingProtocol,
+    init(tabIdentifier: String,
+         webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?,
+         contentBlocking: some ContentBlockingProtocol,
          certificateTrustEvaluator: CertificateTrustEvaluating,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          autoconsentUserScriptPublisher: some Publisher<UserScriptWithAutoconsent?, Never>,
@@ -53,12 +63,24 @@ final class PrivacyDashboardTabExtension {
          didUpgradeToHttpsPublisher: some Publisher<URL, Never>,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
+         tabCrashPublisher: some Publisher<Void, Never>,
          maliciousSiteProtectionStateProvider: @escaping  MaliciousSiteProtectionStateProvider) {
 
+        self.tabIdentifier = tabIdentifier
+        self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
+        self.webExtensionNavigationGate = WebExtensionNavigationGate()
         self.contentBlocking = contentBlocking
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.maliciousSiteProtectionStateProvider = maliciousSiteProtectionStateProvider
+
+        tabCrashPublisher.sink { [weak self] in
+            Task { @MainActor [weak self] in
+                guard #available(macOS 15.4, *), let self else { return }
+                self.webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.webContentProcessTerminated(tabIdentifier: self.tabIdentifier))
+            }
+        }.store(in: &cancellables)
 
         autoconsentUserScriptPublisher.sink { [weak self] autoconsentUserScript in
             autoconsentUserScript?.delegate = self
@@ -101,13 +123,23 @@ final class PrivacyDashboardTabExtension {
                 .publisher(for: .webExtensionAutoconsentDashboardStateRefresh)
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] notification in
-                    self?.handleWebExtensionDashboardStateRefresh(notification)
+                    MainActor.assumeMainThread {
+                        self?.handleWebExtensionDashboardStateRefresh(notification)
+                    }
                 }
                 .store(in: &cancellables)
         }
     }
 
+    deinit {
+        DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, tabIdentifier] in
+            guard #available(macOS 15.4, *) else { return }
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.tabClosed(tabIdentifier: tabIdentifier))
+        }
+    }
+
     @available(macOS 15.4, *)
+    @MainActor
     private func handleWebExtensionDashboardStateRefresh(_ notification: Notification) {
         guard let url = notification.userInfo?[AutoconsentNotification.UserInfoKeys.url] as? URL,
               let consentStatus = notification.userInfo?[AutoconsentNotification.UserInfoKeys.consentStatus] as? ConsentStatusInfo else {
@@ -200,7 +232,22 @@ final class PrivacyDashboardTabExtension {
 extension PrivacyDashboardTabExtension: NavigationResponder {
 
     @MainActor
+    func didStart(_ navigation: Navigation) {
+        guard #available(macOS 15.4, *) else { return }
+        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
+            .navigationStarted(tabIdentifier: tabIdentifier, navigationKind: navigation.cpmMessagingNavigationKind)
+        )
+    }
+
+    @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        if #available(macOS 15.4, *) {
+            // Hold restored web content until the embedded extension's background listeners are
+            // ready, matching the existing startup gates for user scripts and Content Blocking.
+            await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
+                                                          url: navigationAction.url,
+                                                          initialLoadWaiter: webExtensionInitialLoadWaiterProvider())
+        }
         resetConnectionUpgradedTo(navigationAction: navigationAction)
         updateMaliciousSiteInfo(for: navigationAction.url)
         return .next
@@ -209,14 +256,41 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
     @MainActor
     func didCommit(_ navigation: Navigation) {
         resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
+        guard #available(macOS 15.4, *) else { return }
+        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationCommitted(tabIdentifier: tabIdentifier, url: navigation.url))
     }
 
+    @MainActor
     func navigationDidFinish(_ navigation: Navigation) {
         if privacyInfo?.url != navigation.url {
             resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
         }
+        guard #available(macOS 15.4, *), let webExtensionManager = webExtensionManagerProvider() else { return }
+        webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
+            tabIdentifier: tabIdentifier,
+            url: navigation.url,
+            extensionIsLoaded: webExtensionManager.isAutoconsentExtensionLoaded
+        ))
     }
 
+    @MainActor
+    func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard #available(macOS 15.4, *) else { return }
+        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(.navigationFailed(tabIdentifier: tabIdentifier))
+    }
+
+}
+
+extension Navigation {
+    /// Resolves CPM attribution from the first action in a logical navigation.
+    /// The current action may describe a redirect rather than the initiating restoration or history load.
+    var cpmMessagingNavigationKind: CPMNavigationKind {
+        let initialNavigationType = (redirectHistory.first ?? navigationAction).navigationType
+        if initialNavigationType == .sessionRestoration {
+            return .sessionRestoration
+        }
+        return initialNavigationType.isBackForward ? .backForward : .other
+    }
 }
 
 extension PrivacyDashboardTabExtension: AutoconsentUserScriptDelegate {
@@ -282,18 +356,19 @@ extension TabExtensions {
 
 @available(macOS 15.4, *)
 extension PrivacyInfo {
+    /// Dashboard state follows the page across query and fragment changes.
+    func matchesForCPMDashboardState(_ refreshURL: URL) -> Bool {
+        url.matchesCPMDashboardStatePage(refreshURL)
+    }
+
     func updateCookieConsentManagedForWebExtensionDashboardState(url refreshURL: URL, consentStatus: ConsentStatusInfo) {
-        guard url.host == refreshURL.host,
-              normalizedPath(url.path) == normalizedPath(refreshURL.path) else {
+        guard matchesForCPMDashboardState(refreshURL) else {
             return
         }
 
         cookieConsentManaged = consentStatus.toCookieConsentInfo()
     }
 
-    private func normalizedPath(_ path: String) -> String {
-        path.isEmpty ? "/" : path
-    }
 }
 
 @available(macOS 15.4, *)

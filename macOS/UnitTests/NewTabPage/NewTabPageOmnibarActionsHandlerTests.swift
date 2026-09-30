@@ -28,30 +28,49 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     private var historyCoordinator: HistoryCoordinatingMock!
     private var aiChatDeleter: MockAIChatDeleterForHandler!
     private var firedPixels: [String]!
+    private var windowControllersManager: WindowControllersManagerMock!
 
     override func setUp() {
         super.setUp()
         historyCoordinator = HistoryCoordinatingMock()
         aiChatDeleter = MockAIChatDeleterForHandler()
         firedPixels = []
+        windowControllersManager = WindowControllersManagerMock()
     }
 
     override func tearDown() {
         historyCoordinator = nil
         aiChatDeleter = nil
         firedPixels = nil
+        windowControllersManager = nil
         super.tearDown()
     }
 
     private func makeSUT(confirmResult: Bool = true) -> NewTabPageOmnibarActionsHandler {
         NewTabPageOmnibarActionsHandler(
-            windowControllersManager: WindowControllersManagerMock(),
-            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             historyCoordinator: historyCoordinator,
             aiChatDeleter: aiChatDeleter,
             fireDailyCountPixel: { [weak self] event in self?.firedPixels.append(event.name) },
             presentDeleteConfirmation: { _, _ in confirmResult }
         )
+    }
+
+    // MARK: - viewAllAiChats
+
+    func testViewAllAiChatsOpensDuckAIWithSidebarVisible() {
+        let sut = makeSUT()
+
+        sut.viewAllAiChats(target: .sameTab)
+
+        XCTAssertEqual(windowControllersManager.openAIChatCalls, [
+            .init(
+                url: URL(string: "https://duck.ai?sidebar=open")!,
+                behavior: .currentTab,
+                hasPrompt: false
+            )
+        ])
     }
 
     // MARK: - confirmDeleteAiChat

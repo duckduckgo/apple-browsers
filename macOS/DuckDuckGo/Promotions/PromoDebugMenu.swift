@@ -124,6 +124,7 @@ final class PromoDebugMenu: NSMenu {
             let undismissClearItem = NSMenuItem(title: "Undismiss + Clear History", action: #selector(undismissPromoAndClearHistory(_:)), keyEquivalent: "")
             undismissClearItem.representedObject = promo.id
             undismissClearItem.target = self
+            undismissClearItem.setAccessibilityIdentifier(AccessibilityIdentifiers.PromoQueue.undismissClearItem)
             submenu.addItem(undismissClearItem)
 
             parentItem.submenu = submenu

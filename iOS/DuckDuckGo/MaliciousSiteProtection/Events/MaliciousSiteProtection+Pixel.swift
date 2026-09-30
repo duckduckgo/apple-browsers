@@ -20,22 +20,23 @@
 import Foundation
 import Core
 import MaliciousSiteProtection
+import PixelKit
 
 extension Pixel {
 
     static func fire(_ event: MaliciousSiteProtection.Event) {
         guard let convertedPixelEvent = Event.MaliciousSiteProtectionEvent(event) else { return }
-        Pixel.fire(.maliciousSiteProtection(event: convertedPixelEvent), withAdditionalParameters: convertedPixelEvent.parameters)
+        PixelKit.fire(Pixel.Event.maliciousSiteProtection(event: convertedPixelEvent), options: .parameters(convertedPixelEvent.parameters))
     }
 
     static func fireDailyAndCount(_ event: MaliciousSiteProtection.Event) {
         guard let convertedPixelEvent = Event.MaliciousSiteProtectionEvent(event) else { return }
-        DailyPixel.fireDailyAndCount(pixel: .maliciousSiteProtection(event: convertedPixelEvent), withAdditionalParameters: convertedPixelEvent.parameters)
+        PixelKit.fire(Pixel.Event.maliciousSiteProtection(event: convertedPixelEvent), frequency: .dailyAndCount, options: .parameters(convertedPixelEvent.parameters))
     }
 
     static func fireDailyAndStandard(_ event: MaliciousSiteProtection.Event) {
         guard let convertedPixelEvent = Event.MaliciousSiteProtectionEvent(event) else { return }
-        DailyPixel.fireDailyAndCount(pixel: .maliciousSiteProtection(event: convertedPixelEvent), pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes, withAdditionalParameters: convertedPixelEvent.parameters)
+        PixelKit.fire(Pixel.Event.maliciousSiteProtection(event: convertedPixelEvent), frequency: .dailyAndStandard, options: .parameters(convertedPixelEvent.parameters))
     }
 
 }

@@ -54,6 +54,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
     let serpUserScript: SERPInstallOriginUserScript
@@ -110,6 +111,11 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+            attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
+        )
+
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
@@ -142,8 +148,17 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+            // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
+            // Windows found injecting it broke the aiChat message bridge, which is shared code.
+            let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
@@ -226,6 +241,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
 
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)

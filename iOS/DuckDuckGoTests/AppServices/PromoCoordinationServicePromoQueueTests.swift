@@ -145,7 +145,8 @@ final class PromoCoordinationServicePromoQueueTests {
             modalPromptCoordinationManager: manager,
             mode: mode,
             promoQueueLeaseArbiter: arbiter,
-            promoQueueCooldownPolicy: cooldownPolicy
+            promoQueueCooldownPolicy: cooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
     }
 

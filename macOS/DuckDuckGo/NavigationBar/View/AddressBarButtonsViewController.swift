@@ -101,7 +101,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
         return permissionAuthorizationPopover ?? {
-            let popover = PermissionAuthorizationPopover()
+            let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
             NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
             NotificationCenter.default.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
             self.permissionAuthorizationPopover = popover
@@ -1303,9 +1303,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton.setCornerRadius(cornerRadius)
         youTubeAdBlockButton.setCornerRadius(cornerRadius)
 
-        if themeManager.isAppRebranded {
-            trailingButtonsBackground.setCornerRadius(cornerRadius)
-        }
+        trailingButtonsBackground.setCornerRadius(cornerRadius)
     }
 
     private func setupButtonsSize() {
@@ -1494,7 +1492,7 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatMenuConfig.shouldDisplayAddressBarShortcut
         && !isChromeSidebarFeatureEnabled
         && !shouldSkipShowingAnyAIChatButton()
-        && tabViewModel?.tab.content != .onboarding
+        && (tabViewModel?.tab.content != .onboarding || NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking)
     }
 
     private func shouldShowAskAIChatButton() -> Bool {
@@ -1942,14 +1940,6 @@ final class AddressBarButtonsViewController: NSViewController {
             return false
         }
 
-        guard themeManager.isAppRebranded else {
-            /// True when the toggle should be shown (feature active + user setting enabled).
-            /// Hidden in pure passive browsing — URL loaded, bar unfocused, not duck.ai — because there's no user
-            /// input or mode context to toggle between, and the design matches the pre-redesign behaviour there.
-            let isPassiveBrowsing = !isTextFieldEditorFirstResponder && !isAIChatPanelActive && controllerMode == .browsing
-            return !isPassiveBrowsing
-        }
-
         return isTextFieldEditorFirstResponder
     }
 
@@ -2251,19 +2241,14 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func setupSearchModeToggleControl() {
-        let toggleFrame: CGRect = themeManager.isAppRebranded ? NSRect(x: 0, y: 0, width: 82, height: 30) : NSRect(x: 0, y: 0, width: 70, height: 32)
+        let toggleFrame: CGRect = NSRect(x: 0, y: 0, width: 82, height: 30)
         let toggleControl = CustomToggleControl(frame: toggleFrame)
 
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
         toggleControl.collapsedWidth = toggleFrame.width
 
-        if themeManager.isAppRebranded {
-            toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.searchFind, forSegment: 0)
-            toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.aiChat, forSegment: 1)
-        } else {
-            toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
-            toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
-        }
+        toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.searchFind, forSegment: 0)
+        toggleControl.setSelectedImage(DesignSystemImages.Glyphs.Size16.aiChat, forSegment: 1)
 
         toggleControl.setToolTip(UserText.aiChatSearchTheWebTooltip, forSegment: 0)
         toggleControl.setToolTip(UserText.aiChatChatWithAITooltip, forSegment: 1)
@@ -2467,10 +2452,8 @@ final class AddressBarButtonsViewController: NSViewController {
                 newAnimationView.translatesAutoresizingMaskIntoConstraints = false
                 animationWrapperView.addSubview(newAnimationView)
 
-                let leadingConstant: CGFloat = themeManager.isAppRebranded ? 1 : 0.5
-
                 NSLayoutConstraint.activate([
-                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: leadingConstant),
+                    newAnimationView.leadingAnchor.constraint(equalTo: animationWrapperView.leadingAnchor, constant: 1),
                     newAnimationView.centerYAnchor.constraint(equalTo: animationWrapperView.centerYAnchor),
                     newAnimationView.widthAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4),
                     newAnimationView.heightAnchor.constraint(equalTo: animationWrapperView.heightAnchor, constant: 4)
@@ -2876,7 +2859,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         switch popover {
         case popovers.bookmarkPopover:
             if popovers.bookmarkPopover?.isNew == true {
-                NotificationCenter.default.post(name: .bookmarkPromptShouldShow, object: nil)
+                NotificationCenter.default.post(name: .bookmarkAdded, object: nil)
             }
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:
@@ -2891,7 +2874,8 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
             // treat this as a denial of the website permission to prevent the popover from re-appearing
             if !authPopover.viewController.isAuthorizationInProgress,
-               let query = authPopover.viewController.query {
+               let query = authPopover.viewController.query,
+               !query.isComplete {
                 query.handleDecision(grant: false, remember: nil)
             }
             updatePermissionCenterButtonIcon()

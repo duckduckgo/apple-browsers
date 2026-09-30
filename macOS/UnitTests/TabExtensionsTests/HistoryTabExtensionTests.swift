@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Combine
 import History
-import Navigation
+import DDGNavigation
 import SharedTestUtilities
 import WebKit
 import XCTest

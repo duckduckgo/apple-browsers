@@ -19,6 +19,7 @@
 
 import Foundation
 import BrowserServicesKit
+import PixelKit
 
 /// This is only intended to be used during the install (first run after downloading from the app store).
 public protocol ReturnUserMeasurement {
@@ -101,9 +102,9 @@ public class KeychainReturnUserMeasurement: ReturnUserMeasurement {
     }
 
     private func fireDebugPixel(_ event: Pixel.Event, errorCode: OSStatus) {
-        Pixel.fire(pixel: event, withAdditionalParameters: [
+        PixelKit.fire(event, options: .parameters([
             PixelParameters.returnUserErrorCode: "\(errorCode)"
-        ])
+        ]))
     }
 
     /// Only check for keychain items created by *this* app.

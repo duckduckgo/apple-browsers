@@ -45,7 +45,8 @@ public enum PixelKitExtensionSetup {
                        defaultHeaders: [:],
                        defaults: defaults) { pixelName, headers, parameters, _, _, onComplete in
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequestV2.HeadersV2(userAgent: PixelUserAgent.default,
+            // `PixelKit.Options.userAgent` arrives under this key, and overrides the pixel one.
+            let apiHeaders = APIRequestV2.HeadersV2(userAgent: headers[PixelKit.Header.userAgent] ?? PixelUserAgent.default,
                                                    additionalHeaders: headers)
             guard let request = APIRequestV2(url: url,
                                             method: .get,

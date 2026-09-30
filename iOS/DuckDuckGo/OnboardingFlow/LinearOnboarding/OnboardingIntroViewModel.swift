@@ -27,6 +27,7 @@ import Persistence
 import PrivacyConfig
 import SetDefaultBrowserCore
 import SystemSettingsPiPTutorial
+import PixelKit
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -711,7 +712,7 @@ private extension OnboardingIntroViewModel {
             // Fire a pixel to measure the volume of re‑installers who previously synced their device and would normally see the restore-data flow but instead experience the CPP onboarding (honouring the CPP install context).
             // Consider deleting this pixel ini the future if the information is no longer needed
             if restorePromptHandler.isEligibleForRestorePrompt() {
-                DailyPixel.fireDailyAndCount(pixel: .onboardingSyncAutoRestoreUserFromDuckAiFlow)
+                PixelKit.fire(Pixel.Event.onboardingSyncAutoRestoreUserFromDuckAiFlow, frequency: .dailyAndCount)
             }
             return .skipTutorial
         }

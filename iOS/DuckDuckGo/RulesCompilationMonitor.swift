@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import PixelKit
 
 final class RulesCompilationMonitor {
 
@@ -108,10 +109,10 @@ final class RulesCompilationMonitor {
 
     private func reportWaitTime(_ waitTime: TimeInterval, result: Pixel.Event.CompileRulesResult) {
         didReport = true
-        Pixel.fire(pixel: .compilationResult(result: result,
+        PixelKit.fire(Pixel.Event.compilationResult(result: result,
                                              waitTime: Pixel.Event.BucketAggregation(number: waitTime),
                                              appState: isOnboarding ? .onboarding : .regular),
-                   withAdditionalParameters: [Const.waitTime: String(waitTime)])
+                      options: .parameters([Const.waitTime: String(waitTime)]))
     }
 
 }

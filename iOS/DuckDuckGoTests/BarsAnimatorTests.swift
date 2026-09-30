@@ -189,6 +189,24 @@ class BarsAnimatorTests: XCTestCase {
         XCTAssertEqual(sut.barsState, .revealed)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(1.0))
     }
+
+    // The fast-step/catch-up animation logic added for floating chrome is gated on
+    // `isFloatingChromeEnabled`; legacy (non-floating) chrome must keep tracking scroll 1:1 with no
+    // animation regardless of how large a single jump is.
+    func testWhenLegacyChromeThenMidRangeJumpsAreNotAnimated() {
+        let (sut, delegate) = makeSUT()
+        let scrollView = mockScrollView()
+
+        scrollView.contentOffset.y = 100
+        sut.didStartScrolling(in: scrollView)
+        XCTAssertEqual(sut.barsState, .revealed)
+
+        scrollView.contentOffset.y = 100 + delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .transitioning)
+        XCTAssertFalse(delegate.lastVisibilityUpdateWasAnimated, "legacy chrome must not use the floating fast-step/catch-up logic")
+    }
 }
 
 class BarsAnimatorFloatingTests: XCTestCase {
@@ -293,7 +311,7 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertLessThan(percent, 0.1, "1pt of overscroll must not reveal a large slice of the chrome")
     }
 
-    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateQuicklyToHidden() {
+    func testWhenScrollOffsetAdvancesFullTravelInOneUpdateThenBarsAnimateToHidden() {
         let (sut, delegate, clock) = makeFloatingSUT()
         let scrollView = mockTallScrollView()
 
@@ -307,11 +325,52 @@ class BarsAnimatorFloatingTests: XCTestCase {
         XCTAssertEqual(sut.barsState, .hidden)
         XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0))
         XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
-        XCTAssertEqual(delegate.lastAnimationDuration, BarsAnimator.Metrics.floatingFastStepAnimationDuration)
+        // No explicit duration override: the delegate scales the morph duration itself from how
+        // much of the transition this jump skipped, so a full-travel jump gets the full morph.
+        XCTAssertNil(delegate.lastAnimationDuration)
 
         let visibilityUpdateCount = delegate.receivedMessages.count
         sut.didScroll(in: scrollView)
         XCTAssertEqual(delegate.receivedMessages.count, visibilityUpdateCount)
+    }
+
+    // A jump that lands mid-travel (not settled at 0/1) but still skips a large slice of the
+    // transition must animate too — the old fast-step check only fired for jumps landing exactly
+    // on an extreme, so a fling that stopped mid-fade used to snap instead of morph.
+    func testWhenScrollJumpsToMidTravelInOneUpdateThenBarsAnimateToThatFraction() throws {
+        let (sut, delegate, clock) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+
+        scrollView.contentOffset.y = travel * 0.6
+        clock.advance(by: 1.0 / 60.0)
+        sut.didScroll(in: scrollView)
+
+        XCTAssertEqual(sut.barsState, .transitioning)
+        XCTAssertEqual(try XCTUnwrap(delegate.receivedMessages.last?.percent), 0.4, accuracy: 0.001)
+        XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated)
+        XCTAssertNil(delegate.lastAnimationDuration)
+    }
+
+    // The animator's speed limit decides pacing now, so every floating scroll update simply hands
+    // over a target. Nothing in the scroll path may reintroduce an unanimated fast path: that is
+    // what let a fast flick apply a large step in one frame and skip the morph entirely.
+    func testWhenFloatingChromeScrollsThenEveryUpdateIsHandedOverAsAnAnimatedTarget() {
+        let (sut, delegate, _) = makeFloatingSUT()
+        let scrollView = mockTallScrollView()
+
+        scrollView.contentOffset.y = 0
+        sut.didStartScrolling(in: scrollView)
+
+        // A tiny step, a mid-travel step and a full-travel jump must all take the same path.
+        for offset in [travel * 0.02, travel * 0.5, travel] {
+            scrollView.contentOffset.y = offset
+            sut.didScroll(in: scrollView)
+            XCTAssertTrue(delegate.lastVisibilityUpdateWasAnimated, "offset \(offset) must be animated")
+            XCTAssertNil(delegate.lastAnimationDuration, "the animator owns pacing, not the caller")
+        }
     }
 
     func testWhenNewDragInterruptsSettlingThenProgressStartsFromRenderedVisibility() throws {
@@ -661,6 +720,7 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
     var isInMinimalChromeLayout: Bool = false
 
     var isFloatingChromeEnabled: Bool = false
+
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 

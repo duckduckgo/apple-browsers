@@ -24,6 +24,7 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelKit
 import PrivacyConfig
 import UIKit
 import UserScript
@@ -35,6 +36,7 @@ protocol AIChatContextualWebViewControllerDelegate: AnyObject {
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestToLoad url: URL)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didUpdateContextualChatURL url: URL?)
     func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didRequestOpenDownloadWithFileName fileName: String)
+    func contextualWebViewController(_ viewController: AIChatContextualWebViewController, didPersistChatWithID chatID: String)
 }
 
 final class AIChatContextualWebViewController: UIViewController {
@@ -47,6 +49,7 @@ final class AIChatContextualWebViewController: UIViewController {
         let tools: [AIChatRAGTool]?
         let pageContext: AIChatPageContextData?
         let reasoningEffort: AIChatReasoningEffort?
+        let tabAttachmentRequest: MultiTabAttachmentRequest?
     }
 
     // MARK: - Properties
@@ -67,6 +70,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
     private(set) var aiChatContentHandler: AIChatContentHandling
@@ -158,6 +162,7 @@ final class AIChatContextualWebViewController: UIViewController {
          pixelHandler: AIChatContextualModePixelFiring,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)? = nil) {
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -173,11 +178,12 @@ final class AIChatContextualWebViewController: UIViewController {
         self.userAgentManager = userAgentManager
         self.utiHostInstaller = utiHostInstaller
 
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
+            onboardingActivationRecorder: onboardingActivationRecorder,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
             debugSettings: debugSettings,
             getPageContext: getPageContext
@@ -212,6 +218,11 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     deinit {
+        let request = pendingRichPrompt?.tabAttachmentRequest
+        Task { @MainActor in
+            request?.cancel()
+        }
+        aiChatContentHandler.cancelPendingTabContextSubmission()
         urlObservation?.invalidate()
     }
 
@@ -243,21 +254,26 @@ final class AIChatContextualWebViewController: UIViewController {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
-                      reasoningEffort: AIChatReasoningEffort?) {
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if canDeliverPrompt {
-            let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
-            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
-            utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
+            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+                                             pageContext: pageContext, reasoningEffort: reasoningEffort,
+                                             tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: { [weak self] in
+                self?.utiHost?.promptDeliveryUpdated(wasQueued: false, didSendBridgeMessage: true)
+            })
         } else {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
+            pendingRichPrompt?.tabAttachmentRequest?.cancel()
             pendingRichPrompt = PendingRichPrompt(prompt: prompt,
                                                   images: images,
                                                   files: files,
                                                   modelId: modelId,
                                                   tools: tools,
                                                   pageContext: pageContext,
-                                                  reasoningEffort: reasoningEffort)
+                                                  reasoningEffort: reasoningEffort,
+                                                  tabAttachmentRequest: tabAttachmentRequest)
             pendingSelections = selectionsProvider?()
             pendingPrompt = nil
             pendingPageContext = nil
@@ -274,7 +290,17 @@ final class AIChatContextualWebViewController: UIViewController {
         submitPendingIfReady()
     }
 
+    func cancelPendingTabAttachmentPrompt() {
+        if let request = pendingRichPrompt?.tabAttachmentRequest {
+            request.cancel()
+            pendingRichPrompt = nil
+            pendingSelections = nil
+        }
+        aiChatContentHandler.cancelPendingTabContextSubmission()
+    }
+
     func startNewChat() {
+        cancelPendingTabAttachmentPrompt()
         Task { @MainActor in
             await aiChatContentHandler.submitStartChatAction()
         }
@@ -304,6 +330,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func reload() {
+        cancelPendingTabAttachmentPrompt()
         isPageReady = false
         isContentHandlerReady = false
         frontendReadinessGate.reset()
@@ -319,6 +346,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func loadChatURL(_ url: URL) {
+        cancelPendingTabAttachmentPrompt()
         let urlToLoad = chatURLForLoading(url)
         Logger.aiChat.debug("[ContextualWebVC] loadChatURL - resetting page ready flag and loading: \(urlToLoad.shortDescription)")
         isPageReady = false
@@ -441,15 +469,17 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private func submitPromptNow(_ richPrompt: PendingRichPrompt) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending rich prompt now")
-        let didSendBridgeMessage = aiChatContentHandler.canDispatchBridgeMessages
         aiChatContentHandler.submitPrompt(richPrompt.prompt,
                                          images: richPrompt.images,
                                          files: richPrompt.files,
                                          modelId: richPrompt.modelId,
                                          tools: richPrompt.tools,
                                          pageContext: richPrompt.pageContext,
-                                         reasoningEffort: richPrompt.reasoningEffort)
-        utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: didSendBridgeMessage)
+                                         reasoningEffort: richPrompt.reasoningEffort,
+                                         tabAttachmentRequest: richPrompt.tabAttachmentRequest,
+                                         onPromptDispatched: { [weak self] in
+            self?.utiHost?.promptDeliveryUpdated(wasQueued: nil, didSendBridgeMessage: true)
+        })
     }
 
     // MARK: - URL Observation
@@ -492,13 +522,23 @@ extension AIChatContextualWebViewController: UserContentControllerDelegate {
             return .resolve(isFireMode: self.isFireTab,
                             handler: self.duckAiFireModeStorageHandler)
         }
-        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .contextual)
-        userScripts.aiChatUserScript.setContextualModePixelHandler(pixelHandler)
-        utiHost?.bindToUserScript(userScripts.aiChatUserScript)
         if let chatUpdatesPublisher = userScripts.duckAiNativeStorageUserScript?.chatUpdatesPublisher {
             utiHost?.observeChatUpdates(chatUpdatesPublisher)
+            chatPersistenceCancellable = chatUpdatesPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] chatID in
+                    guard let self else { return }
+                    self.delegate?.contextualWebViewController(self, didPersistChatWithID: chatID)
+                }
         }
 
+        configureContentHandler(with: userScripts.aiChatUserScript)
+    }
+
+    func configureContentHandler(with userScript: AIChatUserScript) {
+        aiChatContentHandler.setup(with: userScript, webView: webView, displayMode: .contextual)
+        userScript.setContextualModePixelHandler(pixelHandler)
+        utiHost?.bindToUserScript(userScript)
         isContentHandlerReady = true
         submitPendingIfReady()
     }

@@ -66,6 +66,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard oldValue != isInputBlockedByUsageLimit else { return }
+            updateSubmitButtonAppearance()
+            updateToolbarControlsEnabledState()
+        }
+    }
+
     var usesNewPromptSubmitStyle: Bool = false {
         didSet { updateSubmitButtonAppearance() }
     }
@@ -556,9 +565,13 @@ private extension UnifiedToggleInputToolbarView {
         }()
         submitButton.setImage(icon, for: .normal)
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
-        let isActive = submitAllowed || showVoice
+        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
-        if showVoice {
+        // The blocked button keeps its icon and takes the inactive submit fill: the voice and
+        // return-key styles have no disabled state of their own.
+        if isInputBlockedByUsageLimit {
+            submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+        } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {
             submitButton.applyReturnKeyStyle()
@@ -578,7 +591,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateToolbarControlsEnabledState() {
-        let controlsAreEnabled = !isGenerating
+        let controlsAreEnabled = !isGenerating && !isInputBlockedByUsageLimit
         imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
         toolsButton.isEnabled = controlsAreEnabled
         reasoningButton.isEnabled = controlsAreEnabled

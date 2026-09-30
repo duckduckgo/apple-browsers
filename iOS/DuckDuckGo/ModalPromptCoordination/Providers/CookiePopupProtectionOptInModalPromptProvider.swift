@@ -25,6 +25,7 @@ import UIKit
 import WebExtensions
 import PrivacyConfig
 import FeatureFlags_iOS
+import PixelKit
 
 /// Persisted state for the Cookie Pop-up Protection opt-in dialog (for telemetry + showing conditions + debug reset).
 struct CookiePopupProtectionOptInPromptStore {
@@ -114,13 +115,6 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard isEligibleToShow else { return nil }
 
-        // A/B experiment: this is the last point both arms share before diverging, so enroll here.
-        // `resolveCohort` assigns + enrolls the user; `control` is held back (dialog suppressed), while
-        // `treatment`/unassigned fall through to the current presentation.
-        if featureFlagger.resolveCohort(for: FeatureFlag.cookiePopupOptInDialogExperiment) as? FeatureFlag.CookiePopupOptInDialogCohort == .control {
-            return nil
-        }
-
         // The feature state stays unchanged between presentation and confirmation, so capture it now.
         let autoconsentEnabledWhenShown = AppUserDefaults().autoconsentEnabled
         let store = store
@@ -133,7 +127,7 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
             if let timeSinceShown = store.bucketedTimeSinceFirstShown() {
                 parameters[PixelParameters.timeSinceShown] = timeSinceShown
             }
-            Pixel.fire(pixel: .cookiePopupOptInOptionConfirmed, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInOptionConfirmed, options: .parameters(parameters))
         }))
     }
 
@@ -141,9 +135,9 @@ final class CookiePopupProtectionOptInModalPromptProvider: ModalPromptProvider {
         let parameters = [PixelParameters.autoconsentEnabled: AppUserDefaults().autoconsentEnabled ? "true" : "false"]
         if store.shownCount == 0 {
             store.firstShownDate = Date()
-            Pixel.fire(pixel: .cookiePopupOptInShownFirst, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInShownFirst, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: .cookiePopupOptInShownRepeat, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.cookiePopupOptInShownRepeat, options: .parameters(parameters))
         }
         store.shownCount += 1
     }

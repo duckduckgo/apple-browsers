@@ -26,6 +26,7 @@ import Persistence
 import Common
 import FoundationExtensions
 import os.log
+import PixelKit
 
 final class ConfigurationManager: DefaultConfigurationManager {
 
@@ -70,9 +71,9 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
 
         if let error = error {
-            Pixel.fire(pixel: domainEvent, error: error)
+            PixelKit.fire(domainEvent.withError(error))
         } else {
-            Pixel.fire(pixel: domainEvent)
+            PixelKit.fire(domainEvent)
         }
     }
 
@@ -173,7 +174,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
     @discardableResult
     func fetchAndUpdateBloomFilterExcludedDomains() async -> Bool {
         do {
-            try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false)
+            guard try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: false) == .updated else { return false }
             return try await updateBloomFilterExclusions()
         } catch {
             Logger.general.error("Failed to apply update to bloom filter exclusions: \(error.localizedDescription, privacy: .public)")

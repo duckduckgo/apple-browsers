@@ -80,16 +80,12 @@ final class DuckPlayerNativeUIPresenter {
         static let fadeAnimationDuration: TimeInterval = 0.2
         static let visibleDuration: TimeInterval = 3.0
 
-        // Fallback clearance for the floating toolbar if the host hasn't reported a bar height yet.
-        static let floatingToolbarClearance: CGFloat = BrowserToolbarView.floatingButtonsHeight + 21
+        static let floatingChromeClearance: CGFloat = 4
+        static let floatingWelcomeChromeClearance: CGFloat = 8
 
         // Max time to wait for the floating pill thumbnail before sliding in anyway.
         static let thumbnailReadyTimeout: TimeInterval = 1.0
 
-        // persistentBottomBarHeight is the full safe-area-anchored bar region, but the visible floating
-        // capsule floats lower than that region's top. Trim this much so the pill sits just above the
-        // capsule rather than the (taller) logical bar region. Tuned against device runtime numbers.
-        static let floatingCapsuleInset: CGFloat = 20
     }
 
     /// The container view model for the entry pill
@@ -179,7 +175,9 @@ final class DuckPlayerNativeUIPresenter {
          notificationCenter: NotificationCenter = .default,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
-         floatingUIManager: FloatingUIManaging = FloatingUIManager()) {
+         floatingUIManager: FloatingUIManaging = FloatingUIManager(
+            isFloatingUIFeatureEnabled: false
+         )) {
         self.appSettings = appSettings
         self.duckPlayerSettings = duckPlayerSettings
         self.state = state
@@ -223,8 +221,11 @@ final class DuckPlayerNativeUIPresenter {
     /// the address bar when it's at the bottom, at screen bottom when it's at the top.
     private var pillBottomConstraintConstant: CGFloat {
         if floatingUIManager.isFloatingUIEnabled {
-            let barHeight = hostView?.persistentBottomBarHeight ?? Constants.floatingToolbarClearance
-            return -(barHeight - Constants.floatingCapsuleInset)
+            let chromeHeight = hostView?.floatingBottomChromeObscuredHeight ?? 0
+            let clearance = presentedPillType == .welcome
+                ? Constants.floatingWelcomeChromeClearance
+                : Constants.floatingChromeClearance
+            return -(chromeHeight + DuckPlayerContainer.Constants.presentedOffset + clearance)
         }
         return appSettings.currentAddressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
     }
@@ -253,6 +254,8 @@ final class DuckPlayerNativeUIPresenter {
         pillHeight = Constants.webViewRequiredBottomConstraint
 
         if pillType == .welcome {
+            let usesFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
             // Create the welcome pill view model
             let welcomePillViewModel = DuckPlayerWelcomePillViewModel(
                 onOpen: { [weak self] in
@@ -269,6 +272,7 @@ final class DuckPlayerNativeUIPresenter {
                 hasBackground: false,
                 showDragHandle: false,
                 allowDragGesture: false,
+                showsSheetChrome: !usesFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -284,7 +288,12 @@ final class DuckPlayerNativeUIPresenter {
                     )
                 }
             ) { _ in
-                AnyView(DuckPlayerWelcomePillView(viewModel: welcomePillViewModel))
+                AnyView(
+                    DuckPlayerWelcomePillView(
+                        viewModel: welcomePillViewModel,
+                        usesFloatingStyle: usesFloatingStyle
+                    )
+                )
             }
         } else if pillType == .entry {
             let useFloatingStyle = floatingUIManager.isFloatingUIEnabled
@@ -407,10 +416,9 @@ final class DuckPlayerNativeUIPresenter {
         hostingController.rootView = updatedContainer
     }
 
-    /// Resets the webView constraint to its default value
     @MainActor
     private func resetWebViewConstraint() {
-        guard hostView != nil else { return }
+        guard hostView != nil, !floatingUIManager.isFloatingUIEnabled else { return }
         constraintUpdatePublisher.send(.reset)
     }
 
@@ -922,6 +930,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor
     func showBottomSheetForVisibleChrome() {
+        updatePillBottomConstraint()
         containerViewModel?.show()
         containerViewController?.view.isUserInteractionEnabled = true
         postPillVisibilityNotification(isVisible: true)

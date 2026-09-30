@@ -18,7 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {

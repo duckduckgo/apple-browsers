@@ -17,13 +17,36 @@
 //  limitations under the License.
 //
 
-/// The fixed set of subscription protections (VPN, IDTR, Duck.ai, PIR), shared by the onboarding welcome
-/// list and the completion checklist. `title` is the checklist row copy; the welcome list supplies its own.
-enum SubscriptionOnboardingChecklistItem: CaseIterable, Identifiable {
+import Subscription
+
+/// Steps the completion checklist tracks.
+enum SubscriptionOnboardingChecklistItem: String, CaseIterable, Identifiable {
     case vpn
     case idtr
     case duckAI
     case pir
+
+    /// Every case gated by its own entitlement, `.pir` further gated by `isPIRAvailable`. Can come back
+    /// empty if every case is excluded.
+    static func checklist(isPIRAvailable: Bool, entitlement: EntitlementStatus) -> [SubscriptionOnboardingChecklistItem] {
+        let gated = allCases.filter { $0.isEntitled(entitlement) }
+        return isPIRAvailable ? gated : gated.filter { $0 != .pir }
+    }
+
+    private func isEntitled(_ entitlement: EntitlementStatus) -> Bool {
+        switch self {
+        case .vpn: return entitlement.isEnabled(.networkProtection)
+        case .idtr: return entitlement.isEnabled(.identityTheftRestoration) || entitlement.isEnabled(.identityTheftRestorationGlobal)
+        case .duckAI: return entitlement.isEnabled(.paidAIChat)
+        case .pir: return entitlement.isEnabled(.dataBrokerProtection)
+        }
+    }
+
+    static func completionPercentage(completed: Set<SubscriptionOnboardingChecklistItem>,
+                                     checklist: [SubscriptionOnboardingChecklistItem]) -> Int {
+        guard !checklist.isEmpty else { return 0 }
+        return completed.intersection(checklist).count * 100 / checklist.count
+    }
 
     var id: Self { self }
 

@@ -20,6 +20,7 @@ import Common
 import EventHub
 import Foundation
 import os.log
+import PixelExperimentKit
 import PixelKit
 
 /// The macOS platform marker EventHub appends itself, rather than letting PixelKit derive one.
@@ -74,5 +75,25 @@ final class MacOSEventHubDebugEventMapping: EventMapping<EventHubDebugEvent> {
 
     override init(mapping: @escaping EventMapping<EventHubDebugEvent>.Mapping) {
         fatalError("Use init()")
+    }
+}
+
+/// Hands EventHub's experiment-metric conversion requests to the Native Apps experiment framework.
+///
+/// Lives beside the pixel-firing conformance rather than in the EventHub package: the package must not
+/// depend on `PixelExperimentKit`, whose product is already linked by this app target and whose
+/// products cannot be linked twice without breaking this project's test-target link graph.
+///
+/// Everything the framework owns happens past this call — enrollment and cohort resolution, conversion
+/// window containment, threshold accumulation, repeat suppression and the pixel itself. A request for
+/// an experiment the user is not enrolled in is a no-op there, which is why the hub does not filter.
+struct MacOSEventHubConversionReporting: EventHubConversionReporting {
+
+    func reportConversion(experiment: String, metric: String, windowDays: ClosedRange<Int>, threshold: Int) {
+        Logger.eventHub.info("experiment metric conversion: \(experiment, privacy: .public)/\(metric, privacy: .public) window \(windowDays.lowerBound, privacy: .public)-\(windowDays.upperBound, privacy: .public) threshold \(threshold, privacy: .public)")
+        PixelKit.fireExperimentPixelIfThresholdReached(for: experiment,
+                                                       metric: metric,
+                                                       conversionWindowDays: windowDays,
+                                                       threshold: threshold)
     }
 }

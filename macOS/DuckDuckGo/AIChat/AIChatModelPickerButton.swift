@@ -27,18 +27,11 @@ final class AIChatModelPickerButton: NSView {
     private enum Constants {
         static let height: CGFloat = 28
         static let horizontalPadding: CGFloat = 13
-        static let legacyHorizontalPadding: CGFloat = 10
         static let iconTextSpacing: CGFloat = 3
         static let chevronSize: CGFloat = 16
         static let fontSize: CGFloat = 12
         static let cornerRadius: CGFloat = 14
         static let borderWidth: CGFloat = 1
-    }
-
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
-
-    private var horizontalPadding: CGFloat {
-        themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
     }
 
     private let nameLabel: NSTextField = {
@@ -168,7 +161,7 @@ final class AIChatModelPickerButton: NSView {
     override var intrinsicContentSize: NSSize {
         let labelWidth = nameLabel.intrinsicContentSize.width
         let menuIndicatorWidth = isReadOnly ? 0 : Constants.iconTextSpacing + Constants.chevronSize
-        let totalWidth = horizontalPadding + labelWidth + menuIndicatorWidth + horizontalPadding
+        let totalWidth = Constants.horizontalPadding * 2 + labelWidth + menuIndicatorWidth
         return NSSize(width: totalWidth, height: Constants.height)
     }
 
@@ -260,7 +253,7 @@ final class AIChatModelPickerButton: NSView {
         addSubview(chevronImageView)
 
         NSLayoutConstraint.activate([
-            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: horizontalPadding),
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             nameLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             chevronImageView.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: Constants.iconTextSpacing),
@@ -324,6 +317,7 @@ final class AIChatModelPickerButton: NSView {
     // MARK: - Hover Tracking
 
     private var trackingArea: NSTrackingArea?
+    private var lastHoverEventTimestamp: TimeInterval = 0
 
     private func setupHoverTracking() {
         updateTrackingAreas()
@@ -338,7 +332,7 @@ final class AIChatModelPickerButton: NSView {
 
         let newTrackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
@@ -349,20 +343,7 @@ final class AIChatModelPickerButton: NSView {
         refreshHoverState()
     }
 
-    override func mouseEntered(with event: NSEvent) {
-        isHovered = isEnabled && !isReadOnly
-        NSCursor.arrow.set()
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        NSCursor.arrow.set()
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovered = false
-    }
-
-    /// For the cases where the tracking area can't be trusted — see `sendMenuOpeningAction`.
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu tracking makes callbacks unreliable.
     private func refreshHoverState() {
         guard isEnabled, !isReadOnly, let window else {
             isHovered = false
@@ -376,10 +357,41 @@ final class AIChatModelPickerButton: NSView {
         refreshHoverState()
     }
 
+    /// AppKit can deliver an older enter event after a newer exit event. Trusting that enter
+    /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
+    private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
+        guard event.timestamp >= lastHoverEventTimestamp else {
+            resetTransientFillState()
+            return
+        }
+        lastHoverEventTimestamp = event.timestamp
+        let canShowHover = NSEvent.pressedMouseButtons == 0 || isMouseDown
+        isHovered = hovering && isEnabled && !isReadOnly && canShowHover
+        if !hovering {
+            isMouseDown = false
+        }
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        isMouseDown = false
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        updateHoverState(false, from: event)
+    }
+
     override func mouseDown(with event: NSEvent) {
         guard isEnabled, !isReadOnly else { return }
         wantsFocusRing = false
         isMouseDown = true
+        trackMouseInteraction()
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -399,7 +411,7 @@ final class AIChatModelPickerButton: NSView {
                 return
             }
         }
-        isMouseDown = false
+        resetTransientFillState()
     }
 
     override func keyDown(with event: NSEvent) {

@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 import DDGSync
 import Foundation
 import Persistence
@@ -69,8 +70,12 @@ final class SyncFaviconsPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        guard featureFlagger.isFeatureOn(.promoQueueSyncFaviconsPromo) else { return false }
-        guard let syncService, let syncBookmarksAdapter else { return false }
+        guard AppVersion.runType != .uiTests,
+              featureFlagger.isFeatureOn(.promoQueueSyncFaviconsPromo),
+              let syncService,
+              let syncBookmarksAdapter else {
+            return false
+        }
         return syncService.featureFlags.contains(.userInterface)
             && !syncBookmarksAdapter.isFaviconsFetchingEnabled
             && syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding

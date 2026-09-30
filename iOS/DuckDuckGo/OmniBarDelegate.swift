@@ -115,11 +115,11 @@ protocol OmniBarDelegate: AnyObject {
     /// attachment is added or removed), so an anchored popover can be repositioned to follow it.
     func onOmniBarExpandedContentSizeChanged()
 
+    /// A link in the expanded input's footer card, such as the Terms of Service disclaimer.
+    func onOmniBarFooterLinkTapped(_ url: URL)
+
     /// Called when text changes in the AI Chat text view (iPad tab mode), for filtering chat history suggestions.
     func onAIChatQueryUpdated(_ query: String)
-
-    /// Returns whether search query text on a SERP should be auto-selected in the experimental address bar.
-    func shouldAutoSelectTextForSERPQuery() -> Bool
 
     // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
@@ -246,9 +246,9 @@ extension OmniBarDelegate {
 
     func onOmniBarExpandedContentSizeChanged() {}
 
-    func onAIChatQueryUpdated(_ query: String) {}
+    func onOmniBarFooterLinkTapped(_ url: URL) {}
 
-    func shouldAutoSelectTextForSERPQuery() -> Bool { false }
+    func onAIChatQueryUpdated(_ query: String) {}
 
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}

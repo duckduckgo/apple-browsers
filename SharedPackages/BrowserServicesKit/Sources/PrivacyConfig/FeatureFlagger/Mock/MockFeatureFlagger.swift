@@ -27,7 +27,8 @@ public final class MockFeatureFlagger: FeatureFlagger {
                 localOverrides: (any FeatureFlagLocalOverriding)? = nil,
                 mockActiveExperiments: [String: ExperimentData] = [:],
                 featuresStub: [String: Bool] = [:],
-                resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil) {
+                resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil,
+                isAlreadyAssigned: Bool = true) {
         self.allActiveExperiments = allActiveExperiments
         self.didCallResolveCohort = didCallResolveCohort
         self.internalUserDecider = internalUserDecider
@@ -35,7 +36,11 @@ public final class MockFeatureFlagger: FeatureFlagger {
         self.mockActiveExperiments = mockActiveExperiments
         self._featuresStub = featuresStub
         self.resolveCohortStub = resolveCohortStub
+        self.isAlreadyAssigned = isAlreadyAssigned
     }
+
+    /// Whether `assignedCohort` should report `resolveCohortStub` as already assigned, or `nil` (not yet enrolled).
+    private let isAlreadyAssigned: Bool
 
     public var allActiveExperiments: Experiments = [:]
 
@@ -75,6 +80,6 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     public func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
         didCallAssignedCohort = true
-        return resolveCohortStub
+        return isAlreadyAssigned ? resolveCohortStub : nil
     }
 }

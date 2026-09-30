@@ -4,7 +4,15 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "context_type",
+                "description": "Which carrier the page was handed over in: pdf for a document tab, markdown for a regular web page.",
+                "type": "string",
+                "enum": ["pdf", "markdown"]
+            }
+        ]
     },
     "m_aichat_page_context_extraction_failed": {
         "description": "Fired when Duck.ai page-context extraction was attempted but produced no usable content",
@@ -39,6 +47,12 @@
                 "description": "Bucketed request-to-result time. Present only when a result arrived.",
                 "type": "string",
                 "enum": ["under_1s", "1_to_5s", "over_5s"]
+            },
+            {
+                "key": "context_type",
+                "description": "Which carrier the page was handed over in: pdf for a document tab, markdown for a regular web page.",
+                "type": "string",
+                "enum": ["pdf", "markdown"]
             }
         ]
     },
@@ -51,9 +65,9 @@
             "appVersion",
             {
                 "key": "category",
-                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, internalPage for native special pages (nil URL, about:blank, Duck.ai), or documentTooLarge for a PDF over the size ceiling native will hand across the JS bridge.",
+                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, internalPage for native special pages (nil URL, about:blank, Duck.ai), documentTooLarge for a PDF over the size ceiling native will hand across the JS bridge, or localFile for a page loaded from disk (file://), which is excluded from page context.",
                 "type": "string",
-                "enum": ["pdf", "image", "video", "audio", "internalPage", "documentTooLarge"]
+                "enum": ["pdf", "image", "video", "audio", "internalPage", "documentTooLarge", "localFile"]
             },
             {
                 "key": "reason",

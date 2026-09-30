@@ -22,6 +22,7 @@ import Common
 import FeatureFlags_macOS
 import FoundationExtensions
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import SharedTestUtilities
 import Testing

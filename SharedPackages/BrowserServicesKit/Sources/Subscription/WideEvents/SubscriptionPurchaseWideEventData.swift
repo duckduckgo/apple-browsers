@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 public class SubscriptionPurchaseWideEventData: WideEventData {
     public static let metadata = WideEventMetadata(

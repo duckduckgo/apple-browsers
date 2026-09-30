@@ -26,9 +26,7 @@ import os.log
 import Persistence
 import URLPredictor
 
-#if !SANDBOX_TEST_TOOL
 import PixelKit
-#endif
 
 extension URL.NavigationalScheme {
 
@@ -87,7 +85,6 @@ extension URL {
 
     // MARK: - Factory
 
-#if !SANDBOX_TEST_TOOL
     static func makeSearchUrl(from searchQuery: String) -> URL? {
         let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -161,7 +158,6 @@ extension URL {
         }
         return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
-#endif
 
     static let newtab = URL(string: "duck://newtab")!
     static let welcome = URL(string: "duck://welcome")!
@@ -174,10 +170,10 @@ extension URL {
     static let permissions = URL(string: "duck://permissions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
+    static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
 
     static let dataBrokerProtection = URL(string: "duck://personal-information-removal")!
 
-#if !SANDBOX_TEST_TOOL
     static func settingsPane(_ pane: PreferencePaneIdentifier) -> URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
@@ -211,8 +207,6 @@ extension URL {
     var isPermissions: Bool {
         return navigationalScheme == .duck && host == URL.permissions.host
     }
-
-#endif
 
     enum Invalid {
         static let aboutNewtab = URL(string: "about:newtab")!
@@ -369,7 +363,6 @@ extension URL {
         return "\(host):\(port)"
     }
 
-#if !SANDBOX_TEST_TOOL
     func toString(forUserInput input: String, decodePunycode: Bool = true) -> String {
         let hasInputScheme = input.hasOrIsPrefix(of: self.separatedScheme ?? "")
         let hasInputWww = input.dropping(prefix: self.separatedScheme ?? "").hasOrIsPrefix(of: URL.HostPrefix.www.rawValue)
@@ -380,7 +373,6 @@ extension URL {
                              needsWWW: !input.dropping(prefix: self.separatedScheme ?? "").isEmpty && hasInputWww,
                              dropTrailingSlash: !input.hasSuffix("/"))
     }
-#endif
 
     /// Tries to use the file name part of the URL, if available, adjusting for content type, if available.
     var suggestedFilename: String? {
@@ -563,6 +555,8 @@ extension URL {
         return debugSettings.effectiveHelpBaseURL
     }
 
+    static let internalFeedbackFormHost = "internalapps.duckduckgo.com"
+
     // MARK: - DuckDuckGo
 
     static var onboarding: URL {
@@ -591,7 +585,13 @@ extension URL {
     }
 
     static var internalFeedbackForm: URL {
-        return URL(string: "https://go.duckduckgo.com/feedback")!
+        return URL(string: "https://\(internalFeedbackFormHost)/internal-feedback/")!
+    }
+
+    var isInternalFeedbackForm: Bool {
+        scheme == "https"
+            && host == URL.internalFeedbackFormHost
+            && path.hasPrefix(URL.internalFeedbackForm.path)
     }
 
     static var webTrackingProtection: URL {

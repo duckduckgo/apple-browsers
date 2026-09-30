@@ -60,8 +60,30 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem.separator()
 
             storageServerMenuItem
+
+#if DEBUG || REVIEW
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
+                .targetting(self)
+#endif
         }
     }
+
+#if DEBUG || REVIEW
+
+    // MARK: - Browser Tools
+
+    /// Opens the sidebar on the current tab with the browser tools panel in place of the chat.
+    /// Closing the sidebar brings the chat back next time; there is no persisted mode.
+    @MainActor
+    @objc private func showBrowserToolsPanel() {
+        let coordinator = NSApp.delegateTyped.windowControllersManager
+            .lastKeyMainWindowController?.mainViewController.aiChatCoordinator as? AIChatCoordinator
+        coordinator?.showBrowserToolsDebugPanel()
+    }
+
+#endif
 
     // MARK: - Duck.ai Usage Warnings
 
@@ -120,7 +142,7 @@ final class AIChatDebugMenu: NSMenu {
     /// Brings back a message dismissed with its close button, and one whose CTA has been run.
     @objc private func clearUsageDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
-        store.setDismissal(nil)
+        DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
     }
 

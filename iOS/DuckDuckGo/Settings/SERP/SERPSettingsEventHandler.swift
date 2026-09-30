@@ -1,0 +1,103 @@
+//
+//  SERPSettingsEventHandler.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Core
+import Common
+import FoundationExtensions
+import PixelKit
+import SERPSettings
+
+enum SERPSettingsPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
+    case serpSettingsSerializationFailed
+    case serpSettingsKeyValueStoreReadError
+    case serpSettingsKeyValueStoreWriteError
+    case hideAIGeneratedImagesButtonClicked
+    case openDuckAIButtonClick
+
+    var name: String {
+        switch self {
+        case .serpSettingsSerializationFailed:
+            return "m_serp_settings_serialization_failed"
+        case .serpSettingsKeyValueStoreReadError:
+            return "m_serp_settings_keyvalue_store_read_error"
+        case .serpSettingsKeyValueStoreWriteError:
+            return "m_serp_settings_keyvalue_store_write_error"
+        case .hideAIGeneratedImagesButtonClicked:
+            return "m_aichat_hide_ai_generated_images_button_clicked"
+        case .openDuckAIButtonClick:
+            return "m_serp_settings_open_duck_ai_button_click"
+        }
+    }
+
+    var parameters: [String: String]? {
+        return nil
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .serpSettingsSerializationFailed,
+                .serpSettingsKeyValueStoreReadError,
+                .serpSettingsKeyValueStoreWriteError,
+                .hideAIGeneratedImagesButtonClicked,
+                .openDuckAIButtonClick:
+            return [.pixelSource]
+        }
+    }
+}
+
+final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
+    /// Creates a new SERP settings event handler with default pixel mapping.
+    ///
+    /// This initializer configures the event-to-pixel mappings for all
+    /// supported error types.
+    init() {
+        super.init { event, error, parameters, _ in
+            switch event {
+            case .serializationFailed:
+                // Fires when converting settings dictionary to JSON fails.
+                PixelKit.fire(SERPSettingsPixel.serpSettingsSerializationFailed, frequency: .dailyAndCount)
+            case .keyValueStoreReadError:
+                // Fires when reading from persistent storage fails.
+                // DebugEvent attaches the underlying error's domain/code; `parameters` carries the `reason`
+                // (store read vs JSON decode) so the two failure modes can be distinguished in analytics.
+                PixelKit.fire(DebugEvent(SERPSettingsPixel.serpSettingsKeyValueStoreReadError, error: error),
+                              frequency: .dailyAndCount,
+                              withAdditionalParameters: parameters)
+            case .keyValueStoreWriteError:
+                // Fires when writing to persistent storage fails.
+                PixelKit.fire(SERPSettingsPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
+            case .unrecognizedValue:
+                // Daily-only, no params: the SERP getters run on every read, so a count variant would spam.
+                PixelKit.fire(Pixel.Event.serpSettingsUnrecognizedValue, frequency: .legacyDailyNoSuffix)
+            }
+        }
+    }
+
+    /// Prevents accidental initialization with custom mapping.
+    ///
+    /// This override ensures the default pixel mapping defined in `init()` is always used.
+    @available(*, unavailable, message: "Use init() instead")
+    override init(mapping: @escaping EventMapping<SERPSettingsError>.Mapping) {
+        fatalError("Use init()")
+    }
+}

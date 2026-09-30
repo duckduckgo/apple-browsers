@@ -24,6 +24,7 @@ import WidgetKit
 import Core
 import OSLog
 import VPNWidgetSupport
+import PixelKit
 
 // MARK: - Toggle
 
@@ -62,7 +63,7 @@ struct ControlWidgetToggleVPNIntent: SetValueIntent {
 
     private func startVPN() async throws {
         do {
-            DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterConnectAttempt)
+            PixelKit.fire(Pixel.Event.vpnControlCenterConnectAttempt, frequency: .dailyAndCount)
 
             let controller = VPNWidgetTunnelController()
             try await controller.start(settings: VPNSettings(defaults: .networkProtectionGroupDefaults))
@@ -70,7 +71,7 @@ struct ControlWidgetToggleVPNIntent: SetValueIntent {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()
 
-            DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterConnectSuccess)
+            PixelKit.fire(Pixel.Event.vpnControlCenterConnectSuccess, frequency: .dailyAndCount)
         } catch {
             switch error {
             case VPNWidgetTunnelController.StartFailure.vpnNotConfigured,
@@ -78,10 +79,10 @@ struct ControlWidgetToggleVPNIntent: SetValueIntent {
                 // the app.
                 NEVPNError.configurationDisabled:
 
-                DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterConnectCancelled)
+                PixelKit.fire(Pixel.Event.vpnControlCenterConnectCancelled, frequency: .dailyAndCount)
                 throw EnableAttemptFailure.cancelled
             default:
-                DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterConnectFailure, error: error)
+                PixelKit.fire(Pixel.Event.vpnControlCenterConnectFailure.withError(error), frequency: .dailyAndCount)
                 throw error
             }
         }
@@ -89,7 +90,7 @@ struct ControlWidgetToggleVPNIntent: SetValueIntent {
 
     private func stopVPN() async throws {
         do {
-            DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterDisconnectAttempt)
+            PixelKit.fire(Pixel.Event.vpnControlCenterDisconnectAttempt, frequency: .dailyAndCount)
 
             let controller = VPNWidgetTunnelController()
             try await controller.stop()
@@ -97,14 +98,14 @@ struct ControlWidgetToggleVPNIntent: SetValueIntent {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()
 
-            DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterDisconnectSuccess)
+            PixelKit.fire(Pixel.Event.vpnControlCenterDisconnectSuccess, frequency: .dailyAndCount)
         } catch {
             switch error {
             case VPNWidgetTunnelController.StopFailure.vpnNotConfigured:
-                DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterDisconnectCancelled)
+                PixelKit.fire(Pixel.Event.vpnControlCenterDisconnectCancelled, frequency: .dailyAndCount)
                 throw error
             default:
-                DailyPixel.fireDailyAndCount(pixel: .vpnControlCenterDisconnectFailure, error: error)
+                PixelKit.fire(Pixel.Event.vpnControlCenterDisconnectFailure.withError(error), frequency: .dailyAndCount)
                 throw error
             }
         }

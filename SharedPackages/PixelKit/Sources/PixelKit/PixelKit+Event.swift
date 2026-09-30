@@ -35,6 +35,9 @@ extension PixelKit {
         var error: NSError? { get }
         /// Where the iOS platform marker goes. Defaults to `.standard`.
         var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { get }
+        /// Whether `name` may contain `.`, which the naming rules otherwise forbid.
+        /// Defaults to `false`. See the extension below.
+        var allowsDotInName: Bool { get }
         /// What precedes `name`. Defaults to `.platformDefault`.
         var namePrefix: PixelKitNamePrefix { get }
     }
@@ -45,6 +48,14 @@ public extension PixelKit.Event {
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .standard }
 
     var namePrefix: PixelKitNamePrefix { .platformDefault }
+
+    /// A `.` in a pixel name is a mistake for anything new, so this is `false` by default and
+    /// firing such a pixel trips an assertion.
+    ///
+    /// Set it to `true` only for a legacy name that already shipped with a dot, where correcting
+    /// the name would break the metric. iOS `Pixel.Event` does this: several of its names
+    /// interpolate a bucketed value such as `0.5`.
+    var allowsDotInName: Bool { false }
 
     /// Returns this event with `prefix` in front of its name, overriding `namePrefix`.
     ///
@@ -66,6 +77,7 @@ struct PixelKitPrefixedEvent: PixelKit.Event {
     /// Declared so the reflection-based default inspects the wrapped event, not this wrapper.
     var error: NSError? { wrapped.error }
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { wrapped.platformSuffixPolicy }
+    var allowsDotInName: Bool { wrapped.allowsDotInName }
 }
 
 /// Extract Error parameter from the PixelKit.Event, only one error is supported, if multiple errors are found we assert

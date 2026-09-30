@@ -50,10 +50,30 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var extensionUpdates: AsyncStream<Void> { get }
 
+    /// An async stream describing extension load and reload lifecycle changes.
+    ///
+    /// Backed by a single continuation created on first access, so it supports **one** consumer:
+    /// two iterators would split the events between them rather than each receiving all of them.
+    /// Events emitted before the first access are dropped, so subscribe before loading extensions
+    /// if the initial `loaded` events matter. `WebExtensionManager` delivers the same events to
+    /// `cpmMessagingHealthMonitor` directly and does not depend on this stream.
+    @available(macOS 15.4, iOS 18.4, *)
+    var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { get }
+
+    /// Shared CPM health monitor receiving events from every browser tab and the embedded extension.
+    @available(macOS 15.4, iOS 18.4, *)
+    var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { get }
+
     /// Loads all installed extensions.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func loadInstalledExtensions() async
+
+    /// Forces the embedded extension's background content to load and waits for completion.
+    /// Returns immediately when the embedded extension is not loaded or has no background content.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func loadEmbeddedExtensionBackgroundContent() async
 
     /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
     /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
@@ -141,6 +161,13 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func performSearchTokenRefresh()
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionManaging {
+    // Preserve lightweight test and platform-specific conformers that do not own embedded content.
+    @MainActor
+    func loadEmbeddedExtensionBackgroundContent() async {}
 }
 
 @available(macOS 15.4, iOS 18.4, *)

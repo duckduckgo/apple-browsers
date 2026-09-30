@@ -48,8 +48,11 @@ protocol AIChatUserScriptProviding: AnyObject {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
-                      reasoningEffort: AIChatReasoningEffort?)
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)?)
     func submitStartChatAction()
+    func cancelPendingTabContextSubmission()
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
     func submitToggleSidebarAction()
@@ -57,6 +60,19 @@ protocol AIChatUserScriptProviding: AnyObject {
 }
 
 extension AIChatUserScriptProviding {
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: nil)
+    }
+
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
@@ -119,10 +135,14 @@ protocol AIChatContentHandling: AnyObject {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
-                      reasoningEffort: AIChatReasoningEffort?)
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() async
+
+    func cancelPendingTabContextSubmission()
 
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
@@ -152,6 +172,19 @@ protocol AIChatContentHandling: AnyObject {
 }
 
 extension AIChatContentHandling {
+    func submitPrompt(_ prompt: String,
+                      images: [AIChatNativePrompt.NativePromptImage]?,
+                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: nil)
+    }
+
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
@@ -173,6 +206,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let featureDiscovery: FeatureDiscovery
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let subscriptionManager: any SubscriptionManager
     private let statisticsLoader: StatisticsLoader
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
@@ -196,6 +231,8 @@ final class AIChatContentHandler: AIChatContentHandling {
          featureDiscovery: FeatureDiscovery,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          statisticsLoader: StatisticsLoader = .shared,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
@@ -207,6 +244,8 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.featureDiscovery = featureDiscovery
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.subscriptionManager = subscriptionManager
         self.statisticsLoader = statisticsLoader
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.debugSettings = debugSettings
@@ -215,6 +254,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
 
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
+        self.userScript?.cancelPendingTabContextSubmission()
         self.userScript = userScript
         self.userScript?.delegate = self
         self.userScript?.setDisplayMode(displayMode)
@@ -310,17 +350,30 @@ final class AIChatContentHandler: AIChatContentHandling {
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
-                      reasoningEffort: AIChatReasoningEffort?) {
-        userScript?.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools, pageContext: pageContext, reasoningEffort: reasoningEffort)
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      onPromptDispatched: (() -> Void)? = nil) {
+        guard let userScript else {
+            Task { @MainActor in tabAttachmentRequest?.cancel() }
+            return
+        }
+        userScript.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+                                pageContext: pageContext, reasoningEffort: reasoningEffort,
+                                tabAttachmentRequest: tabAttachmentRequest, onPromptDispatched: onPromptDispatched)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
     func submitStartChatAction() async {
+        cancelPendingTabContextSubmission()
         if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = await getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()
+    }
+
+    func cancelPendingTabContextSubmission() {
+        userScript?.cancelPendingTabContextSubmission()
     }
 
     /// Submits an open settings action to open the AI Chat settings.
@@ -401,6 +454,13 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
+                // Also completes the subscription onboarding checklist's Duck.ai step
+                let wasAlreadyActivated = onboardingActivationRecorder.recordDuckAIActivatedIfNeeded()
+                Task {
+                    SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(
+                        isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                        isAlreadyActivated: wasAlreadyActivated)
+                }
             }
 
             DispatchQueue.main.async {

@@ -449,6 +449,7 @@ public extension DesignSystemImages {
                     ? .init(resource: .feedbackColor24)
                     : .init(resource: .feedbackColor24Legacy)
             }
+            public static var filePDF: DesignSystemImage { .init(resource: .filePDFColor24) }
             public static var fire: DesignSystemImage {
                 AppRebrand.isAppRebranded()
                     ? .init(resource: .fireColor24)
@@ -578,6 +579,7 @@ public extension DesignSystemImages {
                     : .init(resource: .vpnColor24Legacy)
             }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
+            public static var websitePermissions: DesignSystemImage { .init(resource: .websitePermissionsColor24) }
         }
 
         public enum Size32 {

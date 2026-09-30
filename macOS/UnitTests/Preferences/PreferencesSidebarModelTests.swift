@@ -19,8 +19,9 @@
 import Combine
 import Common
 import ConcurrencyExtensions
+import FeatureFlags_macOS
 import FoundationExtensions
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 @_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PreferencesUI_macOS
@@ -105,7 +106,16 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
-            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, includingYouTubeAdBlocking: false, subscriptionState: PreferencesSidebarSubscriptionState()) },
+            loadSections: { _ in
+                loadSections ?? PreferencesSection.defaultSections(
+                    includingDuckPlayer: false,
+                    includingSync: false,
+                    includingAIChat: false,
+                    includingYouTubeAdBlocking: false,
+                    includingWebsitePermissions: false,
+                    subscriptionState: PreferencesSidebarSubscriptionState()
+                )
+            },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
@@ -193,6 +203,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 includingSync: false,
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: false,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -541,6 +552,77 @@ final class PreferencesSidebarModelTests: XCTestCase {
     }
 
     // MARK: Tests for subscribed refresh notification triggers
+
+    func testWhenNavigatingBetweenPanesThenPermissionRequestsAreUpdatedAndCleared() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
+        let model = makeWebsitePermissionsSidebarModel()
+        model.navigate(to: .websitePermission(.camera))
+        model.resetWebsitePermissionRequest()
+
+        model.navigate(to: .websitePermission(.autoplay))
+
+        XCTAssertEqual(model.selectedPane, .websitePermissions)
+        XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+        XCTAssertNil(model.scrollTarget)
+
+        model.resetWebsitePermissionRequest()
+        XCTAssertNil(model.websitePermissionTarget)
+        model.navigate(to: .websitePermission(.autoplay))
+        XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+
+        model.selectPane(.general)
+
+        XCTAssertEqual(model.selectedPane, .general)
+        XCTAssertNil(model.websitePermissionTarget)
+    }
+
+    func testWhenWebsitePermissionsFlagChangesThenAvailabilityAndNavigationUpdateWithoutReopeningSettings() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = false
+        let model = makeWebsitePermissionsSidebarModel()
+        XCTAssertFalse(model.sections.flatMap(\.panes).contains(.websitePermissions))
+        model.selectPane(.general)
+
+        model.navigate(to: .websitePermission(.autoplay))
+
+        XCTAssertEqual(model.selectedPane, .general)
+        XCTAssertNil(model.websitePermissionTarget)
+
+        for isEnabled in [true, false, true] {
+            let updated = expectation(description: "Website Permissions availability becomes \(isEnabled)")
+            let cancellable = model.$sections
+                .dropFirst()
+                .filter { $0.flatMap(\.panes).contains(.websitePermissions) == isEnabled }
+                .prefix(1)
+                .sink { _ in updated.fulfill() }
+
+            mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = isEnabled
+            mockFeatureFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 1)
+            withExtendedLifetime(cancellable) {}
+
+            if isEnabled {
+                model.navigate(to: .websitePermission(.autoplay))
+                XCTAssertEqual(model.selectedPane, .websitePermissions)
+                XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+            } else {
+                XCTAssertNotEqual(model.selectedPane, .websitePermissions)
+            }
+        }
+    }
+
+    private func makeWebsitePermissionsSidebarModel() -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let featureFlagger: MockFeatureFlagger = mockFeatureFlagger
+        return PreferencesSidebarModel(loadSections: { state in
+            PreferencesSection.defaultSections(
+                includingDuckPlayer: false,
+                includingSync: false,
+                includingAIChat: false,
+                includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
+                subscriptionState: state
+            )
+        })
+    }
 
     func testModelReloadsSectionsWhenRefreshSectionsCalled() async throws {
         // Given

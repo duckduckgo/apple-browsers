@@ -25,14 +25,15 @@ struct TabInputState: Equatable {
     var text: String
     var toggleMode: TextEntryMode
     var attachments: [UnifiedToggleInputAttachment]
+    var hasCountedAttachmentPrivacyForDraft: Bool
     var selectedModelID: String?
     var selectedReasoningMode: AIChatReasoningMode?
     var selectedTool: AIChatRAGTool?
     /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
     /// because FE does not re-emit when the user returns to a tab already in voice mode.
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility
-    /// Driven by FE `voiceSessionStarted` / `voiceSessionEnded` user-script messages. Hides the
-    /// header chats/compose pill while voice is active; orthogonal to `aiChatInputBoxVisibility`.
+    /// True while the voice surface is on screen (FE `voiceModeOpened`/`voiceModeClosed` paint events).
+    /// Persisted per tab because FE doesn't re-emit when returning to a tab already in voice mode.
     var isVoiceSessionActive: Bool
     /// Recovery `showModelPicker` pin: keeps the model chip visible mid-chat until prompt submit.
     /// Used when the user has lost access to the selected model.
@@ -42,6 +43,7 @@ struct TabInputState: Equatable {
         text: String = "",
         toggleMode: TextEntryMode = .search,
         attachments: [UnifiedToggleInputAttachment] = [],
+        hasCountedAttachmentPrivacyForDraft: Bool = false,
         selectedModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
@@ -52,6 +54,7 @@ struct TabInputState: Equatable {
         self.text = text
         self.toggleMode = toggleMode
         self.attachments = attachments
+        self.hasCountedAttachmentPrivacyForDraft = hasCountedAttachmentPrivacyForDraft
         self.selectedModelID = selectedModelID
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
@@ -64,12 +67,21 @@ struct TabInputState: Equatable {
         lhs.text == rhs.text
             && lhs.toggleMode == rhs.toggleMode
             && lhs.attachments.map(\.id) == rhs.attachments.map(\.id)
+            && lhs.hasCountedAttachmentPrivacyForDraft == rhs.hasCountedAttachmentPrivacyForDraft
             && lhs.selectedModelID == rhs.selectedModelID
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
             && lhs.isVoiceSessionActive == rhs.isVoiceSessionActive
             && lhs.isModelPickerForcedVisible == rhs.isModelPickerForcedVisible
+    }
+
+    /// The in-progress composition: what the user is drafting, as opposed to restored/ambient state.
+    mutating func clearDraft() {
+        text = ""
+        attachments = []
+        hasCountedAttachmentPrivacyForDraft = false
+        selectedTool = nil
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and

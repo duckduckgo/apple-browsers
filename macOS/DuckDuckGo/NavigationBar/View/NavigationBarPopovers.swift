@@ -88,7 +88,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let pinningManager: PinningManager
     private let isBurner: Bool
-    private let isAppRebranded: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
 
@@ -105,8 +104,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         pinningManager: PinningManager,
-        isBurner: Bool,
-        isAppRebranded: Bool = false
+        isBurner: Bool
     ) {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
@@ -121,7 +119,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.pinningManager = pinningManager
         self.isBurner = isBurner
-        self.isAppRebranded = isAppRebranded
     }
 
     deinit {
@@ -319,15 +316,17 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         return true
     }
 
+    @discardableResult
     func showAutofillOnboardingPopover(from button: MouseOverButton,
                                        withDelegate delegate: NSPopoverDelegate,
-                                       ctaCallback: @escaping (Bool) -> Void) {
-        guard closeTransientPopovers() else { return }
+                                       ctaCallback: @escaping (Bool) -> Void) -> Bool {
+        guard closeTransientPopovers() else { return false }
         let popover = autofillOnboardingPopover ?? AutofillToolbarOnboardingPopover(ctaCallback: ctaCallback)
 
         popover.delegate = delegate
         autofillOnboardingPopover = popover
         show(popover, positionedBelow: button)
+        return true
     }
 
     func showBookmarkListPopover(from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate, forTab tab: Tab?) {
@@ -373,7 +372,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
                                          ctaCallback: @escaping (Bool) -> Void) {
         guard closeTransientPopovers() else { return }
 
-        let popover = SessionRestorePromptPopover(isAppRebranded: isAppRebranded, ctaCallback: ctaCallback)
+        let popover = SessionRestorePromptPopover(ctaCallback: ctaCallback)
         popover.delegate = delegate
         show(popover, positionedBelow: button, simulatingMouseDown: false)
     }
@@ -518,7 +517,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains, pinningManager: pinningManager)
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)
@@ -639,5 +638,4 @@ extension NavigationBarPopovers: NSPopoverDelegate {
 extension Notification.Name {
     static let loginAutoSaved = Notification.Name(rawValue: "loginAutoSaved")
     static let passwordsAutoPinned = Notification.Name(rawValue: "passwordsAutoPinned")
-    static let passwordsPinningPrompt = Notification.Name(rawValue: "passwordsPinningPrompt")
 }

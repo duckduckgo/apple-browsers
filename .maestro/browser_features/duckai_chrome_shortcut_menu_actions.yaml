@@ -1,0 +1,45 @@
+# duckai_chrome_shortcut_menu_actions.yaml
+#
+# Scenario 4: The shortcut's menu offers New Chat and Chats everywhere, and adds the
+# page-context action only off the New Tab Page.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckai_chrome_shortcut
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+# On the New Tab Page there is no page to ask about.
+- tapOn:
+    id: "Browser.TabsBar.AIChatMenuButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "New Chat"
+- assertVisible: "Chats"
+- assertNotVisible: "Ask About Page"
+
+# Dismiss the menu by tapping outside it.
+- tapOn:
+    point: "50%,90%"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertNotVisible: "New Chat"
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+
+# On a web page the menu adds Ask About Page.
+- tapOn:
+    id: "Browser.TabsBar.AIChatMenuButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "New Chat"
+- assertVisible: "Ask About Page"
+- assertVisible: "Chats"

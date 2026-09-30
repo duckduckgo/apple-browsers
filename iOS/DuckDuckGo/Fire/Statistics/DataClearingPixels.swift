@@ -29,15 +29,63 @@ enum DataClearingPixels {
     /// User performed action before data clearing completed
     case userActionBeforeCompletion
 
-    /// App switcher snapshot directory enumeration failed
-    case appSwitcherSnapshotEnumerationFailed(Error)
+    /// A burn request arrived while another burn was still running, so `FireExecutor.burn` dropped it.
+    case burnDropped(trigger: String, scope: String, elapsed: ElapsedBucket)
+}
+
+// MARK: - Elapsed Bucket
+
+extension DataClearingPixels {
+
+    /// Bucketed seconds. Deliberately not `Pixel.Event.BucketAggregation`, whose top bucket is
+    /// "more than 40s" - that collapses a slow burn and an indefinite hang into one value, which is
+    /// the distinction this pixel exists to make.
+    enum ElapsedBucket: String {
+        case lessThan1 = "1"
+        case lessThan5 = "5"
+        case lessThan10 = "10"
+        case lessThan30 = "30"
+        case lessThan60 = "60"
+        case lessThan120 = "120"
+        case lessThan300 = "300"
+        case more
+
+        init(seconds: TimeInterval) {
+            switch seconds {
+            case ...1: self = .lessThan1
+            case ...5: self = .lessThan5
+            case ...10: self = .lessThan10
+            case ...30: self = .lessThan30
+            case ...60: self = .lessThan60
+            case ...120: self = .lessThan120
+            case ...300: self = .lessThan300
+            default: self = .more
+            }
+        }
+    }
 }
 
 // MARK: - PixelKit.Event Protocol
 
 extension DataClearingPixels: PixelKit.Event {
-    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
-    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
+    private enum ParameterNames {
+        static let trigger = "trigger"
+        static let scope = "scope"
+        static let elapsed = "elapsed"
+    }
+
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
+        switch self {
+        case .retriggerIn20s, .userActionBeforeCompletion:
+            /// These two signatures are non-standard and not aligned to the current PixelKit defaults.
+            /// This policy freezes them by not sending the platform marker suffix.
+            return .legacyOmitted
+        case .burnDropped:
+            /// New pixel, and the phone/tablet split matters here: drops are markedly more frequent on iPad.
+            return .standard
+        }
+    }
 
     var name: String {
         switch self {
@@ -45,22 +93,26 @@ extension DataClearingPixels: PixelKit.Event {
             return "m_fire_retrigger_in_20s"
         case .userActionBeforeCompletion:
             return "m_fire_user_action_before_completion"
-        case .appSwitcherSnapshotEnumerationFailed:
-            return "app-switcher_snapshot_enumeration_failed"
+        case .burnDropped:
+            return "fire_burn-dropped"
         }
     }
 
     var parameters: [String: String]? {
-        return nil
+        switch self {
+        case .retriggerIn20s, .userActionBeforeCompletion:
+            return nil
+        case .burnDropped(let trigger, let scope, let elapsed):
+            return [
+                ParameterNames.trigger: trigger,
+                ParameterNames.scope: scope,
+                ParameterNames.elapsed: elapsed.rawValue
+            ]
+        }
     }
 
     var error: NSError? {
-        switch self {
-        case .appSwitcherSnapshotEnumerationFailed(let error):
-            return error as NSError
-        default:
-            return nil
-        }
+        return nil
     }
 
     var standardParameters: [PixelKitStandardParameter]? {

@@ -22,23 +22,20 @@ import Core
 import Foundation
 import PixelKit
 
-/// Injectable pixel-firing seam: bundles the legacy firers (`Core.PixelFiring` for one-off pixels,
-/// `DailyPixelFiring` for daily-and-count) and PixelKit behind one value so UTI pixel firing has a single
-/// injection point. `.live` fires for real; tests pass `PixelFiringMock`/`PixelKitMock`.
+/// Injectable pixel-firing seam: routes UTI pixel firing through a single PixelKit injection point.
+/// `.live` fires for real; tests pass a `PixelKitMock`.
 struct UTIPixelFiring {
-    var pixel: Core.PixelFiring.Type = Pixel.self
-    var daily: DailyPixelFiring.Type = DailyPixel.self
     /// Resolved at fire time so it picks up `PixelKit.setUp` regardless of when this value was created.
     var pixelKit: () -> (any PixelKitFiring)? = { PixelKit.shared }
 
     static let live = UTIPixelFiring()
 
     func fire(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
-        pixel.fire(event, withAdditionalParameters: parameters)
+        pixelKit()?.fire(event, options: .parameters(parameters))
     }
 
     func fireDailyAndCount(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
-        daily.fireDailyAndCount(event, error: nil, withAdditionalParameters: parameters)
+        pixelKit()?.fire(event, frequency: .dailyAndCount, options: .parameters(parameters))
     }
 
     func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
@@ -136,6 +133,12 @@ final class UTIPixelReporter {
     }
 
     // MARK: - Attachments
+
+    func reportAttachmentPrivacy(_ action: AttachmentPrivacyPixel.Action, kind: AttachmentPrivacyPixel.Kind) {
+        withContext {
+            firing.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: $0.surface), frequency: .dailyAndCount)
+        }
+    }
 
     func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
         reportFileValidationFailed(reason: reason.rawValue, source: source)

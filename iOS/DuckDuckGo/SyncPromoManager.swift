@@ -26,6 +26,7 @@ import Core
 import Persistence
 import DDGSync
 import FeatureFlags_iOS
+import PixelKit
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool
@@ -65,7 +66,7 @@ final class SyncPromoManager: SyncPromoManaging {
     private let syncService: DDGSyncing
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let storage: any KeyedStoring<SyncPromoStorageKeys>
-    private let pixelFiring: any PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
     private var syncPromoBookmarksDismissed: Date?
@@ -90,7 +91,7 @@ final class SyncPromoManager: SyncPromoManaging {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          storage: (any KeyedStoring<SyncPromoStorageKeys>) = UserDefaults.app.keyedStoring(),
-         pixelFiring: any PixelFiring.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -166,8 +167,8 @@ final class SyncPromoManager: SyncPromoManaging {
     func dismissPromoFor(_ touchpoint: Touchpoint, reason: DismissalReason) {
         markPromoHandledFor(touchpoint)
 
-        pixelFiring.fire(.syncPromoDismissed,
-                         withAdditionalParameters: ["source": touchpoint.rawValue, "reason": reason.rawValue])
+        pixelFiring?.fire(Pixel.Event.syncPromoDismissed,
+                          options: .parameters(["source": touchpoint.rawValue, "reason": reason.rawValue]))
     }
 
     func resetPromos() {

@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import PixelKit
 import PrivacyConfig
 import Subscription
 import FeatureFlags_iOS
@@ -27,7 +28,7 @@ import FeatureFlags_iOS
 /// Coordinates the subscription promotion launch sheet for users who skipped onboarding.
 ///
 /// Self-contained: owns eligibility, pixel firing, and CTA navigation.
-/// Uses only stable, synchronous signals — no dependency on async product availability.
+/// Uses only stable, synchronous signals, including already-loaded product availability.
 protocol SubscriptionPromoCoordinating: AnyObject {
     /// Per-coordinator presentation gate. Each coordinator decides independently whether the
     /// current onboarding state permits the launch prompt to be shown.
@@ -50,7 +51,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     private let tutorialSettings: TutorialSettings
     private let statisticsStore: StatisticsStore
     private let subscriptionManager: any SubscriptionManager
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     init(
         daxDialogsSettings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
@@ -58,7 +59,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         subscriptionManager: any SubscriptionManager,
-        pixelFiring: PixelFiring.Type = Pixel.self
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.daxDialogsSettings = daxDialogsSettings
         self.featureFlagger = featureFlagger
@@ -84,8 +85,16 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
             && isReturningUser
             && tutorialSettings.hasSkippedOnboarding
             && hasCooldownPassed()
-        Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: \(shouldShow)")
-        return shouldShow
+        guard shouldShow else {
+            Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: false")
+            return false
+        }
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
+            Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
+            return false
+        }
+        Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: true")
+        return true
     }
 
     func markLaunchPromptPresented() {
@@ -152,7 +161,7 @@ final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
     }
 
     private func firePixel(_ event: Pixel.Event) {
-        pixelFiring.fire(event, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(event, options: .parameters(pixelParameters))
     }
 
     private func redirectOrigin() -> SubscriptionFunnelOrigin {

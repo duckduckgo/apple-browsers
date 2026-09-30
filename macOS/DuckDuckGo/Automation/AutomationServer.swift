@@ -152,7 +152,7 @@ final class MacOSAutomationProvider: BrowserAutomationProvider {
               let tabIndex = tabCollectionViewModel.indexInAllTabs(of: tab) else {
             return
         }
-        tabCollectionViewModel.remove(at: tabIndex)
+        tabCollectionViewModel.close(at: tabIndex)
     }
 
     func switchToTab(handle: String) -> Bool {

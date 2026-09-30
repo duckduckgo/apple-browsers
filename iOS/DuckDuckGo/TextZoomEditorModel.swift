@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Core
+import PixelKit
 
 class TextZoomEditorModel: ObservableObject {
 
@@ -63,11 +64,11 @@ class TextZoomEditorModel: ObservableObject {
 
     func onDismiss() {
         guard initialValue.rawValue != TextZoomLevel.allCases[value].rawValue else { return }
-        DailyPixel.fire(pixel: .textZoomChangedOnPageDaily)
-        Pixel.fire(.textZoomChangedOnPage, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.textZoomChangedOnPageDaily, frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(Pixel.Event.textZoomChangedOnPage, options: .parameters([
             PixelParameters.textZoomInitial: String(initialValue.rawValue),
             PixelParameters.textZoomUpdated: String(TextZoomLevel.allCases[value].rawValue),
-        ])
+        ]))
     }
 
 }

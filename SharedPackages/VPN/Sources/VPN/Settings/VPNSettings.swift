@@ -32,6 +32,7 @@ public final class VPNSettings {
         case setConnectOnLogin(_ connectOnLogin: Bool)
         case setIncludeAllNetworks(_ includeAllNetworks: Bool)
         case setEnforceRoutes(_ enforceRoutes: Bool)
+        case setSessionHealthTelemetryEnabled(_ sessionHealthTelemetryEnabled: Bool)
         case setExcludeLocalNetworks(_ excludeLocalNetworks: Bool)
         case setExcludeCGNAT(_ excludeCGNAT: Bool)
         case setExcludeAPNs(_ excludeAPNs: Bool)
@@ -208,6 +209,13 @@ public final class VPNSettings {
                 Change.setShowInMenuBar(showInMenuBar)
             }.eraseToAnyPublisher()
 
+        let sessionHealthTelemetryEnabledPublisher = sessionHealthTelemetryEnabledPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { enabled in
+                Change.setSessionHealthTelemetryEnabled(enabled)
+            }.eraseToAnyPublisher()
+
         let disableRekeyingPublisher = disableRekeyingPublisher
             .dropFirst()
             .removeDuplicates()
@@ -230,6 +238,7 @@ public final class VPNSettings {
             environmentChangePublisher,
             dnsSettingsChangePublisher,
             showInMenuBarPublisher,
+            sessionHealthTelemetryEnabledPublisher,
             disableRekeyingPublisher).eraseToAnyPublisher()
     }()
 
@@ -252,6 +261,7 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
+        defaults.resetVPNSettingSessionHealthTelemetryEnabled()
         defaults.resetVPNSettingEnforceRoutes()
     }
 
@@ -299,6 +309,8 @@ public final class VPNSettings {
             self.dnsSettings = dnsSettings
         case .setShowInMenuBar(let showInMenuBar):
             self.showInMenuBar = showInMenuBar
+        case .setSessionHealthTelemetryEnabled(let enabled):
+            self.sessionHealthTelemetryEnabled = enabled
         case .setDisableRekeying(let disableRekeying):
             self.disableRekeying = disableRekeying
         }
@@ -361,6 +373,23 @@ public final class VPNSettings {
         guard strictRoutingAvailable else {
             defaults.resetVPNSettingEnforceRoutes()
             return
+        }
+    }
+
+    // MARK: - Session Health Telemetry
+
+    public var sessionHealthTelemetryEnabledPublisher: AnyPublisher<Bool, Never> {
+        defaults.vpnSettingSessionHealthTelemetryEnabledPublisher
+    }
+
+    /// Resolved by the host app and retained for system-initiated tunnel starts.
+    public var sessionHealthTelemetryEnabled: Bool {
+        get {
+            defaults.vpnSettingSessionHealthTelemetryEnabled
+        }
+
+        set {
+            defaults.vpnSettingSessionHealthTelemetryEnabled = newValue
         }
     }
 

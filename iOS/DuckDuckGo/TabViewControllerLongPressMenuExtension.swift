@@ -26,13 +26,14 @@ import Common
 import FoundationExtensions
 import Combine
 import DesignResourcesKitIcons
+import PixelKit
 
 extension TabViewController {
 
     func buildLinkPreviewMenu(for url: URL, withProvided providedElements: [UIMenuElement]) -> UIMenu {
         let isFireTab = tabModel.fireTab
         let browsingModeParam = [PixelParameters.browsingMode: tabModel.pixelParamValue]
-        Pixel.fire(pixel: .linkLongPressMenuShown, withAdditionalParameters: browsingModeParam)
+        PixelKit.fire(Pixel.Event.linkLongPressMenuShown, options: .parameters(browsingModeParam))
 
         var sections = [UIMenuElement]()
         var tabActions = [UIMenuElement]()
@@ -146,6 +147,7 @@ extension TabViewController {
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: onboardingPixelReporter,
             featureFlagger: featureFlagger,
+            isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
             contentScopeExperimentManager: contentScopeExperimentsManager,
             textZoomCoordinator: textZoomCoordinator,
             autoconsentManagement: autoconsentManagement,
@@ -164,7 +166,9 @@ extension TabViewController {
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
             adBlockingAvailability: adBlockingAvailability,
-            eventHub: eventHub)
+            eventHub: eventHub,
+            webExtensionManagerProvider: webExtensionManagerProvider,
+            sitePermissionsEnabled: isSitePermissionsEnabled)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

@@ -98,6 +98,7 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
             .labelsHidden()
             .toggleStyle(.switch)
             .accessibilityLabel(Text(UserText.syncThisDeviceTitleV2))
+            .accessibilityIdentifier("SyncSettings.syncThisDeviceToggle")
             .disabled(!model.isAccountCreationAvailable)
         }
         .padding(.horizontal, 16)
@@ -155,8 +156,7 @@ struct SyncSetupViewV2_Previews: PreviewProvider {
             ))
         ],
         configure: { model in
-            DesignSystemRebrand.isAppRebranded = { true }
-            return SyncSetupViewV2<PreviewManagementViewModel>()
+            SyncSetupViewV2<PreviewManagementViewModel>()
                 .environmentObject(model)
                 .frame(width: 544, height: 800, alignment: .top)
                 .padding()

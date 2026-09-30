@@ -459,6 +459,131 @@ final class BrokerProfileJobActionTests: XCTestCase {
         XCTAssertFalse(webViewHandler.wasSetCookiesCalled)
     }
 
+    // MARK: - ExecuteScriptAction Tests
+
+    func testWhenSilencedExecuteScriptActionFails_thenJobContinuesAndSilentFailurePixelIsFired() async {
+        let mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
+        let executeScriptAction = ExecuteScriptAction(id: "1", actionType: .executeScript, script: "", failSilently: true)
+        let nextAction = ExpectationAction(id: "2", actionType: .expectation)
+        let step = Step(type: .optOut, actions: [executeScriptAction, nextAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgentProvider: { nil },
+            operationAwaitTime: 0,
+            stageCalculator: MockStageDurationCalculator(),
+            pixelHandler: mockPixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
+        _ = sut.actionsHandler?.nextAction()
+
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Script failed"))
+
+        XCTAssertFalse(webViewHandler.wasFinishCalled)
+        XCTAssertTrue(webViewHandler.wasExecuteCalledForUserData)
+        guard case .actionFailedError(_, let actionId, let message, _, _, _, _, _, let isSilentFailure) = mockPixelHandler.lastFiredEvent else {
+            return XCTFail("Expected an actionFailedError pixel")
+        }
+        XCTAssertEqual(actionId, "1")
+        XCTAssertEqual(message, "Script failed")
+        XCTAssertTrue(isSilentFailure)
+    }
+
+    func testWhenExecuteScriptActionFailsWithoutFailSilently_thenJobFails() async {
+        let mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
+        let executeScriptAction = ExecuteScriptAction(id: "1", actionType: .executeScript, script: "")
+        let step = Step(type: .optOut, actions: [executeScriptAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgentProvider: { nil },
+            operationAwaitTime: 0,
+            stageCalculator: MockStageDurationCalculator(),
+            pixelHandler: mockPixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
+        _ = sut.actionsHandler?.nextAction()
+
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Script failed"))
+
+        XCTAssertTrue(webViewHandler.wasFinishCalled)
+        XCTAssertNil(mockPixelHandler.lastFiredEvent)
+    }
+
+    func testWhenSilencedExecuteScriptActionIsCancelled_thenJobFails() async {
+        let mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
+        let executeScriptAction = ExecuteScriptAction(id: "1", actionType: .executeScript, script: "", failSilently: true)
+        let step = Step(type: .optOut, actions: [executeScriptAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgentProvider: { nil },
+            operationAwaitTime: 0,
+            stageCalculator: MockStageDurationCalculator(),
+            pixelHandler: mockPixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
+        _ = sut.actionsHandler?.nextAction()
+
+        await sut.onError(error: DataBrokerProtectionError.cancelled)
+
+        XCTAssertTrue(webViewHandler.wasFinishCalled)
+        XCTAssertNil(mockPixelHandler.lastFiredEvent)
+    }
+
+    func testWhenActionIsEvaluated_thenOnlyNonExecuteScriptActionsArmARetry() async {
+        let executeScriptAction = ExecuteScriptAction(id: "1", actionType: .executeScript, script: "")
+        let expectationAction = ExpectationAction(id: "2", actionType: .expectation)
+        let step = Step(type: .optOut, actions: [executeScriptAction, expectationAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            context: BrokerProfileQueryData.mock(with: [step]),
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: MockDBPFeatureFlagger(),
+            applicationNameForUserAgentProvider: { nil },
+            operationAwaitTime: 0,
+            stageCalculator: MockStageDurationCalculator(),
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            actionsHandlerMode: .optOut,
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler.forOptOut(step)
+
+        _ = await sut.evaluateActionAndHaltIfNeeded(executeScriptAction)
+        XCTAssertEqual(sut.retriesCountOnError, 0)
+
+        _ = await sut.evaluateActionAndHaltIfNeeded(expectationAction)
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+    }
+
     // MARK: - ConditionAction Tests
 
     func testWhenConditionActionSucceedsInOptOutStep_thenFireOptOutConditionFoundIsCalled() async {

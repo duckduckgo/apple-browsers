@@ -36,9 +36,11 @@ let package = Package(
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
         .package(path: "../DebugServer"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
@@ -48,6 +50,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtectionCore",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit"),
@@ -75,6 +78,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtectionCoreTestsUtils",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit"),
@@ -88,6 +92,7 @@ let package = Package(
         .testTarget(
             name: "DataBrokerProtectionCoreTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
                 "BrowserServicesKit",
@@ -96,6 +101,7 @@ let package = Package(
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
             resources: [

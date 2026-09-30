@@ -47,7 +47,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         return model
     }()
 
-    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool = false
 
     func waitForInvocation() {
         let expectation = expectation(description: "Inv")

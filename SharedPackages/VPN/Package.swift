@@ -14,22 +14,25 @@ let package = Package(
         .library(name: "VPNTestUtils", targets: ["VPNTestUtils"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
         .target(
             name: "VPN",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .target(name: "WireGuardC"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "Networking", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "PixelKit")
@@ -51,9 +54,10 @@ let package = Package(
         .testTarget(
             name: "VPNTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "VPN",
                 "VPNTestUtils",
-                .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
             ],
             resources: [
                 .copy("Resources/servers-original-endpoint.json"),

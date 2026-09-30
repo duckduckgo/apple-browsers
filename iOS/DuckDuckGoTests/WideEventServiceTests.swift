@@ -20,7 +20,7 @@
 import XCTest
 import Common
 import FoundationExtensions
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit

@@ -102,8 +102,9 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
         let updateBloomFilterExclusionsTask = Task {
             do {
-                try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: isDebug)
-                try await updateBloomFilterExclusions()
+                if try await fetcher.fetch(.bloomFilterExcludedDomains, isDebug: isDebug) == .updated {
+                    try await updateBloomFilterExclusions()
+                }
                 tryAgainLater()
             } catch {
                 handleRefreshError(error)

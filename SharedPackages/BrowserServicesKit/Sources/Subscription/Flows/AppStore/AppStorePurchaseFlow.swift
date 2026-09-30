@@ -23,7 +23,7 @@ import os.log
 import Networking
 import Common
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 public enum AppStorePurchaseFlowError: DDGError {
     case noProductsFound
@@ -111,9 +111,11 @@ public protocol AppStorePurchaseFlow {
     ///
     /// - Parameters:
     ///   - transactionJWS: The JWS representation of the transaction to be validated.
-    ///   - additionalParams: Optional additional parameters to send with the transaction validation request.
+    ///   - experimentAttribution: Optional experiment attribution to send with the transaction validation request.
     /// - Returns: A `Result` containing either a `PurchaseUpdate` object on success or an `AppStorePurchaseFlowError` on failure.
-    @discardableResult func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError>
+    @discardableResult func completeSubscriptionPurchase(
+        with transactionJWS: TransactionJWS,
+        experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError>
 
     /// Changes the subscription tier for a user who already has an active subscription.
     /// This method uses the existing account's externalID and bypasses the "check for active subscription" logic.
@@ -255,12 +257,15 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
     }
 
     @discardableResult
-    public func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
+    public func completeSubscriptionPurchase(
+        with transactionJWS: TransactionJWS,
+        experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Completing Subscription Purchase")
         subscriptionManager.clearSubscriptionCache()
 
         do {
-            let subscription = try await subscriptionManager.confirmPurchase(signature: transactionJWS, additionalParams: additionalParams)
+            let subscription = try await subscriptionManager.confirmPurchase(signature: transactionJWS,
+                                                                             experimentAttribution: experimentAttribution)
             let refreshedToken = try await subscriptionManager.getTokenContainer(policy: .localForceRefresh) // fetch new entitlements
             if subscription.isActive {
                 if refreshedToken.decodedAccessToken.subscriptionEntitlements.isEmpty {

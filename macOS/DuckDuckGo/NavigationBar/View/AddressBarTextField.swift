@@ -747,30 +747,25 @@ final class AddressBarTextField: NSTextField {
         private enum Metrics {
             static let shadowOffset: CGFloat = -2
             static let windowOffset = CGPoint(x: -20, y: -3)
-            static let legacyShadowOffset: CGFloat = 5
-            static let legacyWindowOffset = CGPoint(x: -20, y: 5)
         }
 
-        static func shadowOffset(isAppRebranded: Bool) -> CGFloat {
-            isAppRebranded ? Metrics.shadowOffset : Metrics.legacyShadowOffset
+        static var shadowOffset: CGFloat {
+            Metrics.shadowOffset
         }
 
-        static func windowOffset(isAppRebranded: Bool) -> CGPoint {
-            isAppRebranded ? Metrics.windowOffset : Metrics.legacyWindowOffset
+        static var windowOffset: CGPoint {
+            Metrics.windowOffset
         }
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
     private(set) lazy var suggestionViewController: SuggestionViewController = {
-        NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
-            let suggestionViewController = SuggestionViewController(coder: coder,
-                                                                    suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    themeManager: self.themeManager,
-                                                                    aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
-                                                                    featureFlagger: Application.appDelegate.featureFlagger)
-            suggestionViewController?.delegate = self
-            return suggestionViewController
-        }
+        let suggestionViewController = SuggestionViewController(suggestionContainerViewModel: self.suggestionContainerViewModel!,
+                                                                themeManager: self.themeManager,
+                                                                aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
+                                                                featureFlagger: Application.appDelegate.featureFlagger)
+        suggestionViewController.delegate = self
+        return suggestionViewController
     }()
 
     var isSuggestionWindowVisiblePublisher: AnyPublisher<Bool, Never> {
@@ -784,10 +779,18 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func initSuggestionWindow() {
-        let windowController = NSStoryboard.suggestion
-            .instantiateController(withIdentifier: "SuggestionWindowController") as? NSWindowController
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 218),
+                              styleMask: [.fullSizeContentView],
+                              backing: .buffered,
+                              defer: true)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.autorecalculatesKeyViewLoop = false
+        window.isRestorable = false
+        window.hasShadow = false
 
-        windowController?.contentViewController = suggestionViewController
+        let windowController = NSWindowController(window: window)
+        windowController.contentViewController = suggestionViewController
         self.suggestionWindowController = windowController
     }
 
@@ -852,7 +855,7 @@ final class AddressBarTextField: NSTextField {
         }
 
         /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
-        let padding = SuggestionWindowSizes.windowOffset(isAppRebranded: themeManager.isAppRebranded)
+        let padding = SuggestionWindowSizes.windowOffset
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
@@ -1585,10 +1588,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
 enum SuggestionInputMethod {
     case keyboard
     case mouse
-}
-
-fileprivate extension NSStoryboard {
-    static let suggestion = NSStoryboard(name: "Suggestion", bundle: .main)
 }
 
 extension URL {

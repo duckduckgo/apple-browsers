@@ -27,6 +27,7 @@ import PreviewSnapshots
 
 struct SyncWithAnotherDeviceViewV2: View {
 
+    @Environment(\.colorScheme) private var parentColorScheme
     @EnvironmentObject private var model: ManagementDialogModel
     @EnvironmentObject private var recoveryCodeModel: RecoveryCodeViewModel
 
@@ -83,7 +84,9 @@ struct SyncWithAnotherDeviceViewV2: View {
         } buttons: {
             Spacer()
             Button(UserText.cancel) {
-                model.cancelPressed()
+                Task {
+                    await model.cancelPressedWithConfirmation()
+                }
             }
             .buttonStyle(DismissActionButtonStyle())
         }
@@ -177,22 +180,12 @@ struct SyncWithAnotherDeviceViewV2: View {
 
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 10) {
-            switch selectedTab {
-            case .scanCode:
-                InstructionStepV2(
-                    number: 1,
-                    prefix: UserText.syncWithAnotherDeviceScanStep1PrefixV2,
-                    detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
-                    showsAppIcon: true
-                )
-            case .enterCode:
-                InstructionStepV2(
-                    number: 1,
-                    prefix: UserText.syncWithAnotherDeviceEnterStep1PrefixV2,
-                    detail: UserText.syncWithAnotherDeviceEnterStep1DetailV2,
-                    showsAppIcon: true
-                )
-            }
+            InstructionStepV2(
+                number: 1,
+                prefix: UserText.syncWithAnotherDeviceScanStep1PrefixV2,
+                detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
+                showsAppIcon: true
+            )
 
             InstructionStepV2(
                 number: 2,
@@ -205,6 +198,11 @@ struct SyncWithAnotherDeviceViewV2: View {
                 prefix: selectedTab == .scanCode
                     ? UserText.syncWithAnotherDeviceScanStep3V2
                     : UserText.syncWithAnotherDeviceEnterStep3V2
+            )
+
+            InstructionStepV2(
+                number: 4,
+                prefix: UserText.syncWithAnotherDeviceStep4V2
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -234,12 +232,13 @@ struct SyncWithAnotherDeviceViewV2: View {
                         Text(UserText.share)
                     }
                     .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
                 }
                 .buttonStyle(DismissActionButtonStyle(showsBorder: false,
                                                       stateColors: .themedDismissButton))
 
                 Button {
-                    model.delegate?.copyCode()
+                    model.delegate?.copyCode(codeForDisplayOrPasting)
                     showCopyConfirmation = true
                 } label: {
                     HStack(spacing: 6) {
@@ -249,6 +248,7 @@ struct SyncWithAnotherDeviceViewV2: View {
                         Text(showCopyConfirmation ? UserText.syncWithAnotherDeviceCopiedV2 : UserText.copy)
                     }
                     .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
                 }
                 .buttonStyle(DismissActionButtonStyle(showsBorder: false,
                                                       stateColors: .themedDismissButton))
@@ -262,6 +262,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(innerCardBackground)
+        .environment(\.colorScheme, .light)
     }
 
     private var enterCodeCard: some View {
@@ -327,6 +328,7 @@ struct SyncWithAnotherDeviceViewV2: View {
         .multilineTextAlignment(.leading)
         .frame(width: 240, alignment: .leading)
         .padding(16)
+        .environment(\.colorScheme, parentColorScheme)
     }
 
     private func shareContent(_ sharedText: String) {
@@ -359,6 +361,10 @@ private struct InstructionStepV2: View {
     var detail: String?
     var showsAppIcon: Bool = false
 
+    private var detailSeparator: String {
+        prefix.hasSuffix("'") || prefix.hasSuffix("’") ? "" : " "
+    }
+
     private var text: Text {
         let prefix = Text(prefix)
             .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -368,7 +374,7 @@ private struct InstructionStepV2: View {
         }
 
         return prefix
-            + Text(verbatim: " ")
+            + Text(verbatim: detailSeparator)
             + Text(detail)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
     }
@@ -409,8 +415,8 @@ private enum PairingTabV2: Hashable {
 }
 
 private enum Metrics {
-    static let scanOptionsPanelHeight: CGFloat = 489
-    static let enterOptionsPanelHeight: CGFloat = 393
+    static let scanOptionsPanelHeight: CGFloat = 515
+    static let enterOptionsPanelHeight: CGFloat = 419
     static let exampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ"
 }
 
@@ -434,7 +440,6 @@ struct SyncWithAnotherDeviceViewV2_Previews: PreviewProvider {
             let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
             let tab: PairingTabV2 = state == .scanCode ? .scanCode : .enterCode
 
-            DesignSystemRebrand.isAppRebranded = { true }
             return SyncWithAnotherDeviceViewV2(
                 codeForDisplayOrPasting: sampleCode,
                 stringForQRCode: sampleCode,

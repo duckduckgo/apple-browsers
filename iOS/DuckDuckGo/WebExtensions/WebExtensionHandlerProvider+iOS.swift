@@ -30,15 +30,18 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
     private let searchTokenProvider: SearchTokenProviding?
     private let autoconsentDelegate: IOSAutoconsentMessageHandlerDelegate
+    private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         searchTokenProvider: SearchTokenProviding? = nil
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
+        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
         self.searchTokenProvider = searchTokenProvider
         self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate()
@@ -50,6 +53,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
             return [AutoconsentWebExtensionMessageHandler(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
+                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 delegate: autoconsentDelegate
             )]
         case .darkReader:

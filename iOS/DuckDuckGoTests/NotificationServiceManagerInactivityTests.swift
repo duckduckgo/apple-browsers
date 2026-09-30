@@ -19,29 +19,27 @@
 
 import XCTest
 import UserNotifications
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 @testable import Core
 
 final class NotificationServiceManagerInactivityTests: XCTestCase {
 
     private var stateStore: MockInactivityNotificationStateStore!
+    private var pixelKitMock: PixelKitMock!
     private let daysInactiveKey = InactivityNotificationSchedulerService.Settings.daysInactive.rawValue
     private let tappedPixelName = Pixel.Event.inactiveUserProvisionalPushNotificationTapped.name
 
     override func setUp() {
         super.setUp()
         stateStore = MockInactivityNotificationStateStore()
-        clearPixelStorage()
+        pixelKitMock = PixelKitMock()
     }
 
     override func tearDown() {
         stateStore = nil
-        clearPixelStorage()
+        pixelKitMock = nil
         super.tearDown()
-    }
-
-    private func clearPixelStorage() {
-        Pixel.storage.removeObject(forKey: tappedPixelName)
     }
 
     // MARK: - Category registration
@@ -70,22 +68,24 @@ final class NotificationServiceManagerInactivityTests: XCTestCase {
         NotificationServiceManager.handleInactivityNotification(
             actionIdentifier: UNNotificationDefaultActionIdentifier,
             userInfo: [daysInactiveKey: 5],
-            stateStore: stateStore
+            stateStore: stateStore,
+            pixelFiring: pixelKitMock
         )
 
         XCTAssertEqual(stateStore.recordInteractionCallCount, 1)
-        XCTAssertNotNil(Pixel.storage.object(forKey: tappedPixelName), "Tap pixel should have fired")
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == tappedPixelName }, "Tap pixel should have fired")
     }
 
     func test_defaultAction_missingDaysInactiveInUserInfo_stillRecordsAndFiresUsingDefaultDays() {
         NotificationServiceManager.handleInactivityNotification(
             actionIdentifier: UNNotificationDefaultActionIdentifier,
             userInfo: [:],
-            stateStore: stateStore
+            stateStore: stateStore,
+            pixelFiring: pixelKitMock
         )
 
         XCTAssertEqual(stateStore.recordInteractionCallCount, 1)
-        XCTAssertNotNil(Pixel.storage.object(forKey: tappedPixelName))
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == tappedPixelName })
     }
 
     // MARK: - Dismiss
@@ -94,11 +94,12 @@ final class NotificationServiceManagerInactivityTests: XCTestCase {
         NotificationServiceManager.handleInactivityNotification(
             actionIdentifier: UNNotificationDismissActionIdentifier,
             userInfo: [daysInactiveKey: 5],
-            stateStore: stateStore
+            stateStore: stateStore,
+            pixelFiring: pixelKitMock
         )
 
         XCTAssertEqual(stateStore.recordInteractionCallCount, 1)
-        XCTAssertNil(Pixel.storage.object(forKey: tappedPixelName), "Tap pixel should not have fired")
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty, "Tap pixel should not have fired")
     }
 
     func test_dismissAction_missingDaysInactiveInUserInfo_stillRecordsInteraction() {
@@ -117,11 +118,12 @@ final class NotificationServiceManagerInactivityTests: XCTestCase {
         NotificationServiceManager.handleInactivityNotification(
             actionIdentifier: "com.duckduckgo.some.other.action",
             userInfo: [daysInactiveKey: 5],
-            stateStore: stateStore
+            stateStore: stateStore,
+            pixelFiring: pixelKitMock
         )
 
         XCTAssertEqual(stateStore.recordInteractionCallCount, 0)
-        XCTAssertNil(Pixel.storage.object(forKey: tappedPixelName))
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 }
 

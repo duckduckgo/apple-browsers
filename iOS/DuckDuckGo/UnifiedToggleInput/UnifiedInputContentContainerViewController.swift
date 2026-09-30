@@ -32,6 +32,7 @@ import Suggestions
 import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
+import PixelKit
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -87,6 +88,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let isFloatingUIEnabled: Bool
+    private let floatingUIManager: FloatingUIManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
@@ -101,6 +103,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// The one resolver-driven host that serves both surfaces; its container pinned directly in
     /// `contentContainerView`.
+    var usesRedesignedNewTabPageLayout = false {
+        didSet {
+            guard oldValue != usesRedesignedNewTabPageLayout else { return }
+            unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+            if isViewLoaded {
+                applyRequestedContentInset()
+            }
+        }
+    }
+
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
     /// Single-host path: the suggestions container's top offset (input height + hatch) lives on this
@@ -162,11 +174,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         floatingUIManager: FloatingUIManaging? = nil) {
+        let floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        )
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        self.isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        self.floatingUIManager = floatingUIManager
+        self.isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -370,6 +387,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let rootView = FocusedChromeView(
             hatchModel: hatchModel,
             syncPromo: promo,
+            usesRaisedEscapeHatch: usesRedesignedNewTabPageLayout,
             topInset: chromeTopInsetForPosition,
             onHeightChange: { [weak self] height in
                 guard let self, self.chromeMeasuredHeight != height else { return }
@@ -437,7 +455,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
         } else if shouldShowPinnedHatch {
-            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + FocusedChromeView.Metrics.bottomInset
+            let cardPadding = usesRedesignedNewTabPageLayout ? FocusedChromeView.Metrics.raisedHatchPadding * 2 : 0
+            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
         } else {
             return 0
         }
@@ -647,6 +666,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         let host = UnifiedSuggestionsHost(config: config)
+        host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in
             self?.refreshVisibleContent(animateContentUpdates: true)
         }
@@ -788,7 +808,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
-            internalUserCommands: ntpDeps.internalUserCommands
+            internalUserCommands: ntpDeps.internalUserCommands,
+            floatingUIManager: floatingUIManager
         )
         controller.hideBorderView()
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
@@ -1050,8 +1071,8 @@ extension UnifiedInputContentContainerViewController {
 
     func duckAISuggestionsDidSelectChat(_ chat: AIChatSuggestion) {
         let pixel: Pixel.Event = chat.isPinned ? .aiChatRecentChatSelectedPinned : .aiChatRecentChatSelected
-        DailyPixel.fireDailyAndCount(pixel: pixel)
-        Pixel.fire(pixel: .autocompleteDuckAIClickChatHistory)
+        PixelKit.fire(pixel, frequency: .dailyAndCount)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickChatHistory)
 
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
         delegate?.unifiedInputEditingStateDidSelectChatHistory(url: url)
@@ -1063,7 +1084,7 @@ extension UnifiedInputContentContainerViewController {
     }
 
     func duckAISuggestionsDidSelectSearchDuckDuckGo(query: String) {
-        Pixel.fire(pixel: .autocompleteDuckAIClickSearchDuckDuckGo)
+        PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSearchDuckDuckGo)
         // Symmetric with Search-side "Ask privately" (which calls openAIChat with autoSend:true):
         // flip toggle to Search and submit the query in one step.
         switchBarHandler.setToggleState(.search)
@@ -1074,26 +1095,25 @@ extension UnifiedInputContentContainerViewController {
         delegate?.unifiedInputEditingStateDidRequestSyncSetup()
     }
 
-    /// Fires the click pixel for a tapped Search-surface suggestion. `.askAIChat` gets its own daily
-    /// pixel (needs feature-discovery params), so it's fired here after the standard mapping.
+    /// Fires the click pixels for a tapped Search-surface suggestion. Shared with the iPad popover
+    /// (`SuggestionTrayViewController`) so both surfaces report the same set.
     private func fireSearchSuggestionClickPixel(for suggestion: Suggestion) {
-        autocompletePixels.fireClickPixel(for: suggestion)
-        guard case .askAIChat = suggestion else { return }
-        autocompletePixels.fireAskAIChatClickPixel(
-            isExperimentalExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-            additionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        autocompletePixels.fireClickPixels(
+            for: suggestion,
+            isExperimentalAIChatExperience: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+            aiChatDiscoveryParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     private func fireDuckAISuggestionClickPixel(for suggestion: Suggestion) {
         switch suggestion {
         case .website:
-            Pixel.fire(pixel: .autocompleteDuckAIClickWebsite)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickWebsite)
         case .bookmark(_, _, let isFavorite, _):
-            Pixel.fire(pixel: isFavorite ? .autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
+            PixelKit.fire(isFavorite ? Pixel.Event.autocompleteDuckAIClickFavorite : .autocompleteDuckAIClickBookmark)
         case .historyEntry(_, let url, _):
-            Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
+            PixelKit.fire(url.isDuckDuckGoSearch ? Pixel.Event.autocompleteDuckAIClickHistorySearch : .autocompleteDuckAIClickHistorySite)
         case .openTab:
-            Pixel.fire(pixel: .autocompleteDuckAIClickSwitchToTab)
+            PixelKit.fire(Pixel.Event.autocompleteDuckAIClickSwitchToTab)
         case .phrase, .internalPage, .unknown, .askAIChat:
             break
         }
@@ -1106,23 +1126,23 @@ extension UnifiedInputContentContainerViewController {
 /// switch-tab exactly like the standalone NTP.
 extension UnifiedInputContentContainerViewController: NewTabPageControllerDelegate {
 
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidSelectFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidSelectFavorite(favorite)
     }
 
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+    func newTabPageDidEditFavorite(_ controller: any NewTabPage, favorite: BookmarkEntity) {
         delegate?.unifiedInputEditingStateDidEditFavorite(favorite)
     }
 
-    func newTabPageDidRequestSwitchToTab(_ controller: NewTabPageViewController, tab: Tab) {
+    func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab) {
         delegate?.unifiedInputEditingStateDidRequestSwitchTab(tab)
     }
 
-    func newTabPageDidRequestTabSwitcher(_ controller: NewTabPageViewController) {
+    func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
     }
 
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {}
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {}
 
     func newTabPageDidDismissDuckAIExperimentCompletion(_ controller: NewTabPageViewController) {}
 }

@@ -27,6 +27,33 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     private let sut = UTIFooterMessageMapper(resetDescriber: UTIFooterResetDescriber(locale: Locale(identifier: "en_US")))
 
+    func test_attachmentPrivacyMessage_usesApprovedCopyAndInlineLink() {
+        let message = sut.attachmentPrivacyMessage()
+
+        XCTAssertEqual(message.title,
+                       "Files are automatically scanned for illegal content. Flagged chats have limited data retention. Learn more")
+        XCTAssertNil(message.subtitle)
+        XCTAssertNil(message.primaryAction)
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertEqual(message.link?.text, "Learn more")
+        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
+    }
+
+    func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {
+        let cases = [
+            ("Dateien werden geprüft. %@", "Weitere Informationen"),
+            ("%@：添付ファイルの取り扱い", "詳しく見る"),
+            ("تُفحص الملفات. %@", "معرفة المزيد")
+        ]
+        for (format, label) in cases {
+            let message = sut.attachmentPrivacyMessage(format: format, learnMoreText: label)
+            XCTAssertEqual(message.title, String(format: format, label))
+            XCTAssertEqual(message.link?.text, label)
+            XCTAssertTrue(message.title.contains(label))
+            XCTAssertFalse(message.isDismissible)
+        }
+    }
+
     // MARK: - Headlines
 
     func test_message_approachingNamesTheWindowAndThePercentage() {
@@ -140,9 +167,10 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Dismissal
 
-    func test_message_dismissibilityComesFromTheWarning() {
+    func test_message_onlyBelowLimitWarningsCanBeDismissed() {
         XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
         XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
+        XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: true)).isDismissible)
     }
 
     // MARK: - High-usage model notice
@@ -164,6 +192,31 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     func test_message_highUsageNoticeIsDismissible() {
         XCTAssertTrue(sut.message(for: notice).isDismissible)
+    }
+
+    // MARK: - Terms of Service
+
+    /// Required: nothing closes it before the user has seen what sending agrees to.
+    func test_termsOfServiceMessage_hasNoCloseButtonAndNoAction() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertNil(message.primaryAction)
+    }
+
+    func test_termsOfServiceMessage_linksThePhraseToThePrivacyTerms() throws {
+        let message = sut.termsOfServiceMessage()
+        let link = try XCTUnwrap(message.link)
+
+        XCTAssertTrue(message.title.contains(link.text))
+        XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertEqual(message.icon, .shield)
+        XCTAssertNil(message.subtitle)
     }
 
     // MARK: - Create Image model switch
@@ -195,7 +248,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertEqual(message.title, "Now using 5.6 Luna")
         XCTAssertEqual(message.subtitle,
-                       "Gemma can't create images. Its extra privacy protections won't apply until you switch back.")
+                       "Gemma can't create images. Zero Provider Visibility won't apply until you switch back.")
     }
 
     func test_message_modelSwitchAwayFromANonOSSModelKeepsTheStandardSubtitle() {
@@ -204,6 +257,23 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
             XCTAssertEqual(message.subtitle, "Whatever doesn't support image creation.",
                            "unexpected subtitle for provider \(provider)")
+        }
+    }
+
+    func testUnavailablePurchaseOmitsBothUpsellLabelsAndPreservesLimitInformation() {
+        for isTrialEligible in [true, false] {
+            let warning = warning(.freeReached, window: .daily, isDismissible: false,
+                                  action: .tryForFree(isTrialEligible: isTrialEligible))
+            let available = sut.message(for: warning)
+            let unavailable = sut.message(for: warning, allowsSubscriptionUpsell: false)
+
+            XCTAssertNotNil(available.primaryAction)
+            XCTAssertNil(unavailable.primaryAction)
+            XCTAssertEqual(unavailable.title, available.title)
+            XCTAssertEqual(unavailable.subtitle, available.subtitle)
+            XCTAssertEqual(unavailable.icon, available.icon)
+            XCTAssertFalse(unavailable.isDismissible)
+            XCTAssertTrue(warning.blocksInput)
         }
     }
 

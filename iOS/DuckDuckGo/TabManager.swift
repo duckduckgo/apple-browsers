@@ -32,7 +32,9 @@ import os.log
 import AIChat
 import Combine
 import PrivacyConfig
+import SitePermissions
 import WebExtensions
+import PixelKit
 
 protocol TabManaging {
     var currentTabsModel: TabsModelManaging { get }
@@ -128,6 +130,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
     
     private var tabControllerCache = [TabViewController]()
+    private var tabAttachmentReservations: [ObjectIdentifier: Set<UUID>] = [:]
+    private let tabAttachmentControllerChanges = PassthroughSubject<Void, Never>()
 
     weak var cacheDelegate: (any TabControllerCacheDelegate)?
 
@@ -144,6 +148,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     private let clearAppSwitcherSnapshots: @MainActor () async -> Void
     private let tabTerminationTelemetry: any TabTerminationTelemetry
     private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
@@ -169,12 +174,36 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let privacyStats: PrivacyStatsProviding
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private var webExtensionManager: WebExtensionManaging?
+    private var webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter? = { nil }
     private let launchSourceManager: LaunchSourceManaging
     private let darkReaderFeatureSettings: DarkReaderFeatureSettings
     private let toggleModeStorage: ToggleModeStoring
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
     private weak var controllerPendingTerminationRecovery: TabViewController?
+    let isSitePermissionsEnabled: Bool
+    let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
+
+    @MainActor
+    lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+
+    @MainActor
+    lazy var sitePermissionsFavicons = SitePermissionsFaviconStore(
+        store: sitePermissionsStore,
+        isEnabled: isSitePermissionsEnabled
+    )
+
+    @MainActor
+    private lazy var sitePermissionsDependencies = SitePermissionsDependencies(
+        store: sitePermissionsStore,
+        systemPermissionClient: SystemPermissionClient(),
+        eventHandler: { [sitePermissionsPixelHandler] event in
+            sitePermissionsPixelHandler.fire(event)
+        },
+        revokePermissionsInOtherTabs: { [weak self] site, permissionTypes, sourceTabID in
+            self?.revokeSitePermissions(permissionTypes, for: site, excluding: sourceTabID)
+        }
+    )
 
     // Save debouncing. Fires after `saveDebounceInterval` of quiet, or `saveMaxWait` since
     // the first call in the burst (whichever comes first) so sustained activity cannot push
@@ -212,6 +241,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
          featureFlagger: FeatureFlagger,
+         isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
+         sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          appSettings: AppSettings,
          autoplaySettings: AutoplaySettings = DefaultAutoplaySettings(),
@@ -261,6 +292,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
+            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
         self.tabEvictionSettings = tabEvictionSettings
@@ -297,6 +331,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.adBlockingAvailability = adBlockingAvailability
         self.eventHub = eventHub
         registerForNotifications()
+        AppDependencyProvider.shared.internalFeedbackTabCountProvider.counter = self
     }
 
     deinit {
@@ -307,6 +342,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func setWebExtensionManager(_ manager: WebExtensionManaging?) {
         self.webExtensionManager = manager
     }
+
+    func setWebExtensionInitialLoadWaiterProvider(_ provider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?) {
+        webExtensionInitialLoadWaiterProvider = provider
+    }
     
     @MainActor
     func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource) {
@@ -314,10 +353,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             return
         }
         _currentBrowsingMode = mode
-        Pixel.fire(pixel: .browsingModeSwitched, withAdditionalParameters: [
+        PixelKit.fire(Pixel.Event.browsingModeSwitched, options: .parameters([
             PixelParameters.browsingMode: mode.pixelParamValue,
             PixelParameters.source: source.rawValue
-        ])
+        ]))
     }
 
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
@@ -325,6 +364,51 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         case .fire: return tabsModelProvider.fireModeTabsModel
         case .normal: return tabsModelProvider.normalTabsModel
         }
+    }
+
+    @MainActor
+    private func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
+        let mode = tab.mode
+        return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
+            self?.tabsModel(for: mode).tabs ?? []
+        }, tabsPublisher: tabsModel(for: mode).tabsPublisher, pageProvider: { [weak self] tab in
+            self?.tabAttachmentPage(for: tab)
+        }, acquirePage: { [weak self] tab in
+            self?.acquireTabAttachmentPage(for: tab, mode: mode)
+        })
+    }
+
+    @MainActor
+    private func tabAttachmentPage(for tab: Tab) -> MultiTabAttachmentPage? {
+        guard let controller = controller(for: tab), let page = controller.makeMultiTabAttachmentPage() else { return nil }
+        return MultiTabAttachmentPage(state: { [weak self, weak controller] in
+            guard let controller, self?.controller(for: tab) === controller else { return nil }
+            return page.state()
+        }, changes: page.changes.merge(with: tabAttachmentControllerChanges).eraseToAnyPublisher(),
+        collect: page.collect, loadIfNeeded: page.loadIfNeeded, processTerminations: page.processTerminations)
+    }
+
+    @MainActor
+    private func acquireTabAttachmentPage(for tab: Tab, mode: BrowsingMode) -> MultiTabAttachmentPage.Reservation? {
+        guard tab.mode == mode, tabsModel(for: mode).tabs.contains(where: { $0 === tab }),
+              let url = tab.link?.url, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return nil }
+        let identity = ObjectIdentifier(tab)
+        let reservationID = UUID()
+        // Reserve before creation, since inserting the controller enforces cache capacity.
+        tabAttachmentReservations[identity, default: []].insert(reservationID)
+        let reservation = MultiTabAttachmentPage.Reservation { [weak self] in
+            guard let self, self.tabAttachmentReservations[identity]?.remove(reservationID) != nil else { return }
+            if self.tabAttachmentReservations[identity]?.isEmpty == true {
+                self.tabAttachmentReservations[identity] = nil
+            }
+            self.enforceCacheCapacityIfNeeded()
+        }
+        guard controller(for: tab, createIfNeeded: true) != nil,
+              tabsModel(for: mode).tabs.contains(where: { $0 === tab }) else {
+            reservation.release()
+            return nil
+        }
+        return reservation
     }
 
     @MainActor
@@ -372,6 +456,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
+                                                              isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               autoconsentManagement: autoconsentManagement,
@@ -393,7 +478,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              webExtensionInitialLoadWaiterProvider: { [weak self] in
+                                                                  self?.webExtensionInitialLoadWaiterProvider()
+                                                              },
+                                                              sitePermissionsEnabled: isSitePermissionsEnabled,
+                                                              sitePermissionsDependenciesProvider: { [weak self] in
+                                                                  self?.sitePermissionsDependencies
+                                                              })
+        controller.tabAttachmentSource = makeTabAttachmentSource(for: tab)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -424,6 +518,14 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     
     func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
+    }
+
+    func revokeSitePermissions(_ permissionTypes: Set<SitePermissionType>,
+                               for site: SitePermissionKey,
+                               excluding excludedTabID: String? = nil) {
+        for tab in allTabsModel.tabs where tab.uid != excludedTabID {
+            controller(for: tab)?.revokeSitePermissions(permissionTypes, for: site)
+        }
     }
 
     @MainActor
@@ -502,6 +604,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
+                                                              isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               autoconsentManagement: autoconsentManagement,
@@ -523,7 +626,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                               duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
                                                               adBlockingAvailability: adBlockingAvailability,
-                                                              eventHub: eventHub)
+                                                              eventHub: eventHub,
+                                                              webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
+                                                              webExtensionInitialLoadWaiterProvider: { [weak self] in
+                                                                  self?.webExtensionInitialLoadWaiterProvider()
+                                                              },
+                                                              sitePermissionsEnabled: isSitePermissionsEnabled,
+                                                              sitePermissionsDependenciesProvider: { [weak self] in
+                                                                  self?.sitePermissionsDependencies
+                                                              })
+        controller.tabAttachmentSource = makeTabAttachmentSource(for: controller.tabModel)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !currentTabsModel.hasActiveTabs,
@@ -674,8 +786,11 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
         if let index = tabControllerCache.firstIndex(of: controller) {
             tabControllerCache.remove(at: index)
+            tabAttachmentReservations[ObjectIdentifier(controller.tabModel)] = nil
+            tabAttachmentControllerChanges.send()
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
+        controller.closeSitePermissions()
         controller.dismiss()
     }
 
@@ -705,7 +820,9 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let currentControllerIsNewTabPage = currentController.map { $0.tabModel.link == nil } ?? false
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
-            let evictionCandidates = tabControllerCache.filter { $0 !== currentController }
+            let evictionCandidates = tabControllerCache.filter {
+                $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+            }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
         }
@@ -738,10 +855,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             }
 
             if reloadCurrent {
-                DailyPixel.fireDailyAndCount(pixel: .webKitTerminationDidReloadCurrentTab, pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+                PixelKit.fire(Pixel.Event.webKitTerminationDidReloadCurrentTab, frequency: .dailyAndStandard)
 
                 if controller.url?.isDuckAIURL == true {
-                    DailyPixel.fireDailyAndCount(pixel: .aiChatTabDidReloadAfterTermination)
+                    PixelKit.fire(Pixel.Event.aiChatTabDidReloadAfterTermination, frequency: .dailyAndCount)
                 }
 
                 current()?.reload()
@@ -1000,6 +1117,22 @@ extension TabManager {
 }
 
 
+// MARK: - Internal Feedback
+
+extension TabManager: InternalFeedbackTabCounting {
+
+    @MainActor
+    var openTabCount: Int {
+        allTabsModel.tabs.count
+    }
+
+    @MainActor
+    var activeTabCount: Int {
+        tabControllerCache.count
+    }
+
+}
+
 // MARK: - Debugging Pixels
 
 extension TabManager {
@@ -1053,7 +1186,7 @@ extension TabManager {
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache
-                .filter { $0 !== currentController }
+                .filter { $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil }
                 .forEach { evictFromCache($0, reason: .memoryWarning) }
         }
         flushPendingSave()
@@ -1064,9 +1197,9 @@ extension TabManager {
         let totalTabs = allTabsModel.tabs.count
 
         if let storedPreviews = totalStoredPreviews, storedPreviews > totalTabs {
-            Pixel.fire(pixel: .cachedTabPreviewsExceedsTabCount, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.cachedTabPreviewsExceedsTabCount, options: .parameters([
                 PixelParameters.tabPreviewCountDelta: "\(storedPreviews - totalTabs)"
-            ])
+            ]))
             let validTabIDs = Set(allTabsModel.tabs.map { $0.uid })
             let previewsSourceForCleanup = previewsSource
             Task(priority: .utility) {

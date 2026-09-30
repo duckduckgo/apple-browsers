@@ -239,6 +239,10 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
+    }
+
     var isGenerating: Bool = false {
         didSet { toolsToolbar.isGenerating = isGenerating }
     }
@@ -276,6 +280,11 @@ final class UnifiedToggleInputView: UIView {
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
         get { textEntryView.attachmentPasteHandler }
         set { textEntryView.attachmentPasteHandler = newValue }
+    }
+
+    weak var mentionHandler: TextEntryMentionHandling? {
+        get { textEntryView.mentionHandler }
+        set { textEntryView.mentionHandler = newValue }
     }
 
     var reasoningPickerMenu: UIMenu? {
@@ -366,10 +375,11 @@ final class UnifiedToggleInputView: UIView {
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
-    var onFooterPrimaryTapped: (() -> Void)?
-    var onFooterDismissTapped: (() -> Void)?
+    var onFooterPrimaryTapped: ((UTIFooterItem.ID) -> Void)?
+    var onFooterDismissTapped: ((UTIFooterItem.ID) -> Void)?
+    var onFooterLinkTapped: ((UTIFooterItem.ID, URL) -> Void)?
     /// The footer card entering or leaving the bottom slot, i.e. actually appearing on screen.
-    var onFooterVisibilityChanged: ((Bool) -> Void)?
+    var onFooterVisibilityChanged: (([UTIFooterItem.ID]) -> Void)?
 
     // MARK: - Attachment API
 
@@ -385,7 +395,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func setEditReplaceDisclaimerCardVisible(_ visible: Bool) {
         editReplaceDisclaimerCard.isHidden = !visible
-        applyBottomSlot(visible ? .editDisclaimer : .none)
+        renderFooterMessages(expanded: isExpanded)
     }
 
     // MARK: - Footer Warning Card
@@ -397,82 +407,104 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var bottomCardSlot: BottomCardSlot = .none
+    private var pendingFooterMessages: [UTIFooterItem] = []
+    private var renderedFooterMessages: [UTIFooterItem] = []
+    private var reportedFooterIDs: [UTIFooterItem.ID] = []
+    private var isFooterPresentationActive = false
 
-    private var pendingFooterMessage: UTIFooterMessage?
-
-    @discardableResult
-    func setFooterMessage(_ message: UTIFooterMessage?) -> Bool {
-        pendingFooterMessage = message
-        guard let message else {
-            let wasShowingFooter = bottomCardSlot == .footer
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] view clearing footer (wasShowing=\(wasShowingFooter, privacy: .public))")
-            applyBottomSlot(editReplaceDisclaimerCard.isHidden ? .none : .editDisclaimer)
-            return wasShowingFooter
-        }
-        guard editReplaceDisclaimerCard.isHidden else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] view rejected: edit disclaimer owns the slot")
-            return false
-        }
-        guard isExpanded else {
-            Logger.duckAIUsageWarnings.debug("[UsageWarnings] view deferred: card not expanded yet (layout=\(String(describing: self.currentLayout), privacy: .public)) — the pose animation will pick it up")
-            return false
-        }
-        applyPendingFooterMessage(message)
-        return true
+    func setFooterPresentationActive(_ active: Bool) {
+        isFooterPresentationActive = active
+        reportFooterVisibility()
     }
 
-    /// State-only: the visual slot release stays inside the pose animation.
+    private func reportFooterVisibility() {
+        let ids = isFooterPresentationActive && window != nil && bottomCardSlot == .footer ? renderedFooterMessages.map(\.id) : []
+        guard ids != reportedFooterIDs else { return }
+        reportedFooterIDs = ids
+        onFooterVisibilityChanged?(ids)
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        reportFooterVisibility()
+    }
+
+    @discardableResult
+    func setFooterMessages(_ messages: [UTIFooterItem]) -> Bool {
+        pendingFooterMessages = messages
+        return renderFooterMessages(expanded: isExpanded)
+    }
+
     func clearPendingFooterMessage() {
-        pendingFooterMessage = nil
+        pendingFooterMessages = []
     }
 
     private func applyFooterForCardLayout(expanded: Bool) {
-        guard expanded else {
-            if bottomCardSlot == .footer {
-                Logger.duckAIUsageWarnings.debug("[UsageWarnings] view releasing slot: card no longer expanded")
-                applyBottomSlot(.none)
-            }
-            return
-        }
-        guard let pending = pendingFooterMessage,
-              bottomCardSlot != .footer,
-              editReplaceDisclaimerCard.isHidden else { return }
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] view joining expand animation with pending message")
-        applyPendingFooterMessage(pending)
-        requestHierarchyLayout()
+        renderFooterMessages(expanded: expanded)
     }
 
-    private func applyPendingFooterMessage(_ message: UTIFooterMessage) {
+    @discardableResult
+    private func renderFooterMessages(expanded: Bool) -> Bool {
+        let messages = expanded ? pendingFooterMessages : []
         let wasVisible = bottomCardSlot == .footer
-        Logger.duckAIUsageWarnings.debug("[UsageWarnings] view showing footer '\(message.title, privacy: .public)' (wasVisible=\(wasVisible, privacy: .public))")
-        footerCard.configure(with: message, animateIcon: wasVisible)
-        applyBottomSlot(.footer)
-        // A wrapping title only reports its real height once the label has been laid out at the width
-        // this message's CTA leaves it, and the host measures the bar right after this returns.
-        footerCard.layoutIfNeeded()
-        guard !wasVisible else { return }
-        footerCard.contentView.alpha = 0
-        UIView.animate(withDuration: Constants.footerContentFadeDuration,
-                       delay: Constants.footerContentFadeDelay,
-                       options: [.curveLinear, .beginFromCurrentState]) {
-            self.footerCard.contentView.alpha = 1
+        if messages != renderedFooterMessages {
+            let existingRows = Dictionary(uniqueKeysWithValues: zip(renderedFooterMessages.map(\.id), footerCard.arrangedSubviews))
+            let previousMessages = renderedFooterMessages
+            for item in previousMessages where !messages.contains(where: { $0.id == item.id }) {
+                if let row = existingRows[item.id] {
+                    footerCard.removeArrangedSubview(row)
+                    row.removeFromSuperview()
+                }
+            }
+            for (index, item) in messages.enumerated() {
+                let row = (existingRows[item.id] as? UTIFooterCardView) ?? UTIFooterCardView()
+                row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
+                if !previousMessages.contains(item) {
+                    row.configure(with: item.message, animateIcon: existingRows[item.id] != nil)
+                }
+                row.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?(item.id) }
+                row.onDismissTap = { [weak self] in self?.onFooterDismissTapped?(item.id) }
+                row.onLinkTap = { [weak self] url in self?.onFooterLinkTapped?(item.id, url) }
+                if footerCard.arrangedSubviews.firstIndex(of: row) != index {
+                    footerCard.removeArrangedSubview(row)
+                    footerCard.insertArrangedSubview(row, at: index)
+                }
+                if existingRows[item.id] == nil && !UIAccessibility.isReduceMotionEnabled {
+                    row.contentView.alpha = 0
+                    UIView.animate(withDuration: Constants.footerContentFadeDuration,
+                                   delay: Constants.footerContentFadeDelay,
+                                   options: [.curveLinear, .beginFromCurrentState]) {
+                        row.contentView.alpha = 1
+                    }
+                }
+            }
+            renderedFooterMessages = messages
+            for row in footerCard.arrangedSubviews.reversed() { footerCard.bringSubviewToFront(row) }
         }
+        let slot: BottomCardSlot = messages.isEmpty ? (editReplaceDisclaimerCard.isHidden ? .none : .editDisclaimer) : .footer
+        applyBottomSlot(slot)
+        reportFooterVisibility()
+        footerCard.layoutIfNeeded()
+        return wasVisible || !messages.isEmpty
     }
 
     private func applyBottomSlot(_ slot: BottomCardSlot) {
-        let wasShowingFooter = bottomCardSlot == .footer
+        guard bottomCardSlot != slot else { return }
+        NSLayoutConstraint.deactivate([
+            cardBottomConstraint, cardEditBottomConstraint, cardFooterBottomConstraint,
+            expandedShadowBottomConstraint, expandedShadowEditBottomConstraint, expandedShadowFooterBottomConstraint,
+            footerCollapsedHeightConstraint
+        ])
         bottomCardSlot = slot
+        let hasFooter = slot == .footer
         cardBottomConstraint.isActive = slot == .none
         cardEditBottomConstraint.isActive = slot == .editDisclaimer
         cardFooterBottomConstraint.isActive = slot == .footer
         expandedShadowBottomConstraint.isActive = slot == .none
         expandedShadowEditBottomConstraint.isActive = slot == .editDisclaimer
-        expandedShadowFooterBottomConstraint.isActive = slot == .footer
-        footerCollapsedHeightConstraint.isActive = slot != .footer
-        footerCard.alpha = slot == .footer ? 1 : 0
-        if wasShowingFooter != (slot == .footer) {
-            onFooterVisibilityChanged?(slot == .footer)
-        }
+        expandedShadowFooterBottomConstraint.isActive = hasFooter
+        footerCollapsedHeightConstraint.isActive = !hasFooter
+        footerCard.alpha = hasFooter ? 1 : 0
     }
 
     private static func makeEditReplaceDisclaimerCard() -> UIView {
@@ -560,10 +592,12 @@ final class UnifiedToggleInputView: UIView {
         attachmentsStrip.onPageContextRemove = { [weak viewModel] in viewModel?.tapToRemove() }
         attachmentsStrip.onPageContextTap = { [weak viewModel] in viewModel?.tapToAttach() }
         viewModel.$state
-            .sink { [weak self] state in self?.attachmentsStrip.setPageContextChipState(state) }
-            .store(in: &pageContextChipCancellables)
-        viewModel.$isVisible
-            .sink { [weak self] isVisible in self?.attachmentsStrip.setPageContextChipVisible(isVisible) }
+            .sink { [weak self] state in
+                if let state {
+                    self?.attachmentsStrip.setPageContextChipState(state)
+                }
+                self?.attachmentsStrip.setPageContextChipVisible(state != nil)
+            }
             .store(in: &pageContextChipCancellables)
     }
 
@@ -579,6 +613,10 @@ final class UnifiedToggleInputView: UIView {
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
+    func cardFrame(in view: UIView) -> CGRect {
+        cardView.convert(cardView.bounds, to: view)
+    }
+
     var cardTopAnchor: NSLayoutYAxisAnchor { cardView.topAnchor }
     var cardLeadingAnchor: NSLayoutXAxisAnchor { cardView.leadingAnchor }
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
@@ -588,7 +626,7 @@ final class UnifiedToggleInputView: UIView {
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
-    private let footerCard = UTIFooterCardView()
+    private let footerCard = UIStackView()
     private var pageContextChipCancellables = Set<AnyCancellable>()
 
     private lazy var aiTabCollapsedFireButton: UIButton = {
@@ -694,6 +732,9 @@ final class UnifiedToggleInputView: UIView {
     /// be measured — so the symmetric dismiss can land back on the pill without re-measuring (the
     /// pill has been removed from the toolbar by then).
     private var cachedOmnibarMatchedInsets: OmnibarMatchedInsets?
+    /// The insets are point offsets against the container's width, so they only describe the window
+    /// size they were measured at — a rotation between focus and dismiss invalidates them.
+    private var cachedOmnibarMatchedInsetsWindowSize: CGSize?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
     /// Resting-grey stand-in revealed as the editing fill fades. Flat color (not live glass) so the
     /// morph keeps the card's silhouette without adding glass self-shadowing on top of the toolbar.
@@ -732,6 +773,7 @@ final class UnifiedToggleInputView: UIView {
     private var cardBottomConstraint: NSLayoutConstraint!
     private var cardEditBottomConstraint: NSLayoutConstraint!
     private var cardFooterBottomConstraint: NSLayoutConstraint!
+    private var editDisclaimerBottomConstraint: NSLayoutConstraint!
     private var expandedShadowBottomConstraint: NSLayoutConstraint!
     private var expandedShadowEditBottomConstraint: NSLayoutConstraint!
     private var expandedShadowFooterBottomConstraint: NSLayoutConstraint!
@@ -963,6 +1005,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var fireModeContentSubviews: [UIView] {
+        // aiTabCollapsed buttons keep their own regular glass, so they must stay on the OS trait.
         subviews.filter {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
@@ -991,10 +1034,6 @@ final class UnifiedToggleInputView: UIView {
 
     func selectAllText() {
         textEntryView.selectAllText()
-    }
-
-    func moveCaretToStart() {
-        textEntryView.moveCaretToStart()
     }
 
     var placeholderWindowX: CGFloat? { textEntryView.placeholderWindowX }
@@ -1145,7 +1184,7 @@ final class UnifiedToggleInputView: UIView {
             aiTabCollapsedMenuButton.isHidden = true
         }
         guard layout != currentLayout else {
-            updateExpandedBorderVisibility(expanded && layout.showsToggle)
+            updateExpandedBorderVisibility(expanded && (layout.showsToggle || layout.showsToolbar))
             return
         }
         currentLayout = layout
@@ -1213,7 +1252,7 @@ final class UnifiedToggleInputView: UIView {
         cardView.layer.maskedCorners = Constants.allCorners
         cardView.clipsToBounds = expanded && (usesOmnibarMargins || !isToggleEnabled)
 
-        updateExpandedBorderVisibility(expanded && showsToggle)
+        updateExpandedBorderVisibility(expanded && (showsToggle || showToolbar))
         let changes = {
             self.setCardFlanked(layout == .flanked)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
@@ -1378,7 +1417,8 @@ final class UnifiedToggleInputView: UIView {
             cardLeadingConstraint.constant = Constants.omnibarMatchingHorizontalMargin
             cardTrailingConstraint.constant = -Constants.omnibarMatchingHorizontalMargin
         case .bottom:
-            if let cached = cachedOmnibarMatchedInsets {
+            if let cached = cachedOmnibarMatchedInsets,
+               cachedOmnibarMatchedInsetsWindowSize == window?.bounds.size {
                 // Reproduce the measured pill pose (cached at focus) so the dismiss collapse lands
                 // back on the pill without re-measuring — it's no longer in the toolbar by then.
                 applyOmnibarMatchedInsets(cached)
@@ -1415,6 +1455,7 @@ final class UnifiedToggleInputView: UIView {
             trailing: -(bounds.width - pillInSelf.maxX),
             bottom: -(bounds.height - pillInSelf.maxY))
         cachedOmnibarMatchedInsets = insets
+        cachedOmnibarMatchedInsetsWindowSize = window?.bounds.size
         applyOmnibarMatchedInsets(insets)
         cardView.layer.cornerRadius = collapsedCornerRadius
         layoutIfNeeded()
@@ -1757,9 +1798,9 @@ private extension UnifiedToggleInputView {
         insertSubview(editReplaceDisclaimerCard, belowSubview: cardView)
         footerCard.translatesAutoresizingMaskIntoConstraints = false
         footerCard.alpha = 0
-        footerCard.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?() }
-        footerCard.onDismissTap = { [weak self] in self?.onFooterDismissTapped?() }
-        insertSubview(footerCard, belowSubview: cardView)
+        footerCard.axis = .vertical
+        footerCard.spacing = -UTIFooterCardView.overlap
+        insertSubview(footerCard, belowSubview: editReplaceDisclaimerCard)
         addSubview(aiTabCollapsedFireButton)
         addSubview(aiTabCollapsedMenuButton)
 
@@ -1883,6 +1924,9 @@ private extension UnifiedToggleInputView {
         cardEditBottomConstraint.isActive = false
         cardFooterBottomConstraint = cardView.bottomAnchor.constraint(equalTo: footerCard.topAnchor, constant: UTIFooterCardView.overlap)
         cardFooterBottomConstraint.isActive = false
+        editDisclaimerBottomConstraint = editReplaceDisclaimerCard.bottomAnchor.constraint(equalTo: bottomAnchor,
+                                                                                           constant: -Constants.cardVerticalMarginBottom)
+        editDisclaimerBottomConstraint.isActive = true
         footerCollapsedHeightConstraint = footerCard.heightAnchor.constraint(equalToConstant: UTIFooterCardView.overlap)
         footerCollapsedHeightConstraint.isActive = true
         cardPinnedHeightConstraint = cardView.heightAnchor.constraint(equalToConstant: Constants.collapsedCardHeight)
@@ -1922,7 +1966,6 @@ private extension UnifiedToggleInputView {
 
             editReplaceDisclaimerCard.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
             editReplaceDisclaimerCard.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
-            editReplaceDisclaimerCard.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.cardVerticalMarginBottom),
 
             toggleTopConstraint,
             toggleLeadingConstraint,

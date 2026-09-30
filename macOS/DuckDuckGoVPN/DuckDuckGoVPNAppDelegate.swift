@@ -32,6 +32,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
+import WideEvent
 import ServiceManagement
 import Subscription
 import SwiftUI
@@ -487,7 +488,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupAppRebrand() {
-        let isAppRebranded = featureFlagger.isFeatureOn(.appRebranding)
+        let isAppRebranded = true
         DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
     }
 

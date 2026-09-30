@@ -48,11 +48,10 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.fullContact)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        guard let result = VCardFileReader.read(at: url), !result.wasTruncated else {
+        guard let contact = VCardFileReader.read(at: url) else {
             Issue.record("Expected a single presentable contact")
             return
         }
-        let contact = result.contact
         #expect(contact.givenName == "John")
         #expect(contact.familyName == "Doe")
         #expect(!contact.phoneNumbers.isEmpty)
@@ -65,7 +64,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.nameOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -75,7 +74,7 @@ struct VCardFileReaderTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         // A field-less name is fine as long as the contact has a usable contact method.
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -88,70 +87,59 @@ struct VCardFileReaderTests {
     }
 
     @available(iOS 16, *)
-    @Test("Returns multipleContacts carrying the first contact for a multi-contact file", .timeLimit(.minutes(1)))
-    func returnsMultipleContactsForMultiContact() throws {
+    @Test("Returns the first contact for a multi-contact file", .timeLimit(.minutes(1)))
+    func returnsFirstContactForMultiContact() throws {
         let url = try writeVCardFile(Fixtures.multipleContacts)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        guard let result = VCardFileReader.read(at: url), result.wasTruncated else {
-            Issue.record("Expected multiple presentable contacts")
+        guard let contact = VCardFileReader.read(at: url) else {
+            Issue.record("Expected the first presentable contact")
             return
         }
-        let contact = result.contact
         // We present the first contact (N:One;Person / FN:Person One) and ignore the rest.
         #expect(contact.givenName == "Person")
         #expect(contact.familyName == "One")
     }
 
     @available(iOS 16, *)
-    @Test("Returns singleContact carrying the only presentable contact when an earlier entry is field-less", .timeLimit(.minutes(1)))
+    @Test("Returns the presentable contact when an earlier entry is field-less", .timeLimit(.minutes(1)))
     func returnsSingleContactSkippingUnpresentableFirstEntry() throws {
         let url = try writeVCardFile(Fixtures.unpresentableThenPresentable)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        // The first card has only a job title (which isPresentable doesn't accept), so we skip it. Only
-        // Vera is presentable, so this is a singleContact — multiplicity is keyed off the presentable
-        // count, not the raw parsed count, and nothing presentable was dropped.
-        guard let result = VCardFileReader.read(at: url), !result.wasTruncated else {
+        // The first card has only a job title (which isPresentable doesn't accept), so we skip it.
+        guard let contact = VCardFileReader.read(at: url) else {
             Issue.record("Expected a single presentable contact")
             return
         }
-        let contact = result.contact
         #expect(contact.givenName == "Vera")
         #expect(contact.familyName == "Visible")
     }
 
     @available(iOS 16, *)
-    @Test("Returns singleContact (not multiple) for one real contact followed by a field-less stub", .timeLimit(.minutes(1)))
+    @Test("Returns the presentable contact when followed by a field-less stub", .timeLimit(.minutes(1)))
     func returnsSingleContactForRealContactFollowedByStub() throws {
         let url = try writeVCardFile(Fixtures.presentableThenUnpresentable)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        // Regression guard: a trailing empty/stub VCARD (common in real-world exports) must NOT make a
-        // single real contact look like a multi-contact file — otherwise the truncated pixel over-fires
-        // even though nothing presentable was dropped.
-        guard let result = VCardFileReader.read(at: url), !result.wasTruncated else {
+        guard let contact = VCardFileReader.read(at: url) else {
             Issue.record("Expected a single presentable contact")
             return
         }
-        let contact = result.contact
         #expect(contact.givenName == "John")
         #expect(contact.familyName == "Doe")
     }
 
     @available(iOS 16, *)
-    @Test("Returns multipleContacts carrying the first presentable contact when two presentable entries follow a field-less one", .timeLimit(.minutes(1)))
-    func returnsMultipleContactsSkippingUnpresentableFirstEntry() throws {
+    @Test("Returns the first presentable contact when two presentable entries follow a field-less one", .timeLimit(.minutes(1)))
+    func returnsFirstContactSkippingUnpresentableFirstEntry() throws {
         let url = try writeVCardFile(Fixtures.unpresentableThenTwoPresentable)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        // Two presentable contacts (after a field-less stub) ⇒ we really do drop one, so this is
-        // multipleContacts carrying the first presentable contact.
-        guard let result = VCardFileReader.read(at: url), result.wasTruncated else {
-            Issue.record("Expected multiple presentable contacts")
+        guard let contact = VCardFileReader.read(at: url) else {
+            Issue.record("Expected the first presentable contact")
             return
         }
-        let contact = result.contact
         #expect(contact.givenName == "Vera")
         #expect(contact.familyName == "Visible")
     }
@@ -171,7 +159,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.nonLatinName)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -180,7 +168,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.withPhoto)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     // Single-displayable-field cases: each of the six fixtures below has exactly one populated
@@ -193,7 +181,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.urlOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -202,7 +190,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.birthdayOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -211,7 +199,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.socialProfileOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -220,7 +208,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.instantMessageOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -229,7 +217,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.noteOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     @available(iOS 16, *)
@@ -238,7 +226,7 @@ struct VCardFileReaderTests {
         let url = try writeVCardFile(Fixtures.photoOnly)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        #expect(VCardFileReader.read(at: url)?.wasTruncated == false)
+        #expect(VCardFileReader.read(at: url) != nil)
     }
 
     // MARK: - Helpers
@@ -303,8 +291,7 @@ struct VCardFileReaderTests {
 
         // First card carries only a job title — a parseable field (so the serializer still emits a
         // contact for it) that isPresentable deliberately doesn't accept — followed by one presentable
-        // contact (Vera). Only Vera is presentable, so the reader skips the stub and returns a
-        // singleContact (nothing presentable was dropped).
+        // contact (Vera). The reader skips the stub and returns Vera.
         static let unpresentableThenPresentable = """
         BEGIN:VCARD
         VERSION:3.0
@@ -318,9 +305,7 @@ struct VCardFileReaderTests {
         END:VCARD
         """
 
-        // A field-less stub followed by TWO presentable contacts: the stub is skipped and one
-        // presentable contact is genuinely dropped, so this is multipleContacts carrying Vera (the
-        // first presentable one).
+        // A field-less stub followed by two presentable contacts: the reader skips the stub and returns Vera.
         static let unpresentableThenTwoPresentable = """
         BEGIN:VCARD
         VERSION:3.0
@@ -339,8 +324,7 @@ struct VCardFileReaderTests {
         END:VCARD
         """
 
-        // One real contact followed by a field-less stub (parseable but not presentable). Only John is
-        // presentable, so the reader returns singleContact and does NOT fire the truncated pixel.
+        // One real contact followed by a field-less stub (parseable but not presentable).
         static let presentableThenUnpresentable = """
         BEGIN:VCARD
         VERSION:3.0

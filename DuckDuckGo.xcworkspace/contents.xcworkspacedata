@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+   <FileRef
+      location = "group:SharedPackages/Networking/Tests/NetworkingTests/Networking.xctestplan">
+   </FileRef>
    <Group
       location = "group:SharedPackages"
       name = "SharedPackages">
@@ -31,10 +34,16 @@
       <FileRef
          location = "group:DDGError">
       </FileRef>
+      <FileRef
+         location = "group:EventHub">
+      </FileRef>
       <FileSystemSynchronizedGroup
          location = "group:Infrastructure"
          name = "Infrastructure">
       </FileSystemSynchronizedGroup>
+      <FileRef
+         location = "group:Networking">
+      </FileRef>
       <FileRef
          location = "group:Onboarding">
       </FileRef>
@@ -43,6 +52,9 @@
       </FileRef>
       <FileRef
          location = "group:PixelKit">
+      </FileRef>
+      <FileRef
+         location = "group:WideEvent">
       </FileRef>
       <FileRef
          location = "group:ScreenTimeDataCleaner">
@@ -55,6 +67,9 @@
       </FileRef>
       <FileRef
          location = "group:SnapshotTestingSupport">
+      </FileRef>
+      <FileRef
+         location = "group:UITestingSupport">
       </FileRef>
       <FileRef
          location = "group:UIComponents">

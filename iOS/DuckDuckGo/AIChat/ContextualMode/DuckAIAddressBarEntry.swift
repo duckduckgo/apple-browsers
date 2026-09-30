@@ -21,7 +21,7 @@ import Foundation
 
 /// What the address-bar Duck.ai button does for the current tab and session.
 enum DuckAIAddressBarEntry: Equatable {
-    /// Offer New Chat or Ask About Page.
+    /// Offer New Chat and Chats, plus Ask About Page on web tabs.
     case menu
     /// Open the contextual sheet, restoring any chat already in progress.
     case contextualSheet
@@ -30,20 +30,25 @@ enum DuckAIAddressBarEntry: Equatable {
     /// Open Duck.ai the way the button did before contextual mode.
     case legacyDuckAI
 
-    /// The menu is only offered where the New Chat versus Ask About Page choice is meaningful: a web
-    /// page with no chat to return to and nothing already open.
+    /// Home tabs offer the menu when chat history is available. Web tabs retain contextual
+    /// restoration and require floating input for the Ask About Page action.
     ///
     /// - Parameter hasChatToReopen: A conversation this tab can go back to, whether it is still live
-    ///   or was persisted by an earlier launch. Neither menu action reopens one, so offering the menu
-    ///   here would strand it.
+    ///   or was persisted by an earlier launch. Reopen this tab's conversation directly rather than
+    ///   requiring the user to find it in Chats.
     static func resolve(isContextualModeAvailable: Bool,
                         isFloatingInputAvailable: Bool,
+                        isIPadChromeMenuButtonAvailable: Bool = false,
                         isHomeTab: Bool,
+                        isChatHistoryAvailable: Bool,
                         hasChatToReopen: Bool,
                         isContextualSurfacePresented: Bool) -> DuckAIAddressBarEntry {
-        guard isContextualModeAvailable, !isHomeTab else { return .legacyDuckAI }
+        if isHomeTab {
+            return isChatHistoryAvailable ? .menu : .legacyDuckAI
+        }
+        guard isContextualModeAvailable else { return .legacyDuckAI }
         guard !isContextualSurfacePresented else { return .dismissContextualSurface }
-        guard isFloatingInputAvailable, !hasChatToReopen else { return .contextualSheet }
+        guard isFloatingInputAvailable || isIPadChromeMenuButtonAvailable, !hasChatToReopen else { return .contextualSheet }
         return .menu
     }
 

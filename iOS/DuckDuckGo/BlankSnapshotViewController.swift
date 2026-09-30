@@ -22,6 +22,7 @@ import Core
 import Suggestions
 import PrivacyConfig
 import DesignResourcesKitIcons
+import PixelKit
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
     
@@ -58,6 +59,7 @@ class BlankSnapshotViewController: UIViewController {
          aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
+         isFloatingUIFeatureEnabledForCurrentLaunch: Bool,
          appSettings: AppSettings,
          mobileCustomization: MobileCustomization) {
         self.addressBarPosition = addressBarPosition
@@ -67,7 +69,9 @@ class BlankSnapshotViewController: UIViewController {
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.mobileCustomization = mobileCustomization
-        self.floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger)
+        self.floatingUIManager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch
+        )
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -185,7 +189,7 @@ class BlankSnapshotViewController: UIViewController {
     }
     
     @IBAction func userInteractionDetected() {
-        Pixel.fire(pixel: .blankOverlayNotDismissed)
+        PixelKit.fire(Pixel.Event.blankOverlayNotDismissed)
         delegate?.recoverFromPresenting(controller: self)
     }
 }

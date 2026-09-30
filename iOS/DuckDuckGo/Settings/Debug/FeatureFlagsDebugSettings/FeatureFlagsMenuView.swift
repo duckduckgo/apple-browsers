@@ -1,0 +1,133 @@
+//
+//  FeatureFlagsMenuView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import SwiftUI
+import Core
+import PrivacyConfig
+import FeatureFlags_iOS
+
+struct FeatureFlagsMenuView: View {
+    @ObservedObject var viewModel: FeatureFlagsSettingViewModel = FeatureFlagsSettingViewModel()
+
+    var body: some View {
+        List {
+            internalUserSection()
+            if viewModel.isInternalUser {
+                featureFlagsSection()
+                experimentsSection()
+                resetAllOverridesSection()
+            }
+        }
+        .searchable(text: $viewModel.searchText, prompt: "Filter")
+        .navigationTitle(Text(verbatim: "Feature Flags"))
+    }
+
+    // MARK: - Internal User Section
+    private func internalUserSection() -> some View {
+        Section {
+            Toggle(isOn: $viewModel.isInternalUser) {
+                Label {
+                    Text(verbatim: "Internal User")
+                } icon: {
+                    Image(systemName: "flask")
+                }
+            }
+        }
+    }
+
+    // MARK: - Feature Flags Section
+    private func featureFlagsSection() -> some View {
+        Section(header: Text(verbatim: "Feature Flags")) {
+            Picker("", selection: $viewModel.stateFilter) {
+                ForEach(FeatureFlagsSettingViewModel.StateFilter.allCases, id: \.self) { filter in
+                    Text(verbatim: filter.rawValue).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            ForEach(viewModel.filteredFeatureFlags, id: \.self) { flag in
+                featureFlagRow(flag: flag)
+            }
+        }
+    }
+
+    private func featureFlagRow(flag: FeatureFlag) -> some View {
+        HStack {
+            Toggle(
+                isOn: Binding(
+                    get: { viewModel.isFeatureEnabled(flag) },
+                    set: { newValue in viewModel.toggleFeatureFlag(flag, enabled: newValue) }
+                )
+            ) {
+                VStack(alignment: .leading) {
+                    Text(verbatim: flag.rawValue)
+                        .font(.headline)
+                    Text(verbatim: "Default: \(viewModel.defaultValue(for: flag))")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    if flag == .promoPresentationCoordination || flag == .sitePermissions {
+                        Text(verbatim: "Relaunch required for changes to take effect.")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            Button(action: {
+                viewModel.resetOverride(for: flag)
+            }, label: {
+                Text(verbatim: "Reset")
+                    .padding()
+            })
+            .foregroundColor(.blue)
+        }
+    }
+
+    // MARK: - Experiments Section
+    private func experimentsSection() -> some View {
+        Section(header: Text(verbatim: "Experiments")) {
+            ForEach(viewModel.experiments, id: \.self) { flag in
+                experimentRow(flag: flag)
+            }
+        }
+    }
+
+    private func experimentRow(flag: any FeatureFlagDescribing) -> some View {
+        NavigationLink(destination: ExperimentCohortView(viewModel: viewModel, experiment: flag)) {
+            VStack(alignment: .leading) {
+                Text(verbatim: flag.rawValue)
+                    .font(.headline)
+                Text(verbatim: "Current cohort: \(viewModel.getCurrentCohort(for: flag) ?? "None")")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+
+    // MARK: - Reset All Overrides Section
+    private func resetAllOverridesSection() -> some View {
+        Section {
+            Button(action: {
+                viewModel.resetAllOverrides()
+            }, label: {
+                Text(verbatim: "Reset All Overrides")
+            })
+            .foregroundColor(.red)
+        }
+    }
+}

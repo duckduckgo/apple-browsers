@@ -25,19 +25,24 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
 
     func fire(_ event: DuckAIPromptPixelEvent) {
         guard let pixel = Self.promptBarPixel(for: event) else { return }
+        PixelKit.fire(pixel, frequency: Self.frequency(for: event), includeAppVersionParameter: true)
+    }
 
-        switch pixel {
-        case .newVoiceChat:
-            // The frequency its address bar counterpart uses.
-            PixelKit.fire(pixel, frequency: .dailyAndStandard, includeAppVersionParameter: true)
+    static func frequency(for event: DuckAIPromptPixelEvent) -> PixelKit.Frequency {
+        switch event {
+        case .voiceChatOpened:
+            return .dailyAndStandard
+        case .createImageUnavailable:
+            return .daily
         default:
-            PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            return .dailyAndCount
         }
     }
 
     /// `nil` for events this surface can't produce, per `DuckAIPromptSurface`: page context (tab and
     /// `@`-mention attachments), Customize Responses and the subscription upsell are all off on the
-    /// Prompt Bar, so counting them would define a pixel that never fires.
+    /// Prompt Bar, so counting them would define a pixel that never fires. Gated picker rows aren't
+    /// interactive here either, so gated-row clicks aren't reported.
     static func promptBarPixel(for event: DuckAIPromptPixelEvent) -> PromptBarPixel? {
         switch event {
         case .promptSubmitted: .submitPrompt
@@ -60,6 +65,13 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
         case .modelPickerShown: .modelPickerShown(origin: SubscriptionFunnelOrigin.promptBarModelPicker.rawValue)
         case .reasoningPickerShown: .reasoningPickerShown(origin: SubscriptionFunnelOrigin.promptBarReasoningDropdown.rawValue)
         case .voiceChatOpened: .newVoiceChat
+        case .createImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
+            .createImageModelSwitched(fromModelId: fromModelId,
+                                      toModelId: toModelId,
+                                      fromModelPrivacyPreserving: fromModelPrivacyPreserving)
+        case .createImageModelSwitchNoticeDismissed: .createImageModelSwitchNoticeDismissed
+        case .createImageUnavailable: .createImageUnavailable
+        case .createImageSubmittedWithUnsupportedModel: .createImageSubmittedWithUnsupportedModel
         case .submittedWithTabs,
                 .tabAttachmentRemoved,
                 .tabPickerShown,
@@ -67,6 +79,7 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
                 .tabPickerCanceled,
                 .customizeResponsesOpened,
                 .subscriptionUpsellShown,
+                .gatedRowClick,
                 .subscriptionUpsellTriggered:
             nil
         }

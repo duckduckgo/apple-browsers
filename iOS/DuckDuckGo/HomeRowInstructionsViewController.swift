@@ -20,6 +20,7 @@
 import UIKit
 import AVKit
 import Core
+import PixelKit
 
 class HomeRowInstructionsViewController: UIViewController {
 
@@ -60,7 +61,7 @@ class HomeRowInstructionsViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         HomeRowReminder().setShown()
-        Pixel.fire(pixel: .settingsNextStepsAddAppToDock)
+        PixelKit.fire(Pixel.Event.settingsNextStepsAddAppToDock)
     }
 
     @IBAction func dismiss() {

@@ -22,7 +22,16 @@ import WebKit
 import Common
 import FoundationExtensions
 
+struct ErrorPageHTMLConfiguration {
+    let linkText: String
+    let linkFunction: String
+}
+
 struct ErrorPageHTMLTemplate {
+
+    private enum Constants {
+        static let linkConfigurationMarker = "/* $ERROR_PAGE_LINK_CONFIGURATION$ */"
+    }
 
     static var htmlTemplatePath: String {
         guard let file = ContentScopeScripts.Bundle.path(forResource: "index", ofType: "html", inDirectory: "pages/errorpage") else {
@@ -34,14 +43,41 @@ struct ErrorPageHTMLTemplate {
 
     let error: WKError
     let header: String
+    let configuration: ErrorPageHTMLConfiguration?
 
     func makeHTMLFromTemplate() -> String {
-        guard let html = try? String(contentsOfFile: Self.htmlTemplatePath) else {
+        guard let templateHTML = try? String(contentsOfFile: Self.htmlTemplatePath) else {
             assertionFailure("Should be able to load template")
             return ""
         }
-        return html.replacingOccurrences(of: "$ERROR_DESCRIPTION$", with: error.localizedDescription.escapedUnicodeHtmlString(), options: .literal)
+        let html = templateHTML
+            .replacingOccurrences(of: "$ERROR_DESCRIPTION$", with: error.localizedDescription.escapedUnicodeHtmlString(), options: .literal)
             .replacingOccurrences(of: "$HEADER$", with: header.escapedUnicodeHtmlString(), options: .literal)
+
+        guard let configuration else {
+            return html
+        }
+
+        let script = """
+            window.configureErrorPageLink({
+                text: '\(configuration.linkText.escapedInlineJavaScriptString())',
+                onClick: \(configuration.linkFunction)
+            });
+            """
+        return html.replacingOccurrences(of: Constants.linkConfigurationMarker, with: script, options: .literal)
     }
 
+}
+
+private extension String {
+
+    func escapedInlineJavaScriptString() -> String {
+        escapedJavaScriptString()
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+            .replacingOccurrences(of: "<", with: "\\u003C")
+            .replacingOccurrences(of: ">", with: "\\u003E")
+            .replacingOccurrences(of: "&", with: "\\u0026")
+    }
 }

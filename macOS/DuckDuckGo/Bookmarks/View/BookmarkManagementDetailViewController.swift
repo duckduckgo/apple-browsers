@@ -101,7 +101,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
 
     private lazy var syncPromoViewHostingView: NSView = {
-        let model = SyncPromoViewModel(isAppRebranded: themeManager.isAppRebranded, touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks)
@@ -467,7 +467,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     private func onImport() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {

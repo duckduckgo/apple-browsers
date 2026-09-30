@@ -29,11 +29,12 @@ extension TabViewController {
     /// Re-presents an active chat if one exists for this tab, or restores from persisted URL after app restart.
     ///
     /// - Parameter presentingViewController: The view controller to present the sheet from.
-    func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
+    func presentContextualAIChatSheet(from presentingViewController: UIViewController, attachingPage: Bool = false) {
         Task { @MainActor in
             await aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
-                restoreURL: restoreURLForContextualSheet()
+                restoreURL: restoreURLForContextualSheet(),
+                attachingPage: attachingPage
             )
         }
     }

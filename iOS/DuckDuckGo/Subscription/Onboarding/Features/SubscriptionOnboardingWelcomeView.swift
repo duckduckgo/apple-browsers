@@ -25,21 +25,22 @@ import UIComponents
 /// An overview of the four premium protections (VPN, Identity Theft Restoration, Advanced AI Models, Personal Information Removal).
 /// Tapping a row presents that feature's  info screen (``SubscriptionOnboardingInfoView``) as a sheet; the primary button starts the flow.
 struct SubscriptionOnboardingWelcomeView: View {
-    let onClose: () -> Void
+
+    var navigationButton: SubscriptionOnboardingNavigationButton?
+    var features: [SubscriptionOnboardingChecklistItem] = SubscriptionOnboardingChecklistItem.allCases
+    var onNext: () -> Void = {}
 
     @State private var selectedFeature: SubscriptionOnboardingChecklistItem?
 
     var body: some View {
         SubscriptionOnboardingBaseView(
-            navigationButton: .close(onClose),
+            navigationButton: navigationButton,
             header: SubscriptionOnboardingHeaderView(
                 visual: .image(Image(.subscriptionDDG96)),
                 title: UserText.subscriptionOnboardingWelcomeTitle,
                 explanation: UserText.subscriptionOnboardingWelcomeExplanation),
-            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: {
-                // TODO: advance to the first section once the flow view model exists.
-            }))) {
-            WelcomeCard(onSelect: { selectedFeature = $0 })
+            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext))) {
+            WelcomeCard(features: features, onSelect: { selectedFeature = $0 })
         }
         .subscriptionOnboardingInfoSheet(item: $selectedFeature)
     }
@@ -56,10 +57,11 @@ private struct WelcomeCard: View {
         static let contentInsetVertical: CGFloat = 14
     }
 
-    private let features = SubscriptionOnboardingChecklistItem.allCases
+    private let features: [SubscriptionOnboardingChecklistItem]
     private let onSelect: (SubscriptionOnboardingChecklistItem) -> Void
 
-    init(onSelect: @escaping (SubscriptionOnboardingChecklistItem) -> Void) {
+    init(features: [SubscriptionOnboardingChecklistItem], onSelect: @escaping (SubscriptionOnboardingChecklistItem) -> Void) {
+        self.features = features
         self.onSelect = onSelect
     }
 
@@ -118,14 +120,14 @@ private extension WelcomeCard {
 
 #Preview("Light") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
 }
 
 #Preview("Dark") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .preferredColorScheme(.dark)
@@ -133,7 +135,7 @@ private extension WelcomeCard {
 
 #Preview("Large Text") {
     RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(onClose: {})
+        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
             .subscriptionOnboardingNavigationContainer()
     }
     .dynamicTypeSize(.accessibility5)

@@ -13,7 +13,8 @@ on:
   workflow_call:
     inputs:
       runner:
-        description: "Runner label to run on (e.g. 'macos-26-xlarge')"
+        # A workflow_call input cannot be an array, so the caller passes toJSON of its label list.
+        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-26\",\"ui-tests\"]'."
         required: true
         type: string
       os-version:
@@ -41,14 +42,19 @@ on:
         description: "Ref to check out. Caller should pass its own 'inputs.branch || github.sha'."
         required: true
         type: string
+      test-plan:
+        description: "Test plan to use instead of the scheme's default one (e.g. 'UI Tests App Store' to run a filtered App Store test case other than AppStoreSandboxUITests)"
+        required: false
+        type: string
+        default: ''
 
 jobs:
   run-ui-test:
     # Avoid '/' in the job name: GitHub joins the reusable-workflow job name onto the caller with
     # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
     # nodes. It is also used to build the report filename, where '/' is a path separator.
-    name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
-    runs-on: ${{ inputs.runner }}
+    name: ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.build-type == 'appstore' && ', App Store' || '' }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
+    runs-on: ${{ fromJSON(inputs.runner) }}
 
     # Internal-mode failures are advance warning for features still gated to internal users; they
     # must not fail the overall workflow. Setting continue-on-error here (a normal job inside the
@@ -57,7 +63,7 @@ jobs:
     continue-on-error: ${{ inputs.user-mode == 'internal' }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.runner }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ join(fromJSON(inputs.runner), ',') }}-${{ inputs.test }}-${{ inputs.user-mode }}-${{ inputs.build-type }}
       cancel-in-progress: true
 
     timeout-minutes: 120
@@ -68,6 +74,9 @@ jobs:
       app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
       release-type: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
       extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
+      # Keeps artifact names of the App Store legs apart from the DMG ones when both run in the same workflow run
+      artifact-suffix: ${{ inputs.build-type == 'appstore' && '-appstore' || '' }}
+      TEST_PLAN: ${{ inputs.test-plan }}
 
     steps:
     - name: Register SSH keys for private repos
@@ -144,32 +153,11 @@ jobs:
         echo "First attempt to sync code signing assets failed. Retrying..."
         bundle exec fastlane sync_signing_ci
 
-    - name: Download and unzip artifact
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        max_attempts=3
-        retry_delay=10
-
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Attempt $attempt of $max_attempts"
-          rm -rf build-download-temp
-          mkdir build-download-temp
-          if gh run download "${{ github.run_id }}" --dir build-download-temp; then
-            echo "Download successful"
-            mv build-download-temp/* .
-            rm -rf build-download-temp
-            exit 0
-          fi
-          rm -rf build-download-temp
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Download failed, retrying in ${retry_delay}s..."
-            sleep $retry_delay
-            retry_delay=$((retry_delay * 2))
-          fi
-        done
-        echo "All download attempts failed"
-        exit 1
+    - name: Download app artifact
+      uses: actions/download-artifact@v7
+      with:
+        pattern: DuckDuckGo-${{ env.release-type }}-*.app.tar.xz
+        path: ${{ github.workspace }}/macOS
 
     - name: Set cache key hash
       run: |
@@ -231,6 +219,7 @@ jobs:
         exit 1
 
     - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
       uses: actions/cache/restore@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
@@ -241,8 +230,13 @@ jobs:
     - name: Build for testing
       working-directory: macOS
       run: |
+        test_plan_args=()
+        if [[ -n "$TEST_PLAN" ]]; then
+          test_plan_args=(-testPlan "$TEST_PLAN")
+        fi
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "${{ env.scheme }}" \
+          "${test_plan_args[@]}" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -253,7 +247,7 @@ jobs:
         | xcbeautify
 
     - name: Compute Compilation Cache hash
-      if: github.ref == 'refs/heads/main'
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
       id: compilation-cache-hash
       run: |
         if [ -d "DerivedData/CompilationCache.noindex" ]; then
@@ -264,16 +258,16 @@ jobs:
         fi
 
     - name: Save Xcode Compilation Cache
-      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
       uses: actions/cache/save@v5
       with:
         path: macOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
 
-    - name: Extract and Copy app to /DerivedData
+    - name: Extract and Copy app to DerivedData
       working-directory: macOS
       run: |
-        cd DuckDuckGo-${{ env.release-type }}-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        tar -xf DuckDuckGo-*.app.tar.xz
 
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
@@ -285,15 +279,20 @@ jobs:
           fi
         fi
 
-        mv -f "${{ env.app-name }}.app" "../DerivedData/Build/Products/Review/${{ env.app-name }}.app"
+        mv -f "${{ env.app-name }}.app" "DerivedData/Build/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
       id: run-ui-tests
       working-directory: macOS
       run: |
         defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
+        test_plan_args=()
+        if [[ -n "$TEST_PLAN" ]]; then
+          test_plan_args=(-testPlan "$TEST_PLAN")
+        fi
         set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ env.scheme }}" \
+          "${test_plan_args[@]}" \
           -derivedDataPath DerivedData \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -331,7 +330,7 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       working-directory: macOS
       run: |
-        test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
+        test_id="${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.build-type == 'appstore' && ', App Store' || '' }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})"
         file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
@@ -344,7 +343,7 @@ jobs:
       if: always() && steps.run-ui-tests.outcome != 'skipped'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: "testreport-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "testreport-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
@@ -352,7 +351,7 @@ jobs:
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
@@ -360,7 +359,7 @@ jobs:
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}"
+        name: "app-console-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
         retention-days: 1
@@ -375,7 +374,7 @@ jobs:
       if: failure() || cancelled()
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: failure-marker-macos-ui-${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
+        name: failure-marker-macos-ui-${{ inputs.build-type == 'appstore' && 'appstore-' || '' }}${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
         path: failure-marker/
         retention-days: 1
 
@@ -387,7 +386,7 @@ jobs:
 
         # Create staging directory with timestamp, OS version and failing test name
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-        archive_name="BuildLogs ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
+        archive_name="BuildLogs ${{ inputs.test }} (macOS ${{ inputs.os-version }}${{ inputs.build-type == 'appstore' && ' App Store' || '' }}${{ inputs.user-mode == 'internal' && ' internal' || '' }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
 

@@ -41,7 +41,7 @@ jobs:
     name: iOS shared web tests
     if: ${{ github.event_name == 'schedule' || inputs.platform != 'macos' }}
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-26, general-purpose]
     timeout-minutes: 30
     steps:
 
@@ -61,6 +61,12 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "26.5,26.6"
+
     - name: Checkout shared web tests
       uses: actions/checkout@v6
       with:
@@ -69,8 +75,19 @@ jobs:
         path: tmp/shared-web-tests
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and run tests
+    - name: Install Rust
       run: |
+        if ! command -v cargo > /dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        fi
+
+    - name: Build and run tests
+      env:
+        IOS_VERSION: ${{ steps.select-simulator.outputs.ios-version }}
+        TARGET_DEVICE: iPhone-17
+      run: |
+        export TARGET_OS="iOS-${IOS_VERSION//./-}"
         PROJECT_ROOT="$(pwd)"
         . iOS/scripts/shared_web_tests.sh
 
@@ -117,7 +134,7 @@ jobs:
     name: macOS shared web tests
     if: ${{ github.event_name == 'schedule' || inputs.platform != 'ios' }}
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-26, general-purpose]
     timeout-minutes: 30
     steps:
 

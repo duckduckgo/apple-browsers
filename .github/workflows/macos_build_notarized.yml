@@ -462,14 +462,19 @@ jobs:
       working-directory: ${{ github.workspace }}/macOS/dmg
 
     - name: Install create-dmg
-      run: brew install create-dmg
+      run: |
+        brew install create-dmg
+        # Work around create-dmg 1.3.0's APFS device-order assumption.
+        # Patch the installed script in place to preserve its support assets.
+        /usr/bin/patch --forward -F 0 "$(brew --prefix create-dmg)/bin/create-dmg" \
+          < ../.github/patches/create-dmg-apfs-mount.patch
 
     - name: Create DMG
       id: create-dmg
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        # Capture the mount lookup without changing create-dmg's output or exit status.
+        # Capture attachment metadata without changing hdiutil's output or exit status.
         export DMG_DIAGNOSTICS_DIR="${RUNNER_TEMP}/dmg-mount-diagnostics"
         diagnostics_bin="${RUNNER_TEMP}/dmg-diagnostics-bin"
         mkdir -p "${DMG_DIAGNOSTICS_DIR}" "${diagnostics_bin}"

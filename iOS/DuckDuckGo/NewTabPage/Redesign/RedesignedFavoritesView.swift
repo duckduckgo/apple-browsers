@@ -28,7 +28,6 @@ struct RedesignedFavoritesView: View {
     @State private var gridHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var collapsedItemHeights: [Favorite.ID: CGFloat] = [:]
-    @State private var expandButtonHeight: CGFloat = 0
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: Metrics.columnCount)
     private let haptics = UIImpactFeedbackGenerator()
 
@@ -47,8 +46,7 @@ struct RedesignedFavoritesView: View {
         let estimatedRowHeight = Metrics.tileSize + Metrics.iconToTitleSpacing + UIFont.daxCaption1().lineHeight * 2
         return (0..<rowCount).reduce(CGFloat(0)) { height, row in
             let favorites = model.allFavorites.dropFirst(row * columns.count).prefix(columns.count)
-            let itemHeight = favorites.compactMap { collapsedItemHeights[$0.id] }.max() ?? estimatedRowHeight
-            let rowHeight = row == rowCount - 1 ? max(itemHeight, expandButtonHeight) : itemHeight
+            let rowHeight = favorites.compactMap { collapsedItemHeights[$0.id] }.max() ?? estimatedRowHeight
             return height + rowHeight
         } + CGFloat(rowCount - 1) * Metrics.rowSpacing
     }
@@ -78,8 +76,7 @@ struct RedesignedFavoritesView: View {
         LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
             favorites
             if hasOverflow {
-                // Keep the final tile in the measured grid so expanding does not change
-                // its geometry while the viewport is revealing the remaining rows.
+                // Keep the final tile in the grid so toggling expansion does not change its layout.
                 expansionButton(expands: false)
                     .opacity(isExpanded ? 1 : 0)
                     .animation(expansionAnimation, value: isExpanded)
@@ -149,35 +146,34 @@ struct RedesignedFavoritesView: View {
                           itemSizeCacheKey: { AnyHashable($0) },
                           isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
-            Button {
-                model.favoriteSelected(favorite)
-            } label: {
-                RedesignedFavoriteItemView(favorite: favorite,
-                                 faviconLoading: model.faviconLoader,
-                                 isEditable: model.canEditFavorites,
-                                 onMenuAction: { action in
-                    switch action {
-                    case .edit: model.editFavorite(favorite)
-                    case .delete: model.deleteFavorite(favorite)
-                    }
-                })
-            }
-            .buttonStyle(.plain)
-            .opacity(isVisible ? 1 : 0)
-            // Animate within the tile's host without replacing its root view on every
-            // viewport animation frame.
-            .animation(expansionAnimation, value: isExpanded)
-            .allowsHitTesting(isVisible)
-            .accessibilityHidden(!isVisible)
-            .overlay(alignment: .top) {
+            ZStack(alignment: .top) {
+                Button {
+                    model.favoriteSelected(favorite)
+                } label: {
+                    RedesignedFavoriteItemView(favorite: favorite,
+                                     faviconLoading: model.faviconLoader,
+                                     isEditable: model.canEditFavorites,
+                                     onMenuAction: { action in
+                        switch action {
+                        case .edit: model.editFavorite(favorite)
+                        case .delete: model.deleteFavorite(favorite)
+                        }
+                    })
+                }
+                .buttonStyle(.plain)
+                .opacity(isVisible ? 1 : 0)
+                .allowsHitTesting(isVisible)
+                .accessibilityHidden(!isVisible)
                 if expandButtonID == favorite.id {
-                    expandButton
+                    // Both tiles participate in sizing so See All fits without a separate measurement.
+                    expansionButton(expands: true)
                         .opacity(isExpanded ? 0 : 1)
-                        .animation(expansionAnimation, value: isExpanded)
                         .allowsHitTesting(!isExpanded)
                         .accessibilityHidden(isExpanded)
                 }
             }
+            // Animate the tile crossfade independently of the viewport.
+            .animation(expansionAnimation, value: isExpanded)
             .background {
                 if measuredIDs.contains(favorite.id) {
                     GeometryReader { geometry in
@@ -185,8 +181,6 @@ struct RedesignedFavoritesView: View {
                     }
                 }
             }
-            // The tile is hosted by the native drag source, so consume its measurement
-            // here rather than expecting preferences to cross the hosting boundary.
             .onPreferenceChange(FavoritesGridHeightKey.self) { height in
                 guard measuredIDs.contains(favorite.id), collapsedItemHeights[favorite.id] != height else { return }
                 collapsedItemHeights[favorite.id] = height
@@ -199,18 +193,6 @@ struct RedesignedFavoritesView: View {
         } onMoveFinished: {
             model.favoritesReordered()
         }
-    }
-
-    private var expandButton: some View {
-        expansionButton(expands: true)
-            .background {
-                GeometryReader { geometry in
-                    Color.clear.preference(key: FavoritesGridHeightKey.self, value: geometry.size.height)
-                }
-            }
-            .onPreferenceChange(FavoritesGridHeightKey.self) { height in
-                if expandButtonHeight != height { expandButtonHeight = height }
-            }
     }
 
     private func expansionButton(expands: Bool) -> some View {
@@ -233,16 +215,14 @@ struct RedesignedFavoritesView: View {
     }
 }
 
-/// Interpolate the viewport explicitly. Animating the grid's layout transaction also animates
-/// native hosting-view positions as UIKit resizes the block, moving the entire grid offscreen.
+/// Apply intermediate heights explicitly so UIKit resizing the outer host does not
+/// move SwiftUI's grid to its final position before the reveal has finished.
 private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Animatable {
     var progress: CGFloat
     let collapsedGridHeight: CGFloat
     let expandedGridHeight: CGFloat
     let headerHeight: CGFloat
     let header: Header
-    // Store the grid as a value: invoking a builder with progress rebuilds every
-    // native drag host (and invalidates its intrinsic size) on each animation frame.
     let grid: Grid
 
     var animatableData: CGFloat {
@@ -270,8 +250,6 @@ private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Anim
                 .opacity(progress)
         }
         .clipped()
-        // Progress already supplies each intermediate layout. Child positions must be
-        // applied immediately instead of starting another animation toward the final size.
         .animation(nil, value: progress)
     }
 }

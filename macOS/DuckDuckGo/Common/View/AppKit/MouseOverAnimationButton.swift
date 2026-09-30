@@ -45,9 +45,33 @@ final class MouseOverAnimationButton: AddressBarButton {
         subscribeToEffectiveAppearance()
     }
 
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+
+        guard showsAnimationInSuperview else { return }
+        stopAnimation()
+        resetAnimationView()
+    }
+
+    override var isHidden: Bool {
+        didSet {
+            if showsAnimationInSuperview && isHidden {
+                stopAnimation()
+            }
+        }
+    }
+
     private var isMouseOverCancellable: AnyCancellable?
 
     var isAnimationEnabled: Bool = true
+
+    var showsAnimationInSuperview = false {
+        didSet {
+            guard oldValue != showsAnimationInSuperview else { return }
+            stopAnimation()
+            resetAnimationView()
+        }
+    }
 
     private func subscribeToIsMouseOver() {
         isMouseOverCancellable = publisher(for: \.isMouseOver)
@@ -131,6 +155,7 @@ final class MouseOverAnimationButton: AddressBarButton {
     }
 
     private var currentAnimationView: LottieAnimationView?
+    private var animationViewConstraints: [NSLayoutConstraint] = []
 
     private func updateAnimationView() {
         guard let animationViewCache = animationViewCache else {
@@ -151,34 +176,62 @@ final class MouseOverAnimationButton: AddressBarButton {
             return
         }
 
-        currentAnimationView?.removeFromSuperview()
+        removeAnimationView()
         currentAnimationView = newAnimationView
 
-        newAnimationView.isHidden = true
-        newAnimationView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(newAnimationView)
+        attachAndLayoutAnimation(newAnimationView)
+    }
 
-        if let overrideAnimationViewSize {
-            NSLayoutConstraint.activate([
-                newAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
-                newAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor),
-                newAnimationView.widthAnchor.constraint(equalToConstant: overrideAnimationViewSize.width),
-                newAnimationView.heightAnchor.constraint(equalToConstant: overrideAnimationViewSize.height)
-            ])
-
+    private func attachAndLayoutAnimation(_ newAnimationView: LottieAnimationView) {
+        guard let parentView = showsAnimationInSuperview ? superview : self else {
             return
         }
 
-        NSLayoutConstraint.activate([
-            newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
-            newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
-            newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
-            newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
-        ])
+        attachAnimation(newAnimationView, to: parentView)
+        layoutAnimation(newAnimationView)
+    }
+
+    private func attachAnimation(_ newAnimationView: LottieAnimationView, to parentView: NSView) {
+        newAnimationView.isHidden = true
+        newAnimationView.translatesAutoresizingMaskIntoConstraints = false
+        newAnimationView.clipsToBounds = !showsAnimationInSuperview
+        newAnimationView.maskAnimationToBounds = !showsAnimationInSuperview
+
+        parentView.addSubview(newAnimationView, positioned: .above, relativeTo: showsAnimationInSuperview ? self : nil)
+        newAnimationView.nextResponder = self
+    }
+
+    private func layoutAnimation(_ newAnimationView: LottieAnimationView) {
+        let constraints = {
+            if let overrideAnimationViewSize {
+                return [
+                    newAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
+                    newAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                    newAnimationView.widthAnchor.constraint(equalToConstant: overrideAnimationViewSize.width),
+                    newAnimationView.heightAnchor.constraint(equalToConstant: overrideAnimationViewSize.height)
+                ]
+            }
+
+            return [
+                newAnimationView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.5),
+                newAnimationView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -1),
+                newAnimationView.topAnchor.constraint(equalTo: topAnchor, constant: 0.5),
+                newAnimationView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -1)
+            ]
+        }()
+
+        NSLayoutConstraint.activate(constraints)
+        animationViewConstraints = constraints
+    }
+
+    private func removeAnimationView() {
+        NSLayoutConstraint.deactivate(animationViewConstraints)
+        animationViewConstraints = []
+        currentAnimationView?.removeFromSuperview()
     }
 
     private func resetAnimationView() {
-        currentAnimationView?.removeFromSuperview()
+        removeAnimationView()
         currentAnimationView = nil
         updateAnimationView()
     }

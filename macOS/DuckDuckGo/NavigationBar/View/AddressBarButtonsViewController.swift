@@ -404,6 +404,7 @@ final class AddressBarButtonsViewController: NSViewController {
             privacyDashboardButton.position = .left
         }
 
+        privacyDashboardButton.showsAnimationInSuperview = true
         privacyDashboardButton.sendAction(on: .leftMouseUp)
 
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)

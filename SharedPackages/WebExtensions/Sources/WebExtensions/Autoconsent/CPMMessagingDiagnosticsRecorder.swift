@@ -128,7 +128,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     public init(tabResolver: @escaping TabResolver,
                 observesMemoryPressure: Bool = true,
                 featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)? = nil,
-                pixelFiring: any WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 now: @escaping () -> Date = Date.init,
                 appSession: CPMAppSessionDiagnostics? = nil) {
         self.appSession = appSession

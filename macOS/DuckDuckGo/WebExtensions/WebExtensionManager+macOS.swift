@@ -87,7 +87,6 @@ enum WebExtensionManagerFactory {
                 return nil
             },
             featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
-            pixelFiring: pixelFiring,
             appSession: Application.appDelegate.cpmAppSessionDiagnostics
         ) : nil
 

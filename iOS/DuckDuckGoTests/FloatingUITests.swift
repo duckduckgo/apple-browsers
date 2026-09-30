@@ -1084,7 +1084,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         let searchContainer = try XCTUnwrap(barView.searchContainer)
         let initialTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
-        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === initialTopGlass.contentView)
 
         barView.isUsingSmallTopSpacing = true
         XCTAssertNil(firstGlassView(in: searchContainer))
@@ -1093,12 +1093,26 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.isUsingSmallTopSpacing = false
         let secondTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
         XCTAssertFalse(secondTopGlass === initialTopGlass)
-        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === secondTopGlass.contentView)
 
         barView.isUsingSmallTopSpacing = true
         XCTAssertNil(firstGlassView(in: searchContainer))
         XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
         XCTAssertEqual(glassViewCount(in: searchContainer), 0)
+    }
+
+    func testWhenTopFloatingFieldUsesAdaptiveGlassThenContentInheritsGlassContrast() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.overrideUserInterfaceStyle = .light
+
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+        XCTAssertTrue(contentHost.superview === glassView.contentView)
+        XCTAssertEqual(contentHost.overrideUserInterfaceStyle, .unspecified)
     }
 
     func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToContainer() throws {

@@ -783,6 +783,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private var glassEffectConstraints: [NSLayoutConstraint] = []
     private var floatingHostToContainerConstraints: [NSLayoutConstraint] = []
+    private var floatingHostToGlassContentConstraints: [NSLayoutConstraint] = []
     private var chromeContentContainerView: UIView {
         isFloatingUIEnabled ? floatingGlassContentHostView : searchAreaContainerView
     }
@@ -859,9 +860,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let hasCurrentHierarchy: Bool
         if configuration.kind == .embedded {
             hasCurrentHierarchy = glassEffect.superview == nil && floatingGlassContentHostView.superview === searchAreaContainerView
-        } else {
+        } else if configuration.fireMode {
             hasCurrentHierarchy = glassEffect.superview === searchAreaContainerView
                 && floatingGlassContentHostView.superview === searchAreaContainerView
+        } else {
+            hasCurrentHierarchy = glassEffect.superview === searchAreaContainerView
+                && floatingGlassContentHostView.superview === glassEffect.contentView
         }
         guard !hasCurrentHierarchy || glassEffectConfiguration != configuration else { return }
         UIView.performWithoutAnimation {
@@ -869,6 +873,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
             // Glass appearance is fixed at init.
             NSLayoutConstraint.deactivate(glassEffectConstraints)
+            NSLayoutConstraint.deactivate(floatingHostToGlassContentConstraints)
             NSLayoutConstraint.deactivate(floatingHostToContainerConstraints)
             floatingGlassContentHostView.removeFromSuperview()
             glassEffect.removeFromSuperview()
@@ -891,8 +896,19 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 ]
                 NSLayoutConstraint.activate(glassEffectConstraints)
 
-                searchAreaContainerView.addSubview(floatingGlassContentHostView)
-                NSLayoutConstraint.activate(floatingHostToContainerConstraints)
+                if configuration.fireMode {
+                    searchAreaContainerView.addSubview(floatingGlassContentHostView)
+                    NSLayoutConstraint.activate(floatingHostToContainerConstraints)
+                } else {
+                    glassEffect.contentView.addSubview(floatingGlassContentHostView)
+                    floatingHostToGlassContentConstraints = [
+                        floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
+                        floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
+                        floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
+                        floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+                    ]
+                    NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
+                }
                 setFieldBackgroundColor(.clear)
             }
 
@@ -902,6 +918,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func makeOpaque() {
         if isFloatingUIEnabled {
+            NSLayoutConstraint.deactivate(floatingHostToGlassContentConstraints)
             if floatingGlassContentHostView.superview !== searchAreaContainerView {
                 floatingGlassContentHostView.removeFromSuperview()
                 searchAreaContainerView.addSubview(floatingGlassContentHostView)
@@ -1332,7 +1349,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             leadingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
             trailingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
             floatingGlassContentHostView.overrideUserInterfaceStyle = shouldUseFloatingTopGlass
-                ? pageGlassInterfaceStyle
+                ? .unspecified
                 : window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
             return
         }

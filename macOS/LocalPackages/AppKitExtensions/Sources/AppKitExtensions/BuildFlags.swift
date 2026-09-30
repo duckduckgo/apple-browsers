@@ -1,5 +1,5 @@
 //
-//  WebViewUserAgentProvider.swift
+//  BuildFlags.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,17 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
+public enum BuildFlags {
 
-enum WebViewUserAgentProvider {
-
-    private static let fallbackSafariVersion = "14.1.2"
-    private static let fallbackWebKitVersion = "605.1.15"
-
-    static let applicationNameForUserAgent: String = {
-        let safariVersion = SafariVersionReader.getVersion() ?? fallbackSafariVersion
-        let webKitVersion = WebKitVersionProvider.getVersion() ?? fallbackWebKitVersion
-        return "Version/\(safariVersion) Safari/\(webKitVersion)"
-    }()
-
+    public static var isProductionBuild: Bool {
+        let buildType = StandardApplicationBuildType()
+        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
+            return false
+        } else {
+            return true
+        }
+    }
 }

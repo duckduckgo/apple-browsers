@@ -1,7 +1,7 @@
 //
-//  SafariVersionReader.swift
+//  WebViewUserAgentProvider.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,18 +17,16 @@
 //
 
 import Foundation
-import AppKitExtensions
 
-enum SafariVersionReader {
+public enum WebViewUserAgentProvider {
 
-    static let safariPath = "/Applications/Safari.app"
+    private static let fallbackSafariVersion = "14.1.2"
+    private static let fallbackWebKitVersion = "605.1.15"
 
-    static func getVersion() -> String? {
-        ApplicationVersionReader.getVersion(of: safariPath)
-    }
-
-    static func getMajorVersion() -> Int? {
-        ApplicationVersionReader.getMajorVersion(of: safariPath)
-    }
+    public static let applicationNameForUserAgent: String = {
+        let safariVersion = SafariVersionReader.getVersion() ?? fallbackSafariVersion
+        let webKitVersion = WebKitVersionProvider.getVersion() ?? fallbackWebKitVersion
+        return "Version/\(safariVersion) Safari/\(webKitVersion)"
+    }()
 
 }

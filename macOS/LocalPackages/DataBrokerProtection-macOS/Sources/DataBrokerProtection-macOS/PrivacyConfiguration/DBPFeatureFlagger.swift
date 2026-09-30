@@ -18,49 +18,48 @@
 
 import Foundation
 import DataBrokerProtectionCore
-import DataBrokerProtection_macOS
 import PrivacyConfig
 import FeatureFlags_macOS
 import WideEvent
 
-final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
+public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
     fileprivate let featureFlagger: FeatureFlagger
 
-    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+    public var isForegroundRunningOnAppActiveFeatureOn: Bool {
         // Not relevant to macOS
         return false
     }
 
-    var isContinuedProcessingFeatureOn: Bool {
+    public var isContinuedProcessingFeatureOn: Bool {
         // Continued processing is iOS-only.
         false
     }
 
-    var isWebViewUserAgentOn: Bool {
+    public var isWebViewUserAgentOn: Bool {
         featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
     }
 
-    var isOptOutRetryErrorFrequencyExperimentOn: Bool {
+    public var isOptOutRetryErrorFrequencyExperimentOn: Bool {
         featureFlagger.isFeatureOn(.dbpOptOutRetryError96Hours)
     }
 
-    var isPerformanceMetricsOn: Bool {
+    public var isPerformanceMetricsOn: Bool {
         featureFlagger.isFeatureOn(.dbpPerformanceMetrics)
     }
 
-    var isExtractedProfileRefreshOn: Bool {
+    public var isExtractedProfileRefreshOn: Bool {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
-    var isSchedulerDeferralHandlingEnabled: Bool {
+    public var isSchedulerDeferralHandlingEnabled: Bool {
         featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }
 
-    init(featureFlagger: FeatureFlagger) {
+    public init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }
 
-    init(configurationManager: DataBrokerProtection_macOS.ConfigurationManager,
+    public init(configurationManager: ConfigurationManager,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: privacyConfigurationManager.internalUserDecider,
@@ -77,7 +76,7 @@ final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
 }
 
 extension DBPFeatureFlagger: WideEventFeatureFlagProviding {
-    func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
+    public func isEnabled(_ flag: WideEventFeatureFlag) -> Bool {
         // There are no flags defined currently, but please replace this with a switch statement when a new flag is added.
         return true
     }

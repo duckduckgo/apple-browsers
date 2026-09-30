@@ -354,8 +354,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var aiChatSendButtonWidthConstraint = aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize)
 
-    /// Swaps the arrow for an "Ask" label while the Terms of Service disclaimer shows.
-    var usesAskSendButton = false
+    /// While the Terms of Service disclaimer shows, the send button reads "Ask" and Return adds a new line.
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard oldValue != isTermsOfServiceDisclaimerShown else { return }
+            aiChatTextView.keyboardType = aiChatKeyboardType
+            if aiChatTextView.isFirstResponder { aiChatTextView.reloadInputViews() }
+        }
+    }
+
+    /// The web-search keyboard always draws Return as Go, so only the default one shows a new-line key.
+    private var aiChatKeyboardType: UIKeyboardType { isTermsOfServiceDisclaimerShown ? .default : .webSearch }
 
     var onAIChatSendPressed: (() -> Void)?
 
@@ -1734,6 +1743,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Vertical gaps around the attachments strip when it grows the expanded search area.
         static let attachmentsStripToButtonRowSpacing: CGFloat = 8.0
         static let attachmentsStripToTextViewSpacing: CGFloat = 4.0
+        static let buttonRowToTextViewSpacing: CGFloat = 4.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
@@ -2006,8 +2016,8 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedSearchAreaConstraints() {
-        // The text view fills down to the toolbar row by default; when attachments are present this
-        // is swapped for `textViewBottomToStripConstraint` so the text stops above the strip.
+        // Expanded, the text view stops above the button row (see `applyExpansionConstraints`); when
+        // attachments are present this is swapped for `textViewBottomToStripConstraint` so it stops above the strip.
         let textBottomToContainer = aiChatTextView.bottomAnchor.constraint(
             equalTo: searchAreaContainerView.bottomAnchor,
             constant: -Metrics.duckAITextViewBottomPadding
@@ -2112,7 +2122,7 @@ extension DefaultOmniBarView {
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no
-        aiChatTextView.keyboardType = .webSearch
+        aiChatTextView.keyboardType = aiChatKeyboardType
         aiChatTextView.isScrollEnabled = true
     }
 
@@ -2444,7 +2454,7 @@ extension DefaultOmniBarView {
 
     /// The "Ask" label stands in for the arrow only; the voice icon stays.
     private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
-        let title = allowsAskTitle && usesAskSendButton ? UserText.duckAIAskButtonTitle : nil
+        let title = allowsAskTitle && isTermsOfServiceDisclaimerShown ? UserText.duckAIAskButtonTitle : nil
         aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
         aiChatSendButton.setTitle(title, for: .normal)
         aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel
@@ -2467,6 +2477,10 @@ extension DefaultOmniBarView {
     }
 
     private func applyExpansionConstraints() {
+        // The button row sits inside the expanded container, so the text and caret must stop above it.
+        textViewBottomToContainerConstraint?.constant = isSearchAreaExpanded
+            ? -(Metrics.duckAITextViewBottomPadding + Metrics.sendButtonSize + Metrics.buttonRowToTextViewSpacing)
+            : -Metrics.duckAITextViewBottomPadding
         if isSearchAreaExpanded {
             searchFieldBottomEqualConstraint?.isActive = false
             searchAreaCenterYConstraint?.isActive = false

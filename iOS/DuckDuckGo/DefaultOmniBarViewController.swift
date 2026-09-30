@@ -630,7 +630,7 @@ extension DefaultOmniBarViewController {
         let message = termsOfServiceDisclaimer.message
             ?? toolPickerController?.currentModelSwitchNotice.map { UTIFooterMessageMapper().message(for: $0) }
         omniBarView.setFooterMessage(message, animated: animated)
-        omniBarView.usesAskSendButton = isTermsOfServiceDisclaimerShown
+        omniBarView.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()

@@ -179,6 +179,18 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertTrue(sut.shouldHideClearButton(for: LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)))
     }
 
+    // MARK: - Layout (iPad duck.ai expanded panel)
+
+    func testWhenIPadDuckAIPanelIsExpandedThenTheTextStopsAboveTheButtonRow() throws {
+        let omniBarView = try expandDuckAIPanel(of: sut)
+        omniBarView.layoutIfNeeded()
+
+        let textFrame = omniBarView.aiChatTextView.convert(omniBarView.aiChatTextView.bounds, to: omniBarView)
+        let sendFrame = omniBarView.aiChatSendButton.convert(omniBarView.aiChatSendButton.bounds, to: omniBarView)
+        XCTAssertGreaterThan(textFrame.height, 0)
+        XCTAssertLessThanOrEqual(textFrame.maxY, sendFrame.minY)
+    }
+
     // MARK: - Terms of Service disclaimer (iPad duck.ai expanded panel)
 
     func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenReturnAddsANewLine() throws {
@@ -192,6 +204,7 @@ class QuerySubmittedTests: XCTestCase {
 
         XCTAssertTrue(shouldChange)
         XCTAssertFalse(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .default, "The web-search keyboard would draw Return as Go")
     }
 
     func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenSendReadsAsk() throws {
@@ -235,6 +248,7 @@ class QuerySubmittedTests: XCTestCase {
 
         XCTAssertFalse(shouldChange)
         XCTAssertTrue(mock.wasOnPromptSubmittedCalled)
+        XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .webSearch)
     }
 
     // MARK: - Helper Methods

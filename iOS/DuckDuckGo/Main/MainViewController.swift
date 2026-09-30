@@ -167,7 +167,7 @@ class MainViewController: UIViewController {
 
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
-    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesExpanded: Bool)?
+    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private var daxGreetingAppearance: DaxGreetingContext.Appearance?
     private let daxGreetingActivity: DaxGreetingActivityStore?

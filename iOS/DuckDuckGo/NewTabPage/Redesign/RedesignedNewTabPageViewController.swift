@@ -321,7 +321,9 @@ extension RedesignedNewTabPageViewController: NewTabPageContentHandoff {
 
     var restingContentIsLogo: Bool { false }
 
-    var restingContentIsFavorites: Bool { favoritesModel?.isEmpty == false }
+    var restingContentIsFavorites: Bool {
+        NewTabPageCustomizationStore().isFavoritesSectionVisible && favoritesModel?.isEmpty == false
+    }
 
     func setLogoHidden(_ hidden: Bool) {}
 

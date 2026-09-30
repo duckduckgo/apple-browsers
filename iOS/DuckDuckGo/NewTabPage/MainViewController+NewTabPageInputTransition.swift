@@ -184,14 +184,17 @@ extension MainViewController {
         }
         guard didDraw else { return }
         let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false
-        restingNewTabPageSnapshot = (image, page.view.convert(bounds, to: view), view.bounds.size, favoritesExpanded)
+        let favoritesVisible = NewTabPageCustomizationStore().isFavoritesSectionVisible
+        restingNewTabPageSnapshot = (image, page.view.convert(bounds, to: view), view.bounds.size, (favoritesExpanded, favoritesVisible))
     }
 
     private func makeRestingNewTabPageSnapshot() -> UIView? {
         guard let cached = restingNewTabPageSnapshot else { return nil }
-        // Layout or expansion changes invalidate the captured page; hand off to the current live page instead.
+        // Layout or favorites changes invalidate the captured page; hand off to the current live page instead.
         let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false
-        guard cached.viewportSize == view.bounds.size, cached.favoritesExpanded == favoritesExpanded else {
+        guard cached.viewportSize == view.bounds.size,
+              cached.favoritesState.expanded == favoritesExpanded,
+              cached.favoritesState.visible == NewTabPageCustomizationStore().isFavoritesSectionVisible else {
             restingNewTabPageSnapshot = nil
             return nil
         }

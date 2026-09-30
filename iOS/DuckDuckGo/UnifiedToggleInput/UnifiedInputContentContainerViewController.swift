@@ -611,8 +611,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             showAskAIChat: aiChatSettings.isAIChatEnabled
         )
 
-        let hasFavorites: () -> Bool = {
-            !dependencies.favoritesViewModel.favorites.isEmpty
+        let customizationStore = NewTabPageCustomizationStore()
+        let hasFavorites: () -> Bool = { [weak self] in
+            let isVisible = self?.usesRedesignedNewTabPageLayout != true || customizationStore.isFavoritesSectionVisible
+            return isVisible && !dependencies.favoritesViewModel.favorites.isEmpty
         }
         let hasMessages: () -> Bool = {
             !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
@@ -626,6 +628,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // The activation trigger is already on main (fired from `setActive`) — kept after the hop
             // so the re-resolve it drives stays synchronous, landing before the host becomes visible.
             .merge(with: activationResolveTrigger)
+            .merge(with: customizationStore.favoritesVisibilityPublisher.dropFirst().map { _ in () }.receive(on: DispatchQueue.main))
             .eraseToAnyPublisher()
         let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
         if homePageMessagesConfiguration.mode == .coordinated {

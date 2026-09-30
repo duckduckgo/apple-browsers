@@ -24,9 +24,9 @@ import UIKit
 final class UTIFooterCardView: UIView {
 
     static let overlap: CGFloat = 44
+    static let cornerRadius: CGFloat = 28
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 28
         static let contentTopGap: CGFloat = 12
         static let contentBottom: CGFloat = 12
         static let contentLeading: CGFloat = 20
@@ -189,7 +189,7 @@ final class UTIFooterCardView: UIView {
 private extension UTIFooterCardView {
 
     func setupUI() {
-        layer.cornerRadius = Constants.cornerRadius
+        layer.cornerRadius = Self.cornerRadius
         layer.cornerCurve = .continuous
         layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         clipsToBounds = true
@@ -309,8 +309,11 @@ private extension UTIFooterCardView {
             giftIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             iconTextGap,
-            textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
-            textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            // Centered rather than stretched: the controls keep the content at least their height even
+            // when hidden, and a text view stretched to that draws its one line at the top.
+            textStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            textStack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            textStack.topAnchor.constraint(equalTo: contentView.topAnchor).withPriority(.defaultLow),
 
             textStack.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -Constants.actionSpacing),
             actionButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),

@@ -336,6 +336,30 @@ final class UTIFooterCardViewTests: XCTestCase {
         }
     }
 
+    /// One line of link copy is shorter than the room the card keeps for its controls, even hidden ones.
+    /// A text view stretched to that room draws its line at the top, leaving the icon centered below it.
+    func test_oneLineLinkCopy_isCenteredOnItsIcon() throws {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().termsOfServiceMessage(), animateIcon: false)
+        let wideCardWidth: CGFloat = 900
+        sut.frame = CGRect(x: 0, y: 0, width: wideCardWidth, height: 0)
+        sut.layoutIfNeeded()
+        let height = sut.systemLayoutSizeFitting(CGSize(width: wideCardWidth, height: UIView.layoutFittingCompressedSize.height),
+                                                 withHorizontalFittingPriority: .required,
+                                                 verticalFittingPriority: .fittingSizeLevel).height
+        sut.frame = CGRect(x: 0, y: 0, width: wideCardWidth, height: height)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        let linkText = try XCTUnwrap(linkTextView(in: sut))
+        let shield = try XCTUnwrap(sut.contentView.subviews.first { $0.accessibilityIdentifier == "AIChat.Footer.Icon.Shield" })
+        let oneLine = linkText.sizeThatFits(CGSize(width: linkText.bounds.width, height: CGFloat.greatestFiniteMagnitude)).height
+        XCTAssertLessThan(oneLine, UIFont.daxFootnoteRegular().lineHeight * 2, "The copy has to fit one line for this to mean anything")
+        XCTAssertEqual(linkText.bounds.height, oneLine, accuracy: 0.5)
+        let linkTextCenter = sut.contentView.convert(CGPoint(x: linkText.bounds.midX, y: linkText.bounds.midY), from: linkText)
+        XCTAssertEqual(shield.center.y, linkTextCenter.y, accuracy: 0.5)
+    }
+
     func testPurchaseAvailabilityRemovesAndRestoresRenderedButtonWhileKeepingNotice() throws {
         let card = UTIFooterCardView()
         let mapper = UTIFooterMessageMapper()
@@ -376,6 +400,11 @@ final class UTIFooterCardViewTests: XCTestCase {
             return 0
         }
         return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func linkTextView(in card: UTIFooterCardView) -> UTIFooterLinkTextView? {
+        card.subviews.flatMap(\.subviews).compactMap { $0 as? UIStackView }.first?
+            .arrangedSubviews.compactMap { $0 as? UTIFooterLinkTextView }.first
     }
 
     private func layOut(_ card: UTIFooterCardView, atWidth width: CGFloat) {

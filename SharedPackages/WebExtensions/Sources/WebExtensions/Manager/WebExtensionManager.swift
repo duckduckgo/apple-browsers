@@ -125,6 +125,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
+    /// Receives the API compatibility reports of extension pages, including the ones in tabs.
+    private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
@@ -190,6 +193,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         controllerConfiguration.webViewConfiguration.userContentController.add(windowCloseHandler,
                                                                                 name: WebExtensionWindowCloseScript.messageHandlerName)
 
+        // The stub script also reports which unsupported APIs an extension touches, for the
+        // API compatibility log.
+        controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
+                                                                                name: WebExtensionAPIStubScript.compatibilityMessageHandlerName)
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -212,6 +220,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         windowCloseHandler.onWindowClose = { [weak self] popupWebView in
             self?.windowTabProvider.dismissPopup(for: popupWebView)
+        }
+
+        apiCompatibilityHandler.resolveExtension = { [weak self] url in
+            guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }
+            return (WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                    WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version))
         }
 
         if let scriptletConfiguration {
@@ -688,11 +702,23 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
-        contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
+        contexts.first { Self.url(url, isWithin: $0.baseURL) }
+    }
+
+    /// Hosts are case-insensitive, and a security origin's host does not always keep the case the
+    /// extension's base URL was created with, so the prefix is compared without regard to case.
+    static func url(_ url: URL, isWithin baseURL: URL) -> Bool {
+        url.absoluteString.range(of: baseURL.absoluteString, options: [.anchored, .caseInsensitive]) != nil
     }
 
     public func context(for identifier: String) -> WKWebExtensionContext? {
         contexts.first { $0.uniqueIdentifier == identifier }
+    }
+
+    /// Hands a script message from an extension page in a tab, where the controller's own message
+    /// handlers are not installed, to the API compatibility log.
+    public func handleAPICompatibilityMessage(_ message: WKScriptMessage) {
+        apiCompatibilityHandler.handle(message)
     }
 
     @MainActor

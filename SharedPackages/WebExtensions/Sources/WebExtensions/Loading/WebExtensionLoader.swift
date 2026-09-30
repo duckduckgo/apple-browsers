@@ -156,6 +156,21 @@ public final class WebExtensionLoader: WebExtensionLoading {
         try controller.unload(context)
     }
 
+    /// WebKit silently drops manifest permissions it does not implement; the compatibility log lists them.
+    private func reportDroppedPermissions(of webExtension: WKWebExtension) {
+        let webKitPermissions = Set((webExtension.requestedPermissions.union(webExtension.optionalPermissions)).map(\.rawValue))
+        let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: webExtension.manifest,
+                                                                                 webKitPermissions: webKitPermissions)
+        for permission in dropped {
+            WebExtensionAPICompatibilityReporter.shared.report(
+                kind: .missing,
+                api: WebExtensionAPICompatibilityClassifier.permissionPrefix + permission,
+                extensionName: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                version: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version)
+            )
+        }
+    }
+
     private func makeContext(for webExtension: WKWebExtension, identifier: String) -> WKWebExtensionContext {
         let context = WKWebExtensionContext(for: webExtension)
 
@@ -178,6 +193,10 @@ public final class WebExtensionLoader: WebExtensionLoading {
             for permission in webExtension.optionalPermissions {
                 context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
             }
+        }
+
+        if context.needsChromeCompatibility {
+            reportDroppedPermissions(of: webExtension)
         }
 
         context.isInspectable = isInspectable

@@ -843,6 +843,255 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         XCTAssertTrue(bareContext.evaluateScript("globalThis.\(retentionProperty) === undefined")?.toBool() == true)
     }
 
+    // MARK: - Compatibility Reports
+
+    func testWhenNestedStubIsCalled_ThenTheFullPathIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.notifications.create({ title: 'secret' }); chrome.notifications.foo.bar();")
+        try assertNoExceptions()
+
+        try assertReports("[{\"kind\":\"stubbed\",\"api\":\"notifications.create\"},{\"kind\":\"stubbed\",\"api\":\"notifications.foo.bar\"}]")
+    }
+
+    func testWhenStubIsOnlyRead_ThenNothingIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.notifications.create; chrome.notifications.onClicked; chrome.notifications.onClicked.hasListener();")
+        try assertNoExceptions()
+
+        try assertReports("[]")
+    }
+
+    func testWhenListenerIsAddedToAStubbedEvent_ThenItIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.notifications.onClicked.addListener(function() {});
+        chrome.webNavigation.onCreatedNavigationTarget.addListener(function() {});
+        """)
+        try assertNoExceptions()
+
+        try assertReports("""
+        [{"kind":"stubbed","api":"notifications.onClicked.addListener"},\
+        {"kind":"stubbed","api":"webNavigation.onCreatedNavigationTarget.addListener"}]
+        """)
+    }
+
+    func testWhenTheSameStubIsCalledRepeatedly_ThenItIsReportedOncePerPage() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.notifications.create(); chrome.notifications.create(); chrome.notifications.create();")
+        try assertNoExceptions()
+
+        try assertReports("[{\"kind\":\"stubbed\",\"api\":\"notifications.create\"}]")
+    }
+
+    func testWhenAWorkingShimIsUsed_ThenNothingIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.offscreen.hasDocument();
+        chrome.storage.managed.get();
+        chrome.storage.managed.onChanged.addListener(function() {});
+        chrome.privacy.services.passwordSavingEnabled.get();
+        """)
+        try assertNoExceptions()
+
+        try assertReports("[]")
+    }
+
+    func testWhenAPermissionIsUnknownToTheHost_ThenItIsReportedAsMissing() throws {
+        try installFakePermissions()
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
+
+        try assertReports("[{\"kind\":\"missing\",\"api\":\"permission:idle\"}]")
+    }
+
+    func testWhenThePageRaisesAnError_ThenItsMessageIsReportedForClassification() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        listeners.error({ error: new TypeError("undefined is not an object (evaluating 'chrome.tts.speak')") });
+        listeners.error({ message: "Script error." });
+        """)
+        try assertNoExceptions()
+
+        try assertReports("[{\"kind\":\"error\",\"message\":\"undefined is not an object (evaluating 'chrome.tts.speak')\"}]")
+    }
+
+    func testWhenAnErrorIsNotAboutAnAPI_ThenItNeverLeavesThePage() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        console.error("Failed to fetch https://example.com/?token=secret");
+        console.warn(new Error("Something broke for user@example.com"));
+        listeners.error({ message: "Script error." });
+        listeners.unhandledrejection({ reason: "Invalid argument" });
+        """)
+        try assertNoExceptions()
+
+        try assertReports("[]")
+    }
+
+    func testWhenErrorsAreReportedByTheHundred_ThenStubbedReportsStillGetThrough() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        for (var index = 0; index < 300; index++) {
+            console.error("chrome.tts.method" + index + " is not a function. (In 'chrome.tts.method" + index + "()')");
+        }
+        chrome.notifications.create();
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("reports.filter(function(report) { return report.kind === 'error'; }).length === 50")
+        try assertTrue("reports.filter(function(report) { return report.kind === 'stubbed'; }).length === 1")
+    }
+
+    func testWhenStubbedReportsAreExhausted_ThenErrorsStillGetThrough() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        for (var index = 0; index < 300; index++) {
+            chrome.notifications["method" + index]();
+        }
+        console.error("undefined is not an object (evaluating 'chrome.tts.speak')");
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("reports.filter(function(report) { return report.kind === 'stubbed'; }).length === 200")
+        try assertTrue("reports.filter(function(report) { return report.kind === 'error'; }).length === 1")
+    }
+
+    func testWhenAStubIsCalledThroughCallApplyOrBind_ThenTheStubPathIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.downloads.download.call(null, {});
+        chrome.downloads.pause.apply(null, [1]);
+        chrome.downloads.resume.bind(null)(1);
+        """)
+        try assertNoExceptions()
+
+        try assertReports("""
+        [{"kind":"stubbed","api":"downloads.download"},\
+        {"kind":"stubbed","api":"downloads.pause"},\
+        {"kind":"stubbed","api":"downloads.resume"}]
+        """)
+    }
+
+    func testWhenAPromiseIsRejected_ThenTheReasonMessageIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        listeners.unhandledrejection({ reason: new Error("Invalid call to tabs.query().") });
+        listeners.unhandledrejection({ reason: { unrelated: true } });
+        """)
+        try assertNoExceptions()
+
+        try assertReports("[{\"kind\":\"error\",\"message\":\"Invalid call to tabs.query().\"}]")
+    }
+
+    func testWhenTheConsoleLogsAnErrorOrWarning_ThenItIsReportedAndStillLogged() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+        context.evaluateScript("consoleMessages = [];")
+
+        context.evaluateScript("""
+        console.error(new Error("chrome.tts.speak is not a function. (In 'chrome.tts.speak()')"));
+        console.warn("Invalid call to windows.create().");
+        console.error({ notAnError: true });
+        """)
+        try assertNoExceptions()
+
+        try assertReports("""
+        [{"kind":"error","message":"chrome.tts.speak is not a function. (In 'chrome.tts.speak()')"},\
+        {"kind":"error","message":"Invalid call to windows.create()."}]
+        """)
+        try assertTrue("consoleMessages.length === 3")
+    }
+
+    func testWhenReportsAreInstalledTwice_ThenTheConsoleIsWrappedOnce() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+        try evaluateStubScript()
+        context.evaluateScript("consoleMessages = [];")
+
+        context.evaluateScript("console.error('Invalid call to one.two().');")
+        try assertNoExceptions()
+
+        try assertTrue("consoleMessages.length === 1")
+        try assertReports("[{\"kind\":\"error\",\"message\":\"Invalid call to one.two().\"}]")
+    }
+
+    func testWhenTheHostHasNoReportHandler_ThenTheScriptStillWorks() throws {
+        try installFakeReporting()
+        context.evaluateScript("webkit = { messageHandlers: {} };")
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.notifications.create(); console.error('x'); listeners.error({ message: 'y' });")
+        try assertNoExceptions()
+
+        try assertReports("[]")
+    }
+
+    func testWhenTheReportHandlerThrows_ThenThePageIsNotDisturbed() throws {
+        try installFakeReporting()
+        context.evaluateScript("""
+        webkit.messageHandlers["\(WebExtensionAPIStubScript.compatibilityMessageHandlerName)"].postMessage = function() {
+            throw new Error("handler failed");
+        };
+        """)
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.notifications.create(); console.error('x');")
+        try assertNoExceptions()
+    }
+
+    func testWhenManifestIsADuckDuckGoExtension_ThenNothingIsHookedOrReported() throws {
+        try installFakeReporting()
+        context.evaluateScript("""
+        chrome.runtime.getManifest = function() {
+            return { browser_specific_settings: { duckduckgo: { id: "com.duckduckgo.web-extension.embedded" } } };
+        };
+        """)
+        try evaluateStubScript()
+
+        context.evaluateScript("console.error('x');")
+        try assertNoExceptions()
+
+        try assertTrue("Object.keys(listeners).length === 0")
+        try assertReports("[]")
+    }
+
+    func testWhenPageIsAWebsite_ThenNothingIsHookedOrReported() throws {
+        try installFakeReporting()
+        context.evaluateScript("var location = { protocol: 'https:' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("console.error('x');")
+        try assertNoExceptions()
+
+        try assertTrue("Object.keys(listeners).length === 0")
+        try assertReports("[]")
+    }
+
     // MARK: - Helpers
 
     /// A fresh `JSContext` shaped like an extension page: WebKit exposes only a subset of `chrome.*`,
@@ -1128,6 +1377,27 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         (\(script)).then(function(result) { permissionsResult = result; });
         """)
         try assertNoExceptions(file: file, line: line)
+    }
+
+    /// A page with the report handler WebKit adds once the app registers it, and the event hooks
+    /// a real page has. `reports` collects what the script posts; `listeners` what it registers.
+    private func installFakeReporting() throws {
+        context.evaluateScript("""
+        var reports = [];
+        var listeners = {};
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.compatibilityMessageHandlerName)": {
+                postMessage: function(payload) { reports.push(payload); }
+            }
+        } };
+        globalThis.addEventListener = function(type, listener) { listeners[type] = listener; };
+        """)
+        try assertNoExceptions()
+    }
+
+    private func assertReports(_ json: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let escaped = json.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'")
+        try assertTrue("JSON.stringify(reports) === '\(escaped)'", file: file, line: line)
     }
 
     private func fireScheduledTimers() {

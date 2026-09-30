@@ -54,7 +54,10 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript {
     /// DuckDuckGo uses for its own scripts would not be seen by the extension.
     let requiresRunInPageContentWorld: Bool = true
 
-    let messageNames: [String] = []
+    /// The stub script reports the unsupported APIs an extension touches through this handler.
+    let messageNames: [String] = [WebExtensionAPIStubScript.compatibilityMessageHandlerName]
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
+    }
 }

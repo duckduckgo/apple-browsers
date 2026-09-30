@@ -20,6 +20,10 @@
 import SwiftUI
 import DesignResourcesKit
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 public struct SimplifiedConnectingSheetView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel
@@ -45,57 +49,50 @@ public struct SimplifiedConnectingSheetView: View {
                 EmptyView()
             }
         }
-        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
 
 #if DEBUG
-#Preview("Connecting") {
-    RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
+
+    enum State {
+        case syncAnotherDevice
+        case connecting
+        case deviceConnected
+        case recovering
+        case recoveryCompleted
     }
-}
 
-#Preview("Connecting – Dark") {
-    RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: false)))
+    static var previews: some View {
+        snapshots.previews
     }
-    .preferredColorScheme(.dark)
-}
 
-#Preview("Sync Another Device") {
-    RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false)))
-    }
-}
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Sync Another Device", state: .syncAnotherDevice),
+            .init(name: "Connecting", state: .connecting),
+            .init(name: "Device Connected", state: .deviceConnected, scope: .previews),
+            .init(name: "Recovering", state: .recovering, scope: .previews),
+            .init(name: "Recovery Completed", state: .recoveryCompleted, scope: .previews)
+        ],
+        configure: { state in
+            SimplifiedConnectingSheetView(model: model(for: state))
+        }
+    )
 
-#Preview("Device Connected") {
-    RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
-    }
-}
-
-
-#Preview("Recovering") {
-    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .connecting(isRecovery: true)))
-}
-
-#Preview("Recovery Completed") {
-    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
-}
-
-private extension SyncSettingsViewModel {
-    static func connectingSheetPreview(phase: ConnectingSheetPhase) -> SyncSettingsViewModel {
-        let model = SyncSettingsViewModel(
-            isOnDevEnvironment: { false },
-            switchToProdEnvironment: {},
-            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
-        )
-        model.isSyncEnabled = true
-        model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
-        model.recoveryCode = "y2cJyqsW3FPSJ9y2cJyqsW3FPSJ9y2cJyqsW3FPSJ9"
-        model.connectingSheetPhase = phase
-        return model
+    private static func model(for state: State) -> SyncSettingsViewModel {
+        switch state {
+        case .syncAnotherDevice:
+            return .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false))
+        case .connecting:
+            return .connectingSheetPreview(phase: .connecting(isRecovery: false))
+        case .deviceConnected:
+            return .connectingSheetPreview(phase: .success(isRecovery: false), autoRestoreProvider: .enabled)
+        case .recovering:
+            return .connectingSheetPreview(phase: .connecting(isRecovery: true))
+        case .recoveryCompleted:
+            return .connectingSheetPreview(phase: .success(isRecovery: true))
+        }
     }
 }
 #endif

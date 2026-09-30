@@ -1,5 +1,5 @@
 //
-//  ScanQRCodeViewTests.swift
+//  SimplifiedSyncSettingsViewTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -22,15 +22,14 @@ import Testing
 @testable import SyncUI_iOS
 
 @MainActor
-@Suite("Scan QR Code View Tests")
-final class ScanQRCodeViewTests {
+@Suite("Simplified Sync Settings View Tests")
+final class SimplifiedSyncSettingsViewTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func testScanQRCodeViewiPhoneScreenSnapshots() {
+    func testSimplifiedSyncSettingsViewSnapshots() {
         assertImageSnapshots(
-            ScanQRCodeView_Previews.snapshots,
-            strategy: .iPhoneSingle(.dark),
+            SimplifiedSyncSettingsView_Previews.snapshots,
             size: .screen
         )
     }

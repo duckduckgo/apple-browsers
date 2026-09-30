@@ -23,6 +23,10 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct SyncCodeSheetView: View {
 
     @ObservedObject var model: ScanOrPasteCodeViewModel
@@ -184,13 +188,23 @@ struct SyncCodeSheetView: View {
 }
 
 #if DEBUG
-#Preview {
-    let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
+struct SyncCodeSheetView_Previews: PreviewProvider {
 
-    return RebrandedPreview(isRebranded: true) {
-        SyncCodeSheetView(
-            model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
-        )
+    static let sampleCode = "https://duckduckgo.com/sync/pairing/#&code2=eyJ2ZXJzaW9uIjoiMiIsImNoYW5uZWxJZCI6IjY4MEQ0NUI1LTVFNkUtNDM0Ny05QzQ0LUI2RkJFODBGQzRBNyIsInB1YmxpY0tleSI6IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIn0"
+
+    static var previews: some View {
+        snapshots.previews
     }
+
+    static let snapshots = PreviewSnapshots<Void>(
+        configurations: [
+            .init(name: "Show Code", state: ())
+        ],
+        configure: { _ in
+            SyncCodeSheetView(
+                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+            )
+        }
+    )
 }
 #endif

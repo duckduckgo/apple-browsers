@@ -203,13 +203,17 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
 
     /// Returns `true` is the Subscription has an active `Offer` with a type of `trial`. False otherwise.
     public var hasActiveTrialOffer: Bool {
-        activeOffers.contains(where: { $0.type == .trial })
+        // HACK (dev/test only): force paid (non-trial) experience everywhere, bypassing the real offer check.
+        return false
     }
 
     /// Days in the active trial, derived from `startedAt`...`expiresOrRenewsAt` since `Offer` carries no duration itself; `nil` if there's no trial.
     public func trialLengthInDays(calendar: Calendar = .current) -> Int? {
-        // HACK (dev/test only): force a 7-day trial length, bypassing the real date math entirely.
-        return hasActiveTrialOffer ? 7 : nil
+        guard hasActiveTrialOffer else { return nil }
+        let days = calendar.dateComponents([.day],
+                                           from: calendar.startOfDay(for: startedAt),
+                                           to: calendar.startOfDay(for: expiresOrRenewsAt)).day ?? 0
+        return days > 0 ? days : nil
     }
 
     /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.

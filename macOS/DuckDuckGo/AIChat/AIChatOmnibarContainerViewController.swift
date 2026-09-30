@@ -213,7 +213,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private lazy var attachmentPrivacyGate = AttachmentPrivacyDisplayGate(
         counter: AttachmentPrivacyDisplayCounter(
-            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
+            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
             webKeySource: duckAiNativeStorageHandler
         )
     )

@@ -43,11 +43,9 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
     // MARK: - The cap
 
-    func testThreeDisplaysAreAllowedAndTheFourthIsNot() {
+    func testOneDisplayIsAllowedAndTheSecondIsNot() {
         let counter = makeCounter()
 
-        XCTAssertTrue(counter.consumeDisplay())
-        XCTAssertTrue(counter.consumeDisplay())
         XCTAssertTrue(counter.consumeDisplay())
         XCTAssertFalse(counter.consumeDisplay())
         XCTAssertEqual(counter.displayCount, AttachmentPrivacyDisplayCounter.cap)
@@ -56,9 +54,6 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
     func testCanDisplayFollowsTheCap() {
         let counter = makeCounter()
 
-        XCTAssertTrue(counter.canDisplay)
-        counter.consumeDisplay()
-        counter.consumeDisplay()
         XCTAssertTrue(counter.canDisplay)
         counter.consumeDisplay()
         XCTAssertFalse(counter.canDisplay)
@@ -86,12 +81,11 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
     // MARK: - Migrating the web app's count
 
     func testWebCountIsAdopted() {
-        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 2
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
 
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, 2)
-        XCTAssertTrue(counter.consumeDisplay())
+        XCTAssertEqual(counter.displayCount, 1)
         XCTAssertFalse(counter.consumeDisplay())
     }
 
@@ -126,11 +120,11 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
     /// Deliberate: a state handover, not a display, so waiting for the flag risks missing it.
     func testTheTakeoverHappensEvenWithTheFlagOff() {
-        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 2
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
 
         _ = makeCounter(isEnabled: false)
 
-        XCTAssertEqual(makeCounter().displayCount, 2)
+        XCTAssertEqual(makeCounter().displayCount, 1)
     }
 
     func testAbsentWebCountLeavesTheCountAtZero() {
@@ -151,14 +145,13 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
     func testWebCountIsAdoptedFromAString() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = "2"
 
-        XCTAssertEqual(makeCounter().displayCount, 2)
+        XCTAssertEqual(makeCounter().displayCount, AttachmentPrivacyDisplayCounter.cap)
     }
 
     // MARK: - Reset
 
     func testResetClearsTheCount() {
         let counter = makeCounter()
-        counter.consumeDisplay()
         counter.consumeDisplay()
 
         counter.reset()
@@ -176,7 +169,7 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertNil(webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey])
     }
 
-    /// Otherwise the burn re-adopts the web count and the message never comes back.
+    /// Otherwise the debug reset re-adopts the web count and the message never comes back.
     func testResetDoesNotLeaveTheWebCountToBeAdoptedAgain() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 3
         let counter = makeCounter()
@@ -241,28 +234,28 @@ final class AttachmentPrivacyDisplayGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    /// Emptying the attachments ends the display, so the next one is a new display — as on iOS.
-    func testRemovingAndReattachingSpendsAnotherDisplay() {
+    /// Emptying the attachments ends the display, and the one display is already spent.
+    func testRemovingAndReattachingDoesNotShowAgain() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
 
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertEqual(store.count, 2)
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 1)
     }
 
-    func testAttachingAgainAfterSubmittingSpendsAnother() {
+    func testAttachingAgainAfterSubmittingDoesNotShowAgain() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         gate.displayEnded(tabID: "A")
 
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertEqual(store.count, 2)
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 1)
     }
 
-    func testDifferentTabsAreDifferentDisplays() {
+    func testOnlyOneTabGetsTheDisplay() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
 
-        XCTAssertEqual(store.count, 2)
+        XCTAssertEqual(store.count, 1)
     }
 
     func testReturningToATabKeepsItsGrant() {
@@ -270,17 +263,16 @@ final class AttachmentPrivacyDisplayGateTests: XCTestCase {
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
 
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertEqual(store.count, 2)
+        XCTAssertEqual(store.count, 1)
     }
 
     func testSubmittingInOneTabLeavesAnotherTabsDisplayAlone() {
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
-        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
 
-        gate.displayEnded(tabID: "A")
+        gate.displayEnded(tabID: "B")
 
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
-        XCTAssertEqual(store.count, 2)
+        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertEqual(store.count, 1)
     }
 
     func testASurfaceWithoutATabIsOneDisplay() {
@@ -290,73 +282,12 @@ final class AttachmentPrivacyDisplayGateTests: XCTestCase {
         XCTAssertEqual(store.count, 1)
     }
 
-    func testOnceExhaustedNothingShows() {
-        for tab in ["A", "B", "C"] {
-            XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: tab))
-        }
-
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "D"))
-        XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
-    }
-
     func testADeniedDisplayIsRememberedWhileStaged() {
-        for tab in ["A", "B", "C"] {
-            _ = gate.shouldShow(hasStagedAttachment: true, tabID: tab)
-        }
+        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
 
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "D"))
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "D"))
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
         XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
-    }
-}
-
-final class AttachmentPrivacyDisplayCountRegistryTests: XCTestCase {
-
-    func testRegularModeUsesThePersistentStore() {
-        let persistent = InMemoryAttachmentPrivacyDisplayCountStore()
-        let registry = AttachmentPrivacyDisplayCountRegistry(persistentStore: persistent)
-
-        registry.store(for: .regular).setCount(2)
-
-        XCTAssertEqual(persistent.count, 2)
-    }
-
-    func testOneBurnerWindowKeepsOneStore() {
-        let registry = AttachmentPrivacyDisplayCountRegistry()
-        let mode = BurnerMode(isBurner: true)
-
-        registry.store(for: mode).setCount(2)
-
-        XCTAssertEqual(registry.store(for: mode).count, 2)
-    }
-
-    func testBurnerWindowsDoNotShareACount() {
-        let registry = AttachmentPrivacyDisplayCountRegistry()
-
-        registry.store(for: BurnerMode(isBurner: true)).setCount(3)
-
-        XCTAssertNil(registry.store(for: BurnerMode(isBurner: true)).count)
-    }
-
-    func testABurnerCountIsNotThePersistentOne() {
-        let persistent = InMemoryAttachmentPrivacyDisplayCountStore()
-        let registry = AttachmentPrivacyDisplayCountRegistry(persistentStore: persistent)
-
-        registry.store(for: BurnerMode(isBurner: true)).setCount(3)
-
-        XCTAssertNil(persistent.count)
-    }
-
-    func testResetPersistentLeavesBurnerStoresAlone() {
-        let registry = AttachmentPrivacyDisplayCountRegistry()
-        let mode = BurnerMode(isBurner: true)
-        registry.store(for: .regular).setCount(3)
-        registry.store(for: mode).setCount(3)
-
-        registry.resetPersistent()
-
-        XCTAssertNil(registry.store(for: .regular).count)
-        XCTAssertEqual(registry.store(for: mode).count, 3)
     }
 }
 

@@ -30,23 +30,12 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
-    /// Per read against the key window, so a Fire Window reports its own count.
     @MainActor
     private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
-        let burnerMode = NSApp.delegateTyped.windowControllersManager
-            .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.burnerMode ?? .regular
-        return AttachmentPrivacyDisplayCounter(
-            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
-            webKeySource: NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
-                ?? NSApp.delegateTyped.duckAiNativeStorageHandler
+        AttachmentPrivacyDisplayCounter(
+            store: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
+            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler
         )
-    }
-
-    @MainActor
-    private var attachmentPrivacyScopeLabel: String {
-        let isBurner = NSApp.delegateTyped.windowControllersManager
-            .lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.isBurner ?? false
-        return isBurner ? "this Fire Window" : "persistent"
     }
 
     private lazy var attachmentPrivacyMenuItem = NSMenuItem(
@@ -179,8 +168,7 @@ final class AIChatDebugMenu: NSMenu {
     @MainActor
     private func updateAttachmentPrivacyMenuItemTitle() {
         attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
-            + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown, "
-            + "\(attachmentPrivacyScopeLabel))"
+            + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown)"
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {

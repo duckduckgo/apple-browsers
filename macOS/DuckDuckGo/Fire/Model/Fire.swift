@@ -195,7 +195,6 @@ final class Fire: FireProtocol {
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     let isAppActiveProvider: @MainActor () -> Bool
     let aiChatHistoryCleaner: AIChatHistoryCleaning
-    let attachmentPrivacyDisplayCountRegistry: AttachmentPrivacyDisplayCountRegistry
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     var dataClearingWideEventService: DataClearingWideEventService?
 
@@ -350,7 +349,6 @@ final class Fire: FireProtocol {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
-         attachmentPrivacyDisplayCountRegistry: AttachmentPrivacyDisplayCountRegistry? = nil,
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
          dataClearingWideEventService: DataClearingWideEventService? = nil,
          tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
@@ -381,8 +379,6 @@ final class Fire: FireProtocol {
         } else {
             self.stateRestorationManager = NSApp.delegateTyped.stateRestorationManager
         }
-        self.attachmentPrivacyDisplayCountRegistry = attachmentPrivacyDisplayCountRegistry
-            ?? NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
                                                                                  featureDiscovery: DefaultFeatureDiscovery(),
@@ -610,9 +606,6 @@ final class Fire: FireProtocol {
             dataClearingWideEventService?.start(.clearAutoconsentStats)
             let autoconsentStatsResult = await self.burnAutoconsentStats()
             dataClearingWideEventService?.update(.clearAutoconsentStats, result: autoconsentStatsResult)
-
-            // Not chat history: it records what the user was shown, so every burn clears it.
-            self.attachmentPrivacyDisplayCountRegistry.resetPersistent()
 
             if includeChatHistory {
                 dataClearingWideEventService?.start(.clearAIChatHistory)

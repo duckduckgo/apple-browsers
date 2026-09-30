@@ -74,10 +74,10 @@ final class AIChatTabExtension {
             .resolve(isFireMode: burnerMode.isBurner,
                      handler: burnerDuckAiStorageRegistry?.handler(for: burnerMode))
         }
-        self.attachmentPrivacyCounterProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
+        self.attachmentPrivacyCounterProvider = {
             AttachmentPrivacyDisplayCounter(
-                store: NSApp.delegateTyped.attachmentPrivacyDisplayCountRegistry.store(for: burnerMode),
-                webKeySource: burnerDuckAiStorageRegistry?.handler(for: burnerMode) ?? duckAiNativeStorageHandler,
+                store: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
+                webKeySource: duckAiNativeStorageHandler,
                 featureFlagger: featureFlagger
             )
         }

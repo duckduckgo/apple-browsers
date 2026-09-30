@@ -26,6 +26,7 @@ import PrivacyConfig
 
 // MARK: - Storage
 
+/// One count for the whole app: Fire Windows share it and the fire button leaves it alone.
 /// Not the Duck.ai entries namespace: the web app replaces that wholesale on hydration, which
 /// wiped the count.
 protocol AttachmentPrivacyDisplayCountStoring: AnyObject {
@@ -87,42 +88,12 @@ final class InMemoryAttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplay
     }
 }
 
-/// One store per Fire Window, keyed by its data store like `BurnerDuckAiStorageRegistry`.
-final class AttachmentPrivacyDisplayCountRegistry {
-
-    private let lock = NSLock()
-    private let persistentStore: AttachmentPrivacyDisplayCountStoring
-    private var burnerStores: [ObjectIdentifier: AttachmentPrivacyDisplayCountStoring] = [:]
-
-    init(persistentStore: AttachmentPrivacyDisplayCountStoring = AttachmentPrivacyDisplayCountStore()) {
-        self.persistentStore = persistentStore
-    }
-
-    func store(for burnerMode: BurnerMode) -> AttachmentPrivacyDisplayCountStoring {
-        guard case .burner(let dataStore) = burnerMode else { return persistentStore }
-
-        let key = ObjectIdentifier(dataStore)
-        lock.lock()
-        defer { lock.unlock() }
-        if let existing = burnerStores[key] {
-            return existing
-        }
-        let new = InMemoryAttachmentPrivacyDisplayCountStore()
-        burnerStores[key] = new
-        return new
-    }
-
-    func resetPersistent() {
-        persistentStore.reset()
-    }
-}
-
 // MARK: - Counter
 
 /// Check and increment are one operation, so no caller can pass the cap.
 final class AttachmentPrivacyDisplayCounter {
 
-    static let cap = 3
+    static let cap = 1
 
     /// Name pending confirmation with the front end: wrong, and the takeover silently does nothing.
     static let webEntryKey = "duckaiFileUploadDisclaimerShownCount"
@@ -141,7 +112,7 @@ final class AttachmentPrivacyDisplayCounter {
     }
 
     /// The web app ships first and counts with its own key, so a user who already saw it there
-    /// must not get three more. Once only.
+    /// must not get it again. Once only.
     private func migrateWebCountIfNeeded() {
         guard !store.hasMigratedWebCount else { return }
 
@@ -175,8 +146,8 @@ final class AttachmentPrivacyDisplayCounter {
         return true
     }
 
-    /// The marker goes back on, or the burn would re-migrate the web count and the message would
-    /// never return.
+    /// The marker goes back on, or the next read would re-migrate the web count and the message
+    /// would never return. Debug only.
     func reset() {
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
@@ -202,8 +173,7 @@ final class AttachmentPrivacyDisplayCounter {
 
 // MARK: - Display gate
 
-/// One display per continuous attachment session, per tab. Emptying the attachments ends it, so
-/// re-attaching spends another — matching iOS.
+/// One grant per continuous attachment session, per tab: emptying the attachments ends it.
 final class AttachmentPrivacyDisplayGate {
 
     private static let tablessKey = "no-tab"

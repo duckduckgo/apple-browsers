@@ -95,6 +95,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
+    case webExtensionStateRestorationGate
+
     /// Failsafe for Web Extensions background-process diagnostics observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
@@ -274,7 +278,12 @@ public enum FeatureFlag: String, CaseIterable {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
+
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
+    case websitePermissionsPrompts
 
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
@@ -641,7 +650,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingNonBlocking:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlocking), cohortType: OnboardingNonBlockingCohort.self)
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
@@ -673,6 +682,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate), category: .webExtensions)
         case .cpmBackgroundDelegateProxy:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
         case .cpmDiagnosticsRecorder:
@@ -786,6 +797,10 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .websitePermissionsSettings:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
+                   supportsLocalOverriding: true)
+        case .websitePermissionsPrompts:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsPrompts),
                    supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))

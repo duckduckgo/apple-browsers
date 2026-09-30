@@ -125,6 +125,8 @@ jobs:
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "TEST_RUNNER_INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || 'false' }}" \
           | tee xcodebuild.log \

@@ -88,6 +88,7 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            floatingUIManager: floatingUIManager,
             tabProvider: { [weak self] in self?.tabManager.currentTabsModel.currentTab }
         )
         coordinator.delegate = self

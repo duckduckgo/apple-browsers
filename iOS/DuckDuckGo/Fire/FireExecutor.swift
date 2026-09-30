@@ -564,7 +564,7 @@ class FireExecutor: FireExecuting {
             result = await burnTabAIHistory(tabViewModel: viewModel)
         case .fireMode:
             if !request.options.contains(.data) { // Invalidating the fire mode datastore makes deleting chats redundant.
-                result = await burnFireModeAIHistory(applicationState: applicationState)
+                result = await burnFireModeAIHistory(trigger: request.trigger, applicationState: applicationState)
             } else {
                 result = .success(())
             }
@@ -582,7 +582,7 @@ class FireExecutor: FireExecuting {
                                   applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger, applicationState: applicationState)
         let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
-        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory(applicationState: applicationState) : .success(())
+        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory(trigger: trigger, applicationState: applicationState) : .success(())
         let (normalResult, fireResult) = await (normalBurnTask, fireBurnTask)
         if case .failure = normalResult { return normalResult }
         if case .failure = fireResult { return fireResult }
@@ -603,10 +603,10 @@ class FireExecutor: FireExecuting {
         switch result {
         case .success:
             await recordAIChatsClearDate(trigger: trigger)
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -616,7 +616,8 @@ class FireExecutor: FireExecuting {
     }
 
     @MainActor
-    private func burnFireModeAIHistory(applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
+    private func burnFireModeAIHistory(trigger: FireRequest.Trigger,
+                                       applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         guard fireModeCapability.isFireModeEnabled else {
             return .success(())
         }
@@ -632,10 +633,10 @@ class FireExecutor: FireExecuting {
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

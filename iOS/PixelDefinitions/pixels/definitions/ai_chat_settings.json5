@@ -7,6 +7,11 @@
         "parameters": [
             "appVersion",
             {
+                "key": "source",
+                "description": "Where the delete came from.",
+                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all"]
+            },
+            {
                 "key": "retried",
                 "description": "Whether the Duck.ai web data clear was retried once after a transient failure.",
                 "enum": ["true", "false"]
@@ -25,6 +30,11 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "source",
+                "description": "Where the delete came from.",
+                "enum": ["fire_button", "auto_clear", "multi_select", "delete_all"]
+            },
             "errorDomain",
             "errorCode",
             "underlyingErrorDomain",

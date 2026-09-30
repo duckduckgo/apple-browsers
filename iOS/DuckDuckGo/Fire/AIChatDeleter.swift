@@ -75,12 +75,12 @@ final class AIChatDeleter: AIChatDeleting {
         lastClearingReport = cleaner.lastClearingReport
         switch result {
         case .success:
-            PixelKit.fire(Pixel.Event.aiChatSingleDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatSingleDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner)))
             if !isFireMode {
                 await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
             }
         case .failure(let error):
-            PixelKit.fire(Pixel.Event.aiChatSingleDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatSingleDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner)))
             Logger.aiChat.debug("Failed to delete AI Chat: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -99,14 +99,14 @@ final class AIChatDeleter: AIChatDeleting {
         let result = await cleaner.deleteAIChats(chatIDs: chatIDs)
         switch result {
         case .success:
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: .multiSelect)))
             if !isFireMode {
                 for chatID in chatIDs {
                     await aiChatSyncCleaner.recordChatDeletion(chatID: chatID)
                 }
             }
         case .failure(let error):
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: .multiSelect)))
             Logger.aiChat.debug("Failed to delete AI Chats: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -125,12 +125,12 @@ final class AIChatDeleter: AIChatDeleting {
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: .deleteAll)))
             if !isFireMode {
                 await aiChatSyncCleaner.recordLocalClear(date: Date())
             }
         case .failure(let error):
-            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(retryParameters(of: cleaner)))
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: .deleteAll)))
             Logger.aiChat.debug("Failed to clear AI Chat history: \(error.localizedDescription)")
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -155,13 +155,31 @@ final class AIChatDeleter: AIChatDeleting {
     }
 }
 
-/// Whether the delete was retried, and why the first attempt failed, for the delete pixels.
+/// Where a Duck.ai history delete came from, so the delete pixels can tell the paths apart.
+enum AIChatDeletePixelSource: String {
+    case fireButton = "fire_button"
+    case autoClear = "auto_clear"
+    case multiSelect = "multi_select"
+    case deleteAll = "delete_all"
+
+    init(trigger: FireRequest.Trigger) {
+        switch trigger {
+        case .manualFire: self = .fireButton
+        case .autoClearOnLaunch, .autoClearOnForeground, .fireModeAutoClear: self = .autoClear
+        }
+    }
+}
+
+/// The delete pixels' parameters: where the delete came from, whether it was retried, and why the first attempt failed.
 @MainActor
-func retryParameters(of cleaner: HistoryCleaning) -> [String: String] {
-    guard let report = cleaner.lastClearingReport else { return [:] }
-    var parameters = ["retried": String(report.wasRetried)]
-    if let firstAttemptError = report.firstAttemptError {
-        parameters["first_attempt_error_code"] = String((firstAttemptError as NSError).code)
+func deletePixelParameters(of cleaner: HistoryCleaning, source: AIChatDeletePixelSource? = nil) -> [String: String] {
+    var parameters: [String: String] = [:]
+    parameters["source"] = source?.rawValue
+    if let report = cleaner.lastClearingReport {
+        parameters["retried"] = String(report.wasRetried)
+        if let firstAttemptError = report.firstAttemptError {
+            parameters["first_attempt_error_code"] = String((firstAttemptError as NSError).code)
+        }
     }
     return parameters
 }

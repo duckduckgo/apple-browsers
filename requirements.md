@@ -40,9 +40,9 @@ The only case where an NTP should not show the keyboard is when the user dismiss
   - About 40% of daily iOS app opens land on an NTP. About half of those show no keyboard, although the product decision was to open with the keyboard up. That's an estimated 2–4M affected users per day.
   - With the keyboard up, people can start typing straight away. After inactivity, ~60% of iOS users start a new search.
 - **User feedback:**
-  - Five reports between Jul 23 and Sep 3, 2026 (iPhone, app 7.229–7.235) say the keyboard setting "doesn't work". Their timing matches the Escape Hatch rollout to existing users, which reached 100% on Jul 20.
+  - Five reports between Jul 23 and Sep 3, 2026 (app 7.229–7.235; iPhone where the device is stated) say the keyboard setting "doesn't work". Their timing matches the Escape Hatch rollout to existing users, which reached 100% on Jul 20.
   - One user had **both** keyboard settings on and still got no keyboard.
-  - None of the reports got a reply. One triage note suspected they were really feedback about the Escape Hatch.
+  - None of the reports got a reply. One triage note suspected one of them was really feedback about the Escape Hatch.
 - **Android parity:** Android always shows the keyboard on the NTP.
 
 ## 3. Settings involved
@@ -251,7 +251,7 @@ Two pieces of work aren't pull requests, so they aren't listed: the kick-off (it
 4. After a Fire from the Escape Hatch, should the app restore the focus state from before the burn, or treat it as a new landing?
 5. After an onboarding or promo dialog closes, should the keyboard show?
 6. Duck.ai: keep the suppression that comes from the AI-chat setting?
-7. Is iPad in scope? All the reports came from iPhones, and the Escape Hatch is off by default on iPad.
+7. Is iPad in scope? No report mentions iPad, and the Escape Hatch is off by default on iPad.
 8. Measurement: is feedback volume enough, or should the ramp also watch existing metrics: the NTP focused-state share, the starting-experience KPI, and O-J's toggle exposure?
 9. If an NTP Redesign experiment variant defaults to keyboard down, which rule wins?
 

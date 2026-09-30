@@ -112,16 +112,24 @@ final class AttachmentPrivacyDisplayCounter {
     }
 
     /// The web app ships first and counts with its own key, so a user who already saw it there
-    /// must not get it again. Once only.
+    /// must not get it again. Once only, and only once the key has actually been read: marking on
+    /// a failed read would spend the takeover on nothing and show the message a second time.
     private func migrateWebCountIfNeeded() {
         guard !store.hasMigratedWebCount else { return }
 
-        store.markWebCountMigrated()
-        guard let webCount, webCount > 0 else { return }
+        switch readWebCount() {
+        case .unavailable:
+            Logger.aiChat.debug("Attachment privacy: web count unreadable, takeover deferred")
+        case .absent:
+            store.markWebCountMigrated()
+        case .count(let webCount):
+            store.markWebCountMigrated()
+            guard webCount > 0 else { return }
 
-        let migrated = min(webCount, Self.cap)
-        store.setCount(migrated)
-        Logger.aiChat.debug("Attachment privacy: migrated web count \(migrated, privacy: .public)")
+            let migrated = min(webCount, Self.cap)
+            store.setCount(migrated)
+            Logger.aiChat.debug("Attachment privacy: migrated web count \(migrated, privacy: .public)")
+        }
     }
 
     private var isEnabled: Bool {
@@ -159,14 +167,35 @@ final class AttachmentPrivacyDisplayCounter {
         store.count ?? 0
     }
 
-    private var webCount: Int? {
-        guard let value = try? webKeySource?.getEntry(key: Self.webEntryKey) else { return nil }
+    /// `unavailable` is the one that must not be taken for an answer: no storage handler, or the
+    /// read threw. A value that's there but unparseable is an answer — it will never parse.
+    private enum WebCountRead {
+        case count(Int)
+        case absent
+        case unavailable
+    }
 
-        switch value {
-        case let int as Int: return max(0, int)
-        case let double as Double: return max(0, Int(double))
-        case let string as String: return Int(string).map { max(0, $0) }
-        default: return nil
+    private func readWebCount() -> WebCountRead {
+        guard let webKeySource else { return .unavailable }
+
+        let entry: Any?
+        do {
+            entry = try webKeySource.getEntry(key: Self.webEntryKey)
+        } catch {
+            return .unavailable
+        }
+        guard let entry else { return .absent }
+
+        switch entry {
+        case let int as Int:
+            return .count(max(0, int))
+        case let double as Double:
+            return .count(max(0, Int(double)))
+        case let string as String:
+            guard let int = Int(string) else { return .absent }
+            return .count(max(0, int))
+        default:
+            return .absent
         }
     }
 }

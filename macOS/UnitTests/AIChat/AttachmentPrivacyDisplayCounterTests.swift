@@ -108,6 +108,26 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertEqual(second.displayCount, 1)
     }
 
+    /// Otherwise a counter built before Duck.ai's storage is readable spends the takeover on
+    /// nothing, and the message shows again after the web app already showed it.
+    func testAFailedReadLeavesTheTakeoverForTheNextCounter() {
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
+        webStorage.readError = TestError.unreadable
+
+        XCTAssertEqual(makeCounter().displayCount, 0)
+
+        webStorage.readError = nil
+        XCTAssertEqual(makeCounter().displayCount, 1)
+    }
+
+    func testAnAbsentStorageHandlerLeavesTheTakeoverForTheNextCounter() {
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
+
+        XCTAssertEqual(makeCounter(webKeySource: nil).displayCount, 0)
+
+        XCTAssertEqual(makeCounter().displayCount, 1)
+    }
+
     func testWebCountAppearingAfterTheTakeoverIsIgnored() {
         _ = makeCounter()
 
@@ -181,9 +201,14 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
     // MARK: -
 
     private func makeCounter(isEnabled: Bool = true) -> AttachmentPrivacyDisplayCounter {
+        makeCounter(webKeySource: webStorage, isEnabled: isEnabled)
+    }
+
+    private func makeCounter(webKeySource: DuckAiNativeStorageHandling?,
+                             isEnabled: Bool = true) -> AttachmentPrivacyDisplayCounter {
         AttachmentPrivacyDisplayCounter(
             store: store,
-            webKeySource: webStorage,
+            webKeySource: webKeySource,
             featureFlagger: MockFeatureFlagger(
                 featuresStub: [FeatureFlag.aiChatAttachmentPrivacyDisclosure.rawValue: isEnabled]
             )
@@ -291,13 +316,22 @@ final class AttachmentPrivacyDisplayGateTests: XCTestCase {
     }
 }
 
+private enum TestError: Error {
+    case unreadable
+}
+
 /// Stores entries so the takeover can be driven; the rest is unused.
 private final class FakeWebKeyStorage: DuckAiNativeStorageHandling {
 
     var entries: [String: Any] = [:]
+    var readError: Error?
 
     func putEntry(key: String, value: Any) throws { entries[key] = value }
-    func getEntry(key: String) throws -> Any? { entries[key] }
+
+    func getEntry(key: String) throws -> Any? {
+        if let readError { throw readError }
+        return entries[key]
+    }
     func getAllEntries() throws -> [String: Any] { entries }
     func deleteEntry(key: String) throws { entries.removeValue(forKey: key) }
     func deleteAllEntries() throws { entries.removeAll() }

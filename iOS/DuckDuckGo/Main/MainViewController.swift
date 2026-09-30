@@ -2321,6 +2321,20 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
+    private var isChatPathCompletionPending: Bool {
+        daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+    }
+
+    /// Suppress the keyboard on a New Tab Page when an NTP onboarding dialog is about to appear:
+    /// viewDidAppear shows the dialog after the page attaches, and an editing state created first
+    /// would immediately cover it.
+    /// Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+    /// is scheduled to fire: it drives its own beginEditing, and a premature activation
+    /// causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+    private var isNewTabPageKeyboardBlockedByDialog: Bool {
+        daxDialogsManager.subscriptionPromotionPending || isChatPathCompletionPending
+    }
+
     fileprivate func attachHomeScreen(isNewTab: Bool = false,
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
@@ -2379,18 +2393,10 @@ class MainViewController: UIViewController {
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
-        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
-        // viewDidAppear fires after this function and shows the dialog, but the editing state
-        // created here would immediately cover it.
-        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
-        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
-        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
-        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        let chatPathCompletionPending = isChatPathCompletionPending
         // Resolved before the instrumentation call below, so the wide event records the mode
         // the app decided on rather than racing the keyboard to observe it.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
-            && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2795,6 +2801,15 @@ class MainViewController: UIViewController {
             showBars()
             viewCoordinator.omniBar.beginEditing(animated: true)
         }
+    }
+
+    /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
+    func showKeyboardOnAppOpenIfAllowed() {
+        let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
+        guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
+        if onNewTabPage, daxDialogsManager.isStillOnboarding() || isNewTabPageKeyboardBlockedByDialog { return }
+        // Does nothing while the tab switcher, Settings or another screen is presented.
+        enterSearch()
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {

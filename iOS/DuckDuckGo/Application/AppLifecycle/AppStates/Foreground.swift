@@ -100,7 +100,8 @@ struct Foreground: ForegroundHandling {
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
             userActivityHandler: appDependencies.mainCoordinator,
-            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
+            keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
+                                                 featureFlagger: appDependencies.featureFlagger),
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnEvaluator: idleReturnEvaluator,
             idleReturnDelegate: appDependencies.mainCoordinator

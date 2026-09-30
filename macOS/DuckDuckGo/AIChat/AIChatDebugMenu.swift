@@ -167,8 +167,10 @@ final class AIChatDebugMenu: NSMenu {
 
     @MainActor
     private func updateAttachmentPrivacyMenuItemTitle() {
+        // Not `canDisplay`: that is false with the flag off, which isn't the same as shown.
+        let shown = attachmentPrivacyCounter.displayCount > 0
         attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
-            + "(\(attachmentPrivacyCounter.displayCount)/\(AttachmentPrivacyDisplayCounter.cap) shown)"
+            + (shown ? "(shown)" : "(not shown)")
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {

@@ -1508,6 +1508,19 @@ final class SyncDialogControllerTests: XCTestCase {
 
     // MARK: - Connection Controller Delegate Methods
 
+    func testCancelledPairingConfirmationDoesNotPresentDialogOrEndSetup() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        let confirmationTask = Task { @MainActor in
+            await syncDialogController.controllerShouldAllowPairingV2PeerToJoin(peerName: "iPhone", peerKind: .ddg)
+        }
+        confirmationTask.cancel()
+        let confirmed = await confirmationTask.value
+
+        XCTAssertFalse(confirmed)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+    }
+
     func testPostPairingConfirmationDialog_whenV2Enabled_returnsWaitForOtherDeviceDialog() {
         let dialog = SyncDialogController.postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: true)
 

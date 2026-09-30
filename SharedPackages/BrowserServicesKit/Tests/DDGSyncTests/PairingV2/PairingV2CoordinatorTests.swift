@@ -855,6 +855,30 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.messageExchanger.closeChannelCalls, [setup.localChannelID])
     }
 
+    func testWhenPeerLeavesBeforeConfirmationCanPresentThenCancelsPresentationTask() async throws {
+        let presentationGate = PairingV2CoordinatorTestGate()
+        let confirmationEntered = expectation(description: "Confirmation delegate entered")
+        let presentationChecked = expectation(description: "Cancellation checked at presentation boundary")
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        confirmationDelegate.allowPeerToJoinHandler = {
+            confirmationEntered.fulfill()
+            await presentationGate.wait()
+            XCTAssertTrue(Task.isCancelled)
+            presentationChecked.fulfill()
+            return false
+        }
+        let setup = try await makeHostWithPendingConfirmationAndQueuedBye(confirmationDelegate: confirmationDelegate)
+        await fulfillment(of: [confirmationEntered], timeout: 1)
+
+        try await setup.coordinator.pollOnce()
+        await presentationGate.open()
+        await fulfillment(of: [presentationChecked], timeout: 1)
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(confirmationDelegate.dismissConfirmationCallCount, 1)
+        XCTAssertEqual(setup.coordinator.state, .failed(.peerCancelled))
+    }
+
     func testWhenPeerLeavesDuringConfirmationThenTeardownSendsByeDoneForEveryReason() async throws {
         for reason in [PairingV2ByeReason.done, .cancelled, .error, .unknown("future_reason")] {
             let confirmationGate = PairingV2CoordinatorTestGate()

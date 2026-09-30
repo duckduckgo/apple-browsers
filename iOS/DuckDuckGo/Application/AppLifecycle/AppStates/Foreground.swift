@@ -99,7 +99,8 @@ struct Foreground: ForegroundHandling {
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
         )
         let keyboardPresenter = KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
-                                                  featureFlagger: appDependencies.featureFlagger)
+                                                  featureFlagger: appDependencies.featureFlagger,
+                                                  isModalPromptPending: { appDependencies.mainCoordinator.isModalPromptPending })
         self.keyboardPresenter = keyboardPresenter
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,

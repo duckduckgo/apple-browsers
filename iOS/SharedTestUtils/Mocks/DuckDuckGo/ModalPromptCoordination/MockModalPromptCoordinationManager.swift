@@ -26,6 +26,7 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
     var didPresentModalPromptThisSession = false
+    var hasActiveOrPendingModalAttempt = false
     private(set) var capturedModalLease: PromoQueueModalLease?
     private(set) var reconcilePresentedModalCallCount = 0
     var onPresentCoordinated: (@MainActor () -> Void)?

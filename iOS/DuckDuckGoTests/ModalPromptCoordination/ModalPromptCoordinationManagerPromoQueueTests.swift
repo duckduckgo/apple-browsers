@@ -81,6 +81,24 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     }
 
     @available(iOS 16, *)
+    @Test("Coordinated Attempt Is Pending As Soon As A Prompt Is Committed", .timeLimit(.minutes(1)))
+    func whenCoordinatedPromptIsCommittedThenAttemptIsPendingBeforePresentation() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        sut = ModalPromptCoordinationManager(
+            providers: [MockModalPromptProvider()],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+        let lease = try acquireModalLease()
+
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+
+        #expect(!presenterMock.didCallPresent)
+        #expect(sut.hasActiveOrPendingModalAttempt)
+    }
+
+    @available(iOS 16, *)
     @Test("Coordinated Selection Respects Provider Eligibility And Order", .timeLimit(.minutes(1)))
     func whenCoordinatedProvidersHaveDifferentEligibilityThenFirstEligiblePromptIsSelected() throws {
         // Every provider here forces its own answer, so this covers the eligibility gate and provider order only. The

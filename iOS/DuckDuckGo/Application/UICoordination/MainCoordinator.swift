@@ -701,6 +701,10 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    var isModalPromptPending: Bool {
+        promoCoordinationService.isModalPromptPending
+    }
+
     func prepareHomePageMessagesForForegroundIfNeeded() {
         controller.prepareHomePageMessagesForForegroundIfNeeded()
     }

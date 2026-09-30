@@ -540,7 +540,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     private func collectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
         codeCollectionIntent = intent
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(intent: intent)
@@ -581,7 +580,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     private func legacyCollectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
@@ -701,9 +699,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             await dismissPairingV2Setup()
         } else if isConfirmed {
             pairingV2PeerKind = peerKind
-            if case .sharer = setupRole {
-                confirmedPairingV2PeerName = peerName
-            }
         }
         return isConfirmed
     }

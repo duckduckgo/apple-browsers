@@ -99,7 +99,6 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var scanSetupSource: SyncSetupSource?
     var pairingInfo: PairingInfo?
     var pairingV2PeerKind: PairingV2DeviceKind?
-    var confirmedPairingV2PeerName: String?
     var pairingV2JoinerCodeSource: SyncCodeSource?
     var pairingV2ConfirmationAlert: UIAlertController?
     var pairingV2ConfirmationContinuation: CheckedContinuation<Bool, Never>?
@@ -574,12 +573,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        let successDestination = SyncSettingsViewModel.SuccessDestination.host(
-            joiningDeviceName: confirmedPairingV2PeerName ?? UserText.syncPairingV2UnknownPeerName
-        )
+        let successDestination = SyncSettingsViewModel.SuccessDestination.host
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         presentSuccessScreen(destination: successDestination)
-        confirmedPairingV2PeerName = nil
     }
 
     func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
@@ -620,9 +616,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
-        let successDestination = SyncSettingsViewModel.SuccessDestination.host(
-            joiningDeviceName: confirmedPairingV2PeerName ?? UserText.syncPairingV2UnknownPeerName
-        )
+        let successDestination = SyncSettingsViewModel.SuccessDestination.host
         let parameters = syncSetupPixelParameters(setupSource: .exchange,
                                                   path: SyncSetupPixelValue.pairing,
                                                   peerKind: pairingV2PeerKind?.syncSetupPeerKind,
@@ -630,7 +624,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         PixelKit.fire(Pixel.Event.syncSetupEndedSuccessful,
                       options: .parameters(parameters))
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
         let presentResult: (SyncSettingsViewController) -> Void = { controller in
             controller.presentSuccessScreen(destination: successDestination)
         }
@@ -691,7 +684,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             PixelKit.fire(Pixel.Event.syncSetupEndedSuccessful,
                           options: .parameters(parameters))
             pairingV2PeerKind = nil
-            confirmedPairingV2PeerName = nil
             return
         }
 
@@ -811,7 +803,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .pastedCode, .qrCode:
             PixelKit.fire(Pixel.Event.syncSetupEndedSuccessful, options: .parameters(parameters))
             pairingV2PeerKind = nil
-            confirmedPairingV2PeerName = nil
         case .deepLink:
             PixelKit.fire(Pixel.Event.syncSetupDeepLinkFlowSuccess,
                           options: .parameters(uiVersionParameters))
@@ -828,7 +819,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                                                       timeoutStage: timeoutStage,
                                                                       pairingV2FailureContext: pairingV2FailureContext)))
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
     }
 
     private func sendSetupEndedFailedPixel(setupSource: SyncSetupSource,
@@ -843,7 +833,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                                                       myRole: myRole,
                                                                       pairingV2FailureContext: pairingV2FailureContext)))
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
     }
 
     func sendPairingV2PresenterStartFailurePixelIfNeeded(_ error: Error, setupSource: SyncSetupSource) {
@@ -877,7 +866,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         PixelKit.fire(Pixel.Event.syncSetupEndedAbandoned,
                       options: .parameters(parameters))
         pairingV2PeerKind = nil
-        confirmedPairingV2PeerName = nil
     }
 
     func sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: SyncSetupRole) {

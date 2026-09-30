@@ -1557,7 +1557,7 @@ final class SyncDialogControllerTests: XCTestCase {
         let expectation = expectation(description: "V2 pairing success dialog presented")
 
         managementDialogModel.$currentDialog
-            .filter { $0 == .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName) }
+            .filter { $0 == .pairingSuccess }
             .prefix(1)
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
@@ -1572,7 +1572,7 @@ final class SyncDialogControllerTests: XCTestCase {
         ]
 
         await fulfillment(of: [expectation], timeout: 1)
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForNewHostAndOnlyLocalDeviceRegisters_staysOnConnectingScreen() async {
@@ -1616,9 +1616,9 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
-        XCTAssertNil(managementDialogModel.thisDeviceName)
-        XCTAssertEqual(deviceNameProviderCallCount, 0)
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
+        XCTAssertEqual(managementDialogModel.thisDeviceName, "Test Mac")
+        XCTAssertEqual(deviceNameProviderCallCount, 1)
     }
 
     func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHost_waitsForDevicesBeforeShowingSuccess() async {
@@ -1630,7 +1630,7 @@ final class SyncDialogControllerTests: XCTestCase {
         let expectation = expectation(description: "V2 existing-host success dialog presented")
 
         managementDialogModel.$currentDialog
-            .filter { $0 == .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName) }
+            .filter { $0 == .pairingSuccess }
             .prefix(1)
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
@@ -1644,7 +1644,7 @@ final class SyncDialogControllerTests: XCTestCase {
         ]
 
         await fulfillment(of: [expectation], timeout: 1)
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHostAfterUnknownOutcome_presentsPairingSuccess() {
@@ -1653,7 +1653,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testNativeHostCompletionPlaysAnimationBeforeShowingSuccess() {
@@ -1668,7 +1668,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.preparingToSyncAnimationDidFinish()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testControllerDidUpdatePairingV2JoinStatus_whenWaiting_preservesConnectingDialog() {
@@ -1803,7 +1803,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.preparingToSyncAnimationDidFinish()
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: "Phone"))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
 
         syncDialogController.syncSuccessDonePressed()
 
@@ -1882,7 +1882,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .pastedCode)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testControllerDidCompleteAccountConnection_whenV2EnabledForExistingHost_presentsPairingSuccess() {
@@ -1891,7 +1891,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: true, setupSource: .connect, codeSource: .pastedCode)
 
-        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testControllerDidCompletePairingWithAlreadyConnectedAccount_presentsAlreadyPairedError() {
@@ -2272,7 +2272,7 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testPairingSuccessDonePressedEndsFlow() {
-        managementDialogModel.currentDialog = .pairingSuccess(joiningDeviceName: "Phone")
+        managementDialogModel.currentDialog = .pairingSuccess
 
         syncDialogController.syncSuccessDonePressed()
 

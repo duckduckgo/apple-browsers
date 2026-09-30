@@ -72,10 +72,10 @@ final class SyncSettingsViewModelConnectingSheetTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Host success keeps the joining device name through animation and until Done", .timeLimit(.minutes(1)))
-    func hostSuccessKeepsJoiningDeviceNameThroughAnimation() {
+    @Test("Host success keeps its destination through animation and until Done", .timeLimit(.minutes(1)))
+    func hostSuccessKeepsDestinationThroughAnimation() {
         let sut = makeSUT()
-        let destination = SyncSettingsViewModel.SuccessDestination.host(joiningDeviceName: "Dax’s iPhone")
+        let destination = SyncSettingsViewModel.SuccessDestination.host
         sut.connectingSheetPhase = .waitingForOtherDevice
 
         sut.showSuccess(recoveryCode: "device-code", destination: destination)
@@ -96,7 +96,7 @@ final class SyncSettingsViewModelConnectingSheetTests {
     @Test("A later joiner success does not retain the previous host destination", .timeLimit(.minutes(1)))
     func laterJoinerSuccessDoesNotRetainHostDestination() {
         let sut = makeSUT()
-        sut.showSuccess(recoveryCode: "host-code", destination: .host(joiningDeviceName: "Dax’s iPhone"))
+        sut.showSuccess(recoveryCode: "host-code", destination: .host)
         sut.doneFromConnectingSheet()
 
         sut.showSuccess(recoveryCode: "joiner-code", destination: .joiner(isRecovery: false))

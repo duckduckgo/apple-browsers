@@ -607,7 +607,6 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     @MainActor
     func testWhenPairingV21CompletesAfterDeviceListUpdateThenShowsSuccess() {
         vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
-        vc.confirmedPairingV2PeerName = "Joiner"
         syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
         syncAutoRestoreHandler.existingAutoRestoreDecision = nil
         let devices = [
@@ -619,9 +618,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(vc.viewModel.devices, devices)
-        let successDestination = SyncSettingsViewModel.SuccessDestination.host(joiningDeviceName: "Joiner")
+        let successDestination = SyncSettingsViewModel.SuccessDestination.host
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: successDestination))
-        XCTAssertNil(vc.confirmedPairingV2PeerName)
         XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
 
         vc.viewModel.connectingAnimationDidFinish()
@@ -680,7 +678,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertEqual(
             spyVC.viewModel.connectingSheetPhase,
-            .connecting(isRecovery: false, successDestination: .host(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+            .connecting(isRecovery: false, successDestination: .host)
         )
         XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
     }

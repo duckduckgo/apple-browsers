@@ -74,8 +74,8 @@ struct SyncSuccessView: View {
 
     private var title: String {
         switch destination {
-        case .host(let joiningDeviceName):
-            UserText.simplifiedDeviceAddedTitle(joiningDeviceName)
+        case .host:
+            UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
         case .joiner(let isRecovery):
             isRecovery
                 ? UserText.simplifiedRecoveryCompleteTitle
@@ -210,7 +210,7 @@ private extension SyncSettingsViewModel {
 
 #Preview("Device Added – Host") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), destination: .host(joiningDeviceName: "Dax’s iPhone"))
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .host)
     }
 }
 

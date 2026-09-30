@@ -462,12 +462,7 @@ jobs:
       working-directory: ${{ github.workspace }}/macOS/dmg
 
     - name: Install create-dmg
-      run: |
-        brew install create-dmg
-        # Work around create-dmg 1.3.0's APFS device-order assumption.
-        # Patch the installed script in place to preserve its support assets.
-        /usr/bin/patch --forward -F 0 "$(brew --prefix create-dmg)/bin/create-dmg" \
-          < ../.github/patches/create-dmg-apfs-mount.patch
+      run: brew install create-dmg
 
     - name: Create DMG
       id: create-dmg
@@ -501,10 +496,10 @@ jobs:
         app_name="${app_name// /-}" # replace spaces with hyphens
         app_name="$(echo "$app_name" | tr '[:upper:]' '[:lower:]')" # lowercase
         dmg="${app_name}-${{ env.app-version }}.dmg"
-        # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
+        # Use HFS+ to avoid create-dmg's APFS-specific device discovery.
         create-dmg --volname "${{ env.app-name }}" \
             --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \
-            --filesystem APFS \
+            --filesystem HFS+ \
             --icon "${{ env.app-name }}.app" 140 160 \
             --background "scripts/assets/dmg-background.png" \
             --window-size 600 400 \

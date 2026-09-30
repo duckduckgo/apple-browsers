@@ -7979,6 +7979,20 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
+            } else if self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
+                if request.options.contains(.tabs) && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
+                    // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
+                    let showKeyboardAfterFireButton = DispatchWorkItem {
+                        let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
+                            onDuckAITab: self.currentTab?.isAITab == true,
+                            searchInputToggleOn: self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                            stillOnboarding: self.daxDialogsManager.isStillOnboarding())
+                        guard showsKeyboard, !self.isNewTabPageKeyboardBlockedByDialog else { return }
+                        self.enterSearch()
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
+                    self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
+                }
             } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {

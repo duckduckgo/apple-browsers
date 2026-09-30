@@ -176,8 +176,10 @@ final class AttachmentPrivacyDisclosure {
 
 // MARK: - Display gate
 
-/// Remembers which tab is showing it, so re-resolving while the attachment is staged doesn't turn
-/// the notice off once the display is spent.
+/// Showing the notice spends the one display, so `hasShown` on its own can't answer "should it be
+/// on screen": the next resolve would turn it off with the attachment still staged. This holds the
+/// missing bit — the display is mine, right now — per tab, since one container serves every tab in
+/// the window.
 final class AttachmentPrivacyDisclosureGate {
 
     private static let tablessKey = "no-tab"

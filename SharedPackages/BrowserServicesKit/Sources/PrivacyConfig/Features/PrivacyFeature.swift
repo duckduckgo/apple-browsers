@@ -845,6 +845,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    case stateRestorationGate
     /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.

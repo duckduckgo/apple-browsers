@@ -305,6 +305,25 @@ public struct AIChatElicitationResponseRequest: Decodable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey { case id, result }
 }
 
+// MARK: - Tab change hint
+
+/// Params of the `aiChatTabChanged` push: metadata only, never page content.
+public struct AIChatTabChangedData: Encodable, Equatable, Sendable {
+    public let tabId: String
+    public let change: String
+    public let url: String?
+    public let title: String?
+    public let isAttachable: Bool?
+
+    public init(tabId: String, url: String?, isAttachable: Bool?) {
+        self.tabId = tabId
+        self.change = "navigated"
+        self.url = url
+        self.title = nil
+        self.isAttachable = isAttachable
+    }
+}
+
 // MARK: - Failures
 
 /// Stable failure tokens the front end may branch on.

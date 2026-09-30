@@ -41,6 +41,8 @@ public protocol AIChatSettingsProvider {
 
     /// Maximum number of tabs that can be attached to a contextual Duck.ai message.
     var aiChatAttachMoreTabsLimit: Int { get }
+    /// Date of feature rollout, used by drawer to inform about the feature.
+    var aiChatAttachMoreTabsPromotionStartDate: Date? { get }
 
     /// The user settings state for the AI Chat browsing address bar.
     var isAIChatAddressBarUserSettingsEnabled: Bool { get }

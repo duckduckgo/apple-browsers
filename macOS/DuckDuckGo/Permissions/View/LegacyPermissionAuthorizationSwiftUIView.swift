@@ -1,5 +1,5 @@
 //
-//  PermissionAuthorizationSwiftUIView.swift
+//  LegacyPermissionAuthorizationSwiftUIView.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -209,9 +209,9 @@ enum PermissionAuthorizationType: Equatable {
     }
 }
 
-// MARK: - PermissionAuthorizationSwiftUIView
+// MARK: - LegacyPermissionAuthorizationSwiftUIView
 
-struct PermissionAuthorizationSwiftUIView: View {
+struct LegacyPermissionAuthorizationSwiftUIView: View {
     let domain: String
     let permissionType: PermissionAuthorizationType
     let showsTwoStepUI: Bool
@@ -648,7 +648,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
 // MARK: - Convenience Initializer
 
-extension PermissionAuthorizationSwiftUIView {
+extension LegacyPermissionAuthorizationSwiftUIView {
     init(
         domain: String,
         permissionType: PermissionAuthorizationType,
@@ -719,9 +719,9 @@ extension PermissionType {
 }
 
 #if DEBUG
-struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
+struct LegacyPermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
     static var previews: some View {
-        PermissionAuthorizationSwiftUIView(
+        LegacyPermissionAuthorizationSwiftUIView(
             domain: "apple.com",
             permissionType: .geolocation,
             showsTwoStepUI: true,
@@ -731,7 +731,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
         )
         .previewDisplayName("Geolocation - Two Step")
 
-        PermissionAuthorizationSwiftUIView(
+        LegacyPermissionAuthorizationSwiftUIView(
             domain: "apple.com",
             permissionType: .camera,
             onDeny: {},
@@ -740,7 +740,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
         )
         .previewDisplayName("Camera")
 
-        PermissionAuthorizationSwiftUIView(
+        LegacyPermissionAuthorizationSwiftUIView(
             domain: "apple.com",
             permissionType: .cameraAndMicrophone,
             onDeny: {},

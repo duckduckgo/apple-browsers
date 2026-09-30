@@ -22,7 +22,7 @@ import PixelKit
 import SwiftUI
 
 /// Informational view shown when permission is blocked because system permission is disabled.
-/// Matches the layout of `systemDisabledPermissionView` in `PermissionAuthorizationSwiftUIView`.
+/// Matches the layout of `systemDisabledPermissionView` in `LegacyPermissionAuthorizationSwiftUIView`.
 struct SystemDisabledPermissionInfoView: View {
     let domain: String
     let permissionType: PermissionType

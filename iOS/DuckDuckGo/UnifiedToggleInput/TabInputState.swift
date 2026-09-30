@@ -25,6 +25,7 @@ struct TabInputState: Equatable {
     var text: String
     var toggleMode: TextEntryMode
     var attachments: [UnifiedToggleInputAttachment]
+    var hasCountedAttachmentPrivacyForDraft: Bool
     var selectedModelID: String?
     var selectedReasoningMode: AIChatReasoningMode?
     var selectedTool: AIChatRAGTool?
@@ -42,6 +43,7 @@ struct TabInputState: Equatable {
         text: String = "",
         toggleMode: TextEntryMode = .search,
         attachments: [UnifiedToggleInputAttachment] = [],
+        hasCountedAttachmentPrivacyForDraft: Bool = false,
         selectedModelID: String? = nil,
         selectedReasoningMode: AIChatReasoningMode? = nil,
         selectedTool: AIChatRAGTool? = nil,
@@ -52,6 +54,7 @@ struct TabInputState: Equatable {
         self.text = text
         self.toggleMode = toggleMode
         self.attachments = attachments
+        self.hasCountedAttachmentPrivacyForDraft = hasCountedAttachmentPrivacyForDraft
         self.selectedModelID = selectedModelID
         self.selectedReasoningMode = selectedReasoningMode
         self.selectedTool = selectedTool
@@ -64,6 +67,7 @@ struct TabInputState: Equatable {
         lhs.text == rhs.text
             && lhs.toggleMode == rhs.toggleMode
             && lhs.attachments.map(\.id) == rhs.attachments.map(\.id)
+            && lhs.hasCountedAttachmentPrivacyForDraft == rhs.hasCountedAttachmentPrivacyForDraft
             && lhs.selectedModelID == rhs.selectedModelID
             && lhs.selectedReasoningMode == rhs.selectedReasoningMode
             && lhs.selectedTool == rhs.selectedTool
@@ -76,6 +80,7 @@ struct TabInputState: Equatable {
     mutating func clearDraft() {
         text = ""
         attachments = []
+        hasCountedAttachmentPrivacyForDraft = false
         selectedTool = nil
     }
 

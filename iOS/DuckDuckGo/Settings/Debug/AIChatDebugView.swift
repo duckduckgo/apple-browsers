@@ -38,6 +38,7 @@ struct AIChatDebugView: View {
 
 #if DEBUG || ALPHA
             AIChatAttachmentPrivacySection()
+            AIChatMultiTabPromotionSection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatTermsOfServiceSection()
 #endif
@@ -567,6 +568,33 @@ private final class StorageServerState: ObservableObject {
 }
 
 #if DEBUG || ALPHA
+private struct AIChatMultiTabPromotionSection: View {
+    @State private var status = ""
+    @State private var displayCount = 0
+    private let displayStore = UTIMultiTabPromotionDisplayStore()
+
+    var body: some View {
+        Section {
+            Button {
+                AIChatContextualAttachMoreTabsFeature.resetDrawerPromoForDebugging()
+                displayCount = displayStore.displayCount
+                status = "Promotion reset. Open a new contextual chat to see it again."
+            } label: {
+                Text(verbatim: "Reset promotion")
+            }
+            Text(verbatim: "Current display count: \(displayCount)")
+                .onAppear {
+                    displayCount = displayStore.displayCount
+                }
+            if !status.isEmpty { Text(verbatim: status) }
+        } header: {
+            Text(verbatim: "Chat across multiple tabs")
+        } footer: {
+            Text(verbatim: "Clears the display count, dismissal, and feature usage. The feature flag and promotion dates still apply.")
+        }
+    }
+}
+
 private struct AIChatAttachmentPrivacySection: View {
     @State private var status = ""
 

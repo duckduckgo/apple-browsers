@@ -245,6 +245,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.attachmentPasteHandler = newValue }
     }
 
+    weak var mentionHandler: TextEntryMentionHandling? {
+        get { inputBarView.mentionHandler }
+        set { inputBarView.mentionHandler = newValue }
+    }
+
     var reasoningPickerMenu: UIMenu? {
         get { inputBarView.reasoningPickerMenu }
         set { inputBarView.reasoningPickerMenu = newValue }

@@ -252,11 +252,13 @@ class FireExecutor: FireExecuting {
               applicationState: DataStoreWarmup.ApplicationState) async {
         // Drops reentrant calls. Callers should gate on `burnInProgress`
         if burnInProgress {
+            pixelsReporter.fireDroppedBurnPixel(request: request)
             assertionFailure("Shouldn't get called multiple times")
             return
         }
 
         burnInProgress = true
+        pixelsReporter.burnDidStart()
         defer {
             burnInProgress = false
         }

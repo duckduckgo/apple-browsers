@@ -34,6 +34,80 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
+    func testSwitchingFromPromotionToPlainTitleRestoresOriginalPresentation() throws {
+        for message in [makeMessage(), makeNotice()] {
+            let sut = UTIFooterCardView()
+            sut.configure(with: UTIFooterMessageMapper().multiTabPromotionMessage(), animateIcon: false)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let reference = UTIFooterCardView()
+            reference.configure(with: message, animateIcon: false)
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let referenceLabel = try XCTUnwrap(titleLabel(in: reference))
+            XCTAssertEqual(label.text, message.title)
+            XCTAssertEqual(label.font, referenceLabel.font)
+            XCTAssertNil(label.accessibilityLabel)
+            if let title = label.attributedText {
+                title.enumerateAttribute(.attachment, in: NSRange(location: 0, length: title.length)) { value, _, _ in
+                    XCTAssertNil(value)
+                }
+            }
+        }
+    }
+
+    func testPrivacyUsesNativeLinkAndHidesItOnReuse() throws {
+        let sut = UTIFooterCardView()
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        sut.configure(with: message, animateIcon: false)
+        let textView = try XCTUnwrap((textStack(in: sut)?.arrangedSubviews ?? []).compactMap { $0 as? UTIFooterLinkTextView }.first)
+        let range = (message.title as NSString).range(of: "Learn more")
+        XCTAssertEqual(textView.attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL, message.link?.url)
+        XCTAssertFalse(textView.isHidden)
+        XCTAssertFalse(textView.canBecomeFirstResponder)
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertTrue(textView.isHidden)
+        XCTAssertFalse(try XCTUnwrap(titleLabel(in: sut)).isHidden)
+    }
+
+    func testPrivacyLinkRejectsTrailingAndBelowTextWhitespace() throws {
+        let sut = UTIFooterLinkTextView()
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com"))
+        sut.configure(text: "Learn more", link: .init(text: "Learn more", url: url))
+        sut.frame = CGRect(x: 0, y: 0, width: 300, height: 80)
+        sut.layoutIfNeeded()
+        XCTAssertFalse(sut.point(inside: CGPoint(x: 299, y: 10), with: nil))
+        XCTAssertFalse(sut.point(inside: CGPoint(x: 3, y: 79), with: nil))
+        XCTAssertTrue(sut.point(inside: CGPoint(x: 3, y: 8), with: nil))
+    }
+
+    func testLocalizedLinksUseRenderedWrappedAndRightToLeftRanges() throws {
+        let cases: [(String, String, UISemanticContentAttribute)] = [
+            ("Dateien werden automatisch geprüft. %@", "Weitere Informationen zu diesen Dateien", .forceLeftToRight),
+            ("📎 %@：添付ファイルの取り扱いについて", "詳しく見る", .forceLeftToRight),
+            ("تُفحص الملفات تلقائيًا. %@", "معرفة المزيد", .forceRightToLeft)
+        ]
+        for (format, linkText, direction) in cases {
+            let sut = UTIFooterLinkTextView()
+            sut.semanticContentAttribute = direction
+            let message = UTIFooterMessageMapper().attachmentPrivacyMessage(format: format, learnMoreText: linkText)
+            sut.configure(text: message.title, link: try XCTUnwrap(message.link))
+            sut.frame = CGRect(x: 0, y: 0, width: 140, height: 180)
+            sut.layoutIfNeeded()
+            let range = (message.title as NSString).range(of: linkText)
+            XCTAssertEqual(sut.attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL, message.link?.url)
+            let start = try XCTUnwrap(sut.position(from: sut.beginningOfDocument, offset: range.location))
+            let end = try XCTUnwrap(sut.position(from: start, offset: range.length))
+            let textRange = try XCTUnwrap(sut.textRange(from: start, to: end))
+            let rects = sut.selectionRects(for: textRange).map(\.rect).filter { !$0.isEmpty }
+            XCTAssertFalse(rects.isEmpty, linkText)
+            for rect in rects {
+                XCTAssertTrue(sut.point(inside: CGPoint(x: rect.midX, y: rect.midY), with: nil), linkText)
+            }
+        }
+    }
+
     func test_cardHeight_growsWithAWrappedTitle() {
         let sut = UTIFooterCardView()
 

@@ -34,11 +34,13 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
+    var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let viewModel: DuckAiUsageWarningViewModel?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource?
+    private let multiTabPromotion: UTIFooterMultiTabPromotionSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
     private let highUsageMeasurement: DuckAiUsageWarningMeasurement
@@ -64,6 +66,7 @@ final class UTIFooterController {
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource? = nil,
+         multiTabPromotion: UTIFooterMultiTabPromotionSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          highUsageMeasurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
@@ -74,6 +77,7 @@ final class UTIFooterController {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.attachmentPrivacyNotice = attachmentPrivacyNotice
+        self.multiTabPromotion = multiTabPromotion
         self.mapper = mapper
         self.measurement = measurement
         self.highUsageMeasurement = highUsageMeasurement
@@ -85,6 +89,11 @@ final class UTIFooterController {
     func refresh() {
         viewModel?.refresh()
         highUsageNotice?.refresh()
+        applyCurrentState()
+    }
+
+    func refreshMultiTabPromotion() {
+        guard multiTabPromotion?.isPresented == true || applicableIDs.contains(.multiTabPromotion) else { return }
         applyCurrentState()
     }
 
@@ -100,7 +109,6 @@ final class UTIFooterController {
         applicableHighUsageModelID = nil
         applicableWarning = nil
         visibleIDs = []
-
         updateInputBlock()
         presenter?.clearPendingFooterMessage()
     }
@@ -149,6 +157,8 @@ final class UTIFooterController {
         case .usageWarning:
             measurement.warningDismissed()
             viewModel?.dismiss()
+        case .multiTabPromotion:
+            multiTabPromotion?.dismiss()
         case .highUsage:
             highUsageMeasurement.warningDismissed()
             highUsageNotice?.dismissCurrent()
@@ -160,8 +170,11 @@ final class UTIFooterController {
         let next = Set(ids).intersection(currentMessages.map(\.id))
         let entered = next.subtracting(visibleIDs)
         visibleIDs = next
-        if entered.contains(.attachmentPrivacy) {
-            _ = attachmentPrivacyNotice?.recordDisplay()
+        if entered.contains(.multiTabPromotion) {
+            multiTabPromotion?.recordDisplay()
+        }
+        if entered.contains(.attachmentPrivacy), attachmentPrivacyNotice?.recordDisplay() == true {
+            if let kind = attachmentPrivacyNotice?.kind { onAttachmentPrivacyEvent?(.shown, kind) }
         }
         if !next.isDisjoint(with: [.usageWarning, .outOfUsage]), let warning = viewModel?.warning {
             measurement.cardBecameVisible(DuckAiUsageWarningExposure(warning: warning))
@@ -178,7 +191,13 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
+    func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
+        guard id == .attachmentPrivacy, visibleIDs.contains(id), let kind = attachmentPrivacyNotice?.kind else { return }
+        onAttachmentPrivacyEvent?(.learnMoreTapped, kind)
+    }
+
     func recordPromptSubmitted() {
+        multiTabPromotion?.recordPromptSubmitted()
         measurement.promptSubmitted()
         highUsageMeasurement.promptSubmitted()
         modelSwitchNotice = nil
@@ -288,6 +307,9 @@ final class UTIFooterController {
             }
         }
         if let notice = highUsageNotice?.notice { items.append(.init(id: .highUsage, message: mapper.message(for: notice))) }
+        if multiTabPromotion?.isPresented == true {
+            items.append(.init(id: .multiTabPromotion, message: mapper.multiTabPromotionMessage()))
+        }
         return items
     }
 
@@ -320,8 +342,12 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     private let displayScope: () -> DisplayScope
     private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
-    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private let displayStore: UTIFooterDisplayStoring
     private var displayedScope: DisplayScope?
+
+    /// Travels with the in-memory draft; ending an appearance does not reset it.
+    var hasCountedDraft = false
+    var onDraftCounted: (() -> Void)?
 
     private(set) var isPresented = false
     private(set) var kind: UTIAttachmentPrivacyKind?
@@ -329,7 +355,7 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
          displayScope: @escaping () -> DisplayScope = { .normal },
-         displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
+         displayStore: UTIFooterDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
         self.displayScope = displayScope
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled
@@ -348,13 +374,17 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
         let scope = displayScope()
         guard isPresented, displayedScope == nil,
               count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit else { return false }
-        switch scope {
-        case .normal:
-            displayStore.recordDisplay()
-        case .fireTab(let tab):
-            tab?.attachmentPrivacyNoticeDisplayCount += 1
-        }
         displayedScope = scope
+        if !hasCountedDraft {
+            hasCountedDraft = true
+            switch scope {
+            case .normal:
+                displayStore.recordDisplay()
+            case .fireTab(let tab):
+                tab?.attachmentPrivacyNoticeDisplayCount += 1
+            }
+            onDraftCounted?()
+        }
         return true
     }
 

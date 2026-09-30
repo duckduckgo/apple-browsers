@@ -215,7 +215,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Tracks whether the "Ask about page" quick action chip is currently on screen, so the impression
     /// pixel fires once per appearance rather than on every view-state update.
     private var isAskAboutPageQuickActionVisible = false
-    private var areSuggestionsVisible = false
+    /// Which surface's suggestions are on screen, so an impression is reported once per surface
+    /// rather than once per sheet: the strip over an active chat is a different surface to the
+    /// start chips, and the sheet can show one after the other.
+    private var visibleSuggestionsSurface: AIChatContextualSuggestionsSurface?
 
     /// Stops async suggestion work as soon as the sheet starts dismissing.
     private var canProcessSuggestionSubmission = false
@@ -551,7 +554,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        areSuggestionsVisible = false
+        visibleSuggestionsSurface = nil
         if isBeingDismissed {
             persistentUTIHost?.endEditMode()
             prepareForDismissal()
@@ -980,7 +983,9 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         let actsOnSearch = suggestion.id == ContextualSuggestedPrompt.askAboutSearchID
         cancelSuggestionSubmission()
         delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
-        pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
+        pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id,
+                                           pageType: sessionState.viewState.suggestionsPageType,
+                                           surface: sessionState.hasActiveChat ? .activeChat : .sheet)
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
         suggestionSubmissionID = submissionID
@@ -1259,23 +1264,31 @@ private extension AIChatContextualSheetViewController {
     }
 
     private func fireSuggestionsViewedPixelIfNeeded(for viewState: SheetViewState) {
+        let hasSuggestionsOnScreen = viewIfLoaded?.window != nil
+            && viewState.suggestionsLoadState == .loaded
+            && !viewState.suggestions.isEmpty
+
         let isVisible: Bool
+        let surface: AIChatContextualSuggestionsSurface
         switch viewState.content {
         case .nativeInput:
-            isVisible = viewIfLoaded?.window != nil
-                && viewState.suggestionsLoadState == .loaded
-                && !viewState.suggestions.isEmpty
+            surface = .sheet
+            isVisible = hasSuggestionsOnScreen
         case .webView:
-            isVisible = false
+            // The strip only rides over a chat already under way, and only behind its own flag.
+            surface = .activeChat
+            isVisible = hasSuggestionsOnScreen
+                && featureFlagger.isFeatureOn(.contextualActiveChatSuggestions)
+                && sessionState.hasActiveChat
         }
 
-        defer { areSuggestionsVisible = isVisible }
-        guard isVisible, !areSuggestionsVisible else { return }
+        defer { visibleSuggestionsSurface = isVisible ? surface : nil }
+        guard isVisible, visibleSuggestionsSurface != surface else { return }
         pixelHandler.fireSuggestionsViewed(
             isSmart: viewState.suggestionsAreSmart,
             pageType: viewState.suggestionsPageType,
             scope: viewState.suggestionsScope,
-            surface: .sheet
+            surface: surface
         )
         if viewState.suggestionsScope == .selection {
             delegate?.aiChatContextualSheetViewControllerDidViewSelectionSuggestions(self)

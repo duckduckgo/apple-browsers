@@ -147,7 +147,7 @@ final class AIChatContextualModePixelHandlerTests {
     // MARK: - Suggested Prompt Pixels
 
     @available(iOS 16, macOS 13, *)
-    @Test("Suggestion selected includes suggestion id and page type", .timeLimit(.minutes(1)))
+    @Test("Suggestion selected includes suggestion id, page type and surface", .timeLimit(.minutes(1)))
     func suggestion_selected_includes_suggestion_id_and_page_type() {
         var firedEventName: String?
         var firedParameters: [String: String]?
@@ -158,10 +158,10 @@ final class AIChatContextualModePixelHandlerTests {
                 firedParameters = parameters
             })
 
-        sut.fireSuggestionSelected(suggestionId: "shopping-list", pageType: .recipe)
+        sut.fireSuggestionSelected(suggestionId: "shopping-list", pageType: .recipe, surface: .activeChat)
 
         #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionSelected.name)
-        #expect(firedParameters == ["suggestionId": "shopping-list", "pageType": "recipe"])
+        #expect(firedParameters == ["suggestionId": "shopping-list", "pageType": "recipe", "surface": "active_chat"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -179,7 +179,25 @@ final class AIChatContextualModePixelHandlerTests {
         sut.fireAskAboutPageSuggestionSelected(pageType: .article)
 
         #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionSelected.name)
-        #expect(firedParameters == ["suggestionId": "ask-about-page", "pageType": "article"])
+        #expect(firedParameters == ["suggestionId": "ask-about-page", "pageType": "article", "surface": "sheet"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Suggestions context collection timeout reports its surface", .timeLimit(.minutes(1)))
+    func suggestions_context_collection_timeout_reports_its_surface() {
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        sut.fireSuggestionsContextCollectionTimedOut(surface: .activeChat)
+
+        #expect(firedEventName == Pixel.Event.aiChatContextualSuggestionsContextCollectionTimedOut.name)
+        #expect(firedParameters == ["surface": "active_chat"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -202,6 +220,59 @@ final class AIChatContextualModePixelHandlerTests {
             "pageType": "video",
             "suggestion_scope": "selection",
             "surface": "floating_input"
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Reopened-chat submission reports whether page context was attached", .timeLimit(.minutes(1)), arguments: [true, false])
+    func testOngoingChatSubmissionReportsPageContext(hasPageContext: Bool) {
+        // GIVEN
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            })
+
+        // WHEN
+        sut.firePromptSubmittedInOngoingChat(hasPageContext: hasPageContext)
+
+        // THEN
+        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedOngoingChat.name)
+        #expect(firedParameters == ["has_page_context": String(hasPageContext)])
+    }
+
+    @Test("Discarding a deleted chat fires its own pixel")
+    func testActiveChatDiscardedAfterDeletionPixel() {
+        // GIVEN
+        var firedEvent: Pixel.Event?
+        let sut = AIChatContextualModePixelHandler(firePixel: { firedEvent = $0 })
+
+        // WHEN
+        sut.fireActiveChatDiscardedAfterDeletion()
+
+        // THEN
+        #expect(firedEvent?.name == Pixel.Event.aiChatContextualActiveChatDiscardedAfterDeletion.name)
+    }
+
+    // MARK: - Address Bar Menu Pixels
+
+    @Test("Ask About Search reports a different selection from Ask About Page")
+    func testAskAboutSearchIsDistinctFromAskAboutPage() {
+        // GIVEN
+        var firedNames: [String] = []
+        let sut = AIChatContextualModePixelHandler(firePixel: { firedNames.append($0.name) })
+
+        // WHEN
+        sut.fireAddressBarMenuAskAboutSearchSelected()
+        sut.fireAddressBarMenuAskAboutPageSelected()
+
+        // THEN
+        #expect(firedNames == [
+            Pixel.Event.aiChatContextualAddressBarMenuAskAboutSearchSelected.name,
+            Pixel.Event.aiChatContextualAddressBarMenuAskAboutPageSelected.name
         ])
     }
 
@@ -325,34 +396,48 @@ final class AIChatContextualModePixelHandlerTests {
         return featureDiscovery
     }
 
-    @Test("Prompt submitted with context pixel fires correctly")
-    func testPromptSubmittedWithContextPixel() {
+    @available(iOS 16, macOS 13, *)
+    @Test("Prompt submitted with context pixel fires correctly", .timeLimit(.minutes(1)), arguments: [true, false])
+    func testPromptSubmittedWithContextPixel(isFollowUp: Bool) {
         // GIVEN
-        var firedEvent: Pixel.Event?
-        let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            firedEvent = event
-        }, featureDiscovery: Self.returningUserFeatureDiscovery())
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            },
+            featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
-        sut.firePromptSubmittedWithContext()
+        sut.firePromptSubmittedWithContext(isFollowUp: isFollowUp)
 
         // THEN
-        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
+        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
+        #expect(firedParameters == ["is_follow_up": String(isFollowUp)])
     }
 
-    @Test("Prompt submitted without context pixel fires correctly")
-    func testPromptSubmittedWithoutContextPixel() {
+    @available(iOS 16, macOS 13, *)
+    @Test("Prompt submitted without context pixel fires correctly", .timeLimit(.minutes(1)), arguments: [true, false])
+    func testPromptSubmittedWithoutContextPixel(isFollowUp: Bool) {
         // GIVEN
-        var firedEvent: Pixel.Event?
-        let sut = AIChatContextualModePixelHandler(firePixel: { event in
-            firedEvent = event
-        }, featureDiscovery: Self.returningUserFeatureDiscovery())
+        var firedEventName: String?
+        var firedParameters: [String: String]?
+        let sut = AIChatContextualModePixelHandler(
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            },
+            featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
-        sut.firePromptSubmittedWithoutContext()
+        sut.firePromptSubmittedWithoutContext(isFollowUp: isFollowUp)
 
         // THEN
-        #expect(firedEvent?.name == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
+        #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
+        #expect(firedParameters == ["is_follow_up": String(isFollowUp)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -371,11 +456,11 @@ final class AIChatContextualModePixelHandlerTests {
             featureDiscovery: featureDiscovery)
 
         // WHEN
-        sut.firePromptSubmittedWithContext()
+        sut.firePromptSubmittedWithContext(isFollowUp: false)
 
         // THEN
         #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithContextNative.name)
-        #expect(firedParameters == ["first_prompt_new_install": "true"])
+        #expect(firedParameters == ["first_prompt_new_install": "true", "is_follow_up": "false"])
         #expect(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
     }
 
@@ -386,16 +471,19 @@ final class AIChatContextualModePixelHandlerTests {
         var firedParameters: [String: String]?
         var firedEventName: String?
         let sut = AIChatContextualModePixelHandler(
-            firePixel: { event in firedEventName = event.name },
-            firePixelWithParameters: { _, parameters in firedParameters = parameters },
+            firePixel: { _ in },
+            firePixelWithParameters: { event, parameters in
+                firedEventName = event.name
+                firedParameters = parameters
+            },
             featureDiscovery: Self.returningUserFeatureDiscovery())
 
         // WHEN
-        sut.firePromptSubmittedWithoutContext()
+        sut.firePromptSubmittedWithoutContext(isFollowUp: true)
 
         // THEN
         #expect(firedEventName == Pixel.Event.aiChatContextualPromptSubmittedWithoutContextNative.name)
-        #expect(firedParameters == nil)
+        #expect(firedParameters == ["is_follow_up": "true"])
     }
 
     // MARK: - Manual Attach State Management

@@ -1031,12 +1031,12 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageShown() {}
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
-    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType, surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsViewed(isSmart: Bool,
                                pageType: SuggestionsPageType,
                                scope: ResolvePageSuggestionsInput.Scope,
                                surface: AIChatContextualSuggestionsSurface) {}
-    func fireSuggestionsContextCollectionTimedOut() {}
+    func fireSuggestionsContextCollectionTimedOut(surface: AIChatContextualSuggestionsSurface) {}
     func fireRecentChatsMenuDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
@@ -1045,6 +1045,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireAddressBarMenuAskAboutSearchSelected() {}
     func fireAddressBarMenuRecentChatsSelected() {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
@@ -1060,8 +1061,13 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextCollectionUnavailable() {
         pageContextCollectionUnavailableCount += 1
     }
-    func firePromptSubmittedWithContext() {}
-    func firePromptSubmittedWithoutContext() {}
+    func firePromptSubmittedWithContext(isFollowUp: Bool) {}
+    func firePromptSubmittedWithoutContext(isFollowUp: Bool) {}
+    func firePromptSubmittedInOngoingChat(hasPageContext: Bool) {}
+    func fireActiveChatDiscardedAfterDeletion() {}
+    func firePageContextOffered() {}
+    func firePageContextOfferAccepted() {}
+    func firePageContextOfferDismissed() {}
     func beginManualAttach() {}
     func endManualAttach() {}
     var isManualAttachInProgress: Bool { false }

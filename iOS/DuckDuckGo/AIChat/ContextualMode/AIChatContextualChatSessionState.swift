@@ -303,11 +303,13 @@ final class AIChatContextualChatSessionState {
     /// Call when user submits a prompt from native input
     func handlePromptSubmission(_ prompt: String, url: URL? = nil) {
         guard frontendState != .restoredChat else {
+            fireOngoingChatSubmissionPixel()
             Logger.aiChat.debug("[SessionState] Chat start request ignored - preserving .restoredChat state")
             return
         }
 
         fireSelectionsSubmittedPixelIfNeeded()
+        firePromptSubmissionPixel()
 
         let contextData: AIChatPageContextData?
         switch chipState {
@@ -315,12 +317,10 @@ final class AIChatContextualChatSessionState {
             contextData = context.contextData
             frontendState = .chatWithInitialContext
             deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
-            pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] Chat started WITH initial context (chip was attached)")
         case .placeholder:
             contextData = nil
             frontendState = .chatWithoutInitialContext
-            pixelHandler.firePromptSubmittedWithoutContext()
             Logger.aiChat.debug("[SessionState] Chat started WITHOUT initial context (chip was placeholder)")
         }
 
@@ -338,23 +338,47 @@ final class AIChatContextualChatSessionState {
         fireSelectionsSubmittedPixelIfNeeded()
 
         guard frontendState != .restoredChat else {
+            fireOngoingChatSubmissionPixel()
             Logger.aiChat.debug("[SessionState] UTI chat start request ignored - preserving .restoredChat state")
             return
         }
+
+        firePromptSubmissionPixel()
 
         switch chipState {
         case .attached(let context):
             frontendState = .chatWithInitialContext
             deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
-            pixelHandler.firePromptSubmittedWithContext()
             Logger.aiChat.debug("[SessionState] UTI chat started WITH initial context")
         case .placeholder:
             frontendState = .chatWithoutInitialContext
-            pixelHandler.firePromptSubmittedWithoutContext()
             Logger.aiChat.debug("[SessionState] UTI chat started WITHOUT initial context")
         }
 
         rebuildViewState()
+    }
+
+    /// A reopened chat holds `.restoredChat` for the life of the sheet and never reaches the
+    /// first-prompt paths, so its submissions are reported on their own pixel instead.
+    private func fireOngoingChatSubmissionPixel() {
+        let hasPageContext: Bool
+        switch chipState {
+        case .attached: hasPageContext = true
+        case .placeholder: hasPageContext = false
+        }
+        pixelHandler.firePromptSubmittedInOngoingChat(hasPageContext: hasPageContext)
+    }
+
+    /// Read before the state transition below, so the first prompt of a chat is not reported as one
+    /// sent into a chat already under way.
+    private func firePromptSubmissionPixel() {
+        let isFollowUp = frontendState != .noChat
+        switch chipState {
+        case .attached:
+            pixelHandler.firePromptSubmittedWithContext(isFollowUp: isFollowUp)
+        case .placeholder:
+            pixelHandler.firePromptSubmittedWithoutContext(isFollowUp: isFollowUp)
+        }
     }
 
     private func fireSelectionsSubmittedPixelIfNeeded() {
@@ -367,6 +391,7 @@ final class AIChatContextualChatSessionState {
     func acceptSuggestedContext() {
         guard let context = suggestedContext else { return }
         suggestedContext = nil
+        pixelHandler.firePageContextOfferAccepted()
         attachContextFromSuggestionTap(context)
     }
 
@@ -374,6 +399,7 @@ final class AIChatContextualChatSessionState {
         guard let context = suggestedContext else { return }
         declinedOfferURL = URL(string: context.contextData.url)
         suggestedContext = nil
+        pixelHandler.firePageContextOfferDismissed()
         Logger.aiChat.debug("[SessionState] Suggested context dismissed")
     }
 
@@ -853,6 +879,7 @@ private extension AIChatContextualChatSessionState {
             return
         }
         suggestedContext = context
+        pixelHandler.firePageContextOffered()
         emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))
         Logger.aiChat.debug("[SessionState] Offered page context")
     }
@@ -997,7 +1024,7 @@ private extension AIChatContextualChatSessionState {
             try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
             guard let self, !Task.isCancelled else { return }
             guard self.suggestionsLoadState == .loading, self.canShowSuggestions else { return }
-            self.pixelHandler.fireSuggestionsContextCollectionTimedOut()
+            self.pixelHandler.fireSuggestionsContextCollectionTimedOut(surface: self.hasActiveChat ? .activeChat : .sheet)
             self.resolveSuggestionsIfLoading(from: nil)
         }
     }

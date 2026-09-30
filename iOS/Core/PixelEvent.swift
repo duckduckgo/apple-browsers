@@ -1856,6 +1856,12 @@ extension Pixel {
         case aiChatContextualAddressBarMenuShown
         case aiChatContextualAddressBarMenuNewChatSelected
         case aiChatContextualAddressBarMenuAskAboutPageSelected
+        case aiChatContextualAddressBarMenuAskAboutSearchSelected
+        case aiChatContextualPromptSubmittedOngoingChat
+        case aiChatContextualActiveChatDiscardedAfterDeletion
+        case aiChatContextualPageContextOffered
+        case aiChatContextualPageContextOfferAccepted
+        case aiChatContextualPageContextOfferDismissed
         case aiChatContextualFloatingInputDismissedWithoutSubmission
         case aiChatContextualFloatingInputPromotedToSheet
         case aiChatContextualSuggestionSelected
@@ -3765,6 +3771,12 @@ extension Pixel.Event {
         case .aiChatContextualAddressBarMenuShown: return "aichat_contextual_address_bar_menu_shown"
         case .aiChatContextualAddressBarMenuNewChatSelected: return "aichat_contextual_address_bar_menu_new_chat_selected"
         case .aiChatContextualAddressBarMenuAskAboutPageSelected: return "aichat_contextual_address_bar_menu_ask_about_page_selected"
+        case .aiChatContextualAddressBarMenuAskAboutSearchSelected: return "aichat_contextual_address_bar_menu_ask_about_search_selected"
+        case .aiChatContextualPromptSubmittedOngoingChat: return "m_aichat_contextual_prompt_submitted_ongoing_chat"
+        case .aiChatContextualActiveChatDiscardedAfterDeletion: return "m_aichat_contextual_active_chat_discarded_after_deletion"
+        case .aiChatContextualPageContextOffered: return "m_aichat_contextual_page_context_offered"
+        case .aiChatContextualPageContextOfferAccepted: return "m_aichat_contextual_page_context_offer_accepted"
+        case .aiChatContextualPageContextOfferDismissed: return "m_aichat_contextual_page_context_offer_dismissed"
         case .aiChatContextualFloatingInputDismissedWithoutSubmission: return "aichat_contextual_floating_input_dismissed_without_submission"
         case .aiChatContextualFloatingInputPromotedToSheet: return "aichat_contextual_floating_input_promoted_to_sheet"
         case .aiChatContextualSuggestionSelected: return "aichat_contextual_suggestion_selected"

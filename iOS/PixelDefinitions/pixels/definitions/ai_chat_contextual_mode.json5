@@ -95,14 +95,64 @@
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "aichat_first_prompt_new_install"]
+        "parameters": ["appVersion", "aichat_first_prompt_new_install", {
+            "key": "is_follow_up",
+            "description": "Whether the prompt went into a chat that was already under way rather than starting one.",
+            "type": "boolean"
+        }]
     },
     "m_aichat_contextual_prompt_submitted_without_context_native": {
         "description": "Fired when the user submits a prompt without page context via the native input",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "aichat_first_prompt_new_install"]
+        "parameters": ["appVersion", "aichat_first_prompt_new_install", {
+            "key": "is_follow_up",
+            "description": "Whether the prompt went into a chat that was already under way rather than starting one.",
+            "type": "boolean"
+        }]
+    },
+    "m_aichat_contextual_prompt_submitted_ongoing_chat": {
+        "description": "Fired when the user submits a prompt into a contextual chat that was reopened rather than started. The first-prompt pixels do not cover this path, so the two together give total prompts from the sheet",
+        "owners": ["stardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "has_page_context",
+                "description": "Whether page context was attached to the chat when the prompt was submitted.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_aichat_contextual_active_chat_discarded_after_deletion": {
+        "description": "Fired when the sheet drops the chat it was holding because the user had deleted that chat from their Duck.ai history",
+        "owners": ["stardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_offered": {
+        "description": "Fired when the contextual sheet offers the page the user navigated to, rather than attaching it",
+        "owners": ["stardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_offer_accepted": {
+        "description": "Fired when the user accepts an offered page context, attaching it to the chat",
+        "owners": ["stardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_contextual_page_context_offer_dismissed": {
+        "description": "Fired when the user dismisses an offered page context without attaching it",
+        "owners": ["stardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     },
     "m_aichat_contextual_session_restored": {
         "description": "Fired when an AI Chat contextual session is restored after a cold start",
@@ -174,6 +224,13 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
+    "aichat_contextual_address_bar_menu_ask_about_search_selected": {
+        "description": "Fired when the user selects Ask About Search in the address bar Duck.ai menu",
+        "owners": ["stardio"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "aichat_contextual_address_bar_menu_all_chats_selected": {
         "description": "Fired when the user selects All Chats in the address bar Duck.ai menu",
         "owners": ["aataraxiaa"],
@@ -230,6 +287,11 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
+            {
+                "key": "surface",
+                "description": "The contextual surface where the suggestions were shown.",
+                "type": "string"
+            },
             {
                 "key": "suggestionId",
                 "description": "Catalog key of the selected suggestion (e.g. summarize-page, translate-page, ask-about-page).",
@@ -328,7 +390,14 @@
         "owners": ["pikorddg"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "The contextual surface where the suggestions were shown.",
+                "type": "string"
+            }
+        ]
     },
     "aichat_contextual_selection_attached": {
         "description": "Fired once per text selection attached to Duck.ai. A refusal at the 5-selection cap is reported separately and is not counted here",

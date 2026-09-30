@@ -2261,9 +2261,46 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.beginChatForUTISubmission()
 
         XCTAssertEqual(sessionState.frontendState, .restoredChat)
+        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
+        // The first-prompt pixels stay out of it; the submission is reported on its own pixel.
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithContextFired)
         XCTAssertFalse(mockPixelHandler.promptSubmittedWithoutContextFired)
-        XCTAssertEqual(mockPixelHandler.promptSubmittedWithSelectionsCounts, [1])
+        XCTAssertEqual(mockPixelHandler.ongoingChatSubmissions, [false])
+    }
+
+    func testEveryPromptIntoAReopenedChatIsReported() {
+        sessionState.restoreChat(with: URL(string: "https://duck.ai/?chat=abc")!)
+
+        sessionState.handlePromptSubmission("first")
+        sessionState.handlePromptSubmission("second")
+
+        // The reopened chat holds .restoredChat, so neither reaches the first-prompt paths.
+        XCTAssertEqual(mockPixelHandler.promptSubmittedFollowUpFlags, [])
+        XCTAssertEqual(mockPixelHandler.ongoingChatSubmissions, [false, false])
+    }
+
+    func testTheFirstSubmissionIsNotAFollowUpAndLaterOnesAre() {
+        sessionState.handlePromptSubmission("first")
+        sessionState.handlePromptSubmission("second")
+        sessionState.handlePromptSubmission("third")
+
+        XCTAssertEqual(mockPixelHandler.promptSubmittedFollowUpFlags, [false, true, true])
+    }
+
+    func testAnOfferIsCountedWhenShownAcceptedAndDismissed() {
+        sessionState.handleOfferedContext(makeTestContext(url: "https://example.com/a"))
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferedCount, 1)
+        XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedCount, 1)
+        XCTAssertEqual(mockPixelHandler.pageContextOfferDismissedCount, 0)
+
+        sessionState.handleOfferedContext(makeTestContext(url: "https://example.com/b"))
+        sessionState.dismissSuggestedContext()
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferedCount, 2)
+        XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedCount, 1)
+        XCTAssertEqual(mockPixelHandler.pageContextOfferDismissedCount, 1)
     }
 
     // MARK: - Active Chat Suggestions
@@ -2876,6 +2913,12 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var pageContextRemovedFrontendFired = false
     var promptSubmittedWithContextFired = false
     var promptSubmittedWithoutContextFired = false
+    var promptSubmittedFollowUpFlags: [Bool] = []
+    var ongoingChatSubmissions: [Bool] = []
+    var activeChatDiscardedCount = 0
+    var pageContextOfferedCount = 0
+    var pageContextOfferAcceptedCount = 0
+    var pageContextOfferDismissedCount = 0
     var manualAttachBegan = false
     var manualAttachEnded = false
     var isManualAttachInProgress: Bool = false
@@ -2904,12 +2947,12 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireQuickActionAskAboutPageShown() { quickActionAskAboutPageShownCount += 1 }
     func fireQuickActionAskAboutPageSelected() {}
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {}
-    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {}
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType, surface: AIChatContextualSuggestionsSurface) {}
     func fireSuggestionsViewed(isSmart: Bool,
                                pageType: SuggestionsPageType,
                                scope: ResolvePageSuggestionsInput.Scope,
                                surface: AIChatContextualSuggestionsSurface) {}
-    func fireSuggestionsContextCollectionTimedOut() {}
+    func fireSuggestionsContextCollectionTimedOut(surface: AIChatContextualSuggestionsSurface) {}
     func fireRecentChatsMenuDisplayed() {}
     func fireRecentChatSelected() {}
     func fireViewAllChatsTapped() {}
@@ -2918,6 +2961,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireAddressBarMenuShown() {}
     func fireAddressBarMenuNewChatSelected() {}
     func fireAddressBarMenuAskAboutPageSelected() {}
+    func fireAddressBarMenuAskAboutSearchSelected() {}
     func fireAddressBarMenuRecentChatsSelected() {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
@@ -2929,8 +2973,21 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedFrontend() { pageContextRemovedFrontendFired = true }
     func firePageContextCollectionEmpty() {}
     func firePageContextCollectionUnavailable() {}
-    func firePromptSubmittedWithContext() { promptSubmittedWithContextFired = true }
-    func firePromptSubmittedWithoutContext() { promptSubmittedWithoutContextFired = true }
+    func firePromptSubmittedWithContext(isFollowUp: Bool) {
+        promptSubmittedWithContextFired = true
+        promptSubmittedFollowUpFlags.append(isFollowUp)
+    }
+    func firePromptSubmittedWithoutContext(isFollowUp: Bool) {
+        promptSubmittedWithoutContextFired = true
+        promptSubmittedFollowUpFlags.append(isFollowUp)
+    }
+    func firePromptSubmittedInOngoingChat(hasPageContext: Bool) {
+        ongoingChatSubmissions.append(hasPageContext)
+    }
+    func fireActiveChatDiscardedAfterDeletion() { activeChatDiscardedCount += 1 }
+    func firePageContextOffered() { pageContextOfferedCount += 1 }
+    func firePageContextOfferAccepted() { pageContextOfferAcceptedCount += 1 }
+    func firePageContextOfferDismissed() { pageContextOfferDismissedCount += 1 }
     func beginManualAttach() { manualAttachBegan = true; isManualAttachInProgress = true }
     func endManualAttach() { manualAttachEnded = true; isManualAttachInProgress = false }
 

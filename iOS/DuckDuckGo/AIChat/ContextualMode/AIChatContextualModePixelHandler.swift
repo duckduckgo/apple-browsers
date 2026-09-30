@@ -43,6 +43,7 @@ protocol AIChatContextualModePixelFiring {
     func fireAddressBarMenuShown()
     func fireAddressBarMenuNewChatSelected()
     func fireAddressBarMenuAskAboutPageSelected()
+    func fireAddressBarMenuAskAboutSearchSelected()
     func fireAddressBarMenuRecentChatsSelected()
 
     // MARK: - Floating Input
@@ -51,12 +52,12 @@ protocol AIChatContextualModePixelFiring {
 
     // MARK: - Suggested Prompts
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType)
-    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType)
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType, surface: AIChatContextualSuggestionsSurface)
     func fireSuggestionsViewed(isSmart: Bool,
                                pageType: SuggestionsPageType,
                                scope: ResolvePageSuggestionsInput.Scope,
                                surface: AIChatContextualSuggestionsSurface)
-    func fireSuggestionsContextCollectionTimedOut()
+    func fireSuggestionsContextCollectionTimedOut(surface: AIChatContextualSuggestionsSurface)
 
     // MARK: - Recent Chats Menu
     func fireRecentChatsMenuDisplayed()
@@ -85,8 +86,15 @@ protocol AIChatContextualModePixelFiring {
     func firePageContextCollectionUnavailable()
 
     // MARK: - Prompt Submission
-    func firePromptSubmittedWithContext()
-    func firePromptSubmittedWithoutContext()
+    func firePromptSubmittedWithContext(isFollowUp: Bool)
+    func firePromptSubmittedWithoutContext(isFollowUp: Bool)
+    func firePromptSubmittedInOngoingChat(hasPageContext: Bool)
+    func fireActiveChatDiscardedAfterDeletion()
+
+    // MARK: - Page Context Offer
+    func firePageContextOffered()
+    func firePageContextOfferAccepted()
+    func firePageContextOfferDismissed()
 
     // MARK: - Manual Attach State
     func beginManualAttach()
@@ -195,6 +203,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
     }
 
+    func fireAddressBarMenuAskAboutSearchSelected() {
+        firePixel(.aiChatContextualAddressBarMenuAskAboutSearchSelected)
+    }
+
     func fireAddressBarMenuRecentChatsSelected() {
         firePixelKitEvent(AIChatAddressBarMenuPixel.recentChatsSelected, .dailyAndCount)
     }
@@ -285,34 +297,62 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     // MARK: - Prompt Submission
 
-    func firePromptSubmittedWithContext() {
-        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithContextNative)
+    func firePromptSubmittedWithContext(isFollowUp: Bool) {
+        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithContextNative, isFollowUp: isFollowUp)
     }
 
-    func firePromptSubmittedWithoutContext() {
-        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+    func firePromptSubmittedWithoutContext(isFollowUp: Bool) {
+        firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithoutContextNative, isFollowUp: isFollowUp)
     }
 
     /// Marking after the fire keeps the first-prompt claim on this submission's pixel; the UTI
     /// prompt pixel for the same submission fires earlier in the flow, so it reads the same state.
-    private func firePromptSubmissionPixel(_ event: Pixel.Event) {
-        if featureDiscovery.isFirstDuckAIPromptNewInstall {
-            firePixelWithParameters(event, [PixelParameters.aiChatFirstPromptNewInstall: "true"])
-            featureDiscovery.markDuckAIPromptSubmitted()
-        } else {
-            firePixel(event)
+    private func firePromptSubmissionPixel(_ event: Pixel.Event, isFollowUp: Bool) {
+        var parameters = [PixelParameters.aiChatContextualPromptIsFollowUp: String(isFollowUp)]
+        let isFirstPromptOnNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
+        if isFirstPromptOnNewInstall {
+            parameters[PixelParameters.aiChatFirstPromptNewInstall] = "true"
         }
+        firePixelWithParameters(event, parameters)
+        if isFirstPromptOnNewInstall {
+            featureDiscovery.markDuckAIPromptSubmitted()
+        }
+    }
+
+    /// A reopened chat never reaches the first-prompt paths, so its submissions are reported here.
+    func firePromptSubmittedInOngoingChat(hasPageContext: Bool) {
+        firePixelWithParameters(.aiChatContextualPromptSubmittedOngoingChat,
+                                [PixelParameters.aiChatContextualHasPageContext: String(hasPageContext)])
+    }
+
+    func fireActiveChatDiscardedAfterDeletion() {
+        firePixel(.aiChatContextualActiveChatDiscardedAfterDeletion)
+    }
+
+    // MARK: - Page Context Offer
+
+    func firePageContextOffered() {
+        firePixel(.aiChatContextualPageContextOffered)
+    }
+
+    func firePageContextOfferAccepted() {
+        firePixel(.aiChatContextualPageContextOfferAccepted)
+    }
+
+    func firePageContextOfferDismissed() {
+        firePixel(.aiChatContextualPageContextOfferDismissed)
     }
 
     // MARK: - Suggested Prompts
 
     func fireAskAboutPageSuggestionSelected(pageType: SuggestionsPageType) {
-        fireSuggestionSelected(suggestionId: Self.askAboutPageSuggestionId, pageType: pageType)
+        fireSuggestionSelected(suggestionId: Self.askAboutPageSuggestionId, pageType: pageType, surface: .sheet)
     }
 
-    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType) {
+    func fireSuggestionSelected(suggestionId: String, pageType: SuggestionsPageType, surface: AIChatContextualSuggestionsSurface) {
         firePixelWithParameters(.aiChatContextualSuggestionSelected, [
             PixelParameters.suggestionId: suggestionId,
+            PixelParameters.aiChatSuggestionsSurface: surface.rawValue,
             PixelParameters.suggestionsPageType: pageType.rawValue
         ])
     }
@@ -329,8 +369,9 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         ])
     }
 
-    func fireSuggestionsContextCollectionTimedOut() {
-        firePixel(.aiChatContextualSuggestionsContextCollectionTimedOut)
+    func fireSuggestionsContextCollectionTimedOut(surface: AIChatContextualSuggestionsSurface) {
+        firePixelWithParameters(.aiChatContextualSuggestionsContextCollectionTimedOut,
+                                [PixelParameters.aiChatSuggestionsSurface: surface.rawValue])
     }
 
     // MARK: - Recent Chats Menu
@@ -374,6 +415,8 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 enum AIChatContextualSuggestionsSurface: String {
     case floatingInput = "floating_input"
     case sheet
+    /// The strip shown over a chat already under way, rather than the pre-submit sheet.
+    case activeChat = "active_chat"
 }
 
 enum AIChatContextualSelectionPixel: PixelKit.Event {

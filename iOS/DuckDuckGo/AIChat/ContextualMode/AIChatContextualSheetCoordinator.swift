@@ -177,6 +177,7 @@ final class AIChatContextualSheetCoordinator {
         guard await isChatDeleted(chatID: chatID) else { return }
         Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
         persistedChatIDs.remove(chatID)
+        pixelHandler.fireActiveChatDiscardedAfterDeletion()
         clearActiveChat()
     }
 
@@ -186,6 +187,7 @@ final class AIChatContextualSheetCoordinator {
             persistedChatIDs.insert(chatID)
             return restoreURL
         }
+        pixelHandler.fireActiveChatDiscardedAfterDeletion()
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
         return nil
     }

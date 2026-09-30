@@ -190,7 +190,7 @@ extension MainViewController {
                     self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutPageSelected()
                     self?.askAboutCurrentPageFromAddressBar()
                 case .search(let query):
-                    // TODO: fire a dedicated "ask about search" pixel
+                    self?.duckAIAddressBarPixelHandler.fireAddressBarMenuAskAboutSearchSelected()
                     self?.openFreshDuckAIChatFromAddressBarMenu(source: source, query: query)
                 }
             },

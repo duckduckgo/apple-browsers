@@ -99,7 +99,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
-    private let attachmentPrivacyCountStore: AttachmentPrivacyDisplayCountStoring
+    private let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring?
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
@@ -120,7 +120,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
-         attachmentPrivacyCountStore: AttachmentPrivacyDisplayCountStoring = InMemoryAttachmentPrivacyDisplayCountStore(),
+         attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -132,7 +132,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
-        self.attachmentPrivacyCountStore = attachmentPrivacyCountStore
+        self.attachmentPrivacyDisclosureStore = attachmentPrivacyDisclosureStore
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -150,9 +150,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             self?.notifyCustomizeResponsesChanged()
         }
 
-        // Any surface spending a display moves the shared count, so an open NTP has to re-read it.
+        // Any surface spending the display moves shared state, so an open NTP has to re-read it.
         attachmentPrivacyChangeObserver = NotificationCenter.default.addObserver(
-            forName: .attachmentPrivacyDisplayCountDidChange,
+            forName: .attachmentPrivacyDisclosureDidChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -483,8 +483,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         customizeResponsesChangedSubject.send(())
     }
 
-    /// The count and the kill switch. The flag needs its own leg: every other config publisher
-    /// dedupes on its own flag, so a flip of this one alone would never reach an open NTP.
+    /// The kill switch needs its own leg: every other config publisher dedupes on its own flag,
+    /// so a flip of this one alone would never reach an open NTP.
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> {
         Publishers.Merge(
             attachmentPrivacyChangedSubject,
@@ -503,20 +503,21 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     @MainActor
     var showAttachmentPrivacyDisclaimer: Bool {
-        attachmentPrivacyCounter.canDisplay
+        attachmentPrivacyDisclosure?.canShow ?? false
     }
 
     @MainActor
     func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind) {
-        attachmentPrivacyCounter.consumeDisplay()
+        attachmentPrivacyDisclosure?.claim()
     }
 
-    /// Built per read: a thin wrapper over the one store, so it always sees the current count.
     @MainActor
-    private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
-        AttachmentPrivacyDisplayCounter(store: attachmentPrivacyCountStore,
-                                        webKeySource: duckAiStorageHandlerProvider(.regular),
-                                        featureFlagger: featureFlagger)
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure? {
+        guard let attachmentPrivacyDisclosureStore else { return nil }
+
+        return AttachmentPrivacyDisclosure(store: attachmentPrivacyDisclosureStore,
+                                           webKeySource: duckAiStorageHandlerProvider(.regular),
+                                           featureFlagger: featureFlagger)
     }
 
     var isAttachTabsEnabled: Bool {

@@ -137,7 +137,7 @@ extension NewTabPageActionsManager {
                 NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
-            attachmentPrivacyCountStore: NSApp.delegateTyped.attachmentPrivacyDisplayCountStore,
+            attachmentPrivacyDisclosureStore: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },

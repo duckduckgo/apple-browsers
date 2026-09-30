@@ -29,6 +29,10 @@ import WebKit
 /// unique identifier, so an extension without a button shows no popup at all.
 ///
 /// Each browser window owns its own updater, because each window has its own navigation bar.
+///
+/// The updater reads the manager through a closure on every update, because the app delegate
+/// releases the manager when the web extensions feature flag turns off and creates a new one when
+/// it turns back on. When the closure returns `nil`, the updater removes every button.
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
@@ -42,7 +46,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     var themeUpdateCancellable: AnyCancellable?
 
     private let container: NSStackView
-    private let webExtensionManager: WebExtensionManaging
+    private let webExtensionManagerProvider: () -> WebExtensionManaging?
     private var buttons = Set<MouseOverButton>()
     private var updateCancellable: AnyCancellable?
 
@@ -57,10 +61,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         }
     }
 
-    init(webExtensionManager: WebExtensionManaging,
+    init(webExtensionManagerProvider: @escaping () -> WebExtensionManaging?,
          themeManager: ThemeManaging,
          container: NSStackView) {
-        self.webExtensionManager = webExtensionManager
+        self.webExtensionManagerProvider = webExtensionManagerProvider
         self.themeManager = themeManager
         self.container = container
 
@@ -96,7 +100,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         //
         // `loadedExtensions` is a set, so sort the contexts to keep the button order
         // the same between updates and between app launches.
-        let loaded = webExtensionManager.loadedExtensions
+        let loaded = webExtensionManagerProvider()?.loadedExtensions ?? []
         let contexts = loaded
             .filter(\.declaresToolbarAction)
             .sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
@@ -202,7 +206,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             return
         }
 
-        let context = webExtensionManager.loadedExtensions.first { context in
+        let context = webExtensionManagerProvider()?.loadedExtensions.first { context in
             context.uniqueIdentifier == identifier
         }
 

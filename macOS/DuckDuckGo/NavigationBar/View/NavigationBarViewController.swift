@@ -548,8 +548,8 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func setupWebExtensionButtons() {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            let updater = WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager,
+        if #available(macOS 15.4, *) {
+            let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
                                                           themeManager: themeManager,
                                                           container: menuButtons)
             updater.startUpdating()

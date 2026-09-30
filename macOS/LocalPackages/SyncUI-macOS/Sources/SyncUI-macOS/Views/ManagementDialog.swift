@@ -35,6 +35,7 @@ public enum ManagementDialogKind: Equatable {
     case prepareToSync(PreparingToSyncMode)
     case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
+    case pairingSuccess(joiningDeviceName: String)
     case nowSyncing
     case syncWithServer
     case syncAnotherDevicePrompt
@@ -131,6 +132,8 @@ public struct ManagementDialog: View {
                 } else {
                     SaveRecoveryPDFView(code: code)
                 }
+            case .pairingSuccess(let joiningDeviceName):
+                SyncSuccessViewV2(code: nil, joiningDeviceName: joiningDeviceName)
             case .nowSyncing:
                 DeviceSyncedView()
             case .syncWithServer:

@@ -38,10 +38,10 @@ public struct SimplifiedConnectingSheetView: View {
             switch model.connectingSheetPhase {
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptView(model: model)
-            case .connecting(let isRecovery, let isFinishing):
+            case .connecting(let isRecovery, let successDestination):
                 SimplifiedConnectingContentView(
                     isRecovery: isRecovery,
-                    isFinishing: isFinishing,
+                    isFinishing: successDestination != nil,
                     onAnimationFinished: { model.connectingAnimationDidFinish() }
                 )
             case .waitingForOtherDevice:
@@ -51,8 +51,8 @@ public struct SimplifiedConnectingSheetView: View {
                     isWaitingForOtherDevice: true,
                     onAnimationFinished: {}
                 )
-            case .success(let isRecovery):
-                SyncSuccessView(model: model, isRecovery: isRecovery)
+            case .success(let destination):
+                SyncSuccessView(model: model, destination: destination)
             case .none:
                 EmptyView()
             }
@@ -98,13 +98,13 @@ struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
         case .connecting:
             return .connectingSheetPreview(phase: .connecting(isRecovery: false))
         case .deviceConnected:
-            return .connectingSheetPreview(phase: .success(isRecovery: false), autoRestoreProvider: .enabled)
+            return .connectingSheetPreview(phase: .success(.joiner(isRecovery: false)), autoRestoreProvider: .enabled)
         case .waitingForOtherDevice:
             return .connectingSheetPreview(phase: .waitingForOtherDevice)
         case .recovering:
             return .connectingSheetPreview(phase: .connecting(isRecovery: true))
         case .recoveryCompleted:
-            return .connectingSheetPreview(phase: .success(isRecovery: true))
+            return .connectingSheetPreview(phase: .success(.joiner(isRecovery: true)))
         }
     }
 }

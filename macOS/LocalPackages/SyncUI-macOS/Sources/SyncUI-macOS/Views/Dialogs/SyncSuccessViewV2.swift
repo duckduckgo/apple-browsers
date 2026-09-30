@@ -25,13 +25,14 @@ struct SyncSuccessViewV2: View {
 
     @EnvironmentObject private var model: ManagementDialogModel
 
-    let code: String
+    let code: String?
+    var joiningDeviceName: String?
 
     @State private var showCopyConfirmation = false
 
     private var title: String {
         UserText.syncSuccessTitleV2(
-            deviceName: model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceNameV2
+            deviceName: joiningDeviceName ?? model.thisDeviceName ?? UserText.syncSuccessFallbackDeviceNameV2
         )
     }
 
@@ -51,13 +52,15 @@ struct SyncSuccessViewV2: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("SyncSuccessTitle")
 
-                Text(UserText.syncSuccessDescriptionV2)
-                    .font(.body)
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let code {
+                    Text(UserText.syncSuccessDescriptionV2)
+                        .font(.body)
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                recoveryCodeCard
+                    recoveryCodeCard(code: code)
+                }
             }
         } buttons: {
             Spacer()
@@ -72,7 +75,7 @@ struct SyncSuccessViewV2: View {
         }
     }
 
-    private var recoveryCodeCard: some View {
+    private func recoveryCodeCard(code: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(.qrDownloadHero)
                 .resizable()
@@ -145,6 +148,12 @@ struct SyncSuccessViewV2: View {
     let model = ManagementDialogModel()
     model.thisDeviceName = "Dax’s MacBook Pro"
     return SyncSuccessViewV2(code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ")
+        .environmentObject(model)
+}
+
+#Preview("Pairing Host") {
+    let model = ManagementDialogModel()
+    return SyncSuccessViewV2(code: nil, joiningDeviceName: "Dax’s iPhone")
         .environmentObject(model)
 }
 #endif

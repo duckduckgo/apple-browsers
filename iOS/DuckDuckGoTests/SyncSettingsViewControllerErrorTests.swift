@@ -607,6 +607,9 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     @MainActor
     func testWhenPairingV21CompletesAfterDeviceListUpdateThenShowsSuccess() {
         vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        vc.confirmedPairingV2PeerName = "Joiner"
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = nil
         let devices = [
             SyncSettingsViewModel.Device(id: "host", name: "Host", type: "phone", isThisDevice: true),
             SyncSettingsViewModel.Device(id: "joiner", name: "Joiner", type: "phone", isThisDevice: false)
@@ -616,11 +619,14 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(vc.viewModel.devices, devices)
-        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        let successDestination = SyncSettingsViewModel.SuccessDestination.host(joiningDeviceName: "Joiner")
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: successDestination))
+        XCTAssertNil(vc.confirmedPairingV2PeerName)
+        XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
 
         vc.viewModel.connectingAnimationDidFinish()
 
-        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .success(isRecovery: false))
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .success(successDestination))
     }
 
     @MainActor
@@ -666,11 +672,17 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncAutoRestoreHandler: syncAutoRestoreHandler
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = nil
 
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
         spyVC.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .qrCode)
 
-        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        XCTAssertEqual(
+            spyVC.viewModel.connectingSheetPhase,
+            .connecting(isRecovery: false, successDestination: .host(joiningDeviceName: UserText.syncPairingV2UnknownPeerName))
+        )
+        XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
     }
 
     @MainActor

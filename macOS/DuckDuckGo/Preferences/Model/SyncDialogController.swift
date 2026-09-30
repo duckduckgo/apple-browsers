@@ -109,18 +109,13 @@ final class SyncDialogController {
     private var syncPromoSource: String?
     private var authenticationCancelledPromptContinuation: (@MainActor () -> Void)?
     private var pairingV2PeerKind: PairingV2DeviceKind?
+    private var confirmedPairingV2PeerName: String?
     private var pairingV2ConfirmationRequest: PendingPairingConfirmation?
     private var pairingV2ConfirmationWasDismissedByController = false
-    private var didCreateSyncAccountDuringPairing = false
     private var displayedCodeSetupSource: SyncSetupSource?
     private var hostDeviceWaitCancellable: AnyCancellable?
     private var hostDeviceRefreshCancellable: AnyCancellable?
-    private var pendingPreparingToSyncCompletion: PreparingToSyncCompletion?
-
-    private enum PreparingToSyncCompletion {
-        case endFlow
-        case showSyncSuccess
-    }
+    private var pendingSyncSuccessDialog: ManagementDialogKind?
 
     @Published var stringForQR: String?
     @Published var codeForDisplayOrPasting: String?
@@ -274,11 +269,12 @@ final class SyncDialogController {
     }
 
     private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool) {
-        let shouldPresentSuccess = didCreateSyncAccountDuringPairing
-        didCreateSyncAccountDuringPairing = false
+        let joiningDeviceName = confirmedPairingV2PeerName ?? UserText.syncPairingV2UnknownPeerName
+        confirmedPairingV2PeerName = nil
 
+        let successDialog = ManagementDialogKind.pairingSuccess(joiningDeviceName: joiningDeviceName)
         let complete: (SyncDialogController) -> Void = { controller in
-            controller.completeAfterPreparingToSyncAnimation(shouldPresentSuccess ? .showSyncSuccess : .endFlow)
+            controller.completeAfterPreparingToSyncAnimation(successDialog)
         }
 
         if shouldWaitForDevicesToChange {
@@ -288,31 +284,22 @@ final class SyncDialogController {
         }
     }
 
-    private func completeAfterPreparingToSyncAnimation(_ completion: PreparingToSyncCompletion) {
+    private func completeAfterPreparingToSyncAnimation(_ successDialog: ManagementDialogKind) {
         guard managementDialogModel.isSimplifiedSyncSetupV2Enabled,
               managementDialogModel.isPreparingToSyncAnimationPaused else {
-            performPreparingToSyncCompletion(completion)
+            presentDialog(for: successDialog)
             return
         }
 
-        pendingPreparingToSyncCompletion = completion
+        pendingSyncSuccessDialog = successDialog
         presentDialog(for: .prepareToSync(.twoDevicePairing))
         managementDialogModel.isPreparingToSyncAnimationPaused = false
-    }
-
-    private func performPreparingToSyncCompletion(_ completion: PreparingToSyncCompletion) {
-        switch completion {
-        case .endFlow:
-            managementDialogModel.endFlow()
-        case .showSyncSuccess:
-            showSyncSuccess()
-        }
     }
 
     private func startPollingForRecoveryKey(isRecovery: Bool) {
         cancelHostDeviceWait()
         pairingV2PeerKind = nil
-        didCreateSyncAccountDuringPairing = false
+        confirmedPairingV2PeerName = nil
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -442,7 +429,7 @@ final class SyncDialogController {
     private func startPollingForPublicKey() {
         cancelHostDeviceWait()
         pairingV2PeerKind = nil
-        didCreateSyncAccountDuringPairing = false
+        confirmedPairingV2PeerName = nil
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -788,8 +775,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
 
     func didEndFlow() {
         cancelHostDeviceWait()
-        didCreateSyncAccountDuringPairing = false
-        pendingPreparingToSyncCompletion = nil
+        confirmedPairingV2PeerName = nil
+        pendingSyncSuccessDialog = nil
         managementDialogModel.isPreparingToSyncAnimationPaused = false
         let controller = self.connectionController
         let delegate = self.coordinationDelegate
@@ -801,9 +788,9 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func preparingToSyncAnimationDidFinish() {
-        guard let completion = pendingPreparingToSyncCompletion else { return }
-        pendingPreparingToSyncCompletion = nil
-        performPreparingToSyncCompletion(completion)
+        guard let successDialog = pendingSyncSuccessDialog else { return }
+        pendingSyncSuccessDialog = nil
+        presentDialog(for: successDialog)
     }
 }
 
@@ -997,6 +984,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             managementDialogModel.endFlow()
         } else if isConfirmed {
             pairingV2PeerKind = peerKind
+            if case .sharer = setupRole {
+                confirmedPairingV2PeerName = peerName
+            }
             if let dialog = Self.postPairingConfirmationDialog(
                 isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled,
                 setupRole: setupRole
@@ -1028,7 +1018,6 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
 
         if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
-            didCreateSyncAccountDuringPairing = true
             return
         }
 
@@ -1063,7 +1052,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if self.managementDialogModel.isSimplifiedSyncSetupV2Enabled,
                self.managementDialogModel.isPreparingToSyncAnimationPaused {
-                self.completeAfterPreparingToSyncAnimation(.showSyncSuccess)
+                self.completeAfterPreparingToSyncAnimation(.saveRecoveryCode(self.recoveryCode ?? ""))
             } else {
                 self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
             }

@@ -254,6 +254,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let addresses: [DBPUIUserProfileAddress]
     public let alternativeNames: [String]
     public let relatives: [String]
+    public let profileUrl: String?
     public let foundDate: Double
     /// The moment the broker acknowledged the opt-out for email-confirming brokers, or the moment our
     /// form submission completed for brokers that don't email-confirm. For a value that consistently
@@ -266,13 +267,14 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, optOutFormSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], profileUrl: String? = nil, foundDate: Double, optOutSubmittedDate: Double? = nil, optOutFormSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
         self.id = id
         self.dataBroker = dataBroker
         self.name = name
         self.addresses = addresses
         self.alternativeNames = alternativeNames
         self.relatives = relatives
+        self.profileUrl = profileUrl
         self.foundDate = foundDate
         self.optOutSubmittedDate = optOutSubmittedDate
         self.optOutFormSubmittedDate = optOutFormSubmittedDate
@@ -339,6 +341,7 @@ extension DBPUIDataBrokerProfileMatch {
                   addresses: extractedProfile.addresses?.map { DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
                   relatives: extractedProfile.relatives ?? [String](),
+                  profileUrl: extractedProfile.profileUrl,
                   foundDate: foundDate.timeIntervalSince1970,
                   optOutSubmittedDate: optOutSubmittedDate?.timeIntervalSince1970,
                   optOutFormSubmittedDate: optOutFormSubmittedDate?.timeIntervalSince1970,

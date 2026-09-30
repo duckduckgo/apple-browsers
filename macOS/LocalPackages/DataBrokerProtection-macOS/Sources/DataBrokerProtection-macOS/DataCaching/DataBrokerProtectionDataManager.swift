@@ -65,6 +65,7 @@ public protocol DataBrokerProtectionDataManagerDelegate: AnyObject {
 
 public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
     private let profileSavedNotifier: DBPProfileSavedNotifier?
+    private let optOutEmailOpener: DBPUIOptOutEmailOpening
 
     public let communicator = DBPUICommunicator()
 
@@ -79,6 +80,17 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
                          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
         self.database = database
         self.profileSavedNotifier = profileSavedNotifier
+        self.optOutEmailOpener = DBPUIOptOutEmailOpener()
+        self.onProfileSaved = nil
+        communicator.delegate = self
+    }
+
+    init(database: DataBrokerProtectionRepository,
+         profileSavedNotifier: DBPProfileSavedNotifier? = nil,
+         optOutEmailOpener: DBPUIOptOutEmailOpening) {
+        self.database = database
+        self.profileSavedNotifier = profileSavedNotifier
+        self.optOutEmailOpener = optOutEmailOpener
         self.onProfileSaved = nil
         communicator.delegate = self
     }
@@ -222,6 +234,12 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         delegate?.dataBrokerProtectionDataManagerWillOpenSendFeedbackForm()
     }
 
+    @MainActor
+    public func willOpenOptOutEmail(_ payload: DBPUIOptOutEmail) -> Bool {
+        let result = optOutEmailOpener.open(payload)
+        return result.didOpen
+    }
+
     public func willApplyVPNBypassSetting(_ bypass: Bool) async {
         await delegate?.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(bypass)
     }
@@ -262,6 +280,8 @@ public protocol UserProfileDelegate: AnyObject {
 
 public protocol UserActionDelegate: AnyObject {
     func willOpenSendFeedbackForm()
+    @MainActor
+    func willOpenOptOutEmail(_ payload: DBPUIOptOutEmail) -> Bool
     func willApplyVPNBypassSetting(_ bypass: Bool) async
     func willRemoveOptOutFromDashboard(_ id: Int64)
 }
@@ -401,6 +421,10 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func openSendFeedbackModal() async {
         delegate?.willOpenSendFeedbackForm()
+    }
+
+    public func openOptOutEmail(_ payload: DBPUIOptOutEmail) async -> Bool {
+        return await delegate?.willOpenOptOutEmail(payload) ?? false
     }
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {

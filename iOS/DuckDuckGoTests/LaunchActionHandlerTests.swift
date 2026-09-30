@@ -424,3 +424,49 @@ final class LaunchActionHandlerTests {
     }
 
 }
+
+struct NewTabPageKeyboardPolicyTests {
+
+    struct AppOpenCase: Sendable {
+        let onNewTab: Bool
+        let onAppLaunch: Bool
+        let onNewTabPage: Bool
+        let showsKeyboard: Bool
+    }
+
+    @Test(
+        "App open follows New Tab or App Launch on a New Tab Page, and App Launch elsewhere",
+        arguments: [
+            AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: true, showsKeyboard: true),
+            AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: true, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: true, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: true, showsKeyboard: false),
+            AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false),
+            AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false)
+        ]
+    )
+    func whenAppOpensThenKeyboardFollowsTheSettingsTable(_ testCase: AppOpenCase) {
+        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: testCase.onAppLaunch)
+
+        #expect(policy.showsKeyboardOnAppOpen(onNewTabPage: testCase.onNewTabPage) == testCase.showsKeyboard)
+    }
+
+    @Test(
+        "App open is a cold start or a return after more than 20 seconds in the background",
+        arguments: [
+            (nil, true),
+            (21, true),
+            (20, false),
+            (5, false)
+        ] as [(TimeInterval?, Bool)]
+    )
+    func whenReturningAfterTimeInBackgroundThenItIsAnAppOpenOnlyPastTheThreshold(secondsInBackground: TimeInterval?, isAppOpen: Bool) {
+        let now = Date()
+        let lastBackgroundDate = secondsInBackground.map { now.addingTimeInterval(-$0) }
+
+        #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
+    }
+
+}

@@ -712,6 +712,17 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
         let peerKeyPair = try makePeerKeyPair()
         var payload: PairingV2QRCodePayload?
+        let recoveryCodeResponseLock = NSLock()
+        var hasSentRecoveryCodeResponse = false
+        messageExchanger.sendHandler = { messages, _ in
+            let crypto = PairingV2MessageCrypto()
+            for message in messages {
+                guard let decrypted = try crypto.decrypt(message, privateKey: peerKeyPair.privateKey) else { continue }
+                if case .recoveryCodeResponse = decrypted {
+                    recoveryCodeResponseLock.withLock { hasSentRecoveryCodeResponse = true }
+                }
+            }
+        }
         messageExchanger.fetchMessagesHandler = { _, sequence in
             guard let payload else {
                 return []
@@ -732,6 +743,7 @@ final class SyncConnectionControllerTests: XCTestCase {
                     )
                 ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
             case 2:
+                guard recoveryCodeResponseLock.withLock({ hasSentRecoveryCodeResponse }) else { return [] }
                 return try Self.encryptedPresenterPeerMessages(messages: [
                     .bye(.init(reason: .done))
                 ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
@@ -1871,6 +1883,17 @@ final class SyncConnectionControllerTests: XCTestCase {
         let messageExchanger = PairingV2MessageExchangingMock()
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
         let peerKeyPair = try makePeerKeyPair()
+        let recoveryCodeResponseLock = NSLock()
+        var hasSentRecoveryCodeResponse = false
+        messageExchanger.sendHandler = { messages, _ in
+            let crypto = PairingV2MessageCrypto()
+            for message in messages {
+                guard let decrypted = try crypto.decrypt(message, privateKey: peerKeyPair.privateKey) else { continue }
+                if case .recoveryCodeResponse = decrypted {
+                    recoveryCodeResponseLock.withLock { hasSentRecoveryCodeResponse = true }
+                }
+            }
+        }
         messageExchanger.fetchMessagesHandler = { _, sequence in
             switch sequence {
             case 0:
@@ -1887,6 +1910,7 @@ final class SyncConnectionControllerTests: XCTestCase {
                     initialSequence: sequence
                 )
             case 1:
+                guard recoveryCodeResponseLock.withLock({ hasSentRecoveryCodeResponse }) else { return [] }
                 return try self.encryptedPeerMessages(
                     [.bye(.init(reason: .done))],
                     messageExchanger: messageExchanger,

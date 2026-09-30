@@ -206,14 +206,19 @@ public extension WebExtensionManaging {
     }
 }
 
+#if os(macOS)
 @available(macOS 15.4, *)
 public extension WebExtensionManaging {
+    /// Performs the command of a third-party extension whose keyboard shortcut matches `event`.
     @MainActor
     func performCommand(for event: NSEvent) -> Bool {
-        let contexts = loadedExtensions.sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
+        let contexts = loadedExtensions
+            .filter(\.needsChromeCompatibility)
+            .sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
         for context in contexts where context.performCommand(for: event) {
             return true
         }
         return false
     }
 }
+#endif

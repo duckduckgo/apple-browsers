@@ -189,7 +189,11 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             shouldResetClickCountForNextEventOfTypes = nil
         }
 
-        if #available(macOS 15.4, *), delegateTyped.webExtensionManager?.performCommand(for: event) == true {
+        // Extension keyboard shortcuts need a command, control or option modifier.
+        if #available(macOS 15.4, *),
+           event.type == .keyDown,
+           !event.modifierFlags.isDisjoint(with: [.command, .control, .option]),
+           delegateTyped.webExtensionManager?.performCommand(for: event) == true {
             return
         }
 

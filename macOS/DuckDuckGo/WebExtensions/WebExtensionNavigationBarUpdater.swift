@@ -81,15 +81,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             }
     }
 
-    /// Stops following the manager and removes the buttons. Called when the manager goes away.
-    func stopUpdating() {
-        updateCancellable = nil
-        for button in buttons {
-            button.removeFromSuperview()
-        }
-        buttons.removeAll()
-    }
-
     func applyThemeStyle(theme: ThemeStyleProviding) {
         for button in buttons {
             applyThemeStyle(theme: theme, to: button)

@@ -474,9 +474,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    /// Released when the web extensions feature flag turns off, and created again when it turns
-    /// back on. Observers that hold on to a manager follow this publisher, so they drop the old one.
-    @Published private(set) var webExtensionManager: WebExtensionManaging?
+    private(set) var webExtensionManager: WebExtensionManaging?
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?

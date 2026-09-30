@@ -26,6 +26,11 @@ final class TabShadowView: NSView {
         return view
     }()
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupSubviews()
+    }
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupSubviews()

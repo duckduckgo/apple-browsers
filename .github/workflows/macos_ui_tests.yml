@@ -98,6 +98,23 @@ jobs:
       build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
     secrets: inherit
 
+  # The App Store sandbox test case (AppStoreSandboxUITests) runs along every full (unfiltered) DMG run,
+  # so it needs its own sandboxed App Store build.
+  create-notarized-appstore-app:
+    name: Build Notarized Review app (appstore)
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true' && (inputs.build-type || 'dmg') == 'dmg' && !inputs.single_test_class
+
+    uses: ./.github/workflows/macos_build_notarized.yml
+    with:
+      release-type: sandbox-review
+      create-dmg: false
+      branch: ${{ inputs.branch || github.sha }}
+      skip-notify: true
+      build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
+    secrets: inherit
+
   # This job sets up the matrix strategy arguments for the ui-tests jobs
   setup-tests:
     name: Set up tests list
@@ -111,6 +128,8 @@ jobs:
       # The ui-tests jobs multiply this list by the test list to build their matrix.
       config: ${{ steps.define-runners.outputs.config }}
       test: ${{ steps.list-tests.outputs.test }}
+      # Test plan passed to xcodebuild; empty means the scheme's default test plan
+      test-plan: ${{ steps.list-tests.outputs.test-plan }}
       all-os-versions: ${{ steps.define-runners.outputs.all-os-versions }}
       start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
       # The UI Tests matrix runs each user mode as a separate job (ui-tests-production /
@@ -190,10 +209,21 @@ jobs:
         run: |
           # Check if one or more test classes were specified
           single_test_class="${{ inputs.single_test_class }}"
+          build_type="${{ inputs.build-type || 'dmg' }}"
+          # App Store only test case; its test plan is the default one of the App Store UI Tests schemes
+          appstore_test_class="AppStoreSandboxUITests"
+          test_plan=""
 
           if [[ -n "$single_test_class" ]]; then
             echo "Running specified test class(es): $single_test_class"
             test=$(echo $single_test_class | jq -cR 'split(" ")')
+            if [[ "$build_type" == "appstore" ]]; then
+              # The default App Store test plan only includes $appstore_test_class
+              test_plan="UI Tests App Store"
+            fi
+          elif [[ "$build_type" == "appstore" ]]; then
+            echo "Running the App Store test case: $appstore_test_class"
+            test=$(jq -cn --arg name "$appstore_test_class" '[$name]')
           else
             # Find all test classes that inherit from UITestCase
             # Fail if any test classes inherit directly from XCTestCase
@@ -209,8 +239,10 @@ jobs:
             fi
 
             # Extract test class names that inherit from UITestCase
+            # The App Store test case runs in the separate ui-tests-appstore job
             test_names=$(grep -rh "class.*:.*UITestCase" UITests --include="*.swift" \
               | sed -E 's/^[^c]*class[[:space:]]+([A-Za-z0-9_]+)[[:space:]]*:.*/\1/' \
+              | grep -vx "$appstore_test_class" \
               | sort -u \
               | tr '\n' ' ')
 
@@ -224,6 +256,7 @@ jobs:
           fi
 
           echo "test=${test}" >> $GITHUB_OUTPUT
+          echo "test-plan=${test_plan}" >> $GITHUB_OUTPUT
 
   # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
   # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
@@ -252,6 +285,7 @@ jobs:
       test: ${{ matrix.test }}
       user-mode: production
       build-type: ${{ inputs.build-type || 'dmg' }}
+      test-plan: ${{ needs.setup-tests.outputs.test-plan }}
       branch: ${{ inputs.branch || github.sha }}
     secrets: inherit
 
@@ -274,13 +308,35 @@ jobs:
       test: ${{ matrix.test }}
       user-mode: internal
       build-type: ${{ inputs.build-type || 'dmg' }}
+      test-plan: ${{ needs.setup-tests.outputs.test-plan }}
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
+
+  # App Store only test case, run along the full DMG run on the same runner configurations (production mode).
+  ui-tests-appstore:
+    name: UI Tests App Store
+    needs: [create-notarized-appstore-app, setup-tests]
+    strategy:
+      fail-fast: false
+      # See the note on ui-tests-production for why the configurations are a matrix key.
+      matrix:
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
+        test: [AppStoreSandboxUITests]
+    uses: ./.github/workflows/macos_run_ui_test.yml
+    with:
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
+      test: ${{ matrix.test }}
+      user-mode: production
+      build-type: appstore
       branch: ${{ inputs.branch || github.sha }}
     secrets: inherit
 
   test-report:
     name: Report test results
     if: always() && needs.should-run-checks.outputs.should_run == 'true'
-    needs: [should-run-checks, setup-tests, ui-tests-production, ui-tests-internal]
+    needs: [should-run-checks, setup-tests, ui-tests-production, ui-tests-internal, ui-tests-appstore]
     runs-on: ubuntu-latest
 
     steps:
@@ -320,7 +376,7 @@ jobs:
   notify-failure:
     name: Notify on failure
     if: ${{ always() && github.event_name == 'schedule' }}
-    needs: [ui-tests-production, ui-tests-internal]
+    needs: [ui-tests-production, ui-tests-internal, ui-tests-appstore]
     runs-on: ubuntu-latest
 
     steps:
@@ -337,14 +393,20 @@ jobs:
         artifacts=$(gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '.artifacts[].name' || true)
         has_production=false
         has_internal=false
+        has_appstore=false
         if echo "$artifacts" | grep -E '^failure-marker-macos-ui-production' >/dev/null; then
           has_production=true
         fi
         if echo "$artifacts" | grep -E '^failure-marker-macos-ui-internal' >/dev/null; then
           has_internal=true
         fi
+        # App Store leg markers are named failure-marker-macos-ui-appstore-<mode>-...
+        if echo "$artifacts" | grep -E '^failure-marker-macos-ui-appstore-' >/dev/null; then
+          has_appstore=true
+        fi
         echo "has_production=$has_production" >> "$GITHUB_OUTPUT"
         echo "has_internal=$has_internal" >> "$GITHUB_OUTPUT"
+        echo "has_appstore=$has_appstore" >> "$GITHUB_OUTPUT"
 
     - name: Create Asana task for production-mode failure
       if: steps.detect.outputs.has_production == 'true'
@@ -365,3 +427,13 @@ jobs:
         asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
         asana-task-name: GH Workflow Failure - UI Tests (internal mode, advance warning)
         asana-task-description: The internal-mode UI Tests leg has failed. Advance warning for a feature still gated to internal users. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    - name: Create Asana task for App Store failure
+      if: steps.detect.outputs.has_appstore == 'true'
+      uses: duckduckgo/native-github-asana-sync@v2.5.1
+      with:
+        action: create-asana-task
+        asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
+        asana-task-name: GH Workflow Failure - App Store UI Tests
+        asana-task-description: The App Store (sandboxed) UI Tests leg has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

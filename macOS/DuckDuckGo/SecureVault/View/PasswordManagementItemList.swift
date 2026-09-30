@@ -42,7 +42,7 @@ struct PasswordManagementItemListView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     private var style: PasswordManagementStyle {
-        PasswordManagementStyle.style(theme: themeManager.theme, isAppRebranded: themeManager.isAppRebranded)
+        PasswordManagementStyle.style(theme: themeManager.theme)
     }
 
     private func selectItem(id: String, proxy: ScrollViewProxy) {
@@ -589,20 +589,10 @@ struct PasswordManagementStyle {
         selected ? selectedTextColor : textColor
     }
 
-    static func style(theme: ThemeStyleProviding, isAppRebranded: Bool) -> PasswordManagementStyle {
+    static func style(theme: ThemeStyleProviding) -> PasswordManagementStyle {
         // Almost clear, so that whole view is clickable
         let clearBackgroundColor = Color(NSColor.windowBackgroundColor.withAlphaComponent(0.001))
         let controlTextColor = Color(NSColor.controlTextColor)
-
-        guard isAppRebranded else {
-            return PasswordManagementStyle(headerImageName: .syncOK32Legacy,
-                                           backgroundColor: clearBackgroundColor,
-                                           backgroundCornerRadius: 3,
-                                           buttonCornerRadius: 3,
-                                           textColor: controlTextColor,
-                                           selectedBackgroundColor: .accentColor,
-                                           selectedTextColor: .white)
-        }
 
         let selectedBackgroundColor = Color(theme.palette.controlsFillTertiary)
         return PasswordManagementStyle(headerImageName: .syncCheck56,

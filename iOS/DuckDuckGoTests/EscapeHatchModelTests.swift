@@ -97,6 +97,27 @@ struct EscapeHatchModelTests {
     }
 
     @available(iOS 16, *)
+    @Test("Redesigned resting page retains the supplied hatch and clears its idle context on removal")
+    func redesignedPageUpdatesEscapeHatch() {
+        let targetTab = Tab(uid: "target-tab")
+        let router = SpyRouter()
+        let hatch = makeSUT(targetTab: targetTab, router: router)
+        let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
+        let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel)
+
+        page.setEscapeHatch(hatch)
+        #expect(pageModel.escapeHatch === hatch)
+        #expect(pageModel.openedAfterIdle)
+        pageModel.escapeHatch?.onCloseTab()
+        #expect(router.closeCalls.count == 1)
+        #expect(router.closeCalls.first === targetTab)
+
+        page.setEscapeHatch(nil)
+        #expect(pageModel.escapeHatch == nil)
+        #expect(!pageModel.openedAfterIdle)
+    }
+
+    @available(iOS 16, *)
     @Test("Convenience init wires onBurnTabImmediately to the router's no-confirmation method", .timeLimit(.minutes(1)))
     func convenienceInitWiresBurnImmediatelyClosure() {
         let targetTab = Tab(uid: "target-tab")

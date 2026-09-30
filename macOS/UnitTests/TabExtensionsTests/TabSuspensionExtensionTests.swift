@@ -19,7 +19,7 @@
 import Combine
 import Common
 import FoundationExtensions
-@testable import Navigation
+@testable import DDGNavigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit

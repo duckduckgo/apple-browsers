@@ -418,6 +418,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         XCTAssertEqual(extractionPixels.calls.count, 1)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .markdown)
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .navigation)
     }
 
@@ -683,6 +684,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
         XCTAssertTrue(received?.contextData.hasAttachedPage ?? false)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .success)
         XCTAssertEqual(extractionPixels.calls.first?.trigger, .userRequest)
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .pdf)
     }
 
     func testWhenDocumentTabAndUserRequestIsTooLargeThenPublishesNil() async {
@@ -727,6 +729,7 @@ final class AIChatPageContextHandlerTests: XCTestCase {
 
         XCTAssertNil(received)
         XCTAssertEqual(extractionPixels.calls.first?.outcome, .failure(.documentUnavailable))
+        XCTAssertEqual(extractionPixels.calls.first?.contextType, .pdf)
     }
 
     func testWhenDocumentCollectIsInFlightAndURLChangesThenResultIsDropped() async {
@@ -1129,14 +1132,16 @@ private final class MockPageContextExtractionPixelFiring: PageContextExtractionP
         let outcome: PageContextExtractionOutcome
         let trigger: PageContextExtractionTrigger
         let latency: PageContextExtractionLatencyBucket?
+        let contextType: PageContextType
     }
 
     private(set) var calls: [Call] = []
 
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?) {
-        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency))
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType) {
+        calls.append(Call(outcome: outcome, trigger: trigger, latency: latency, contextType: contextType))
     }
 }
 
@@ -1186,17 +1191,29 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
 
     private func capture(_ outcome: PageContextExtractionOutcome,
                          trigger: PageContextExtractionTrigger,
-                         latency: PageContextExtractionLatencyBucket?) -> (event: Pixel.Event, params: [String: String])? {
+                         latency: PageContextExtractionLatencyBucket?,
+                         contextType: PageContextType = .markdown) -> (event: Pixel.Event, params: [String: String])? {
         var captured: (Pixel.Event, [String: String])?
         let handler = PageContextExtractionPixelHandler(firePixel: { captured = ($0, $1) })
-        handler.fire(outcome, trigger: trigger, latency: latency)
+        handler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
         return captured.map { (event: $0.0, params: $0.1) }
     }
 
-    func testWhenSuccessThenFiresSuccessPixelWithNoAdditionalParams() {
+    func testWhenSuccessThenFiresSuccessPixelWithContextTypeOnly() {
         let result = capture(.success, trigger: .navigation, latency: .under1s)
         XCTAssertEqual(result?.event.name, "aichat_page_context_extraction_success")
-        XCTAssertEqual(result?.params, [:])
+        XCTAssertEqual(result?.params, ["context_type": "markdown"])
+    }
+
+    func testWhenSuccessForADocumentThenSuccessPixelSaysPDF() {
+        let result = capture(.success, trigger: .userRequest, latency: .under1s, contextType: .pdf)
+        XCTAssertEqual(result?.params["context_type"], "pdf")
+    }
+
+    func testWhenFailureForADocumentThenFailedPixelSaysPDF() {
+        let result = capture(.failure(.documentUnavailable), trigger: .userRequest, latency: nil, contextType: .pdf)
+        XCTAssertEqual(result?.params["context_type"], "pdf")
+        XCTAssertEqual(result?.params["reason"], "document_unavailable")
     }
 
     func testWhenFailureThenFiresFailedPixelWithReasonTriggerLatency() {
@@ -1205,6 +1222,7 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(result?.params["reason"], "empty_content")
         XCTAssertEqual(result?.params["trigger"], "auto")
         XCTAssertEqual(result?.params["latency"], "1_to_5s")
+        XCTAssertEqual(result?.params["context_type"], "markdown")
     }
 
     func testWhenFailureWithoutLatencyThenOmitsLatencyParam() {
@@ -1219,5 +1237,130 @@ final class PageContextExtractionPixelHandlerTests: XCTestCase {
         XCTAssertEqual(result?.params["category"], "pdf")
         XCTAssertEqual(result?.params["reason"], "non_attachable")
         XCTAssertEqual(result?.params["trigger"], "tab_content")
+        XCTAssertNil(result?.params["context_type"], "category already names the page kind")
     }
+}
+
+@MainActor
+final class AIChatAttachedPageCollectionTests: XCTestCase {
+    private let url = URL(string: "https://example.com/page")!
+    private let webView = WKWebView()
+    private let script = AttachedPageScript()
+
+    override func tearDown() {
+        script.onCollect = nil
+        super.tearDown()
+    }
+
+    private func context(url: String = "https://example.com/page", content: String = "Page content") -> AIChatPageContextData {
+        AIChatPageContextData(title: "Page", favicon: [], url: url, content: content,
+                              truncated: false, fullContentLength: content.count)
+    }
+
+    private func handler() -> DuckDuckGo.AIChatPageContextHandler {
+        DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
+                                            faviconProvider: { _ in nil }, currentURLProvider: { self.url })
+    }
+
+    func testIgnoresWrongPageAndAcceptsMatchingDocumentURL() async {
+        let expected = context(url: url.absoluteString + "#section")
+        script.onCollect = {
+            self.script.results.send(.collected(self.context(url: "https://wrong.example/page")))
+            self.script.results.send(.collected(expected))
+        }
+        let result = await handler().collectContext(for: url, isValid: { true })
+        XCTAssertEqual(result, .collected(expected))
+        XCTAssertEqual(script.subscriptionCount, 0)
+    }
+
+    func testEmptyContentIsDistinctFromExtractionFailure() async {
+        script.onCollect = { self.script.results.send(.collected(self.context(content: ""))) }
+        let empty = await handler().collectContext(for: url, isValid: { true })
+        XCTAssertEqual(empty, .empty)
+        for failure in [PageContextCollectionResult.scriptError, .decodeFailed] {
+            script.onCollect = { self.script.results.send(failure) }
+            let result = await handler().collectContext(for: url, isValid: { true })
+            XCTAssertEqual(result, .failed)
+        }
+    }
+
+    func testTimeoutReleasesSubscriptionWithoutClearingSharedScript() async {
+        let result = await handler().collectContext(for: url, timeout: 0, isValid: { true })
+        XCTAssertEqual(result, .timedOut)
+        XCTAssertEqual(script.subscriptionCount, 0)
+        XCTAssertTrue(script.webView === webView)
+    }
+
+    func testCancellationReleasesSubscriptionAndDoesNotAffectNextCollection() async {
+        let started = expectation(description: "Collection started")
+        script.onCollect = { started.fulfill() }
+        let handler = handler()
+        let task = Task { await handler.collectContext(for: url, isValid: { true }) }
+        await fulfillment(of: [started], timeout: 1)
+        task.cancel()
+        let result = await task.value
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertEqual(script.subscriptionCount, 0)
+        let expected = context()
+        script.onCollect = { self.script.results.send(.collected(expected)) }
+        let replacement = await handler.collectContext(for: url, isValid: { true })
+        XCTAssertEqual(replacement, .collected(expected))
+    }
+
+    func testInvalidatedOperationRejectsMatchingURLResult() async {
+        var valid = true
+        script.onCollect = {
+            valid = false
+            self.script.results.send(.collected(self.context()))
+        }
+        let result = await handler().collectContext(for: url, isValid: { valid })
+        XCTAssertEqual(result, .unavailable)
+    }
+
+    func testUnavailablePageDoesNotTriggerScript() async {
+        script.onCollect = { XCTFail("Unavailable page must not collect") }
+        let result = await handler().collectContext(for: url, isValid: { false })
+        XCTAssertEqual(result, .unavailable)
+    }
+
+    func testDocumentCollectionPreservesBytesAndEnrichesFavicon() async {
+        let document = AIChatPageContextData.document(title: "Document", url: url.absoluteString,
+                                                     mimeType: AIChatPageContextData.pdfMIMEType, data: "JVBERi0=")
+        script.onCollect = { XCTFail("Document collection must not invoke HTML extraction") }
+        let handler = DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { self.script },
+                                              faviconProvider: { _ in "data:image/png;base64,icon" },
+                                              currentURLProvider: { self.url }, mimeTypeProvider: { _ in "application/pdf" },
+                                              isDocumentContextEnabled: { true },
+                                              makeDocumentContext: { _, _, _ in .document(document) })
+        let result = await handler.collectContext(for: url, isValid: { true })
+        XCTAssertEqual(result, .collected(document.withFavicon([.init(href: "data:image/png;base64,icon", rel: "icon")])))
+    }
+
+    func testDocumentTimeoutCancelsOwnedRead() async {
+        let cancelled = expectation(description: "Document read cancelled")
+        let handler = DuckDuckGo.AIChatPageContextHandler(webViewProvider: { self.webView }, userScriptProvider: { nil },
+                                              faviconProvider: { _ in nil }, currentURLProvider: { self.url },
+                                              mimeTypeProvider: { _ in "application/pdf" }, isDocumentContextEnabled: { true },
+                                              makeDocumentContext: { _, _, _ in
+            do { try await Task.sleep(nanoseconds: 10_000_000_000) } catch { cancelled.fulfill() }
+            return .unavailable
+        })
+        let result = await handler.collectContext(for: url, timeout: 0.01, isValid: { true })
+        XCTAssertEqual(result, .timedOut)
+        await fulfillment(of: [cancelled], timeout: 1)
+    }
+}
+
+private final class AttachedPageScript: PageContextCollecting {
+    let results = PassthroughSubject<PageContextCollectionResult, Never>()
+    var webView: WKWebView?
+    var onCollect: (() -> Void)?
+    private(set) var subscriptionCount = 0
+
+    var collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never> {
+        results.handleEvents(receiveSubscription: { [weak self] _ in self?.subscriptionCount += 1 },
+                             receiveCancel: { [weak self] in self?.subscriptionCount -= 1 }).eraseToAnyPublisher()
+    }
+
+    func collect() { onCollect?() }
 }

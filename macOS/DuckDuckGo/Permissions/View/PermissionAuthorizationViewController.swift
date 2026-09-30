@@ -18,7 +18,9 @@
 
 import AIChat
 import Cocoa
+import FeatureFlags_macOS
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 
 extension PermissionType {
@@ -63,8 +65,9 @@ extension Array where Element == PermissionType {
 final class PermissionAuthorizationViewController: NSViewController {
 
     let systemPermissionManager = SystemPermissionManager()
+    private let featureFlagger: FeatureFlagger
 
-    private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
+    private var swiftUIHostingView: NSView?
 
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
@@ -76,7 +79,8 @@ final class PermissionAuthorizationViewController: NSViewController {
         }
     }
 
-    init() {
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -103,11 +107,31 @@ final class PermissionAuthorizationViewController: NSViewController {
         view.subviews.forEach { $0.removeFromSuperview() }
         swiftUIHostingView = nil
 
+        let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            NSHostingView(rootView: PermissionAuthorizationView(viewModel: makeViewModel(for: query)))
+        } else {
+            makeLegacyHostingView(for: query)
+        }
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        swiftUIHostingView = hostingView
+        isAuthorizationInProgress = true
+    }
+
+    private func makeLegacyHostingView(for query: PermissionAuthorizationQuery) -> NSView {
         let permissionType = PermissionAuthorizationType(from: query.permissions)
         let showsTwoStepUI = permissionType.requiresSystemPermission
             && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
 
-        let swiftUIView = PermissionAuthorizationSwiftUIView(
+        let swiftUIView = LegacyPermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
             showsTwoStepUI: showsTwoStepUI,
@@ -128,20 +152,20 @@ final class PermissionAuthorizationViewController: NSViewController {
             } : nil,
             systemPermissionManager: systemPermissionManager
         )
+        return NSHostingView(rootView: swiftUIView)
+    }
 
-        let hostingView = NSHostingView(rootView: swiftUIView)
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(hostingView)
-
-        NSLayoutConstraint.activate([
-            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
-            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        swiftUIHostingView = hostingView
-        isAuthorizationInProgress = true
+    private func makeViewModel(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationViewModel {
+        PermissionAuthorizationViewModel(
+            query: query,
+            openURL: { url in
+                Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+            },
+            finish: { [weak self] in
+                self?.isAuthorizationInProgress = false
+                self?.dismiss()
+            }
+        )
     }
 
     private func handleDeny() {

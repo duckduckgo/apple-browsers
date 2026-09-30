@@ -154,6 +154,8 @@ struct DataImportViewModel {
     private let wideEvent: WideEventManaging
     private var dataImportWideEventData: DataImportWideEventData?
 
+    private let pixelFiring: (any PixelKitFiring)?
+
     struct DataTypeImportResult: Equatable {
         let dataType: DataImport.DataType
         let result: DataImportResult<DataTypeSummary>
@@ -238,6 +240,7 @@ struct DataImportViewModel {
          directoryAccessAvailability: DataDirectoryPermissionFixAvailability? = nil,
          reportSenderFactory: @escaping ReportSenderFactory = { FeedbackSender().sendDataImportReport },
          wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
         let directoryAccessAvailability = directoryAccessAvailability
@@ -303,6 +306,7 @@ struct DataImportViewModel {
         self.directoryAccessAvailability = directoryAccessAvailability
         self.reportSenderFactory = reportSenderFactory
         self.wideEvent = wideEvent
+        self.pixelFiring = pixelFiring
         self.onFinished = onFinished
         self.onCancelled = onCancelled
     }
@@ -608,6 +612,7 @@ struct DataImportViewModel {
             return
         }
         let syncTouchpoint: SyncDeviceButtonTouchpoint = screen == .sourceAndDataTypesPicker ? .dataImportStart : .dataImportFinish
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": syncTouchpoint.rawValue]))
         syncLauncher.startDeviceSyncFlow(source: syncTouchpoint) {
             completion?()
         }
@@ -962,6 +967,7 @@ extension DataImportViewModel {
                      featureFlagger: featureFlagger,
                      directoryAccessAvailability: directoryAccessAvailability,
                      reportSenderFactory: reportSenderFactory,
+                     pixelFiring: pixelFiring,
                      onFinished: onFinished,
                      onCancelled: onCancelled)
     }
@@ -1011,6 +1017,7 @@ extension DataImportViewModel {
                      directoryAccessAvailability: directoryAccessAvailability,
                      reportSenderFactory: reportSenderFactory,
                      wideEvent: wideEvent,
+                     pixelFiring: pixelFiring,
                      onFinished: onFinished,
                      onCancelled: onCancelled)
     }

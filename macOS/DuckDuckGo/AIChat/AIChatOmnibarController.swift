@@ -1320,6 +1320,13 @@ final class AIChatOmnibarController {
         isImageGenerationMode || selectedModelSupportsImageUpload
     }
 
+    /// Attachments that would ship with a submit, so a prompt with no text can still be sent.
+    var hasSendableAttachments: Bool {
+        (canSendImages && !activeImageAttachments.isEmpty)
+            || (selectedModelSupportsFileUpload && !activeFileAttachments.isEmpty)
+            || !activeTabAttachments.isEmpty
+    }
+
     /// Each picker allows one pick past its limit as a visible cue, so submitting stays held there.
     private var hasSubmitBlockingAttachmentExcess: Bool {
         if canSendImages && activeImageAttachments.count > maxImageAttachments {
@@ -1352,7 +1359,7 @@ final class AIChatOmnibarController {
     }
 
     func submit() {
-        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasSendableAttachments else {
             return
         }
 
@@ -1699,7 +1706,11 @@ struct AIChatReasoningPickerItem {
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
     /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
-    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+    /// `hidesGatedModels` is the usage card's chevron: it offers a way out of a spent allowance, so a
+    /// row the user's plan can't pick has nothing to offer there.
+    func modelPickerItems(selectedModelId: String?,
+                          freeModelsOnly: Bool = false,
+                          hidesGatedModels: Bool = false) -> [AIChatModelPickerItem] {
         let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
@@ -1719,7 +1730,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

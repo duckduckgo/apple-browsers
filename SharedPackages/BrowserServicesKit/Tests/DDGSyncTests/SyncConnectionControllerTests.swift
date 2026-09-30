@@ -59,7 +59,9 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didCompletePairingWithAlreadyConnectedAccountSetupRole: SyncSetupRole?
     var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
     var didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts: Bool?
+    var didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow: Bool?
     var didSwitchAccountsDuringRecovery = false
+    var didFinishReportingAccountSwitchCalled = { }
     var didErrorCalled = { }
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
     var shouldContinueServerSyncOperation = true
@@ -118,10 +120,16 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool {
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow: Bool) async -> Bool {
         didFindTwoAccountsDuringRecoveryCalled = recoveryKey
         didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts = shouldPromptBeforeSwitchingAccounts
+        didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow = shouldDeferEndingFlow
         return didSwitchAccountsDuringRecovery
+    }
+
+    func controllerDidFinishReportingAccountSwitch(didSucceed _: Bool) {
+        didFinishReportingAccountSwitchCalled()
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
@@ -1637,6 +1645,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertFalse(result)
         XCTAssertNotNil(delegate.didFindTwoAccountsDuringRecoveryCalled)
         XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts, false)
+        XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow, false)
         XCTAssertNil(delegate.didErrorErrors)
     }
 
@@ -1665,14 +1674,28 @@ final class SyncConnectionControllerTests: XCTestCase {
         }
         let payload = PairingV2QRCodePayload(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
         let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+        var didSendRecoveryCodeDone = false
+        messageExchanger.sendHandler = { messages, _ in
+            if try messages.contains(where: {
+                try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey) ==
+                    .recoveryCodeDone(.init(reason: .success))
+            }) {
+                didSendRecoveryCodeDone = true
+            }
+        }
+        var didFinishReportingAccountSwitch = false
+        delegate.didFinishReportingAccountSwitchCalled = {
+            didFinishReportingAccountSwitch = true
+            XCTAssertTrue(didSendRecoveryCodeDone)
+        }
 
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
-        let encryptedDone = try XCTUnwrap(messageExchanger.sendCalls[2].messages.first)
-        let done = try PairingV2MessageCrypto().decrypt(encryptedDone, privateKey: peerKeyPair.privateKey)
         XCTAssertTrue(result)
         XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts, false)
-        XCTAssertEqual(done, .recoveryCodeDone(.init(reason: .success)))
+        XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow, true)
+        XCTAssertTrue(didFinishReportingAccountSwitch)
+        XCTAssertTrue(didSendRecoveryCodeDone)
         XCTAssertNil(delegate.didErrorErrors)
     }
 
@@ -1989,8 +2012,10 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         let twoAccountsKey = await delegate.didFindTwoAccountsDuringRecoveryCalled
         let shouldPromptBeforeSwitchingAccounts = await delegate.didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts
+        let shouldDeferEndingFlow = await delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow
         XCTAssertNotNil(twoAccountsKey)
         XCTAssertEqual(shouldPromptBeforeSwitchingAccounts, true)
+        XCTAssertEqual(shouldDeferEndingFlow, false)
     }
 
     @MainActor

@@ -977,8 +977,17 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     @discardableResult
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool {
-        await handleAccountAlreadyExists(recoveryKey, shouldPromptBeforeSwitchingAccounts: shouldPromptBeforeSwitchingAccounts)
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow: Bool = false) async -> Bool {
+        await handleAccountAlreadyExists(recoveryKey,
+                                         shouldPromptBeforeSwitchingAccounts: shouldPromptBeforeSwitchingAccounts,
+                                         shouldDeferEndingFlow: shouldDeferEndingFlow)
+    }
+
+    func controllerDidFinishReportingAccountSwitch(didSucceed: Bool) {
+        if didSucceed || managementDialogModel.syncErrorMessage == nil {
+            managementDialogModel.endFlow()
+        }
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
@@ -1051,7 +1060,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     @discardableResult
-    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey, shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool {
+    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey,
+                                            shouldPromptBeforeSwitchingAccounts: Bool,
+                                            shouldDeferEndingFlow: Bool) async -> Bool {
         defer {
             PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
         }
@@ -1063,7 +1074,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             return false
         } else {
             let didSwitchAccounts = await switchAccounts(recoveryKey: recoveryKey)
-            managementDialogModel.endFlow()
+            if !shouldDeferEndingFlow {
+                managementDialogModel.endFlow()
+            }
             return didSwitchAccounts
         }
     }

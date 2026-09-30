@@ -239,6 +239,29 @@ final class PromoCoordinationServiceTests {
         }
     }
 
+    // MARK: - Pending Modal Prompt
+
+    @Test(
+        "Check Pending Modal Prompt Mirrors The Coordination Manager",
+        arguments: [true, false],
+        [PromoCoordinationMode.legacy, .coordinated]
+    )
+    func whenManagerReportsPendingAttemptThenServiceReportsPendingModalPrompt(isPending: Bool, mode: PromoCoordinationMode) {
+        // GIVEN
+        managerMock.hasActiveOrPendingModalAttempt = isPending
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            mode: mode,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+        )
+
+        // THEN
+        #expect(sut.isModalPromptPending == isPending)
+    }
+
 
 }
 

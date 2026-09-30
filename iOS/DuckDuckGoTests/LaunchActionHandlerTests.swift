@@ -543,11 +543,12 @@ struct NewTabPageKeyboardPolicyTests {
             AfterFireCase(onNewTab: true, onDuckAITab: true, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: false),
             AfterFireCase(onNewTab: false, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: false),
             AfterFireCase(onNewTab: false, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: false)
-        ]
+        ],
+        [false, true]
     )
-    func whenFireLandsOnNewTabPageThenKeyboardFollowsTheAfterFireTable(_ testCase: AfterFireCase) {
-        // App Launch plays no part after Fire, so it's on here to prove that.
-        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: true)
+    func whenFireLandsOnNewTabPageThenKeyboardFollowsTheAfterFireTable(_ testCase: AfterFireCase, onAppLaunch: Bool) {
+        // App Launch plays no part after Fire, so every row must hold with it on and off.
+        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: onAppLaunch)
 
         let showsKeyboard = policy.showsKeyboardAfterFire(
             onDuckAITab: testCase.onDuckAITab,

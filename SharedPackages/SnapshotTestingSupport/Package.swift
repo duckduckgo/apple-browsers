@@ -38,9 +38,17 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.6"),
+        .package(path: "../Infrastructure/DesignResourcesKit"),
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
     ],
     targets: [
-        .target(name: "PreviewSnapshots"),
+        .target(
+            name: "PreviewSnapshots",
+            dependencies: [
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
+            ]
+        ),
         .target(
             name: "SnapshotTestingSupport",
             dependencies: [

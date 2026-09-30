@@ -14300,7 +14300,7 @@
 			repositoryURL = "https://github.com/pointfreeco/combine-schedulers.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.2.2;
+				version = 1.2.0;
 			};
 			traits = (
 			);

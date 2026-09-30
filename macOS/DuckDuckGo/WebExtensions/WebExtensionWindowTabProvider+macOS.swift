@@ -57,7 +57,8 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: tabs, isPopup: configuration.windowType == .popup),
-            burnerMode: burnerMode
+            burnerMode: burnerMode,
+            windowControllersManager: windowControllersManager
         )
 
         let mainWindow = windowControllersManager.openNewWindow(

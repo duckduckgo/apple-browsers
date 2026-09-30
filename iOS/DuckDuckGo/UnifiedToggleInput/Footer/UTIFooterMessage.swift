@@ -32,6 +32,42 @@ struct CreateImageModelSwitchNotice: Equatable {
     }
 }
 
+struct UTIFooterItem: Equatable, Identifiable {
+    enum ID: Int, CaseIterable {
+        case termsConsent
+        case outOfUsage
+        case attachmentPrivacy
+        case modelSwitch
+        case usageWarning
+        case highUsage
+    }
+
+    enum MessageType {
+        case required
+        case action
+        case informational
+    }
+
+    var type: MessageType {
+        switch id {
+        case .termsConsent: return .required
+        case .outOfUsage, .attachmentPrivacy: return .required
+        case .modelSwitch: return .action
+        case .usageWarning, .highUsage: return .informational
+        }
+    }
+
+    let id: ID
+    let message: UTIFooterMessage
+
+    static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        guard !isEditing else { return [] }
+        let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
+        let required = ordered.filter { $0.type == .required }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
@@ -47,7 +83,7 @@ struct UTIFooterMessage: Equatable {
         let title: String
     }
 
-    /// A phrase inside `title` that opens `url`.
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
     struct Link: Equatable {
         let text: String
         let url: URL

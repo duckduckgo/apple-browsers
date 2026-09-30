@@ -239,6 +239,8 @@ final class MainCoordinator {
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
                                 clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
+        // Start before any tab saves a decision, so each saved site keeps its favicon.
+        _ = tabManager.sitePermissionsFavicons
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -253,6 +255,7 @@ final class MainCoordinator {
                                         privacyConfigurationManager: privacyConfigurationManager,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         privacyStats: privacyStats,
+                                        sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
                                         duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                         fireModeStorageController: contentBlockingService.fireModeStorageController,
@@ -456,6 +459,9 @@ final class MainCoordinator {
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
+            initialLoadGateEnabledProvider: { [weak self] in
+                self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+            },
             pixelFiring: iOSWebExtensionPixelFiring()
         ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []
@@ -468,6 +474,9 @@ final class MainCoordinator {
         )
 
         tabManager.setWebExtensionManager(webExtensionManager)
+        tabManager.setWebExtensionInitialLoadWaiterProvider { [weak lifecycleCoordinator] in
+            lifecycleCoordinator?.initialLoadWaiter
+        }
         controller.setWebExtensionEventsCoordinator(webExtensionEventsCoordinator)
         controller.setWebExtensionManager(webExtensionManager)
         controller.setWebExtensionLifecycleCoordinator(lifecycleCoordinator)
@@ -506,9 +515,11 @@ final class MainCoordinator {
 
         isWebExtensionLoadPending = false
         webExtensionLoadTask?.cancel()
+        guard let coordinator = webExtensionLifecycleCoordinator else { return }
+        let loadAndSyncTask = coordinator.loadAndSync()
         webExtensionLoadTask = Task { @MainActor [weak self] in
-            guard let self, let coordinator = self.webExtensionLifecycleCoordinator else { return }
-            await coordinator.loadAndSync().value
+            guard let self else { return }
+            await loadAndSyncTask.value
             guard !Task.isCancelled else { return }
             self.webExtensionEventsCoordinator?.registerExistingTabsAndWindow()
         }
@@ -609,6 +620,7 @@ final class MainCoordinator {
         webExtensionEventsCoordinator = nil
         darkReaderCancellables.removeAll()
         tabManager.setWebExtensionManager(nil)
+        tabManager.setWebExtensionInitialLoadWaiterProvider { nil }
         controller.setWebExtensionEventsCoordinator(nil)
         controller.setWebExtensionManager(nil)
     }

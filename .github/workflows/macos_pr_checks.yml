@@ -297,6 +297,12 @@ jobs:
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify
 
+    - name: Deactivate Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        mode: deactivate
+
     - name: Run unit tests
       id: run-unit-tests
       run: |

@@ -46,7 +46,8 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private let openURL: (URL) -> Void
     private let openSystemSettingsURL: (URL) -> Void
-    private let finish: () -> Void
+    /// Set by whichever presenter currently shows this view model, so a cached flow closes the popover on screen.
+    var finish: () -> Void
 
     /// The allow choice held back until macOS grants its own permission.
     /// Submitting it earlier would let macOS show its prompt before the user asks for it.
@@ -105,8 +106,11 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         switch action {
         case .onAppear:
             viewState.title = makeTitle()
-            viewState.learnMore = permissionType.learnMoreURL.map {
-                PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+            if case .decision(var decision) = viewState.content {
+                decision.learnMore = permissionType.learnMoreURL.map {
+                    PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+                }
+                viewState.content = .decision(decision)
             }
             if query?.isSystemPermissionDisabled == true, pendingDecision == nil {
                 isResumingStoredDecision = true
@@ -132,7 +136,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             onDismiss()
 
         case .learnMore:
-            guard let url = viewState.learnMore?.url else { return }
+            guard let url = viewState.decision?.learnMore?.url else { return }
             openURL(url)
         }
     }
@@ -224,7 +228,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             buttonTitle = UserText.websitePermissionsPromptOpenSystemSettings
         }
         systemPermissionRefreshGeneration += 1
-        viewState.systemPermissionStep = .init(phase: phase, message: message, buttonTitle: buttonTitle)
+        viewState.content = .systemPermission(.init(phase: phase, message: message, buttonTitle: buttonTitle))
     }
 
     private func requestSystemPermission() {

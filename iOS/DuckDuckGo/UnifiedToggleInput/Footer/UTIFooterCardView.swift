@@ -212,7 +212,6 @@ private extension UTIFooterCardView {
         contentView.addSubview(dismissButton)
 
         let contentTop = contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.overlap + Constants.contentTopGap)
-        contentTop.priority = .defaultHigh
 
         let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
         actionCollapsedWidthConstraint = actionCollapsedWidth
@@ -389,23 +388,16 @@ final class UTIFooterActionButton: UIView {
 
 // MARK: - Link text
 
-/// Body copy with one tappable phrase. A text view rather than a label, so only the phrase takes the
-/// tap and VoiceOver can reach it as a link; every other touch falls through to the card.
+/// Uses the text view's rendered link rectangles for touch routing, including wrapped and RTL text.
 final class UTIFooterLinkTextView: UITextView {
-
-    private enum Constants {
-        /// Widens the phrase's hit area past its glyphs, which are only as tall as the footnote font.
-        static let hitSlop: CGFloat = 8
-    }
-
+    private static let hitSlop: CGFloat = 8
     var onLinkTap: ((URL) -> Void)?
-
     private var content: (text: String, link: UTIFooterMessage.Link)?
+    private var linkRange: NSRange?
 
     init() {
         super.init(frame: .zero, textContainer: nil)
         isEditable = false
-        // Links only respond in a selectable text view; `point(inside:)` keeps selection off the rest.
         isSelectable = true
         isScrollEnabled = false
         backgroundColor = .clear
@@ -422,50 +414,54 @@ final class UTIFooterLinkTextView: UITextView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override var canBecomeFirstResponder: Bool { false }
+
     func configure(text: String, link: UTIFooterMessage.Link) {
         content = (text, link)
         applyColors()
     }
 
-    /// Rebuilds the copy, since the colors are baked into the attributed string.
     func applyColors() {
         guard let content else { return }
         let attributed = NSMutableAttributedString(string: content.text, attributes: [
             .font: UIFont.daxFootnoteRegular(),
-            .foregroundColor: UIColor(designSystemColor: .textSecondary)
+            .foregroundColor: UIColor(designSystemColor: .textPrimary)
         ])
-        let linkRange = (content.text as NSString).range(of: content.link.text)
-        if linkRange.location != NSNotFound {
+        let range = (content.text as NSString).range(of: content.link.text, options: .backwards)
+        linkRange = range.location == NSNotFound ? nil : range
+        if let linkRange {
             attributed.addAttribute(.link, value: content.link.url, range: linkRange)
         }
         attributedText = attributed
         linkTextAttributes = [.foregroundColor: UIColor(designSystemColor: .accentTextPrimary)]
     }
 
-    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        super.point(inside: point, with: event) && link(near: point) != nil
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) ||
+            traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            applyColors()
+        }
     }
 
-    private func link(near point: CGPoint) -> URL? {
-        guard let position = closestPosition(to: point),
-              let range = tokenizer.rangeEnclosingPosition(position, with: .character, inDirection: .storage(.forward))
-                ?? tokenizer.rangeEnclosingPosition(position, with: .character, inDirection: .storage(.backward)),
-              firstRect(for: range).insetBy(dx: -Constants.hitSlop, dy: -Constants.hitSlop).contains(point) else { return nil }
-        let index = offset(from: beginningOfDocument, to: range.start)
-        guard index >= 0, index < attributedText.length else { return nil }
-        return attributedText.attribute(.link, at: index, effectiveRange: nil) as? URL
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        guard super.point(inside: point, with: event), let linkRange,
+              let start = position(from: beginningOfDocument, offset: linkRange.location),
+              let end = position(from: start, offset: linkRange.length),
+              let range = textRange(from: start, to: end) else { return false }
+        return selectionRects(for: range).contains {
+            !$0.rect.isEmpty && $0.rect.insetBy(dx: -Self.hitSlop, dy: -Self.hitSlop).contains(point)
+        }
     }
 }
 
 extension UTIFooterLinkTextView: UITextViewDelegate {
-
     @available(iOS 17.0, *)
     func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
         guard case .link(let url) = textItem.content else { return nil }
         return UIAction { [weak self] _ in self?.onLinkTap?(url) }
     }
 
-    /// No long-press menu: its "Open Link" would leave the app for Safari.
     @available(iOS 17.0, *)
     func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem, defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
         nil

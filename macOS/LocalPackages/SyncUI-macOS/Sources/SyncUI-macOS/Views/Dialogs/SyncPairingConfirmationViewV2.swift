@@ -90,8 +90,7 @@ public struct SyncPairingConfirmationViewV2: View {
 
 #if DEBUG
 #Preview("Default") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return SyncPairingConfirmationViewV2(
+    SyncPairingConfirmationViewV2(
         title: "Sync new device?",
         message: "\"Dax’s iPhone\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
         cancelButtonTitle: "Cancel",
@@ -102,8 +101,7 @@ public struct SyncPairingConfirmationViewV2: View {
 }
 
 #Preview("Long Device Name") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return SyncPairingConfirmationViewV2(
+    SyncPairingConfirmationViewV2(
         title: "Sync new device?",
         message: "\"Dax’s Very Long MacBook Pro Device Name\" will be able to access your synced DuckDuckGo passwords, autofill data, and Duck.ai chats.",
         cancelButtonTitle: "Cancel",

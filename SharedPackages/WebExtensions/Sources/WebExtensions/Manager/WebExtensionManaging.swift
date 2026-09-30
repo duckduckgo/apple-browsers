@@ -69,6 +69,12 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func loadInstalledExtensions() async
 
+    /// Forces the embedded extension's background content to load and waits for completion.
+    /// Returns immediately when the embedded extension is not loaded or has no background content.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func loadEmbeddedExtensionBackgroundContent() async
+
     /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
     /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
     /// orphaned-file cleanup performed by `loadInstalledExtensions()`. Falls back to
@@ -155,6 +161,13 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func performSearchTokenRefresh()
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionManaging {
+    // Preserve lightweight test and platform-specific conformers that do not own embedded content.
+    @MainActor
+    func loadEmbeddedExtensionBackgroundContent() async {}
 }
 
 @available(macOS 15.4, iOS 18.4, *)

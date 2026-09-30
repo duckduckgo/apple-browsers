@@ -140,11 +140,6 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Dismissal
 
-    func test_message_dismissibilityComesFromTheWarning() {
-        XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
-        XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
-    }
-
     // MARK: - High-usage model notice
 
     func test_message_highUsageNoticeNamesTheModel() {

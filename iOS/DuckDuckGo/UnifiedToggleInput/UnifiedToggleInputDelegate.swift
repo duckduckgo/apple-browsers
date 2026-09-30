@@ -41,8 +41,9 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     /// Edit mode entered/exited — the host applies the surrounding chrome (transcript whiteout,
     /// header swap). The input side is handled within the coordinator.
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool)
-    /// A link in the input's own copy, such as the Terms of Service disclaimer.
-    func unifiedToggleInputDidRequestOpenURL(_ url: URL)
+    /// A link inside a footer message. Always a new tab: loading in place would discard the draft
+    /// and the attachment the message is about.
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL)
 }
 
 extension UnifiedToggleInputDelegate {
@@ -52,5 +53,5 @@ extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
-    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {}
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {}
 }

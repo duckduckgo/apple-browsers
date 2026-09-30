@@ -97,6 +97,7 @@ protocol TabExtensionDependencies {
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     var eventHub: EventHubManaging { get }
     var webExtensionManagerProvider: @MainActor () -> WebExtensionManaging? { get }
+    var webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter? { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -166,6 +167,7 @@ extension TabExtensionsBuilder {
         add {
             PrivacyDashboardTabExtension(tabIdentifier: args.tabID,
                                          webExtensionManagerProvider: dependencies.webExtensionManagerProvider,
+                                         webExtensionInitialLoadWaiterProvider: dependencies.webExtensionInitialLoadWaiterProvider,
                                          contentBlocking: dependencies.privacyFeatures.contentBlocking,
                                          certificateTrustEvaluator: dependencies.certificateTrustEvaluator,
                                          contentScopeExperimentsManager: dependencies.contentScopeExperimentsManager,

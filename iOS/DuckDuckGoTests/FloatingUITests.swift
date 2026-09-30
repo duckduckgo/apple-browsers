@@ -860,7 +860,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(glassViewCount(in: barView), baseline)
     }
 
-    func testWhenFloatingMinimalChromeBarShowsLightPageThenAllGlassFollowsPageStyle() {
+    func testWhenFloatingMinimalChromeBarShowsLightPageThenGlassUsesSupportedAppearancePolicy() {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
         barView.overrideUserInterfaceStyle = .dark
@@ -870,7 +870,11 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
         let glassViews = allGlassViews(in: barView)
         XCTAssertEqual(glassViews.count, 3)
-        XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .light })
+        if #available(iOS 26.0, *) {
+            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .unspecified })
+        } else {
+            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .light })
+        }
     }
 
     private func allGlassViews(in view: UIView) -> [UIVisualEffectView] {
@@ -909,21 +913,19 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(glassView.frame, searchContainer.bounds)
     }
 
-    func testWhenFloatingFieldIsAtBottomThenContentIsHostedInsideUntintedGlass() throws {
+    func testWhenFloatingFieldIsAtBottomThenContentUsesPlainEmbeddedContainer() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.isUsingSmallTopSpacing = true
         barView.layoutIfNeeded()
 
         let searchContainer = try XCTUnwrap(barView.searchContainer)
-        let glassView = try XCTUnwrap(firstGlassView(in: searchContainer))
         let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
 
-        XCTAssertTrue(contentHost.isDescendant(of: glassView.contentView))
-        XCTAssertEqual(searchContainer.backgroundColor, .clear)
-        if #available(iOS 26.0, *) {
-            XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
-        }
+        XCTAssertTrue(contentHost.superview === searchContainer)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertEqual(searchContainer.backgroundColor?.resolvedColor(with: searchContainer.traitCollection),
+                       UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
     }
 
     func testWhenShieldAndLoupeShareTheIconSlotThenTheyShareACentre() throws {
@@ -1034,13 +1036,10 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.layoutIfNeeded()
 
         let searchContainer = try XCTUnwrap(barView.searchContainer)
-        let glassView = try XCTUnwrap(firstGlassView(in: searchContainer))
-
-        // The visible field is the glass, so it has to be the full 48pt rather than a 44pt pill
-        // floating inside the slot.
         XCTAssertEqual(barView.expectedHeight, 48, accuracy: 0.01)
         XCTAssertEqual(searchContainer.bounds.height, barView.expectedHeight, accuracy: 0.01)
-        XCTAssertEqual(glassView.frame.height, barView.expectedHeight, accuracy: 0.01)
+        XCTAssertEqual(searchContainer.backgroundColor?.resolvedColor(with: searchContainer.traitCollection),
+                       UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
     }
 
     func testWhenToolbarMaterialAppearanceRefreshesThenHostedOmnibarUsesSettledStyle() {
@@ -1051,45 +1050,58 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.isUsingSmallTopSpacing = true
         toolbar.setOmnibarView(barView, height: barView.expectedHeight)
 
-        toolbar.refreshMaterialAppearance(interfaceStyle: .dark)
+        toolbar.refreshMaterialAppearance(interfaceStyle: .dark, isFireMode: false)
 
-        let refreshCompleted = expectation(description: "Nested material refreshed")
+        let refreshCompleted = expectation(description: "Embedded material refreshed")
         DispatchQueue.main.async {
-            let glassView = self.firstGlassView(in: barView.searchContainer)
-            XCTAssertEqual(glassView?.overrideUserInterfaceStyle.rawValue, UIUserInterfaceStyle.dark.rawValue)
+            XCTAssertNil(self.firstGlassView(in: barView.searchContainer))
+            XCTAssertEqual(barView.searchContainer.backgroundColor?.resolvedColor(with: barView.searchContainer.traitCollection),
+                           UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                            .resolvedColor(with: barView.searchContainer.traitCollection))
             refreshCompleted.fulfill()
         }
         wait(for: [refreshCompleted], timeout: 1)
     }
 
-    func testWhenFloatingFieldMovesBetweenTopAndBottomThenContentRemainsInsideCurrentGlass() throws {
+    func testWhenBottomFloatingFieldIsHostedThenContentInheritsToolbarGlass() throws {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
+        toolbar.setFloatingStyleEnabled(true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        toolbar.setOmnibarView(barView, height: barView.expectedHeight)
+        toolbar.layoutIfNeeded()
+
+        let toolbarGlass = try XCTUnwrap(firstGlassView(in: toolbar))
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+
+        XCTAssertTrue(contentHost.isDescendant(of: toolbarGlass.contentView))
+    }
+
+    func testWhenFloatingFieldMovesBetweenTopAndBottomThenContentUsesTheCurrentContainer() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.layoutIfNeeded()
 
         let searchContainer = try XCTUnwrap(barView.searchContainer)
-        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
         let initialTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
-        XCTAssertTrue(contentHost.isDescendant(of: initialTopGlass.contentView))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
 
         barView.isUsingSmallTopSpacing = true
-        let bottomGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
-        XCTAssertFalse(bottomGlass === initialTopGlass)
-        XCTAssertTrue(contentHost.isDescendant(of: bottomGlass.contentView))
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
 
         barView.isUsingSmallTopSpacing = false
         let secondTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
-        XCTAssertFalse(secondTopGlass === bottomGlass)
-        XCTAssertTrue(contentHost.isDescendant(of: secondTopGlass.contentView))
+        XCTAssertFalse(secondTopGlass === initialTopGlass)
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
 
         barView.isUsingSmallTopSpacing = true
-        let secondBottomGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
-        XCTAssertFalse(secondBottomGlass === secondTopGlass)
-        XCTAssertTrue(contentHost.isDescendant(of: secondBottomGlass.contentView))
-        XCTAssertEqual(glassViewCount(in: searchContainer), 1)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        XCTAssertEqual(glassViewCount(in: searchContainer), 0)
     }
 
-    func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToGlass() throws {
+    func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToContainer() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.isUsingSmallTopSpacing = true
@@ -1102,9 +1114,10 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertFalse(searchContainer.backgroundColor == .clear)
 
         barView.refreshFireMode(fireMode: false)
-        let glassView = try XCTUnwrap(firstGlassView(in: searchContainer))
-        XCTAssertTrue(contentHost.isDescendant(of: glassView.contentView))
-        XCTAssertEqual(searchContainer.backgroundColor, .clear)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(contentHost.superview === searchContainer)
+        XCTAssertEqual(searchContainer.backgroundColor?.resolvedColor(with: searchContainer.traitCollection),
+                       UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
     }
 
     func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
@@ -1118,10 +1131,9 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
     }
 
-    func testWhenMaterialAppearanceRefreshesThenGlassViewIsRebuilt() throws {
+    func testWhenTopMaterialAppearanceRefreshesThenGlassViewIsRebuilt() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
-        barView.isUsingSmallTopSpacing = true
         barView.layoutIfNeeded()
         let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
 

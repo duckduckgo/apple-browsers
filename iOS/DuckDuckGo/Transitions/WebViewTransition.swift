@@ -233,6 +233,29 @@ class ToWebViewTransition: WebViewTransition {
         })
     }
 
+    private func preparePreview(_ preview: UIImage?, rowIndex: Int) {
+        if let preview {
+            imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
+                                                                     previewSize: preview.size,
+                                                                     isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
+        } else {
+            imageView.frame = CGRect(origin: .zero, size: imageContainer.bounds.size)
+        }
+        imageView.image = preview
+
+        let indexPath = IndexPath(row: rowIndex, section: 0)
+        if tabSwitcherSettings.isGridViewEnabled,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
+        } else if let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: true)
+        }
+
+        if !tabSwitcherSettings.isGridViewEnabled {
+            imageView.alpha = 0
+        }
+    }
+
     override func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         prepareSubviews(using: transitionContext)
         
@@ -275,25 +298,7 @@ class ToWebViewTransition: WebViewTransition {
             mainViewController.viewCoordinator.navigationBarContainer.backgroundColor = transitionBackgroundColor
         }
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
-        if let preview = preview {
-            imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
-                                                                     previewSize: preview.size,
-                                                                     isGridViewEnabled: tabSwitcherSettings.isGridViewEnabled)
-        } else {
-            imageView.frame = CGRect(origin: .zero, size: imageContainer.bounds.size)
-        }
-        imageView.image = preview
-
-        if tabSwitcherSettings.isGridViewEnabled,
-           let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewGridCell {
-            prepareGridChromeSnapshot(for: cell, initiallyVisible: true)
-        } else if let cell = tabSwitcherViewController.collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewListCell {
-            prepareListChrome(for: cell, initiallyVisible: true)
-        }
-        
-        if !tabSwitcherSettings.isGridViewEnabled {
-            self.imageView.alpha = 0
-        }
+        preparePreview(preview, rowIndex: rowIndex)
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
 

@@ -360,8 +360,9 @@ class MainViewController: UIViewController {
 
     private func refreshSettledFloatingGlassAppearance() {
         guard isFloatingUIEnabled else { return }
+        let isFireMode = tabManager.currentBrowsingMode == .fire
         let interfaceStyle = settledFloatingGlassInterfaceStyle
-        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle, isFireMode: isFireMode)
         // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
         // in the navigation bar container instead, so its glass keeps the style it was snapshotted
         // with and lands opaque before flipping translucent a frame later.

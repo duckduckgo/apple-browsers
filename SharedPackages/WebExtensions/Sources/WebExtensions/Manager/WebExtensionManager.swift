@@ -134,6 +134,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
 
+    // MARK: - AsyncStream
+
     private var continuation: AsyncStream<Void>.Continuation?
     public private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
@@ -746,6 +748,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     func notifyUpdate() {
+        continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
     }

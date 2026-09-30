@@ -489,6 +489,8 @@ class MainViewController: UIViewController {
 
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
+    /// A New Tab Page landing that waits for the tab switcher to go, because `enterSearch()` does nothing while it's up.
+    private var focusesNewTabPageAfterTabSwitcherDismissal = false
 
     // Duck.ai fire onboarding flow — see MainViewController+DuckAIFireOnboarding.swift
     var duckAIFireOnboardingFlow = DuckAIFireOnboardingFlowContext()
@@ -2877,6 +2879,16 @@ class MainViewController: UIViewController {
         if isNewTabPageVisible, isAppOpenKeyboardWindowVisible {
             newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
         }
+        enterSearch()
+    }
+
+    /// A landing on a New Tab Page inside the app that didn't come through `newTab()`.
+    /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
+    func showKeyboardOnNewTabPageLandingIfAllowed() {
+        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              tabManager.currentTabsModel.currentTab?.isHomeTab == true,
+              NewTabPageKeyboardPolicy().showsKeyboardOnInAppLanding,
+              !isNewTabPageKeyboardBlockedByDialog else { return }
         enterSearch()
     }
 
@@ -7632,6 +7644,10 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) {
         remoteMessageImpressionReporter.scheduleCheck()
+        if focusesNewTabPageAfterTabSwitcherDismissal {
+            focusesNewTabPageAfterTabSwitcherDismissal = false
+            showKeyboardOnNewTabPageLandingIfAllowed()
+        }
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didFinishWithSelectedTab tab: Tab?) {
@@ -7707,6 +7723,12 @@ extension MainViewController: TabSwitcherDelegate {
     }
     
     func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        // Closing every tab leaves the switcher's own unseen new tab, which it then dismisses onto.
+        // `updateCurrentTab()` makes that tab current first, so the dismissal reports no new selection.
+        if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+           let tab = tabManager.currentTabsModel.currentTab, tab.isHomeTab, !tab.viewed {
+            focusesNewTabPageAfterTabSwitcherDismissal = true
+        }
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         updateCurrentTab()
     }
@@ -7812,6 +7834,10 @@ extension MainViewController: TabSwitcherDelegate {
                 request = FireRequest(options: .tabs, trigger: .manualFire, scope: .normalMode, source: .tabSwitcher)
             }
             await fireExecutor.burn(request: request, applicationState: .unknown)
+            // In normal mode the switcher dismisses onto the new tab the burn leaves.
+            if case .normalMode = request.scope {
+                focusesNewTabPageAfterTabSwitcherDismissal = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            }
             tabSwitcher.dismissIfPossible()
         }
     }
@@ -8959,6 +8985,7 @@ extension MainViewController {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
             self.closeTab(tab, behavior: .createEmptyTabAtSamePosition)
+            self.showKeyboardOnNewTabPageLandingIfAllowed()
 
         case .newTab:
             self.newTab()
@@ -9072,6 +9099,7 @@ extension MainViewController {
         case .home:
             guard let tab = currentTab?.tabModel else { return }
             closeTab(tab, behavior: .createEmptyTabAtSamePosition)
+            showKeyboardOnNewTabPageLandingIfAllowed()
 
         case .newTab:
             newTab()

@@ -229,6 +229,7 @@ extension MainViewController {
         
         guard let tab = currentTab else { return }
         closeTab(tab.tabModel)
+        showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: true)
     }
     
     @objc func keyboardNextTab() {

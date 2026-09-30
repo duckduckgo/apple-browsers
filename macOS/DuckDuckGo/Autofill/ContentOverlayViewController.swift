@@ -83,6 +83,10 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
 
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
+    lazy var autofillImportPromoReporter: AutofillImportPromoReporting = Application.appDelegate.autofillImportPromoObserver
+
+    private var isShowingImportPrompt = false
+
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
@@ -147,6 +151,11 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     public override func viewWillDisappear() {
         // We should never see this but it's better than a flash of old content
         webView.load(URLRequest(url: .blankPage))
+
+        if isShowingImportPrompt {
+            autofillImportPromoReporter.overlayDidHideImportPrompt(self)
+            isShowingImportPrompt = false
+        }
     }
 
     public func messageMouseMove(x: CGFloat, y: CGFloat) {
@@ -385,6 +394,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         } else if pixel.isCredentialsImportPromotionPixel {
             PixelKit.fire(GeneralPixel.jsPixel(pixel))
+            autofillImportPromoReporter.overlayDidShowImportPrompt(self)
+            isShowingImportPrompt = true
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
             let parameters = usageProvider.formattedFillDate.flatMap {
@@ -442,6 +453,16 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
+        // Report before launching so the action is recorded before the import flow can hide this overlay.
+        if isShowingImportPrompt {
+            autofillImportPromoReporter.overlayDidStartImport(self)
+        }
         DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled)
+    }
+
+    public func autofillDidPermanentlyDismissCredentialsImportPrompt() {
+        if isShowingImportPrompt {
+            autofillImportPromoReporter.overlayDidPermanentlyDismissImportPrompt(self)
+        }
     }
 }

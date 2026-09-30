@@ -174,6 +174,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
 
     @MainActor
+    private(set) lazy var autofillImportPromoObserver = AutofillImportPromoObserver()
+
+    @MainActor
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
@@ -1545,7 +1548,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateController: updateController,
             updateNotificationBridge: updateNotificationPromoBridge,
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-            quitSurveyPromoObserver: quitSurveyPromoObserver
+            quitSurveyPromoObserver: quitSurveyPromoObserver,
+            autofillImportPromoObserver: autofillImportPromoObserver
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

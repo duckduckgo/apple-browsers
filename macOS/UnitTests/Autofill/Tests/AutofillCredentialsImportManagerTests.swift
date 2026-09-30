@@ -24,15 +24,19 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
 
     private var manager: AutofillCredentialsImportManager!
     private var importState: MockAutofillLoginImportState!
+    private var presentationDelegate: MockAutofillCredentialsImportPresentationDelegate!
 
     override func setUp() {
         super.setUp()
         importState = MockAutofillLoginImportState()
+        presentationDelegate = MockAutofillCredentialsImportPresentationDelegate()
         manager = AutofillCredentialsImportManager(loginImportStateProvider: importState, isBurnerWindow: false)
+        manager.presentationDelegate = presentationDelegate
     }
 
     override func tearDown() {
         importState = nil
+        presentationDelegate = nil
         manager = nil
         super.tearDown()
     }
@@ -95,6 +99,12 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
         manager.autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal()
 
         XCTAssertTrue(importState.isCredentialsImportPromoInBrowserPermanentlyDismissed)
+    }
+
+    func testWhenPermanentCredentialsImportPromptDismissalIsRequested_ThenPresentationDelegateIsNotifiedOnce() {
+        manager.autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal()
+
+        XCTAssertEqual(presentationDelegate.calls, [.permanentDismissal])
     }
 
     func testOnAutofillUserScriptShouldDisplayOverlay_NonParsableSerializedInputContext_returnsTrue() {
@@ -170,5 +180,22 @@ final class MockAutofillLoginImportState: AutofillLoginImportStateStoring, Autof
     var stubHasNeverPromptWebsitesForDomain = false
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool {
         stubHasNeverPromptWebsitesForDomain
+    }
+}
+
+private final class MockAutofillCredentialsImportPresentationDelegate: AutofillCredentialsImportPresentationDelegate {
+    enum Call: Equatable {
+        case importFlowRequest
+        case permanentDismissal
+    }
+
+    private(set) var calls: [Call] = []
+
+    func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
+        calls.append(.importFlowRequest)
+    }
+
+    func autofillDidPermanentlyDismissCredentialsImportPrompt() {
+        calls.append(.permanentDismissal)
     }
 }

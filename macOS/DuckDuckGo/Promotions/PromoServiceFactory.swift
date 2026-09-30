@@ -79,7 +79,8 @@ struct PromoServiceFactory {
             bookmarkToolbar(dependencies: dependencies),
             autoplayDiscoverability(dependencies: dependencies),
             quitSurvey(observer: dependencies.quitSurveyPromoObserver),
-            duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver)
+            duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver),
+            autofillImport(observer: dependencies.autofillImportPromoObserver)
         ]
 
         if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {

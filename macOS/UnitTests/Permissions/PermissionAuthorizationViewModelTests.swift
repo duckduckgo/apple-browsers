@@ -70,7 +70,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         viewModel.send(action: .onAppear)
 
         XCTAssertEqual(viewModel.viewState.title, String(format: UserText.websitePermissionsPromptLocationFormat, "maps.example.com"))
-        XCTAssertEqual(viewModel.viewState.learnMore, .init(title: UserText.permissionPopupLearnMoreLink, url: Self.locationHelpURL))
+        XCTAssertEqual(viewModel.viewState.decision?.learnMore, .init(title: UserText.permissionPopupLearnMoreLink, url: Self.locationHelpURL))
     }
 
     func testOnAppearHasNoLearnMoreForCamera() {
@@ -78,7 +78,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
 
         viewModel.send(action: .onAppear)
 
-        XCTAssertNil(viewModel.viewState.learnMore)
+        XCTAssertNil(viewModel.viewState.decision?.learnMore)
     }
 
     // MARK: - Decisions
@@ -171,7 +171,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
 
                 XCTAssertFalse(query.isSystemPermissionDisabled)
                 XCTAssertNil(viewModel.viewState.systemPermissionStep)
-                XCTAssertEqual(viewModel.viewState.decisionButtons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
+                XCTAssertEqual(viewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
                 XCTAssertTrue(decisions.isEmpty)
                 XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
 

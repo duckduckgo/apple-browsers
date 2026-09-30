@@ -98,8 +98,11 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         switch action {
         case .onAppear:
             viewState.title = makeTitle()
-            viewState.learnMore = permissionType.learnMoreURL.map {
-                PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+            if case .decision(var decision) = viewState.content {
+                decision.learnMore = permissionType.learnMoreURL.map {
+                    PermissionAuthorizationViewState.LearnMore(title: UserText.permissionPopupLearnMoreLink, url: $0)
+                }
+                viewState.content = .decision(decision)
             }
             if query?.isSystemPermissionDisabled == true, pendingDecision == nil {
                 isResumingStoredDecision = true
@@ -125,7 +128,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             onDismiss()
 
         case .learnMore:
-            guard let url = viewState.learnMore?.url else { return }
+            guard let url = viewState.decision?.learnMore?.url else { return }
             openURL(url)
         }
     }
@@ -206,7 +209,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             message = systemPermissionOffMessage
             buttonTitle = UserText.websitePermissionsPromptOpenSystemSettings
         }
-        viewState.systemPermissionStep = .init(phase: phase, message: message, buttonTitle: buttonTitle)
+        viewState.content = .systemPermission(.init(phase: phase, message: message, buttonTitle: buttonTitle))
     }
 
     private func requestSystemPermission() {

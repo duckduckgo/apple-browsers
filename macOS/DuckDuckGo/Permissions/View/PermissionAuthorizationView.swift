@@ -54,27 +54,11 @@ struct PermissionAuthorizationView: View {
                 .accessibilityIdentifier(viewModel.viewState.closeButtonAccessibilityIdentifier)
             }
 
-            if let step = viewModel.viewState.systemPermissionStep {
+            switch viewModel.viewState.content {
+            case .decision(let decision):
+                decisionContent(decision)
+            case .systemPermission(let step):
                 systemPermissionStep(step)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(viewModel.viewState.decisionButtons) { button in
-                        decisionButton(button)
-                    }
-                }
-
-                if let learnMore = viewModel.viewState.learnMore {
-                    Button(action: { viewModel.send(action: .learnMore) }) {
-                        Text(learnMore.title)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(designSystemColor: .accentTextPrimary))
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .cursor(.pointingHand)
-                    .frame(maxWidth: .infinity)
-                }
             }
         }
         .padding(20)
@@ -82,6 +66,28 @@ struct PermissionAuthorizationView: View {
         .background(Color(designSystemColor: .surfaceSecondary))
         .onAppear {
             viewModel.send(action: .onAppear)
+        }
+    }
+
+    @ViewBuilder
+    private func decisionContent(_ decision: PermissionAuthorizationViewState.Decision) -> some View {
+        VStack(spacing: 8) {
+            ForEach(decision.buttons) { button in
+                decisionButton(button)
+            }
+        }
+
+        if let learnMore = decision.learnMore {
+            Button(action: { viewModel.send(action: .learnMore) }) {
+                Text(learnMore.title)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .cursor(.pointingHand)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -202,11 +208,11 @@ private func previewViewModel(
     PermissionAuthorizationView(viewModel: previewViewModel(
         domain: "microsoft.ai",
         permissions: [.notification],
-        initialState: .init(systemPermissionStep: .init(
+        initialState: .init(content: .systemPermission(.init(
             phase: .request,
             message: UserText.websitePermissionsPromptSystemNotificationsRequired,
             buttonTitle: UserText.websitePermissionsPromptRequestSystemPermission
-        ))
+        )))
     ))
 }
 
@@ -214,11 +220,11 @@ private func previewViewModel(
     PermissionAuthorizationView(viewModel: previewViewModel(
         domain: "microsoft.ai",
         permissions: [.notification],
-        initialState: .init(systemPermissionStep: .init(
+        initialState: .init(content: .systemPermission(.init(
             phase: .waiting,
             message: UserText.websitePermissionsPromptSystemNotificationsRequired,
             buttonTitle: UserText.websitePermissionsPromptWaitingForSystemPermission
-        ))
+        )))
     ))
 }
 
@@ -226,11 +232,11 @@ private func previewViewModel(
     PermissionAuthorizationView(viewModel: previewViewModel(
         domain: "microsoft.ai",
         permissions: [.notification],
-        initialState: .init(systemPermissionStep: .init(
+        initialState: .init(content: .systemPermission(.init(
             phase: .openSettings,
             message: UserText.websitePermissionsPromptSystemNotificationsOff,
             buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
-        ))
+        )))
     ))
 }
 
@@ -238,11 +244,11 @@ private func previewViewModel(
     PermissionAuthorizationView(viewModel: previewViewModel(
         domain: "maps.example.com",
         permissions: [.geolocation],
-        initialState: .init(systemPermissionStep: .init(
+        initialState: .init(content: .systemPermission(.init(
             phase: .request,
             message: UserText.websitePermissionsPromptSystemLocationRequired,
             buttonTitle: UserText.websitePermissionsPromptRequestSystemPermission
-        ))
+        )))
     ))
 }
 
@@ -250,11 +256,11 @@ private func previewViewModel(
     PermissionAuthorizationView(viewModel: previewViewModel(
         domain: "maps.example.com",
         permissions: [.geolocation],
-        initialState: .init(systemPermissionStep: .init(
+        initialState: .init(content: .systemPermission(.init(
             phase: .openSettings,
             message: UserText.websitePermissionsPromptSystemLocationOff,
             buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
-        ))
+        )))
     ))
     .preferredColorScheme(.dark)
 }

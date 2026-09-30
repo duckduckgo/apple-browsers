@@ -20,6 +20,8 @@ import Foundation
 import AVFoundation
 
 extension AVCaptureDevice {
+    private typealias AuthorizationStatusImplementation = @convention(c) (AnyClass, Selector, NSString) -> AVAuthorizationStatus
+
     private static var authorizationStatusForMediaType: ((AVMediaType, inout AVAuthorizationStatus) -> Void)?
     private static var authorizationStatusSwizzleID: UUID?
     private static var isSwizzled: Bool { authorizationStatusForMediaType != nil }
@@ -30,13 +32,18 @@ extension AVCaptureDevice {
     private static let swizzledAuthorizationStatusForMediaType = {
         class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))
     }()
+    private static let systemAuthorizationStatusImplementation: AuthorizationStatusImplementation? = {
+        guard let originalAuthorizationStatusForMediaType else { return nil }
+        return unsafeBitCast(method_getImplementation(originalAuthorizationStatusForMediaType), to: AuthorizationStatusImplementation.self)
+    }()
 
     @discardableResult
     static func swizzleAuthorizationStatusForMediaType(with replacement: @escaping ((AVMediaType, inout AVAuthorizationStatus) -> Void)) -> UUID? {
         dispatchPrecondition(condition: .onQueue(.main))
         guard !self.isSwizzled else { return nil }
         guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
-              let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType
+              let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType,
+              systemAuthorizationStatusImplementation != nil
         else {
             assertionFailure("Methods not available")
             return nil
@@ -66,12 +73,18 @@ extension AVCaptureDevice {
     }
 
     /// App permission checks must read macOS's actual status while WebKit's preflight is intercepted.
+    @objc dynamic
     static func systemAuthorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        isSwizzled ? swizzled_authorizationStatus(for: mediaType) : authorizationStatus(for: mediaType)
+        guard let systemAuthorizationStatusImplementation else {
+            assertionFailure("Authorization status implementation not available")
+            return .denied
+        }
+        // Selector dispatch can race with restoring the hook; this implementation is captured before the first exchange.
+        return systemAuthorizationStatusImplementation(self, #selector(authorizationStatus(for:)), mediaType.rawValue as NSString)
     }
 
     @objc dynamic private static func swizzled_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        var result = self.swizzled_authorizationStatus(for: mediaType) // call the original
+        var result = systemAuthorizationStatus(for: mediaType)
         if Thread.isMainThread,
            let authorizationStatusForMediaType = Self.authorizationStatusForMediaType {
             authorizationStatusForMediaType(mediaType, &result)

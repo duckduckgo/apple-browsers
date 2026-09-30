@@ -63,6 +63,8 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     private var appDidBecomeActiveCancellable: AnyCancellable?
     /// Tells a timeout apart from one scheduled for an earlier request.
     private var systemPermissionRequestCount = 0
+    /// Invalidates status snapshots when a newer refresh or a system permission transition supersedes them.
+    private var systemPermissionRefreshGeneration = 0
 
     init(
         initialState: PermissionAuthorizationViewState? = .init(),
@@ -221,6 +223,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             message = systemPermissionOffMessage
             buttonTitle = UserText.websitePermissionsPromptOpenSystemSettings
         }
+        systemPermissionRefreshGeneration += 1
         viewState.systemPermissionStep = .init(phase: phase, message: message, buttonTitle: buttonTitle)
     }
 
@@ -291,18 +294,20 @@ final class PermissionAuthorizationViewModel: ObservableObject {
         appDidBecomeActiveCancellable = appDidBecomeActivePublisher.sink { [weak self] in
             guard let self else { return }
             Task { @MainActor [systemPermissionManager, systemPermissions] in
-                let requestCount = self.systemPermissionRequestCount
+                self.systemPermissionRefreshGeneration += 1
+                let refreshGeneration = self.systemPermissionRefreshGeneration
                 var states: [PermissionType: SystemPermissionAuthorizationState] = [:]
                 for permission in systemPermissions {
                     states[permission] = await systemPermissionManager.authorizationState(for: permission)
                 }
-                guard self.systemPermissionRequestCount == requestCount else { return }
+                guard self.systemPermissionRefreshGeneration == refreshGeneration else { return }
                 self.updateSystemPermissionStep(using: states)
             }
         }
     }
 
     private func stopObservingSystemPermission() {
+        systemPermissionRefreshGeneration += 1
         pendingDecision = nil
         currentSystemPermission = nil
         systemAuthorizationCancellable = nil

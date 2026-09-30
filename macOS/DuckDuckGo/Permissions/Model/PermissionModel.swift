@@ -51,6 +51,7 @@ final class PermissionModel {
     private let featureFlagger: FeatureFlagger
 
     private var temporarilyAllowedExternalSchemes: [String: Set<PermissionType>] = [:]
+    private var mediaAuthorizationSwizzleID: UUID?
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
@@ -427,7 +428,15 @@ final class PermissionModel {
         // AVCaptureDevice.authorizationStatus(for:mediaType) is swizzled to determine requested media type
         // otherwise WebView won't call any other delegate methods if System Permission is denied
         var checkedPermissions = Set<PermissionType>()
-        let swizzleID = AVCaptureDevice.swizzleAuthorizationStatusForMediaType { [weak self] mediaType, authorizationStatus in
+        var swizzleID: UUID?
+        let restoreAuthorizationStatus = { [weak self] in
+            guard let swizzleID else { return }
+            AVCaptureDevice.restoreAuthorizationStatusForMediaType(ifMatching: swizzleID)
+            if self?.mediaAuthorizationSwizzleID == swizzleID {
+                self?.mediaAuthorizationSwizzleID = nil
+            }
+        }
+        swizzleID = AVCaptureDevice.swizzleAuthorizationStatusForMediaType { [weak self] mediaType, authorizationStatus in
             let permission: PermissionType
             // media type for Camera/Microphone can be only determined separately
             switch mediaType {
@@ -443,28 +452,28 @@ final class PermissionModel {
                 authorizationStatus = .authorized
                 checkedPermissions.insert(permission)
                 if checkedPermissions == [.camera, .microphone] {
-                    AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+                    restoreAuthorizationStatus()
                 }
                 return
             }
             switch authorizationStatus {
             case .denied, .restricted:
                 self?.permissions[permission].systemAuthorizationDenied(systemWide: false)
-                AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+                restoreAuthorizationStatus()
 
             case .notDetermined, .authorized:
                 checkedPermissions.insert(permission)
                 if checkedPermissions == [.camera, .microphone] {
-                    AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+                    restoreAuthorizationStatus()
                 }
             @unknown default: break
             }
         }
-        // A permission query may only enumerate devices. Restore the hook without ending a newer request's interception.
+        // A permission query may only enumerate devices. Restore the hook without ending a newer installation.
         guard let swizzleID else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            AVCaptureDevice.restoreAuthorizationStatusForMediaType(ifMatching: swizzleID)
-        }
+        // The hook is process-wide; tabs that did not install it must not end another tab's interception.
+        mediaAuthorizationSwizzleID = swizzleID
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: restoreAuthorizationStatus)
     }
 
     func isPopupBlockedByDefault(forDomain domain: String) -> Bool {
@@ -542,8 +551,9 @@ final class PermissionModel {
     /// The decisionHandler will be called synchronously if there's a permanent (stored) permission granted or denied
     /// If no permanent decision is stored a new AuthorizationQuery will be initialized and published via $authorizationQuery
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (Bool) -> Void) {
-        if permissions.contains(.camera) || permissions.contains(.microphone) {
-            AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+        if permissions.contains(.camera) || permissions.contains(.microphone), let swizzleID = mediaAuthorizationSwizzleID {
+            AVCaptureDevice.restoreAuthorizationStatusForMediaType(ifMatching: swizzleID)
+            mediaAuthorizationSwizzleID = nil
         }
         guard !permissions.isEmpty else {
             assertionFailure("Unexpected permissions/domain")

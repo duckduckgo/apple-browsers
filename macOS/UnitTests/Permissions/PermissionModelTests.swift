@@ -86,6 +86,7 @@ final class PermissionModelTests: XCTestCase {
 
     override func tearDown() {
         AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+        AVCaptureDeviceMock.authorizationStatuses = nil
         webView = nil
         permissionManagerMock = nil
         geolocationServiceMock = nil
@@ -684,6 +685,99 @@ final class PermissionModelTests: XCTestCase {
 
         waitForExpectations(timeout: 0)
         XCTAssertEqual(model.permissions, [:])
+    }
+
+    func testWhenPromptFlagIsOffThenMediaPermissionQueriesDoNotOverrideSystemStatus() {
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied, .video: .restricted]
+
+        model.queryMediaPermission("microphone")
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), .restricted)
+        XCTAssertEqual(model.permissions, [:])
+    }
+
+    func testWhenPromptFlagIsOnThenWebKitMediaChecksAreAuthorizedWhileSystemChecksKeepTheirRealStatus() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        let statuses: [AVAuthorizationStatus] = [.notDetermined, .denied, .restricted, .authorized]
+
+        for status in statuses {
+            AVCaptureDeviceMock.authorizationStatuses = [.audio: status, .video: status]
+            model.queryMediaPermission("camera")
+
+            XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), .authorized)
+            XCTAssertEqual(AVCaptureDevice.systemAuthorizationStatus(for: .video), status)
+            XCTAssertEqual(AVCaptureDevice.systemAuthorizationStatus(for: .audio), status)
+            XCTAssertEqual(model.permissions, [:])
+
+            // WebKit's second device check finishes the interception without changing the real status.
+            XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .authorized)
+            XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), status)
+            XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), status)
+        }
+    }
+
+    func testWhenMediaRequestReachesWebsitePermissionCallbackThenItsOverrideIsRemoved() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied]
+        model.queryMediaPermission("microphone")
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .authorized)
+
+        model.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+        model.authorizationQuery?.cancel()
+    }
+
+    func testWhenSystemAuthorizationIsReadDuringInterceptionThenItKeepsTheOriginalStatus() throws {
+        let originalStatus = AVCaptureDevice.systemAuthorizationStatus(for: .audio)
+        let interceptedStatus: AVAuthorizationStatus = originalStatus == .authorized ? .denied : .authorized
+        let swizzleID = try XCTUnwrap(AVCaptureDevice.swizzleAuthorizationStatusForMediaType { _, status in
+            status = interceptedStatus
+        })
+        defer { AVCaptureDevice.restoreAuthorizationStatusForMediaType(ifMatching: swizzleID) }
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), interceptedStatus)
+        XCTAssertEqual(AVCaptureDevice.systemAuthorizationStatus(for: .audio), originalStatus)
+    }
+
+    func testWhenAnotherTabRequestsMediaPermissionThenItDoesNotRemoveTheInstallingTabsOverride() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied]
+        let otherModel = PermissionModel(permissionManager: permissionManagerMock,
+                                         geolocationService: geolocationServiceMock,
+                                         systemPermissionManager: systemPermissionManagerMock,
+                                         featureFlagger: featureFlagger)
+        model.queryMediaPermission("microphone")
+        otherModel.queryMediaPermission("microphone")
+
+        otherModel.permissions([.microphone], requestedForDomain: "other.example.com") { (_: Bool) in }
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .authorized)
+        model.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+        model.authorizationQuery?.cancel()
+        otherModel.authorizationQuery?.cancel()
+    }
+
+    func testWhenAnotherTabInstallsANewerOverrideThenAnOlderRequestDoesNotRemoveIt() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied]
+        let otherModel = PermissionModel(permissionManager: permissionManagerMock,
+                                         geolocationService: geolocationServiceMock,
+                                         systemPermissionManager: systemPermissionManagerMock,
+                                         featureFlagger: featureFlagger)
+        model.queryMediaPermission("microphone")
+        AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+        otherModel.queryMediaPermission("microphone")
+
+        model.permissions([.microphone], requestedForDomain: "example.com") { (_: Bool) in }
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .authorized)
+        otherModel.permissions([.microphone], requestedForDomain: "other.example.com") { (_: Bool) in }
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+        model.authorizationQuery?.cancel()
+        otherModel.authorizationQuery?.cancel()
     }
 
     func testWhenSystemLocationIsDisabledAndLocationQueriedThenQueryIsShownForTwoStepFlow() {
@@ -1544,6 +1638,81 @@ final class PermissionModelTests: XCTestCase {
     }
 
     // MARK: - System Permission Disabled Tests
+
+    func testWhenPromptFlagIsOffThenStoredMediaAllowIgnoresSystemAuthorizationState() {
+        let states: [SystemPermissionAuthorizationState] = [.denied, .restricted, .notDetermined]
+        for permission in [PermissionType.camera, .microphone] {
+            permissionManagerMock.setPermission(.allow, forDomain: "example.com", permissionType: permission)
+            for state in states {
+                systemPermissionManagerMock.authorizationStates[permission] = state
+                var granted: Bool?
+
+                model.permissions([permission], requestedForDomain: "example.com") { (decision: Bool) in
+                    granted = decision
+                }
+
+                XCTAssertEqual(granted, true)
+                XCTAssertNil(model.authorizationQuery)
+            }
+        }
+    }
+
+    func testWhenBothMediaPermissionsAreAlwaysAllowedAndOneIsBlockedThenCombinedRequestWaitsInSystemStep() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        for requestedPermissions: [PermissionType] in [[.camera, .microphone], [.microphone, .camera]] {
+            for blockedPermission in requestedPermissions {
+                systemPermissionManagerMock.authorizationStates = [.camera: .authorized, .microphone: .authorized]
+                systemPermissionManagerMock.authorizationStates[blockedPermission] = .denied
+                for permission in requestedPermissions {
+                    permissionManagerMock.setPermission(.allow, forDomain: "example.com", permissionType: permission)
+                }
+                var decisions: [Bool] = []
+                var blockedBySystem = false
+                let cancellable = model.permissionBlockedBySystem.sink { _ in blockedBySystem = true }
+
+                model.permissions(requestedPermissions, requestedForDomain: "example.com") { (decision: Bool) in
+                    decisions.append(decision)
+                }
+
+                let query = try XCTUnwrap(model.authorizationQuery)
+                XCTAssertEqual(query.permissions, requestedPermissions)
+                XCTAssertTrue(query.isSystemPermissionDisabled)
+                XCTAssertTrue(decisions.isEmpty)
+                XCTAssertFalse(blockedBySystem)
+                query.cancel()
+                XCTAssertEqual(decisions, [false])
+                withExtendedLifetime(cancellable) {}
+            }
+        }
+    }
+
+    func testWhenOnlyOneMediaPermissionIsAlwaysAllowedThenCombinedRequestShowsWebsiteChoicesDespiteBlockedDevice() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        for requestedPermissions: [PermissionType] in [[.camera, .microphone], [.microphone, .camera]] {
+            for allowedPermission in requestedPermissions {
+                for blockedPermission in requestedPermissions {
+                    systemPermissionManagerMock.authorizationStates = [.camera: .authorized, .microphone: .authorized]
+                    systemPermissionManagerMock.authorizationStates[blockedPermission] = .denied
+                    for permission in requestedPermissions {
+                        permissionManagerMock.setPermission(permission == allowedPermission ? .allow : .ask,
+                                                            forDomain: "example.com", permissionType: permission)
+                    }
+                    var granted: Bool?
+
+                    model.permissions(requestedPermissions, requestedForDomain: "example.com") { (decision: Bool) in
+                        granted = decision
+                    }
+
+                    let query = try XCTUnwrap(model.authorizationQuery)
+                    XCTAssertEqual(query.permissions, requestedPermissions)
+                    XCTAssertFalse(query.isSystemPermissionDisabled)
+                    XCTAssertNil(granted)
+                    query.cancel()
+                    XCTAssertEqual(granted, false)
+                }
+            }
+        }
+    }
 
     func testWhenSystemPermissionDeniedThenQueryIsShown() {
         // Set system permission as denied

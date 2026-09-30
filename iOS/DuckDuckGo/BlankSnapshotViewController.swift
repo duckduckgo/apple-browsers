@@ -59,6 +59,7 @@ class BlankSnapshotViewController: UIViewController {
          aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
+         isFloatingUIFeatureEnabledForCurrentLaunch: Bool,
          appSettings: AppSettings,
          mobileCustomization: MobileCustomization) {
         self.addressBarPosition = addressBarPosition
@@ -69,7 +70,7 @@ class BlankSnapshotViewController: UIViewController {
         self.appSettings = appSettings
         self.mobileCustomization = mobileCustomization
         self.floatingUIManager = FloatingUIManager(
-            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+            isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch
         )
         super.init(nibName: nil, bundle: nil)
     }

@@ -375,10 +375,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        floatingUIManager: FloatingUIManaging? = nil,
         tabProvider: @escaping () -> Tab? = { nil },
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
+        let floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        )
         let upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
@@ -427,7 +431,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             syncService: syncService,
             aiChatSyncCleaner: aiChatSyncCleaner,
-            recentModalPromptStatusProvider: recentModalPromptStatusProvider
+            recentModalPromptStatusProvider: recentModalPromptStatusProvider,
+            floatingUIManager: floatingUIManager
         )
         floatingReturnKeyViewController = UnifiedToggleInputFloatingReturnKeyViewController()
         super.init()

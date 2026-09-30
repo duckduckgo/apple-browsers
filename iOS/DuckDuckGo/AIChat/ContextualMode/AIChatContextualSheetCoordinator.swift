@@ -134,6 +134,7 @@ final class AIChatContextualSheetCoordinator {
     @Published private(set) var isFloatingInputPresented: Bool = false
 
     private var floatingChipsCancellable: AnyCancellable?
+    private let floatingUIManager: FloatingUIManaging
     private var areFloatingSuggestionsVisible = false
 
     /// Session timer for auto-resetting the chat after inactivity
@@ -244,6 +245,7 @@ final class AIChatContextualSheetCoordinator {
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         floatingUIManager: FloatingUIManaging? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          pageContextHandler: AIChatPageContextHandling,
          tabURLPublishers: AIChatTabURLPublishers,
@@ -264,6 +266,9 @@ final class AIChatContextualSheetCoordinator {
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        )
         self.floatingInputFeature = floatingInputFeature
         self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         self.pageContextHandler = pageContextHandler
@@ -871,6 +876,7 @@ private extension AIChatContextualSheetCoordinator {
             attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
+            floatingUIManager: floatingUIManager,
             tabProvider: { [weak self] in self?.tabProvider() },
             tabAttachmentSource: tabAttachmentSource,
             isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }

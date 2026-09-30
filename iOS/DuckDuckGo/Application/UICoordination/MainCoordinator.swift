@@ -102,6 +102,7 @@ final class MainCoordinator {
     private var pendingProtectedDataWork: [() -> Void] = []
     private var privacyConfigurationManager: PrivacyConfigurationManaging?
     private let onboardingManager: OnboardingFlowManaging
+    let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
 
@@ -147,6 +148,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.floatingUIAugust2026)
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
@@ -214,6 +216,7 @@ final class MainCoordinator {
                                 contextualOnboardingLogic: daxDialogs,
                                 onboardingPixelReporter: reportingService.onboardingPixelReporter,
                                 featureFlagger: featureFlagger,
+                                isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                 contentScopeExperimentManager: contentScopeExperimentManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
                                 textZoomCoordinatorProvider: textZoomCoordinatorProvider,
@@ -297,6 +300,7 @@ final class MainCoordinator {
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
+                                        isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         lastTabShortcutAdapter: lastTabShortcutAdapter,

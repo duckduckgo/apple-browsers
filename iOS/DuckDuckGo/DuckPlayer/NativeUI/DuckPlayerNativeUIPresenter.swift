@@ -175,7 +175,7 @@ final class DuckPlayerNativeUIPresenter {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          floatingUIManager: FloatingUIManaging = FloatingUIManager(
-            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+            isFloatingUIFeatureEnabled: false
          )) {
         self.appSettings = appSettings
         self.duckPlayerSettings = duckPlayerSettings

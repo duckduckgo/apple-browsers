@@ -292,8 +292,9 @@ class TabViewController: UIViewController {
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
     private var contextualOnboardingTopInset: CGFloat = 0
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     lazy var floatingUIManager = FloatingUIManager(
-        isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch,
+        isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
@@ -610,6 +611,7 @@ class TabViewController: UIViewController {
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                                    featureFlagger: FeatureFlagger,
+                                   isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
                                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    autoconsentManagement: AutoconsentManaging,
@@ -650,6 +652,7 @@ class TabViewController: UIViewController {
                                  contextualOnboardingLogic: contextualOnboardingLogic,
                                  onboardingPixelReporter: onboardingPixelReporter,
                                  featureFlagger: featureFlagger,
+                                 isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                  contentScopeExperimentManager: contentScopeExperimentManager,
                                  textZoomCoordinator: textZoomCoordinator,
                                  autoconsentManagement: autoconsentManagement,
@@ -722,8 +725,9 @@ class TabViewController: UIViewController {
 
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
-                                    featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                    userScriptsDependencies: userScriptsDependencies)
+                                    featureFlagger: featureFlagger,
+                                    userScriptsDependencies: userScriptsDependencies,
+                                    floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
             let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
@@ -842,6 +846,7 @@ class TabViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
+            floatingUIManager: floatingUIManager,
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
@@ -872,6 +877,7 @@ class TabViewController: UIViewController {
          onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
          urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
          featureFlagger: FeatureFlagger,
+         isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          textZoomCoordinator: TextZoomCoordinating,
          autoconsentManagement: AutoconsentManaging,
@@ -919,6 +925,8 @@ class TabViewController: UIViewController {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
+            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement

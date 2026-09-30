@@ -113,7 +113,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          narrowLayoutInLandscape: Bool = false,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          floatingUIManager: FloatingUIManaging = FloatingUIManager(
-            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+            isFloatingUIFeatureEnabled: false
          ),
          appWidthObserver: AppWidthObserver = .shared,
          notificationCenter: NotificationCenter = .default,

@@ -202,7 +202,7 @@ class TabSwitcherViewController: UIViewController {
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.floatingUIManager = floatingUIManager ?? FloatingUIManager(
-            isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch
+            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
         )
         self.keyValueStore = keyValueStore
         self.favicons = favicons

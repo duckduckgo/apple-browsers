@@ -517,8 +517,9 @@ class MainViewController: UIViewController {
     lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
     let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
-    private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
-        isFloatingUIFeatureEnabled: AppDependencyProvider.shared.isFloatingUIFeatureEnabledForCurrentLaunch,
+    private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
+    lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
+        isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
@@ -635,6 +636,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
         lastTabShortcutAdapter: LastTabShortcutAdapter,
@@ -721,6 +723,8 @@ class MainViewController: UIViewController {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
+            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastTabShortcutAdapter = lastTabShortcutAdapter
@@ -861,7 +865,8 @@ class MainViewController: UIViewController {
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
-            internalUserCommands: internalUserCommands)
+            internalUserCommands: internalUserCommands,
+            floatingUIManager: floatingUIManager)
     }()
 
     lazy var suggestionTrayDependencies: SuggestionTrayDependencies = {

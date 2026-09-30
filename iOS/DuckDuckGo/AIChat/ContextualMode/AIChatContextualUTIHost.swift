@@ -85,6 +85,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        floatingUIManager: FloatingUIManaging = FloatingUIManager(isFloatingUIFeatureEnabled: false),
         tabProvider: @escaping () -> Tab? = { nil },
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
@@ -111,6 +112,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
             placesAttachmentsAboveInput: isFloatingInputAvailable,
             usageLimitsStore: usageLimitsStore,
+            floatingUIManager: floatingUIManager,
             tabProvider: tabProvider
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(

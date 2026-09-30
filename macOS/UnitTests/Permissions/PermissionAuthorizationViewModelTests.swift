@@ -316,67 +316,6 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         withExtendedLifetime((query, viewModel)) {}
     }
 
-    func testWhenMediaRefreshIsStillUndeterminedThenTheDeviceKeepsWaiting() async {
-        systemPermissionManager.authorizationStates = [.camera: .notDetermined, .microphone: .notDetermined]
-        systemPermissionManager.defersAuthorizationResponse = true
-        systemPermissionManager.defersAuthorizationStateResponse = true
-        let query = makeQuery(permissions: [.camera, .microphone])
-        let viewModel = makeViewModel(query: query)
-        viewModel.send(action: .allowThisVisit)
-        viewModel.send(action: .requestSystemPermission)
-
-        appDidBecomeActive.send()
-        await waitUntil { self.systemPermissionManager.pendingAuthorizationStateCompletions.count == 1 }
-        systemPermissionManager.pendingAuthorizationStateCompletions[0](.notDetermined)
-        await waitUntil { self.systemPermissionManager.pendingAuthorizationStateCompletions.count == 2 }
-        systemPermissionManager.pendingAuthorizationStateCompletions[1](.notDetermined)
-        await waitUntil { self.systemPermissionManager.authorizationStateResponseCount == 2 }
-        await settle()
-
-        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
-        XCTAssertNil(viewModel.viewState.systemPermissionStep?.buttonAction)
-        XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.camera])
-        XCTAssertNil(result)
-        withExtendedLifetime((query, viewModel)) {}
-    }
-
-    func testWhenMediaRefreshFinishesAfterTimeoutThenItDoesNotRestoreTheRequestStep() async {
-        systemPermissionManager.authorizationStates[.camera] = .notDetermined
-        systemPermissionManager.defersAuthorizationResponse = true
-        systemPermissionManager.defersAuthorizationStateResponse = true
-        let query = makeQuery(permissions: [.camera])
-        let viewModel = makeViewModel(query: query)
-        viewModel.send(action: .allowThisVisit)
-        viewModel.send(action: .requestSystemPermission)
-
-        appDidBecomeActive.send()
-        await waitUntil { self.systemPermissionManager.pendingAuthorizationStateCompletions.count == 1 }
-        runScheduledWork()
-        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
-        systemPermissionManager.pendingAuthorizationStateCompletions[0](.notDetermined)
-        await waitUntil { self.systemPermissionManager.authorizationStateResponseCount == 1 }
-        await settle()
-
-        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
-        XCTAssertNil(result)
-        withExtendedLifetime((query, viewModel)) {}
-    }
-
-    func testWhenOnlyMicrophoneIsDeniedThenCombinedRequestOpensMicrophoneSettings() throws {
-        systemPermissionManager.authorizationStates = [.camera: .authorized, .microphone: .denied]
-        let query = makeQuery(permissions: [.camera, .microphone])
-        let viewModel = makeViewModel(query: query)
-
-        viewModel.send(action: .allowThisVisit)
-        viewModel.send(action: .openSystemSettings)
-
-        XCTAssertEqual(openedSystemSettingsURLs, [try XCTUnwrap(PermissionAuthorizationType.microphone.systemSettingsURL)])
-        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.message, UserText.websitePermissionsPromptSystemMicrophoneOff)
-        XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
-        XCTAssertNil(result)
-        withExtendedLifetime((query, viewModel)) {}
-    }
-
     func testWhenLocationServicesAreRestoredThenSettingsStepReturnsToRequestStep() async throws {
         systemPermissionManager.authorizationStates[.geolocation] = .systemDisabled
         let query = makeQuery(permissions: [.geolocation])

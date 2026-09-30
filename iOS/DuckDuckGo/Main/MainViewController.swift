@@ -464,6 +464,8 @@ class MainViewController: UIViewController {
     var showKeyboardAfterFireButton: DispatchWorkItem?
     /// A New Tab Page landing that waits for the tab switcher to go, because `enterSearch()` does nothing while it's up.
     private var focusesNewTabPageAfterTabSwitcherDismissal = false
+    /// Set while Fire dismisses the tab switcher: the post-Fire keyboard rule decides for the page it lands on.
+    private var isDismissingTabSwitcherForFire = false
 
     // Duck.ai fire onboarding flow — see MainViewController+DuckAIFireOnboarding.swift
     var duckAIFireOnboardingFlow = DuckAIFireOnboardingFlowContext()
@@ -2853,8 +2855,10 @@ class MainViewController: UIViewController {
 
     /// A landing on a New Tab Page inside the app that didn't come through `newTab()`.
     /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
-    func showKeyboardOnNewTabPageLandingIfAllowed() {
+    /// - Parameter afterSwitchingTabs: `true` when the user picked a different tab or closed the current one.
+    func showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: Bool = false) {
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+              !afterSwitchingTabs || NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
               tabManager.currentTabsModel.currentTab?.isHomeTab == true,
               NewTabPageKeyboardPolicy().showsKeyboardOnInAppLanding,
               !isNewTabPageKeyboardBlockedByDialog else { return }
@@ -5933,6 +5937,7 @@ extension MainViewController: OmniBarDelegate {
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
                 self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
+                self?.showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: true)
             }
         ))
     }
@@ -7595,6 +7600,10 @@ extension MainViewController: TabSwitcherDelegate {
             assertionFailure("Couldn't create new tab")
             return
         }
+        if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage), NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
+           newTab.tabModel.isHomeTab, !isDismissingTabSwitcherForFire {
+            focusesNewTabPageAfterTabSwitcherDismissal = true
+        }
         transitionTo(tab: newTab, from: previousTab)
     }
 
@@ -7727,8 +7736,10 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
-        self.forgetAllWithAnimation(request: fireRequest) {
+        self.forgetAllWithAnimation(request: fireRequest) { [weak self] in
+            self?.isDismissingTabSwitcherForFire = true
             tabSwitcher.dismissIfPossible(animated: false)
+            self?.isDismissingTabSwitcherForFire = false
         }
     }
 

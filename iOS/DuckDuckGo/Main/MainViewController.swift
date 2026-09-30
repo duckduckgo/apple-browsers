@@ -2661,7 +2661,8 @@ class MainViewController: UIViewController {
         let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .quickFire)
         forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
-        if KeyboardSettings().onAppLaunch {
+        // On iPhone this focus outlives the burn, so behind the flag the post-Fire rule decides instead.
+        if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && KeyboardSettings().onAppLaunch {
             enterSearch()
         }
     }

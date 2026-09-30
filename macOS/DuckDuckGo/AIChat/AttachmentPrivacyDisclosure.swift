@@ -205,7 +205,7 @@ final class AttachmentPrivacyDisclosureGate {
     func shouldShow(hasStagedAttachment: Bool, tabID: String?) -> Bool {
         let key = tabID ?? Self.tablessKey
         guard hasStagedAttachment else {
-            displayEnded(tabID: tabID)
+            if showingTab == key { showingTab = nil }
             return false
         }
         if showingTab == key { return true }
@@ -213,11 +213,6 @@ final class AttachmentPrivacyDisclosureGate {
 
         showingTab = key
         return true
-    }
-
-    func displayEnded(tabID: String?) {
-        guard showingTab == tabID ?? Self.tablessKey else { return }
-        showingTab = nil
     }
 }
 

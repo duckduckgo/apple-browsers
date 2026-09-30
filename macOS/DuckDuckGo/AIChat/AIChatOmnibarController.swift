@@ -203,8 +203,6 @@ final class AIChatOmnibarController {
     /// Blocked-submit reason, for the container VC's attachments error label.
     var onAttachmentValidationFailed: ((String) -> Void)?
 
-    var onPromptSubmitted: (() -> Void)?
-
     /// Waits for all attachment resizing to complete before proceeding.
     var waitForAttachmentsReady: (() async -> Void)?
 
@@ -1387,7 +1385,6 @@ final class AIChatOmnibarController {
         firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
-        onPromptSubmitted?()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and

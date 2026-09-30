@@ -294,13 +294,6 @@ final class AttachmentPrivacyDisclosureGateTests: XCTestCase {
         XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
     }
 
-    func testAttachingAgainAfterSubmittingDoesNotShowAgain() {
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        gate.displayEnded(tabID: "A")
-
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-    }
-
     func testOnlyOneTabGetsTheDisplay() {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
         XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
@@ -313,10 +306,10 @@ final class AttachmentPrivacyDisclosureGateTests: XCTestCase {
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
     }
 
-    func testAnotherTabsSubmitLeavesTheShowingTabAlone() {
+    func testAnotherTabsEmptyingLeavesTheShowingTabAlone() {
         _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
 
-        gate.displayEnded(tabID: "B")
+        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "B"))
 
         XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
     }

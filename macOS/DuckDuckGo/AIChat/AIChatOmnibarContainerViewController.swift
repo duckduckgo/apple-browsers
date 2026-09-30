@@ -1204,9 +1204,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.onLearnMore = { [weak self] in
             self?.openAttachmentPrivacyLearnMore()
         }
-        omnibarController.onPromptSubmitted = { [weak self] in
-            self?.endAttachmentPrivacyDisplay()
-        }
 
         omnibarController.usageWarningViewModel?.onOpenModelPicker = { [weak self] in
             guard let self else { return }
@@ -1286,10 +1283,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var shouldShowAttachmentPrivacyDisclosure: Bool {
         attachmentPrivacyGate.shouldShow(hasStagedAttachment: hasStagedFileOrImageAttachment,
                                          tabID: omnibarController.currentTabUUID)
-    }
-
-    private func endAttachmentPrivacyDisplay() {
-        attachmentPrivacyGate.displayEnded(tabID: omnibarController.currentTabUUID)
     }
 
     /// A new tab, so the staged attachment and the draft survive.

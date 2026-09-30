@@ -205,7 +205,8 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
-        if currentTab != nil {
+        // A New Tab Page often has no tab controller yet, and find-in-page then does nothing.
+        if currentTab != nil || featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
             newTab()
         } else {
             keyboardFind()

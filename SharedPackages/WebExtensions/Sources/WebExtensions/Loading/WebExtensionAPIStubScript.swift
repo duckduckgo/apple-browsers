@@ -110,6 +110,21 @@ enum WebExtensionAPIStubScript {
             return;
         }
 
+        // The script must leave ordinary web content alone: some websites define their own
+        // `window.chrome` object to look like Chrome, and they must not get stubs installed on it,
+        // nor the retention array leaked into them. Only extension pages are served over
+        // `webkit-extension:`. A bare `JSContext` in tests has no `location`, so an absent
+        // `location` still lets the script run.
+        try {
+            if (globalThis.location !== undefined && typeof globalThis.location.protocol === "string"
+                && globalThis.location.protocol !== "webkit-extension:") {
+                return;
+            }
+        } catch (error) {
+            // Reading `location` should not throw; if it does, treat the frame as not ours.
+            return;
+        }
+
         // Our own extensions (autoconsent, content blocker, Dark Reader, …) declare
         // `browser_specific_settings.duckduckgo` and need no Chrome shims. Keep in sync with
         // `WKWebExtension.needsChromeCompatibility`.
@@ -121,21 +136,6 @@ enum WebExtensionAPIStubScript {
             }
         } catch (error) {
             // A page that cannot read its manifest is treated like any other extension page.
-        }
-
-        // The script must leave ordinary web content alone: some websites define their own
-        // `window.chrome` object to look like Chrome, and they must not get stubs installed on it,
-        // nor the retention array leaked into them. Only extension pages are served over
-        // `webkit-extension:`. A bare `JSContext` in tests has no
-        // `location`, so an absent `location` still lets the script run.
-        try {
-            if (globalThis.location !== undefined && typeof globalThis.location.protocol === "string"
-                && globalThis.location.protocol !== "webkit-extension:") {
-                return;
-            }
-        } catch (error) {
-            // Reading `location` should not throw; if it does, treat the frame as not ours.
-            return;
         }
 
         // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a

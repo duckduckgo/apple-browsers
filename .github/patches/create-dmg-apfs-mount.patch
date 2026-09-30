@@ -1,0 +1,37 @@
+--- create-dmg
++++ create-dmg
+@@ -509,13 +509,25 @@
+ if [[ "$FILESYSTEM" == "APFS" ]]; then
+-	HDIUTIL_FILTER="tail -n 1"
++	# APFS attach output can list the mounted volume before its container.
++	# Select the device and mount point from the same plist entity instead.
++	attach_plist=$(mktemp -t create-dmg-attach.XXXXXX)
++	hdiutil attach -mountrandom "${MOUNT_RANDOM_PATH}" -readwrite -noverify -noautoopen -nobrowse -plist "${DMG_TEMP_NAME}" > "${attach_plist}"
++	DEV_NAME=""
++	MOUNT_DIR=""
++	entity_index=0
++	while /usr/libexec/PlistBuddy -c "Print :system-entities:${entity_index}" "${attach_plist}" > /dev/null 2>&1; do
++		entity_device=$(/usr/libexec/PlistBuddy -c "Print :system-entities:${entity_index}:dev-entry" "${attach_plist}" 2>/dev/null || true)
++		entity_mount=$(/usr/libexec/PlistBuddy -c "Print :system-entities:${entity_index}:mount-point" "${attach_plist}" 2>/dev/null || true)
++		if [[ -n "${entity_device}" && -n "${entity_mount}" ]]; then
++			DEV_NAME="${entity_device}"
++			MOUNT_DIR="${entity_mount}"
++			break
++		fi
++		entity_index=$((entity_index + 1))
++	done
++	rm -f "${attach_plist}"
+ else
+-	HDIUTIL_FILTER="sed 1q"
+-fi
+-DEV_NAME=$(hdiutil attach -mountrandom ${MOUNT_RANDOM_PATH} -readwrite -noverify -noautoopen -nobrowse "${DMG_TEMP_NAME}" | grep -E --color=never '^/dev/' | ${HDIUTIL_FILTER} | awk '{print $1}')
++	DEV_NAME=$(hdiutil attach -mountrandom "${MOUNT_RANDOM_PATH}" -readwrite -noverify -noautoopen -nobrowse "${DMG_TEMP_NAME}" | grep -E --color=never '^/dev/' | sed 1q | awk '{print $1}')
++	MOUNT_DIR=$(find_mount_dir "${DEV_NAME}s")
++fi
+ echo "Device name:     $DEV_NAME"
+-if [[ "$FILESYSTEM" == "APFS" ]]; then
+-	MOUNT_DIR=$(find_mount_dir "${DEV_NAME}")
+-else
+-	MOUNT_DIR=$(find_mount_dir "${DEV_NAME}s")
+-fi
+ if [[ -z "${MOUNT_DIR}" ]]; then

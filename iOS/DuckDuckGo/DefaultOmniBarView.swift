@@ -345,11 +345,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.isHidden = true
         button.layer.cornerRadius = Metrics.sendButtonSize / 2
         button.layer.masksToBounds = true
         return button
     }()
+
+    private lazy var aiChatSendButtonWidthConstraint = aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize)
+
+    /// Swaps the arrow for an "Ask" label while the Terms of Service disclaimer shows.
+    var usesAskSendButton = false
 
     var onAIChatSendPressed: (() -> Void)?
 
@@ -1454,7 +1460,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
         aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
 
-        aiChatSendButton.accessibilityLabel = "Send message"
+        aiChatSendButton.accessibilityLabel = Constant.aiChatSendAccessibilityLabel
         aiChatSendButton.accessibilityHint = "Sends your message to DuckDuckGo AI"
         aiChatSendButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChatSend"
         aiChatSendButton.accessibilityTraits = .button
@@ -1750,6 +1756,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private struct Constant {
         static let accessibilityPrefix = "Browser.OmniBar"
+        static let aiChatSendAccessibilityLabel = "Send message"
     }
 
     private func applyOmnibarCornerStyle() {
@@ -2025,7 +2032,7 @@ extension DefaultOmniBarView {
 
             aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
-            aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+            aiChatSendButtonWidthConstraint,
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
 
             modelPickerButton.trailingAnchor.constraint(equalTo: aiChatSendButton.leadingAnchor, constant: -Metrics.modelPickerToSendButtonSpacing),
@@ -2418,21 +2425,32 @@ extension DefaultOmniBarView {
         let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else if !hasText && attachments.isEmpty {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.voice, allowsAskTitle: false)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
             aiChatSendButton.backgroundColor = .clear
             aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
             aiChatSendButton.isEnabled = false
         }
+    }
+
+    /// The "Ask" label stands in for the arrow only; the voice icon stays.
+    private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
+        let title = allowsAskTitle && usesAskSendButton ? UserText.duckAIAskButtonTitle : nil
+        aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
+        aiChatSendButton.setTitle(title, for: .normal)
+        aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel
+        aiChatSendButtonWidthConstraint.constant = title.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Metrics.sendButtonSize)
+        } ?? Metrics.sendButtonSize
     }
 
     func updateLeftIconForMode(_ mode: TextEntryMode) {

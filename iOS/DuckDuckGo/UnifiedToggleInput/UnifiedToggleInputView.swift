@@ -1635,6 +1635,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateSubmitButtonStyle() {
         toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
+        toolsToolbar.usesAskSubmitButton = handler.usesAskSubmitButton
     }
 
     private func submitCurrentInput() {
@@ -2034,6 +2035,13 @@ private extension UnifiedToggleInputView {
             .store(in: &cancellables)
 
         handler.usesReturnKeySubmitButtonStylePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.usesAskSubmitButtonPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateSubmitButtonStyle()

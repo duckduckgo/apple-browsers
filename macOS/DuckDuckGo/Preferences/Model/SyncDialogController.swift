@@ -895,6 +895,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
+        guard !Task.isCancelled else {
+            return false
+        }
         let peerName = pairingV2DisplayName(for: peerName)
         let message = UserText.syncPairingV2ConfirmationMessage(peerName, isThirdPartyPeer: peerKind == .thirdParty)
         if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
@@ -903,6 +906,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         let isConfirmed = await showPairingV2Confirmation(message: message)
         let wasDismissedByController = pairingV2ConfirmationWasDismissedByController
         pairingV2ConfirmationWasDismissedByController = false
+        guard !Task.isCancelled else {
+            return false
+        }
         if !isConfirmed, !wasDismissedByController {
             sendSetupEndedAbandonedPixel(setupRole: setupRole, reason: SyncSetupPixelKitEvent.ParameterValue.syncConfirmationDenied)
             managementDialogModel.endFlow()
@@ -1231,6 +1237,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     private func showPairingV2Confirmation(message: String) async -> Bool {
+        guard !Task.isCancelled else {
+            return false
+        }
         guard managementDialogModel.isSimplifiedSyncSetupV2Enabled else {
             return await showLegacyPairingV2Confirmation(message: message)
         }
@@ -1268,6 +1277,9 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     }
 
     private func showLegacyPairingV2Confirmation(message: String) async -> Bool {
+        guard !Task.isCancelled else {
+            return false
+        }
         let alert = NSAlert.syncPairingV2Confirmation(message: message)
 
         guard let parentWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window else {

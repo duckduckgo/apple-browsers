@@ -479,6 +479,29 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testCancelledPairingConfirmationDoesNotPresentAlertOrEndSetup() async {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+        let confirmationTask = Task { @MainActor in
+            await spyVC.controllerShouldJoinPairingV2Peer(peerName: "Mac", peerKind: .ddg)
+        }
+        confirmationTask.cancel()
+        let confirmed = await confirmationTask.value
+
+        XCTAssertFalse(confirmed)
+        XCTAssertEqual(spyVC.presentCallCount, 0)
+        XCTAssertNotNil(spyVC.viewModel.connectingSheetPhase)
+    }
+
+    @MainActor
     func testWhenPairingSetupIsDismissedThenRemovesScannerAndNestedQRCodeSheet() async {
         let navigationController = UINavigationController(rootViewController: vc)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))

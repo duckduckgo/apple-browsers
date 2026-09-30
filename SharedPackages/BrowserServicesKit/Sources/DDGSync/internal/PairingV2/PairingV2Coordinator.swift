@@ -64,6 +64,7 @@ final class PairingV2Coordinator {
     private var hasOpenedLocalChannel = false
     private var hasClosedLocalChannel = false
     private var pendingConfirmation: PairingV2PendingConfirmation?
+    private var pendingConfirmationTask: Task<Void, Never>?
     private var pendingRecoveryCode: PairingV2RecoveryCodeResponseMessage?
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
@@ -589,7 +590,7 @@ final class PairingV2Coordinator {
     private func beginConfirmation(_ operation: @escaping () async -> PairingV2Event) {
         let confirmation = PairingV2PendingConfirmation()
         pendingConfirmation = confirmation
-        Task {
+        pendingConfirmationTask = Task {
             await confirmation.resolve(operation())
         }
     }
@@ -601,6 +602,7 @@ final class PairingV2Coordinator {
             return
         }
         pendingConfirmation = nil
+        pendingConfirmationTask = nil
         let recoveryCode = pendingRecoveryCode
         pendingRecoveryCode = nil
         try await execute(stateMachine.handle(event))
@@ -612,6 +614,8 @@ final class PairingV2Coordinator {
     private func dismissPendingConfirmation() async {
         let confirmation = pendingConfirmation
         pendingConfirmation = nil
+        pendingConfirmationTask?.cancel()
+        pendingConfirmationTask = nil
         pendingRecoveryCode = nil
         if confirmation != nil {
             await confirmationDelegate?.pairingV2CoordinatorDismissConfirmation()
@@ -699,6 +703,8 @@ final class PairingV2Coordinator {
         hasOpenedLocalChannel = false
         hasClosedLocalChannel = false
         pendingConfirmation = nil
+        pendingConfirmationTask?.cancel()
+        pendingConfirmationTask = nil
         pendingRecoveryCode = nil
     }
 

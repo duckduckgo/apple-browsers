@@ -702,6 +702,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
         let wasDismissedByController = pairingV2ConfirmationWasDismissedByController
         pairingV2ConfirmationWasDismissedByController = false
+        guard !Task.isCancelled else {
+            return false
+        }
         if !isConfirmed, !wasDismissedByController {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
             await dismissPairingV2Setup()
@@ -712,6 +715,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
+        guard !Task.isCancelled else {
+            return false
+        }
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in

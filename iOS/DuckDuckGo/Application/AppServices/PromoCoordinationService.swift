@@ -154,6 +154,11 @@ final class PromoCoordinationService {
     func handleAppBackgrounded() {
         modalPromptCoordinationManager.releaseDeferredModal()
     }
+
+    /// Whether a modal prompt has been committed and is on its way to the screen, or is on it.
+    var isModalPromptPending: Bool {
+        modalPromptCoordinationManager.hasActiveOrPendingModalAttempt
+    }
 }
 
 extension PromoCoordinationService: PromoGating {

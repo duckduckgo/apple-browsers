@@ -22,6 +22,7 @@ import UIKit
 @MainActor
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
+    var hasActiveOrPendingModalAttempt: Bool { get }
 
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
     func presentModalPromptIfNeeded(

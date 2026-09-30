@@ -342,6 +342,30 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @available(iOS 16, *)
+    @Test(
+        "Check A Legacy Attempt Is Pending As Soon As A Prompt Is Committed",
+        .timeLimit(.minutes(1)),
+        arguments: [true, false]
+    )
+    func whenLegacyPromptIsCommittedThenAttemptIsPendingBeforePresentation(hasEligiblePrompt: Bool) {
+        // GIVEN
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        sut = ModalPromptCoordinationManager(
+            providers: [MockModalPromptProvider(shouldReturnPrompt: hasEligiblePrompt)],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock
+        )
+
+        // WHEN
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // THEN the scheduled presentation hasn't run yet, but the attempt already counts as pending.
+        #expect(!presenterMock.didCallPresent)
+        #expect(sut.hasActiveOrPendingModalAttempt == hasEligiblePrompt)
+    }
+
+    @available(iOS 16, *)
     @Test("Check Session Flag Is Not Set When No Modal Is Presented", .timeLimit(.minutes(1)))
     func whenNoModalIsPresentedThenSessionFlagIsNotSet() {
         // GIVEN

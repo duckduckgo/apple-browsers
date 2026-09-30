@@ -72,6 +72,6 @@ extension PageSignalsTabExtension: TabExtension, PageSignalsTabExtensionProtocol
 
 extension TabExtensions {
     var pageSignals: PageSignalsTabExtensionProtocol? {
-        resolve(PageSignalsTabExtension.self)
+        resolve(PageSignalsTabExtension.self, .nullable)
     }
 }

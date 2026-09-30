@@ -576,6 +576,9 @@ public enum FeatureFlag: String {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// https://app.asana.com/1/137249556945/task/1218357179163026
+    case alwaysShowKeyboardOnNewTabPage
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -990,6 +993,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.sitePermissions))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
+        case .alwaysShowKeyboardOnNewTabPage:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
         }
     }
 

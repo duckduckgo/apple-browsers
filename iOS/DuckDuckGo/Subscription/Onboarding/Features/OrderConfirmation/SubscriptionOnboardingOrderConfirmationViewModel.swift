@@ -113,7 +113,7 @@ private extension SubscriptionOnboardingOrderConfirmationViewModel {
               drawableTrialLengths.contains(trialLength) else { return .paid }
 
         return .freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel(freeTrialStartDate: subscription.startedAt,
-                                                                          billingStartDate: subscription.expiresOrRenewsAt,
+                                                                          billingStartDate: calendar.date(byAdding: .day, value: trialLength, to: subscription.startedAt) ?? subscription.expiresOrRenewsAt,
                                                                           trialLength: trialLength,
                                                                           now: now,
                                                                           calendar: calendar))

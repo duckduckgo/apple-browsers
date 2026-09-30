@@ -168,9 +168,8 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
                           for context: WKWebExtensionContext) throws -> String {
         // An empty identifier means the containing app of a Safari app extension. Safari
         // answers those from the app extension's own handler class, which is an NSExtension
-        // and not a host process. 1Password's Safari build does this for
-        // `request-os-version` and for its `core` messages, so those calls cannot succeed
-        // here. Its Chrome build names a real host instead.
+        // and not a host process. Those calls cannot succeed here, whereas
+        // a Chrome build names a real host.
         guard let applicationIdentifier, !applicationIdentifier.isEmpty else {
             Logger.webExtensions.error("""
             ❌ \(context.webExtension.displayName ?? "An extension", privacy: .public) \
@@ -207,7 +206,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     ///
     /// A host manifest names the extensions it trusts, and a host checks the argument against
     /// that list. Chrome's `allowed_origins` holds `chrome-extension://<id>/` origins, and a
-    /// host such as 1Password's refuses anything else, so we present the extension's Chrome
+    /// host such as Bitwarden's refuses anything else, so we present the extension's Chrome
     /// origin and refuse the connection ourselves when the list has no room for it. Firefox's
     /// `allowed_extensions` names extensions by identifier instead and leaves the argument
     /// unchecked, so there we send the Chrome origin only because more hosts recognize it than

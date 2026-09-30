@@ -221,7 +221,7 @@ final class NativeMessagingHostSession {
         if let exitStatus, exitStatus != 0 {
             // Two causes look the same here. The host may have nothing to talk to, as
             // Bitwarden's proxy does without its desktop app. Or it refused us, as
-            // 1Password's does for a browser it does not know. A host that refuses usually
+            // a host does for a browser it does not know. A host that refuses usually
             // says so in its last message or on standard error.
             Logger.webExtensions.error("""
             ❌ Host \(self.hostName, privacy: .public) ended with status \(exitStatus, privacy: .public). \

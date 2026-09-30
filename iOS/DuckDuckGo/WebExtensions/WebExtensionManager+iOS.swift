@@ -97,7 +97,6 @@ public enum WebExtensionManagerFactory {
                 return (webView: controller.webView, extensionTab: controller)
             },
             featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger),
-            pixelFiring: pixelFiring,
             appSession: appSession.map { session in
                 let change: CPMAppSessionDiagnostics.VersionChange?
                 switch session.appVersionChange {

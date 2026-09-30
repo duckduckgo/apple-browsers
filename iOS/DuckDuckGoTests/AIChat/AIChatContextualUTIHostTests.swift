@@ -504,5 +504,10 @@ private func XCTAssertEqualState(
 }
 
 private struct FixedTabAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
     let state: AIChatContextualAttachMoreTabsState
 }

@@ -73,6 +73,7 @@ final class UTIAttachmentController {
         let onDraftChanged: () -> Void
         let onExpandIfNeeded: () -> Void
         let updateFloatingReturnKey: () -> Void
+        var onTabAttached: () -> Void = {}
     }
 
     let pasteHandler = UnifiedToggleInputPasteHandler()
@@ -426,14 +427,14 @@ final class UTIAttachmentController {
         )
     }
 
-    private var canUseTabAttachments: Bool {
+    var canUseTabAttachments: Bool {
         guard environment.isContextualChatState(),
               environment.tabAttachmentSource() != nil,
               case .available = environment.tabAttachmentFeatureState() else { return false }
         return true
     }
 
-    private var tabAttachmentCandidates: [MultiTabAttachmentCandidate] {
+    var tabAttachmentCandidates: [MultiTabAttachmentCandidate] {
         guard canUseTabAttachments, let source = environment.tabAttachmentSource() else { return [] }
         return source.candidates().filter {
             $0.tabId != source.currentTabID || environment.isPageContextAttachable() != false
@@ -478,6 +479,7 @@ final class UTIAttachmentController {
                                                                         title: currentCandidate.title,
                                                                         url: currentCandidate.url,
                                                                         favicon: favicon)))
+                callbacks.onTabAttached()
             }
         } else if candidate.tabId == source.currentTabID {
             guard let remove = environment.pageContextRemoveHandler() else { return false }

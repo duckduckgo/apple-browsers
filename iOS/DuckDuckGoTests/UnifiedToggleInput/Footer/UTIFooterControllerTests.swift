@@ -71,7 +71,8 @@ final class UTIFooterControllerTests: XCTestCase {
     }
 
     private func makeSUT(viewModel: DuckAiUsageWarningViewModel?,
-                         termsOfServiceStore: DuckAiTermsOfServiceStore?) -> UTIFooterController {
+                         termsOfServiceStore: DuckAiTermsOfServiceStore?,
+                         multiTabPromotion: UTIFooterMultiTabPromotionSource? = nil) -> UTIFooterController {
         let privacySource = UTIFooterAttachmentPrivacyNoticeSource(
             attachmentKind: { [unowned self] in privacyKind },
             isEnabled: { [unowned self] in privacyEnabled },
@@ -80,6 +81,7 @@ final class UTIFooterControllerTests: XCTestCase {
                                   termsOfServiceStore: termsOfServiceStore,
                                   highUsageNotice: makeNoticeSource(),
                                   attachmentPrivacyNotice: privacySource,
+                                  multiTabPromotion: multiTabPromotion,
                                   measurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
                                   highUsageMeasurement: DuckAiUsageWarningMeasurement(pixelFiring: measurementFiring),
                                   createImagePixelFiring: createImagePixelFiring,
@@ -346,6 +348,56 @@ final class UTIFooterControllerTests: XCTestCase {
         let attachment = UnifiedToggleInputAttachment.tab(.init(tabId: "page-tab", title: "Page",
                                                                  url: URL(string: "https://example.com")!))
         XCTAssertNil(UTIAttachmentPrivacyKind(attachment: attachment))
+    }
+
+    func testHidingPromotionPreservesVisiblePrivacyNoticeWithoutUpdatingPresenter() {
+        let feature = FooterPromotionFeature()
+        let promotion = UTIFooterMultiTabPromotionSource(feature: { feature }, isEligible: { true })
+        promotion.beginPresentation()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: nil, multiTabPromotion: promotion)
+        privacyKind = .file
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertTrue(promotion.isPresented)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        let messages = sut.currentMessages
+        let appliedCount = presenter.appliedStacks.count
+        let snapshotReadCount = limitsProvider.readCount
+
+        feature.isPromotionAvailable = false
+        sut.refreshMultiTabPromotion()
+
+        XCTAssertFalse(promotion.isPresented)
+        XCTAssertEqual(sut.currentMessages, messages)
+        XCTAssertEqual(presenter.appliedStacks.count, appliedCount)
+        XCTAssertEqual(presenter.pendingClearCount, 0)
+        XCTAssertEqual(limitsProvider.readCount, snapshotReadCount)
+        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+    }
+
+    func testHidingPromotionPreservesVisibleUsageWarningWithoutReadingNewLimitsOrUpdatingPresenter() {
+        let feature = FooterPromotionFeature()
+        let promotion = UTIFooterMultiTabPromotionSource(feature: { feature }, isEligible: { true })
+        promotion.beginPresentation()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: nil, multiTabPromotion: promotion)
+        limitsProvider.limits = weeklyUsage(75)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertTrue(promotion.isPresented)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
+        let messages = sut.currentMessages
+        let appliedCount = presenter.appliedStacks.count
+        let snapshotReadCount = limitsProvider.readCount
+
+        feature.isPromotionAvailable = false
+        limitsProvider.limits = .noData
+        sut.refreshMultiTabPromotion()
+
+        XCTAssertFalse(promotion.isPresented)
+        XCTAssertEqual(sut.currentMessages, messages)
+        XCTAssertEqual(presenter.appliedStacks.count, appliedCount)
+        XCTAssertEqual(presenter.pendingClearCount, 0)
+        XCTAssertEqual(limitsProvider.readCount, snapshotReadCount)
     }
 
     func testPrivacyCannotBeDismissedAndDoesNotSpendUsageWarningDismissal() {
@@ -1749,6 +1801,16 @@ final class UTIFooterControllerTests: XCTestCase {
 
 // MARK: - Test doubles
 
+private final class FooterPromotionFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    var state: AIChatContextualAttachMoreTabsState { .available(maximumTabAttachmentCount: 3) }
+    var isPromotionAvailable = true
+
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { isPromotionAvailable }
+    func recordDrawerPromoDisplay() { }
+    func dismissDrawerPromo() { isPromotionAvailable = false }
+    func recordTabAttachment() { isPromotionAvailable = false }
+}
+
 private final class StubUsageLimitsProvider: DuckAiUsageSnapshotProviding {
     var limits: DuckAiUsageSnapshot = .noData
     var readCount = 0
@@ -1790,7 +1852,7 @@ private final class SpyUTIFooterPresenter: UTIFooterPresenting {
     }
 }
 
-private final class PrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring {
+private final class PrivacyDisplayStore: UTIFooterDisplayStoring {
     var displayCount = 0
     func recordDisplay() { displayCount += 1 }
     func reset() { displayCount = 0 }

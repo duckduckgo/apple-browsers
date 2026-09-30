@@ -34,6 +34,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatTabBarContextualSheetButtonVisible: Bool
     public var sessionTimerInMinutes: Int
     public var aiChatAttachMoreTabsLimit: Int
+    public var aiChatAttachMoreTabsPromotionStartDate: Date?
     public var isAIChatSearchInputUserSettingsEnabled: Bool
     public var isAIChatSearchInputUserSettingsDisabledByUser: Bool
     public var isAutomaticContextAttachmentEnabled: Bool

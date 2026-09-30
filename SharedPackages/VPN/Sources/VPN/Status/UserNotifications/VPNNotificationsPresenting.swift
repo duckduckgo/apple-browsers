@@ -52,4 +52,11 @@ public protocol VPNNotificationsPresenting {
     /// This is only available by enabling debug event notifications in the debug menu.
     func showDebugEventNotification(message: String)
 
+    /// Clears any pending authorization-request suppression, without presenting a notification.
+    func clearAuthorizationSuppression()
+
+}
+
+public extension VPNNotificationsPresenting {
+    func clearAuthorizationSuppression() {}
 }

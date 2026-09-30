@@ -76,6 +76,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
         let eventHub: EventHubManaging
         let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+        let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -167,7 +168,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil,
                      eventHub: EventHubManaging? = nil,
-                     webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager }
+                     webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager },
+                     webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = {
+                         guard #available(macOS 15.4, *) else { return nil }
+                         return NSApp.delegateTyped.webExtensionLifecycleCoordinator?.initialLoadWaiter
+                     }
     ) {
 
         let duckPlayer = duckPlayer
@@ -236,7 +241,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager,
                   eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub,
-                  webExtensionManagerProvider: webExtensionManagerProvider
+                  webExtensionManagerProvider: webExtensionManagerProvider,
+                  webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider
         )
     }
 
@@ -289,7 +295,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging,
          eventHub: EventHubManaging,
-         webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?
+         webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -339,7 +346,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
-                                      geolocationService: geolocationService)
+                                      geolocationService: geolocationService,
+                                      featureFlagger: featureFlagger)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()
         let userScriptsPublisher = userContentControllerPromise.future
@@ -375,7 +383,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           permissionManager: permissionManager,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                           eventHub: eventHub,
-                                                          webExtensionManagerProvider: webExtensionManagerProvider)
+                                                          webExtensionManagerProvider: webExtensionManagerProvider,
+                                                          webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },

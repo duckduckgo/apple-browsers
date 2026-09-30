@@ -172,3 +172,97 @@ final class WebExtensionAvailabilityTests: XCTestCase {
         mockWebExtensionManager.loadedExtensions = [WKWebExtensionContext(for: webExtension)]
     }
 }
+
+@available(iOS 18.4, *)
+@MainActor
+final class WebExtensionNavigationCancellationTests: XCTestCase {
+
+    func testWhenNavigationIsInvalidatedThenDecisionIsCancelledWithoutOpeningSharedGate() async throws {
+        let actions: [(String, (TabViewController) -> Void)] = [
+            ("Stop", { $0.stopLoading() }),
+            ("New URL", { $0.load(url: URL(string: "https://example.com/new")!) }),
+            ("Close", { $0.closeSitePermissions() }),
+            ("Fire", { $0.prepareForDataClearing() })
+        ]
+        for (name, invalidate) in actions {
+            let coordinator = WebExtensionLifecycleCoordinator(manager: MockWebExtensionManaging(),
+                                                                initialLoadTimeout: 60,
+                                                                enabledTypesProvider: { [.embedded] })
+            defer { coordinator.cancelAll() }
+            let waiter = try XCTUnwrap(coordinator.initialLoadWaiter)
+            let started = expectation(description: "\(name): waiting for extension startup")
+            let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
+                                             webExtensionInitialLoadWaiterProvider: {
+                return {
+                    started.fulfill()
+                    await waiter()
+                }
+            })
+            tab.specialErrorPageNavigationHandler.delegate = nil
+            defer { tab.prepareForDataClearing() }
+            let webView = try XCTUnwrap(tab.webView as? MockWebView)
+            let cancelled = expectation(description: "\(name): pending decision cancelled")
+            cancelled.assertForOverFulfill = true
+            tab.webView(webView, decidePolicyFor: makeNavigationAction()) { policy in
+                XCTAssertEqual(policy, .cancel, name)
+                cancelled.fulfill()
+            }
+            await fulfillment(of: [started], timeout: 1)
+            invalidate(tab)
+            let loadCount = webView.loadCallCount
+            await fulfillment(of: [cancelled], timeout: 1)
+            XCTAssertEqual(webView.loadCallCount, loadCount, "Cancelled policy must not start a replacement load")
+            XCTAssertNotNil(coordinator.initialLoadWaiter, "Cancelling one navigation must not open the shared gate")
+        }
+    }
+
+    func testWhenSupersededWaitFinishesThenReplacementWaitCanStillBeCancelled() async throws {
+        var continuations = [CheckedContinuation<Void, Never>]()
+        defer { continuations.forEach { $0.resume() } }
+        let firstStarted = expectation(description: "First wait started")
+        let secondStarted = expectation(description: "Replacement wait started")
+        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
+                                         webExtensionInitialLoadWaiterProvider: {
+            return {
+                // Intentionally ignore cancellation to exercise the check after await.
+                await withCheckedContinuation { continuation in
+                    continuations.append(continuation)
+                    (continuations.count == 1 ? firstStarted : secondStarted).fulfill()
+                }
+            }
+        })
+        tab.specialErrorPageNavigationHandler.delegate = nil
+        defer { tab.prepareForDataClearing() }
+        let webView = try XCTUnwrap(tab.webView as? MockWebView)
+        let firstCancelled = expectation(description: "Superseded decision cancelled")
+        firstCancelled.assertForOverFulfill = true
+        tab.webView(webView, decidePolicyFor: makeNavigationAction()) { policy in
+            XCTAssertEqual(policy, .cancel)
+            firstCancelled.fulfill()
+        }
+        await fulfillment(of: [firstStarted], timeout: 1)
+        let secondCancelled = expectation(description: "Replacement decision cancelled by Stop")
+        secondCancelled.assertForOverFulfill = true
+        tab.webView(webView, decidePolicyFor: makeNavigationAction()) { policy in
+            XCTAssertEqual(policy, .cancel)
+            secondCancelled.fulfill()
+        }
+        await fulfillment(of: [secondStarted], timeout: 1)
+        guard continuations.count == 2 else {
+            XCTFail("Both navigation waits must have started")
+            return
+        }
+        continuations.removeFirst().resume()
+        await fulfillment(of: [firstCancelled], timeout: 1)
+        tab.stopLoading()
+        continuations.removeFirst().resume()
+        await fulfillment(of: [secondCancelled], timeout: 1)
+        XCTAssertEqual(webView.loadCallCount, 0, "Neither stale policy may start a replacement load")
+    }
+
+    private func makeNavigationAction() -> WKNavigationAction {
+        let request = URLRequest(url: URL(string: "https://example.com/old")!)
+        return MockNavigationAction(request: request, navigationType: .other,
+                                    targetFrame: .mock(isMainFrame: true, securityOriginHost: "example.com", request: request))
+    }
+}

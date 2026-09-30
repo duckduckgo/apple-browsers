@@ -79,10 +79,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
     case cookiePopupOptInDialog
 
-    /// Holdback experiment for the Cookie Pop-up Protection opt-in dialog (`control` suppresses it, `treatment` shows it)
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216573736010817?focus=true
-    case cookiePopupOptInDialogExperiment
-
     // Duckplayer 'Web based' UI
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
@@ -361,6 +357,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
     case unifiedToggleInputAttachmentPaste
 
+    /// https://app.asana.com/1/137249556945/task/1218397803938552
+    case unifiedToggleInputAttachmentPrivacy
+
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
@@ -432,6 +431,10 @@ public enum FeatureFlag: String {
     /// available. On by default; disable remotely to load/install immediately (previous flow).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
     case webExtensionProtectedDataLoadGate
+
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218932196689863
+    case webExtensionStateRestorationGate
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
     case embeddedExtension
@@ -583,11 +586,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
     /// Cohorts for the onboarding-flow-by-download-reason experiment.
     public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
@@ -672,8 +670,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
-        case .cookiePopupOptInDialogExperiment:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialogExperiment), cohortType: CookiePopupOptInDialogCohort.self)
         case .duckPlayer:
             Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
         case .duckPlayerOpenInNewTab:
@@ -854,6 +850,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
+        case .unifiedToggleInputAttachmentPrivacy:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:
@@ -900,6 +898,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .webExtensionProtectedDataLoadGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate))
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:

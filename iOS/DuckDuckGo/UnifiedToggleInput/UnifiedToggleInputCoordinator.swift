@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import Core
 import DDGSync
+import FeatureFlags_iOS
 import os.log
 import PrivacyConfig
 import Subscription
@@ -74,7 +75,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         UTIAttachmentPolicy(
             attachmentLimits: modelStore.attachmentLimits,
             attachmentUsage: attachmentUsage,
-            pendingAttachments: viewController.currentAttachments,
+            pendingAttachments: attachmentsRetainedForDismiss ?? viewController.currentAttachments,
             model: modelStore.selectedModel,
             maximumTabAttachmentCount: maximumTabAttachmentCount,
             currentPageTabID: tabAttachmentSource?.currentTabID,
@@ -178,6 +179,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private(set) var currentTabUID: TabUID?
     private var lastActivatedTabUID: TabUID?
     private var isApplyingState = false
+    /// Raised only around the dismiss-time attachment strip, so that clear isn't mistaken for the
+    /// user emptying the bar. Synchronous: `clearAttachments` calls back inline.
+    private var isClearingAttachmentsForDismiss = false
+    /// The attachments stripped from the bar at dismiss time. While this is set it — not the now
+    /// empty bar — is what a snapshot reports, so a later persist (the omnibar refresh writes the
+    /// new URL into the field, which persists the draft) can't overwrite the tab's attachments
+    /// with an empty list. Mirrors `UTITextModel.currentText` surviving `clearForDismiss()`.
+    private var attachmentsRetainedForDismiss: [UnifiedToggleInputAttachment]?
     private var isPerformingDismissCleanup: Bool { textModel.isPerformingDismissCleanup }
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
@@ -314,6 +323,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modeChangeSubject.eraseToAnyPublisher()
     }
 
+    private let featureFlagger: FeatureFlagger
+
     private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
     var attachmentsChangePublisher: AnyPublisher<Void, Never> {
         attachmentsChangeSubject.eraseToAnyPublisher()
@@ -326,9 +337,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
 
     var subscriptionUpsellPolicy: DuckAISubscriptionUpsellPolicy { modelStore.upsellPolicy }
-    /// `nil` when neither usage warnings nor the Terms of Service disclaimer is active, which differs
-    /// from having nothing to show.
     private var footerController: UTIFooterController?
+    private let tabProvider: () -> Tab?
+    private var attachmentPrivacyNoticeSource: UTIFooterAttachmentPrivacyNoticeSource?
 
     // MARK: - Initialization
 
@@ -364,6 +375,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        tabProvider: @escaping () -> Tab? = { nil },
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
@@ -371,8 +383,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.isUpdatedCreateImageEnabled = updatedCreateImageFeature.isAvailable
         self.host = host
+        self.tabProvider = tabProvider
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
+        self.featureFlagger = featureFlagger
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
@@ -502,7 +516,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             view: .init(
                 currentAttachments: { [weak self] in self?.viewController.currentAttachments ?? [] },
                 isGenerating: { [weak self] in self?.viewController.isGenerating ?? false },
-                addAttachment: { [weak self] in self?.viewController.addAttachment($0) },
+                addAttachment: { [weak self] attachment in
+                    guard let self else { return }
+                    restoreAttachmentsRetainedForDismiss()
+                    viewController.addAttachment(attachment)
+                },
                 removeAttachment: { [weak self] in self?.viewController.removeAttachment(id: $0) },
                 removeAllAttachments: { [weak self] in self?.viewController.removeAllAttachments() },
                 replaceAttachment: { [weak self] id, attachment in self?.viewController.replaceAttachment(id: id, with: attachment) },
@@ -534,8 +552,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
-                    self?.persistDraftToStore()
-                    self?.onAttachmentsChanged?()
+                    guard let self else { return }
+                    if !isClearingAttachmentsForDismiss {
+                        attachmentsRetainedForDismiss = nil
+                    }
+                    persistDraftToStore()
+                    onAttachmentsChanged?()
+                    footerController?.refresh()
                 },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() }
@@ -686,6 +709,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func activateForTab(_ uid: TabUID) {
         let previous = currentTabUID
         if previous == uid {
+            restoreAttachmentsRetainedForDismiss()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: already active, skipping re-apply")
             return
         }
@@ -706,16 +730,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isApplyingState = true
         defer {
             isApplyingState = false
+            footerController?.refresh()
             updateFloatingReturnKeyState()
         }
         Logger.unifiedInputState.debug("applyState for tab [\(self.currentTabUID ?? "nil")]: \(state.summary)")
 
+        attachmentPrivacyNoticeSource?.clear()
+        attachmentPrivacyNoticeSource?.hasCountedDraft = state.hasCountedAttachmentPrivacyForDraft
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         isVoiceSessionActive = state.isVoiceSessionActive
         isModelPickerForcedVisible = state.isModelPickerForcedVisible
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
+        attachmentsRetainedForDismiss = nil
         attachmentController.replaceAllAttachments(with: state.attachments)
         synchronizeTabAttachmentPreparations()
 
@@ -744,7 +772,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         TabInputState(
             text: currentText,
             toggleMode: inputMode,
-            attachments: viewController.currentAttachments,
+            attachments: attachmentsRetainedForDismiss ?? viewController.currentAttachments,
+            hasCountedAttachmentPrivacyForDraft: attachmentPrivacyNoticeSource?.hasCountedDraft ?? false,
             selectedModelID: modelStore.persistedModelId,
             selectedReasoningMode: modelStore.selectedReasoningMode,
             selectedTool: toolsController.selectedTool,
@@ -765,6 +794,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             if didChangeChat {
                 if !currentText.isEmpty { setText("") }
                 clearAttachments()
+                attachmentPrivacyNoticeSource?.hasCountedDraft = false
                 if toolsController.selectedTool != nil { resetToolsSelection() }
             }
         }
@@ -811,8 +841,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func clearStoreEntryAfterSubmission() {
+        attachmentPrivacyNoticeSource?.hasCountedDraft = false
         textModel.resetToEmpty()
-        guard let uid = currentTabUID else { return }
+        guard let uid = currentTabUID else {
+            if let uid = lastActivatedTabUID {
+                var cleared = stateStore.state(for: uid)
+                cleared.clearDraft()
+                stateStore.update(cleared, for: uid)
+            }
+            return
+        }
         var cleared = snapshotCurrentState()
         cleared.clearDraft()
         stateStore.recordUserChoice(cleared, for: uid, isNewChatContext: false)
@@ -844,6 +882,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
+        restoreAttachmentsRetainedForDismiss()
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = duckAISurfaceState(.expanded)
@@ -932,10 +971,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
     private func exitEditMode(reply: EditPromptReply) {
         guard isEditing else { return }
+        clearAttachments()
+        attachmentPrivacyNoticeSource?.hasCountedDraft = false
         isEditing = false
         resolveEdit(reply)
         resetToolsSelection()
-        clearAttachments()
         setText("")
         showCollapsed()
     }
@@ -971,7 +1011,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
-    // MARK: - Footer
+    // MARK: - Usage Warnings
 
     private func setUpFooter(subscriptionManager: any SubscriptionManager, termsOfServiceStore: DuckAiTermsOfServiceStore?) {
         let viewModel = usageLimitsStore?.makeWarningViewModel(
@@ -986,20 +1026,41 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             // must never surface the regular session's.
             isFireMode: { [weak self] in self?.viewController.handler.isFireTab ?? false }
         )
-        guard viewModel != nil || termsOfServiceStore != nil else { return }
-
         viewModel?.onAction = { [weak self] action in
             self?.handleUsageWarningAction(action)
         }
+        attachmentPrivacyNoticeSource = UTIFooterAttachmentPrivacyNoticeSource(
+            attachmentKind: { [weak self] in
+                self?.viewController.currentAttachments.lazy.compactMap { UTIAttachmentPrivacyKind(attachment: $0) }.first
+            },
+            isEnabled: { [weak self] in
+                guard let self, !isApplyingState else { return false }
+                return featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy)
+            },
+            displayScope: { [weak self] in
+                guard let self else { return .fireTab(nil) }
+                if let tab = tabProvider() {
+                    return tab.fireTab ? .fireTab(tab) : .normal
+                }
+                return viewController.handler.isFireTab ? .fireTab(nil) : .normal
+            }
+        )
+        attachmentPrivacyNoticeSource?.onDraftCounted = { [weak self] in
+            self?.persistDraftToStore()
+        }
         footerController = UTIFooterController(viewModel: viewModel,
                                               termsOfServiceStore: termsOfServiceStore,
-                                              // Part of the usage warnings, so it goes wherever they do.
                                               highUsageNotice: viewModel == nil ? nil : makeHighUsageNoticeSource(),
+                                              attachmentPrivacyNotice: attachmentPrivacyNoticeSource,
                                               measurement: makeUsageWarningMeasurement(),
+                                              highUsageMeasurement: makeUsageWarningMeasurement(),
                                               createImagePixelFiring: createImagePixelFiring,
                                               allowsSubscriptionUpsell: { [weak self] in
                                                   self?.modelStore.allowsSubscriptionUpsell ?? false
                                               })
+        footerController?.onAttachmentPrivacyEvent = { [weak self] action, kind in
+            self?.pixelReporter.reportAttachmentPrivacy(action, kind: kind)
+        }
         footerController?.presenter = viewController
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
@@ -1066,8 +1127,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func refreshFooterSuppression() {
-        let suppressed = isEditing || inputMode != .aiChat
+        let suppressed = inputMode != .aiChat
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] suppression inputs: isEditing=\(self.isEditing, privacy: .public) mode=\(String(describing: self.inputMode), privacy: .public) → \(suppressed, privacy: .public)")
+        footerController?.setEditing(isEditing)
         footerController?.setSuppressed(suppressed)
     }
 
@@ -1105,6 +1167,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     // MARK: - Omnibar State
 
     func activateFromOmnibar(prefilledText: String? = nil, inputMode: TextEntryMode = .search, cardPosition: UnifiedToggleInputCardPosition = .top) {
+        restoreAttachmentsRetainedForDismiss()
         keyboardMonitor.arm(awaiting: cardPosition == .top)
         displayState = .omnibar(.active)
         if host == .omnibar {
@@ -1182,7 +1245,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         syncInputBehaviorToHandler()
         // Text clear is deferred to dismiss completion — avoids placeholder flash mid-collapse.
         resetToolsSelection()
-        clearAttachments()
+        clearAttachmentsForDismiss()
         updateFloatingReturnKeyState()
 
         if resetView {
@@ -1570,6 +1633,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
+        attachmentPrivacyNoticeSource?.hasCountedDraft = false
         setText("")
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
@@ -1784,6 +1848,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func clearAttachments() {
+        attachmentsRetainedForDismiss = nil
+        attachmentController.clearAttachments()
+        persistDraftToStore()
+    }
+
+    private func restoreAttachmentsRetainedForDismiss() {
+        guard let attachments = attachmentsRetainedForDismiss else { return }
+        attachmentsRetainedForDismiss = nil
+        attachmentController.replaceAllAttachments(with: attachments)
+    }
+
+    /// Teardown, not a removal: the bar is stripped, but the attachments are held in
+    /// `attachmentsRetainedForDismiss` so every snapshot until the tab is re-activated still
+    /// reports them. Mirrors `UTITextModel.clearForDismiss()` keeping `currentText`. The host
+    /// notification and the footer refresh still run.
+    func clearAttachmentsForDismiss() {
+        let retained = viewController.currentAttachments
+        guard !retained.isEmpty else { return attachmentController.clearAttachments() }
+        attachmentsRetainedForDismiss = retained
+        isClearingAttachmentsForDismiss = true
+        defer { isClearingAttachmentsForDismiss = false }
         attachmentController.clearAttachments()
     }
 
@@ -1923,6 +2008,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let files = selectedModelSupportsFileUpload
                 ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
+            footerController?.acceptTermsIfDisclaimerShown()
+            footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()
             exitEditMode(reply: .submit(prompt: text, images: images, files: files))
             return
@@ -1943,9 +2030,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
-        footerController?.recordPromptSubmitted()
-        // Ahead of delivery, which stamps the prompt with the acceptance.
         footerController?.acceptTermsIfDisclaimerShown()
+        footerController?.recordPromptSubmitted()
 
         let configuration = promptSubmissionConfiguration
         recordDuckAISubmissionStarted(
@@ -2028,6 +2114,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String) {
+        if !isApplyingState, !isPerformingDismissCleanup, !isEditing,
+           !currentText.isEmpty, text.isEmpty, viewController.currentAttachments.isEmpty {
+            attachmentPrivacyNoticeSource?.hasCountedDraft = false
+        }
         textModel.handleUserTextChange(text)
     }
 
@@ -2075,20 +2165,21 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         updateFloatingReturnKeyState()
     }
 
-    func unifiedToggleInputVCDidTapFooterPrimaryAction(_ vc: UnifiedToggleInputViewController) {
-        footerController?.performPrimaryAction()
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID) {
+        footerController?.performPrimaryAction(id)
     }
 
-    func unifiedToggleInputVCDidDismissFooter(_ vc: UnifiedToggleInputViewController) {
-        footerController?.dismissCurrent()
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didDismissFooter id: UTIFooterItem.ID) {
+        footerController?.dismiss(id)
     }
 
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility isVisible: Bool) {
-        footerController?.footerVisibilityChanged(isVisible: isVisible)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeFooterVisibility ids: [UTIFooterItem.ID]) {
+        footerController?.footerVisibilityChanged(visible: ids)
     }
 
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterLink url: URL) {
-        delegate?.unifiedToggleInputDidRequestOpenURL(url)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterLink url: URL, messageID: UTIFooterItem.ID) {
+        footerController?.recordLinkTapped(messageID)
+        delegate?.unifiedToggleInputDidRequestOpenInNewTab(url)
     }
 
     func unifiedToggleInputVCDidChangeHeight(_ vc: UnifiedToggleInputViewController) {

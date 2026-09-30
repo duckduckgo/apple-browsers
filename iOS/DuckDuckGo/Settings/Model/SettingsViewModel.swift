@@ -293,6 +293,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
+    private weak var voiceSearchPermissionReminder: UIViewController?
     @Published var shouldShowEmailAlert: Bool = false
 
     @Published var shouldShowRecentlyVisitedSites: Bool = true
@@ -399,7 +400,6 @@ final class SettingsViewModel: ObservableObject {
                 !self.appSettings.keepAddressBarVisibleOnIPad
             },
             set: { hideWhileScrolling in
-                PixelKit.fire(hideWhileScrolling ? Pixel.Event.settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
                 let keepVisible = !hideWhileScrolling
                 self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
             }
@@ -935,7 +935,7 @@ final class SettingsViewModel: ObservableObject {
                     self?.voiceSearchHelper.enableVoiceSearch(true)
                     if !result {
                         // Permission is denied
-                        self?.shouldShowNoMicrophonePermissionAlert = true
+                        self?.showNoMicrophonePermissionAlert()
                     }
                 }
             }
@@ -943,6 +943,28 @@ final class SettingsViewModel: ObservableObject {
             voiceSearchHelper.enableVoiceSearch(false)
             state.voiceSearchEnabled = false
         }
+    }
+
+    @MainActor
+    private func showNoMicrophonePermissionAlert() {
+        guard isSitePermissionsEnabled else {
+            shouldShowNoMicrophonePermissionAlert = true
+            return
+        }
+        let actionHandler = VoiceSearchPermissionPromptActionHandler(
+            eventHandler: sitePermissionsEventHandler,
+            disableVoiceSearch: { },
+            dismiss: { [weak self] completion in
+                self?.voiceSearchPermissionReminder?.dismiss(animated: true, completion: completion)
+            },
+            openSystemSettings: { [weak self] in
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                self?.urlOpener.open(url)
+            })
+        let reminder = NoMicPermissionAlert.buildReminder(viewModel: .voiceSearchSettings, onAction: actionHandler.handle)
+        voiceSearchPermissionReminder = reminder
+        presentViewController(reminder, modal: false)
+        actionHandler.didShow()
     }
 
     var longPressBinding: Binding<Bool> {

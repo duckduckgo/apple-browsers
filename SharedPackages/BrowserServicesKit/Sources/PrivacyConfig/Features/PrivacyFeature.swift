@@ -177,7 +177,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
+
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
+    case websitePermissionsPrompts
 
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
@@ -389,6 +394,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the native input attachment privacy disclosure.
+    case unifiedToggleInputAttachmentPrivacy
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -669,7 +677,6 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case cookiePopupOptInDialog
-    case cookiePopupOptInDialogExperiment
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -838,6 +845,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    case stateRestorationGate
     /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.

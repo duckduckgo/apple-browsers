@@ -30,8 +30,8 @@ import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
-import SitePermissions
 import MaliciousSiteProtection
+import SitePermissions
 @testable import DuckDuckGo
 import Combine
 @testable import Core
@@ -216,6 +216,7 @@ extension TabViewController {
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
         sitePermissionsEnabled: Bool = false,
+        webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false,
@@ -256,6 +257,7 @@ extension TabViewController {
             autoplaySettings: MockAutoplaySettings(),
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub(),
+            webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
             sitePermissionsEnabled: sitePermissionsEnabled
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,

@@ -63,7 +63,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
     var onVoiceSearchRequested: (() -> Void)?
-    var onOpenURLRequested: ((URL) -> Void)?
+
+    /// A link inside a footer message (e.g. the attachment privacy disclosure's "Learn more").
+    var onOpenInNewTabRequested: ((URL) -> Void)?
 
     var attachedContextURL: URL? {
         chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
@@ -83,6 +85,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        tabProvider: @escaping () -> Tab? = { nil },
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
@@ -107,7 +110,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             contextualStart: start,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
             placesAttachmentsAboveInput: isFloatingInputAvailable,
-            usageLimitsStore: usageLimitsStore
+            usageLimitsStore: usageLimitsStore,
+            tabProvider: tabProvider
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -577,8 +581,9 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         onEditModeChange?(isEditing)
     }
-    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
-        onOpenURLRequested?(url)
+
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {
+        onOpenInNewTabRequested?(url)
     }
 }
 

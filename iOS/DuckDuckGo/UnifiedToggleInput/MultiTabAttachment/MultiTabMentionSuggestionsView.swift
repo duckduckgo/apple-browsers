@@ -31,7 +31,7 @@ final class MultiTabMentionSuggestionsView: UIView {
         var title: String { suggestion.candidate.title }
         var prompt: String { "" }
         var icon: UIImage? {
-            suggestion.isSelected ? DesignSystemImages.Glyphs.Size16.checkCircle : DesignSystemImages.Glyphs.Size16.tabContent
+            DesignSystemImages.Glyphs.Size16.tabContent
         }
     }
 
@@ -47,7 +47,6 @@ final class MultiTabMentionSuggestionsView: UIView {
 
     private let actionsView = AIChatQuickActionsView<Action>()
     private let scrollView = UIScrollView()
-    private let emptyLabel = UILabel()
     private var scrollHeightConstraint: NSLayoutConstraint!
     private var suggestions: [MultiTabMentionController.Suggestion]?
 
@@ -66,10 +65,7 @@ final class MultiTabMentionSuggestionsView: UIView {
         guard self.suggestions != suggestions else { return }
         self.suggestions = suggestions
         actionsView.configure(with: suggestions.map(Action.init),
-                              isEnabled: { $0.suggestion.isEnabled },
-                              isSelected: { $0.suggestion.isSelected })
-        emptyLabel.isHidden = !suggestions.isEmpty
-        actionsView.isHidden = suggestions.isEmpty
+                              isEnabled: { $0.suggestion.isEnabled })
         let rows = CGFloat(max(1, min(suggestions.count, Metrics.maximumVisibleRows)))
         scrollHeightConstraint.constant = rows * Metrics.chipHeight + (rows - 1) * Metrics.chipSpacing + 2 * Metrics.scrollPadding
         scrollView.setContentOffset(.zero, animated: false)
@@ -82,20 +78,14 @@ final class MultiTabMentionSuggestionsView: UIView {
 
     private func setupLayout() {
         translatesAutoresizingMaskIntoConstraints = false
-        emptyLabel.text = UserText.aiChatChooseTabsNoMatches
-        emptyLabel.font = .daxBodyRegular()
-        emptyLabel.textColor = UIColor(designSystemColor: .textSecondary)
-        emptyLabel.numberOfLines = 0
         scrollView.keyboardDismissMode = .none
         scrollView.showsVerticalScrollIndicator = true
         scrollView.delaysContentTouches = false
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(scrollView)
-        for child in [actionsView, emptyLabel] {
-            child.translatesAutoresizingMaskIntoConstraints = false
-            scrollView.addSubview(child)
-        }
+        actionsView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(actionsView)
 
         scrollHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: Metrics.chipHeight)
         scrollHeightConstraint.priority = .defaultHigh
@@ -111,9 +101,6 @@ final class MultiTabMentionSuggestionsView: UIView {
             actionsView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             actionsView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -Metrics.scrollPadding),
             actionsView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
-            emptyLabel.topAnchor.constraint(equalTo: scrollView.frameLayoutGuide.topAnchor, constant: Metrics.scrollPadding),
-            emptyLabel.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
-            emptyLabel.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
         ])
     }
 }

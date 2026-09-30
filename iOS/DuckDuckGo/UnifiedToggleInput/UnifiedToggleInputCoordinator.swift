@@ -1827,7 +1827,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabs: { [weak self] in self?.attachmentController.tabAttachmentCandidates ?? [] },
                 attachedTabIds: { [weak self] in self?.attachmentPolicy.selectedTabIDs ?? [] },
                 canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
-                toggleAttachment: { [weak self] in self?.attachmentController.toggleTabAttachment($0) ?? false }
+                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true) ?? false }
             ))
             mentionController.onSuggestionsChanged = { [weak self] in self?.onTabMentionSuggestionsChanged?($0) }
             tabMentionController = mentionController

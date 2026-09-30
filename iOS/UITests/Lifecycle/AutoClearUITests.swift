@@ -64,7 +64,7 @@ final class AutoClearUITests: UITestCase {
             app.incrementStorageCounters()
 
             app.openNewTab()
-            app.openURL("https://example.com", expecting: "Example Domain")
+            app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
         }
 
         XCTContext.runActivity(named: "Clear tabs and website data after backgrounding") { _ in
@@ -74,11 +74,11 @@ final class AutoClearUITests: UITestCase {
             XCTAssertTrue(
                 app.searchEntry.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.fireAnimation),
                 "Browser did not become available after Auto Clear.")
-            XCTAssertFalse(app.webViews.staticTexts["Example Domain"].exists, "Cleared page is still visible.")
+            XCTAssertFalse(app.webViews.staticTexts["Privacy Test Pages"].exists, "Cleared page is still visible.")
 
             app.openTabSwitcher()
             app.assertTabCount(1)
-            XCTAssertFalse(app.staticTexts["Example Domain"].exists, "Cleared tab is still present in the tab switcher.")
+            XCTAssertFalse(app.staticTexts["Privacy Test Pages"].exists, "Cleared tab is still present in the tab switcher.")
             app.buttons["TabSwitcher.Button.Done"].tapWhenHittable()
 
             app.openStorageCounterPage()

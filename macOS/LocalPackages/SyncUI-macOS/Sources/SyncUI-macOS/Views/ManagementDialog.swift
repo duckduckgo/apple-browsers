@@ -113,7 +113,9 @@ public struct ManagementDialog: View {
                 }
             case .prepareToSync(let mode):
                 if model.isSimplifiedSyncSetupV2Enabled {
-                    PreparingToSyncViewV2(state: .connecting)
+                    PreparingToSyncViewV2(state: .connecting, isAnimationPaused: model.isPreparingToSyncAnimationPaused) {
+                        model.preparingToSyncAnimationDidFinish()
+                    }
                 } else {
                     PreparingToSyncView(mode: mode)
                 }

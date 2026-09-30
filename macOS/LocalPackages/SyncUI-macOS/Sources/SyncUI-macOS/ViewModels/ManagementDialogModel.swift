@@ -47,6 +47,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func switchAccountsCancelled()
     func enterCodeViewDidAppear()
     func authenticationCancelledPromptClosePressed() async
+    func preparingToSyncAnimationDidFinish()
     func didEndFlow()
 }
 
@@ -61,6 +62,7 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen: Bool = false
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
     @Published public var isSimplifiedSyncSetupV2Enabled: Bool = false
+    @Published public var isPreparingToSyncAnimationPaused: Bool = false
     @Published public var isConnectingThisDeviceOnly: Bool = false
     @Published public var isConnectingAnotherDevice: Bool = false
     @Published public var authenticationCancelledPromptOffersRetry: Bool = false
@@ -116,6 +118,11 @@ public final class ManagementDialogModel: ObservableObject {
     public func showSwitchAccountsMessage() {
         shouldShowSwitchAccountsMessage = true
         shouldShowErrorMessage = true
+    }
+
+    @MainActor
+    public func preparingToSyncAnimationDidFinish() {
+        delegate?.preparingToSyncAnimationDidFinish()
     }
 
     @MainActor

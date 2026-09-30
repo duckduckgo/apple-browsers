@@ -1656,6 +1656,21 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
+    func testNativeHostCompletionPlaysAnimationBeforeEndingFlow() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.preparingToSyncAnimationDidFinish()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
     func testControllerDidUpdatePairingV2JoinStatus_whenWaiting_preservesConnectingDialog() {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
@@ -1668,6 +1683,7 @@ final class SyncDialogControllerTests: XCTestCase {
     func testControllerDidUpdatePairingV2JoinStatus_whenUnknown_presentsWaitForOtherDeviceDialog() {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
 
         syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
 
@@ -1720,6 +1736,14 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
+    func testControllerWillBeginTransmittingRecoveryKey_doesNotReplaceWaitForOtherDevice() async {
+        managementDialogModel.currentDialog = .waitForOtherDevice
+
+        await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
     func testControllerDidReceiveRecoveryKey_presentsPrepareDialog() {
         syncDialogController.controllerDidReceiveRecoveryKey()
 
@@ -1730,6 +1754,67 @@ final class SyncDialogControllerTests: XCTestCase {
         await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode, codeVersion: .v1)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+    }
+
+    func testControllerDidRecognizeV2PairingCode_pausesConnectingAnimationBeforeConfirmation() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+
+        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .qrCode, codeVersion: .v2)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.didEndFlow()
+
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+    }
+
+    func testThirdPartyV2HostConfirmationPausesAnimationUntilPairingCompletes() async {
+        let confirmationPresented = expectation(description: "pairing confirmation presented")
+        var resolveConfirmation: ((Bool) -> Void)?
+        makeControllerWithPairingV2Confirmation { _ in
+            confirmationPresented.fulfill()
+            return await withCheckedContinuation { continuation in
+                resolveConfirmation = { continuation.resume(returning: $0) }
+            }
+        }
+        let initialDialog = ManagementDialogKind.syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        managementDialogModel.currentDialog = initialDialog
+
+        let confirmationTask = Task {
+            await syncDialogController.controllerShouldAllowPairingV2PeerToJoin(peerName: "Phone", peerKind: .thirdParty)
+        }
+        await fulfillment(of: [confirmationPresented], timeout: 1)
+
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, initialDialog)
+
+        resolveConfirmation?(true)
+        let didConfirm = await confirmationTask.value
+        XCTAssertTrue(didConfirm)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.preparingToSyncAnimationDidFinish()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testThirdPartyV2HostDecliningConfirmationEndsFlow() async {
+        makeControllerWithPairingV2Confirmation { _ in false }
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+
+        let didConfirm = await syncDialogController.controllerShouldAllowPairingV2PeerToJoin(peerName: "Phone", peerKind: .thirdParty)
+
+        XCTAssertFalse(didConfirm)
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
     }
 
     func testControllerDidCreateSyncAccount_whenV2Disabled_presentsSaveRecoveryCodeDialog() {
@@ -2008,6 +2093,23 @@ final class SyncDialogControllerTests: XCTestCase {
             pixelFiring: pixelKitMock,
             keyValueStore: mockKeyValueStore,
             confirmCloseSetup: { await confirmation.present() }
+        )
+    }
+
+    private func makeControllerWithPairingV2Confirmation(_ confirmation: @escaping @MainActor (String) async -> Bool) {
+        featureFlagger.isFeatureOn[FeatureFlag.simplifiedSyncSetupV2.rawValue] = true
+        syncDialogController = SyncDialogController(
+            syncService: ddgSyncing,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: authenticator,
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                self?.connectionController ?? MockSyncConnectionControlling()
+            },
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelKitMock,
+            keyValueStore: mockKeyValueStore,
+            confirmPairingV2Setup: confirmation
         )
     }
 

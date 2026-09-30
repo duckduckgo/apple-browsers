@@ -55,7 +55,7 @@ final class BrowserToolsDebugPanel: NSWindowController {
             browserTools: service
         )
         self.chatHandler = chatHandler
-        self.userScript = AIChatUserScript(handler: chatHandler, urlSettings: UserDefaults.standard.keyedStoring())
+        self.userScript = AIChatUserScript(handler: chatHandler, urlSettings: UserDefaults.standard.keyedStoring(), browserTools: nil)
 
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
                               styleMask: [.titled, .closable, .resizable],
@@ -66,6 +66,7 @@ final class BrowserToolsDebugPanel: NSWindowController {
         window.contentView = makeContentView()
         window.center()
         refreshTarget()
+        service.register(self)
     }
 
     required init?(coder: NSCoder) {
@@ -325,7 +326,20 @@ final class BrowserToolsDebugPanel: NSWindowController {
     }
 }
 
-/// Receives the prompt a page would, since no page is listening.
+/// Receives the pushes a page would, since no page is listening.
+extension BrowserToolsDebugPanel: AIChatBrowserToolsPushing {
+
+    var pushTargetWebView: WKWebView? { selectedTab?.webView }
+
+    func pushToolsListChanged() {
+        appendToLog("⇠ notifications/tools/list_changed\n")
+    }
+
+    func pushTabChanged(_ data: AIChatTabChangedData) {
+        appendToLog("⇠ aiChatTabChanged \(prettyPrinted(data))\n")
+    }
+}
+
 extension BrowserToolsDebugPanel: AIChatElicitationPushing {
 
     func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {

@@ -7850,8 +7850,8 @@ extension MainViewController: TabSwitcherDelegate {
             }
             await fireExecutor.burn(request: request, applicationState: .unknown)
             // In normal mode the switcher dismisses onto the new tab the burn leaves.
-            if case .normalMode = request.scope {
-                focusesNewTabPageAfterTabSwitcherDismissal = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            if case .normalMode = request.scope, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
+                focusesNewTabPageAfterTabSwitcherDismissal = true
             }
             tabSwitcher.dismissIfPossible()
         }
@@ -7870,6 +7870,8 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     private func tabSwitcherNewTabWithAnimation() {
+        // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
+        focusesNewTabPageAfterTabSwitcherDismissal = false
         newTab()
         if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
@@ -7930,6 +7932,8 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
         // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
         performCancel(animated: false)
+        // A landing left pending by an earlier switcher that never reported its dismissal is stale now.
+        focusesNewTabPageAfterTabSwitcherDismissal = false
         showTabSwitcher()
     }
 

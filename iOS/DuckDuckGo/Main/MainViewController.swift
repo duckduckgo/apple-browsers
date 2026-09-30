@@ -5991,8 +5991,9 @@ extension MainViewController: OmniBarDelegate {
             },
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
+                let closesLastTab = self?.tabManager.currentTabsModel.count == 1
                 self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
-                self?.showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: true)
+                self?.showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: !closesLastTab)
             }
         ))
     }

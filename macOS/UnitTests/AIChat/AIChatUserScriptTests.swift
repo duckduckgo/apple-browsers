@@ -318,6 +318,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    @MainActor
     func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         nil
     }

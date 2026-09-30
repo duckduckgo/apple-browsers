@@ -72,15 +72,9 @@ final class AttachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring
 // MARK: - Disclosure
 
 /// One display for the whole app: Fire Windows share it, and the fire button leaves it alone.
-/// Claims are taken under one lock shared by every instance, so two surfaces resolving at once
-/// can't both be handed the display.
 final class AttachmentPrivacyDisclosure {
 
     static let webEntryKey = DuckAiNativeStorageReservedEntryKeys.fileUploadDisclaimerShown.rawValue
-
-    /// Static because instances are built per read, over one shared store that has no
-    /// compare-and-swap of its own.
-    private static let lock = NSLock()
 
     private let store: AttachmentPrivacyDisclosureStoring
     private let webKeySource: DuckAiNativeStorageHandling?
@@ -97,9 +91,6 @@ final class AttachmentPrivacyDisclosure {
     var canShow: Bool {
         guard isEnabled else { return false }
 
-        Self.lock.lock()
-        defer { Self.lock.unlock() }
-
         takeOverWebFlagIfNeeded()
         return !store.hasShown
     }
@@ -107,12 +98,11 @@ final class AttachmentPrivacyDisclosure {
     /// The raw state, with no takeover: a debug read shouldn't decide when the handover happens.
     var hasShown: Bool { store.hasShown }
 
+    /// Main thread only, like every caller: that is what keeps the check and the write from
+    /// interleaving with another surface's.
     @discardableResult
     func claim() -> Bool {
         guard isEnabled else { return false }
-
-        Self.lock.lock()
-        defer { Self.lock.unlock() }
 
         takeOverWebFlagIfNeeded()
         guard !store.hasShown else { return false }
@@ -122,9 +112,6 @@ final class AttachmentPrivacyDisclosure {
     }
 
     func reset() {
-        Self.lock.lock()
-        defer { Self.lock.unlock() }
-
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
         store.markWebFlagTakenOver()
@@ -136,7 +123,7 @@ final class AttachmentPrivacyDisclosure {
 
     /// Whatever ships first, the web app owns the disclosure until our flag is on, so the handover
     /// waits for the flag: taken early, or taken on a failed read, a `true` written later goes
-    /// unread and the message shows a second time. Callers hold `lock`.
+    /// unread and the message shows a second time.
     private func takeOverWebFlagIfNeeded() {
         guard !store.hasTakenOverWebFlag else { return }
 

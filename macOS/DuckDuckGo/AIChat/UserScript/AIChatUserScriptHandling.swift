@@ -92,7 +92,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
-    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -300,6 +300,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
     }
 
+    @MainActor
     public func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
         AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosureProvider?().claim() ?? false)
     }

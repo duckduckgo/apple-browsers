@@ -68,21 +68,6 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
         XCTAssertFalse(store.hasShown)
     }
 
-    /// Probabilistic by nature — it fails loudly if the claim stops being atomic, which is what
-    /// the shared store can't do on its own.
-    func testOnlyOneOfManyConcurrentCallersClaims() {
-        let grantLock = NSLock()
-        var grants: [Bool] = []
-
-        DispatchQueue.concurrentPerform(iterations: 50) { _ in
-            let granted = self.makeDisclosure().claim()
-            grantLock.withLock { grants.append(granted) }
-        }
-
-        XCTAssertEqual(grants.filter { $0 }.count, 1)
-        XCTAssertTrue(store.hasShown)
-    }
-
     // MARK: - The kill switch
 
     func testNothingIsAllowedWithTheFlagOff() {

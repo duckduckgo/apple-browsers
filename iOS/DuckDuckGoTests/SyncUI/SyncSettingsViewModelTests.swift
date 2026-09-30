@@ -457,9 +457,9 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .connecting(isRecovery: false)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+        sut.showSuccess(recoveryCode: "code", destination: .joiner(isRecovery: false))
 
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .joiner(isRecovery: false)))
         XCTAssertEqual(sut.recoveryCode, "code")
     }
 
@@ -467,18 +467,18 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .connecting(isRecovery: true)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: true)
+        sut.showSuccess(recoveryCode: "code", destination: .joiner(isRecovery: true))
 
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: true, isFinishing: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: true, successDestination: .joiner(isRecovery: true)))
     }
 
     func testWhenShowSuccessOutsideConnectingThenNavigatesToSuccessImmediately() {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: false)
+        sut.showSuccess(recoveryCode: "code", destination: .joiner(isRecovery: false))
 
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.joiner(isRecovery: false)))
         XCTAssertEqual(sut.recoveryCode, "code")
     }
 
@@ -486,18 +486,18 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = nil
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: true)
+        sut.showSuccess(recoveryCode: "code", destination: .joiner(isRecovery: true))
 
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.joiner(isRecovery: true)))
     }
 
     func testWhenConnectingAnimationFinishesWhileFinishingThenNavigatesToSuccess() {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
-        sut.connectingSheetPhase = .connecting(isRecovery: true, isFinishing: true)
+        sut.connectingSheetPhase = .connecting(isRecovery: true, successDestination: .joiner(isRecovery: true))
 
         sut.connectingAnimationDidFinish()
 
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: true))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.joiner(isRecovery: true)))
     }
 
     func testWhenConnectingAnimationFinishesWhileNotFinishingThenPhaseIsUnchanged() {
@@ -506,7 +506,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
 
         sut.connectingAnimationDidFinish()
 
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false))
     }
 
     func testWhenConnectingAnimationFinishesOutsideConnectingThenPhaseIsUnchanged() {
@@ -522,11 +522,11 @@ final class SyncSettingsViewModelTests: XCTestCase {
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler())
         sut.connectingSheetPhase = .connecting(isRecovery: false)
 
-        sut.showSuccess(recoveryCode: "code", isRecovery: false)
-        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+        sut.showSuccess(recoveryCode: "code", destination: .joiner(isRecovery: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .joiner(isRecovery: false)))
 
         sut.connectingAnimationDidFinish()
-        XCTAssertEqual(sut.connectingSheetPhase, .success(isRecovery: false))
+        XCTAssertEqual(sut.connectingSheetPhase, .success(.joiner(isRecovery: false)))
     }
 
     func testWhenAnotherDevicePromptAppearedThenFiresPromptShownPixel() {

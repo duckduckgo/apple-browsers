@@ -190,11 +190,16 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
+    public enum SuccessDestination: Equatable {
+        case host(joiningDeviceName: String)
+        case joiner(isRecovery: Bool)
+    }
+
     public enum ConnectingSheetPhase: Equatable, Identifiable {
-        case connecting(isRecovery: Bool, isFinishing: Bool = false)
+        case connecting(isRecovery: Bool, successDestination: SuccessDestination? = nil)
         case syncAnotherDevice(isConnecting: Bool)
         case waitingForOtherDevice
-        case success(isRecovery: Bool)
+        case success(SuccessDestination)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
         // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
@@ -447,19 +452,25 @@ public class SyncSettingsViewModel: ObservableObject {
         beginSimplifiedSyncSetup()
     }
 
-    public func showSuccess(recoveryCode: String, isRecovery: Bool) {
+    public func showSuccess(recoveryCode: String, destination: SuccessDestination) {
         self.recoveryCode = recoveryCode
+        let isRecovery: Bool
+        if case .joiner(let recovery) = destination {
+            isRecovery = recovery
+        } else {
+            isRecovery = false
+        }
         switch connectingSheetPhase {
         case .connecting, .waitingForOtherDevice:
-            connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
+            connectingSheetPhase = .connecting(isRecovery: isRecovery, successDestination: destination)
         default:
-            connectingSheetPhase = .success(isRecovery: isRecovery)
+            connectingSheetPhase = .success(destination)
         }
     }
 
     public func connectingAnimationDidFinish() {
-        guard case .connecting(let isRecovery, true) = connectingSheetPhase else { return }
-        connectingSheetPhase = .success(isRecovery: isRecovery)
+        guard case .connecting(_, let successDestination?) = connectingSheetPhase else { return }
+        connectingSheetPhase = .success(successDestination)
     }
 
     public func doneFromConnectingSheet() {

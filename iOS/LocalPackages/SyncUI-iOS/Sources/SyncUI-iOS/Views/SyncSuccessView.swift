@@ -25,7 +25,19 @@ import SwiftUI
 struct SyncSuccessView: View {
 
     @ObservedObject var model: SyncSettingsViewModel
-    let isRecovery: Bool
+    let destination: SyncSettingsViewModel.SuccessDestination
+
+    private var isHost: Bool {
+        if case .host = destination { return true }
+        return false
+    }
+
+    private var isRecovery: Bool {
+        if case .joiner(let recovery) = destination {
+            return recovery
+        }
+        return false
+    }
 
     private var autoRestoreBinding: Binding<Bool> {
         Binding {
@@ -40,7 +52,7 @@ struct SyncSuccessView: View {
             List {
                 headerSection
 
-                if !isRecovery {
+                if !isHost && !isRecovery {
                     recoveryCodeSection
 
                     if model.isAutoRestoreFeatureAvailable {
@@ -61,9 +73,14 @@ struct SyncSuccessView: View {
     }
 
     private var title: String {
-        isRecovery
-            ? UserText.simplifiedRecoveryCompleteTitle
-            : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
+        switch destination {
+        case .host(let joiningDeviceName):
+            UserText.simplifiedDeviceAddedTitle(joiningDeviceName)
+        case .joiner(let isRecovery):
+            isRecovery
+                ? UserText.simplifiedRecoveryCompleteTitle
+                : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
+        }
     }
 
     private var description: String {
@@ -105,11 +122,13 @@ struct SyncSuccessView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .accessibility(identifier: "SyncSuccessTitle")
 
-                Text(description)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !isHost {
+                    Text(description)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, 8)
@@ -185,19 +204,25 @@ private extension SyncSettingsViewModel {
 
 #Preview("Device Added") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: false)
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .joiner(isRecovery: false))
+    }
+}
+
+#Preview("Device Added – Host") {
+    RebrandedPreview(isRebranded: true) {
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .host(joiningDeviceName: "Dax’s iPhone"))
     }
 }
 
 #Preview("Device Added – No Auto-Restore") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), isRecovery: false)
+        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .joiner(isRecovery: false))
     }
 }
 
 #Preview("Recovery Complete") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), isRecovery: true)
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .joiner(isRecovery: true))
     }
 }
 

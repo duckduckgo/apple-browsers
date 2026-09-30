@@ -187,7 +187,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
+                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, destination: .joiner(isRecovery: false))
             } catch {
                 optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
@@ -540,6 +540,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     private func collectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
+        confirmedPairingV2PeerName = nil
         codeCollectionIntent = intent
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(intent: intent)
@@ -580,6 +581,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     private func legacyCollectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
+        confirmedPairingV2PeerName = nil
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
@@ -699,6 +701,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             await dismissPairingV2Setup()
         } else if isConfirmed {
             pairingV2PeerKind = peerKind
+            if case .sharer = setupRole {
+                confirmedPairingV2PeerName = peerName
+            }
         }
         return isConfirmed
     }

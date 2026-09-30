@@ -33,10 +33,10 @@ public struct SimplifiedConnectingSheetView: View {
             switch model.connectingSheetPhase {
             case .syncAnotherDevice:
                 SyncAnotherDevicePromptView(model: model)
-            case .connecting(let isRecovery, let isFinishing):
+            case .connecting(let isRecovery, let successDestination):
                 SimplifiedConnectingContentView(
                     isRecovery: isRecovery,
-                    isFinishing: isFinishing,
+                    isFinishing: successDestination != nil,
                     onAnimationFinished: { model.connectingAnimationDidFinish() }
                 )
             case .waitingForOtherDevice:
@@ -46,8 +46,8 @@ public struct SimplifiedConnectingSheetView: View {
                     isWaitingForOtherDevice: true,
                     onAnimationFinished: { model.connectingAnimationDidFinish() }
                 )
-            case .success(let isRecovery):
-                SyncSuccessView(model: model, isRecovery: isRecovery)
+            case .success(let destination):
+                SyncSuccessView(model: model, destination: destination)
             case .none:
                 EmptyView()
             }
@@ -78,7 +78,7 @@ public struct SimplifiedConnectingSheetView: View {
 
 #Preview("Device Connected") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(.joiner(isRecovery: false))))
     }
 }
 
@@ -94,7 +94,7 @@ public struct SimplifiedConnectingSheetView: View {
 }
 
 #Preview("Recovery Completed") {
-    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: true)))
+    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(.joiner(isRecovery: true))))
 }
 
 private extension SyncSettingsViewModel {

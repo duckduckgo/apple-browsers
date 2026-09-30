@@ -209,6 +209,7 @@ class SuggestionTrayViewController: UIViewController {
         let appSettings: AppSettings
         let subscriptionManager: any SubscriptionManager
         let internalUserCommands: URLBasedDebugCommands
+        let floatingUIManager: FloatingUIManaging
     }
 
     let productSurfaceTelemetry: ProductSurfaceTelemetry
@@ -494,7 +495,8 @@ class SuggestionTrayViewController: UIViewController {
             appSettings: dependencies.appSettings,
             faviconsCache: dependencies.faviconsCache,
             subscriptionManager: dependencies.subscriptionManager,
-            internalUserCommands: dependencies.internalUserCommands
+            internalUserCommands: dependencies.internalUserCommands,
+            floatingUIManager: dependencies.floatingUIManager
         )
 
         controller.delegate = newTabPageControllerDelegate

@@ -147,6 +147,7 @@ extension TabViewController {
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: onboardingPixelReporter,
             featureFlagger: featureFlagger,
+            isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
             contentScopeExperimentManager: contentScopeExperimentsManager,
             textZoomCoordinator: textZoomCoordinator,
             autoconsentManagement: autoconsentManagement,

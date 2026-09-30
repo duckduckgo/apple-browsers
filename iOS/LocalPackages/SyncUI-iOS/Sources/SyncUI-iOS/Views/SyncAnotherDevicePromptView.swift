@@ -77,6 +77,8 @@ struct SyncAnotherDevicePromptView: View {
                 .padding(.bottom, 20)
             }
             .padding(.horizontal, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 model.anotherDevicePromptAppeared()

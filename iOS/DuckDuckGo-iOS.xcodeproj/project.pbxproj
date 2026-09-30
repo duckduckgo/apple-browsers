@@ -1804,6 +1804,7 @@
 		F1AF3A3F2F44AD1100D2BAD3 /* RebrandedAppIconPickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AF3A3E2F44AD1100D2BAD3 /* RebrandedAppIconPickerViewModel.swift */; };
 		F1AF3A412F44AE2600D2BAD3 /* AppIconManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AF3A402F44AE2400D2BAD3 /* AppIconManaging.swift */; };
 		F1BDDC022C340DDF00459306 /* SyncManagementViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BDDC002C340DDF00459306 /* SyncManagementViewModelTests.swift */; };
+		1BDE02F3A745968B4D0E61BB /* SyncSuccessViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F38CB257BE94EF3752259B /* SyncSuccessViewTests.swift */; };
 		F1BE54581E69DE1000FCF649 /* TutorialSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BE54571E69DE1000FCF649 /* TutorialSettings.swift */; };
 		F1CA3C371F045878005FADB3 /* PrivacyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CA3C361F045878005FADB3 /* PrivacyStore.swift */; };
 		F1CA3C391F045885005FADB3 /* PrivacyUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CA3C381F045885005FADB3 /* PrivacyUserDefaults.swift */; };
@@ -3782,6 +3783,7 @@
 		F1AF3A402F44AE2400D2BAD3 /* AppIconManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconManaging.swift; sourceTree = "<group>"; };
 		F1B745211E549D550072547E /* UIColorExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIColorExtension.swift; sourceTree = "<group>"; };
 		F1BDDC002C340DDF00459306 /* SyncManagementViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManagementViewModelTests.swift; sourceTree = "<group>"; };
+		79F38CB257BE94EF3752259B /* SyncSuccessViewTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncSuccessViewTests.swift; sourceTree = "<group>"; };
 		F1BE54571E69DE1000FCF649 /* TutorialSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TutorialSettings.swift; sourceTree = "<group>"; };
 		F1CA3C361F045878005FADB3 /* PrivacyStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyStore.swift; sourceTree = "<group>"; };
 		F1CA3C381F045885005FADB3 /* PrivacyUserDefaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyUserDefaults.swift; sourceTree = "<group>"; };
@@ -8000,6 +8002,7 @@
 			isa = PBXGroup;
 			children = (
 				F1BDDC002C340DDF00459306 /* SyncManagementViewModelTests.swift */,
+				79F38CB257BE94EF3752259B /* SyncSuccessViewTests.swift */,
 				A1B2C3D62F7F111100ABCDEF /* SyncSettingsViewModelTests.swift */,
 			);
 			path = SyncUI;
@@ -9979,6 +9982,7 @@
 				9FAB4B762E98C70B00D8298A /* HomeMessageViewModelTests.swift in Sources */,
 				E53A32E13739A86D87B5FB44 /* SafariRedirectHandlerTests.swift in Sources */,
 				F1BDDC022C340DDF00459306 /* SyncManagementViewModelTests.swift in Sources */,
+				1BDE02F3A745968B4D0E61BB /* SyncSuccessViewTests.swift in Sources */,
 				A1B2C3D72F7F111100ABCDEF /* SyncSettingsViewModelTests.swift in Sources */,
 				9FFDA83B2DFA8E58007923F7 /* MockAVQueuePlayer.swift in Sources */,
 				5BCF85522F7D7E4B0053B95E /* AddressBarURLFilterTests.swift in Sources */,

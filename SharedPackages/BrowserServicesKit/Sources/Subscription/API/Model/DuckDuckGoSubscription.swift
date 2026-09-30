@@ -209,7 +209,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     /// Days in the active trial, derived from `startedAt`...`expiresOrRenewsAt` since `Offer` carries no duration itself; `nil` if there's no trial.
     public func trialLengthInDays(calendar: Calendar = .current) -> Int? {
         // HACK (dev/test only): force a 7-day trial length, bypassing the real date math entirely.
-        return hasActiveTrialOffer ? 7 : nil
+        return 7
     }
 
     /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.

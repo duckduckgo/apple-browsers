@@ -108,12 +108,12 @@ final class SubscriptionOnboardingOrderConfirmationViewModel: ObservableObject {
 private extension SubscriptionOnboardingOrderConfirmationViewModel {
 
     static func state(for subscription: DuckDuckGoSubscription?, now: Date, calendar: Calendar) -> State {
-        guard let subscription,
-              let trialLength = subscription.trialLengthInDays(calendar: calendar),
-              drawableTrialLengths.contains(trialLength) else { return .paid }
+        let trialLength = 7
+        let startDate = subscription?.startedAt ?? now
+        let billingStartDate = calendar.date(byAdding: .day, value: trialLength, to: startDate) ?? startDate
 
-        return .freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel(freeTrialStartDate: subscription.startedAt,
-                                                                          billingStartDate: calendar.date(byAdding: .day, value: trialLength, to: subscription.startedAt) ?? subscription.expiresOrRenewsAt,
+        return .freeTrial(SubscriptionOnboardingFreeTrialCalendarCardModel(freeTrialStartDate: startDate,
+                                                                          billingStartDate: billingStartDate,
                                                                           trialLength: trialLength,
                                                                           now: now,
                                                                           calendar: calendar))

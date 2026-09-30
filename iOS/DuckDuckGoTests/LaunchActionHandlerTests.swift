@@ -558,6 +558,13 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(showsKeyboard == testCase.showsKeyboard)
     }
 
+    @Test("An in-app landing follows New Tab alone", arguments: [true, false], [true, false])
+    func whenLandingInsideTheAppThenOnlyNewTabDecides(onNewTab: Bool, onAppLaunch: Bool) {
+        let policy = NewTabPageKeyboardPolicy(onNewTab: onNewTab, onAppLaunch: onAppLaunch)
+
+        #expect(policy.showsKeyboardOnInAppLanding == onNewTab)
+    }
+
 }
 
 @MainActor

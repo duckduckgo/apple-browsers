@@ -459,6 +459,7 @@ final class UnifiedToggleInputView: UIView {
             for (index, item) in messages.enumerated() {
                 let row = (existingRows[item.id] as? UTIFooterCardView) ?? UTIFooterCardView()
                 row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
+                row.isBelowAnotherCard = index > 0
                 if !previousMessages.contains(item) {
                     row.configure(with: item.message, animateIcon: existingRows[item.id] != nil)
                 }

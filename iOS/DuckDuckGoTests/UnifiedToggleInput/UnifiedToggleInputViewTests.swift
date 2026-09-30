@@ -131,10 +131,12 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 let stack = try XCTUnwrap(sut.subviews.compactMap { $0 as? UIStackView }.first {
                     $0.arrangedSubviews.contains { $0 is UTIFooterCardView }
                 })
-                for card in stack.arrangedSubviews.compactMap({ $0 as? UTIFooterCardView }) {
+                for (index, card) in stack.arrangedSubviews.compactMap({ $0 as? UTIFooterCardView }).enumerated() {
                     let text = try XCTUnwrap(firstDescendant(of: UTIFooterLinkTextView.self, in: card))
                     let textFrame = card.convert(text.bounds, from: text)
-                    XCTAssertGreaterThanOrEqual(textFrame.minY, UTIFooterCardView.overlap + 12 - 0.5)
+                    let topGap: CGFloat = index == 0 ? 12 : 0
+                    XCTAssertGreaterThanOrEqual(textFrame.minY, UTIFooterCardView.overlap + topGap - 0.5)
+                    XCTAssertLessThanOrEqual(textFrame.minY, UTIFooterCardView.overlap + topGap + 0.5)
                     XCTAssertGreaterThanOrEqual(text.bounds.height + 0.5,
                                                text.sizeThatFits(CGSize(width: text.bounds.width, height: CGFloat.greatestFiniteMagnitude)).height)
                     XCTAssertLessThanOrEqual(textFrame.maxY, card.bounds.height - 12 + 0.5)

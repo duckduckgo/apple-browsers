@@ -40,9 +40,32 @@ struct DefaultRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
             database: database,
             notificationCenter: .default,
             errorEvents: RemoteMessagingStoreErrorHandling(),
+            autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent> { event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    PixelKit.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
+                }
+            },
+            enforcesMaxImpressions: true,
             remoteMessagingAvailabilityProvider: availabilityProvider
         )
     }
+}
+
+private enum RemoteMessagePixel: PixelKit.Event {
+    case autoDismissed(messageID: String)
+
+    var name: String { "m_mac_remote_message_auto_dismissed" }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .autoDismissed(let messageID):
+            return ["message": messageID]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 final class RemoteMessagingClient: RemoteMessagingProcessing {

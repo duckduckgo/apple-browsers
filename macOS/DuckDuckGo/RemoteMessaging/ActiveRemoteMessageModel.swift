@@ -39,7 +39,6 @@ final class ActiveRemoteMessageModel: ObservableObject {
     @Published private var remoteMessage: RemoteMessageModel?
     @Published var newTabPageRemoteMessage: RemoteMessageModel?
     @Published var tabBarRemoteMessage: RemoteMessageModel?
-    @Published var isViewOnScreen: Bool = false
 
     /**
      * A block that returns a remote messaging store, if it exists.
@@ -150,23 +149,6 @@ final class ActiveRemoteMessageModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        let remoteMessagePublisher = $remoteMessage
-            .compactMap({ $0 })
-            .filter { [weak self] _ in self?.isViewOnScreen == true }
-            .asVoid()
-        let isViewOnScreenPublisher = $isViewOnScreen.removeDuplicates().filter({ $0 }).asVoid()
-        Publishers.Merge(remoteMessagePublisher, isViewOnScreenPublisher)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else {
-                    return
-                }
-                Task {
-                    await self.markRemoteMessageAsShown()
-                }
-            }
-            .store(in: &cancellables)
-
         updateRemoteMessage()
     }
 
@@ -202,20 +184,30 @@ final class ActiveRemoteMessageModel: ObservableObject {
         }
     }
 
-    func markRemoteMessageAsShown() async {
-        guard let remoteMessage, let store = store() else {
+    @MainActor
+    func markRemoteMessageAsShown(withID messageID: String, on surface: RemoteMessageSurfaceType) async {
+        guard let remoteMessage,
+              remoteMessage.id == messageID,
+              remoteMessage.surfaces.contains(surface) || (surface == .tabBar && remoteMessage.isLegacyTabBarSurvey),
+              remoteMessage.content?.isSupported == true,
+              let store = store() else {
+            return
+        }
+        let result = await store.recordRemoteMessageImpression(withID: messageID)
+        guard case .recorded(let isFirstImpression, _) = result else {
+            refreshRemoteMessageForPresentation()
             return
         }
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
+
         if remoteMessage.isMetricsEnabled {
-            PixelKit.fire(GeneralPixel.remoteMessageShown, withAdditionalParameters: ["message": remoteMessage.id])
+            PixelKit.fire(GeneralPixel.remoteMessageShown, withAdditionalParameters: ["message": messageID])
         }
-        if !store.hasShownRemoteMessage(withID: remoteMessage.id) {
+        if isFirstImpression {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
-                PixelKit.fire(GeneralPixel.remoteMessageShownUnique, withAdditionalParameters: ["message": remoteMessage.id])
+                PixelKit.fire(GeneralPixel.remoteMessageShownUnique, withAdditionalParameters: ["message": messageID])
             }
-            await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
         }
     }
 
@@ -226,6 +218,10 @@ final class ActiveRemoteMessageModel: ObservableObject {
     private func updateRemoteMessage() {
         // Only new tab page and tab bar are supported on macOS.
         remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
+    }
+
+    func refreshRemoteMessageForPresentation() {
+        updateRemoteMessage()
     }
 
     private var cancellables = Set<AnyCancellable>()

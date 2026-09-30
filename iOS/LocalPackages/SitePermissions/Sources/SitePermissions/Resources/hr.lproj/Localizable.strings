@@ -1,0 +1,138 @@
+/* Button that temporarily grants a website permission for the current page. */
+"sitePermissions.dialog.allow-once" = "Dopusti jednom";
+
+/* Button that saves approval for this website. DuckDuckGo's iOS app permission is separate. */
+"sitePermissions.dialog.allow-while-using-site" = "Dopusti tijekom upotrebe web-mjesta";
+
+/* Combined website camera and microphone permission prompt title. %@ is the website domain; iOS app permissions are separate. */
+"sitePermissions.dialog.camera-and-microphone.title" = "Web-mjesto „%@“ želi pristupiti tvojoj kameri i mikrofonu";
+
+/* Website camera permission prompt title. %@ is the website domain; this is separate from iOS camera permission. */
+"sitePermissions.dialog.camera.title" = "Web-mjesto „%@“ želi pristupiti tvojoj kameri";
+
+/* Fire-tab button that denies a website permission for this tab session without saving it. */
+"sitePermissions.dialog.deny" = "Odbij";
+
+/* Explanation shown when DuckDuckGo search results ask to use location. Copy requires review. */
+"sitePermissions.dialog.location.duckduckgo-serp.body" = "Anonimizirat ćemo tvoju lokaciju i upotrijebiti je da bismo ti pružili bolje rezultate, bliže tebi.";
+
+/* Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review. */
+"sitePermissions.dialog.location.duckduckgo-serp.title" = "„duckduckgo.com“ želi pristupiti tvojoj lokaciji";
+
+/* Website location permission prompt title. %@ is the website domain; this is separate from iOS location permission. */
+"sitePermissions.dialog.location.title" = "Web-mjesto „%@“ želi pristupiti tvojoj lokaciji";
+
+/* Website microphone permission prompt title. %@ is the website domain; this is separate from iOS microphone permission. */
+"sitePermissions.dialog.microphone.title" = "Web-mjesto „%@“ želi pristupiti tvojem mikrofonu";
+
+/* Button that saves denial for this website until the user changes it. */
+"sitePermissions.dialog.never-allow" = "Nikada ne dopusti";
+
+/* VoiceOver value for a website permission currently in use. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.in-use" = "%@, u upotrebi";
+
+/* VoiceOver value for a paused website permission. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.paused" = "%@, pauzirano";
+
+/* Website permission picker option that saves approval for this site; iOS app permission is separate. */
+"sitePermissions.management.always-allow" = "Uvijek dopusti";
+
+/* Permission picker option that asks again when a site requests access. */
+"sitePermissions.management.ask-each-time" = "Pitaj svaki puta";
+
+/* Camera permission row label. */
+"sitePermissions.management.camera" = "Kamera";
+
+/* Accessibility label for the on-site permission sheet close button. */
+"sitePermissions.management.close" = "Zatvori";
+
+/* Action that opens DuckDuckGo's page in iOS Settings. */
+"sitePermissions.management.go-to-system-settings" = "Idi na Postavke sustava";
+
+/* Location permission row label. */
+"sitePermissions.management.location" = "Lokacija";
+
+/* Microphone permission row label. */
+"sitePermissions.management.microphone" = "Mikrofon";
+
+/* Website permission picker option that saves denial for this site until the user changes it. */
+"sitePermissions.management.never-allow" = "Nikada ne dopusti";
+
+/* Caption below on-site permission rows explaining when changes apply. */
+"sitePermissions.management.reload-caption" = "Ponovno učitaj stranicu kako bi promjene stupile na snagu.";
+
+/* Reminder shown when iOS blocks permissions a website is allowed to use. %@ is a localized list of camera, location, or microphone names. Copy requires review. */
+"sitePermissions.management.reminder" = "DuckDuckGo treba pristup tvojem %@ ako želiš koristiti povezane značajke na ovom web-mjestu.";
+
+/* Lowercase camera name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.camera" = "kamera";
+
+/* Lowercase location name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.location" = "lokacija";
+
+/* Lowercase microphone name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.microphone" = "mikrofon";
+
+/* Action that removes all stored permissions for the current site. */
+"sitePermissions.management.remove-permissions" = "Ukloni dopuštenja";
+
+/* Visible and VoiceOver title of the website permission sheet. %@ is the website domain; translators may move it within the sentence. */
+"sitePermissions.management.title" = "Dopuštenja za „%@“";
+
+/* Body of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.body" = "Dopuštenja za kameru i mikrofon potrebna su ako želiš koristiti povezane značajke na ovom web-mjestu.";
+
+/* Title of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.title" = "DuckDuckGo treba pristupiti tvojoj kameri i mikrofonu";
+
+/* Body of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.body" = "Dopuštenja za kameru potrebna su ako želiš koristiti značajke kamere na ovom web-mjestu.";
+
+/* Title of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.title" = "DuckDuckGo treba pristupiti tvojoj kameri";
+
+/* Button that closes a permission reminder without changing anything. */
+"sitePermissions.recovery.reminder.cancel" = "Odustani";
+
+/* Button that opens the DuckDuckGo page in iOS Settings. */
+"sitePermissions.recovery.reminder.change-permissions" = "Promijeni dozvole";
+
+/* Body of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.body" = "Dozvole za lokaciju potrebna su ako želiš koristiti značajke lokacije na ovom web-mjestu.";
+
+/* Title of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.title" = "DuckDuckGo treba pristupiti tvojoj lokaciji";
+
+/* Body of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.body" = "Dozvole za mikrofon potrebne su ako želiš koristiti značajke mikrofona na ovom web-mjestu.";
+
+/* Title of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.title" = "DuckDuckGo treba pristupiti tvom mikrofonu";
+
+/* Toast shown when a website was allowed camera access but the iOS camera prompt was denied. */
+"sitePermissions.recovery.toast.camera" = "DuckDuckGo nije mogao dati pristup kameri ovom web-mjestu";
+
+/* Toast shown when both fresh iOS permission prompts were denied. The combined wording requires copy review. */
+"sitePermissions.recovery.toast.camera-and-microphone" = "DuckDuckGo nije mogao dati pristup kameri i mikrofonu ovom web-mjestu";
+
+/* Toast shown when a website was allowed location access but the iOS location prompt was denied. */
+"sitePermissions.recovery.toast.location" = "DuckDuckGo nije mogao podijeliti lokaciju s ovim web-mjestom";
+
+/* Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied. */
+"sitePermissions.recovery.toast.microphone" = "DuckDuckGo nije mogao dati pristup mikrofonu ovom web-mjestu";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Dozvole za mikrofon potrebne su ako želiš koristiti glasovno čavrljanje u Duck.ai.";
+
+/* Body of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.body" = "Ako želiš koristiti naše Privatno glasovno pretraživanje, potrebna su dopuštenja za mikrofon.";
+
+/* Button that turns off Voice Search in DuckDuckGo. */
+"sitePermissions.voice-search.reminder.hide" = "Sakrij glasovno pretraživanje";
+
+/* Title of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.title" = "DuckDuckGo treba pristupiti tvom mikrofonu";
+
+/* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
+"sitePermissions.voice-search.settings-reminder.body" = "Dopuštenja za mikrofon potrebne su ako želiš koristiti naše privatne glasovne značajke.";
+

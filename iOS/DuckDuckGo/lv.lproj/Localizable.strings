@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Bezm. izmēģin.";
+"action.title.vpn.free-trial-badge" = "Izmēģini bez maksas";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Bloķē uzmācīgus izsekotājus, pirms tie tiek ielādēti, tādējādi efektīvi novēršot reklāmas, kas balstās uz izsekošanu.";
@@ -321,6 +321,15 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Šis faila tips netiek atbalstīts, lūdzu, pievieno %@.";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nevar izveidot attēlus. Pilnīga neredzamība pakalpojumu sniedzējam netiks piemērota, kamēr nepārslēgsies atpakaļ.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ neatbalsta attēlu izveidi.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Tagad izmanto %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Rediģējot atbilde tiks aizstāta ar jaunu.";
@@ -1440,9 +1449,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfigurācija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
@@ -2585,9 +2591,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Ievadi dienu skaitu, kas nav negatīvs. Instalēšanas datums tiks iestatīts uz tik daudzām dienām pagātnē.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3043,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Pasākums pievienots Apple kalendāram";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importēt paroles";
 
@@ -3161,9 +3161,6 @@
 "keyCommandZoomOut" = "Tālināt";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Pēdējo reizi apstrādāts: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Ielādē pieejamos produktus...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3234,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Ziņojumu politikas resursdatora nosaukums";
-
-/* No comment provided by engineer. */
-"Messages" = "Ziņojumi";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3593,7 @@
 "No extensions installed" = "Nav instalētu paplašinājumu";
 
 /* No comment provided by engineer. */
-"No Logs" = "Nav žurnālu";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nav atbilstību vaicājumam \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Nav ziņojumu";
 
 /* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
@@ -4139,9 +4127,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo nevar ielādēt šo lapu.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Radinieki: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4484,25 @@
 "settings.complete.setup" = "Pabeidz iestatīšanu";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Mēs centīsimies tavā vietā atlasīt tikai visprivātākās pieejamās sīkfailu opcijas un pēc tam aizvērt šos uznirstošos logus.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Automātiski pārvaldīt sīkfailu uznirstošos logus";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Sīkfailu uznirstošo logu aizsardzība";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo var automātiski pārvaldīt sīkfailu preferences, lai maksimāli palielinātu privātumu, samazinātu sīkfailus un aizvērtu šos uznirstošos logus.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Pārvaldīt sīkfailu uznirstošos logus";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Ļauj DuckDuckGo arī ietaupīt tev vienu klikšķi, tavā vietā pieņemot sīkfailus, lai aizvērtu uznirstošos logus, no kuriem nevar atteikties.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Uznirstošie logi bez atteikšanās iespējas";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Dzēst cilnes un datus";
@@ -4702,6 +4687,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Iestati adreses joslas pozīciju";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Vienmēr atļaut";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Jautāt katru reizi";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Atrašanās vieta";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Pārvaldīt vietnes";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofons";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Nekad neatļaut";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Noņemt visas vietņu atļaujas";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Noņemt atļaujas";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Atļaujas ir noņemtas visām vietnēm";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Atļaujas noņemtas vietnei %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Atļaujas vietnei %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Vari skatīt un mainīt DuckDuckGo sistēmas atļaujas sadaļā %@.";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Sistēmas iestatījumi.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Notiek aktivizēšana";
 
@@ -4882,9 +4909,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Kas jauns";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Rāda žurnālus no pēdējās minūtes, lai palīdzētu diagnosticēt problēmas uzreiz pēc atsvaidzināšanas.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izvēlies atbilstošāko problēmas raksturojumu.";
 
@@ -4899,6 +4923,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Vai vietne nedarbojas? Informē DuckDuckGo.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Vietnes atļaujas";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Iesniegt ziņojumu";
@@ -4926,9 +4953,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Statuss: nederīgs";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
@@ -5417,9 +5441,6 @@
 "theme.name.light" = "Gaišs";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Šajā sarakstā ir iekļauti parādītie ziņojumi, kā arī ne vairāk kā 1 ziņojums, ko ir plānots rādīt. Konfigurācijā var būt vēl citi ziņojumi, kas tiks parādīti, taču tie vēl nav apstrādāti.";
-
-/* No comment provided by engineer. */
 "Title" = "Nosaukums";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5442,9 +5463,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontaktpersona pievienota";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versija: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Meklēt";
@@ -5842,20 +5860,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ko tu gribi importēt?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nevar izveidot attēlus. Pilnīga neredzamība pakalpojumu sniedzējam netiks piemērota, kamēr nepārslēgsies atpakaļ.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ neatbalsta attēlu izveidi.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Tagad izmanto %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Visas tērzēšanas sarunas";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Faili tiek automātiski skenēti, meklējot nelikumīgu saturu. Atzīmētajām tērzēšanām ir ierobežota datu saglabāšana. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Uzzināt vairāk";

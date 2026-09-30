@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Sync & Backupセッションを再開してブックマークやパスワードなどを復元するか、新しいセットアップを続行します。";
 
@@ -295,7 +292,7 @@
 /* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
 "sync.simplified.scan.v2.qr.app.name" = "デスクトップ版DuckDuckGo";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "同期するためにQRコードをスキャンします。";
 
 /* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */

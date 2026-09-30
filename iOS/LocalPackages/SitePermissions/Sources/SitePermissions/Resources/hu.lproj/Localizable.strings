@@ -1,0 +1,138 @@
+/* Button that temporarily grants a website permission for the current page. */
+"sitePermissions.dialog.allow-once" = "Engedélyezés egyszer";
+
+/* Button that saves approval for this website. DuckDuckGo's iOS app permission is separate. */
+"sitePermissions.dialog.allow-while-using-site" = "Engedélyezés a webhely használata közben";
+
+/* Combined website camera and microphone permission prompt title. %@ is the website domain; iOS app permissions are separate. */
+"sitePermissions.dialog.camera-and-microphone.title" = "A(z) „%@” webhely hozzá akar férni a kamerádhoz és a mikrofonodhoz";
+
+/* Website camera permission prompt title. %@ is the website domain; this is separate from iOS camera permission. */
+"sitePermissions.dialog.camera.title" = "A(z) „%@” webhely hozzá akar férni a kamerádhoz";
+
+/* Fire-tab button that denies a website permission for this tab session without saving it. */
+"sitePermissions.dialog.deny" = "Megtagadás";
+
+/* Explanation shown when DuckDuckGo search results ask to use location. Copy requires review. */
+"sitePermissions.dialog.location.duckduckgo-serp.body" = "Anonimizáljuk a tartózkodási helyedet, és arra használjuk, hogy jobb, hozzád közelebbi találatokat nyújtsunk.";
+
+/* Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review. */
+"sitePermissions.dialog.location.duckduckgo-serp.title" = "A „duckduckgo.com” webhely hozzá akar férni a tartózkodási helyedhez";
+
+/* Website location permission prompt title. %@ is the website domain; this is separate from iOS location permission. */
+"sitePermissions.dialog.location.title" = "A(z) „%@” webhely hozzá akar férni a tartózkodási helyedhez";
+
+/* Website microphone permission prompt title. %@ is the website domain; this is separate from iOS microphone permission. */
+"sitePermissions.dialog.microphone.title" = "A(z) „%@” webhely hozzá akar férni a mikrofonodhoz";
+
+/* Button that saves denial for this website until the user changes it. */
+"sitePermissions.dialog.never-allow" = "Engedélyezés soha";
+
+/* VoiceOver value for a website permission currently in use. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.in-use" = "%@, használatban";
+
+/* VoiceOver value for a paused website permission. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.paused" = "%@, szüneteltetve";
+
+/* Website permission picker option that saves approval for this site; iOS app permission is separate. */
+"sitePermissions.management.always-allow" = "Engedélyezés mindig";
+
+/* Permission picker option that asks again when a site requests access. */
+"sitePermissions.management.ask-each-time" = "Rákérdezés minden alkalommal";
+
+/* Camera permission row label. */
+"sitePermissions.management.camera" = "Kamera";
+
+/* Accessibility label for the on-site permission sheet close button. */
+"sitePermissions.management.close" = "Bezárás";
+
+/* Action that opens DuckDuckGo's page in iOS Settings. */
+"sitePermissions.management.go-to-system-settings" = "Lépj a Rendszerbeállítások menübe";
+
+/* Location permission row label. */
+"sitePermissions.management.location" = "Tartózkodási hely";
+
+/* Microphone permission row label. */
+"sitePermissions.management.microphone" = "Mikrofon";
+
+/* Website permission picker option that saves denial for this site until the user changes it. */
+"sitePermissions.management.never-allow" = "Engedélyezés soha";
+
+/* Caption below on-site permission rows explaining when changes apply. */
+"sitePermissions.management.reload-caption" = "Töltsd újra az oldalt a módosítások érvénybe léptetéséhez.";
+
+/* Reminder shown when iOS blocks permissions a website is allowed to use. %@ is a localized list of camera, location, or microphone names. Copy requires review. */
+"sitePermissions.management.reminder" = "Ha kapcsolódó funkciókat szeretnél használni ezen a webhelyen, a DuckDuckGo-nak hozzá kell férnie a következőhöz: %@.";
+
+/* Lowercase camera name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.camera" = "kamera";
+
+/* Lowercase location name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.location" = "tartózkodási hely";
+
+/* Lowercase microphone name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.microphone" = "mikrofon";
+
+/* Action that removes all stored permissions for the current site. */
+"sitePermissions.management.remove-permissions" = "Engedélyek eltávolítása";
+
+/* Visible and VoiceOver title of the website permission sheet. %@ is the website domain; translators may move it within the sentence. */
+"sitePermissions.management.title" = "„%@” engedélyei";
+
+/* Body of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.body" = "Kamera- és mikrofonengedélyre van szükség, ha kapcsolódó funkciókat szeretnél használni ezen a webhelyen.";
+
+/* Title of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.title" = "A DuckDuckGónak hozzá kell férnie a kamerádhoz és a mikrofonodhoz";
+
+/* Body of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.body" = "Kameraengedélyre van szükség, ha kamerafunkciókat szeretnél használni ezen a webhelyen.";
+
+/* Title of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.title" = "A DuckDuckGónak hozzá kell férnie a kamerádhoz";
+
+/* Button that closes a permission reminder without changing anything. */
+"sitePermissions.recovery.reminder.cancel" = "Mégsem";
+
+/* Button that opens the DuckDuckGo page in iOS Settings. */
+"sitePermissions.recovery.reminder.change-permissions" = "Engedélyek módosítása";
+
+/* Body of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.body" = "Tartózkodási hely engedélyre van szükség, ha helyfunkciókat szeretnél használni ezen a webhelyen.";
+
+/* Title of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.title" = "A DuckDuckGónak hozzá kell férnie a tartózkodási helyedhez";
+
+/* Body of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.body" = "Mikrofonengedélyre van szükség, ha mikrofonfunkciókat szeretnél használni ezen a webhelyen.";
+
+/* Title of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.title" = "A DuckDuckGónak hozzá kell férnie a mikrofonodhoz";
+
+/* Toast shown when a website was allowed camera access but the iOS camera prompt was denied. */
+"sitePermissions.recovery.toast.camera" = "A DuckDuckGo nem tudott kamera-hozzáférést adni a webhelynek";
+
+/* Toast shown when both fresh iOS permission prompts were denied. The combined wording requires copy review. */
+"sitePermissions.recovery.toast.camera-and-microphone" = "A DuckDuckGo nem tudott kamera- és mikrofon-hozzáférést adni a webhelynek";
+
+/* Toast shown when a website was allowed location access but the iOS location prompt was denied. */
+"sitePermissions.recovery.toast.location" = "A DuckDuckGo nem tudta megosztani a tartózkodási helyet ezzel a webhellyel";
+
+/* Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied. */
+"sitePermissions.recovery.toast.microphone" = "A DuckDuckGo nem tudott mikrofon-hozzáférést adni a webhelynek";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Mikrofonengedélyre van szükség, ha a Duck.ai-ban szeretnél hangcsevegést használni.";
+
+/* Body of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.body" = "Mikrofonengedélyre van szükség, ha szeretnél privát beszédhangalapú keresést használni.";
+
+/* Button that turns off Voice Search in DuckDuckGo. */
+"sitePermissions.voice-search.reminder.hide" = "Beszédhangalapú keresés elrejtése";
+
+/* Title of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.title" = "A DuckDuckGónak hozzá kell férnie a mikrofonodhoz";
+
+/* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
+"sitePermissions.voice-search.settings-reminder.body" = "Mikrofonengedélyre van szükség, ha szeretnéd privát beszédhangfunkcióinkat használni.";
+

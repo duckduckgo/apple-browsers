@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Ingyenes próba";
+"action.title.vpn.free-trial-badge" = "Próbáld ki ingyen";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket.";
@@ -321,6 +321,15 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "A fájltípus nem támogatott, csatolj %@ fájlt.";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "A(z) %@ nem tud képeket létrehozni. A nulla szolgáltatói láthatóság nem érvényesül, amíg vissza nem váltasz.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nem támogatja a képgenerálást.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Most a(z) %@ van használatban";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "A szerkesztés lecseréli a választ egy újra.";
@@ -1440,9 +1449,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfiguráció";
 
 /* No comment provided by engineer. */
 "Confirm" = "Megerősítés";
@@ -2585,9 +2591,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Adj meg egy nem negatív napszámot. A telepítés dátuma ennyi nappal korábbira lesz állítva.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3043,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Az esemény hozzáadva az Apple naptárhoz";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Jelszavak importálása";
 
@@ -3161,9 +3161,6 @@
 "keyCommandZoomOut" = "Kicsinyítés";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Utolsó feldolgozás: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Elérhető termékek betöltése...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3234,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Üzenetkezelési szabályzat állomásneve";
-
-/* No comment provided by engineer. */
-"Messages" = "Üzenetek";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3593,7 @@
 "No extensions installed" = "Nincsenek telepített bővítmények";
 
 /* No comment provided by engineer. */
-"No Logs" = "Nincsenek naplók";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Nincs találat a következőre: „%@”";
-
-/* No comment provided by engineer. */
-"No messages" = "Nincsenek üzenetek";
 
 /* No comment provided by engineer. */
 "No results found" = "Nincs találat";
@@ -4139,9 +4127,6 @@
 "prompt.web-page-load-error.title" = "A DuckDuckGo nem tudja betölteni ezt az oldalt.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Legutóbbi feldolgozási naplók";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Rokonok: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4484,25 @@
 "settings.complete.setup" = "Beállítás végrehajtása";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Igyekszünk kiválasztani az elérhető legdiszkrétebb sütibeállításokat, és bezárni ezeket a felugró ablakokat.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Felugró sütiablakok automatikus kezelése";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Felugró sütiablak elleni védelem";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "A DuckDuckGo az adatvédelem maximalizálása, a sütik minimalizálása és a felugró ablakok bezárása érdekében képes a sütikre vonatkozó beállítások automatikus kezelésére.\n[További részletek](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Felugró sütiablakok kezelése";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Engedd, hogy a DuckDuckGo egy kattintást megspórolva elfogadja helyetted a sütiket, és bezárja a le nem tiltható felugró ablakokat.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Le nem tiltható felugró ablakok";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Lapok és adatok törlése";
@@ -4702,6 +4687,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Állítsd be a címsor elhelyezkedését";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Engedélyezés mindig";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Rákérdezés minden alkalommal";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Tartózkodási hely";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Webhelyek kezelése";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Engedélyezés soha";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Összes webhelyengedély eltávolítása";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Engedélyek eltávolítása";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Minden webhely engedélye eltávolítva";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "%@ engedélyei eltávolítva";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "%@ engedélyei";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "A DuckDuckGo rendszerengedélyeit itt tekintheted meg és módosíthatod: %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Rendszerbeállítások.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktiválás";
 
@@ -4882,9 +4909,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Újdonságok";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Megjeleníti az utolsó perc naplóit, hogy segítsen a közvetlenül a frissítés után felmerülő problémák diagnosztizálásában.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Válaszd ki azt a lehetőséget, amelyik a legjobban leírja a tapasztalt problémát.";
 
@@ -4899,6 +4923,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Nem működik a webhely? Jelezd a DuckDuckGo felé.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Webhelyengedélyek";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Jelentés beküldése";
@@ -4926,9 +4953,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Állapot: Érvénytelenítve";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tárolt állomásnév: %@";
@@ -5417,9 +5441,6 @@
 "theme.name.light" = "Világos";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Ez a lista a megjelenített üzeneteket és legfeljebb egy megjelenítésre ütemezett üzenetet tartalmaz. Előfordulhat, hogy a konfigurációban több üzenet is megjelenik, de ezek még nincsenek feldolgozva.";
-
-/* No comment provided by engineer. */
 "Title" = "Cím";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5442,9 +5463,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Névjegy hozzáadva";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Verzió: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Keresés";
@@ -5842,20 +5860,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Mit szeretnél importálni?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "A(z) %@ nem tud képeket létrehozni. A nulla szolgáltatói láthatóság nem érvényesül, amíg vissza nem váltasz.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ nem támogatja a képgenerálást.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Most a(z) %@ van használatban";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Összes csevegés";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "A rendszer automatikusan ellenőrzi a fájlokat a jogellenes tartalmak szempontjából. A megjelölt csevegésekre korlátozott adatmegőrzés vonatkozik. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "További részletek";

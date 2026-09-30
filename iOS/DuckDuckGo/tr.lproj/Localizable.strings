@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Ücretsiz deneme";
+"action.title.vpn.free-trial-badge" = "Ücretsiz Dene";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "İstilacı izleyicileri yüklenmeden önce engelleyerek, izlemeye dayalı reklamları etkili bir şekilde ortadan kaldırır.";
@@ -321,6 +321,15 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Bu dosya türü desteklenmiyor, lütfen bir %@ ekleyin.";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ görsel oluşturamaz. Sıfır Sağlayıcı Görünürlüğü, geri dönene kadar geçerli olmayacak.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ görsel oluşturmayı desteklemiyor.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Artık %@ kullanılıyor";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Düzenleme işlemi, önceki yanıtı yeni bir yanıtla değiştirecektir.";
@@ -1440,9 +1449,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Yapılandırma";
 
 /* No comment provided by engineer. */
 "Confirm" = "Onayla";
@@ -2585,9 +2591,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Olumsuz olmayan gün sayısını girin. Kurulum tarihi o kadar gün öncesine ayarlanacaktır.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3043,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Etkinlik Apple Takvim'e eklendi";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Şifreleri İçe Aktar";
 
@@ -3161,9 +3161,6 @@
 "keyCommandZoomOut" = "Uzaklaştır";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Son İşlenme: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Mevcut ürünler yükleniyor...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3234,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Mesaj politikası ana bilgisayar adı";
-
-/* No comment provided by engineer. */
-"Messages" = "Mesajlar";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3593,7 @@
 "No extensions installed" = "Hiçbir uzantı yüklü değil";
 
 /* No comment provided by engineer. */
-"No Logs" = "Günlük Yok";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "\"%@\" için eşleşme bulunamadı";
-
-/* No comment provided by engineer. */
-"No messages" = "Mesaj yok";
 
 /* No comment provided by engineer. */
 "No results found" = "Sonuç bulunamadı";
@@ -4139,9 +4127,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo bu sayfayı yükleyemiyor.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Son İşlem Günlükleri";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Akrabalar: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4484,25 @@
 "settings.complete.setup" = "Kurulumu Tamamlayın";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Sizin için mümkün olan en gizli çerez seçeneklerini belirlemeyi hedefleyecek ve ardından bu açılır pencereleri kapatacağız.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Çerez Açılır Pencerelerini Otomatik Yönet";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Çerez Açılır Pencere Engelleyici";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo, gizliliği en üst düzeye çıkarmak, çerezleri en aza indirmek ve bu açılır pencereleri kapatmak için çerez tercihlerinizi otomatik olarak yönetebilir.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Çerez Açılır Pencerelerini Yönetin";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Ayrıca DuckDuckGo'nun, devre dışı bırakma seçeneği sunmayan açılır pencereleri kapatmak için sizin adınıza çerezleri kabul etmesine izin verin. Böylece bir tıklamadan tasarruf edebilirsiniz.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Devre Dışı Bırakma Seçeneği Olmayan Açılır Pencereler";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Sekmeleri ve Verileri Sil";
@@ -4702,6 +4687,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Adres Çubuğu Konumunuzu Ayarlayın";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Her Zaman İzin Ver";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Her Seferinde Sor";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Konum";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Siteleri Yönet";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Hiçbir Zaman İzin Verme";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Tüm Site İzinlerini Kaldır";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "İzinleri Kaldır";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Tüm Siteler İçin İzinler Kaldırıldı";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "%@ için izinler kaldırıldı";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "%@ için İzinler";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "DuckDuckGo'nun sistem izinlerini %@ üzerinden görüntüleyebilir ve değiştirebilirsiniz.";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Sistem Ayarları.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Etkinleştiriliyor";
 
@@ -4882,9 +4909,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Yenilikler";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Yenilemeden hemen sonra sorunları teşhis etmeye yardımcı olmak için son bir dakikanın günlüklerini gösterir.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
 
@@ -4899,6 +4923,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Site çalışmıyor mu? DuckDuckGo'ya bildirin.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Site İzinleri";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Rapor Gönder";
@@ -4926,9 +4953,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Durum: Geçersiz kılındı";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
@@ -5417,9 +5441,6 @@
 "theme.name.light" = "Açık";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Bu liste, gösterilmiş mesajların yanı sıra gösterilmesi planlanan en fazla 1 mesajı içerir. Yapılandırmada sunulacak daha fazla mesaj olabilir, ancak bunlar henüz işlenmemiştir.";
-
-/* No comment provided by engineer. */
 "Title" = "Title";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5442,9 +5463,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kişi eklendi";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Sürüm: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Ara";
@@ -5842,20 +5860,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ görsel oluşturamaz. Sıfır Sağlayıcı Görünürlüğü, geri dönene kadar geçerli olmayacak.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ görsel oluşturmayı desteklemiyor.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Artık %@ kullanılıyor";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Tüm Sohbetler";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Dosyalar, yasa dışı içerik için otomatik olarak taranır. İşaretlenen sohbetlerin veri saklama süresi sınırlıdır. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Daha fazla bilgi";

@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Skús zadarmo!";
+"action.title.vpn.free-trial-badge" = "Vyskúšaj to zadarmo";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blokuje invazívne sledovače skôr, než sa načítajú, čím efektívne eliminuje reklamy, ktoré sa spoliehajú na sledovanie.";
@@ -321,6 +321,15 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Tento typ súboru nie je podporovaný. Prilož %@.";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nedokáže vytvárať obrázky. Nulová viditeľnosť poskytovateľa nebude platiť, kým sa neprepneš späť.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ nepodporuje vytváranie obrázkov.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Teraz používaš %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Upravením sa odpoveď nahradí novou.";
@@ -1440,9 +1449,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfigurácia";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdiť";
@@ -2585,9 +2591,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Zadaj kladný počet dní. Dátum inštalácie bude nastavený na dátum spred toľkoto dní.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3043,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Udalosť bola pridaná do Apple Kalendára";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importovať heslá";
 
@@ -3161,9 +3161,6 @@
 "keyCommandZoomOut" = "Zmenšiť";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Naposledy spracované: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Načítavam dostupné produkty...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3234,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Názov hostiteľa politiky správ";
-
-/* No comment provided by engineer. */
-"Messages" = "Správy";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3593,7 @@
 "No extensions installed" = "Žiadne nainštalované rozšírenia";
 
 /* No comment provided by engineer. */
-"No Logs" = "Žiadne záznamy";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Žiadne zhody pre \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Žiadne správy";
 
 /* No comment provided by engineer. */
 "No results found" = "Nenašli sa žiadne výsledky";
@@ -4139,9 +4127,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo nemôže načítať túto stránku.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Nedávne záznamy o spracovaní";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Príbuzní: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4484,25 @@
 "settings.complete.setup" = "Dokonči svoje nastavenie";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Budeme sa snažiť vybrať pre teba len tie možnosti súborov cookie s najväčšou ochranou súkromia a následne tieto vyskakovacie okná zatvoríme.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Automatická správa kontextových okien súborov cookie";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrana proti automatickému otváraniu okien o súboroch cookie";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo môže automaticky spravovať možnosti súborov cookie s cieľom maximalizovať súkromie, minimalizovať súbory cookie a zavrieť tieto kontextové okná.\n[Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Správa kontextových okien súborov cookie";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Nechaj tiež DuckDuckGo, aby ti ušetril kliknutie tým, že v tvojom mene prijme súbory cookie a zatvorí vyskakovacie okná, ktoré ti neumožňujú odmietnuť ich.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Automaticky zobrazené okná bez možnosti odmietnutia";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Vymazať karty a údaje";
@@ -4702,6 +4687,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Nastavenie polohy panela s adresou";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Vždy povoliť";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Vždy sa opýtať";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Poloha";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Správa lokalít";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofón";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Nikdy nepovoliť";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Odstrániť všetky povolenia stránok";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Odstrániť povolenia";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Povolenia boli odstránené pre všetky lokality";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Povolenia boli odstránené pre %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Povolenia pre %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Systémové povolenia pre DuckDuckGo si môžeš zobraziť a upraviť v %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "systémových nastaveniach.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktivácia";
 
@@ -4882,9 +4909,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Novinky";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Zobrazuje záznamy z poslednej minúty, ktoré pomôžu pri diagnostike problémov hneď po obnovení.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyberte možnosť, ktorá najlepšie opisuje problém, ktorý ste zaznamenali.";
 
@@ -4899,6 +4923,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Stránka nefunguje? Oznámte to DuckDuckGo.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Povolenia pre polohu";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Odoslať správu";
@@ -4926,9 +4953,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Stav: zneplatnené";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený názov hostiteľa: %@";
@@ -5417,9 +5441,6 @@
 "theme.name.light" = "Svetlá";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Tento zoznam obsahuje zobrazené správy a maximálne 1 správu, ktorá je naplánovaná na zobrazenie. V konfigurácii môžu byť ďalšie správy, ktoré sa zobrazia, ale ešte neboli spracované.";
-
-/* No comment provided by engineer. */
 "Title" = "Názov";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5442,9 +5463,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt bol pridaný";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Verzia: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Vyhľadávať";
@@ -5842,20 +5860,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Čo chceš importovať?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ nedokáže vytvárať obrázky. Nulová viditeľnosť poskytovateľa nebude platiť, kým sa neprepneš späť.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ nepodporuje vytváranie obrázkov.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Teraz používaš %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Všetky chaty";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Súbory sa automaticky kontrolujú ohľadom nelegálneho obsahu. Označené čety majú obmedzené uchovávanie údajov. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Zisti viac";

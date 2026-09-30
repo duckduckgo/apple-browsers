@@ -1,0 +1,138 @@
+/* Button that temporarily grants a website permission for the current page. */
+"sitePermissions.dialog.allow-once" = "Να επιτραπεί μία φορά";
+
+/* Button that saves approval for this website. DuckDuckGo's iOS app permission is separate. */
+"sitePermissions.dialog.allow-while-using-site" = "Να επιτρέπεται κατά τη χρήση του ιστότοπου";
+
+/* Combined website camera and microphone permission prompt title. %@ is the website domain; iOS app permissions are separate. */
+"sitePermissions.dialog.camera-and-microphone.title" = "Ο ιστότοπος «%@» θέλει να αποκτήσει πρόσβαση στην κάμερα και στο μικρόφωνό σας";
+
+/* Website camera permission prompt title. %@ is the website domain; this is separate from iOS camera permission. */
+"sitePermissions.dialog.camera.title" = "Ο ιστότοπος «%@» θέλει να αποκτήσει πρόσβαση στην κάμερά σας";
+
+/* Fire-tab button that denies a website permission for this tab session without saving it. */
+"sitePermissions.dialog.deny" = "Απόρριψη";
+
+/* Explanation shown when DuckDuckGo search results ask to use location. Copy requires review. */
+"sitePermissions.dialog.location.duckduckgo-serp.body" = "Θα ανωνυμοποιήσουμε την τοποθεσία σας και θα τη χρησιμοποιήσουμε για να προσφέρουμε καλύτερα αποτελέσματα, πιο κοντά σε εσάς.";
+
+/* Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review. */
+"sitePermissions.dialog.location.duckduckgo-serp.title" = "Το «duckduckgo.com» θέλει να αποκτήσει πρόσβαση στην τοποθεσία σας";
+
+/* Website location permission prompt title. %@ is the website domain; this is separate from iOS location permission. */
+"sitePermissions.dialog.location.title" = "Ο ιστότοπος «%@» θέλει να αποκτήσει πρόσβαση στην τοποθεσία σας";
+
+/* Website microphone permission prompt title. %@ is the website domain; this is separate from iOS microphone permission. */
+"sitePermissions.dialog.microphone.title" = "Ο ιστότοπος «%@» θέλει να αποκτήσει πρόσβαση στο μικρόφωνό σας";
+
+/* Button that saves denial for this website until the user changes it. */
+"sitePermissions.dialog.never-allow" = "Να μην επιτρέπεται ποτέ";
+
+/* VoiceOver value for a website permission currently in use. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.in-use" = "%@, σε χρήση";
+
+/* VoiceOver value for a paused website permission. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.paused" = "%@, σε παύση";
+
+/* Website permission picker option that saves approval for this site; iOS app permission is separate. */
+"sitePermissions.management.always-allow" = "Να επιτρέπεται πάντα";
+
+/* Permission picker option that asks again when a site requests access. */
+"sitePermissions.management.ask-each-time" = "Να γίνεται ερώτηση κάθε φορά";
+
+/* Camera permission row label. */
+"sitePermissions.management.camera" = "Κάμερα";
+
+/* Accessibility label for the on-site permission sheet close button. */
+"sitePermissions.management.close" = "Κλείσιμο";
+
+/* Action that opens DuckDuckGo's page in iOS Settings. */
+"sitePermissions.management.go-to-system-settings" = "Μετάβαση στις Ρυθμίσεις συστήματος";
+
+/* Location permission row label. */
+"sitePermissions.management.location" = "Τοποθεσία";
+
+/* Microphone permission row label. */
+"sitePermissions.management.microphone" = "Μικρόφωνο";
+
+/* Website permission picker option that saves denial for this site until the user changes it. */
+"sitePermissions.management.never-allow" = "Να μην επιτρέπεται ποτέ";
+
+/* Caption below on-site permission rows explaining when changes apply. */
+"sitePermissions.management.reload-caption" = "Επαναφορτώστε τη σελίδα για να εφαρμοστούν οι αλλαγές.";
+
+/* Reminder shown when iOS blocks permissions a website is allowed to use. %@ is a localized list of camera, location, or microphone names. Copy requires review. */
+"sitePermissions.management.reminder" = "Το DuckDuckGo χρειάζεται πρόσβαση στο στοιχείο «%@» σας, αν θέλετε να χρησιμοποιήσετε σχετικές λειτουργίες σε αυτόν τον ιστότοπο.";
+
+/* Lowercase camera name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.camera" = "κάμερα";
+
+/* Lowercase location name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.location" = "τοποθεσία";
+
+/* Lowercase microphone name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.microphone" = "μικρόφωνο";
+
+/* Action that removes all stored permissions for the current site. */
+"sitePermissions.management.remove-permissions" = "Κατάργηση δικαιωμάτων";
+
+/* Visible and VoiceOver title of the website permission sheet. %@ is the website domain; translators may move it within the sentence. */
+"sitePermissions.management.title" = "Δικαιώματα για «%@»";
+
+/* Body of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.body" = "Απαιτούνται δικαιώματα πρόσβασης στην κάμερα και στο μικρόφωνο αν θέλετε να χρησιμοποιήσετε σχετικές λειτουργίες σε αυτόν τον ιστότοπο.";
+
+/* Title of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.title" = "Το DuckDuckGo χρειάζεται πρόσβαση στην κάμερα και στο μικρόφωνό σας";
+
+/* Body of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.body" = "Απαιτούνται δικαιώματα πρόσβασης στην κάμερα αν θέλετε να χρησιμοποιήσετε λειτουργίες κάμερας σε αυτόν τον ιστότοπο.";
+
+/* Title of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.title" = "Το DuckDuckGo χρειάζεται πρόσβαση στην κάμερά σας";
+
+/* Button that closes a permission reminder without changing anything. */
+"sitePermissions.recovery.reminder.cancel" = "Ακύρωση";
+
+/* Button that opens the DuckDuckGo page in iOS Settings. */
+"sitePermissions.recovery.reminder.change-permissions" = "Αλλαγή δικαιωμάτων";
+
+/* Body of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.body" = "Απαιτούνται δικαιώματα πρόσβασης στην τοποθεσία αν θέλετε να χρησιμοποιήσετε λειτουργίες τοποθεσίας σε αυτόν τον ιστότοπο.";
+
+/* Title of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.title" = "Το DuckDuckGo χρειάζεται πρόσβαση στην τοποθεσία σας";
+
+/* Body of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.body" = "Απαιτούνται δικαιώματα πρόσβασης στο μικρόφωνο αν θέλετε να χρησιμοποιήσετε λειτουργίες μικροφώνου σε αυτόν τον ιστότοπο.";
+
+/* Title of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.title" = "Το DuckDuckGo χρειάζεται πρόσβαση στο μικρόφωνό σας";
+
+/* Toast shown when a website was allowed camera access but the iOS camera prompt was denied. */
+"sitePermissions.recovery.toast.camera" = "Το DuckDuckGo δεν μπόρεσε να δώσει πρόσβαση στην κάμερα σε αυτόν τον ιστότοπο";
+
+/* Toast shown when both fresh iOS permission prompts were denied. The combined wording requires copy review. */
+"sitePermissions.recovery.toast.camera-and-microphone" = "Το DuckDuckGo δεν μπόρεσε να δώσει πρόσβαση στην κάμερα και στο μικρόφωνο σε αυτόν τον ιστότοπο";
+
+/* Toast shown when a website was allowed location access but the iOS location prompt was denied. */
+"sitePermissions.recovery.toast.location" = "Το DuckDuckGo δεν μπόρεσε να κοινοποιήσει την τοποθεσία σε αυτόν τον ιστότοπο";
+
+/* Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied. */
+"sitePermissions.recovery.toast.microphone" = "Το DuckDuckGo δεν μπόρεσε να δώσει πρόσβαση στο μικρόφωνο σε αυτόν τον ιστότοπο";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Απαιτούνται δικαιώματα πρόσβασης στο μικρόφωνο αν θέλετε να χρησιμοποιήσετε τη φωνητική συνομιλία στο Duck.ai.";
+
+/* Body of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.body" = "Απαιτούνται δικαιώματα πρόσβασης στο μικρόφωνο αν θέλετε να χρησιμοποιήσετε την Ιδιωτική Φωνητική Αναζήτησή μας.";
+
+/* Button that turns off Voice Search in DuckDuckGo. */
+"sitePermissions.voice-search.reminder.hide" = "Απόκρυψη φωνητικής αναζήτησης";
+
+/* Title of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.title" = "Το DuckDuckGo χρειάζεται πρόσβαση στο μικρόφωνό σας";
+
+/* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
+"sitePermissions.voice-search.settings-reminder.body" = "Απαιτούνται δικαιώματα πρόσβασης στο μικρόφωνο αν θέλετε να χρησιμοποιήσετε τις ιδιωτικές φωνητικές λειτουργίες μας.";
+

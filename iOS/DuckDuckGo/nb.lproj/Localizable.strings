@@ -322,6 +322,15 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Denne filtypen støttes ikke. Legg heller ved en %@.";
 
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke lage bilder. At leverandøren ikke har innsyn, gjelder ikke før du bytter tilbake.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ støtter ikke bildegenerering.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Bruker nå %@";
+
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Redigering vil erstatte svaret med et nytt.";
 
@@ -1440,9 +1449,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfigurasjon";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bekreft";
@@ -2585,9 +2591,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Skriv inn et antall dager som ikke er negativt. Installasjonsdatoen blir satt til for det antallet dager siden.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3043,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Hendelsen er lagt til i Apple-kalenderen";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importer passord";
 
@@ -3161,9 +3161,6 @@
 "keyCommandZoomOut" = "Zoom ut";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Sist behandlet: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Laster inn tilgjengelige produkter...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3234,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Vertsnavn for meldingspolicy";
-
-/* No comment provided by engineer. */
-"Messages" = "Meldinger";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3593,7 @@
 "No extensions installed" = "Ingen utvidelser er installert";
 
 /* No comment provided by engineer. */
-"No Logs" = "Ingen logger";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Ingen treff for «%@»";
-
-/* No comment provided by engineer. */
-"No messages" = "Ingen meldinger";
 
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater ble funnet";
@@ -4139,9 +4127,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo kan ikke laste inn denne siden.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Nylige behandlingslogger";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Slektninger: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4484,25 @@
 "settings.complete.setup" = "Fullfør oppsettet";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Vi prøver å velge de mest private alternativene for informasjonskapsler som er tilgjengelige, og så lukker vi disse popup-vinduene.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Administrer popup-vinduer om informasjonskapsler automatisk";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mot popup-vinduer om informasjonskapsler";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan administrere innstillinger for informasjonskapsler automatisk for å maksimere personvernet, minimere informasjonskapsler og lukke disse popup-vinduene.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Administrer vinduer om informasjonskapsler";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Du kan også la DuckDuckGo spare deg for et klikk ved å godta informasjonskapsler på dine vegne, og dermed lukke popup-vinduer som ikke gir deg muligheten til å reservere deg.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Popup-vinduer uten mulighet til å reservere seg";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Slett faner og data";
@@ -4702,6 +4687,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Angi plassering av adressefeltet";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Tillat alltid";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Spør hver gang";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Posisjon";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Administrer nettsteder";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Tillat aldri";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Fjern alle nettstedstillatelser";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Fjern tillatelser";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Tillatelser fjernet for alle nettsteder";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Tillatelser fjernet for %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Tillatelser for %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Du kan se og endre systemtillatelsene for DuckDuckGo i %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Systeminnstillinger.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktiverer";
 
@@ -4882,9 +4909,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Dette er nytt";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Viser logger fra det siste minuttet for å prøve å diagnostisere problemer umiddelbart etter en oppdatering.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Velg alternativet som best beskriver problemet du opplevde.";
 
@@ -4899,6 +4923,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Fungerer ikke nettstedet? Gi beskjed til DuckDuckGo.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Nettstedstillatelser";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Send inn rapport";
@@ -4926,9 +4953,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Status: ugyldig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";
@@ -5417,9 +5441,6 @@
 "theme.name.light" = "Lyst";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Denne listen inneholder meldinger som er blitt vist, pluss maksimalt én melding som er planlagt for visning. Det kan være flere meldinger i konfigurasjonen som skal vises, men de er ikke behandlet ennå.";
-
-/* No comment provided by engineer. */
 "Title" = "Tittel";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5442,9 +5463,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt lagt til";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Versjon: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Søk";
@@ -5842,20 +5860,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Hva vil du importere?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan ikke lage bilder. At leverandøren ikke har innsyn, gjelder ikke før du bytter tilbake.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ støtter ikke bildegenerering.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Bruker nå %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Alle chatter";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Filer skannes automatisk for ulovlig innhold. Flaggede chatter har begrenset datalagring. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Finn ut mer";

@@ -46,7 +46,8 @@ final class PermissionAuthorizationViewModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private let openURL: (URL) -> Void
     private let openSystemSettingsURL: (URL) -> Void
-    private let finish: () -> Void
+    /// Set by whichever presenter currently shows this view model, so a cached flow closes the popover on screen.
+    var finish: () -> Void
 
     /// The allow choice held back until macOS grants its own permission.
     /// Submitting it earlier would let macOS show its prompt before the user asks for it.

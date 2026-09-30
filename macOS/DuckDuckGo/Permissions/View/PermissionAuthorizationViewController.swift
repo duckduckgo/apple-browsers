@@ -163,12 +163,14 @@ final class PermissionAuthorizationViewController: NSViewController {
             openURL: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
             },
-            finish: { [weak self, weak query] in
-                guard let self, let query, self.query === query else { return }
-                self.isAuthorizationInProgress = false
-                self.dismiss()
-            }
+            finish: {}
         )
+        // Rebind on every attach: a cached view model may have been created by another presenter, e.g. before the tab moved windows.
+        viewModel.finish = { [weak self, weak query] in
+            guard let self, let query, self.query === query else { return }
+            self.isAuthorizationInProgress = false
+            self.dismiss()
+        }
         query.parameters.authorizationViewModel = viewModel
         return viewModel
     }

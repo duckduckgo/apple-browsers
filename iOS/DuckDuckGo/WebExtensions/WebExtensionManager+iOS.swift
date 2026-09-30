@@ -38,6 +38,10 @@ private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsPro
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -93,6 +97,7 @@ public enum WebExtensionManagerFactory {
                 return (webView: controller.webView, extensionTab: controller)
             },
             featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger),
+            pixelFiring: pixelFiring,
             appSession: appSession.map { session in
                 let change: CPMAppSessionDiagnostics.VersionChange?
                 switch session.appVersionChange {

@@ -36,6 +36,10 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -83,6 +87,7 @@ enum WebExtensionManagerFactory {
                 return nil
             },
             featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
+            pixelFiring: pixelFiring,
             appSession: Application.appDelegate.cpmAppSessionDiagnostics
         ) : nil
 

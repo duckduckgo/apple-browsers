@@ -917,6 +917,61 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .usageLimit)
     }
 
+    // MARK: - Duck.ai terms
+
+    @MainActor
+    func testWhenTermsAcceptanceIsRequiredThenGetConfigSaysSo() async throws {
+        configProvider.requiresAiTermsAcceptance = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.requiresAiTermsAcceptance, true)
+    }
+
+    @MainActor
+    func testWhenTermsAcceptanceIsNotRequiredThenGetConfigSaysSo() async throws {
+        configProvider.requiresAiTermsAcceptance = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.requiresAiTermsAcceptance, false)
+    }
+
+    @MainActor
+    func testWhenSubmitChatAcceptsTheTermsThenAcceptanceIsRecordedBeforeTheHandOff() async throws {
+        let configProvider = self.configProvider!
+        let expectation = expectation(description: "submitChatCalled")
+        var acceptancesAtHandOff: Int?
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, _, _, _ in
+            acceptancesAtHandOff = configProvider.recordAiTermsAcceptedCallCount
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil, aiTermsAccepted: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+
+        XCTAssertEqual(acceptancesAtHandOff, 1)
+    }
+
+    @MainActor
+    func testWhenSubmitChatDoesNotAcceptTheTermsThenNoAcceptanceIsRecorded() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.recordAiTermsAcceptedCallCount, 0)
+    }
+
+    func testOpenPrivacyTermsIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openPrivacyTermsCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openPrivacyTermsHandler = {
+            expectation.fulfill()
+        }
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openPrivacyTerms)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
     // MARK: - attach tabs (config)
 
     @MainActor

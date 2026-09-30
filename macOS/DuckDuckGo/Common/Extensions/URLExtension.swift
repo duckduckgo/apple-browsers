@@ -572,6 +572,10 @@ extension URL {
         return URL(string: "\(duckAiBase)/")!
     }
 
+    static var duckAiPrivacyTerms: URL {
+        return URL(string: "\(base)/duckai/privacy-terms")!
+    }
+
     static var duckDuckGoAutocomplete: URL {
         duckDuckGo.appendingPathComponent("ac/")
     }

@@ -106,6 +106,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     let openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let hasAcceptedTermsAndConditionsPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
 
     func reset() {
         isAIFeaturesEnabled = true

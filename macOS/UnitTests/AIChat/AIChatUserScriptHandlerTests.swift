@@ -22,6 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 @testable import DDGSync
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 @_spi(Testing) import SharedTestUtilities
@@ -1629,6 +1630,96 @@ struct AIChatUserScriptHandlerTests {
         )
 
         #expect(failureHandler.handleCalls.isEmpty)
+    }
+
+    // MARK: - Terms of Service
+
+    @MainActor
+    private func makeTermsHandler(isNativeTermsOfServiceOn: Bool) -> AIChatUserScriptHandler {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub["aiChatNativeTermsOfService"] = isNativeTermsOfServiceOn
+        return AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: featureFlagger,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter,
+            termsOfServiceStore: DuckAiTermsOfServiceStore(preferencesStorage: storage, keyValueStore: InMemoryThrowingKeyValueStore())
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativePrompt stamps whether the terms were accepted", .timeLimit(.minutes(1)), arguments: [true, false])
+    @MainActor
+    func testThatGetAIChatNativePromptStampsTermsAccepted(hasAccepted: Bool) async {
+        storage.hasAcceptedTermsAndConditions = hasAccepted
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("hello", autoSubmit: true) }
+        let handler = makeTermsHandler(isNativeTermsOfServiceOn: true)
+
+        let prompt = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock()) as? AIChatNativePrompt
+
+        #expect(prompt == AIChatNativePrompt.queryPrompt("hello", autoSubmit: true).withTermsAccepted(hasAccepted))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("getAIChatNativePrompt leaves termsAccepted out while native terms are off", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatGetAIChatNativePromptOmitsTermsAcceptedWhenFlagIsOff() async {
+        storage.hasAcceptedTermsAndConditions = true
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("hello", autoSubmit: true) }
+        let handler = makeTermsHandler(isNativeTermsOfServiceOn: false)
+
+        let prompt = await handler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock()) as? AIChatNativePrompt
+
+        #expect(prompt == AIChatNativePrompt.queryPrompt("hello", autoSubmit: true))
+        #expect(prompt?.termsAccepted == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("submitAIChatNativePrompt stamps whether the terms were accepted", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatSubmitAIChatNativePromptStampsTermsAccepted() async throws {
+        struct EventNotReceivedError: Error {}
+        storage.hasAcceptedTermsAndConditions = true
+        let handler = makeTermsHandler(isNativeTermsOfServiceOn: true)
+
+        let promptStream = AsyncStream { continuation in
+            let cancellable = handler.aiChatNativePromptPublisher
+                .sink { prompt in
+                    continuation.yield(prompt)
+                }
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+
+        handler.submitAIChatNativePrompt(.queryPrompt("test", autoSubmit: true))
+
+        guard let prompt = await promptStream.first(where: { _ in true }) else {
+            throw EventNotReceivedError()
+        }
+        #expect(prompt == AIChatNativePrompt.queryPrompt("test", autoSubmit: true).withTermsAccepted(true))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Duck.ai reporting the terms as accepted records acceptance", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatTermsAcceptedMetricRecordsAcceptance() async {
+        let handler = makeTermsHandler(isNativeTermsOfServiceOn: true)
+
+        await withCheckedContinuation { continuation in
+            handler.didReportMetric(.init(metricName: .userDidAcceptTermsAndConditions)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(storage.hasAcceptedTermsAndConditions)
     }
 }
 

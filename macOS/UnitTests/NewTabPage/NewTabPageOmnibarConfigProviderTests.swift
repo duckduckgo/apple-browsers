@@ -1065,6 +1065,141 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(events, [false, true])
     }
 
+    // MARK: - Duck.ai terms
+
+    @MainActor
+    private func makeTermsProvider(
+        isFlagOn: Bool,
+        preferencesStorage: MockAIChatPreferencesStorage,
+        nativeStorage: DuckAiNativeStorageHandling? = nil
+    ) throws -> (NewTabPageOmnibarConfigProvider, MockFeatureFlagger) {
+        let store = try makeStore()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = [FeatureFlag.aiChatNativeTermsOfService.rawValue: isFlagOn]
+        let provider = NewTabPageOmnibarConfigProvider(
+            keyValueStore: store,
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            featureFlagger: featureFlagger,
+            searchPreferences: makeSearchPreferences(),
+            termsOfServiceStore: DuckAiTermsOfServiceStore(preferencesStorage: preferencesStorage,
+                                                           keyValueStore: store,
+                                                           nativeStorage: nativeStorage)
+        )
+        return (provider, featureFlagger)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenDuckAiRecordedAcceptanceInNativeStorage_returnsFalse() throws {
+        let nativeStorage = try DuckAiNativeStorageHandler(.memory())
+        try nativeStorage.putEntry(key: "duckaiHasAgreedToTerms", value: "true")
+        let (provider, _) = try makeTermsProvider(isFlagOn: true,
+                                                  preferencesStorage: MockAIChatPreferencesStorage(),
+                                                  nativeStorage: nativeStorage)
+
+        XCTAssertFalse(provider.requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsWhenDuckAiRecordsAcceptanceInNativeStorage() throws {
+        let nativeStorage = try DuckAiNativeStorageHandler(.memory())
+        let (provider, _) = try makeTermsProvider(isFlagOn: true,
+                                                  preferencesStorage: MockAIChatPreferencesStorage(),
+                                                  nativeStorage: nativeStorage)
+
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+
+        try nativeStorage.putEntry(key: "duckaiHasAgreedToTerms", value: "true")
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [true, false])
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFlagOnAndNotAccepted_returnsTrue() throws {
+        let (provider, _) = try makeTermsProvider(isFlagOn: true, preferencesStorage: MockAIChatPreferencesStorage())
+
+        XCTAssertTrue(provider.requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenAlreadyAccepted_returnsFalse() throws {
+        let preferencesStorage = MockAIChatPreferencesStorage()
+        preferencesStorage.hasAcceptedTermsAndConditions = true
+        let (provider, _) = try makeTermsProvider(isFlagOn: true, preferencesStorage: preferencesStorage)
+
+        XCTAssertFalse(provider.requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptance_whenFlagOff_returnsFalse() throws {
+        let (provider, _) = try makeTermsProvider(isFlagOn: false, preferencesStorage: MockAIChatPreferencesStorage())
+
+        XCTAssertFalse(provider.requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRecordAiTermsAccepted_recordsAcceptance() throws {
+        let preferencesStorage = MockAIChatPreferencesStorage()
+        let (provider, _) = try makeTermsProvider(isFlagOn: true, preferencesStorage: preferencesStorage)
+
+        provider.recordAiTermsAccepted()
+
+        XCTAssertTrue(preferencesStorage.hasAcceptedTermsAndConditions)
+        XCTAssertFalse(provider.requiresAiTermsAcceptance)
+    }
+
+    @MainActor
+    func testRecordAiTermsAccepted_whileAnNtpIsSubscribed_pushesThatNoAcceptanceIsRequired() throws {
+        let (provider, _) = try makeTermsProvider(isFlagOn: true, preferencesStorage: MockAIChatPreferencesStorage())
+
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+
+        provider.recordAiTermsAccepted()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [true, false])
+    }
+
+    @MainActor
+    func testRecordAiTermsAccepted_whenFlagOff_recordsNothing() throws {
+        let preferencesStorage = MockAIChatPreferencesStorage()
+        let (provider, _) = try makeTermsProvider(isFlagOn: false, preferencesStorage: preferencesStorage)
+
+        provider.recordAiTermsAccepted()
+
+        XCTAssertFalse(preferencesStorage.hasAcceptedTermsAndConditions)
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsWhenTheUserAcceptsOnDuckAi() throws {
+        let preferencesStorage = MockAIChatPreferencesStorage()
+        let (provider, _) = try makeTermsProvider(isFlagOn: true, preferencesStorage: preferencesStorage)
+
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+
+        preferencesStorage.hasAcceptedTermsAndConditions = true
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [true, false])
+    }
+
+    @MainActor
+    func testRequiresAiTermsAcceptancePublisher_emitsOnFlaggerUpdate() throws {
+        let (provider, featureFlagger) = try makeTermsProvider(isFlagOn: false, preferencesStorage: MockAIChatPreferencesStorage())
+
+        var events: [Bool] = []
+        let cancellable = provider.requiresAiTermsAcceptancePublisher.sink { events.append($0) }
+
+        featureFlagger.featuresStub = [FeatureFlag.aiChatNativeTermsOfService.rawValue: true]
+        featureFlagger.triggerUpdate()
+
+        cancellable.cancel()
+        XCTAssertEqual(events, [false, true])
+    }
+
 }
 
 // MARK: - Mocks

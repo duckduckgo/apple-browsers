@@ -102,6 +102,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
@@ -120,6 +121,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
+         termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
@@ -131,6 +133,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
+        self.termsOfServiceStore = termsOfServiceStore
+            ?? DuckAiTermsOfServiceStore(keyValueStore: keyValueStore, nativeStorage: duckAiStorageHandlerProvider(.regular))
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -533,6 +537,29 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .prepend(isSearchSuggestionDeletionEnabled)
             .removeDuplicates()
             .eraseToAnyPublisher()
+    }
+
+    var requiresAiTermsAcceptance: Bool {
+        featureFlagger.isFeatureOn(.aiChatNativeTermsOfService) && !termsOfServiceStore.hasAccepted
+    }
+
+    /// Re-emits when the flag flips or the user accepts anywhere, including on Duck.ai itself.
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        Publishers.Merge(
+            featureFlagger.updatesPublisher.map { _ in () },
+            termsOfServiceStore.hasAcceptedPublisher.map { _ in () }
+        )
+        .compactMap { [weak self] in self?.requiresAiTermsAcceptance }
+        .prepend(requiresAiTermsAcceptance)
+        .removeDuplicates()
+        .eraseToAnyPublisher()
+    }
+
+    /// Ignored unless the disclaimer is due, so a stale or forged flag can't record acceptance.
+    @MainActor
+    func recordAiTermsAccepted() {
+        guard requiresAiTermsAcceptance else { return }
+        termsOfServiceStore.recordAcceptedInNativeInput()
     }
 
     var showCustomizePopover: Bool {

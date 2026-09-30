@@ -60,4 +60,8 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     @MainActor
     func setCustomizeResponsesActive(_ active: Bool)
 
+    /// Opens Duck.ai's Privacy Policy and Terms of Service in a new tab, from the terms disclaimer link.
+    @MainActor
+    func openPrivacyTerms()
+
 }

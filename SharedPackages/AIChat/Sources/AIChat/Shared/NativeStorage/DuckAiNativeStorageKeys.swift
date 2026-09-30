@@ -38,4 +38,7 @@ public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
 
     /// Web-written, native-read. JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
     case usageLimits
+
+    /// Written and read by both sides: the user accepted Duck.ai's Terms of Service. Value: `"true"`.
+    case duckaiHasAgreedToTerms
 }

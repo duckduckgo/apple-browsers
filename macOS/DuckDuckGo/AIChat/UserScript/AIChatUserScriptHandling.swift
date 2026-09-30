@@ -190,6 +190,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
     private var storage: AIChatPreferencesStorage
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
@@ -233,9 +234,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
         conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
-        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
+        termsOfServiceStore: DuckAiTermsOfServiceStore? = nil
     ) {
         self.storage = storage
+        self.termsOfServiceStore = termsOfServiceStore
+            ?? DuckAiTermsOfServiceStore(preferencesStorage: storage,
+                                         keyValueStore: Application.appDelegate.keyValueStore,
+                                         nativeStorage: Application.appDelegate.duckAiNativeStorageHandler)
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.browserTools = browserTools
@@ -329,7 +335,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
-        messageHandling.getDataForMessageType(.nativePrompt)
+        let prompt = messageHandling.getDataForMessageType(.nativePrompt)
+        guard let nativePrompt = prompt as? AIChatNativePrompt else { return prompt }
+        return nativePrompt.withTermsAccepted(termsAcceptedMarker())
     }
 
     @MainActor
@@ -477,7 +485,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
-        aiChatNativePromptSubject.send(prompt)
+        aiChatNativePromptSubject.send(prompt.withTermsAccepted(termsAcceptedMarker()))
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
@@ -1184,19 +1192,21 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
     }
 
     private func handleTermsAccepted() {
-        let alreadyAccepted = storage.hasAcceptedTermsAndConditions
+        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
 
-        if alreadyAccepted {
-            let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
-            let pixel: AIChatPixel = syncIsOn
-                ? .aiChatTermsAcceptedDuplicateSyncOn
-                : .aiChatTermsAcceptedDuplicateSyncOff
-            Task { @MainActor [weak self] in
-                self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
-            }
+        let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
+        let pixel: AIChatPixel = syncIsOn
+            ? .aiChatTermsAcceptedDuplicateSyncOn
+            : .aiChatTermsAcceptedDuplicateSyncOff
+        Task { @MainActor [weak self] in
+            self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         }
+    }
 
-        storage.hasAcceptedTermsAndConditions = true
+    /// `nil` wherever the config doesn't claim support, so the FE never sees a marker it wasn't told to trust.
+    private func termsAcceptedMarker() -> Bool? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeTermsOfService) else { return nil }
+        return termsOfServiceStore.hasAccepted
     }
 
     private func refreshAtbs(completion: (() -> Void)? = nil) {

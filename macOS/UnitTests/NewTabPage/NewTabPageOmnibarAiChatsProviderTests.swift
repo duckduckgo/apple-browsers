@@ -374,6 +374,9 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var isSearchSuggestionDeletionEnabled: Bool = false
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var requiresAiTermsAcceptance: Bool = false
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    @MainActor func recordAiTermsAccepted() {}
 }
 
 private extension AIChatSuggestion {

@@ -130,4 +130,13 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// Whether history-entry suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isSearchSuggestionDeletionEnabled: Bool { get }
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the omnibar should show the Duck.ai terms disclaimer. Published so the client can push
+    /// `omnibar_onConfigUpdate` to every open NTP once the user accepts, wherever they accepted.
+    var requiresAiTermsAcceptance: Bool { get }
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Records that the user accepted Duck.ai's terms by clicking "Ask"/"Create" under the disclaimer.
+    @MainActor
+    func recordAiTermsAccepted()
 }

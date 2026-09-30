@@ -50,6 +50,7 @@ public protocol AIChatPreferencesStorage {
     var lastUsedSidebarWidth: Double? { get set }
 
     var hasAcceptedTermsAndConditions: Bool { get set }
+    var hasAcceptedTermsAndConditionsPublisher: AnyPublisher<Bool, Never> { get }
 
     func reset()
 }
@@ -88,6 +89,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
         userDefaults.showSearchAndDuckAITogglePublisher
+    }
+
+    public var hasAcceptedTermsAndConditionsPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.hasAcceptedTermsAndConditionsPublisher
     }
 
     public init(userDefaults: UserDefaults = .standard,
@@ -340,7 +345,7 @@ private extension UserDefaults {
         }
     }
 
-    var hasAcceptedTermsAndConditions: Bool {
+    @objc dynamic var hasAcceptedTermsAndConditions: Bool {
         get {
             value(forKey: Keys.hasAcceptedTermsAndConditions) as? Bool ?? false
         }
@@ -348,6 +353,10 @@ private extension UserDefaults {
         set {
             set(newValue, forKey: Keys.hasAcceptedTermsAndConditions)
         }
+    }
+
+    var hasAcceptedTermsAndConditionsPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.hasAcceptedTermsAndConditions).eraseToAnyPublisher()
     }
 }
 #endif

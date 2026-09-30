@@ -302,8 +302,13 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
-    var hasAcceptedTermsAndConditions: Bool = false
+    var hasAcceptedTermsAndConditions: Bool = false {
+        didSet {
+            hasAcceptedTermsAndConditionsSubject.send(hasAcceptedTermsAndConditions)
+        }
+    }
 
+    private var hasAcceptedTermsAndConditionsSubject = PassthroughSubject<Bool, Never>()
     private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
@@ -315,6 +320,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         isAIFeaturesEnabledSubject.eraseToAnyPublisher()
+    }
+
+    var hasAcceptedTermsAndConditionsPublisher: AnyPublisher<Bool, Never> {
+        hasAcceptedTermsAndConditionsSubject.eraseToAnyPublisher()
     }
 
     var showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> {

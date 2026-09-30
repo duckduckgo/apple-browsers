@@ -172,6 +172,9 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
     var hasAcceptedTermsAndConditions: Bool = false
+    var hasAcceptedTermsAndConditionsPublisher: AnyPublisher<Bool, Never> {
+        Empty().eraseToAnyPublisher()
+    }
 
     func reset() {
         isAIFeaturesEnabled = false

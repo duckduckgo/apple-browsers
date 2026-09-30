@@ -300,6 +300,9 @@ public extension NewTabPageDataModel {
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
         var usageLimits: OmnibarUsageLimits?
+        /// True while the user hasn't accepted Duck.ai's terms: the omnibar shows the terms disclaimer
+        /// and an "Ask"/"Create" button. The web echoes it back on `omnibar_setConfig`, where it's ignored.
+        var requiresAiTermsAcceptance: Bool?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
@@ -490,6 +493,8 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
+        /// True only when the terms disclaimer was showing and the user clicked "Ask"/"Create".
+        var aiTermsAccepted: Bool?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

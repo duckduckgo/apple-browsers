@@ -162,4 +162,17 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> {
         $isSearchSuggestionDeletionEnabled.removeDuplicates().eraseToAnyPublisher()
     }
+
+    @Published var requiresAiTermsAcceptance: Bool = false
+
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        $requiresAiTermsAcceptance.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    }
+
+    private(set) var recordAiTermsAcceptedCallCount = 0
+
+    @MainActor
+    func recordAiTermsAccepted() {
+        recordAiTermsAcceptedCallCount += 1
+    }
 }

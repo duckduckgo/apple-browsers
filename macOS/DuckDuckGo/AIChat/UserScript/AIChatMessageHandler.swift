@@ -152,7 +152,8 @@ extension AIChatMessageHandler {
             attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
                 ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
                 : nil,
-            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools)
+            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools),
+            supportsNativeTermsOfService: featureFlagger.isFeatureOn(.aiChatNativeTermsOfService)
         )
     }
 

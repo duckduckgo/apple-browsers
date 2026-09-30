@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "a214261ab72f7002242d5626ae5cb1b97b7968da",
-        "version" : "17.13.0"
+        "branch" : "pr-releases/alavrenchuk/ntp-tos",
+        "revision" : "89f146772624ffa2d33722df711c226d66139635"
       }
     },
     {

@@ -291,6 +291,17 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         onCustomizeResponsesChanged()
     }
 
+    @MainActor
+    func openPrivacyTerms() {
+        NewTabPageLinkOpener.open(
+            .duckAiPrivacyTerms,
+            source: .ui,
+            sender: .userScript,
+            target: .newTab,
+            sourceWindow: windowControllersManager.lastKeyMainWindowController?.window
+        )
+    }
+
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {
         switch target {
         case .sameTab:

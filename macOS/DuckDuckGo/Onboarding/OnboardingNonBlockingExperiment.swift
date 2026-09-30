@@ -23,7 +23,7 @@ import PrivacyConfig
 struct OnboardingNonBlockingExperiment {
 
     private let featureFlagger: FeatureFlagger
-    private static let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlocking.rawValue
+    private static let subfeatureID = MacOSBrowserConfigSubfeature.onboardingNonBlockingV2.rawValue
 
     enum Metric: String {
         case importRequested

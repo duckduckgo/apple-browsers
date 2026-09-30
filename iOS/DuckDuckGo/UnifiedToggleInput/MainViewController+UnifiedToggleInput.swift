@@ -1434,6 +1434,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onMenuPressed()
     }
 
+    func unifiedToggleInputDidRequestAppMenuLongPress() {
+        onMenuLongPressed()
+    }
+
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         applyEditModeChrome(isEditing)
     }

@@ -1586,8 +1586,9 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             snapshot.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             view.addSubview(snapshot)
         }
+        let closesLastTab = tabManager.currentTabsModel.count == 1
         closeTab(tab, behavior: .onlyClose)
-        showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: true)
+        showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: !closesLastTab)
         guard let snapshot else { return }
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
             snapshot.alpha = 0

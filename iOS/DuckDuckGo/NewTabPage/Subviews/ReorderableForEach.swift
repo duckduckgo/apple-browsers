@@ -38,6 +38,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     // The native host also invalidates its measurement when width or UIKit traits change.
     private var itemSizeCacheKey: ((Data) -> AnyHashable)?
     private var isItemReorderingEnabled: (Data) -> Bool = { _ in true }
+    private var previewPath: ((CGRect) -> UIBezierPath)?
 
     @State private var movedItem: Data?
     @State private var didMove = false
@@ -63,6 +64,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
          onDragActivityChanged: ((Bool) -> Void)? = nil,
          itemSizeCacheKey: ((Data) -> AnyHashable)? = nil,
          isItemReorderingEnabled: @escaping (Data) -> Bool = { _ in true },
+         previewPath: ((CGRect) -> UIBezierPath)? = nil,
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void,
@@ -73,6 +75,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.onDragActivityChanged = onDragActivityChanged
         self.itemSizeCacheKey = itemSizeCacheKey
         self.isItemReorderingEnabled = isItemReorderingEnabled
+        self.previewPath = previewPath
         self.content = content
         self.preview = preview
         self.onMove = onMove
@@ -92,7 +95,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         case .movable(let metadata) where isReorderingEnabled:
             if let onDragActivityChanged, let preview {
                 ReorderDragSource(content: content(item), preview: preview(item), itemProvider: metadata.itemProvider,
-                                  isEnabled: isItemReorderingEnabled(item), sizeCacheKey: itemSizeCacheKey?(item),
+                                  isEnabled: isItemReorderingEnabled(item), sizeCacheKey: itemSizeCacheKey?(item), previewPath: previewPath,
                                   onBegin: { sessionID in
                     activeDragSessionID = sessionID
                     movedItem = item
@@ -159,6 +162,7 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
     let itemProvider: NSItemProvider
     let isEnabled: Bool
     let sizeCacheKey: AnyHashable?
+    let previewPath: ((CGRect) -> UIBezierPath)?
     let onBegin: (ObjectIdentifier) -> Void
     let onEnd: (ObjectIdentifier) -> Void
 
@@ -236,7 +240,7 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
             // detached SwiftUI host can be empty when UIKit captures the lift preview.
             let parameters = UIDragPreviewParameters()
             parameters.backgroundColor = .clear
-            parameters.visiblePath = UIBezierPath(rect: previewFrame)
+            parameters.visiblePath = source.previewPath?(previewFrame) ?? UIBezierPath(rect: previewFrame)
             return UITargetedDragPreview(view: view, parameters: parameters)
         }
 

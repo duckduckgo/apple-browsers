@@ -144,7 +144,8 @@ struct RedesignedFavoritesView: View {
         return ReorderableForEach(allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
                           onDragActivityChanged: { isDraggingFavorite = $0 },
                           itemSizeCacheKey: { AnyHashable($0) },
-                          isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) }) { favorite in
+                          isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) },
+                          previewPath: { UIBezierPath(ovalIn: $0) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
             ZStack(alignment: .top) {
                 Button {
@@ -239,17 +240,22 @@ private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Anim
                 .frame(height: headerHeight * progress, alignment: .top)
                 .clipped()
             grid
+                // Let native lift shadows extend above and beside the grid. Cancel the padding
+                // outside the mask so tile positions and the bottom reveal edge stay unchanged.
+                .padding(.horizontal, Metrics.liftPreviewPadding)
+                .padding(.top, Metrics.liftPreviewPadding)
                 // Keep the grid's layout proposal constant while only its viewport changes.
-                .frame(height: max(expandedGridHeight, collapsedGridHeight), alignment: .top)
-                .frame(height: revealedGridHeight, alignment: .top)
+                .frame(height: max(expandedGridHeight, collapsedGridHeight) + Metrics.liftPreviewPadding, alignment: .top)
+                .frame(height: revealedGridHeight + Metrics.liftPreviewPadding, alignment: .top)
                 .clipped()
+                .padding(.top, -Metrics.liftPreviewPadding)
+                .padding(.horizontal, -Metrics.liftPreviewPadding)
         }
         .padding(Metrics.contentPadding)
         .background {
             RedesignedNewTabPageModuleBackground()
                 .opacity(progress)
         }
-        .clipped()
         .animation(nil, value: progress)
     }
 }
@@ -273,6 +279,7 @@ private struct FavoritesGridHeightKey: PreferenceKey {
 private enum Metrics {
     static let expansionDuration: TimeInterval = 0.3
     static let contentPadding: CGFloat = 16
+    static let liftPreviewPadding: CGFloat = 32
     static let headerSpacing: CGFloat = 8
     static let headerToGridSpacing: CGFloat = 12
     static let headerIconSize: CGFloat = 16

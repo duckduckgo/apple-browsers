@@ -118,7 +118,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
         // `action.popupPopover` is never shown. Its rounded chrome cannot be clipped from
-        // outside on macOS 26, and extension popups such as Dark Reader paint a square page
+        // outside on macOS 26, and many extension popups paint a square page
         // over it, which leaves the frame corners showing. `WebExtensionPopupPresenter` hosts
         // the same web view in a square panel instead.
         popupPresenter.present(action, for: context, from: button)

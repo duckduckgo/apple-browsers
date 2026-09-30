@@ -153,6 +153,62 @@ final class WKWebExtensionContextExtensionTests: XCTestCase {
         XCTAssertNil(context.duckDuckGoWebExtensionType)
     }
 
+    // MARK: - needsChromeCompatibility
+
+    @MainActor
+    func testWhenManifestHasKnownDuckDuckGoId_ThenNoChromeCompatibilityIsNeeded() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Test",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "com.duckduckgo.content-blocker-extension"
+                }
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertFalse(context.needsChromeCompatibility)
+        XCTAssertFalse(context.webExtension.needsChromeCompatibility)
+    }
+
+    @MainActor
+    func testWhenManifestHasNoDuckDuckGoId_ThenChromeCompatibilityIsNeeded() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Test",
+            "version": "1.0"
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.needsChromeCompatibility)
+        XCTAssertTrue(context.webExtension.needsChromeCompatibility)
+    }
+
+    @MainActor
+    func testWhenManifestHasUnknownDuckDuckGoId_ThenChromeCompatibilityIsNotNeeded() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Test",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "com.unknown.extension"
+                }
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertFalse(context.needsChromeCompatibility)
+    }
+
     // MARK: - declaresToolbarAction
 
     @MainActor

@@ -76,6 +76,44 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications !== undefined")
     }
 
+    // MARK: - DuckDuckGo Extensions
+
+    func testWhenManifestIsADuckDuckGoExtension_ThenScriptDoesNothing() throws {
+        context.evaluateScript("""
+        chrome.runtime.getManifest = function() {
+            return { browser_specific_settings: { duckduckgo: { id: "com.duckduckgo.web-extension.embedded" } } };
+        };
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.notifications === undefined")
+        try assertTrue("globalThis['\(WebExtensionAPIStubScript.retentionPropertyName)'] === undefined")
+    }
+
+    func testWhenManifestIsThirdParty_ThenScriptInstallsStubs() throws {
+        context.evaluateScript("""
+        chrome.runtime.getManifest = function() { return { name: "Third party" }; };
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.notifications !== undefined")
+    }
+
+    func testWhenGetManifestThrows_ThenScriptInstallsStubs() throws {
+        context.evaluateScript("""
+        chrome.runtime.getManifest = function() { throw new Error("no manifest"); };
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.notifications !== undefined")
+    }
+
     // MARK: - Embedded Frames
 
     func testWhenPageIsAnEmbeddedFrame_ThenActionOpenPopupIsHidden() throws {

@@ -44,6 +44,19 @@ enum WebExtensionWindowCloseScript {
             return;
         }
 
+        // Our own extensions declare `browser_specific_settings.duckduckgo` and need no Chrome
+        // shims. Keep in sync with `WKWebExtension.needsChromeCompatibility`.
+        try {
+            var api = globalThis.chrome || globalThis.browser;
+            var settings = api && api.runtime && typeof api.runtime.getManifest === "function"
+                ? api.runtime.getManifest().browser_specific_settings : undefined;
+            if (settings && settings.duckduckgo) {
+                return;
+            }
+        } catch (error) {
+            // A page that cannot read its manifest is treated like any other extension page.
+        }
+
         var originalClose = globalThis.close;
         globalThis.close = function() {
             try {

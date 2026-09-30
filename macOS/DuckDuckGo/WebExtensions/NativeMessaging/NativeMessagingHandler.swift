@@ -78,8 +78,6 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
             port.sendMessage(message) { error in
                 if let error {
                     Logger.webExtensions.error("❌ Port send failed: \(error.localizedDescription, privacy: .public)")
-                } else {
-                    Logger.webExtensions.debug("📨 Delivered a host message to the extension port of \(hostName, privacy: .public)")
                 }
             }
         }

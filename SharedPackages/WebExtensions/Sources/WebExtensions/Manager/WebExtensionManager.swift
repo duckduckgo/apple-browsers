@@ -132,6 +132,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
 
+    // MARK: - AsyncStream
+
     private var continuation: AsyncStream<Void>.Continuation?
     public private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
@@ -700,6 +702,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     func notifyUpdate() {
+        continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
     }

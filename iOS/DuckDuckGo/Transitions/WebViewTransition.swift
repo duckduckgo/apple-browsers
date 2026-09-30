@@ -256,7 +256,10 @@ class ToWebViewTransition: WebViewTransition {
             concealLiveFloatingToolbar(of: mainViewController)
         }
 
-        solidBackground.backgroundColor = theme.backgroundColor
+        let transitionBackgroundColor = isFloating
+            ? mainViewController.floatingTabSwitcherTransitionBackgroundColor
+            : theme.backgroundColor
+        solidBackground.backgroundColor = transitionBackgroundColor
         solidBackground.frame = webView.bounds
         // Put overlay above webview to hide its content till the end of the transition
         solidBackground.removeFromSuperview()
@@ -266,7 +269,11 @@ class ToWebViewTransition: WebViewTransition {
         setCardFrame(initialContainerFrame,
                      cornerRadius: TabViewCell.Constants.cellCornerRadius,
                      shadowOpacity: 1)
-        imageContainer.backgroundColor = theme.backgroundColor
+        imageContainer.backgroundColor = transitionBackgroundColor
+        let usesFloatingTopBackdrop = isFloating && mainViewController.appSettings.currentAddressBarPosition == .top
+        if usesFloatingTopBackdrop {
+            mainViewController.viewCoordinator.navigationBarContainer.backgroundColor = transitionBackgroundColor
+        }
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         if let preview = preview {
             imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
@@ -327,6 +334,9 @@ class ToWebViewTransition: WebViewTransition {
             }
         }, completion: { _ in
             self.removeTransitionViews()
+            if usesFloatingTopBackdrop {
+                mainViewController.viewCoordinator.navigationBarContainer.backgroundColor = .clear
+            }
             mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
             transitionContext.completeTransition(true)
         })

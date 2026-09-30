@@ -757,6 +757,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var desiredGlassInterfaceStyle: UIUserInterfaceStyle {
+        if #available(iOS 26.0, *), !fireMode {
+            return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
+        }
         if let pageGlassInterfaceStyle {
             return pageGlassInterfaceStyle
         }
@@ -1341,9 +1344,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
-    /// Matches the field and minimal chrome button glass to the page, so a light page gets light glass in dark mode.
     private func applyPageGlassInterfaceStyle() {
         guard !fireMode, let pageGlassInterfaceStyle else { return }
+        if #available(iOS 26.0, *) {
+            glassEffect.overrideUserInterfaceStyle = .unspecified
+            leadingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
+            trailingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
+            return
+        }
         glassEffect.overrideUserInterfaceStyle = pageGlassInterfaceStyle
         leadingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
         trailingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle

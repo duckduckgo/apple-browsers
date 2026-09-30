@@ -459,6 +459,46 @@ private final class TestPanGestureRecognizer: UIPanGestureRecognizer {
 
 final class FloatingGlassAppearancePolicyTests: XCTestCase {
 
+    func testWhenPageColorIsUnavailableThenSiteThemeColorIsUsed() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: false,
+            contentBackgroundColor: nil,
+            underPageBackgroundColor: nil,
+            siteThemeColor: .black)
+
+        XCTAssertEqual(color, .black)
+    }
+
+    func testWhenSiteThemeColorIsAvailableThenItTakesPriorityOverUnderPageColor() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: false,
+            contentBackgroundColor: nil,
+            underPageBackgroundColor: .white,
+            siteThemeColor: .black)
+
+        XCTAssertEqual(color, .black)
+    }
+
+    func testWhenContentBackgroundColorIsAvailableThenItTakesPriority() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: false,
+            contentBackgroundColor: .black,
+            underPageBackgroundColor: .white,
+            siteThemeColor: .white)
+
+        XCTAssertEqual(color, .black)
+    }
+
+    func testWhenNewTabPageIsVisibleThenStaleWebPageColorsAreIgnored() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: true,
+            contentBackgroundColor: .black,
+            underPageBackgroundColor: .black,
+            siteThemeColor: .black)
+
+        XCTAssertNil(color)
+    }
+
     func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {
         let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: true,

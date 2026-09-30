@@ -81,6 +81,7 @@ final class DuckPlayerNativeUIPresenter {
         static let visibleDuration: TimeInterval = 3.0
 
         static let floatingChromeClearance: CGFloat = 4
+        static let floatingWelcomeChromeClearance: CGFloat = 8
 
         // Max time to wait for the floating pill thumbnail before sliding in anyway.
         static let thumbnailReadyTimeout: TimeInterval = 1.0
@@ -219,7 +220,10 @@ final class DuckPlayerNativeUIPresenter {
     private var pillBottomConstraintConstant: CGFloat {
         if floatingUIManager.isFloatingUIEnabled {
             let chromeHeight = hostView?.floatingBottomChromeObscuredHeight ?? 0
-            return -(chromeHeight + DuckPlayerContainer.Constants.presentedOffset + Constants.floatingChromeClearance)
+            let clearance = presentedPillType == .welcome
+                ? Constants.floatingWelcomeChromeClearance
+                : Constants.floatingChromeClearance
+            return -(chromeHeight + DuckPlayerContainer.Constants.presentedOffset + clearance)
         }
         return appSettings.currentAddressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
     }
@@ -248,6 +252,8 @@ final class DuckPlayerNativeUIPresenter {
         pillHeight = Constants.webViewRequiredBottomConstraint
 
         if pillType == .welcome {
+            let usesFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
             // Create the welcome pill view model
             let welcomePillViewModel = DuckPlayerWelcomePillViewModel(
                 onOpen: { [weak self] in
@@ -264,6 +270,7 @@ final class DuckPlayerNativeUIPresenter {
                 hasBackground: false,
                 showDragHandle: false,
                 allowDragGesture: false,
+                showsSheetChrome: !usesFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -279,7 +286,12 @@ final class DuckPlayerNativeUIPresenter {
                     )
                 }
             ) { _ in
-                AnyView(DuckPlayerWelcomePillView(viewModel: welcomePillViewModel))
+                AnyView(
+                    DuckPlayerWelcomePillView(
+                        viewModel: welcomePillViewModel,
+                        usesFloatingStyle: usesFloatingStyle
+                    )
+                )
             }
         } else if pillType == .entry {
             let useFloatingStyle = floatingUIManager.isFloatingUIEnabled

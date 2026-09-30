@@ -425,6 +425,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/0/1218855001659655
     case cpmMessagingHangRecovery
 
+    /// Remotely activated Web Extension background Web View graveyard treatment.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
+    case cpmBackgroundGraveyardTreatment
+
     /// Failsafe kill switch for deferring web-extension load/install until protected data is
     /// available. On by default; disable remotely to load/install immediately (previous flow).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
@@ -896,6 +900,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
+        case .cpmBackgroundGraveyardTreatment:
+            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
         case .webExtensionStateRestorationGate:

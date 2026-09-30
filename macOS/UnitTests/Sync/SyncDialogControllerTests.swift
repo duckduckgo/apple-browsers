@@ -654,6 +654,38 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertFalse(managementDialogModel.shouldShowSwitchAccountsMessage)
     }
 
+    func testV21AccountSwitchKeepsFlowOpenUntilReportFinishes() async {
+        setUpWithSingleDevice(id: "1")
+        managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
+        ddgSyncing.stubLogin = [RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+
+        let didSwitchAccounts = await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.exchange, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: true)
+
+        XCTAssertTrue(didSwitchAccounts)
+        XCTAssertNotNil(managementDialogModel.currentDialog)
+
+        let cancelCalled = expectation(description: "Connection canceled after reporting")
+        connectionController.cancelCalled = { cancelCalled.fulfill() }
+        syncDialogController.controllerDidFinishReportingAccountSwitch(didSucceed: true)
+
+        await fulfillment(of: [cancelCalled], timeout: 5.0)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testV21AccountSwitchReportFailureKeepsPresentedError() {
+        managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
+
+        syncDialogController.controllerDidFinishReportingAccountSwitch(didSucceed: false)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+        XCTAssertNotNil(managementDialogModel.currentDialog)
+    }
+
     func test_switchAccounts_disconnectsThenLogsInAgain() async throws {
         let loginCalledExpectation = XCTestExpectation(description: "Login Called Again")
 

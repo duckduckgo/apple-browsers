@@ -637,7 +637,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     @discardableResult
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool {
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow _: Bool = false) async -> Bool {
         // The connecting sheet owns the completion prompt.
         if shouldPromptBeforeSwitchingAccounts && viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)

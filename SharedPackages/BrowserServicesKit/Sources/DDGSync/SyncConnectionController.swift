@@ -41,7 +41,9 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     @discardableResult
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async -> Bool
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow: Bool) async -> Bool
+    func controllerDidFinishReportingAccountSwitch(didSucceed: Bool)
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
@@ -563,12 +565,19 @@ public class SyncConnectionController: SyncConnectionControlling {
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
         } catch SyncError.accountAlreadyExists where coordinator.supportsRecoveryCodeDone {
+            let shouldEndFlowAfterReporting = coordinator.pendingRecoveryKey != nil
             let didSwitchAccounts = await handlePairingV2AccountAlreadyExists(coordinator, setupRole: setupRole)
             do {
                 try await coordinator.completeAccountSwitch(didSucceed: didSwitchAccounts)
             } catch {
                 await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                if shouldEndFlowAfterReporting {
+                    await delegate?.controllerDidFinishReportingAccountSwitch(didSucceed: false)
+                }
                 return false
+            }
+            if shouldEndFlowAfterReporting {
+                await delegate?.controllerDidFinishReportingAccountSwitch(didSucceed: didSwitchAccounts)
             }
             return didSwitchAccounts
         } catch {
@@ -670,7 +679,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             return await delegate?.controllerDidFindTwoAccountsDuringRecovery(
                 recoveryKey,
                 setupRole: setupRole,
-                shouldPromptBeforeSwitchingAccounts: false
+                shouldPromptBeforeSwitchingAccounts: false,
+                shouldDeferEndingFlow: coordinator.supportsRecoveryCodeDone
             ) ?? false
         } else {
             await delegate?.controllerDidError(.failedToLogIn, underlyingError: SyncError.accountAlreadyExists, setupRole: setupRole)
@@ -894,7 +904,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             await delegate?.controllerDidFindTwoAccountsDuringRecovery(
                 recoveryKey,
                 setupRole: setupRole,
-                shouldPromptBeforeSwitchingAccounts: true)
+                shouldPromptBeforeSwitchingAccounts: true,
+                shouldDeferEndingFlow: false)
         } else {
             await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: setupRole)
         }
@@ -1035,6 +1046,9 @@ public extension SyncConnectionControllerDelegate {
     }
 
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole _: SyncSetupRole) {
+    }
+
+    func controllerDidFinishReportingAccountSwitch(didSucceed _: Bool) {
     }
 }
 

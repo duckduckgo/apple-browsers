@@ -134,9 +134,9 @@ final class AttachmentPrivacyDisclosure {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
     }
 
-    /// The web app ships first and owns the disclosure until the flag is on, so the handover waits
-    /// for it: taken early, or taken on a failed read, a `true` written later goes unread and the
-    /// message shows a second time. Callers hold `lock`.
+    /// Whatever ships first, the web app owns the disclosure until our flag is on, so the handover
+    /// waits for the flag: taken early, or taken on a failed read, a `true` written later goes
+    /// unread and the message shows a second time. Callers hold `lock`.
     private func takeOverWebFlagIfNeeded() {
         guard !store.hasTakenOverWebFlag else { return }
 

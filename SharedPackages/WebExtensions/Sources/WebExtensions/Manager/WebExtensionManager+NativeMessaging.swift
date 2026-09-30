@@ -203,8 +203,8 @@ extension WebExtensionManager {
     /// usually posts its first message in the same JavaScript turn as `connectNative()`, and
     /// WebKit drops a port message that arrives while the port has no message handler. The
     /// `async` form of this method runs its body in a new task, so it returns to WebKit before
-    /// any handler is in place, and that first message is lost. iCloud Passwords sends its hello
-    /// that way, and without the hello its helper never answers anything that follows.
+    /// any handler is in place, and that first message is lost. A native host that waits for a
+    /// hello from the extension never answers anything that follows when the hello is lost.
     ///
     /// WebKit calls this form synchronously on the main thread, so a message handler installed
     /// here is in place before WebKit processes the next message from the extension. Messages

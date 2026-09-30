@@ -594,7 +594,9 @@ class FireExecutor: FireExecuting {
                                          applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         // Right after launch the store can fail to respond until it's warmed up, even when no website data is burned.
         await dataStoreWarmupWorker.setApplicationState(applicationState)
+        let warmupStart = ProcessInfo.processInfo.systemUptime
         await dataStoreWarmupWorker.ensureNormalStoreIsReady()
+        dataClearingWideEventService?.recordAIChatWarmupWait(milliseconds: Int((ProcessInfo.processInfo.systemUptime - warmupStart) * 1000))
         let cleaner = historyCleanerProvider(nil, false)
         let result = await cleaner.cleanAIChatHistory()
         if let report = cleaner.lastClearingReport {

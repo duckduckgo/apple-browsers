@@ -252,6 +252,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         eventData.clearAIChatHistoryPageLoadMilliseconds = 1234
         eventData.clearAIChatHistoryScriptReadyMilliseconds = 56
         eventData.clearAIChatHistoryScriptReplyMilliseconds = 20000
+        eventData.clearAIChatHistoryWarmupWaitMilliseconds = 0
 
         // When
         let params = eventData.jsonParameters()
@@ -263,6 +264,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_page_load_ms"] as? Int, 1230)
         XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_script_ready_ms"] as? Int, 60)
         XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_script_reply_ms"] as? Int, 10000)
+        XCTAssertEqual(params["feature.data.ext.clear_aiChat_history_warmup_wait_ms"] as? Int, 0)
     }
 
     func testJSONParameters_includesActionError_topLevelOnly() {

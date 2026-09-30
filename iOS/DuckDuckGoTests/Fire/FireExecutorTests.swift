@@ -906,6 +906,15 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(eventData.clearAIChatHistoryScriptReplyMilliseconds, 5000)
     }
 
+    func testWhenAIChatsAreBurnedThenWideEventRecordsTheWarmupWait() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAIChatHistoryWarmupWaitMilliseconds)
+    }
+
     func testWhenAIChatClearSucceededFirstTimeThenWideEventRecordsNoRetry() async throws {
         mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
         let executor = makeFireExecutor()

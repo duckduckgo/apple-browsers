@@ -113,6 +113,8 @@ public class DataClearingWideEventData: WideEventData {
     public var clearAIChatHistoryPageLoadMilliseconds: Int?
     public var clearAIChatHistoryScriptReadyMilliseconds: Int?
     public var clearAIChatHistoryScriptReplyMilliseconds: Int?
+    /// How long the Duck.ai clear waited for the storage warm-up before starting; 0 when storage was already warm.
+    public var clearAIChatHistoryWarmupWaitMilliseconds: Int?
 
     public var clearAutoconsentManagementCacheDuration: WideEvent.MeasuredInterval?
     public var clearAutoconsentManagementCacheStatus: ActionStatus?
@@ -504,6 +506,7 @@ extension DataClearingWideEventData {
             (WideEventParameter.DataClearingFeature.aiChatPageLoad, clearAIChatHistoryPageLoadMilliseconds.map(processedDuration)),
             (WideEventParameter.DataClearingFeature.aiChatScriptReady, clearAIChatHistoryScriptReadyMilliseconds.map(processedDuration)),
             (WideEventParameter.DataClearingFeature.aiChatScriptReply, clearAIChatHistoryScriptReplyMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatWarmupWait, clearAIChatHistoryWarmupWaitMilliseconds.map(processedDuration)),
         ])
 
         for action in Action.allCases {
@@ -607,6 +610,7 @@ extension WideEventParameter {
         static let aiChatPageLoad = "feature.data.ext.clear_aiChat_history_page_load_ms"
         static let aiChatScriptReady = "feature.data.ext.clear_aiChat_history_script_ready_ms"
         static let aiChatScriptReply = "feature.data.ext.clear_aiChat_history_script_reply_ms"
+        static let aiChatWarmupWait = "feature.data.ext.clear_aiChat_history_warmup_wait_ms"
 
         static func latency(at action: DataClearingWideEventData.Action) -> String {
             "feature.data.ext.\(action.rawValue)_latency_ms"

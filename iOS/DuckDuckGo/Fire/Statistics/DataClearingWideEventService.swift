@@ -128,6 +128,11 @@ final class DataClearingWideEventService {
         eventData?.clearAIChatHistoryScriptReplyMilliseconds = report.firstAttemptTimings.scriptReplyMilliseconds
     }
 
+    /// Records how long the Duck.ai clear waited for the storage warm-up, to measure the warm-up's effect on failures.
+    func recordAIChatWarmupWait(milliseconds: Int) {
+        eventData?.clearAIChatHistoryWarmupWaitMilliseconds = milliseconds
+    }
+
     // MARK: - Completing Wide Event
 
     /// Completes the current wide event with success status.

@@ -191,8 +191,6 @@ extension Preferences {
                             .tint(nil)
                             .tag(false)
                             .padding(.bottom, 4)
-                            // SwiftUI can expose the entire radio option as one pop-up accessibility element.
-                            .accessibilityIdentifier(startupWindowTypeAccessibilityIdentifier(startupModel.startupWindowType))
 
                             Text(UserText.reopenAllWindowsFromLastSession).tag(true)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")

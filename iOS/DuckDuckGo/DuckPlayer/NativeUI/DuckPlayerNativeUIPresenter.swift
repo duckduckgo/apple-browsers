@@ -252,6 +252,8 @@ final class DuckPlayerNativeUIPresenter {
         pillHeight = Constants.webViewRequiredBottomConstraint
 
         if pillType == .welcome {
+            let usesFloatingStyle = floatingUIManager.isFloatingUIEnabled
+
             // Create the welcome pill view model
             let welcomePillViewModel = DuckPlayerWelcomePillViewModel(
                 onOpen: { [weak self] in
@@ -268,7 +270,7 @@ final class DuckPlayerNativeUIPresenter {
                 hasBackground: false,
                 showDragHandle: false,
                 allowDragGesture: false,
-                showsSheetChrome: !floatingUIManager.isFloatingUIEnabled,
+                showsSheetChrome: !usesFloatingStyle,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -287,7 +289,7 @@ final class DuckPlayerNativeUIPresenter {
                 AnyView(
                     DuckPlayerWelcomePillView(
                         viewModel: welcomePillViewModel,
-                        usesOpaqueBackground: self.floatingUIManager.isFloatingUIEnabled
+                        usesFloatingStyle: usesFloatingStyle
                     )
                 )
             }

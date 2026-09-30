@@ -50,6 +50,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private var isEntranceAnimationPending = false
     private var entranceAnimator: UIViewPropertyAnimator?
     private var detachedContentOffset: CGPoint?
+    private var inputEditingLayout: InputEditingLayout?
+
+    private struct InputEditingLayout {
+        let contentOffset: CGPoint
+        let inputFrameInWindow: CGRect?
+        let windowBounds: CGRect?
+        var isGeometryValid = true
+    }
 
     private let backgroundImageView = UIImageView(image: UIImage(named: "background-pond-light"))
 
@@ -125,8 +133,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
 
-        let isLandscape = view.bounds.width > view.bounds.height
+        // Keyboard resizing must not be mistaken for rotation. Use the window's orientation,
+        // and stop preserving geometry captured before a rotation or window resize.
+        let layoutSize = view.window?.bounds.size ?? view.bounds.size
+        let isLandscape = layoutSize.width > layoutSize.height
         contentTopConstraint.constant = isLandscape ? Metrics.customizeButtonTopMargin : Metrics.portraitContentTopInset
+        if let savedLayout = inputEditingLayout, savedLayout.windowBounds != view.window?.bounds {
+            inputEditingLayout?.isGeometryValid = false
+        }
 
         // The square artwork fills the page without stretching, with its pond anchored to the bottom.
         let backgroundSize = max(view.bounds.width, view.bounds.height)
@@ -143,10 +157,12 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Reattachment passes through the outgoing tab's bounds and safe area before NTP chrome settles.
-        // Keep those temporary layouts from changing the loaded page's scroll position.
-        if let detachedContentOffset, scrollView.contentOffset != detachedContentOffset {
-            scrollView.setContentOffset(detachedContentOffset, animated: false)
+        // Reattachment and keyboard transitions temporarily change the viewport and safe area.
+        // Keep those layouts from changing the loaded page's resting scroll position.
+        let editingOffset = inputEditingLayout.flatMap { $0.isGeometryValid ? $0.contentOffset : nil }
+        if let preservedOffset = editingOffset ?? detachedContentOffset,
+           scrollView.contentOffset != preservedOffset {
+            scrollView.setContentOffset(preservedOffset, animated: false)
         }
     }
 
@@ -188,9 +204,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private func finishRestoringScrollPosition() {
         guard let savedOffset = detachedContentOffset else { return }
         detachedContentOffset = nil
+        restoreScrollPosition(savedOffset)
+    }
+
+    private func restoreScrollPosition(_ savedOffset: CGPoint) {
+        view.setNeedsLayout()
         view.layoutIfNeeded()
-        // Favorites or messages may have been removed while this page was detached.
-        // Clamp only after reattachment, once the final viewport and content size are available.
+        // Favorites or messages may have been removed while the page was detached or the input was focused.
+        // Clamp once the resting viewport and content size are available.
         let minimumY = -scrollView.adjustedContentInset.top
         let maximumY = max(minimumY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
         let restoredY = min(max(savedOffset.y, minimumY), maximumY)
@@ -377,9 +398,34 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         blocks.first { $0.id == .searchInput }?.viewController.view
     }
 
+    func searchInputTransitionFrame(in targetView: UIView) -> CGRect? {
+        guard let window = view.window else { return nil }
+        if let inputEditingLayout, inputEditingLayout.isGeometryValid, inputEditingLayout.windowBounds == window.bounds {
+            return inputEditingLayout.inputFrameInWindow.map { targetView.convert($0, from: window) }
+        }
+        guard let frame = visibleSearchInputFrameInWindow() else { return nil }
+        return targetView.convert(frame, from: window)
+    }
+
+    private func visibleSearchInputFrameInWindow() -> CGRect? {
+        guard let window = view.window, let searchInputView else { return nil }
+        let frame = searchInputView.convert(searchInputView.bounds, to: window)
+        let viewport = scrollView.convert(scrollView.bounds, to: window).intersection(window.bounds)
+        // An offscreen resting card should not pull the editor beyond the visible page.
+        return frame.intersects(viewport) ? frame : nil
+    }
+
     func setSearchInputEditing(_ isEditing: Bool) {
-        if isEditing {
+        if isEditing, inputEditingLayout == nil {
             finishEntranceAnimation()
+            view.layoutIfNeeded()
+            scrollView.setContentOffset(scrollView.contentOffset, animated: false)
+            inputEditingLayout = InputEditingLayout(contentOffset: scrollView.contentOffset,
+                                                    inputFrameInWindow: visibleSearchInputFrameInWindow(),
+                                                    windowBounds: view.window?.bounds)
+        } else if !isEditing, let savedLayout = inputEditingLayout {
+            inputEditingLayout = nil
+            restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
         view.accessibilityElementsHidden = isEditing

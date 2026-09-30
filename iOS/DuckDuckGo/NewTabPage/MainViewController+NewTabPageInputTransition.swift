@@ -52,11 +52,11 @@ extension MainViewController {
         coordinator.pushContentInsets()
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         inputContainer.transform = .identity
-        let source = (newTabPageViewController as? NewTabPageInputTransitionSource)?.searchInputView
+        let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
         // The keyboard already moves bottom input. Translating it from the resting card as
         // well makes it travel down before reversing direction as the keyboard arrives.
-        if let source, !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled {
-            let restingFrame = source.convert(source.bounds, to: view)
+        if !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled,
+           let restingFrame = transitionSource?.searchInputTransitionFrame(in: view) {
             let editingFrame = coordinator.viewController.inputCardFrame(in: view)
             inputContainer.transform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
         }
@@ -89,10 +89,11 @@ extension MainViewController {
                                       animated: Bool,
                                       completion: (() -> Void)? = nil) {
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
-        let source = (newTabPageViewController as? NewTabPageInputTransitionSource)?.searchInputView
+        let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
+        let source = transitionSource?.searchInputView
         var restingTransform = CGAffineTransform.identity
-        if let source, !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled {
-            let restingFrame = source.convert(source.bounds, to: view)
+        if !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled,
+           let restingFrame = transitionSource?.searchInputTransitionFrame(in: view) {
             let editingFrame = coordinator.viewController.inputCardFrame(in: view)
             restingTransform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
         }

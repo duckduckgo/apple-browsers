@@ -2357,9 +2357,9 @@ class MainViewController: UIViewController {
             && !chatPathCompletionPending
 
         let controller = newTabPageControllerStore.page(for: tabModel,
-                                                       isNewTab: isNewTab,
-                                                       openedAfterIdle: hatch != nil,
-                                                       daxDialogFactory: newTabDaxDialogFactory)
+                                                        isNewTab: isNewTab,
+                                                        openedAfterIdle: hatch != nil,
+                                                        daxDialogFactory: newTabDaxDialogFactory)
 
         controller.delegate = self
         controller.chromeDelegate = self

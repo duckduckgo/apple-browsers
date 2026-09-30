@@ -52,8 +52,10 @@ class NewPermissionViewTests: UITestCase {
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .microphone)
 
-        // Now set up and launch the app
-        app = XCUIApplication.setUp()
+        // Now set up and launch the app, keeping the Allow / Deny prompt these tests are written for
+        app = XCUIApplication.setUp(featureFlags: [
+            "websitePermissionsPrompts": false,
+        ])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
@@ -688,6 +690,7 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
+                "websitePermissionsPrompts": false,
             ]
         )
 

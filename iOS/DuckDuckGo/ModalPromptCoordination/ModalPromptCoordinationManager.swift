@@ -118,7 +118,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// Whether a modal is on its way to the screen.
     ///
     /// A held deferred slot is excluded: it means a promo owns the slot, not that the user saw
-    /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt".
+    /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt",
+    /// and holds back the app-open keyboard through `PromoCoordinationService.isModalPromptPending`.
     var hasActiveOrPendingModalAttempt: Bool {
         if case .deferred = attemptState {
             return !legacyActiveAttemptIDs.isEmpty

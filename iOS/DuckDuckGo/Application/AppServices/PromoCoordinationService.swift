@@ -155,7 +155,8 @@ final class PromoCoordinationService {
         modalPromptCoordinationManager.releaseDeferredModal()
     }
 
-    /// Whether a modal prompt has been committed and is on its way to the screen, or is on it.
+    /// Whether a modal prompt has been committed and is on its way to the screen.
+    /// Coordinated mode also keeps this true while the prompt is on screen.
     var isModalPromptPending: Bool {
         modalPromptCoordinationManager.hasActiveOrPendingModalAttempt
     }

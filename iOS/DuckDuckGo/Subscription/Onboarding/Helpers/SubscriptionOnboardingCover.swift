@@ -71,7 +71,11 @@ final class SubscriptionOnboardingViewCoordinator: UIViewController {
         hosting.modalPresentationStyle = .overFullScreen
         hosting.view.backgroundColor = UIColor(designSystemColor: .background)
         presented = hosting
-        target.present(hosting, animated: true)
+        target.present(hosting, animated: true) {
+            // Force a fresh layout pass once presentation settles to avoid presented content laid out for stake bounds when presented.
+            hosting.view.setNeedsLayout()
+            hosting.view.layoutIfNeeded()
+        }
     }
 
     /// `beforeDismiss` runs before the cover's own dismiss animation (e.g. an unanimated pop underneath,

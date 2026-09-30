@@ -107,6 +107,48 @@ final class MultiTabMentionControllerTests: XCTestCase {
         XCTAssertTrue(fixture.selectedIDs.isEmpty)
     }
 
+    func testWhenUnmatchedQueryContainsWhitespaceThenDismissesUntilQueryMatchesAgain() async {
+        let fixture = MentionFixture()
+        let cases: [(text: String, expectedIDs: [TabUID]?)] = [
+            ("@wiki", [fixture.candidate.tabId]),
+            ("@xyz", []),
+            ("@xyz ", nil),
+            ("@xyz more", nil),
+            ("@ can you summarise this", nil),
+            ("@xyz\t", nil),
+            ("@wiki", [fixture.candidate.tabId]),
+        ]
+
+        for testCase in cases {
+            fixture.textView.text = testCase.text
+            fixture.textView.selectedRange = NSRange(location: (testCase.text as NSString).length, length: 0)
+            let originalSelection = fixture.textView.selectedRange
+            let updated = expectation(description: "Suggestions updated for \(testCase.text)")
+            fixture.onUpdate = { _ in updated.fulfill() }
+
+            fixture.controller.textDidChange(in: fixture.textView)
+            await fulfillment(of: [updated], timeout: 1)
+            fixture.onUpdate = nil
+
+            XCTAssertEqual(fixture.suggestions?.map(\.candidate.tabId), testCase.expectedIDs, testCase.text)
+            XCTAssertEqual(fixture.textView.text, testCase.text)
+            XCTAssertEqual(fixture.textView.selectedRange, originalSelection)
+        }
+        XCTAssertTrue(fixture.toggledIDs.isEmpty)
+    }
+
+    func testWhenQueryContainsSpacesAndMatchesTitleThenKeepsSuggestionsVisible() async {
+        let fixture = MentionFixture()
+        let candidate = MultiTabAttachmentCandidate(tabId: "new-york", title: "New York City", url: fixture.candidate.url)
+        fixture.candidates = [candidate]
+        fixture.textView.text = "@new york"
+        fixture.textView.selectedRange = NSRange(location: (fixture.textView.text as NSString).length, length: 0)
+
+        await presentSuggestions(fixture)
+
+        XCTAssertEqual(fixture.suggestions?.map(\.candidate.tabId), [candidate.tabId])
+    }
+
     private func presentSuggestions(_ fixture: MentionFixture) async {
         let presented = expectation(description: "Suggestions presented")
         fixture.onUpdate = { if $0 != nil { presented.fulfill() } }

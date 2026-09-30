@@ -90,10 +90,14 @@ final class MultiTabMentionController: TextEntryMentionHandling {
             dismiss()
             return
         }
+        let candidates = MultiTabAttachmentCandidateFilter.filter(environment.tabs(), query: token.query)
+        if candidates.isEmpty, token.query.rangeOfCharacter(from: .whitespaces) != nil {
+            dismiss()
+            return
+        }
         self.textView = textView
         activeToken = token
         let selectedIDs = environment.attachedTabIds()
-        let candidates = MultiTabAttachmentCandidateFilter.filter(environment.tabs(), query: token.query)
         onSuggestionsChanged?(candidates.map {
             let isSelected = selectedIDs.contains($0.tabId)
             return Suggestion(candidate: $0, isSelected: isSelected,

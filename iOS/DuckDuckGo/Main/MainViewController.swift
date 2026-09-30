@@ -7645,6 +7645,8 @@ extension MainViewController: TabSwitcherDelegate {
             applyWidth()
         }
         let previousTab = currentTab
+        // A New Tab Page often has no tab controller, so only the model tells Done apart from a pick.
+        let previousTabModel = tabManager.currentTabsModel.currentTab
         
         guard tab !== previousTab?.tabModel else {
             if daxDialogsManager.shouldShowFireButtonPulse {
@@ -7670,7 +7672,7 @@ extension MainViewController: TabSwitcherDelegate {
             return
         }
         if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage), NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
-           newTab.tabModel.isHomeTab, !isDismissingTabSwitcherForFire {
+           newTab.tabModel.isHomeTab, newTab.tabModel !== previousTabModel, !isDismissingTabSwitcherForFire {
             focusesNewTabPageAfterTabSwitcherDismissal = true
         }
         transitionTo(tab: newTab, from: previousTab)

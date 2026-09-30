@@ -99,7 +99,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
-    private let attachmentPrivacyCountStoreProvider: (BurnerMode) -> AttachmentPrivacyDisplayCountStoring
+    private let attachmentPrivacyCountStore: AttachmentPrivacyDisplayCountStoring
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
@@ -120,8 +120,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
-         attachmentPrivacyCountStoreProvider: @escaping (BurnerMode) -> AttachmentPrivacyDisplayCountStoring =
-             { [store = InMemoryAttachmentPrivacyDisplayCountStore()] _ in store },
+         attachmentPrivacyCountStore: AttachmentPrivacyDisplayCountStoring = InMemoryAttachmentPrivacyDisplayCountStore(),
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -133,7 +132,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
-        self.attachmentPrivacyCountStoreProvider = attachmentPrivacyCountStoreProvider
+        self.attachmentPrivacyCountStore = attachmentPrivacyCountStore
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -503,25 +502,21 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     @MainActor
-    func showAttachmentPrivacyDisclaimer(requestingWebView: WKWebView?) -> Bool {
-        attachmentPrivacyCounter(requestingWebView: requestingWebView)?.canDisplay ?? false
+    var showAttachmentPrivacyDisclaimer: Bool {
+        attachmentPrivacyCounter.canDisplay
     }
 
     @MainActor
-    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind,
-                                          requestingWebView: WKWebView?) {
-        attachmentPrivacyCounter(requestingWebView: requestingWebView)?.consumeDisplay()
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind) {
+        attachmentPrivacyCounter.consumeDisplay()
     }
 
-    /// Built per call: the burner mode comes from the requesting webview, and the counter is a thin
-    /// wrapper over the store the registry owns.
+    /// Built per read: a thin wrapper over the one store, so it always sees the current count.
     @MainActor
-    private func attachmentPrivacyCounter(requestingWebView: WKWebView?) -> AttachmentPrivacyDisplayCounter? {
-        guard let windowControllersManager else { return nil }
-        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
-        return AttachmentPrivacyDisplayCounter(store: attachmentPrivacyCountStoreProvider(burnerMode),
-                                               webKeySource: duckAiStorageHandlerProvider(burnerMode),
-                                               featureFlagger: featureFlagger)
+    private var attachmentPrivacyCounter: AttachmentPrivacyDisplayCounter {
+        AttachmentPrivacyDisplayCounter(store: attachmentPrivacyCountStore,
+                                        webKeySource: duckAiStorageHandlerProvider(.regular),
+                                        featureFlagger: featureFlagger)
     }
 
     var isAttachTabsEnabled: Bool {

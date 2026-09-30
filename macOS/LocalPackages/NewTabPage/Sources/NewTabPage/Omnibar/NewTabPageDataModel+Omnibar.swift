@@ -295,8 +295,8 @@ public extension NewTabPageDataModel {
         let enableAiChatDeletion: Bool?
         /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
         let enableSearchSuggestionDeletion: Bool?
-        /// Whether this surface may still show the file-upload privacy disclaimer. Native owns the
-        /// device-wide display count; false or `nil` means the omnibar renders nothing.
+        /// Whether the file-upload privacy disclaimer may still be shown. Native owns the one
+        /// app-wide display; false or `nil` means the omnibar renders nothing.
         var showAttachmentPrivacyDisclaimer: Bool?
         /// Enables the native-driven Create Image model-switch flow in the web omnibar.
         var enableUpdatedCreateImage: Bool?

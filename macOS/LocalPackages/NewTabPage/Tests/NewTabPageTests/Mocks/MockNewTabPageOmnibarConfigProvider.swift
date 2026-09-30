@@ -114,16 +114,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         usageLimitsSubject.eraseToAnyPublisher()
     }
 
-    var showAttachmentPrivacyDisclaimerResult = false
     @MainActor
-    func showAttachmentPrivacyDisclaimer(requestingWebView: WKWebView?) -> Bool {
-        showAttachmentPrivacyDisclaimerResult
-    }
+    var showAttachmentPrivacyDisclaimer = false
 
     private(set) var attachmentPrivacyDisclaimerShownKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind] = []
     @MainActor
-    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind,
-                                          requestingWebView: WKWebView?) {
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind) {
         attachmentPrivacyDisclaimerShownKinds.append(kind)
     }
 

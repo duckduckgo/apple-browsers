@@ -179,7 +179,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
-            showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer(requestingWebView: original.webView),
+            showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits()
@@ -242,7 +242,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     @MainActor
     private func notifyConfigUpdated() {
         let customize = configProvider.customizeResponsesState(requestingWebView: nil)
-        var config = NewTabPageDataModel.OmnibarConfig(
+        let config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
             showAiSetting: configProvider.isAIChatSettingVisible,
@@ -266,17 +266,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
             enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
+            showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits()
         )
-        // Pushed per window rather than broadcast, because a Fire Window counts its displays on its
-        // own and one shared value would hand every NTP the key window's answer.
-        actionsManager?.userScripts.forEach { userScript in
-            guard let webView = userScript.webView else { return }
-            config.showAttachmentPrivacyDisclaimer = configProvider.showAttachmentPrivacyDisclaimer(requestingWebView: webView)
-            pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config, to: webView)
-        }
+        pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
 
     /// Strips `reasoningEfforts` when the feature is off, so the web hides the picker with no
@@ -396,7 +391,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown = DecodableHelper.decode(from: params) else {
             return nil
         }
-        configProvider.attachmentPrivacyDisclaimerShown(kind: action.kind, requestingWebView: original.webView)
+        configProvider.attachmentPrivacyDisclaimerShown(kind: action.kind)
         return nil
     }
 

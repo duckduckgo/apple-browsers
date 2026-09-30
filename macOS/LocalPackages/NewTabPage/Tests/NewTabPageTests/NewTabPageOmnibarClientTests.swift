@@ -858,7 +858,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testTheProvidersAttachmentPrivacyAnswerIsIncludedInConfig() async throws {
-        configProvider.showAttachmentPrivacyDisclaimerResult = true
+        configProvider.showAttachmentPrivacyDisclaimer = true
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
@@ -867,7 +867,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testWhenTheProviderRefusesThenConfigSaysSo() async throws {
-        configProvider.showAttachmentPrivacyDisclaimerResult = false
+        configProvider.showAttachmentPrivacyDisclaimer = false
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 

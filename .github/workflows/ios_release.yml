@@ -65,7 +65,7 @@ on:
 
 jobs:
   make-release:
-    runs-on: [image:osx-27-edge, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
     name: Make App Store Connect Release
 
     env:

@@ -161,14 +161,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             config=$(jq -c <<< '[
-              {"runner": ["image:osx-27-edge", "ui-tests"], "xcode-version": ""}
+              {"runner": ["image:osx-tahoe-27", "ui-tests"], "xcode-version": ""}
             ]')
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
               {"runner": ["macos-15-xlarge"], "xcode-version": "26.2"},
               {"runner": ["macos-26-xlarge"], "xcode-version": "26.6"},
-              {"runner": ["image:osx-27-edge", "ui-tests"], "xcode-version": ""}
+              {"runner": ["image:osx-tahoe-27", "ui-tests"], "xcode-version": ""}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT

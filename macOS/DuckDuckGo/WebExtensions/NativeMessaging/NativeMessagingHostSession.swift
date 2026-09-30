@@ -156,9 +156,8 @@ final class NativeMessagingHostSession {
 
         // Writes go off the main thread, so a host that reads slowly cannot block the browser.
         // They go through one serial queue, so frames reach the host in the order the extension
-        // posted them and never interleave. A detached task per message gave no such guarantee:
-        // iCloud Passwords posts tab focus events on the same port while its pairing handshake is
-        // in flight, and a handshake step that overtook an earlier frame failed the pairing.
+        // posted them and never interleave. A detached task per message gave no such guarantee,
+        // and a host that expects a handshake in order fails when a later frame overtakes an earlier one.
         writeQueue.async {
             do {
                 try handle.write(contentsOf: frame)

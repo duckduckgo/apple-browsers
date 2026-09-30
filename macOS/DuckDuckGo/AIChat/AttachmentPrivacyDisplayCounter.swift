@@ -90,10 +90,15 @@ final class InMemoryAttachmentPrivacyDisplayCountStore: AttachmentPrivacyDisplay
 
 // MARK: - Counter
 
-/// Check and increment are one operation, so no caller can pass the cap.
+/// Check and increment happen under one lock shared by every instance, so two surfaces resolving
+/// at once can't both be handed the last display.
 final class AttachmentPrivacyDisplayCounter {
 
     static let cap = 1
+
+    /// Static because instances are built per read, over one shared store that has no
+    /// compare-and-swap of its own.
+    private static let lock = NSLock()
 
     static let webEntryKey = DuckAiNativeStorageReservedEntryKeys.fileUploadDisclaimerShown.rawValue
 
@@ -107,12 +112,13 @@ final class AttachmentPrivacyDisplayCounter {
         self.store = store
         self.webKeySource = webKeySource
         self.featureFlagger = featureFlagger
-        migrateWebCountIfNeeded()
     }
 
     /// The web app ships first and counts with its own key, so a user who already saw it there
-    /// must not get it again. Once only, and only once the key has actually been read: marking on
-    /// a failed read would spend the takeover on nothing and show the message a second time.
+    /// must not get it again. Once only, and deliberately not in `init`: until the flag is on the
+    /// web app still owns the disclosure and can write the key at any time, so a takeover taken
+    /// early — or on a failed read — leaves a later `true` unread and shows the message again.
+    /// Callers hold `lock`.
     private func migrateWebCountIfNeeded() {
         guard !store.hasMigratedWebCount else { return }
 
@@ -136,14 +142,30 @@ final class AttachmentPrivacyDisplayCounter {
     }
 
     var canDisplay: Bool {
-        isEnabled && count < Self.cap
+        guard isEnabled else { return false }
+
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+
+        migrateWebCountIfNeeded()
+        return count < Self.cap
     }
 
+    /// The raw count, with no takeover: a debug read shouldn't decide when the handover happens.
     var displayCount: Int { count }
 
     @discardableResult
     func consumeDisplay() -> Bool {
         guard isEnabled else { return false }
+
+        return claimDisplay()
+    }
+
+    private func claimDisplay() -> Bool {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+
+        migrateWebCountIfNeeded()
 
         let current = count
         Logger.aiChat.debug("Attachment privacy: display requested, count read as \(current, privacy: .public)")
@@ -156,6 +178,9 @@ final class AttachmentPrivacyDisplayCounter {
     /// The marker goes back on, or the next read would re-migrate the web count and the message
     /// would never return. Debug only.
     func reset() {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
         store.markWebCountMigrated()

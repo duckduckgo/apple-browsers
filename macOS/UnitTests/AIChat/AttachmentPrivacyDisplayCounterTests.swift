@@ -85,7 +85,7 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, 1)
+        XCTAssertEqual(adoptedCount(counter), 1)
         XCTAssertFalse(counter.consumeDisplay())
     }
 
@@ -95,7 +95,7 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, 1)
+        XCTAssertEqual(adoptedCount(counter), 1)
         XCTAssertFalse(counter.consumeDisplay())
     }
 
@@ -104,7 +104,7 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, 0)
+        XCTAssertEqual(adoptedCount(counter), 0)
         XCTAssertTrue(counter.consumeDisplay())
     }
 
@@ -113,18 +113,18 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, AttachmentPrivacyDisplayCounter.cap)
+        XCTAssertEqual(adoptedCount(counter), AttachmentPrivacyDisplayCounter.cap)
         XCTAssertFalse(counter.consumeDisplay())
     }
 
     func testWebCountIsAdoptedOnlyOnce() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
-        _ = makeCounter()
+        _ = adoptedCount(makeCounter())
 
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 3
         let second = makeCounter()
 
-        XCTAssertEqual(second.displayCount, 1)
+        XCTAssertEqual(adoptedCount(second), 1)
     }
 
     /// Otherwise a counter built before Duck.ai's storage is readable spends the takeover on
@@ -133,43 +133,66 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
         webStorage.readError = TestError.unreadable
 
-        XCTAssertEqual(makeCounter().displayCount, 0)
+        XCTAssertEqual(adoptedCount(makeCounter()), 0)
 
         webStorage.readError = nil
-        XCTAssertEqual(makeCounter().displayCount, 1)
+        XCTAssertEqual(adoptedCount(makeCounter()), 1)
     }
 
     func testAnAbsentStorageHandlerLeavesTheTakeoverForTheNextCounter() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
 
-        XCTAssertEqual(makeCounter(webKeySource: nil).displayCount, 0)
+        XCTAssertEqual(adoptedCount(makeCounter(webKeySource: nil)), 0)
 
-        XCTAssertEqual(makeCounter().displayCount, 1)
+        XCTAssertEqual(adoptedCount(makeCounter()), 1)
     }
 
     func testWebCountAppearingAfterTheTakeoverIsIgnored() {
-        _ = makeCounter()
+        _ = adoptedCount(makeCounter())
 
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 3
         let second = makeCounter()
 
-        XCTAssertEqual(second.displayCount, 0)
+        XCTAssertEqual(adoptedCount(second), 0)
         XCTAssertTrue(second.consumeDisplay())
     }
 
-    /// Deliberate: a state handover, not a display, so waiting for the flag risks missing it.
-    func testTheTakeoverHappensEvenWithTheFlagOff() {
-        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 1
+    /// Until the flag is on the web app still owns the disclosure and can write the key at any
+    /// time, so taking the handover early would leave a later `true` unread.
+    func testTheTakeoverWaitsForTheFlag() {
+        let disabled = makeCounter(isEnabled: false)
+        _ = disabled.canDisplay
+        disabled.consumeDisplay()
 
-        _ = makeCounter(isEnabled: false)
+        XCTAssertFalse(store.hasMigratedWebCount)
 
-        XCTAssertEqual(makeCounter().displayCount, 1)
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = true
+        let enabled = makeCounter()
+
+        XCTAssertFalse(enabled.canDisplay)
+        XCTAssertEqual(enabled.displayCount, 1)
+    }
+
+    /// The native omnibar holds one counter for the window's lifetime, so the instance that was
+    /// built with the flag off has to take the handover itself once it flips.
+    func testTheTakeoverHappensOnAnInstanceThatOutlivesTheFlagFlip() {
+        let flagger = MockFeatureFlagger(
+            featuresStub: [FeatureFlag.aiChatAttachmentPrivacyDisclosure.rawValue: false]
+        )
+        let counter = AttachmentPrivacyDisplayCounter(store: store, webKeySource: webStorage, featureFlagger: flagger)
+        _ = counter.canDisplay
+
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = true
+        flagger.featuresStub = [FeatureFlag.aiChatAttachmentPrivacyDisclosure.rawValue: true]
+
+        XCTAssertFalse(counter.canDisplay)
+        XCTAssertFalse(counter.consumeDisplay())
     }
 
     func testAbsentWebCountLeavesTheCountAtZero() {
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, 0)
+        XCTAssertEqual(adoptedCount(counter), 0)
     }
 
     func testUnreadableWebCountLeavesTheCountAtZero() {
@@ -177,14 +200,29 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
 
         let counter = makeCounter()
 
-        XCTAssertEqual(counter.displayCount, 0)
+        XCTAssertEqual(adoptedCount(counter), 0)
         XCTAssertTrue(counter.consumeDisplay())
     }
 
     func testWebCountIsAdoptedFromAString() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = "2"
 
-        XCTAssertEqual(makeCounter().displayCount, AttachmentPrivacyDisplayCounter.cap)
+        XCTAssertEqual(adoptedCount(makeCounter()), AttachmentPrivacyDisplayCounter.cap)
+    }
+
+    /// Probabilistic by nature — it fails loudly if the check-and-increment stops being atomic,
+    /// which is what the shared store can't do on its own.
+    func testOnlyOneOfManyConcurrentCallersGetsTheDisplay() {
+        let grantLock = NSLock()
+        var grants: [Bool] = []
+
+        DispatchQueue.concurrentPerform(iterations: 50) { _ in
+            let granted = self.makeCounter().consumeDisplay()
+            grantLock.withLock { grants.append(granted) }
+        }
+
+        XCTAssertEqual(grants.filter { $0 }.count, 1)
+        XCTAssertEqual(store.count, AttachmentPrivacyDisplayCounter.cap)
     }
 
     // MARK: - Reset
@@ -214,10 +252,18 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         let counter = makeCounter()
         counter.reset()
 
-        XCTAssertEqual(makeCounter().displayCount, 0)
+        let next = makeCounter()
+        XCTAssertTrue(next.canDisplay)
+        XCTAssertEqual(next.displayCount, 0)
     }
 
     // MARK: -
+
+    /// The takeover happens on the first decision, not in `init`, so ask for one.
+    private func adoptedCount(_ counter: AttachmentPrivacyDisplayCounter) -> Int {
+        _ = counter.canDisplay
+        return counter.displayCount
+    }
 
     private func makeCounter(isEnabled: Bool = true) -> AttachmentPrivacyDisplayCounter {
         makeCounter(webKeySource: webStorage, isEnabled: isEnabled)

@@ -95,8 +95,7 @@ final class AttachmentPrivacyDisplayCounter {
 
     static let cap = 1
 
-    /// Name pending confirmation with the front end: wrong, and the takeover silently does nothing.
-    static let webEntryKey = "duckaiFileUploadDisclaimerShownCount"
+    static let webEntryKey = DuckAiNativeStorageReservedEntryKeys.fileUploadDisclaimerShown.rawValue
 
     private let store: AttachmentPrivacyDisplayCountStoring
     private let webKeySource: DuckAiNativeStorageHandling?
@@ -194,6 +193,9 @@ final class AttachmentPrivacyDisplayCounter {
         case let string as String:
             guard let int = Int(string) else { return .absent }
             return .count(max(0, int))
+        // A flag can only say it was shown, so it counts as one.
+        case let shown as Bool:
+            return .count(shown ? 1 : 0)
         default:
             return .absent
         }

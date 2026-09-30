@@ -89,6 +89,25 @@ final class AttachmentPrivacyDisplayCounterTests: XCTestCase {
         XCTAssertFalse(counter.consumeDisplay())
     }
 
+    /// What the web app actually writes: a flag, not a count.
+    func testWebFlagIsAdopted() {
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = true
+
+        let counter = makeCounter()
+
+        XCTAssertEqual(counter.displayCount, 1)
+        XCTAssertFalse(counter.consumeDisplay())
+    }
+
+    func testAnUnsetWebFlagLeavesTheCountAtZero() {
+        webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = false
+
+        let counter = makeCounter()
+
+        XCTAssertEqual(counter.displayCount, 0)
+        XCTAssertTrue(counter.consumeDisplay())
+    }
+
     func testWebCountIsCappedWhenAdopted() {
         webStorage.entries[AttachmentPrivacyDisplayCounter.webEntryKey] = 9
 

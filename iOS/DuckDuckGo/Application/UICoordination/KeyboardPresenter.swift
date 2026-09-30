@@ -74,17 +74,20 @@ final class KeyboardPresenter: KeyboardPresenting {
 
     private let mainViewController: any AppOpenKeyboardHandling
     private let featureFlagger: FeatureFlagger
+    private let isModalPromptPending: () -> Bool
     private let pixelFiring: (any PixelKitFiring)?
     private let onAppLaunch: () -> Bool
     private let schedule: (@escaping () -> Void) -> Void
 
     init(mainViewController: any AppOpenKeyboardHandling,
          featureFlagger: FeatureFlagger,
+         isModalPromptPending: @escaping () -> Bool = { false },
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
          schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
         self.featureFlagger = featureFlagger
+        self.isModalPromptPending = isModalPromptPending
         self.pixelFiring = pixelFiring
         self.onAppLaunch = onAppLaunch
         self.schedule = schedule
@@ -105,7 +108,7 @@ final class KeyboardPresenter: KeyboardPresenting {
             if flagOn, !isCurrentRequest(requestID) { return }
             schedule { [self] in
                 if flagOn {
-                    guard isCurrentRequest(requestID) else { return }
+                    guard isCurrentRequest(requestID), !isModalPromptPending() else { return }
                     mainViewController.showKeyboardOnAppOpenIfAllowed()
                 } else {
                     mainViewController.enterSearchOnAppOpen()

@@ -2892,7 +2892,8 @@ class MainViewController: UIViewController {
               !afterSwitchingTabs || NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
               tabManager.currentTabsModel.currentTab?.isHomeTab == true,
               NewTabPageKeyboardPolicy().showsKeyboardOnInAppLanding,
-              !isNewTabPageKeyboardBlockedByDialog else { return }
+              !isNewTabPageKeyboardBlockedByDialog,
+              !daxDialogsManager.isStillOnboarding() else { return }
         enterSearch()
     }
 

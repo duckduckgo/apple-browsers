@@ -150,7 +150,6 @@ extension MainViewController {
                 }
             },
             interruptCleanup: { [weak self] in
-                transitionSnapshot.removeFromSuperview()
                 inputContainer.transform = .identity
                 contentContainer.transform = .identity
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
@@ -162,10 +161,7 @@ extension MainViewController {
             resigningInput: { [weak coordinator] in
                 coordinator?.viewController.deactivateInput()
             },
-            completion: {
-                finish()
-                transitionSnapshot.removeFromSuperview()
-            })
+            completion: finish)
     }
 
     func captureRestingNewTabPageSnapshot() {

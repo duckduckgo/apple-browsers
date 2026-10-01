@@ -509,6 +509,8 @@ final class AIChatUsageWarningCardView: NSView {
 
         var linkAttributes = bodyAttributes
         linkAttributes[.link] = URL.aiChatPrivacy
+        // Set here, not left to `linkTextAttributes`: the body's arrow is in the text storage and wins.
+        linkAttributes[.cursor] = NSCursor.pointingHand
         result.append(NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore,
                                          attributes: linkAttributes))
         return result

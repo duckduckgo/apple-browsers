@@ -3078,38 +3078,7 @@ class MainViewController: UIViewController {
         unifiedToggleInputCoordinator?.updateIsFireTab(isCurrentTabFireTab())
 
         guard let tab = currentTab, tab.link != nil else {
-            // An inline NTP can have no URL, so it needs its toolbar reconciled on this path too.
-            if newTabPageViewController?.hasInlineSearchInput == true, isInMinimalChromeLayout != isMinimalChromeMode() {
-                applyWidth()
-            }
-            viewCoordinator.omniBar.stopBrowsing()
-            // Clear Dax Easter Egg logo when no tab is active
-            viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
-            if let tabModel = tabManager.currentTabsModel.currentTab {
-                viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tabModel))
-                // Only activate from the model when there's no TabViewController to drive
-                // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
-                // a second time for the same uid, causing redundant attachment teardown.
-                if currentTab == nil {
-                    unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
-                }
-            }
-            updateBrowsingMenuHeaderDataSource()
-            if let tab = currentTab {
-                refreshUnifiedToggleInput(for: tab)
-            } else if let coordinator = unifiedToggleInputCoordinator, coordinator.isActive {
-                // An active omnibar session means the address bar was just activated (e.g. by
-                // launchNewSearch after a subscription promo dismissal on a tab with no VC yet).
-                // Hiding the coordinator here would tear it down before the keyboard can appear.
-                // refreshUnifiedToggleInput carries its own preserveOmnibarSession guard; mirror
-                // that protection for this nil-tab path.
-                guard !coordinator.isOmnibarSession else { return }
-                coordinator.hide()
-                coordinator.unbind()
-                viewCoordinator.hideAITabChrome()
-                applyUnifiedInputChromeBackground(.standardChrome)
-            }
-            updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
+            refreshOmniBarWithoutURL()
             return
         }
 
@@ -3142,6 +3111,41 @@ class MainViewController: UIViewController {
         }
 
         updateBrowsingMenuHeaderDataSource()
+        updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
+    }
+
+    private func refreshOmniBarWithoutURL() {
+        // An inline NTP can have no URL, so it needs its toolbar reconciled on this path too.
+        if newTabPageViewController?.hasInlineSearchInput == true, isInMinimalChromeLayout != isMinimalChromeMode() {
+            applyWidth()
+        }
+        viewCoordinator.omniBar.stopBrowsing()
+        // Clear Dax Easter Egg logo when no tab is active
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
+        if let tabModel = tabManager.currentTabsModel.currentTab {
+            viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tabModel))
+            // Only activate from the model when there's no TabViewController to drive
+            // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
+            // a second time for the same uid, causing redundant attachment teardown.
+            if currentTab == nil {
+                unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
+            }
+        }
+        updateBrowsingMenuHeaderDataSource()
+        if let tab = currentTab {
+            refreshUnifiedToggleInput(for: tab)
+        } else if let coordinator = unifiedToggleInputCoordinator, coordinator.isActive {
+            // An active omnibar session means the address bar was just activated (e.g. by
+            // launchNewSearch after a subscription promo dismissal on a tab with no VC yet).
+            // Hiding the coordinator here would tear it down before the keyboard can appear.
+            // refreshUnifiedToggleInput carries its own preserveOmnibarSession guard; mirror
+            // that protection for this nil-tab path.
+            guard !coordinator.isOmnibarSession else { return }
+            coordinator.hide()
+            coordinator.unbind()
+            viewCoordinator.hideAITabChrome()
+            applyUnifiedInputChromeBackground(.standardChrome)
+        }
         updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }
 

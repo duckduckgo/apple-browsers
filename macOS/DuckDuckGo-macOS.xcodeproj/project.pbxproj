@@ -1439,7 +1439,6 @@
 		37EE55E52D5F197300D53C7C /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C12D5F197300D53C7C /* trackers-1.json */; };
 		37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C22D5F197300D53C7C /* trackers-2.json */; };
 		37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C32D5F197300D53C7C /* trackers-3.json */; };
-		37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */; };
 		37EE55E92D5F197300D53C7C /* BadgeAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AA2D5F197300D53C7C /* BadgeAnimationView.swift */; };
 		37EE55EA2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AB2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift */; };
 		37EE55EB2D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AD2D5F197300D53C7C /* BadgeNotificationContainerView.swift */; };
@@ -1480,7 +1479,6 @@
 		37EE560E2D5F197300D53C7C /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C12D5F197300D53C7C /* trackers-1.json */; };
 		37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C22D5F197300D53C7C /* trackers-2.json */; };
 		37EE56102D5F197300D53C7C /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C32D5F197300D53C7C /* trackers-3.json */; };
-		37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */; };
 		37EE56122D5F197300D53C7C /* BadgeAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AA2D5F197300D53C7C /* BadgeAnimationView.swift */; };
 		37EE56132D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AB2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift */; };
 		37EE56142D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AD2D5F197300D53C7C /* BadgeNotificationContainerView.swift */; };
@@ -5591,7 +5589,6 @@
 		37EE55CC2D5F197300D53C7C /* MenuItemWithNotificationDot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemWithNotificationDot.swift; sourceTree = "<group>"; };
 		37EE55CD2D5F197300D53C7C /* MoreOptionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenu.swift; sourceTree = "<group>"; };
 		37EE55CE2D5F197300D53C7C /* MoreOptionsMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuButton.swift; sourceTree = "<group>"; };
-		37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NavigationBar.storyboard; sourceTree = "<group>"; };
 		37EE55D02D5F197300D53C7C /* NavigationBarPopovers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarPopovers.swift; sourceTree = "<group>"; };
 		37EE55D12D5F197300D53C7C /* NavigationBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarViewController.swift; sourceTree = "<group>"; };
 		37EE55D22D5F197300D53C7C /* NavigationButtonMenuDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationButtonMenuDelegate.swift; sourceTree = "<group>"; };
@@ -5822,7 +5819,6 @@
 		4BE41A5D28446EAD00760399 /* BookmarksBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarViewModel.swift; sourceTree = "<group>"; };
 		4BE4D0BA2D8D2DE400D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
 		FA57C0DE0000000000000017 /* HangMetrics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HangMetrics; path = ../SharedPackages/HangMetrics; sourceTree = SOURCE_ROOT; };
-		4BE53369286912D40019DBFD /* BookmarksBarCollectionViewItem.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BookmarksBarCollectionViewItem.xib; sourceTree = "<group>"; };
 		4BE5336A286912D40019DBFD /* BookmarksBarCollectionViewItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCollectionViewItem.swift; sourceTree = "<group>"; };
 		4BE5336D286915A10019DBFD /* BookmarksBarCenterAlignedLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCenterAlignedLayout.swift; sourceTree = "<group>"; };
 		4BE53373286E39F10019DBFD /* ChromiumKeychainPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumKeychainPrompt.swift; sourceTree = "<group>"; };
@@ -9036,7 +9032,6 @@
 				37EE55CC2D5F197300D53C7C /* MenuItemWithNotificationDot.swift */,
 				37EE55CD2D5F197300D53C7C /* MoreOptionsMenu.swift */,
 				37EE55CE2D5F197300D53C7C /* MoreOptionsMenuButton.swift */,
-				37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */,
 				37EE55D02D5F197300D53C7C /* NavigationBarPopovers.swift */,
 				37EE55D12D5F197300D53C7C /* NavigationBarViewController.swift */,
 				37EE55D22D5F197300D53C7C /* NavigationButtonMenuDelegate.swift */,
@@ -14860,7 +14855,6 @@
 				37EE560E2D5F197300D53C7C /* trackers-1.json in Resources */,
 				37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE56102D5F197300D53C7C /* trackers-3.json in Resources */,
-				37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				3706FCC3293F65D500E42796 /* userscript.js in Resources */,
 				B5165047300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165048300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -15108,7 +15102,6 @@
 				37EE55E52D5F197300D53C7C /* trackers-1.json in Resources */,
 				37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */,
-				37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				B5165045300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165046300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				B31055C627A1BA1D001AC618 /* userscript.js in Resources */,

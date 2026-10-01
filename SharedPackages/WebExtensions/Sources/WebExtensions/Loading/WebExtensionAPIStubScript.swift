@@ -160,6 +160,25 @@ public enum WebExtensionAPIStubScript {
             // A page that cannot read its manifest is treated like any other extension page.
         }
 
+        // `Symbol.dispose` and `Symbol.asyncDispose` (explicit resource management, `using`
+        // declarations) ship in Chrome but not in this WebKit. TypeScript's `using` helpers throw
+        // "Symbol.dispose is not defined." without them, which stops Bitwarden's SDK from unlocking
+        // the vault. Defining them here, before any extension code runs, also lets generated code
+        // that only attaches `[Symbol.dispose]` methods when the symbol exists do so. Only the
+        // symbols are needed: the helpers do the disposing themselves.
+        ["dispose", "asyncDispose"].forEach(function(name) {
+            try {
+                if (typeof Symbol[name] !== "symbol") {
+                    Object.defineProperty(Symbol, name, {
+                        value: Symbol("Symbol." + name),
+                        writable: false, enumerable: false, configurable: false
+                    });
+                }
+            } catch (error) {
+                console.info("[DuckDuckGo] Could not define Symbol." + name + ": " + error);
+            }
+        });
+
         // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
         // generic nestable stub; "offscreen", "privacy" and "idle" are purpose-shaped (see
         // makeOffscreen, makePrivacy and makeIdle below).

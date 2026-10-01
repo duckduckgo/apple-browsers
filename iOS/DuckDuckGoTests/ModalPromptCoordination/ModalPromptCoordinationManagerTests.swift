@@ -365,6 +365,110 @@ final class ModalPromptCoordinationManagerTests {
         #expect(sut.hasActiveOrPendingModalAttempt == hasEligiblePrompt)
     }
 
+    // MARK: - Close Handler
+
+    private func makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker,
+                                      closeChecks: MockModalPromptScheduler,
+                                      hasEligiblePrompt: Bool = true) -> ModalPromptCoordinationManager {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        return ModalPromptCoordinationManager(
+            providers: [MockModalPromptProvider(shouldReturnPrompt: hasEligiblePrompt)],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker,
+            closeCheckScheduling: closeChecks
+        )
+    }
+
+    @available(iOS 16, *)
+    @Test("Check The Close Handler Runs Once The Legacy Prompt Leaves The Screen", .timeLimit(.minutes(1)))
+    func whenLegacyPromptLeavesTheScreenThenCloseHandlerRunsOnce() throws {
+        // GIVEN
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: attachmentChecker, closeChecks: closeChecks)
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // WHEN
+        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
+
+        // THEN it waits while the prompt is on its way
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        // and while it's on screen
+        schedulerMock.executeScheduledBlock()
+        let root = try #require(presenterMock.capturedViewController)
+        attachmentChecker.markAttached(root)
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        // and runs once it has left
+        attachmentChecker.attachedRoots.removeAll()
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 1)
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check The Close Handler Runs When UIKit Never Attaches The Prompt", .timeLimit(.minutes(1)))
+    func whenPresentationIsRefusedThenCloseHandlerRuns() {
+        // GIVEN
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: attachmentChecker, closeChecks: closeChecks)
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
+
+        // WHEN the prompt is handed to UIKit but never attached
+        schedulerMock.executeScheduledBlock()
+        closeChecks.executeScheduledBlock()
+
+        // THEN
+        #expect(handlerRunCount == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check No Close Handler Is Kept When No Prompt Is Pending", .timeLimit(.minutes(1)))
+    func whenNoPromptIsPendingThenCloseHandlerIsNotKept() {
+        // GIVEN
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(),
+                                   closeChecks: closeChecks,
+                                   hasEligiblePrompt: false)
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // WHEN
+        let waits = sut.runOnceModalPromptCloses {}
+
+        // THEN
+        #expect(!waits)
+        #expect(!closeChecks.didCallSchedule)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check A Cancelled Close Handler Never Runs", .timeLimit(.minutes(1)))
+    func whenCloseHandlerIsCancelledThenItNeverRuns() {
+        // GIVEN
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(), closeChecks: closeChecks)
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock)
+        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
+
+        // WHEN
+        sut.cancelModalPromptCloseHandler()
+        schedulerMock.executeScheduledBlock()
+        closeChecks.executeScheduledBlock()
+
+        // THEN
+        #expect(handlerRunCount == 0)
+    }
+
     @available(iOS 16, *)
     @Test("Check Session Flag Is Not Set When No Modal Is Presented", .timeLimit(.minutes(1)))
     func whenNoModalIsPresentedThenSessionFlagIsNotSet() {

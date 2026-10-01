@@ -701,8 +701,8 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
-    var isModalPromptPending: Bool {
-        promoCoordinationService.isModalPromptPending
+    func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool {
+        promoCoordinationService.runOnceModalPromptCloses(handler)
     }
 
     func prepareHomePageMessagesForForegroundIfNeeded() {

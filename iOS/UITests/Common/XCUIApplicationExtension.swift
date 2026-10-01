@@ -61,11 +61,48 @@ extension XCUIApplication {
     }
 
     func openBrowsingMenuItem(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
+        let item = openBrowsingMenu(revealing: identifier, file: file, line: line)
+        item.tapWhenHittable(file: file, line: line)
+    }
+
+    func openBrowsingMenu(revealing identifier: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
         buttons["Browser.Toolbar.Button.Menu"].tapWhenHittable(file: file, line: line)
-        let item = descendants(matching: .any)[identifier]
         let menu = descendants(matching: .any)["Browser.Menu.List"]
-        menu.swipeUpToReveal(item, file: file, line: line)
-        item.tap()
+        let item = descendants(matching: .any)[identifier]
+        let deadline = Date().addingTimeInterval(UITestTimeouts.navigation)
+        guard menu.waitForExistence(timeout: UITestTimeouts.elementExistence) else {
+            XCTFail("Browsing menu did not appear.", file: file, line: line)
+            return item
+        }
+
+        let targetIsInteractive = NSPredicate { _, _ in
+            guard item.exists else { return false }
+            let frame = item.frame
+            // SwiftUI can expose an off-screen row with an empty or null frame;
+            // asking XCTest for its hit point in that state can raise an error.
+            guard !frame.isEmpty, !frame.isNull, !frame.isInfinite else { return false }
+            return item.isEnabled && item.isHittable
+        }
+
+        // Scrolling can expand the sheet before moving its contents. Wait for the target
+        // to become tappable rather than depending on the system grabber or detent state.
+        while Date() < deadline {
+            if targetIsInteractive.evaluate(with: item) {
+                return item
+            }
+            menu.swipeUp(velocity: .slow)
+            let remaining = deadline.timeIntervalSinceNow
+            if remaining > 0 && item.wait(for: targetIsInteractive, timeout: min(1, remaining)) {
+                return item
+            }
+        }
+
+        XCTContext.runActivity(named: "Browsing menu reveal failure: \(identifier)") { activity in
+            activity.add(XCTAttachment(string: menu.debugDescription))
+            activity.add(XCTAttachment(screenshot: screenshot()))
+        }
+        XCTFail("Browsing menu item '\(identifier)' did not become tappable.", file: file, line: line)
+        return item
     }
 
     func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {

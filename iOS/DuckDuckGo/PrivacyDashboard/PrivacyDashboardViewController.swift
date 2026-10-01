@@ -121,6 +121,7 @@ final class PrivacyDashboardViewController: UIViewController {
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        webView.accessibilityIdentifier = "PrivacyDashboard.WebView"
     }
 
     public override func viewDidDisappear(_ animated: Bool) {

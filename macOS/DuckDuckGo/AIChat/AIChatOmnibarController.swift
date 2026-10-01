@@ -182,6 +182,7 @@ final class AIChatOmnibarController {
             usageWarningMeasurement.ctaTapped(.upsell)
             onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
+            usageWarningMeasurement.ctaTapped(.weeklyLimit)
             // Web reads the entry on its next hydration, so there is nothing to reload here.
             usageLimitsStore?.write(entries)
         }

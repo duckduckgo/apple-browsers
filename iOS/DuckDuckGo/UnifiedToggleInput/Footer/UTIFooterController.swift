@@ -246,7 +246,8 @@ final class UTIFooterController {
         switch action {
         case .switchToModel, .switchToFreeModel: return .switchModel
         case .tryForFree: return .upsell
-        case .startUsingWeeklyLimit, .none: return nil
+        case .startUsingWeeklyLimit: return .weeklyLimit
+        case .none: return nil
         }
     }
 

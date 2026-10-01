@@ -123,26 +123,26 @@ final class BrowserToolbarViewTests: XCTestCase {
         guard #available(iOS 26.0, *) else { return }
         let sut = makeSUT(embeddedOmnibar: false)
 
-        sut.refreshMaterialAppearance(interfaceStyle: .dark, isFireMode: false)
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
 
         let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
         XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
         XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
 
-        sut.refreshMaterialAppearance(interfaceStyle: .light, isFireMode: false)
+        sut.refreshMaterialAppearance(interfaceStyle: .light)
 
         XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
         XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
-    func testWhenStandaloneGlassIsInFireModeThenItStaysDark() throws {
+    func testWhenStandaloneGlassUsesDarkInterfaceStyleThenItRemainsAdaptive() throws {
         guard #available(iOS 26.0, *) else { return }
         let sut = makeSUT(embeddedOmnibar: false)
 
-        sut.refreshMaterialAppearance(interfaceStyle: .dark, isFireMode: true)
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
 
         let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
-        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .dark)
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
     func testWhenNotFloatingThenProgressIsANoOp() {

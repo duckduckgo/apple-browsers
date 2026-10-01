@@ -617,11 +617,11 @@ final class BrowserToolbarView: UIView {
         updateCornerStyle()
     }
 
-    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle, isFireMode: Bool) {
+    func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle) {
         guard isFloatingStyleEnabled else { return }
         materialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
-            if #available(iOS 26.0, *), !isFireMode {
+            if #available(iOS 26.0, *) {
                 materialBackgroundView.overrideUserInterfaceStyle = .unspecified
                 chromeContentHost.overrideUserInterfaceStyle = .unspecified
             } else {

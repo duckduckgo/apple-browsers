@@ -1060,7 +1060,7 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.isUsingSmallTopSpacing = true
         toolbar.setOmnibarView(barView, height: barView.expectedHeight)
 
-        toolbar.refreshMaterialAppearance(interfaceStyle: .dark, isFireMode: false)
+        toolbar.refreshMaterialAppearance(interfaceStyle: .dark)
 
         let refreshCompleted = expectation(description: "Embedded material refreshed")
         DispatchQueue.main.async {

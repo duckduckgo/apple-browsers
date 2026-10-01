@@ -618,7 +618,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(vc.viewModel.devices, devices)
-        let successDestination = SyncSettingsViewModel.SuccessDestination.host
+        let successDestination = SyncSettingsViewModel.SuccessDestination.fullRecoveryCode(isRecovery: false)
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: successDestination))
         XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
 
@@ -639,6 +639,60 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
             XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: isRecovery))
         }
+    }
+
+    @MainActor
+    func testWhenSyncAccountIsCreatedDuringFlowThenSuccessUsesFullRecoveryCodeScreen() {
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        ddgSyncing.account = makeSyncAccount(userId: "new-account")
+        ddgSyncing.authState = .addingNewDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
+    }
+
+    @MainActor
+    func testWhenFlowKeepsTheSameSyncAccountThenSuccessUsesShortScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "same-account")
+        ddgSyncing.authState = .active
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .alreadySyncing))
+    }
+
+    @MainActor
+    func testWhenFlowKeepsTheSameSyncAccountWhileAddingDeviceThenSuccessUsesShortScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "same-account")
+        ddgSyncing.authState = .addingNewDevice
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .alreadySyncing))
+    }
+
+    @MainActor
+    func testWhenFlowSwitchesSyncAccountsThenSuccessUsesFullRecoveryCodeScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "starting-account")
+        ddgSyncing.authState = .active
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        ddgSyncing.account = makeSyncAccount(userId: "resulting-account")
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
+    }
+
+    private func makeSyncAccount(userId: String) -> SyncAccount {
+        SyncAccount(deviceId: "device", deviceName: "Test Device", deviceType: "phone", userId: userId,
+                    primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
     }
 
     @MainActor
@@ -678,7 +732,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertEqual(
             spyVC.viewModel.connectingSheetPhase,
-            .connecting(isRecovery: false, successDestination: .host)
+            .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false))
         )
         XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
     }

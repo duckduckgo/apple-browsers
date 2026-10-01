@@ -38,9 +38,9 @@ final class SyncSettingsViewModelConnectingSheetTests {
     func showSuccessForRecovery() {
         let sut = makeSUT()
 
-        sut.showSuccess(recoveryCode: "recovery-code", destination: .joiner(isRecovery: true))
+        sut.showSuccess(recoveryCode: "recovery-code", destination: .fullRecoveryCode(isRecovery: true))
 
-        #expect(sut.connectingSheetPhase == .success(.joiner(isRecovery: true)))
+        #expect(sut.connectingSheetPhase == .success(.fullRecoveryCode(isRecovery: true)))
         #expect(sut.recoveryCode == "recovery-code")
     }
 
@@ -49,9 +49,9 @@ final class SyncSettingsViewModelConnectingSheetTests {
     func showSuccessForDeviceAdded() {
         let sut = makeSUT()
 
-        sut.showSuccess(recoveryCode: "device-code", destination: .joiner(isRecovery: false))
+        sut.showSuccess(recoveryCode: "device-code", destination: .fullRecoveryCode(isRecovery: false))
 
-        #expect(sut.connectingSheetPhase == .success(.joiner(isRecovery: false)))
+        #expect(sut.connectingSheetPhase == .success(.fullRecoveryCode(isRecovery: false)))
         #expect(sut.recoveryCode == "device-code")
     }
 
@@ -61,21 +61,21 @@ final class SyncSettingsViewModelConnectingSheetTests {
         let sut = makeSUT()
         sut.connectingSheetPhase = .waitingForOtherDevice
 
-        sut.showSuccess(recoveryCode: "device-code", destination: .joiner(isRecovery: false))
+        sut.showSuccess(recoveryCode: "device-code", destination: .fullRecoveryCode(isRecovery: false))
 
-        #expect(sut.connectingSheetPhase == .connecting(isRecovery: false, successDestination: .joiner(isRecovery: false)))
+        #expect(sut.connectingSheetPhase == .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
 
         sut.connectingAnimationDidFinish()
 
-        #expect(sut.connectingSheetPhase == .success(.joiner(isRecovery: false)))
+        #expect(sut.connectingSheetPhase == .success(.fullRecoveryCode(isRecovery: false)))
         #expect(sut.recoveryCode == "device-code")
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Host success keeps its destination through animation and until Done", .timeLimit(.minutes(1)))
-    func hostSuccessKeepsDestinationThroughAnimation() {
+    @Test("Already-syncing success keeps its destination through animation and until Done", .timeLimit(.minutes(1)))
+    func alreadySyncingSuccessKeepsDestinationThroughAnimation() {
         let sut = makeSUT()
-        let destination = SyncSettingsViewModel.SuccessDestination.host
+        let destination = SyncSettingsViewModel.SuccessDestination.alreadySyncing
         sut.connectingSheetPhase = .waitingForOtherDevice
 
         sut.showSuccess(recoveryCode: "device-code", destination: destination)
@@ -93,15 +93,15 @@ final class SyncSettingsViewModelConnectingSheetTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A later joiner success does not retain the previous host destination", .timeLimit(.minutes(1)))
-    func laterJoinerSuccessDoesNotRetainHostDestination() {
+    @Test("A later full success does not retain the previous short destination", .timeLimit(.minutes(1)))
+    func laterFullSuccessDoesNotRetainShortDestination() {
         let sut = makeSUT()
-        sut.showSuccess(recoveryCode: "host-code", destination: .host)
+        sut.showSuccess(recoveryCode: "host-code", destination: .alreadySyncing)
         sut.doneFromConnectingSheet()
 
-        sut.showSuccess(recoveryCode: "joiner-code", destination: .joiner(isRecovery: false))
+        sut.showSuccess(recoveryCode: "joiner-code", destination: .fullRecoveryCode(isRecovery: false))
 
-        #expect(sut.connectingSheetPhase == .success(.joiner(isRecovery: false)))
+        #expect(sut.connectingSheetPhase == .success(.fullRecoveryCode(isRecovery: false)))
         #expect(sut.recoveryCode == "joiner-code")
     }
 
@@ -109,7 +109,7 @@ final class SyncSettingsViewModelConnectingSheetTests {
     @Test("Done from the connecting sheet dismisses it", .timeLimit(.minutes(1)))
     func doneFromConnectingSheetDismisses() {
         let sut = makeSUT()
-        sut.showSuccess(recoveryCode: "recovery-code", destination: .joiner(isRecovery: true))
+        sut.showSuccess(recoveryCode: "recovery-code", destination: .fullRecoveryCode(isRecovery: true))
 
         sut.doneFromConnectingSheet()
 

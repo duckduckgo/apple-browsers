@@ -115,6 +115,7 @@ final class SyncDialogController {
     private var hostDeviceWaitCancellable: AnyCancellable?
     private var hostDeviceRefreshCancellable: AnyCancellable?
     private var pendingSyncSuccessDialog: ManagementDialogKind?
+    private var startingSyncAccountUserId: String?
 
     @Published var stringForQR: String?
     @Published var codeForDisplayOrPasting: String?
@@ -258,6 +259,7 @@ final class SyncDialogController {
     }
 
     private func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {
+        captureStartingSyncAccount()
         Task {
             await connectionController.syncCodeEntered(code: recoveryCode, canScanLegacyURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes), codeSource: codeSource)
         }
@@ -273,7 +275,7 @@ final class SyncDialogController {
     }
 
     private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool) {
-        let successDialog = ManagementDialogKind.pairingSuccess
+        let successDialog = successDialogForCurrentAccount()
         let complete: (SyncDialogController) -> Void = { controller in
             controller.completeAfterPreparingToSyncAnimation(successDialog)
         }
@@ -283,6 +285,24 @@ final class SyncDialogController {
         } else {
             complete(self)
         }
+    }
+
+    private func captureStartingSyncAccount() {
+        switch syncService.authState {
+        case .active, .addingNewDevice:
+            startingSyncAccountUserId = syncService.account?.userId
+        case .initializing, .inactive:
+            startingSyncAccountUserId = nil
+        }
+    }
+
+    private func successDialogForCurrentAccount(isRecovery: Bool = false) -> ManagementDialogKind {
+        guard !isRecovery,
+              let startingSyncAccountUserId,
+              startingSyncAccountUserId == syncService.account?.userId else {
+            return .saveRecoveryCode(recoveryCode ?? "")
+        }
+        return .pairingSuccess
     }
 
     private func completeAfterPreparingToSyncAnimation(_ successDialog: ManagementDialogKind) {
@@ -300,6 +320,7 @@ final class SyncDialogController {
     private func startPollingForRecoveryKey(isRecovery: Bool) {
         cancelHostDeviceWait()
         pairingV2PeerKind = nil
+        captureStartingSyncAccount()
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -416,6 +437,7 @@ final class SyncDialogController {
 
     private func startLegacyRecoveryFlow() {
         cancelHostDeviceWait()
+        captureStartingSyncAccount()
         let recoveryCode = recoveryCode ?? "" // Only called if Sync enabled therefore will never be blank
         codeForDisplayOrPasting = recoveryCode
         stringForQR = recoveryCode
@@ -429,6 +451,7 @@ final class SyncDialogController {
     private func startPollingForPublicKey() {
         cancelHostDeviceWait()
         pairingV2PeerKind = nil
+        captureStartingSyncAccount()
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
             do {
@@ -1045,11 +1068,14 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         PixelKit.fire(GeneralPixel.syncLogin)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let successDialog = self.managementDialogModel.isSimplifiedSyncSetupV2Enabled
+                ? self.successDialogForCurrentAccount(isRecovery: isRecovery)
+                : .saveRecoveryCode(self.recoveryCode ?? "")
             if self.managementDialogModel.isSimplifiedSyncSetupV2Enabled,
                self.managementDialogModel.isPreparingToSyncAnimationPaused {
-                self.completeAfterPreparingToSyncAnimation(.saveRecoveryCode(self.recoveryCode ?? ""))
+                self.completeAfterPreparingToSyncAnimation(successDialog)
             } else {
-                self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
+                self.presentDialog(for: successDialog)
             }
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {

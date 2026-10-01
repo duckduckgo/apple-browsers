@@ -187,7 +187,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, destination: .joiner(isRecovery: false))
+                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, destination: .fullRecoveryCode(isRecovery: false))
             } catch {
                 optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
@@ -392,6 +392,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func showRecoveryCodeEntry() {
+        captureStartingSyncAccount()
         dismissRecoverSyncedDataSheetIfNeeded { [weak self] in
             self?.presentRecoveryCodeScan()
         }
@@ -552,6 +553,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func collectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
         codeCollectionIntent = intent
+        captureStartingSyncAccount()
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(intent: intent)
             return

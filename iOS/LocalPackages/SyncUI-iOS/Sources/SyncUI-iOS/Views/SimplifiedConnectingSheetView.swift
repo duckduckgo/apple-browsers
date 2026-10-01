@@ -98,13 +98,13 @@ struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
         case .connecting:
             return .connectingSheetPreview(phase: .connecting(isRecovery: false))
         case .deviceConnected:
-            return .connectingSheetPreview(phase: .success(.joiner(isRecovery: false)), autoRestoreProvider: .enabled)
+            return .connectingSheetPreview(phase: .success(.fullRecoveryCode(isRecovery: false)), autoRestoreProvider: .enabled)
         case .waitingForOtherDevice:
             return .connectingSheetPreview(phase: .waitingForOtherDevice)
         case .recovering:
             return .connectingSheetPreview(phase: .connecting(isRecovery: true))
         case .recoveryCompleted:
-            return .connectingSheetPreview(phase: .success(.joiner(isRecovery: true)))
+            return .connectingSheetPreview(phase: .success(.fullRecoveryCode(isRecovery: true)))
         }
     }
 }

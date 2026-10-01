@@ -51,8 +51,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
     private var isUpdatedCreateImageEnabled = false
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private lazy var termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(
-        feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: dependencies.featureFlagger)
+        feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: dependencies.featureFlagger),
+        store: termsOfServiceStore
     )
 
     override var iPadDuckAIControlValues: IPadDuckAIControlValues {
@@ -65,8 +67,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         )
     }
 
-    init(dependencies: OmnibarDependencyProvider, isFloatingUIEnabled: Bool) {
+    init(dependencies: OmnibarDependencyProvider,
+         isFloatingUIEnabled: Bool,
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.termsOfServiceStore = termsOfServiceStore
         super.init(dependencies: dependencies)
     }
 
@@ -625,7 +630,16 @@ extension DefaultOmniBarViewController {
         let message = termsOfServiceDisclaimer.message
             ?? toolPickerController?.currentModelSwitchNotice.map { UTIFooterMessageMapper().message(for: $0) }
         omniBarView.setFooterMessage(message, animated: animated)
+        omniBarView.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
+        let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
+    }
+
+    /// Sending with the disclaimer on screen accepts the terms, so only the Ask button sends and Return adds a new line.
+    private var isTermsOfServiceDisclaimerShown: Bool {
+        guard let visibleMessage = omniBarView.visibleFooterMessage else { return false }
+        return visibleMessage == termsOfServiceDisclaimer.message
     }
 
     private func refreshModelPicker() {
@@ -747,6 +761,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
             if omniDelegate?.onAIChatSuggestionsActivateHighlight() == true {
                 return false
             }
+            guard !isTermsOfServiceDisclaimerShown else { return true }
             submitIPadDuckAIText(from: textView)
             return false
         }

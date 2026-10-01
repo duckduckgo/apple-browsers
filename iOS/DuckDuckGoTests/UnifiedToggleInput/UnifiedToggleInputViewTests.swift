@@ -163,6 +163,20 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(visible, [.usageWarning])
     }
 
+    func testWhenTheHandlerAsksForTheAskButtonThenSubmitReadsAsk() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Submit", in: sut))
+
+        handler.usesAskSubmitButton = true
+        flushMainQueue()
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+
+        handler.usesAskSubmitButton = false
+        flushMainQueue()
+        XCTAssertNil(submitButton.title(for: .normal))
+    }
+
     func testWhenExpandedInputSwitchesToSearchThenCardKeepsOutline() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

@@ -280,8 +280,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
 
+    /// Sending with the disclaimer on screen accepts the terms, so only the Ask button sends and Return adds a new line.
+    private var isTermsOfServiceDisclaimerShown: Bool {
+        footerController?.isTermsOfServiceVisible == true
+    }
+
     private var submitsAIChatPromptOnKeyboardReturn: Bool {
-        isOmnibarNewAIChatPrompt || isContextualChatState
+        (isOmnibarNewAIChatPrompt || isContextualChatState) && !isTermsOfServiceDisclaimerShown
     }
 
     private var usesReturnKeySubmitButtonStyle: Bool {
@@ -289,7 +294,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var usesFloatingReturnKey: Bool {
-        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt
+        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt && !isTermsOfServiceDisclaimerShown
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -338,6 +343,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let usageLimitsStore: DuckAiUsageLimitsStore?
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
     var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
+    var onFloatingReturnKeyAvailabilityChanged: (() -> Void)?
 
     var subscriptionUpsellPolicy: DuckAISubscriptionUpsellPolicy { modelStore.upsellPolicy }
     private var footerController: UTIFooterController?
@@ -1090,6 +1096,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
             self?.tabMentionController?.refresh()
+        }
+        footerController?.onTermsOfServiceVisibilityChanged = { [weak self] _ in
+            guard let self else { return }
+            syncInputBehaviorToHandler()
+            updateFloatingReturnKeyState()
+            onFloatingReturnKeyAvailabilityChanged?()
         }
 
         // Also what brings a message back after the user has acted on the previous one.
@@ -2408,6 +2420,7 @@ private extension UnifiedToggleInputCoordinator {
     func syncInputBehaviorToHandler() {
         viewController.handler.submitsAIChatOnKeyboardReturn = submitsAIChatPromptOnKeyboardReturn
         viewController.handler.usesReturnKeySubmitButtonStyle = usesReturnKeySubmitButtonStyle
+        viewController.handler.usesAskSubmitButton = isTermsOfServiceDisclaimerShown
     }
 
     func resetSessionState() {

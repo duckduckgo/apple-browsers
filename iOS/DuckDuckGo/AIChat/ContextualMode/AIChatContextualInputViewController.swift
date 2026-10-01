@@ -388,6 +388,7 @@ private extension AIChatContextualInputViewController {
         }
         displayedTermsOfServiceMessage = message
         termsOfServiceCard.isHidden = message == nil
+        basicNativeInputViewController.submitButtonTitle = message == nil ? nil : UserText.duckAIAskButtonTitle
 
         // The outgoing pin goes first, so the two are never active together.
         let (outgoing, incoming) = message == nil

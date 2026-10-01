@@ -833,7 +833,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualSuggestedPrompts:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:

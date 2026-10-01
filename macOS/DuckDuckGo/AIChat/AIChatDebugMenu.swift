@@ -44,6 +44,13 @@ final class AIChatDebugMenu: NSMenu {
         target: self
     )
 
+    /// Stands in for the web app until the front end writes this itself.
+    private lazy var attachmentPrivacyWebFlagMenuItem = NSMenuItem(
+        title: "Set Duck.ai's Attachment Privacy Flag",
+        action: #selector(setAttachmentPrivacyWebFlag),
+        target: self
+    )
+
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
@@ -75,6 +82,8 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem.separator()
 
             attachmentPrivacyMenuItem
+
+            attachmentPrivacyWebFlagMenuItem
 
             NSMenuItem.separator()
 
@@ -163,6 +172,12 @@ final class AIChatDebugMenu: NSMenu {
     @objc private func resetAttachmentPrivacyDisclosure() {
         attachmentPrivacyDisclosure.reset()
         updateAttachmentPrivacyMenuItemTitle()
+    }
+
+    @MainActor
+    @objc private func setAttachmentPrivacyWebFlag() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey,
+                                                                      value: true)
     }
 
     @MainActor

@@ -124,17 +124,30 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
         XCTAssertFalse(store.hasShown)
     }
 
-    func testAWebFlagAppearingAfterTheTakeoverIsIgnored() {
-        _ = makeDisclosure().canShow
+    /// The web app may show it at any point before the front end delegates to us, so a flag that
+    /// appears after we have already answered still counts.
+    func testAWebFlagAppearingLaterIsHonoured() {
+        XCTAssertTrue(makeDisclosure().canShow)
 
         webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
 
-        XCTAssertTrue(makeDisclosure().canShow)
+        XCTAssertFalse(makeDisclosure().canShow)
     }
 
-    /// Otherwise a read taken before Duck.ai's storage is readable spends the takeover on nothing,
-    /// and the message shows again after the web app already showed it.
-    func testAFailedReadLeavesTheTakeoverForTheNextRead() {
+    /// Adopted on the first read, so the web app replacing its own entries can't bring the message
+    /// back.
+    func testAnAdoptedFlagSurvivesTheWebKeyGoingAway() {
+        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
+        XCTAssertFalse(makeDisclosure().canShow)
+
+        webStorage.entries.removeAll()
+
+        XCTAssertFalse(makeDisclosure().canShow)
+        XCTAssertTrue(store.hasShown)
+    }
+
+    /// A failed read is not an answer: the next decision reads again.
+    func testAFailedReadIsNotAnAnswer() {
         webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
         webStorage.readError = TestError.unreadable
 
@@ -144,7 +157,7 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
         XCTAssertFalse(makeDisclosure().canShow)
     }
 
-    func testAnAbsentStorageHandlerLeavesTheTakeoverForTheNextRead() {
+    func testAnAbsentStorageHandlerIsNotAnAnswer() {
         webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
 
         XCTAssertTrue(makeDisclosure(webKeySource: nil).canShow)
@@ -152,23 +165,20 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
         XCTAssertFalse(makeDisclosure().canShow)
     }
 
-    /// Until the flag is on the web app still owns the disclosure and can write the key at any
-    /// time, so taking the handover early would leave a later `true` unread.
-    func testTheTakeoverWaitsForTheFlag() {
+    /// With the flag off nothing is read or recorded, so the web app keeps owning it.
+    func testNothingIsRecordedWithTheFlagOff() {
+        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
         let disabled = makeDisclosure(isEnabled: false)
+
         _ = disabled.canShow
         disabled.claim()
 
-        XCTAssertFalse(store.hasTakenOverWebFlag)
-
-        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
-
-        XCTAssertFalse(makeDisclosure().canShow)
+        XCTAssertFalse(store.hasShown)
     }
 
     /// The native omnibar holds one of these for the window's lifetime, so the instance built with
-    /// the flag off has to take the handover itself once it flips.
-    func testTheTakeoverHappensOnAnInstanceThatOutlivesTheFlagFlip() {
+    /// the flag off has to adopt the web flag itself once it flips.
+    func testTheWebFlagIsAdoptedByAnInstanceThatOutlivesTheFlagFlip() {
         let flagger = MockFeatureFlagger(
             featuresStub: [FeatureFlag.aiChatAttachmentPrivacyDisclosure.rawValue: false]
         )
@@ -203,7 +213,7 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
         XCTAssertNil(webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey])
     }
 
-    /// Otherwise the debug reset re-adopts the web flag and the message never comes back.
+    /// The web key goes with it, or the next read would adopt it straight back.
     func testResetDoesNotLeaveTheWebFlagToBeAdoptedAgain() {
         webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = true
         let disclosure = makeDisclosure()

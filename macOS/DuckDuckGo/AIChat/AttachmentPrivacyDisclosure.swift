@@ -29,8 +29,6 @@ import PrivacyConfig
 protocol AttachmentPrivacyDisclosureStoring: AnyObject {
     var hasShown: Bool { get }
     func markShown()
-    var hasTakenOverWebFlag: Bool { get }
-    func markWebFlagTakenOver()
     func reset()
 }
 
@@ -38,7 +36,6 @@ protocol AttachmentPrivacyDisclosureStoring: AnyObject {
 final class AttachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring {
 
     private static let shownKey = "aichat.attachment-privacy.disclosure-shown"
-    private static let takenOverKey = "aichat.attachment-privacy.web-flag-taken-over"
 
     private let keyValueStore: ThrowingKeyValueStoring
 
@@ -52,15 +49,8 @@ final class AttachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring
         try? keyValueStore.set(true, forKey: Self.shownKey)
     }
 
-    var hasTakenOverWebFlag: Bool { flag(Self.takenOverKey) }
-
-    func markWebFlagTakenOver() {
-        try? keyValueStore.set(true, forKey: Self.takenOverKey)
-    }
-
     func reset() {
         try? keyValueStore.removeObject(forKey: Self.shownKey)
-        try? keyValueStore.removeObject(forKey: Self.takenOverKey)
     }
 
     private func flag(_ key: String) -> Bool {
@@ -91,8 +81,7 @@ final class AttachmentPrivacyDisclosure {
     var canShow: Bool {
         guard isEnabled else { return false }
 
-        takeOverWebFlagIfNeeded()
-        return !store.hasShown
+        return !hasBeenShown()
     }
 
     /// The raw state, with no takeover: a debug read shouldn't decide when the handover happens.
@@ -103,9 +92,7 @@ final class AttachmentPrivacyDisclosure {
     @discardableResult
     func claim() -> Bool {
         guard isEnabled else { return false }
-
-        takeOverWebFlagIfNeeded()
-        guard !store.hasShown else { return false }
+        guard !hasBeenShown() else { return false }
 
         store.markShown()
         return true
@@ -114,62 +101,41 @@ final class AttachmentPrivacyDisclosure {
     func reset() {
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
-        store.markWebFlagTakenOver()
     }
 
     private var isEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
     }
 
-    /// Whatever ships first, the web app owns the disclosure until our flag is on, so the handover
-    /// waits for the flag: taken early, or taken on a failed read, a `true` written later goes
-    /// unread and the message shows a second time.
-    private func takeOverWebFlagIfNeeded() {
-        guard !store.hasTakenOverWebFlag else { return }
+    /// Whatever ships first, the web app owns the disclosure until our flag is on and the front
+    /// end delegates, so its flag counts as shown. Read on every decision until we have recorded
+    /// one ourselves, then adopted, so the answer survives the web app replacing its own entries.
+    private func hasBeenShown() -> Bool {
+        if store.hasShown { return true }
+        guard webFlagSaysShown() else { return false }
 
-        switch readWebFlag() {
-        case .unavailable:
-            Logger.aiChat.debug("Attachment privacy: web flag unreadable, takeover deferred")
-        case .notShown:
-            store.markWebFlagTakenOver()
-        case .shown:
-            store.markWebFlagTakenOver()
-            store.markShown()
-            Logger.aiChat.debug("Attachment privacy: took over the web app's flag")
-        }
+        store.markShown()
+        Logger.aiChat.debug("Attachment privacy: adopted the web app's flag")
+        return true
     }
 
-    private enum WebFlagRead {
-        case shown
-        case notShown
-        case unavailable
-    }
-
-    /// `unavailable` is the one that must not be taken for an answer: no storage handler, or the
-    /// read threw. A value that's there but unparseable is an answer, since it will never parse.
-    /// Numbers are read too, for the count the web app wrote before it settled on a flag.
-    private func readWebFlag() -> WebFlagRead {
-        guard let webKeySource else { return .unavailable }
-
-        let entry: Any?
-        do {
-            entry = try webKeySource.getEntry(key: Self.webEntryKey)
-        } catch {
-            return .unavailable
-        }
-        guard let entry else { return .notShown }
+    /// Numbers too, for the count the web app wrote before it settled on a flag. A failed read or
+    /// an unreadable value is not an answer — the next decision reads again.
+    private func webFlagSaysShown() -> Bool {
+        guard let webKeySource,
+              let entry = try? webKeySource.getEntry(key: Self.webEntryKey) else { return false }
 
         switch entry {
         case let shown as Bool:
-            return shown ? .shown : .notShown
+            return shown
         case let count as Int:
-            return count > 0 ? .shown : .notShown
+            return count > 0
         case let count as Double:
-            return count > 0 ? .shown : .notShown
+            return count > 0
         case let count as String:
-            return (Int(count) ?? 0) > 0 ? .shown : .notShown
+            return (Int(count) ?? 0) > 0
         default:
-            return .notShown
+            return false
         }
     }
 }

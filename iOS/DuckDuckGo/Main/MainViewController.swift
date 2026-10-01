@@ -2272,6 +2272,7 @@ class MainViewController: UIViewController {
     }
     
     private lazy var escapeHatchModelBuilder = EscapeHatchModelBuilder(
+        previewsSource: previewsSource,
         tabManager: tabManager,
         lastActiveTabStore: lastActiveTabStore,
         idleReturnEligibilityManager: idleReturnEligibilityManager,

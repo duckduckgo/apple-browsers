@@ -327,6 +327,20 @@ struct NewTabPageSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("When the app raises the keyboard then the inactivity timeout still runs", .timeLimit(.minutes(1)))
+    func whenKeyboardRaisedOnArrivalThenInactivityTimeoutStillRuns() {
+        let (sut, wideEvent, clock) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+
+        clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout - 5)
+        sut.keyboardRaisedOnArrival()
+        clock.advance(by: 6)
+        sut.visitBackgrounded()
+
+        #expect(lastCompletion(wideEvent)?.0.terminalAction == .noActionTimeout)
+    }
+
+    @available(iOS 16, *)
     @Test("When no active visit then a raised keyboard records nothing", .timeLimit(.minutes(1)))
     func whenNoActiveVisitThenRaisedKeyboardRecordsNothing() {
         let (sut, wideEvent, _) = makeSUT()

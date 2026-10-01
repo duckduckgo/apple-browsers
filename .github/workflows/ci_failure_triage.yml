@@ -1,0 +1,56 @@
+name: CI Failure Triage
+run-name: CI Failure Triage - Claude connectivity test
+
+# CI failure analysis: inspect the preceding 24 hours, diagnose failures,
+# recommend fixes, and optionally hand off draft fix PRs to a separate publish job.
+# This initial scaffold only tests Claude authentication. The triage inputs below
+# are reserved for that implementation; no failures are analyzed or PRs opened yet.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lookback_hours:
+        description: 'CI history window in hours (reserved for triage implementation)'
+        type: string
+        default: '24'
+      max_fix_prs:
+        description: 'Maximum draft fix PRs (reserved; currently no PRs are opened)'
+        type: string
+        default: '0'
+  push:
+    branches:
+      - sam/ci-failure-triage
+    paths:
+      - .github/workflows/ci_failure_triage.yml
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: ci-failure-triage-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    name: Test Claude access
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check Claude credential availability
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [[ -z "$ANTHROPIC_API_KEY" ]]; then
+            echo "::error::ANTHROPIC_API_KEY is not available to this repository."
+            exit 1
+          fi
+
+      - name: Call Claude
+        uses: anthropics/claude-code-action@cfc3eb22bfed5c26ef66e3223c982af27e4524de # v1, matches the Windows workflow
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: 'Reply with exactly: Test'
+          claude_args: '--max-turns 1 --tools ""'

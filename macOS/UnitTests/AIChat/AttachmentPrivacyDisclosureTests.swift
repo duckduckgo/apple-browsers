@@ -107,6 +107,20 @@ final class AttachmentPrivacyDisclosureTests: XCTestCase {
         XCTAssertTrue(makeDisclosure().canShow)
     }
 
+    /// What the web app actually mirrors: its localStorage value, so a string.
+    func testAWebFlagIsAdoptedFromAString() {
+        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = "true"
+
+        XCTAssertFalse(makeDisclosure().canShow)
+        XCTAssertTrue(store.hasShown)
+    }
+
+    func testAFalseWebFlagStringLeavesItUnshown() {
+        webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = "false"
+
+        XCTAssertTrue(makeDisclosure().canShow)
+    }
+
     func testAWebCountIsAdoptedFromAString() {
         webStorage.entries[AttachmentPrivacyDisclosure.webEntryKey] = "2"
 

@@ -132,8 +132,10 @@ final class AttachmentPrivacyDisclosure {
             return count > 0
         case let count as Double:
             return count > 0
-        case let count as String:
-            return (Int(count) ?? 0) > 0
+        // The web app mirrors its localStorage, so the flag arrives as the string "true".
+        case let text as String:
+            if let flag = Bool(text.lowercased()) { return flag }
+            return (Int(text) ?? 0) > 0
         default:
             return false
         }

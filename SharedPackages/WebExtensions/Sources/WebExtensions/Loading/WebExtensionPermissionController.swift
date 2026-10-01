@@ -71,6 +71,8 @@ public final class WebExtensionPermissionController {
     private let prompter: any WebExtensionPermissionPrompting
     private var observations: [String: Set<AnyCancellable>] = [:]
     private var contexts: [String: WKWebExtensionContext] = [:]
+    /// Stores last known state of saved settings per extension to avoid unnecessary writes to disk.
+    private var lastSavedSettings: [String: WebExtensionPermissionSettings] = [:]
 
     /// This set keeps trusted extensions at the time of installation.
     ///
@@ -112,10 +114,12 @@ public final class WebExtensionPermissionController {
         }
 
         observations.removeValue(forKey: identifier)
+        lastSavedSettings.removeValue(forKey: identifier)
         contexts[identifier] = context
         do {
             if let settings = try store.settings(for: identifier) {
                 try restore(settings, to: context)
+                lastSavedSettings[identifier] = settings
             } else {
                 let request = WebExtensionPermissionRequest(permissions: context.webExtension.requestedPermissions,
                                                             matchPatterns: context.webExtension.allRequestedMatchPatterns)
@@ -131,6 +135,7 @@ public final class WebExtensionPermissionController {
         } catch {
             if contexts[identifier] === context {
                 contexts.removeValue(forKey: identifier)
+                lastSavedSettings.removeValue(forKey: identifier)
             }
             throw error
         }
@@ -160,7 +165,7 @@ public final class WebExtensionPermissionController {
     public func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {
         guard var settings = try store.settings(for: identifier) else { return }
         settings.hasAccessToPrivateData = allowed
-        try store.save(settings, for: identifier)
+        try save(settings, for: identifier)
         contexts[identifier]?.hasAccessToPrivateData = allowed
         NotificationCenter.default.post(name: .webExtensionPrivateAccessDidChange, object: self)
     }
@@ -168,6 +173,7 @@ public final class WebExtensionPermissionController {
     func forget(_ identifier: String) throws {
         try store.removeSettings(for: identifier)
         observations.removeValue(forKey: identifier)
+        lastSavedSettings.removeValue(forKey: identifier)
         contexts.removeValue(forKey: identifier)
     }
 
@@ -181,6 +187,7 @@ public final class WebExtensionPermissionController {
             }
         }
         observations.removeValue(forKey: identifier)
+        lastSavedSettings.removeValue(forKey: identifier)
         contexts.removeValue(forKey: identifier)
     }
 
@@ -214,12 +221,22 @@ public final class WebExtensionPermissionController {
         settings.grantedPermissions = Dictionary(uniqueKeysWithValues: context.grantedPermissions.map { ($0.key.rawValue, $0.value) })
         settings.grantedMatchPatterns = Dictionary(uniqueKeysWithValues: context.grantedPermissionMatchPatterns.map { ($0.key.string, $0.value) })
         settings.hasRequestedOptionalAccessToAllHosts = context.hasRequestedOptionalAccessToAllHosts
-        try store.save(settings, for: context.uniqueIdentifier)
-        Logger.webExtensions.debug("Saved permissions to store for \(context.uniqueIdentifier)")
+        try save(settings, for: context.uniqueIdentifier)
     }
 
+    private func save(_ settings: WebExtensionPermissionSettings, for identifier: String) throws {
+        guard lastSavedSettings[identifier] != settings else { return }
+        try store.save(settings, for: identifier)
+        // Failed writes must remain retryable on the next notification.
+        lastSavedSettings[identifier] = settings
+    }
+
+    /// Listen to WebKit notifications about changed permissions and update the store to match changes.
+    ///
+    /// This will fire a couple of times during extension installation (and can't be easily worked around
+    /// because WebKit updates permissions asynchronously), but `lastSavedSettings` guards us from
+    /// too frequent unnecessary disk writes.
     private func observePermissionChanges(in context: WKWebExtensionContext) {
-        // Includes permissions.remove(), so revoked optional grants cannot return on relaunch.
         let notifications = [WKWebExtensionContext.permissionsWereGrantedNotification,
                              WKWebExtensionContext.grantedPermissionsWereRemovedNotification,
                              WKWebExtensionContext.permissionMatchPatternsWereGrantedNotification,
@@ -229,7 +246,6 @@ public final class WebExtensionPermissionController {
                 MainActor.assumeIsolated {
                     guard let self, let context else { return }
                     do {
-                        Logger.webExtensions.debug("Notification received: \(notification.name.rawValue) for \(context.uniqueIdentifier)")
                         try self.save(context)
                     } catch {
                         Logger.webExtensions.error("Could not save changed extension permissions: \(error.localizedDescription)")

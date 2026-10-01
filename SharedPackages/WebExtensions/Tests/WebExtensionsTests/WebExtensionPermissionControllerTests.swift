@@ -29,8 +29,93 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     private let prompter = PermissionPrompterMock()
     private var store: WebExtensionPermissionStore { WebExtensionPermissionStore(keyValueStore: keyValueStore) }
 
-    private func makeController() -> WebExtensionPermissionController {
-        WebExtensionPermissionController(store: store, installationStore: installationStore, prompter: prompter)
+    private func makeController(permissionStore: (any WebExtensionPermissionStoring)? = nil) -> WebExtensionPermissionController {
+        WebExtensionPermissionController(store: permissionStore ?? store, installationStore: installationStore, prompter: prompter)
+    }
+
+    func testRepeatedNotificationsSkipUnchangedSettingsButPersistGrantsAndRevocations() async throws {
+        let countingStore = CountingPermissionStore(wrapping: store)
+        let controller = makeController(permissionStore: countingStore)
+        let context = try await makeContext()
+        try await controller.prepare(context)
+        XCTAssertEqual(countingStore.saveAttempts, 1)
+
+        for _ in 0..<15 {
+            NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+            NotificationCenter.default.post(name: WKWebExtensionContext.permissionMatchPatternsWereGrantedNotification, object: context)
+        }
+        XCTAssertEqual(countingStore.saveAttempts, 1)
+
+        let granted = await controller.request(.init(permissions: [.clipboardWrite]), for: context)
+        XCTAssertTrue(granted)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(countingStore.saveAttempts, 2)
+        XCTAssertNotNil(try store.settings(for: context.uniqueIdentifier)?.grantedPermissions["clipboardWrite"])
+
+        context.setPermissionStatus(.unknown, for: WKWebExtension.Permission.clipboardWrite)
+        for _ in 0..<3 {
+            NotificationCenter.default.post(name: WKWebExtensionContext.grantedPermissionsWereRemovedNotification, object: context)
+        }
+        XCTAssertEqual(countingStore.saveAttempts, 3)
+        XCTAssertNil(try store.settings(for: context.uniqueIdentifier)?.grantedPermissions["clipboardWrite"])
+    }
+
+    func testFailedNotificationSaveIsRetriedUntilSuccessful() async throws {
+        let countingStore = CountingPermissionStore(wrapping: store)
+        let controller = makeController(permissionStore: countingStore)
+        let context = try await makeContext()
+        try await controller.prepare(context)
+        context.setPermissionStatus(.grantedExplicitly, for: WKWebExtension.Permission.clipboardWrite)
+        keyValueStore.shouldThrowOnSet = true
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(countingStore.saveAttempts, 2)
+        XCTAssertNil(try store.settings(for: context.uniqueIdentifier)?.grantedPermissions["clipboardWrite"])
+
+        keyValueStore.shouldThrowOnSet = false
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(countingStore.saveAttempts, 3)
+        XCTAssertNotNil(try store.settings(for: context.uniqueIdentifier)?.grantedPermissions["clipboardWrite"])
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(countingStore.saveAttempts, 3)
+    }
+
+    func testRestoringAndUnloadingUnchangedSettingsDoesNotWriteAgain() async throws {
+        let context = try await makeContext()
+        try await makeController().prepare(context)
+        let countingStore = CountingPermissionStore(wrapping: store)
+        let controller = makeController(permissionStore: countingStore)
+        let restored = WKWebExtensionContext(for: context.webExtension)
+        restored.uniqueIdentifier = context.uniqueIdentifier
+        try await controller.prepare(restored)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: restored)
+        controller.didUnload(restored.uniqueIdentifier)
+        XCTAssertEqual(countingStore.saveAttempts, 0)
+    }
+
+    func testPrivateAccessChangesUpdateSavedSnapshot() async throws {
+        let countingStore = CountingPermissionStore(wrapping: store)
+        let controller = makeController(permissionStore: countingStore)
+        let context = try await makeContext()
+        try await controller.prepare(context)
+        try controller.setHasAccessToPrivateData(true, for: context.uniqueIdentifier)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(countingStore.saveAttempts, 2)
+        try controller.setHasAccessToPrivateData(false, for: context.uniqueIdentifier)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(countingStore.saveAttempts, 3)
+        XCTAssertEqual(try store.settings(for: context.uniqueIdentifier)?.hasAccessToPrivateData, false)
+    }
+
+    func testReinstallationAfterForgettingConsentSavesIdenticalSettingsAgain() async throws {
+        let countingStore = CountingPermissionStore(wrapping: store)
+        let controller = makeController(permissionStore: countingStore)
+        let context = try await makeContext()
+        try await controller.prepare(context)
+        try controller.forget(context.uniqueIdentifier)
+        XCTAssertNil(try store.settings(for: context.uniqueIdentifier))
+        try await controller.prepare(context)
+        XCTAssertEqual(countingStore.saveAttempts, 2)
+        XCTAssertNotNil(try store.settings(for: context.uniqueIdentifier))
     }
 
     func testWhenInstallationIsDeniedThenNoConsentIsStored() async throws {
@@ -404,5 +489,27 @@ private final class PermissionPrompterMock: WebExtensionPermissionPrompting {
         permissionRequests.append(permissions)
         onPermissionRequest?()
         return permissionResponse
+    }
+}
+
+private final class CountingPermissionStore: WebExtensionPermissionStoring {
+    private let wrapped: any WebExtensionPermissionStoring
+    private(set) var saveAttempts = 0
+
+    init(wrapping store: any WebExtensionPermissionStoring) {
+        wrapped = store
+    }
+
+    func settings(for identifier: String) throws -> WebExtensionPermissionSettings? {
+        try wrapped.settings(for: identifier)
+    }
+
+    func save(_ settings: WebExtensionPermissionSettings, for identifier: String) throws {
+        saveAttempts += 1
+        try wrapped.save(settings, for: identifier)
+    }
+
+    func removeSettings(for identifier: String) throws {
+        try wrapped.removeSettings(for: identifier)
     }
 }

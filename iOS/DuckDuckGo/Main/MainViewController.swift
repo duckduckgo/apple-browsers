@@ -517,8 +517,9 @@ class MainViewController: UIViewController {
     lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
     let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
-    private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
-        featureFlagger: featureFlagger,
+    private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
+    lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
+        isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
@@ -635,6 +636,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
         lastTabShortcutAdapter: LastTabShortcutAdapter,
@@ -721,6 +723,8 @@ class MainViewController: UIViewController {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
+            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastTabShortcutAdapter = lastTabShortcutAdapter
@@ -861,7 +865,8 @@ class MainViewController: UIViewController {
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
-            internalUserCommands: internalUserCommands)
+            internalUserCommands: internalUserCommands,
+            floatingUIManager: floatingUIManager)
     }()
 
     lazy var suggestionTrayDependencies: SuggestionTrayDependencies = {
@@ -6215,6 +6220,13 @@ extension MainViewController: OmniBarDelegate {
         // is anchored beneath it — re-apply the inset so it follows instead of leaving a gap.
         guard isPad, isPopoverVisible, isModeToggleInAIChatMode else { return }
         suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: true)
+    }
+
+    /// A new tab, like the iPhone input's links, so the chat behind the bar stays where it was.
+    func onOmniBarFooterLinkTapped(_ url: URL) {
+        performCancel(animated: false)
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
     private func duckAIPopoverTopInset() -> CGFloat {

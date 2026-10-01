@@ -2564,8 +2564,11 @@ public struct UserText {
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
     public static let aiChatHeaderEditMessageTitle = NSLocalizedString("aichat.header.editMessage", value: "Edit Message", comment: "Title shown in the Duck.ai tab header while editing a previously sent message")
     public static let aiChatEditReplaceResponseDisclaimer = NSLocalizedString("aichat.edit.replaceResponseDisclaimer", value: "Editing will replace the response with a new one.", comment: "Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response")
-    public static let aiChatAttachmentPrivacyNoticeFormat = NotLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
-    public static let aiChatAttachmentPrivacyNoticeLearnMore = NotLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
+    public static let aiChatMultiTabPromotion = NotLocalizedString("aichat.multiTab.promotion", value: "New · Type “@” or tap the {attachment} icon to add a tab.", comment: "Multi-tab feature promotion. {attachment} is replaced by an inline attachment icon.")
+    public static let aiChatMultiTabPromotionNew = NotLocalizedString("aichat.multiTab.promotion.new", value: "New", comment: "Emphasized prefix in the multi-tab feature promotion.")
+    public static let aiChatMultiTabPromotionAttachment = NotLocalizedString("aichat.multiTab.promotion.attachment", value: "attachment", comment: "Spoken name of the inline attachment icon in the multi-tab feature promotion.")
+    public static let aiChatAttachmentPrivacyNoticeFormat = NSLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
+    public static let aiChatAttachmentPrivacyNoticeLearnMore = NSLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
     public static let aiChatHeaderRecentChatsAccessibilityLabel = NotLocalizedString("aichat.header.recentChats.a11y", value: "Recent chats", comment: "Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header")
     public static let aiChatHeaderCloseTabAccessibilityLabel = NotLocalizedString("aichat.header.closeTab.a11y", value: "Close tab", comment: "Accessibility label for the close-tab button in the Duck.ai tab header")
     public static let aiChatHeaderNewChatAccessibilityLabel = NotLocalizedString("aichat.header.newChat.a11y", value: "New chat", comment: "Accessibility label for the new-chat button in the Duck.ai tab header")
@@ -2588,8 +2591,9 @@ public struct UserText {
 
     // MARK: - Duck.ai Terms of Service (unified toggle input footer)
 
-    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By sending a message, you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; sending a message accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
+    public static let duckAITermsOfServiceDisclaimer = NotLocalizedString("aichat.termsOfService.disclaimer", value: "DuckDuckGo anonymizes your chats. By tapping 'Ask' you agree to our %@.", comment: "Disclaimer below the Duck.ai input for users who haven't accepted the terms yet; tapping the input's 'Ask' button accepts them. %@ is a link reading 'Privacy Policy and Terms of Service'")
     public static let duckAITermsOfServiceDisclaimerLink = NotLocalizedString("aichat.termsOfService.disclaimer.link", value: "Privacy Policy and Terms of Service", comment: "Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page")
+    public static let duckAIAskButtonTitle = NotLocalizedString("aichat.termsOfService.ask.button", value: "Ask", comment: "Title of the Duck.ai input's send button while the Terms of Service disclaimer is shown; tapping it sends the prompt and accepts the terms")
 
     // MARK: - Duck.ai Create Image model switch (unified toggle input footer)
 
@@ -3217,6 +3221,8 @@ public struct UserText {
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value: "Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
     public static let dataImportHubTitle = NSLocalizedString("data.import.hub.title", value: "Bring to DuckDuckGo", comment: "Title for the data import hub screen")
+    public static let dataImportSafariUnavailableInBuildTitle = NotLocalizedString("data.import.safari.unavailable.build.title", value: "Safari Import Unavailable in the Alpha app", comment: "Internal only — not localized")
+    public static let dataImportSafariUnavailableInBuildMessage = NotLocalizedString("data.import.safari.unavailable.build.message", value: "To test this flow, use the main DuckDuckGo app. Apple only grants the entitlement required for importing from Safari to the App Store app.", comment: "Internal only — not localized")
     public static let importSourceSectionImportFrom = NSLocalizedString("data.import.source.section.import-from", value: "Import From", comment: "Section header for password import sources on the hub screen")
     public static let importSourceSectionSyncFrom = NSLocalizedString("data.import.source.section.sync-from", value: "Sync From", comment: "Section header for sync-based import sources on the hub screen")
     public static let importSourcePasswordsApp = NSLocalizedString("data.import.source.passwords-app", value: "Passwords App", comment: "Row title for importing from the Apple Passwords app")

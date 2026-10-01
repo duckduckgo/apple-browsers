@@ -220,7 +220,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case onboardingAsync
 
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlocking
+    case onboardingNonBlockingV2
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
@@ -853,6 +853,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Failsafe kill switch for the CPM background-view graveyard treatment.
+    case cpmBackgroundGraveyardTreatment
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

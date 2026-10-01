@@ -45,8 +45,7 @@ struct RedesignedEscapeHatchView: View {
                 RedesignedEscapeHatchModuleView(
                     title: model.title,
                     domain: model.subtitle.isEmpty ? nil : model.subtitle,
-                    // Tab.lastViewedDate is restricted to telemetry, so it cannot supply this caption.
-                    lastVisitedText: nil,
+                    lastVisitedText: lastVisitedText,
                     thumbnail: model.thumbnail,
                     favicon: specialTabIcon,
                     faviconDomain: model.domain,
@@ -63,6 +62,11 @@ struct RedesignedEscapeHatchView: View {
         }
         .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isReturnToTabCardVisible)
         .id(model.targetTab.uid)
+    }
+
+    private var lastVisitedText: String? {
+        guard !model.isFireTab, let lastViewedDate = model.targetTab.lastViewedDate else { return nil }
+        return lastViewedDate.formatted(.relative(presentation: .named, unitsStyle: .abbreviated))
     }
 
     private var specialTabIcon: UIImage? {

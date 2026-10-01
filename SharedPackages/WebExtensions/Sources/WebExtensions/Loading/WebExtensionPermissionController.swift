@@ -71,7 +71,14 @@ public final class WebExtensionPermissionController {
     private let prompter: any WebExtensionPermissionPrompting
     private var observations: [String: Set<AnyCancellable>] = [:]
     private var contexts: [String: WKWebExtensionContext] = [:]
-    // Trust comes from the browser's install path, never from a user-supplied manifest.
+
+    /// This set keeps trusted extensions at the time of installation.
+    ///
+    /// To guard from malicious actors impersonating a trusted extension by adjusting manifest file,
+    /// an additional verification of the extension install path is performed in `WebExtensionManager`
+    /// and only extensions installed from within the app bundle are trusted.
+    ///
+    /// - Seealso: `func isTrusted(_ identifier: String) -> Bool`
     var trustedInstallations: Set<String> = []
 
     public init(store: any WebExtensionPermissionStoring,
@@ -82,6 +89,11 @@ public final class WebExtensionPermissionController {
         self.prompter = prompter
     }
 
+    /// Verify if the extension is trusted, and therefore exempt from permission prompts.
+    ///
+    /// Only extensions bundled with the app are trusted. Those are included in `trustedInstallations` set
+    /// for the time of the installation, and after installation they can be queries from `installationStore`
+    /// by checking their `isEmbedded` flag.
     func isTrusted(_ identifier: String) -> Bool {
         trustedInstallations.contains(identifier) || installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == true
     }

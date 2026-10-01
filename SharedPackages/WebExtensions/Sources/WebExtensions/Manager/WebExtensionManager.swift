@@ -250,7 +250,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
-        // A manifest's DDG identifier is not proof that it came from the app bundle.
+        // A manifest's DDG identifier is not enough of a proof that it came from the app bundle. We're additionally verifying sourceURL.
         let isBundled = EmbeddedWebExtensionRegistry.all.contains { $0.bundledURL?.standardizedFileURL == sourceURL.standardizedFileURL }
         let embeddedType = permissionController == nil || isBundled ? metadata.type : nil
         if embeddedType != nil {

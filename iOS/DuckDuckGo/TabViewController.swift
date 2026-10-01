@@ -2912,7 +2912,9 @@ extension TabViewController: WKNavigationDelegate {
 
             for (const element of candidates) {
                 if (!element) continue;
-                const values = getComputedStyle(element).backgroundColor.match(/[\\d.]+/g)?.map(Number);
+                const backgroundColor = getComputedStyle(element).backgroundColor;
+                if (!backgroundColor.startsWith('rgb(') && !backgroundColor.startsWith('rgba(')) continue;
+                const values = backgroundColor.match(/[\\d.]+/g)?.map(Number);
                 if (!values || values.length < 3) continue;
                 const alpha = values.length > 3 ? values[3] : 1;
                 if (alpha > 0.05) {

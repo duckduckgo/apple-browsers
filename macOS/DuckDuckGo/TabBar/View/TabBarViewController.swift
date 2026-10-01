@@ -385,6 +385,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         scrollView.borderType = .noBorder
         scrollView.hasVerticalScroller = false
         scrollView.verticalScrollElasticity = .none
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsetsZero
         scrollView.contentView = clipView
         scrollViewHeightConstraint = scrollView.heightAnchor
             .constraint(equalToConstant: LayoutConstants.scrollViewHeight)

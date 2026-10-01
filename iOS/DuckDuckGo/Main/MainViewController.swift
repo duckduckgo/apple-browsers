@@ -44,6 +44,7 @@ import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
 import RemoteMessaging
+import SitePermissions
 import Subscription
 import Suggestions
 import SwiftUI
@@ -95,11 +96,12 @@ enum FloatingGlassAppearancePolicy {
     static func interfaceStyle(isFireMode: Bool,
                                traitCollection: UITraitCollection,
                                pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
-        if isFireMode || traitCollection.userInterfaceStyle == .dark {
+        if isFireMode {
             return .dark
         }
+        // Follow the page in both themes: forcing dark glass over a light page leaves its white icons washed out.
         guard let pageBackgroundColor else {
-            return .light
+            return traitCollection.userInterfaceStyle == .dark ? .dark : .light
         }
         let resolvedColor = pageBackgroundColor.resolvedColor(with: traitCollection)
         return resolvedColor.brightnessPercentage < 50 ? .dark : .light
@@ -216,6 +218,7 @@ class MainViewController: UIViewController {
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isDownloadMenuAlertVisible: Bool?
+    private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
     }
@@ -514,8 +517,9 @@ class MainViewController: UIViewController {
     lazy var aiChatContextualFloatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature()
     let duckAIAddressBarPixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()
     lazy var unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()
-    private lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
-        featureFlagger: featureFlagger,
+    private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
+    lazy var floatingUIManager: FloatingUIManaging = FloatingUIManager(
+        isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
     lazy var minimalChromeSettings: MinimalChromeSettingsProviding = MinimalChromeSettings()
@@ -632,6 +636,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
         lastTabShortcutAdapter: LastTabShortcutAdapter,
@@ -718,6 +723,8 @@ class MainViewController: UIViewController {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
+            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastTabShortcutAdapter = lastTabShortcutAdapter
@@ -858,7 +865,8 @@ class MainViewController: UIViewController {
             remoteMessagingPixelReporter: remoteMessagingPixelReporter,
             appSettings: appSettings,
             subscriptionManager: subscriptionManager,
-            internalUserCommands: internalUserCommands)
+            internalUserCommands: internalUserCommands,
+            floatingUIManager: floatingUIManager)
     }()
 
     lazy var suggestionTrayDependencies: SuggestionTrayDependencies = {
@@ -3923,7 +3931,7 @@ class MainViewController: UIViewController {
     }
     
     private func showNoMicrophonePermissionAlert() {
-        let isRedesigned = featureFlagger.isFeatureOn(.sitePermissions)
+        let isRedesigned = tabManager.isSitePermissionsEnabled
         guard isRedesigned else {
             let alertController = NoMicPermissionAlert.build(isRedesigned: false) { _ in }
             present(alertController, animated: true, completion: nil)
@@ -4515,7 +4523,7 @@ class MainViewController: UIViewController {
     /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
     private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
-            isSitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
             onAction: { [weak self] action in
                 self?.dismiss(animated: true) {
@@ -5562,7 +5570,7 @@ extension MainViewController: OmniBarDelegate {
             case .fire:
                 browsingMenu.highlightFireButton()
 
-            case .openBookmarks:
+            case .openBookmarks, .sitePermissions:
                 break
             }
         }
@@ -6212,6 +6220,13 @@ extension MainViewController: OmniBarDelegate {
         // is anchored beneath it — re-apply the inset so it follows instead of leaving a gap.
         guard isPad, isPopoverVisible, isModeToggleInAIChatMode else { return }
         suggestionTrayController?.setAdditionalTopInset(duckAIPopoverTopInset(), animated: true)
+    }
+
+    /// A new tab, like the iPhone input's links, so the chat behind the bar stays where it was.
+    func onOmniBarFooterLinkTapped(_ url: URL) {
+        performCancel(animated: false)
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
     private func duckAIPopoverTopInset() -> CGFloat {
@@ -7305,6 +7320,21 @@ extension MainViewController: TabDelegate {
         viewCoordinator.omniBar?.showYouTubeAdBlockNotification()
     }
 
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        guard currentTab === tab else { return }
+        let orderedPermissionTypes = SitePermissionType.allCases.filter(permissionTypes.contains)
+        sitePermissionAnimationTab = tab
+        viewCoordinator.menuToolbarButton.animateSitePermissionGranted(orderedPermissionTypes)
+        viewCoordinator.omniBar.barView.menuButton.animateSitePermissionGranted(orderedPermissionTypes)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        guard sitePermissionAnimationTab === tab else { return }
+        viewCoordinator.menuToolbarButton.cancelSitePermissionAnimation()
+        viewCoordinator.omniBar.barView.menuButton.cancelSitePermissionAnimation()
+        sitePermissionAnimationTab = nil
+    }
+
     func tabDidRequestShowingMenuHighlighter(tab: TabViewController) {
         showMenuHighlighterIfNeeded()
     }
@@ -8066,6 +8096,8 @@ extension MainViewController {
         // Unrelated trait changes must preserve that hierarchy.
         if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
             || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
+            // A raster captured before editing cannot follow a later appearance change.
+            restingNewTabPageSnapshot = nil
             refreshSettledFloatingGlassAppearance()
         }
         updateFindInPage()

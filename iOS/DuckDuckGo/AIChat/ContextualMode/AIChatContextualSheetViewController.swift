@@ -176,7 +176,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+        termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+            feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
+        )
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
@@ -409,6 +412,8 @@ final class AIChatContextualSheetViewController: UIViewController {
         button.accessibilityIdentifier = "AIChat.ContextualSheet.CloseButton"
         return button
     }()
+
+    var inputSuggestionsTopAnchor: NSLayoutYAxisAnchor { contentContainerView.topAnchor }
 
     private lazy var contentContainerView: UIView = {
         let view = UIView()
@@ -1059,6 +1064,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
         handleChipRemoved()
     }
+
+    /// Opens in a new tab once the sheet is down; the draft stays for when the user comes back.
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
+    }
 }
 
 // MARK: - VoiceSearchViewControllerDelegate
@@ -1138,7 +1148,14 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling) {
+        persistentUTIHost?.discardTabAttachments()
+        webViewController?.cancelPendingTabAttachmentPrompt()
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+    }
+
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        persistentUTIHost?.discardTabAttachments()
+        webViewController?.cancelPendingTabAttachmentPrompt()
     }
 
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling) {
@@ -1294,6 +1311,8 @@ private extension AIChatContextualSheetViewController {
     }
 
     func submitPromptFromNativeInput(_ prompt: String) {
+        // Ahead of delivery, which stamps the prompt with the acceptance.
+        contextualInputViewController.acceptTermsIfDisclaimerShown()
         beginWaitingForInitialPromptResponseStateIfNeeded()
         delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
     }
@@ -1501,6 +1520,9 @@ private extension AIChatContextualSheetViewController {
         }
 
         let utiView = persistentUTIHost.mount(in: self)
+        persistentUTIHost.onTabMentionVisibilityChanged = { [weak self] isVisible in
+            self?.contextualInputViewController.view.isHidden = isVisible
+        }
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
         contentContainerBottomConstraint?.isActive = false
         let bottomConstraint = contentContainerView.bottomAnchor.constraint(equalTo: utiView.topAnchor)

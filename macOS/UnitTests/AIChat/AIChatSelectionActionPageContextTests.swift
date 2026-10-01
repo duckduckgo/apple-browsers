@@ -42,6 +42,13 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         pageContext = PageContextMock()
     }
 
+    override func tearDown() {
+        config = nil
+        coordinator = nil
+        pageContext = nil
+        super.tearDown()
+    }
+
     func testSummarizeSuppressesAutoPageContext() {
         makeSummarizer().summarize(.init(text: "selected", websiteURL: URL(string: "https://example.com"), websiteTitle: "Example", source: .contextMenu))
 

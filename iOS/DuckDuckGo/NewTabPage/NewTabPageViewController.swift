@@ -68,8 +68,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let onboardingFlowProvider: OnboardingFlowProviding
 
     private let newTabPageViewModel: NewTabPageViewModel
-    private let messagesModel: NewTabPageMessagesModel
-    private let favoritesModel: FavoritesViewModel
+    let messagesModel: NewTabPageMessagesModel
+    let favoritesModel: FavoritesViewModel
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
@@ -112,7 +112,9 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
-         floatingUIManager: FloatingUIManaging = FloatingUIManager(),
+         floatingUIManager: FloatingUIManaging = FloatingUIManager(
+            isFloatingUIFeatureEnabled: false
+         ),
          appWidthObserver: AppWidthObserver = .shared,
          notificationCenter: NotificationCenter = .default,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),

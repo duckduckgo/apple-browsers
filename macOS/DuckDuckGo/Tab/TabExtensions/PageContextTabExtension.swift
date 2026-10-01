@@ -42,6 +42,7 @@ final class PageContextTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private var sidebarCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
+    private let browserTools: AIChatBrowserToolsService
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -124,9 +125,11 @@ final class PageContextTabExtension {
         aiChatSessionStore: AIChatSessionStoring,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool,
-        faviconManagement: FaviconManagement
+        faviconManagement: FaviconManagement,
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
     ) {
         self.tabID = tabID
+        self.browserTools = browserTools
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.extractionPixelHandler = extractionPixelHandler
@@ -449,9 +452,11 @@ final class PageContextTabExtension {
         fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
     }
 
+    /// `contextType` defaults to markdown: only a document tab goes over as a PDF.
     private func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
                                      trigger: PageContextExtractionTrigger,
-                                     latency: PageContextExtractionLatencyBucket?) {
+                                     latency: PageContextExtractionLatencyBucket?,
+                                     contextType: PageContextType = .markdown) {
         guard isExtractionMeasurementEnabled else { return }
         guard isSidebarVisibleForTab else { return }
         if case .failure(.emptyContent) = outcome, trigger != .userRequest { return }
@@ -462,7 +467,7 @@ final class PageContextTabExtension {
             didReportExtractionForCurrentNavigation = true
         }
         Logger.aiChat.debug("📊 PageContext extraction outcome: \(String(describing: outcome), privacy: .public) trigger=\(trigger.rawValue, privacy: .public) latency=\(latency?.rawValue ?? "nil", privacy: .public)")
-        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
     }
 
     /// Fires `.timeout` for any collect that hasn't produced a result within the timeout window and
@@ -533,7 +538,7 @@ final class PageContextTabExtension {
     private func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView else {
             Logger.aiChat.debug("⚠️ PageContext gate: no webview, cannot read document host=\(url.host ?? "nil", privacy: .public)")
-            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil, contextType: .pdf)
             return
         }
         guard Self.shouldRunDocumentCollect(trigger: trigger, webViewURL: webView.url, contentURL: url) else {
@@ -561,7 +566,7 @@ final class PageContextTabExtension {
             case .document(let pageContext):
                 Logger.aiChat.debug("📎 PageContext: document attached host=\(url.host ?? "nil", privacy: .public)")
                 await self.handle(pageContext)
-                self.fireExtractionPixel(.success, trigger: trigger, latency: latency)
+                self.fireExtractionPixel(.success, trigger: trigger, latency: latency, contextType: .pdf)
             case .tooLarge(let pageContext):
                 Logger.aiChat.debug("🚫 PageContext: document over size ceiling host=\(url.host ?? "nil", privacy: .public)")
                 await self.handle(pageContext)
@@ -575,7 +580,7 @@ final class PageContextTabExtension {
                 if Self.shouldDeliverCollectionResult(nil, wasForced: wasForced, cached: self.cachedPageContext) {
                     await self.handle(DocumentPageContextProvider.metadataContext(url: url, title: title, attachable: false))
                 }
-                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
+                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency, contextType: .pdf)
             }
         }
     }
@@ -876,6 +881,9 @@ extension PageContextTabExtension: NavigationResponder {
     func navigationDidFinish(_ navigation: Navigation) {
         guard !isLoadedInSidebar else { return }
         reCollectForSettledNavigation(navigation)
+        if ["http", "https"].contains(navigation.url.scheme?.lowercased()) {
+            browserTools.notifyTabChanged(ownerTabID: tabID, url: navigation.url)
+        }
     }
 
     /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page

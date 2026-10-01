@@ -107,3 +107,14 @@ extension View {
         }
     }
 }
+
+extension View {
+    @ViewBuilder
+    func scrollDismissesKeyboardIfAvailable() -> some View {
+        if #available(iOS 16, *) {
+            scrollDismissesKeyboard(.immediately)
+        } else {
+            self
+        }
+    }
+}

@@ -25,7 +25,7 @@ struct SyncStatusView<ViewModel>: View where ViewModel: ManagementViewModel {
         let syncFooterText = model.isAIChatSyncEnabled ? UserText.syncFooterUpdated : UserText.syncFooter
         VStack(alignment: .leading, spacing: 8) {
             SyncPreferencesRow {
-                Image(model.isAppRebranded ? .solidCheckmark : .solidCheckmarkLegacy)
+                Image(.solidCheckmark)
             } centerContent: {
                 Text(UserText.syncConnected)
                     .foregroundColor(Color(.blackWhite60))

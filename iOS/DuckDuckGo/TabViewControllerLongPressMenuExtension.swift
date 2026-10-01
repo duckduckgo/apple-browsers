@@ -147,6 +147,7 @@ extension TabViewController {
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: onboardingPixelReporter,
             featureFlagger: featureFlagger,
+            isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
             contentScopeExperimentManager: contentScopeExperimentsManager,
             textZoomCoordinator: textZoomCoordinator,
             autoconsentManagement: autoconsentManagement,
@@ -166,7 +167,8 @@ extension TabViewController {
             autoplaySettings: autoplaySettings,
             adBlockingAvailability: adBlockingAvailability,
             eventHub: eventHub,
-            webExtensionManagerProvider: webExtensionManagerProvider)
+            webExtensionManagerProvider: webExtensionManagerProvider,
+            sitePermissionsEnabled: isSitePermissionsEnabled)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

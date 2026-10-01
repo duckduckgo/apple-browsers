@@ -417,13 +417,6 @@ extension Pixel {
         case icsCalendarRoutedByExtension
         case icsCalendarUnsupportedRRule
 
-        case vcardContactEditorPresented
-        case vcardContactEditorSaved
-        case vcardContactEditorCancelled
-        case vcardContactMultipleContactsTruncated
-        case vcardContactFallbackParseFailure
-        case vcardContactRoutedByExtension
-
         case walletPassPreviewRequested
         case walletPassPreviewFailed
 
@@ -1473,8 +1466,6 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
-        case settingsHideTabBarWhileScrollingOn
-        case settingsHideTabBarWhileScrollingOff
         case settingsWhatsNewOpen
         case settingsAutoplayOpen
         case settingsAutoplayChanged
@@ -2220,8 +2211,6 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
-        case .settingsHideTabBarWhileScrollingOn: return "settings_hide_tab_bar_while_scrolling_on"
-        case .settingsHideTabBarWhileScrollingOff: return "settings_hide_tab_bar_while_scrolling_off"
         case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
         case .settingsAutoplayOpen: return "m_settings_autoplay_open"
         case .settingsAutoplayChanged: return "m_settings_autoplay_changed"
@@ -2443,13 +2432,6 @@ extension Pixel.Event {
         case .icsCalendarFallbackParseFailure: return "m_ics_calendar_fallback_parse_failure"
         case .icsCalendarRoutedByExtension: return "m_ics_calendar_routed_by_extension"
         case .icsCalendarUnsupportedRRule: return "m_ics_calendar_unsupported_rrule"
-
-        case .vcardContactEditorPresented: return "m_vcard_contact_editor_presented"
-        case .vcardContactEditorSaved: return "m_vcard_contact_editor_saved"
-        case .vcardContactEditorCancelled: return "m_vcard_contact_editor_cancelled"
-        case .vcardContactMultipleContactsTruncated: return "m_vcard_contact_multiple_contacts_truncated"
-        case .vcardContactFallbackParseFailure: return "m_vcard_contact_fallback_parse_failure"
-        case .vcardContactRoutedByExtension: return "m_vcard_contact_routed_by_extension"
 
         case .walletPassPreviewRequested: return "wallet_pass_preview_requested"
         case .walletPassPreviewFailed: return "wallet_pass_preview_failed"

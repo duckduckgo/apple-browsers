@@ -514,6 +514,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
     var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
+    var onFooterLinkTapped: ((URL) -> Void)?
 
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
@@ -643,13 +644,29 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return strip
     }()
 
-    private let createImageModelSwitchCard: UTIFooterCardView = {
+    /// One slot below the expanded Duck.ai input, shared by the Terms of Service disclaimer and the
+    /// Create Image model switch notice.
+    private let footerCard: UTIFooterCardView = {
         let card = UTIFooterCardView()
         card.translatesAutoresizingMaskIntoConstraints = false
-        card.alpha = 0
-        card.isHidden = true
         return card
     }()
+
+    /// Gives the footer card the expanded bar's shadow; without it the card looks see-through over a white page.
+    private let footerCardShadowView: CompositeShadowView = {
+        let view = CompositeShadowView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
+        view.layer.cornerRadius = UTIFooterCardView.cornerRadius
+        view.layer.cornerCurve = .continuous
+        view.applyActiveShadow()
+        view.alpha = 0
+        view.isHidden = true
+        return view
+    }()
+
+    /// `nil` whenever the footer card is off screen, including while the input is collapsed.
+    private(set) var visibleFooterMessage: UTIFooterMessage?
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -746,7 +763,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
-    private var embeddedGlassInterfaceStyle: UIUserInterfaceStyle?
+    private var pageGlassInterfaceStyle: UIUserInterfaceStyle?
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
@@ -757,8 +774,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var desiredGlassInterfaceStyle: UIUserInterfaceStyle {
-        if isBottomFloatingField, !isFloatingMinimalChromeBar, let embeddedGlassInterfaceStyle {
-            return embeddedGlassInterfaceStyle
+        if let pageGlassInterfaceStyle {
+            return pageGlassInterfaceStyle
         }
         return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
     }
@@ -768,18 +785,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
                 if configuration.kind == .embedded {
-                    // Native regular material, tinted so it still reads as our surface colour.
-                    view = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
-                    let tintView = UIView()
-                    tintView.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
-                    tintView.translatesAutoresizingMaskIntoConstraints = false
-                    view.contentView.addSubview(tintView)
-                    NSLayoutConstraint.activate([
-                        tintView.topAnchor.constraint(equalTo: view.contentView.topAnchor),
-                        tintView.leadingAnchor.constraint(equalTo: view.contentView.leadingAnchor),
-                        tintView.trailingAnchor.constraint(equalTo: view.contentView.trailingAnchor),
-                        tintView.bottomAnchor.constraint(equalTo: view.contentView.bottomAnchor)
-                    ])
+                    // Flat fill: the chrome underneath is already glass.
+                    view = UIVisualEffectView(effect: nil)
+                    view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
                 } else {
                     let effect = UIGlassEffect(style: .regular)
                     if configuration.fireMode {
@@ -792,9 +800,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         if configuration.kind == .embedded {
             view.overrideUserInterfaceStyle = configuration.interfaceStyle
-            // `cornerConfiguration` only shapes glass effects; a classic UIBlurEffect needs a
-            // manual capsule radius, kept in sync with its height in `applyOmnibarCornerStyle()`.
-            view.clipsToBounds = true
         }
         return view
     }
@@ -916,8 +921,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
             setFieldBackgroundColor(.clear)
             searchAreaContainerView.layoutIfNeeded()
-            // The new glassEffect has no corner radius yet; only layoutSubviews() sets it otherwise.
-            applyOmnibarCornerStyle()
         }
     }
 
@@ -948,7 +951,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     func refreshMaterialAppearance(interfaceStyle: UIUserInterfaceStyle? = nil) {
         if let interfaceStyle {
-            embeddedGlassInterfaceStyle = interfaceStyle
+            pageGlassInterfaceStyle = interfaceStyle
         }
         glassEffectConfiguration = nil
         updateFireModeAppearance()
@@ -964,6 +967,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             removeMinimalChromeButtonGlass()
         }
         makeGlass()
+        applyPageGlassInterfaceStyle()
         setNeedsLayout()
     }
 
@@ -1063,7 +1067,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         leadingButtonsContainer.addArrangedSubview(leadingBookmarksButtonView)
         leadingButtonsContainer.addArrangedSubview(passwordsButtonView)
 
-        searchAreaAlignmentView.addSubview(createImageModelSwitchCard)
+        searchAreaAlignmentView.addSubview(footerCardShadowView)
+        footerCardShadowView.addSubview(footerCard)
         searchAreaAlignmentView.addSubview(searchAreaContainerView)
 
         if isFloatingUIEnabled {
@@ -1089,8 +1094,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
-        createImageModelSwitchCard.onDismissTap = { [weak self] in
+        // Only the model switch notice carries a close button; the disclaimer is required.
+        footerCard.onDismissTap = { [weak self] in
             self?.onCreateImageModelSwitchNoticeDismissed?()
+        }
+        footerCard.onLinkTap = { [weak self] url in
+            self?.onFooterLinkTapped?(url)
         }
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
@@ -1167,10 +1176,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             // centerX constraint below keep it centered within the available width.
             searchAreaContainerView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
 
-            createImageModelSwitchCard.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            createImageModelSwitchCard.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            createImageModelSwitchCard.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
-                                                            constant: -UTIFooterCardView.overlap),
+            footerCardShadowView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            footerCardShadowView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            footerCardShadowView.topAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor,
+                                                      constant: -UTIFooterCardView.overlap),
+            footerCard.topAnchor.constraint(equalTo: footerCardShadowView.topAnchor),
+            footerCard.leadingAnchor.constraint(equalTo: footerCardShadowView.leadingAnchor),
+            footerCard.trailingAnchor.constraint(equalTo: footerCardShadowView.trailingAnchor),
+            footerCard.bottomAnchor.constraint(equalTo: footerCardShadowView.bottomAnchor),
 
             fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
             fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
@@ -1342,9 +1355,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
         leadingButtonsContainer.overrideUserInterfaceStyle = style
         trailingButtonsContainer.overrideUserInterfaceStyle = style
-        if isBottomFloatingField, !isFloatingMinimalChromeBar, !fireMode, let embeddedGlassInterfaceStyle {
-            glassEffect.overrideUserInterfaceStyle = embeddedGlassInterfaceStyle
-        }
         // When floating, the chrome (and the address text) lives inside `floatingGlassContentHostView`,
         // which in non-fire mode is reparented into `glassEffect.contentView` and so isn't reached by
         // the loop above. Apply the style directly so it resets to `.unspecified` in non-fire mode and
@@ -1353,7 +1363,16 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingGlassContentHostView.overrideUserInterfaceStyle = style
         }
         refreshMinimalChromeGlassTint()
+        applyPageGlassInterfaceStyle()
         progressView?.updateFireModeAppearance(fireMode: fireMode)
+    }
+
+    /// Matches the field and minimal chrome button glass to the page, so a light page gets light glass in dark mode.
+    private func applyPageGlassInterfaceStyle() {
+        guard !fireMode, let pageGlassInterfaceStyle else { return }
+        glassEffect.overrideUserInterfaceStyle = pageGlassInterfaceStyle
+        leadingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
+        trailingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
     }
 
     private func updateShadows() {
@@ -1525,7 +1544,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             attachButton,
             attachmentsStripView,
             aiChatTextView,
-            createImageModelSwitchCard
+            footerCardShadowView
         ]
         return candidates.first { candidate in
             guard !candidate.isHidden, candidate.alpha > 0 else { return false }
@@ -1654,7 +1673,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private struct Metrics {
-        static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
         /// Height of the address field when it is hosted inside the floating bottom toolbar, matching
         /// the 48pt search pill in the chrome spec.
@@ -1747,11 +1765,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         searchAreaView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius + Metrics.activeBorderWidth
 
-        // The embedded field's classic UIBlurEffect ignores `cornerConfiguration`; radius it by hand.
-        if glassEffectConfiguration?.kind == .embedded {
-            glassEffect.layer.cornerRadius = glassEffect.bounds.height / 2
-        }
-
         // The pre-iOS 26 blur fallback needs an explicit capsule radius (iOS 26 uses `.capsule()`).
         if #unavailable(iOS 26.0) {
             for glass in [leadingButtonsGlassView, trailingButtonsGlassView].compactMap({ $0 }) {
@@ -1809,7 +1822,7 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
 extension DefaultOmniBarView {
     static func activateItemSizeConstraints(for item: UIView) {
         item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
-        item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
+        item.widthAnchor.constraint(equalToConstant: OmniBarMetrics.itemSize).isActive = true
     }
 
     static func setUpCommonProperties(for button: UIButton) {
@@ -1923,18 +1936,19 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView {
 
-    func setCreateImageModelSwitchFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
+    func setFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
         guard let message, isSearchAreaExpanded else {
-            hideCreateImageModelSwitchCard(animated: animated)
+            hideFooterCard(animated: animated)
             return
         }
 
-        createImageModelSwitchCard.configure(with: message, animateIcon: false)
-        createImageModelSwitchCard.isHidden = false
-        searchAreaAlignmentView.sendSubviewToBack(createImageModelSwitchCard)
+        footerCard.configure(with: message, animateIcon: false)
+        footerCardShadowView.isHidden = false
+        visibleFooterMessage = message
+        searchAreaAlignmentView.sendSubviewToBack(footerCardShadowView)
 
         guard animated else {
-            createImageModelSwitchCard.alpha = 1
+            footerCardShadowView.alpha = 1
             layoutIfNeeded()
             return
         }
@@ -1942,25 +1956,26 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.createImageModelSwitchCard.alpha = 1
+            self.footerCardShadowView.alpha = 1
             self.layoutIfNeeded()
         }
     }
 
     func expandedContentMaxY(in view: UIView) -> CGFloat {
-        let isCardVisible = !createImageModelSwitchCard.isHidden && createImageModelSwitchCard.alpha > 0
-        let bottomView = isCardVisible ? createImageModelSwitchCard : searchAreaContainerView
+        let isCardVisible = !footerCardShadowView.isHidden && footerCardShadowView.alpha > 0
+        let bottomView = isCardVisible ? footerCardShadowView : searchAreaContainerView
         return bottomView.convert(bottomView.bounds, to: view).maxY
     }
 
-    private func hideCreateImageModelSwitchCard(animated: Bool) {
-        guard !createImageModelSwitchCard.isHidden else { return }
+    private func hideFooterCard(animated: Bool) {
+        visibleFooterMessage = nil
+        guard !footerCardShadowView.isHidden else { return }
 
         let completion: () -> Void = {
-            self.createImageModelSwitchCard.isHidden = true
+            self.footerCardShadowView.isHidden = true
         }
         guard animated else {
-            createImageModelSwitchCard.alpha = 0
+            footerCardShadowView.alpha = 0
             completion()
             return
         }
@@ -1968,7 +1983,7 @@ extension DefaultOmniBarView {
         UIView.animate(withDuration: Metrics.expansionAnimationDuration,
                        delay: 0,
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
-            self.createImageModelSwitchCard.alpha = 0
+            self.footerCardShadowView.alpha = 0
         } completion: { finished in
             guard finished else { return }
             completion()

@@ -192,10 +192,3 @@ private struct SeparatorTrailingToContentModifier: ViewModifier {
         }
     }
 }
-
-private extension View {
-    @ViewBuilder
-    func scrollDismissesKeyboardIfAvailable() -> some View {
-        if #available(iOS 16, *) { self.scrollDismissesKeyboard(.immediately) } else { self }
-    }
-}

@@ -551,6 +551,9 @@ final class PasswordManagementViewController: NSViewController {
         NotificationCenter.default.publisher(for: .dataImportComplete)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                // A closed popover is never reshown (a new one is created each time), and refreshing it
+                // off-screen would re-select and render the Sync promo, firing a phantom displayed pixel.
+                guard self?.view.window?.isVisible == true else { return }
                 self?.refreshData()
             }
             .store(in: &cancellables)
@@ -1409,7 +1412,6 @@ final class PasswordManagementViewController: NSViewController {
         }
 
         let syncPromoViewModel = SyncPromoViewModel(
-            isAppRebranded: themeManager.isAppRebranded,
             touchpointType: touchpoint,
             primaryButtonAction: { [weak self] in
                 self?.syncPromoManager.goToSyncSettings(for: touchpoint)

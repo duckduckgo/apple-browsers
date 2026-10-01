@@ -105,6 +105,48 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications !== undefined")
     }
 
+    // MARK: - Explicit Resource Management Symbols
+
+    func testWhenScriptRuns_ThenDisposeSymbolsAreDefined() throws {
+        try evaluateStubScript()
+
+        try assertTrue("typeof Symbol.dispose === 'symbol'")
+        try assertTrue("typeof Symbol.asyncDispose === 'symbol'")
+        try assertTrue("Symbol.dispose !== Symbol.asyncDispose")
+    }
+
+    func testWhenCodeUsesTypeScriptDisposeHelperPattern_ThenResourceIsDisposed() throws {
+        try evaluateStubScript()
+
+        // Mirrors what TypeScript's `__addDisposableResource` / `__disposeResources` do for `using`.
+        try assertTrue("""
+        (function() {
+            var disposed = false;
+            var resource = {};
+            resource[Symbol.dispose] = function() { disposed = true; };
+            if (!Symbol.dispose) { throw new TypeError("Symbol.dispose is not defined."); }
+            var dispose = resource[Symbol.dispose];
+            if (typeof dispose !== "function") { throw new TypeError("Object not disposable."); }
+            dispose.call(resource);
+            return disposed;
+        })()
+        """)
+    }
+
+    func testWhenDisposeSymbolAlreadyExists_ThenScriptKeepsIt() throws {
+        context.evaluateScript("""
+        var existingDispose = typeof Symbol.dispose === "symbol" ? Symbol.dispose : Symbol("existing");
+        if (typeof Symbol.dispose !== "symbol") {
+            Object.defineProperty(Symbol, "dispose", { value: existingDispose, configurable: true });
+        }
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("Symbol.dispose === existingDispose")
+    }
+
     func testWhenGetManifestThrows_ThenScriptInstallsStubs() throws {
         context.evaluateScript("""
         chrome.runtime.getManifest = function() { throw new Error("no manifest"); };

@@ -22,19 +22,26 @@ import AVFoundation
 /// Temporarily intercepts `AVCaptureDevice.authorizationStatus(for:)` while WebKit handles a camera/microphone request.
 ///
 /// Why: before WebKit asks its UI delegate (`webView(_:requestMediaCapturePermissionFor:...)`) about a
-/// `getUserMedia` call, it reads `AVCaptureDevice.authorizationStatus(for:)` itself. When macOS has denied
-/// access, WebKit rejects the call right there and the delegate never runs, so the app can neither learn
-/// which device was requested nor show its own prompt.
+/// `getUserMedia` call, it checks macOS access itself by reading `AVCaptureDevice.authorizationStatus(for:)`.
+/// When macOS has denied access, WebKit rejects the call right there and the delegate never runs, so the app
+/// can neither learn which device was requested nor show its own prompt. When macOS hasn't decided yet, WebKit
+/// shows the macOS prompt itself, before the delegate and therefore before the website prompt.
+///
+/// `queryPermission` can't replace the hook. WebKit calls it before that check, but only uses a granted answer
+/// (to mark the request as having persistent access) and checks macOS access whatever it returns. It also always
+/// asks about both "camera" and "microphone", so it doesn't say which devices the page requested.
 ///
 /// How it works:
 /// 1. `PermissionModel.prepareForMediaPermissionRequest()` calls `swizzleAuthorizationStatusForMediaType(with:)`
-///    from WebKit's preflight callbacks (`checkUserMediaPermissionForURL` and `queryPermission`), before WebKit
-///    reads the status. This exchanges the class method's implementation with `swizzled_authorizationStatus(for:)`
-///    and stores the replacement closure.
+///    from WebKit's preflight callback (`queryPermission` from Safari 26's WebKit, `checkUserMediaPermissionForURL`
+///    before that), before WebKit reads the status. This exchanges the class method's implementation with
+///    `swizzled_authorizationStatus(for:)` and stores the replacement closure.
 /// 2. While installed, every main-thread `authorizationStatus(for:)` call gets the real macOS status and passes it
 ///    through the closure, which can change it. With `websitePermissionsPrompts` on, the closure reports
 ///    `.authorized`, so WebKit always reaches the delegate and the website prompt shows its System Settings step
-///    instead. With the flag off, it records which devices macOS denied and leaves the status unchanged.
+///    instead. With the flag off, it records which devices macOS denied and leaves the status unchanged. Only
+///    `checkUserMediaPermissionForURL` installs the hook with the flag off, so this recording only happens on
+///    older WebKit versions that still call it.
 /// 3. The hook is process-wide and must not outlive the request. `PermissionModel` restores it when the request
 ///    reaches the delegate, once both devices have been checked, or after a 5-second fallback. Each install returns
 ///    an identifier, and `restoreAuthorizationStatusForMediaType(ifMatching:)` ignores stale identifiers, so a late

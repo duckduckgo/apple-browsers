@@ -420,7 +420,9 @@ final class PermissionModel {
 
     // MARK: - WebView delegated methods
 
-    // Called before requestMediaCapturePermissionFor: to validate System Permissions
+    // Called before requestMediaCapturePermissionFor: to validate System Permissions.
+    // Legacy: WebKit before Safari 26 calls checkUserMediaPermissionForURL; Safari 26's WebKit calls queryPermission,
+    // which reaches queryMediaPermission(_:) instead. Remove together with that delegate method.
     func checkUserMediaPermission(for url: URL?, mainFrameURL: URL?, decisionHandler: @escaping (String, Bool) -> Void) {
         prepareForMediaPermissionRequest()
         decisionHandler(/*salt - seems not used anywhere:*/ "", /*includeSensitiveMediaDeviceDetails:*/ false)

@@ -2890,12 +2890,15 @@ class MainViewController: UIViewController {
     /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
     /// - Parameter afterSwitchingTabs: `true` when the user picked a different tab or closed the current one.
     func showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: Bool = false) {
+        // A landing applied once the tab switcher closes comes after the page's own dialog appeared, and the
+        // last onboarding dialog counts itself as seen as soon as it does, so the dialog is checked directly.
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
               !afterSwitchingTabs || NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
               tabManager.currentTabsModel.currentTab?.isHomeTab == true,
               NewTabPageKeyboardPolicy().showsKeyboardOnInAppLanding,
               !isNewTabPageKeyboardBlockedByDialog,
-              !isNewTabPageKeyboardHeldForOnboarding else { return }
+              !isNewTabPageKeyboardHeldForOnboarding,
+              !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
         enterSearch()
     }
 

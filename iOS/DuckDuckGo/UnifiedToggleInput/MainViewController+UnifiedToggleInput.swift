@@ -88,8 +88,7 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
-            floatingUIManager: floatingUIManager,
-            tabProvider: { [weak self] in self?.tabManager.currentTabsModel.currentTab }
+            floatingUIManager: floatingUIManager
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -522,6 +521,10 @@ private extension MainViewController {
                 self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.onFloatingReturnKeyAvailabilityChanged = { [weak self] in
+            self?.updateFloatingReturnKeyVisibility()
+        }
 
         coordinator.textChangePublisher
             .sink { [weak self] text in
@@ -1433,6 +1436,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidRequestAppMenu() {
         onMenuPressed()
+    }
+
+    func unifiedToggleInputDidRequestAppMenuLongPress() {
+        onMenuLongPressed()
     }
 
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {

@@ -34,6 +34,7 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
     func unifiedToggleInputDidRequestFire()
     func unifiedToggleInputDidRequestAppMenu()
+    func unifiedToggleInputDidRequestAppMenuLongPress()
     /// Destination state the UTI should snap to at the start of an inline-dismiss animation.
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
     func unifiedToggleInputDidTapClearText()

@@ -38,6 +38,7 @@ protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidClearSelectedTool(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapFire(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView)
+    func unifiedToggleInputViewDidLongPressAppMenu(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowModelPicker(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidShowReasoningPicker(_ view: UnifiedToggleInputView)
@@ -459,6 +460,7 @@ final class UnifiedToggleInputView: UIView {
             for (index, item) in messages.enumerated() {
                 let row = (existingRows[item.id] as? UTIFooterCardView) ?? UTIFooterCardView()
                 row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
+                row.isBelowAnotherCard = index > 0
                 if !previousMessages.contains(item) {
                     row.configure(with: item.message, animateIcon: existingRows[item.id] != nil)
                 }
@@ -649,6 +651,7 @@ final class UnifiedToggleInputView: UIView {
         button.isHidden = true
         button.accessibilityLabel = UserText.menuButtonHint
         button.addTarget(self, action: #selector(appMenuTapped), for: .touchUpInside)
+        button.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(appMenuLongPressed)))
         return button
     }()
 
@@ -658,6 +661,11 @@ final class UnifiedToggleInputView: UIView {
 
     @objc private func appMenuTapped() {
         delegate?.unifiedToggleInputViewDidTapAppMenu(self)
+    }
+
+    @objc private func appMenuLongPressed(_ sender: UILongPressGestureRecognizer) {
+        guard sender.state == .began else { return }
+        delegate?.unifiedToggleInputViewDidLongPressAppMenu(self)
     }
 
     // MARK: - Shadow
@@ -1635,6 +1643,7 @@ final class UnifiedToggleInputView: UIView {
 
     private func updateSubmitButtonStyle() {
         toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
+        toolsToolbar.usesAskSubmitButton = handler.usesAskSubmitButton
     }
 
     private func submitCurrentInput() {
@@ -2034,6 +2043,13 @@ private extension UnifiedToggleInputView {
             .store(in: &cancellables)
 
         handler.usesReturnKeySubmitButtonStylePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.usesAskSubmitButtonPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateSubmitButtonStyle()

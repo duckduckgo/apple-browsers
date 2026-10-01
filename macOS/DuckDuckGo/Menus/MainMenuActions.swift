@@ -556,12 +556,7 @@ extension AppDelegate {
 
     @objc func navigateToPrivateEmail(_ sender: Any?) {
         DispatchQueue.main.async {
-            guard let window = NSApplication.shared.keyWindow,
-                  let windowController = window.windowController as? MainWindowController else {
-                assertionFailure("No reference to main window controller")
-                return
-            }
-            windowController.mainViewController.browserTabViewController.openNewTab(with: .url(URL.duckDuckGoEmailLogin, source: .ui))
+            Application.appDelegate.windowControllersManager.show(url: .duckDuckGoEmailLogin, source: .ui, newTab: true)
         }
     }
 
@@ -1820,6 +1815,12 @@ extension MainViewController {
             tabCollectionViewModel.select(at: .unpinned(0))
         }
         Application.appDelegate.resetPinnedTabs(sender)
+    }
+
+    /// The feedback form is otherwise only reachable through a remote message action,
+    /// and only for non-internal users, so there is no way to open it by hand.
+    @objc func showFeedbackForm(_ sender: Any?) {
+        FeedbackPresenter.presentFeedbackForm()
     }
 
     @objc func showSaveCredentialsPopover(_ sender: Any?) {

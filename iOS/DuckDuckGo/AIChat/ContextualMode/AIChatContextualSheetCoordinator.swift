@@ -119,7 +119,6 @@ final class AIChatContextualSheetCoordinator {
 
     /// Session state - single source of truth for frontend and chip state
     let sessionState: AIChatContextualChatSessionState
-    var tabProvider: () -> Tab? = { nil }
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -885,7 +884,6 @@ private extension AIChatContextualSheetCoordinator {
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
             floatingUIManager: floatingUIManager,
-            tabProvider: { [weak self] in self?.tabProvider() },
             tabAttachmentSource: tabAttachmentSource,
             isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
         )

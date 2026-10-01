@@ -446,14 +446,14 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Resets usage dismissals and the normal-browsing attachment disclosure display cap.
+    /// Resets usage dismissals and the attachment disclosure shown flag.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
         DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
         UTIAttachmentPrivacyNoticeDisplayStore().reset()
-        status = "Dismissals and attachment disclosure display count reset. Fire Tabs keep their own counts."
+        status = "Dismissals and attachment disclosure reset."
     }
 
     private func clear() {
@@ -602,15 +602,15 @@ private struct AIChatAttachmentPrivacySection: View {
         Section {
             Button {
                 UTIAttachmentPrivacyNoticeDisplayStore().reset()
-                status = "Normal browsing count reset. Open a new Fire Tab to test a fresh Fire count."
+                status = "Attachment disclosure reset. It shows on the next image or file attachment."
             } label: {
-                Text(verbatim: "Reset attachment disclosure display count")
+                Text(verbatim: "Reset attachment disclosure")
             }
             if !status.isEmpty { Text(verbatim: status) }
         } header: {
             Text(verbatim: "Unified input footer")
         } footer: {
-            Text(verbatim: "Resets the attachment disclosure in normal browsing. Each Fire Tab has its own display count.")
+            Text(verbatim: "Resets the attachment disclosure so it shows once more, in any tab.")
         }
     }
 }

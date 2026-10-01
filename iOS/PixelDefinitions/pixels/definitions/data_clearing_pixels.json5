@@ -40,7 +40,7 @@
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
 

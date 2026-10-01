@@ -170,8 +170,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
-            let pageWorldFeatures = [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue]
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: pageWorldFeatures, privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {

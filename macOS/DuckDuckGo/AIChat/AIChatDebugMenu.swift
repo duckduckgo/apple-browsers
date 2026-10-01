@@ -34,7 +34,8 @@ final class AIChatDebugMenu: NSMenu {
     private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure {
         AttachmentPrivacyDisclosure(
             store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
-            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler
+            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
         )
     }
 

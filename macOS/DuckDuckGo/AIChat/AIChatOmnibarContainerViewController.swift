@@ -215,7 +215,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let gate = AttachmentPrivacyDisclosureGate(
             disclosure: AttachmentPrivacyDisclosure(
                 store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
-                webKeySource: duckAiNativeStorageHandler
+                webKeySource: duckAiNativeStorageHandler,
+                featureFlagger: NSApp.delegateTyped.featureFlagger
             )
         )
         gate.onDisplayStarted = { [weak self] kind in

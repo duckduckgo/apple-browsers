@@ -83,7 +83,7 @@ final class AttachmentPrivacyDisclosure {
 
     init(store: AttachmentPrivacyDisclosureStoring,
          webKeySource: DuckAiNativeStorageHandling?,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger) {
         self.store = store
         self.webKeySource = webKeySource
         self.featureFlagger = featureFlagger

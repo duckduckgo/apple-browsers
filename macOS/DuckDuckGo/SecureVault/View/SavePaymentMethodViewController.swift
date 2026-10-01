@@ -50,12 +50,12 @@ final class SavePaymentMethodViewController: NSViewController {
         return controller
     }
 
-    var cardDetailsLabel: NSTextField!
-    var cardExpirationLabel: NSTextField!
-    var titleLabel: NSTextField!
-    var saveButton: NSButton!
-    var dontSaveButton: NSButton!
-    var cardIconImageView: NSImageView!
+    private var cardDetailsLabel: NSTextField!
+    private var cardExpirationLabel: NSTextField!
+    private var titleLabel: NSTextField!
+    private var saveButton: NSButton!
+    private var dontSaveButton: NSButton!
+    private var cardIconImageView: NSImageView!
 
     weak var delegate: SavePaymentMethodDelegate?
 

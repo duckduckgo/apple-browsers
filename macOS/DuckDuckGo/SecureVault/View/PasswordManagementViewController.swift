@@ -75,34 +75,33 @@ final class PasswordManagementViewController: NSViewController {
 
     weak var delegate: PasswordManagementDelegate?
 
-    var boxView: NSBox!
-    var backgroundView: ColorView!
-    var lockMenuItem: NSMenuItem!
-    var importPasswordMenuItem: NSMenuItem!
-    var exportLoginItem: NSMenuItem!
-    var deleteAllPasswordsMenuItem: NSMenuItem!
-    var settingsMenuItem: NSMenuItem!
-    var unlockYourAutofillLabel: FlatButton!
-    var autofillTitleLabel: NSTextField!
-    var unlockYourAutofillInfo: NSButtonCell!
-    var listContainer: NSView!
-    var itemContainer: NSView!
-    var addVaultItemButton: NSButton!
-    var moreButton: NSButton!
-    var searchField: SearchField!
-    var divider: NSView!
-    var emptyState: NSView!
-    var emptyStateImageView: NSImageView!
-    var emptyStateTitle: NSTextField!
-    var emptyStateMessageHeight: NSLayoutConstraint!
-    var emptyStateMessageContainer: NSView!
-    var emptyStateImportButton: NSButton!
-    var emptyStateSyncButton: NSButton!
-    var lockScreen: NSView!
-    var lockScreenIconImageView: NSImageView!
-
-    var lockScreenDurationLabel: NSTextField!
-    var lockScreenOpenInPreferencesButton: LinkButton!
+    private var boxView: NSBox!
+    private var backgroundView: ColorView!
+    private var lockMenuItem: NSMenuItem!
+    private var importPasswordMenuItem: NSMenuItem!
+    private var exportLoginItem: NSMenuItem!
+    private var deleteAllPasswordsMenuItem: NSMenuItem!
+    private var settingsMenuItem: NSMenuItem!
+    private var unlockYourAutofillLabel: FlatButton!
+    private var autofillTitleLabel: NSTextField!
+    private var unlockYourAutofillInfo: NSButtonCell!
+    private var listContainer: NSView!
+    private var itemContainer: NSView!
+    private var addVaultItemButton: NSButton!
+    private var moreButton: NSButton!
+    private var searchField: SearchField!
+    private var divider: NSView!
+    private var emptyState: NSView!
+    private var emptyStateImageView: NSImageView!
+    private var emptyStateTitle: NSTextField!
+    private var emptyStateMessageHeight: NSLayoutConstraint!
+    private var emptyStateMessageContainer: NSView!
+    private var emptyStateImportButton: NSButton!
+    private var emptyStateSyncButton: NSButton!
+    private var lockScreen: NSView!
+    private var lockScreenIconImageView: NSImageView!
+    private var lockScreenDurationLabel: NSTextField!
+    private var lockScreenOpenInPreferencesButton: LinkButton!
 
     var emptyStateCancellable: AnyCancellable?
     var editingCancellable: AnyCancellable?
@@ -377,9 +376,8 @@ final class PasswordManagementViewController: NSViewController {
         lockScreenDurationLabel = NSTextField(labelWithString: "")
         lockScreenDurationLabel.translatesAutoresizingMaskIntoConstraints = false
         lockScreenDurationLabel.alignment = .center
+        lockScreenDurationLabel.textColor = .blackWhite60
 
-        // Sized up front: a zero-width text view lays its text container out at a different width
-        // than it is drawn at, which desynchronises the link's cursor rect from its glyphs.
         let preferencesLabel = NSTextField(labelWithString: UserText.pmLockScreenPreferencesLabel)
         preferencesLabel.translatesAutoresizingMaskIntoConstraints = false
         preferencesLabel.font = .systemFont(ofSize: 13)
@@ -560,7 +558,6 @@ final class PasswordManagementViewController: NSViewController {
 
         subscribeToThemeChanges()
         applyThemeStyle()
-
     }
 
     private func setUpEmptyStateMessageView() {

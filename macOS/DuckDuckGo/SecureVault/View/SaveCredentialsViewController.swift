@@ -94,33 +94,33 @@ final class SaveCredentialsViewController: NSViewController {
     private let backfilledKey = GeneralPixel.AutofillParameterKeys.backfilled
     private let fireproofDomains: FireproofDomains
 
-    var backgroundBox: NSBox!
-    var ddgPasswordManagerTitle: NSView!
-    var titleLabel: NSTextField!
-    var passwordManagerTitle: NSView!
-    var passwordManagerAccountLabel: NSTextField!
-    var passwordManagerTitleLabel: NSTextField!
-    var unlockPasswordManagerTitle: NSView!
-    var faviconImage: NSImageView!
-    var domainLabel: NSTextField!
-    var usernameField: NSTextField!
-    var hiddenPasswordField: NSSecureTextField!
-    var visiblePasswordField: NSTextField!
-    var unlockPasswordManagerTitleLabel: NSTextField!
-    var usernameFieldTitleLabel: NSTextField!
-    var passwordFieldTitleLabel: NSTextField!
-    var notNowSegmentedControl: NSSegmentedControl!
-    var saveButton: NSButton!
-    var updateButton: NSButton!
-    var dontUpdateButton: NSButton!
-    var doneButton: NSButton!
-    var editButton: NSButton!
-    var openPasswordManagerButton: NSButton!
-    var passwordManagerNotNowButton: NSButton!
-    var fireproofCheck: NSButton!
-    var fireproofCheckDescription: NSTextFieldCell!
-    var tooltipView: MouseOverView!
-    var lockImageBackgroundView: NSBox!
+    private var backgroundBox: NSBox!
+    private var ddgPasswordManagerTitle: NSView!
+    private var titleLabel: NSTextField!
+    private var passwordManagerTitle: NSView!
+    private var passwordManagerAccountLabel: NSTextField!
+    private var passwordManagerTitleLabel: NSTextField!
+    private var unlockPasswordManagerTitle: NSView!
+    private var faviconImage: NSImageView!
+    private var domainLabel: NSTextField!
+    private var usernameField: NSTextField!
+    private var hiddenPasswordField: NSSecureTextField!
+    private var visiblePasswordField: NSTextField!
+    private var unlockPasswordManagerTitleLabel: NSTextField!
+    private var usernameFieldTitleLabel: NSTextField!
+    private var passwordFieldTitleLabel: NSTextField!
+    private var notNowSegmentedControl: NSSegmentedControl!
+    private var saveButton: NSButton!
+    private var updateButton: NSButton!
+    private var dontUpdateButton: NSButton!
+    private var doneButton: NSButton!
+    private var editButton: NSButton!
+    private var openPasswordManagerButton: NSButton!
+    private var passwordManagerNotNowButton: NSButton!
+    private var fireproofCheck: NSButton!
+    private var fireproofCheckDescription: NSTextFieldCell!
+    private var tooltipView: MouseOverView!
+    private var lockImageBackgroundView: NSBox!
 
     private var infoViewController: PopoverInfoViewController? {
         presentedViewControllers?.first {

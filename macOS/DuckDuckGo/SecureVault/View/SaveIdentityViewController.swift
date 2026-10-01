@@ -49,9 +49,9 @@ final class SaveIdentityViewController: NSViewController {
     }
 
     private var identityStackView: NSStackView!
-    var titleLabel: NSTextField!
-    var notNowButton: NSButton!
-    var saveButton: NSButton!
+    private var titleLabel: NSTextField!
+    private var notNowButton: NSButton!
+    private var saveButton: NSButton!
 
     weak var delegate: SaveIdentityDelegate?
 

@@ -61,6 +61,7 @@ extension XCUIApplication {
         buttons["TabSwitcher.Menu.SelectTabs"].tapWhenHittable(file: file, line: line)
         buttons["TabSwitcher.Button.More"].tapWhenHittable(file: file, line: line)
         buttons["TabSwitcher.Menu.BookmarkAll"].tapWhenHittable(file: file, line: line)
+        assertConfirmationAlertContainsCount(expectedTabCount, file: file, line: line)
         buttons.matching(identifier: "TabSwitcher.BookmarkTabs.Confirm").firstMatch
             .tapWhenHittable(file: file, line: line)
 
@@ -101,7 +102,11 @@ extension XCUIApplication {
             line: line)
     }
 
-    func deleteBookmarkFolder(_ folder: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+    func deleteBookmarkFolder(
+        _ folder: XCUIElement,
+        expectedChildCount: Int,
+        file: StaticString = #filePath,
+        line: UInt = #line) {
         XCTAssertTrue(
             folder.wait(
                 for: NSPredicate(format: "exists == true AND isHittable == true"),
@@ -113,8 +118,23 @@ extension XCUIApplication {
         // UIKit does not expose an identifier for contextual actions. Tap the revealed trailing
         // action relative to the semantically identified folder, then verify its confirmation.
         folder.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        assertConfirmationAlertContainsCount(expectedChildCount, file: file, line: line)
         buttons.matching(identifier: "Bookmarks.Folder.ConfirmDelete").firstMatch
             .tapWhenHittable(file: file, line: line)
+    }
+
+    private func assertConfirmationAlertContainsCount(
+        _ count: Int,
+        file: StaticString = #filePath,
+        line: UInt = #line) {
+        let countText = alerts.firstMatch.staticTexts.matching(
+            NSPredicate(format: "label MATCHES %@", ".*\\b\(count)\\b.*")
+        ).firstMatch
+        XCTAssertTrue(
+            countText.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Confirmation alert did not display the expected count of \(count).",
+            file: file,
+            line: line)
     }
 
     func createBookmarkFolder(
@@ -152,7 +172,7 @@ extension XCUIApplication {
             "Bookmarks list did not reappear after saving.", file: file, line: line)
     }
 
-    func deleteBookmark(_ bookmark: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+    func deleteBookmarkFromEditor(_ bookmark: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTContext.runActivity(named: "Delete bookmark from the editor") { _ in
             buttons["Bookmarks.Edit"].tapWhenHittable(file: file, line: line)
             bookmark.tapWhenHittable(file: file, line: line)

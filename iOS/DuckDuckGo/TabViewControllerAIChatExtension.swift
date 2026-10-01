@@ -25,7 +25,7 @@ import WebKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool)
 
     /// Loads AIChat in voice mode.
     func loadVoiceMode()
@@ -55,7 +55,8 @@ extension TabViewController: AITabController {
               modelId: String? = nil,
               reasoningEffort: AIChatReasoningEffort? = nil,
               images: [AIChatNativePrompt.NativePromptImage]? = nil,
-              files: [AIChatNativePrompt.NativePromptFile]? = nil) {
+              files: [AIChatNativePrompt.NativePromptFile]? = nil,
+              termsAccepted: Bool = false) {
         isVoiceModeRequested = false
 
         aiChatContentHandler.setPayload(payload: payload)
@@ -70,7 +71,7 @@ extension TabViewController: AITabController {
                 files: files,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort
-            )
+            ).withTermsAccepted(termsAccepted)
             AIChatPromptHandler.shared.setData(prompt)
         }
 

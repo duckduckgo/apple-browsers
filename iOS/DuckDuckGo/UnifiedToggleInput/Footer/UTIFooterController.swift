@@ -34,7 +34,7 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
-    /// The disclaimer on screen means the next send accepts the terms.
+    /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
@@ -193,10 +193,16 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    func acceptTermsIfDisclaimerShown() {
-        guard visibleIDs.contains(.termsConsent), let termsOfServiceStore else { return }
-        termsOfServiceStore.recordAcceptedInNativeInput()
-        applyCurrentState()
+    /// Call only for an Ask tap. Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        guard let termsOfServiceStore else { return false }
+        if visibleIDs.contains(.termsConsent) {
+            termsOfServiceStore.recordAcceptedInNativeInput()
+            Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
+            applyCurrentState()
+        }
+        return termsOfServiceStore.hasAccepted
     }
 
     func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {

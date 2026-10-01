@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo
 
@@ -355,11 +356,75 @@ final class UTIRenderStateTests: XCTestCase {
         sut.showExpanded()
         showFooter([.termsConsent])
 
-        _ = sut.prepareExternalPromptSubmission()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertTrue(termsOfServiceStore.hasAccepted)
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
         XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+    }
+
+    func test_omnibarNewAIChat_whenAskIsTappedWithTheDisclaimerOnScreen_theTermsAreAcceptedAndThePromptCarriesThem() {
+        let delegate = RecordingPromptDelegate()
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        sut.delegate = delegate
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        showFooter([.termsConsent])
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertTrue(termsOfServiceStore.hasAccepted)
+        XCTAssertEqual(delegate.submittedTermsAccepted, [true])
+    }
+
+    /// Paste & Go can send while the disclaimer shows; Return can't, it adds a new line.
+    func test_omnibarNewAIChat_whenTextEntrySendsWithTheDisclaimerOnScreen_nothingIsAccepted() {
+        let delegate = RecordingPromptDelegate()
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        sut.delegate = delegate
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        showFooter([.termsConsent])
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "how", mode: .aiChat, trigger: .textEntry)
+
+        XCTAssertFalse(termsOfServiceStore.hasAccepted)
+        XCTAssertEqual(delegate.submittedTermsAccepted, [false])
+    }
+
+    func test_omnibarNewAIChat_whenTermsAreAlreadyAccepted_onlyAnAskTapCarriesThem() {
+        termsOfServiceStore.recordWebReport()
+        let delegate = RecordingPromptDelegate()
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        sut.delegate = delegate
+
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "second", mode: .aiChat, trigger: .textEntry)
+
+        XCTAssertEqual(delegate.submittedTermsAccepted, [true, false])
+    }
+
+    func test_omnibarNewAIChat_whenAnExternalSuggestionIsSentWithTheDisclaimerOnScreen_nothingIsAccepted() {
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        showFooter([.termsConsent])
+
+        _ = sut.prepareExternalPromptSubmission()
+
+        XCTAssertFalse(termsOfServiceStore.hasAccepted)
+    }
+
+    func test_contextualChat_whenAQuickActionIsSentWithTheDisclaimerOnScreen_nothingIsAccepted() {
+        let delegate = RecordingPromptDelegate()
+        sut = makeCoordinatorWithTermsOfService(host: .contextualChat, contextualStart: .expandedPreSubmit)
+        sut.delegate = delegate
+        sut.showExpanded()
+        showFooter([.termsConsent])
+
+        sut.submitProgrammatic(text: "Summarize This Page")
+
+        XCTAssertFalse(termsOfServiceStore.hasAccepted)
+        XCTAssertEqual(delegate.submittedTermsAccepted, [false])
     }
 
     // MARK: - Content Input Mode
@@ -450,4 +515,21 @@ final class UTIRenderStateTests: XCTestCase {
     private func showFooter(_ ids: [UTIFooterItem.ID]) {
         sut.unifiedToggleInputVC(sut.viewController, didChangeFooterVisibility: ids)
     }
+}
+
+private final class RecordingPromptDelegate: UnifiedToggleInputDelegate {
+    private(set) var submittedTermsAccepted: [Bool] = []
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+        submittedTermsAccepted.append(termsAccepted)
+    }
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    func unifiedToggleInputDidRequestVoiceSearch() {}
+    func unifiedToggleInputDidRequestAIVoiceChat() {}
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
+    func unifiedToggleInputDidChangeHeight() {}
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidRequestAppMenuLongPress() {}
 }

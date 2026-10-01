@@ -1,5 +1,5 @@
 //
-//  NavigationCompletionWaiter.swift
+//  CallbackWaiter.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,21 +18,21 @@
 
 import Foundation
 
-/// Waits for one web view navigation at a time, with a timeout, ignoring callbacks from any other navigation.
+/// Waits for one callback at a time, with a timeout, ignoring callbacks meant for another wait (e.g. an earlier navigation).
 @MainActor
-final class NavigationCompletionWaiter {
+final class CallbackWaiter {
 
-    private var pendingNavigation: AnyObject?
+    private var pendingHandle: AnyObject?
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
     private var timeoutTask: Task<Void, Never>?
 
     nonisolated init() {}
 
-    /// - Parameter start: Starts the navigation and returns its handle (a `WKNavigation`).
-    func wait(timeout: TimeInterval, timeoutError: Error, start: () -> AnyObject?) async -> Result<Void, Error> {
+    /// - Parameter start: Starts the awaited work and returns its handle (e.g. a `WKNavigation`), or `nil` if it has none.
+    func wait(timeout: TimeInterval, timeoutError: Error, start: () -> AnyObject? = { nil }) async -> Result<Void, Error> {
         await withCheckedContinuation { continuation in
             self.continuation = continuation
-            pendingNavigation = start()
+            pendingHandle = start()
             timeoutTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 guard !Task.isCancelled else { return }
@@ -41,19 +41,20 @@ final class NavigationCompletionWaiter {
         }
     }
 
-    func complete(_ navigation: AnyObject?, with result: Result<Void, Error>) {
-        guard navigation === pendingNavigation else { return }
+    /// Only the pending wait's own handle completes it; work started without a handle completes with `nil`.
+    func complete(_ handle: AnyObject?, with result: Result<Void, Error>) {
+        guard handle === pendingHandle else { return }
         finish(with: result)
     }
 
-    func failPendingNavigation(with error: Error) {
+    func failPending(with error: Error) {
         finish(with: .failure(error))
     }
 
     private func finish(with result: Result<Void, Error>) {
         timeoutTask?.cancel()
         timeoutTask = nil
-        pendingNavigation = nil
+        pendingHandle = nil
         let continuation = continuation
         self.continuation = nil
         continuation?.resume(returning: result)

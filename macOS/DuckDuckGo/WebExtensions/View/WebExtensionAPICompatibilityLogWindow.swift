@@ -33,10 +33,40 @@ final class WebExtensionAPICompatibilityLogViewModel: ObservableObject {
         let id: Int
         let date: Date
         let entry: WebExtensionAPICompatibilityLog.Entry
+
+        var extensionLabel: String {
+            WebExtensionAPICompatibilityLogViewModel.extensionLabel(name: entry.extensionName, version: entry.version)
+        }
     }
 
     @Published private(set) var rows: [Row] = []
     @Published private(set) var errorMessage: String?
+
+    /// The extension the list is limited to, as `extensionLabel(name:version:)`; `nil` shows all extensions.
+    @Published var selectedExtension: String?
+
+    init(rows: [Row] = []) {
+        self.rows = rows
+    }
+
+    /// How an extension is named in the list and in the filter.
+    nonisolated static func extensionLabel(name: String, version: String) -> String {
+        "\(name) v\(version)"
+    }
+
+    /// The extensions that have entries, plus the selected one so the filter always shows what it is set to.
+    var extensionLabels: [String] {
+        var labels = Set(rows.map(\.extensionLabel))
+        if let selectedExtension {
+            labels.insert(selectedExtension)
+        }
+        return labels.sorted()
+    }
+
+    var filteredRows: [Row] {
+        guard let selectedExtension else { return rows }
+        return rows.filter { $0.extensionLabel == selectedExtension }
+    }
 
     func refresh() {
         Task {
@@ -56,9 +86,9 @@ final class WebExtensionAPICompatibilityLogViewModel: ObservableObject {
     }
 
     func copyToPasteboard() {
-        let text = rows.map { row in
+        let text = filteredRows.map { row in
             [row.date.formatted(date: .omitted, time: .standard),
-             "\(row.entry.extensionName) v\(row.entry.version)",
+             row.extensionLabel,
              row.entry.kind.rawValue,
              row.entry.api].joined(separator: "\t")
         }.joined(separator: "\n")
@@ -93,7 +123,14 @@ struct WebExtensionAPICompatibilityLogView: View {
             HStack {
                 Button("Refresh") { viewModel.refresh() }
                 Button("Copy") { viewModel.copyToPasteboard() }
-                    .disabled(viewModel.rows.isEmpty)
+                    .disabled(viewModel.filteredRows.isEmpty)
+                Picker("Extension", selection: $viewModel.selectedExtension) {
+                    Text("All Extensions").tag(String?.none)
+                    ForEach(viewModel.extensionLabels, id: \.self) { label in
+                        Text(label).tag(String?.some(label))
+                    }
+                }
+                .fixedSize()
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage).foregroundColor(.red)
                 }
@@ -103,10 +140,10 @@ struct WebExtensionAPICompatibilityLogView: View {
 
             List {
                 header
-                ForEach(viewModel.rows) { row in
+                ForEach(viewModel.filteredRows) { row in
                     HStack(alignment: .top) {
                         Text(row.date.formatted(date: .omitted, time: .standard)).frame(width: 90, alignment: .leading)
-                        Text("\(row.entry.extensionName) v\(row.entry.version)").frame(width: 200, alignment: .leading)
+                        Text(row.extensionLabel).frame(width: 200, alignment: .leading)
                         Text(row.entry.kind.rawValue).frame(width: 90, alignment: .leading)
                         Text(row.entry.api).textSelection(.enabled)
                         Spacer()
@@ -126,5 +163,35 @@ struct WebExtensionAPICompatibilityLogView: View {
             Spacer()
         }
         .font(.headline)
+    }
+}
+
+/// Owns the single compatibility log window, so the Debug Menu and the extension toolbar buttons open the same one.
+@available(macOS 15.4, *)
+@MainActor
+final class WebExtensionAPICompatibilityLogPresenter {
+
+    static let shared = WebExtensionAPICompatibilityLogPresenter()
+
+    private let viewModel = WebExtensionAPICompatibilityLogViewModel()
+    private var window: NSWindow?
+
+    /// Opens the window, limited to the given extension (as the log names it) or showing all of them.
+    func show(extensionName: String? = nil, version: String? = nil) {
+        if window == nil {
+            let window = NSWindow(contentViewController: NSHostingController(
+                rootView: WebExtensionAPICompatibilityLogView(viewModel: viewModel)))
+            window.title = "JavaScript API Compatibility Log"
+            window.isReleasedWhenClosed = false
+            window.center()
+            self.window = window
+        }
+        if let extensionName, let version {
+            viewModel.selectedExtension = WebExtensionAPICompatibilityLogViewModel.extensionLabel(name: extensionName, version: version)
+        } else {
+            viewModel.selectedExtension = nil
+        }
+        viewModel.refresh()
+        window?.makeKeyAndOrderFront(nil)
     }
 }

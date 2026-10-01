@@ -42,7 +42,7 @@ public enum WebExtensionAPICompatibilityLog {
     static let logger = Logger(subsystem: subsystem, category: category)
 
     /// Makes an extension's name or version safe to put on a single log line.
-    static func sanitizedField(_ value: String?) -> String {
+    public static func sanitizedField(_ value: String?) -> String {
         let cleaned = String(String.UnicodeScalarView((value ?? "").unicodeScalars.map {
             CharacterSet.controlCharacters.contains($0) ? " " : $0
         })).trimmingCharacters(in: .whitespaces)

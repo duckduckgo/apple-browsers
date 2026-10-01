@@ -5038,9 +5038,6 @@ Take back control of your personal information with the browser designed for dat
 /* Title of the dialog to confirm turning off sync and deleting server data */
 "sync.simplified.delete.all.confirm.title" = "Turn Off Sync & Backup and Delete Server Data?";
 
-/* Toast message shown after sync is enabled by connecting with another device */
-"sync.simplified.device-synced.toast" = "New device added!";
-
 /* Toast message shown after copying recovery code to clipboard from settings */
 "sync.simplified.recovery.code.copied.toast" = "Recovery code copied";
 

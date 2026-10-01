@@ -378,6 +378,7 @@ final class AddressBarButtonsViewController: NSViewController {
         configureAddressBarButton(askAIChatButton, image: .aiChat,
                                   cornerRadius: LayoutConstants.buttonCornerRadius,
                                   action: #selector(aiChatButtonAction(_:)))
+        askAIChatButton.normalTintColor = .button
         askAIChatButton.isHidden = true
 
         aiChatButton = AddressBarMenuButton(frame: .zero)
@@ -392,6 +393,7 @@ final class AddressBarButtonsViewController: NSViewController {
         configureAddressBarButton(cancelButton, image: .clear,
                                   cornerRadius: LayoutConstants.cancelButtonCornerRadius,
                                   action: #selector(cancelButtonAction(_:)))
+        cancelButton.normalTintColor = .clearButton
         cancelButton.isHidden = true
         cancelButton.horizontalPadding = LayoutConstants.cancelButtonPadding
         cancelButton.verticalPadding = LayoutConstants.cancelButtonPadding
@@ -442,6 +444,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton = AddressBarButton(frame: .zero)
         configureAddressBarButton(permissionCenterButton, image: nil, cornerRadius: nil,
                                   action: #selector(permissionCenterButtonAction(_:)))
+        permissionCenterButton.normalTintColor = .button
         permissionCenterButton.isHidden = true
 
         youTubeAdBlockButton = AddressBarButton(frame: .zero)

@@ -213,15 +213,16 @@ internal class MouseOverButton: NSButton, Hoverable {
         isMouseDown = true
         defer { isMouseDown = false }
 
-        guard isEnabled, let action else { return }
-
-        if eventTypeMask.contains(.leftMouseDown) {
-            // Deliberately not calling `super`: its cell tracking would fire the action a second
-            // time on mouse-up. `isMouseDown` stays set while the menu runs its own modal loop.
-            NSApp.sendAction(action, to: target, from: self)
-        } else {
+        guard eventTypeMask.contains(.leftMouseDown), isEnabled, let action else {
+            // Anything that did not ask for mouse-down keeps AppKit's own tracking, including
+            // action-less buttons that rely on it purely for the pressed appearance.
             super.mouseDown(with: event)
+            return
         }
+
+        // Deliberately not calling `super`: its cell tracking would fire the action a second
+        // time on mouse-up. `isMouseDown` stays set while the menu runs its own modal loop.
+        NSApp.sendAction(action, to: target, from: self)
     }
 
     override func otherMouseDown(with event: NSEvent) {

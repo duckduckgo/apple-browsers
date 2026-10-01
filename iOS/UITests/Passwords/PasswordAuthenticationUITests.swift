@@ -35,6 +35,20 @@ final class PasswordAuthenticationUITests: UITestCase {
         app.closePasswordManager()
 
         app.openPasswordManager()
+        let authenticationReason = springboard.staticTexts["Unlock device to access passwords"]
+        let passcodeField = springboard.secureTextFields.firstMatch
+        XCTAssertTrue(
+            authenticationReason.waitForExistence(timeout: UITestTimeouts.navigation),
+            "Password access did not request device authentication.")
+        XCTAssertFalse(app.passwordList.exists, "Password list was accessible before authentication.")
+
+        passcodeField.typeText("\n")
+
+        XCTAssertTrue(
+            authenticationReason.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Submitting an empty passcode dismissed password authentication.")
+        XCTAssertFalse(app.passwordList.exists, "Password list became accessible after an empty passcode.")
+
         app.authenticateForPasswordAccess(using: springboard)
 
         XCTAssertTrue(

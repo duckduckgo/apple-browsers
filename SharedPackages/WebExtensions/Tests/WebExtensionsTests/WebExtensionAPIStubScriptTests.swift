@@ -1282,6 +1282,23 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("consoleMessages.length === 3")
     }
 
+    func testWhenAngularLogsAMissingLanguageFeature_ThenItIsReported() throws {
+        try installFakeReporting()
+        try evaluateStubScript()
+
+        // Bitwarden's ErrorHandler logs a label and then the error.
+        context.evaluateScript("""
+        console.error("Unhandled error in angular", new TypeError("Symbol.dispose is not defined."));
+        console.error(new ReferenceError("Can't find variable: DisposableStack"));
+        """)
+        try assertNoExceptions()
+
+        try assertReports("""
+        [{"kind":"error","message":"Symbol.dispose is not defined."},\
+        {"kind":"error","message":"Can't find variable: DisposableStack"}]
+        """)
+    }
+
     func testWhenReportsAreInstalledTwice_ThenTheConsoleIsWrappedOnce() throws {
         try installFakeReporting()
         try evaluateStubScript()

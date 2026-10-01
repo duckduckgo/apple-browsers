@@ -270,7 +270,8 @@ public enum WebExtensionAPIStubScript {
 
         // Only text shaped like an error about an API leaves the page; everything else stays here.
         // The browser classifies these further (and is the one place that decides what is logged).
-        var reportableErrorFragments = ["is not an object (evaluating '", "is not a function. (In '", "Invalid call to "];
+        var reportableErrorFragments = ["is not an object (evaluating '", "is not a function. (In '", "Invalid call to ",
+            "Can't find variable: ", " is not defined."];
 
         function isReportableErrorMessage(message) {
             return reportableErrorFragments.some(function(fragment) {

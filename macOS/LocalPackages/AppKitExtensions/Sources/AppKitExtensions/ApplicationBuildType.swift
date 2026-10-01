@@ -20,7 +20,7 @@ import Common
 import FoundationExtensions
 import Foundation
 
-protocol ApplicationBuildType {
+public protocol ApplicationBuildType {
     var isSparkleBuild: Bool { get }
     var isAppStoreBuild: Bool { get }
     var isDebugBuild: Bool { get }
@@ -28,12 +28,14 @@ protocol ApplicationBuildType {
     var isAlphaBuild: Bool { get }
 }
 
-struct StandardApplicationBuildType: ApplicationBuildType {
+public struct StandardApplicationBuildType: ApplicationBuildType {
 
-    let isAppStoreBuild: Bool = AppVersion.isAppStoreBuild
-    var isSparkleBuild: Bool { !isAppStoreBuild }
+    public let isAppStoreBuild: Bool = AppVersion.isAppStoreBuild
+    public var isSparkleBuild: Bool { !isAppStoreBuild }
 
-    var isDebugBuild: Bool {
+    public init() {}
+
+    public var isDebugBuild: Bool {
 #if DEBUG
         return true
 #else
@@ -41,12 +43,12 @@ struct StandardApplicationBuildType: ApplicationBuildType {
 #endif
     }
 
-    let isReviewBuild: Bool = Bundle.main.bundleIdentifier?.contains(".review") ?? false
-    let isAlphaBuild: Bool = Bundle.main.bundleIdentifier?.contains(".alpha") ?? false
+    public let isReviewBuild: Bool = Bundle.main.bundleIdentifier?.contains(".review") ?? false
+    public let isAlphaBuild: Bool = Bundle.main.bundleIdentifier?.contains(".alpha") ?? false
 
 }
 
-extension ApplicationBuildType {
+public extension ApplicationBuildType {
 
     /// Returns the pixel channel name based on internal-user status and build type.
     ///

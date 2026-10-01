@@ -1,7 +1,7 @@
 //
-//  DataBrokerProtectionSettings+Environment.swift
+//  DuckDuckGoUserAgent.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,19 +17,15 @@
 //
 
 import Foundation
-import DataBrokerProtection_macOS
-import DataBrokerProtectionCore
-import Subscription
+import Common
+import FoundationExtensions
 
-public extension DataBrokerProtectionSettings {
+public enum UserAgent {
 
-    /// Align VPN environment to the Subscription environment
-    func alignTo(subscriptionEnvironment: SubscriptionEnvironment) {
-        switch subscriptionEnvironment.serviceEnvironment {
-        case .production:
-            self.selectedEnvironment = .production
-        case .staging:
-            self.selectedEnvironment = .staging
-        }
+    public static func duckDuckGoUserAgent(appVersion: String = AppVersion.shared.versionNumber,
+                                           appID: String = AppVersion.shared.identifier,
+                                           systemVersion: String = AppVersion.shared.osVersionMajorMinor) -> String {
+        return "ddg_mac/\(appVersion) (\(appID); macOS \(systemVersion))"
     }
+
 }

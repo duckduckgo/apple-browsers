@@ -19,9 +19,9 @@
 import Foundation
 import WebKit
 
-struct WebKitVersionProvider {
+public struct WebKitVersionProvider {
 
-    static func getVersion() -> String? {
+    public static func getVersion() -> String? {
         guard let userAgent = WKWebView().value(forKey: "userAgent") as? String,
               let regularExpression = try? NSRegularExpression(pattern: #"AppleWebKit\s*\/\s*([\d.]+)"#, options: []),
               let match = regularExpression.firstMatch(in: userAgent, options: [], range: userAgent.fullRange),

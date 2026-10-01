@@ -56,6 +56,13 @@ public final class WebExtensionLoader: WebExtensionLoading {
         case failedToFindContextForIdentifier(identifier: String)
     }
 
+    /// Identifies consent/settings failures separately from bundle and WebKit load failures.
+    struct PermissionPreparationError: LocalizedError {
+        let underlyingError: Error
+
+        var errorDescription: String? { underlyingError.localizedDescription }
+    }
+
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
     private let permissionController: WebExtensionPermissionController?
@@ -175,7 +182,11 @@ public final class WebExtensionLoader: WebExtensionLoading {
         context.isInspectable = isInspectable
 
         if let permissionController {
-            try await permissionController.prepare(context)
+            do {
+                try await permissionController.prepare(context)
+            } catch {
+                throw PermissionPreparationError(underlyingError: error)
+            }
             return context
         }
 

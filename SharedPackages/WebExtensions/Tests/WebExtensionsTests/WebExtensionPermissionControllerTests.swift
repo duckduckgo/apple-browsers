@@ -544,6 +544,93 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         try manager.uninstallExtension(identifier: newIdentifier)
     }
 
+    func testInstalledExtensionSurvivesSettingsReadFailureAndLoadsOnRetry() async throws {
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = try makeExtensionURL()
+        let manager = makeManager(storage: storage)
+        installationStore.add(InstalledWebExtension(uniqueIdentifier: "existing", filename: "extension", name: nil, version: nil))
+        keyValueStore.shouldThrowOnGet = true
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(manager.webExtensionIdentifiers, ["existing"])
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertFalse(storage.removeExtensionCalled)
+        XCTAssertEqual(storage.cleanupOrphanedExtensionsKnownIdentifiers, ["existing"])
+        keyValueStore.shouldThrowOnGet = false
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(manager.loadedExtensions.count, 1)
+        try manager.uninstallExtension(identifier: "existing")
+    }
+
+    func testInstalledExtensionSurvivesConsentSaveFailure() async throws {
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = try makeExtensionURL()
+        let manager = makeManager(storage: storage)
+        installationStore.add(InstalledWebExtension(uniqueIdentifier: "existing", filename: "extension", name: nil, version: nil))
+        keyValueStore.shouldThrowOnSet = true
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(manager.webExtensionIdentifiers, ["existing"])
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertFalse(storage.removeExtensionCalled)
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+    }
+
+    func testCorruptManifestIsRemovedEvenWhenPermissionControllerIsEnabled() async throws {
+        let source = try makeExtensionURL()
+        try Data("invalid manifest".utf8).write(to: source.appendingPathComponent("manifest.json"))
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage)
+        installationStore.add(InstalledWebExtension(uniqueIdentifier: "broken", filename: "extension", name: nil, version: nil))
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertTrue(manager.webExtensionIdentifiers.isEmpty)
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertEqual(storage.removeExtensionIdentifier, "broken")
+        XCTAssertEqual(storage.cleanupOrphanedExtensionsKnownIdentifiers, [])
+        XCTAssertTrue(prompter.installationRequests.isEmpty)
+    }
+
+    func testMissingBundleIsRemovedEvenWhenPermissionControllerIsEnabled() async {
+        let storage = WebExtensionStorageProvidingMock()
+        storage.shouldReturnNilForResolve = true
+        let manager = makeManager(storage: storage)
+        installationStore.add(InstalledWebExtension(uniqueIdentifier: "missing", filename: "extension", name: nil, version: nil))
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertTrue(manager.webExtensionIdentifiers.isEmpty)
+        XCTAssertEqual(storage.removeExtensionIdentifier, "missing")
+        XCTAssertEqual(storage.cleanupOrphanedExtensionsKnownIdentifiers, [])
+    }
+
+    func testMixedLoadFailuresPreserveOnlyTheExtensionWithPermissionFailure() async {
+        let storage = WebExtensionStorageProvidingMock()
+        let loader = WebExtensionLoadingMock()
+        loader.mockLoadResults = [
+            .failure(WebExtensionLoader.PermissionPreparationError(underlyingError: WebExtensionPermissionController.PermissionError.installationDenied)),
+            .failure(NSError(domain: WKError.errorDomain, code: WKError.Code.webContentProcessTerminated.rawValue))
+        ]
+        let manager = WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
+                                          windowTabProvider: WebExtensionWindowTabProvidingMock(),
+                                          storageProvider: storage,
+                                          installationStore: installationStore,
+                                          permissionController: makeController(),
+                                          loader: loader)
+        installationStore.add(InstalledWebExtension(uniqueIdentifier: "denied", filename: "extension", name: nil, version: nil))
+        installationStore.add(InstalledWebExtension(uniqueIdentifier: "broken", filename: "extension", name: nil, version: nil))
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(manager.webExtensionIdentifiers, ["denied"])
+        XCTAssertEqual(storage.removeExtensionIdentifier, "broken")
+        XCTAssertEqual(storage.cleanupOrphanedExtensionsKnownIdentifiers, ["denied"])
+    }
+
     private func makeManager(storage: WebExtensionStorageProvidingMock) -> WebExtensionManager {
         WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
                             windowTabProvider: WebExtensionWindowTabProvidingMock(),

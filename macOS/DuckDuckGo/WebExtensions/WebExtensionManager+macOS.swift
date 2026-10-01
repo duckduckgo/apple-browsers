@@ -93,11 +93,11 @@ enum WebExtensionManagerFactory {
         ) : nil
 
         let installationStore = InstalledWebExtensionStore()
-        let permissionController = WebExtensionPermissionController(
+        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
             prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
-        )
+        ) : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),

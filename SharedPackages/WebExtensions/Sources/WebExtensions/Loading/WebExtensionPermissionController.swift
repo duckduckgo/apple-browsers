@@ -242,7 +242,7 @@ public final class WebExtensionPermissionController {
                              WKWebExtensionContext.permissionMatchPatternsWereGrantedNotification,
                              WKWebExtensionContext.grantedPermissionMatchPatternsWereRemovedNotification]
         observations[context.uniqueIdentifier] = Set(notifications.map { name in
-            NotificationCenter.default.publisher(for: name, object: context).sink { [weak self, weak context] notification in
+            NotificationCenter.default.publisher(for: name, object: context).sink { [weak self, weak context] _ in
                 MainActor.assumeIsolated {
                     guard let self, let context else { return }
                     do {

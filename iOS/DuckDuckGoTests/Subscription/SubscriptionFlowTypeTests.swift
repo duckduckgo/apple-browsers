@@ -123,6 +123,23 @@ final class SubscribeFlowInitialURLBuilderTests: XCTestCase {
         XCTAssertEqual(initialURL, URL(string: "https://duckduckgo.com/subscriptions?experiment_perfpaywall=control")!)
     }
 
+    func testWhenURLAlreadyHasACohortThenItIsReplaced() {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscriptions?experiment_perfpaywall=control")!
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.PerformanceOptimizedPaywallsCohort.treatment)
+
+        let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
+            redirectURLComponents: nil,
+            landingURL: nil,
+            subscriptionManager: subscriptionManager,
+            tld: TLD(),
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(initialURL, performanceOptimizedPaywallURL)
+    }
+
     func testWhenUserIsNotEnrolledThenReturnsLegacyPurchaseURL() {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultURL = purchaseURL

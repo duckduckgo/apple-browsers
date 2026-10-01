@@ -397,6 +397,7 @@ enum SubscribeFlowInitialURLBuilder {
             return purchaseURL
         }
         let paywallURL = cohort == .treatment ? performanceOptimizedPaywallURL : purchaseURL
-        return paywallURL.appendingParameter(name: "experiment_perfpaywall", value: cohort.rawValue)
+        return paywallURL.removingParameters(named: ["experiment_perfpaywall"])
+            .appendingParameter(name: "experiment_perfpaywall", value: cohort.rawValue)
     }
 }

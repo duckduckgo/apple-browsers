@@ -132,7 +132,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     ///
     /// A held deferred slot is excluded: it means a promo owns the slot, not that the user saw
     /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt",
-    /// and tells `runOnceModalPromptCloses(_:)` whether there is a prompt to wait for.
+    /// and, while a prompt is still on its way, tells `runOnceModalPromptCloses(_:)` whether it will come.
     var hasActiveOrPendingModalAttempt: Bool {
         if case .deferred = attemptState {
             return !legacyActiveAttemptIDs.isEmpty
@@ -277,7 +277,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     }
 
     func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool {
-        guard hasActiveOrPendingModalAttempt else { return false }
+        // Nothing to wait for when no prompt is on its way or on screen. That includes a held deferred
+        // slot, and an attempt UIKit refused, whose legacy ID never clears.
+        guard !hasModalPromptLeftScreen else { return false }
 
         let isAlreadyChecking = promptCloseHandler != nil
         promptCloseHandler = handler

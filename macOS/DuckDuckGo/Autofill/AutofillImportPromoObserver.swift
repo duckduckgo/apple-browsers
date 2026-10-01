@@ -26,16 +26,22 @@ protocol AutofillImportPromoReporting: AnyObject {
     @MainActor func overlayDidHideImportPrompt(_ overlay: AnyObject)
 }
 
+enum AutofillImportPromoState {
+    case initial
+    case permanentlyDismissed
+    case importStarted
+}
+
 /// Observes the "Import passwords" item in the autofill dropdown.
 final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPromoReporting {
 
     // Only one overlay is on screen at a time; others may not have reported their hide yet.
     private var currentOverlay: ObjectIdentifier?
-    private var currentOutcome: PromoResult = .ignored(cooldown: 0)
+    private var promoState: AutofillImportPromoState = .initial
 
-    // PromoService reads `resultWhenHidden` on its own queue.
-    private let resolvedResultLock = NSLock()
-    private var resolvedResult: PromoResult = .ignored(cooldown: 0)
+    // PromoService reads `resultWhenHidden` on its own queue; hold the state for a closed promo so it can be used for the result.
+    private let closedPromoStateLock = NSLock()
+    private var closedPromoState: AutofillImportPromoState = .initial
 
     private let visibilitySubject = CurrentValueSubject<Bool, Never>(false)
 
@@ -43,9 +49,13 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     var isVisiblePublisher: AnyPublisher<Bool, Never> { visibilitySubject.removeDuplicates().eraseToAnyPublisher() }
 
     var resultWhenHidden: PromoResult {
-        resolvedResultLock.lock()
-        defer { resolvedResultLock.unlock() }
-        return resolvedResult
+        closedPromoStateLock.lock()
+        defer { closedPromoStateLock.unlock() }
+        switch closedPromoState {
+        case .initial: return .ignored(cooldown: 0)
+        case .permanentlyDismissed: return .ignored()
+        case .importStarted: return .actioned
+        }
     }
 
     init() { }
@@ -59,20 +69,20 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
             close()
         }
         currentOverlay = overlayID
-        currentOutcome = .ignored(cooldown: 0)
+        promoState = .initial
         visibilitySubject.send(true)
     }
 
     @MainActor
     func overlayDidStartImport(_ overlay: AnyObject) {
         guard currentOverlay == ObjectIdentifier(overlay) else { return }
-        currentOutcome = .actioned
+        promoState = .importStarted
     }
 
     @MainActor
     func overlayDidPermanentlyDismissImportPrompt(_ overlay: AnyObject) {
         guard currentOverlay == ObjectIdentifier(overlay) else { return }
-        currentOutcome = .ignored()
+        promoState = .permanentlyDismissed
     }
 
     @MainActor
@@ -84,9 +94,9 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     @MainActor
     private func close() {
         // Resolve before emitting: PromoService reads `resultWhenHidden` once it observes `false`.
-        resolvedResultLock.lock()
-        resolvedResult = currentOutcome
-        resolvedResultLock.unlock()
+        closedPromoStateLock.lock()
+        closedPromoState = promoState
+        closedPromoStateLock.unlock()
         currentOverlay = nil
         visibilitySubject.send(false)
     }

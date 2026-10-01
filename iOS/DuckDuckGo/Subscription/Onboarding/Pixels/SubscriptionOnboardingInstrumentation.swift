@@ -19,12 +19,9 @@
 
 import Foundation
 import PixelKit
-import AIChat
 
 /// Reports the onboarding funnel.
 protocol SubscriptionOnboardingInstrumenting {
-    /// The funnel's denominator, and the only place the Duck.ai-disabled cohort is counted.
-    func flowStarted()
     func stepShown(_ section: SubscriptionOnboardingSection)
     func stepCompleted(_ section: SubscriptionOnboardingSection)
     func stepSkipped(_ section: SubscriptionOnboardingSection)
@@ -39,8 +36,7 @@ extension SubscriptionOnboardingSection {
         switch self {
         case .orderConfirmation: "intro"
         case .welcome: "features_summary"
-        case .vpnActivation: "vpn"
-        case .vpnWidget, .vpnTips: "vpn_widget"
+        case .vpnActivation, .vpnWidget, .vpnTips: "vpn"
         case .idtr: "idtr"
         case .duckAI: "duck_ai"
         case .progress: "completion"
@@ -63,25 +59,12 @@ extension SubscriptionOnboardingEntryPoint {
 struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumenting {
 
     private let entryPoint: SubscriptionOnboardingEntryPoint
-    private let isDuckAIEnabled: () -> Bool
     private let pixelFiring: PixelFiring?
 
     init(entryPoint: SubscriptionOnboardingEntryPoint,
-         isDuckAIEnabled: (() -> Bool)? = nil,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.entryPoint = entryPoint
-        if let isDuckAIEnabled {
-            self.isDuckAIEnabled = isDuckAIEnabled
-        } else {
-            let aiChatSettings = AIChatSettings()
-            self.isDuckAIEnabled = { aiChatSettings.isAIChatEnabled }
-        }
         self.pixelFiring = pixelFiring
-    }
-
-    func flowStarted() {
-        fire(.subscriptionOnboardingFlowStarted(entryPoint: entryPoint.pixelValue,
-                                                isDuckAIEnabled: isDuckAIEnabled()))
     }
 
     func stepShown(_ section: SubscriptionOnboardingSection) {

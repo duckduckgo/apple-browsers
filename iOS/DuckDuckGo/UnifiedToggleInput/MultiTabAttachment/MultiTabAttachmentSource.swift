@@ -25,6 +25,14 @@ struct MultiTabAttachmentCandidate: Equatable {
     let tabId: TabUID
     let title: String
     let url: URL
+    let isCurrentTab: Bool
+
+    init(tabId: TabUID, title: String, url: URL, isCurrentTab: Bool = false) {
+        self.tabId = tabId
+        self.title = title
+        self.url = url
+        self.isCurrentTab = isCurrentTab
+    }
 }
 
 /// Reads metadata from the source sheet's browsing mode without materializing tab controllers.
@@ -54,7 +62,8 @@ struct MultiTabAttachmentSource {
                 guard let link = tab.link,
                       !AIChatTabMetadata.shouldExcludeFromTabPicker(link.url),
                       seen.insert(tab.uid).inserted else { return nil }
-                return MultiTabAttachmentCandidate(tabId: tab.uid, title: link.displayTitle, url: link.url)
+                return MultiTabAttachmentCandidate(tabId: tab.uid, title: link.displayTitle, url: link.url,
+                                                   isCurrentTab: tab.uid == currentTabID)
             }
     }
 }

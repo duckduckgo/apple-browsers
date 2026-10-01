@@ -191,7 +191,7 @@ final class CriticalPathsTests: XCTestCase {
         let sheetsQuery = settingsWindow.sheets
         settingsWindow.buttons["Sync and Back Up This Device"].click()
         sheetsQuery.buttons["Turn On Sync & Backup"].click()
-        sheetsQuery.buttons["Copy Code"].click()
+        sheetsQuery.buttons["Copy Code"].assertExists().click()
         sheetsQuery.buttons["Next"].click()
         sheetsQuery.buttons["Done"].click()
         let syncEnabledElement = settingsWindow.staticTexts["Sync Enabled"]
@@ -201,7 +201,7 @@ final class CriticalPathsTests: XCTestCase {
         settingsWindow.swipeUp()
         settingsWindow.buttons["Turn Off and Delete Server Data…"].click()
         sheetsQuery.buttons["Delete Data"].click()
-        let beginSync = settingsWindow.staticTexts["Begin Syncing"]
+        let beginSync = settingsWindow.staticTexts["Begin Syncing"].assertExists()
         beginSync.click()
         XCTAssertTrue(beginSync.exists, "Begyn Sync text is not visible")
 

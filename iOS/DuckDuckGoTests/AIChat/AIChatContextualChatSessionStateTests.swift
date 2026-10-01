@@ -629,6 +629,26 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.latestContext)
     }
 
+    func testAutomaticCurrentPageAttachmentReservesSlotUntilContextArrives() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.beginAutomaticAttach()
+        XCTAssertTrue(sessionState.isPageContextAttachInProgress)
+
+        sessionState.updateContext(makeTestContext())
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+    }
+
+    func testFailedAutomaticCurrentPageAttachmentReleasesReservedSlot() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.beginAutomaticAttach()
+        sessionState.updateContext(nil)
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+
+        sessionState.beginAutomaticAttach()
+        sessionState.cancelAutomaticAttach()
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+    }
+
     func testRemovingPendingCurrentPagePreventsLateAutomaticAttachment() {
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)

@@ -27,7 +27,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -38,7 +38,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIIsEnabledButUnifiedToggleInputIsUnavailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
@@ -49,7 +49,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIIsDisabledAndUnifiedToggleInputIsAvailableThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isFloatingUIFeatureEnabled: false,
             isPadProvider: { false },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -60,7 +60,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPadThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { true },
             isSupportedOSProvider: { true },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -71,7 +71,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenOSIsUnsupportedThenFloatingUIIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { false },
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
@@ -82,7 +82,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenAugustFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isSupportedOSProvider: { false },
             isTabSwitcherSupportedOSProvider: { true },
@@ -95,7 +95,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenAugustFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
+            isFloatingUIFeatureEnabled: false,
             isPadProvider: { false },
             isTabSwitcherSupportedOSProvider: { true }
         )
@@ -105,7 +105,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenAugustFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { true },
             isTabSwitcherSupportedOSProvider: { true }
         )
@@ -115,7 +115,7 @@ final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenTabSwitcherOSIsUnsupportedThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.floatingUIAugust2026]),
+            isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
             isTabSwitcherSupportedOSProvider: { false }
         )
@@ -554,6 +554,32 @@ final class FloatingGlassAppearancePolicyTests: XCTestCase {
 }
 
 final class FloatingUILayoutPolicyTests: XCTestCase {
+
+    func testWhenAddressBarIsAtBottomThenWebViewEndsAboveBottomChrome() {
+        let obscuredContentInsets = UIEdgeInsets(top: 59, left: 0, bottom: 154, right: 0)
+
+        let layout = FloatingUILayoutPolicy.webViewLayout(
+            obscuredContentInsets: obscuredContentInsets,
+            addressBarPosition: .bottom
+        )
+
+        XCTAssertEqual(layout.topAnchorConstant, 0)
+        XCTAssertEqual(layout.bottomAnchorConstant, -154)
+        XCTAssertEqual(layout.obscuredContentInsets, UIEdgeInsets(top: 59, left: 0, bottom: 0, right: 0))
+    }
+
+    func testWhenAddressBarIsAtTopThenWebViewStartsBelowTopChrome() {
+        let obscuredContentInsets = UIEdgeInsets(top: 111, left: 0, bottom: 83, right: 0)
+
+        let layout = FloatingUILayoutPolicy.webViewLayout(
+            obscuredContentInsets: obscuredContentInsets,
+            addressBarPosition: .top
+        )
+
+        XCTAssertEqual(layout.topAnchorConstant, 111)
+        XCTAssertEqual(layout.bottomAnchorConstant, -83)
+        XCTAssertEqual(layout.obscuredContentInsets, .zero)
+    }
 
     func testWhenFloatingTopBarThenNewTabPageBottomInsetClearsTheToolbar() {
         let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(

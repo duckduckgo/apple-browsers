@@ -30,7 +30,7 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
         self.windowProvider = windowProvider
     }
 
-    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> Bool? {
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
         let alert = makeAlert(for: webExtension, permissions: permissions, isInstallation: true)
         let privateAccess = NSButton(checkboxWithTitle: UserText.webExtensionAllowFireWindows, target: nil, action: nil)
         privateAccess.state = .off
@@ -40,13 +40,13 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
             let explanation = NSTextField(wrappingLabelWithString: UserText.webExtensionPrivateAccessExplanation)
             stack.addArrangedSubview(explanation)
         }
-        guard await present(alert) == .alertFirstButtonReturn else { return nil }
-        return privateAccess.state == .on
+        guard await present(alert) == .alertFirstButtonReturn else { return .denied }
+        return .granted(privateDataAccess: privateAccess.state == .on)
     }
 
-    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool {
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         let alert = makeAlert(for: context.webExtension, permissions: permissions, isInstallation: false)
-        return await present(alert) == .alertFirstButtonReturn
+        return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
     }
 
     private func present(_ alert: NSAlert) async -> NSApplication.ModalResponse {

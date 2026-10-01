@@ -38,9 +38,25 @@ public struct WebExtensionPermissionRequest {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public protocol WebExtensionPermissionPrompting {
-    /// Nil means the installation was canceled. False means approved without private access.
-    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> Bool?
-    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool
+    /// Used to handle granting permissions for an extension upon installation
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult
+
+    /// Used to handle granting permissions for an extension at runtime
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+public enum WebExtensionPermissionInstallationPromptResult: Equatable {
+    case granted(privateDataAccess: Bool)
+    case denied
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+public enum WebExtensionPermissionPromptResult: Equatable {
+    case granted
+    case denied
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -91,11 +107,11 @@ public final class WebExtensionPermissionController {
             } else {
                 let request = WebExtensionPermissionRequest(permissions: context.webExtension.requestedPermissions,
                                                             matchPatterns: context.webExtension.allRequestedMatchPatterns)
-                guard let privateAccess = await prompter.confirmInstallation(of: context.webExtension, permissions: request),
-                      contexts[identifier] === context else {
+                let result = await prompter.confirmInstallation(of: context.webExtension, permissions: request)
+                guard case .granted(let privateDataAccess) = result, contexts[identifier] === context else {
                     throw PermissionError.installationDenied
                 }
-                context.hasAccessToPrivateData = privateAccess
+                context.hasAccessToPrivateData = privateDataAccess
                 grant(request, to: context)
                 try save(context)
             }
@@ -111,7 +127,7 @@ public final class WebExtensionPermissionController {
     func request(_ request: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool {
         if isTrusted(context.uniqueIdentifier) { return true }
         guard contexts[context.uniqueIdentifier] === context,
-              await prompter.confirmPermissions(request, for: context),
+              await prompter.confirmPermissions(request, for: context) == .granted,
               contexts[context.uniqueIdentifier] === context else { return false }
 
         let previousPermissions = context.grantedPermissions
@@ -187,6 +203,7 @@ public final class WebExtensionPermissionController {
         settings.grantedMatchPatterns = Dictionary(uniqueKeysWithValues: context.grantedPermissionMatchPatterns.map { ($0.key.string, $0.value) })
         settings.hasRequestedOptionalAccessToAllHosts = context.hasRequestedOptionalAccessToAllHosts
         try store.save(settings, for: context.uniqueIdentifier)
+        Logger.webExtensions.debug("Saved permissions to store for \(context.uniqueIdentifier)")
     }
 
     private func observePermissionChanges(in context: WKWebExtensionContext) {
@@ -196,10 +213,11 @@ public final class WebExtensionPermissionController {
                              WKWebExtensionContext.permissionMatchPatternsWereGrantedNotification,
                              WKWebExtensionContext.grantedPermissionMatchPatternsWereRemovedNotification]
         observations[context.uniqueIdentifier] = Set(notifications.map { name in
-            NotificationCenter.default.publisher(for: name, object: context).sink { [weak self, weak context] _ in
+            NotificationCenter.default.publisher(for: name, object: context).sink { [weak self, weak context] notification in
                 MainActor.assumeIsolated {
                     guard let self, let context else { return }
                     do {
+                        Logger.webExtensions.debug("Notification received: \(notification.name.rawValue) for \(context.uniqueIdentifier)")
                         try self.save(context)
                     } catch {
                         Logger.webExtensions.error("Could not save changed extension permissions: \(error.localizedDescription)")

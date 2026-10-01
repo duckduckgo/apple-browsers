@@ -237,6 +237,22 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.constraints.contentContainerTop.isActive)
     }
 
+    func testWhenFloatingInlineInputDismissStartsThenFocusedBackgroundRemainsVisible() {
+        for position in [AddressBarPosition.top, .bottom] {
+            let coordinator = makeCoordinator(position: position)
+            coordinator.setFloatingUIEnabled(true)
+            coordinator.unifiedToggleInputContainer = UIView()
+            coordinator.focusedStateBackground = UIView()
+            coordinator.focusedStateBackground.isHidden = false
+
+            coordinator.hideUnifiedToggleInputOmnibar(transition: .inlineInput)
+
+            XCTAssertFalse(coordinator.focusedStateBackground.isHidden,
+                           "The full-screen backdrop must cover the pond until the inline handoff")
+            coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+        }
+    }
+
     func testWhenDismissIsReplacedThenOnlyTheCurrentTransitionRemainsInProgress() {
         let coordinator = makeCoordinator()
         coordinator.unifiedToggleInputContainer = UIView()

@@ -154,6 +154,7 @@ extension MainViewController {
                 contentContainer.transform = .identity
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
+                self?.viewCoordinator.focusedStateBackground.alpha = 1
                 if restingSnapshot == nil {
                     source?.alpha = 0
                 }

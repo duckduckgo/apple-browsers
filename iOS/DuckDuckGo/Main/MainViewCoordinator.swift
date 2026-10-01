@@ -608,7 +608,7 @@ class MainViewCoordinator {
         }
         omnibarDismissInterruptCleanup = interruptCleanup
         isInlineInputDismissInProgress = transition == .inlineInput
-        if isFloatingUIEnabled {
+        if isFloatingUIEnabled, transition == .omnibar {
             hideFocusedStateBackground()
         }
 
@@ -626,6 +626,11 @@ class MainViewCoordinator {
             // A full-duration page fade exposes both favorites grids throughout the movement.
             animator.addAnimations({ [weak self] in
                 self?.unifiedToggleInputContainer.alpha = 0
+                // The focused host stops above the toolbar. Keep its full-screen backdrop
+                // until the handoff so the pond cannot appear early along the bottom edge.
+                if self?.isFloatingUIEnabled == true {
+                    self?.focusedStateBackground.alpha = 0
+                }
                 inlineInputHandoffAnimations?()
             }, delayFactor: Constants.inlineInputDismissHandoffStart)
         }

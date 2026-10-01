@@ -41,9 +41,8 @@ final class NavigationCompletionWaiter {
         }
     }
 
-    /// A navigation that WebKit reports without a handle is taken to be the pending one.
     func complete(_ navigation: AnyObject?, with result: Result<Void, Error>) {
-        guard navigation == nil || navigation === pendingNavigation else { return }
+        guard navigation === pendingNavigation else { return }
         finish(with: result)
     }
 

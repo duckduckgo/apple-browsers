@@ -81,6 +81,17 @@ final class NavigationCompletionWaiterTests: XCTestCase {
         XCTAssertNoThrow(try result.get())
     }
 
+    func testWhenANavigationReportsWithoutAHandleThenItIsIgnored() async {
+        let navigation = NSObject()
+
+        let result = await wait(for: navigation) { [unowned self] in
+            waiter.complete(nil, with: .failure(TestError.failed))
+            waiter.complete(navigation, with: .success(()))
+        }
+
+        XCTAssertNoThrow(try result.get())
+    }
+
     func testWhenNavigationNeverReportsThenWaitTimesOut() async {
         let result = await wait(for: NSObject(), timeout: 0.05) {}
 

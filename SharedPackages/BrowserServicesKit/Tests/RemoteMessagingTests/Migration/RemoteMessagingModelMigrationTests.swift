@@ -41,8 +41,8 @@ final class RemoteMessagingModelMigrationTests {
         try? FileManager.default.removeItem(at: testLocation)
     }
 
-    @Test("Check Model Lightweight Migration From V1 to V2")
-    func checkModelMigrationFromV1ToV2() throws {
+    @Test("Check Model Lightweight Migration From V1 to Current Version")
+    func checkModelMigrationFromV1ToCurrentVersion() throws {
         // GIVEN
         // Copy real V1 database files
         try copyDatabase(name: "Database_V1", formDirectory: resourcesURLDirectory, toDirectory: testLocation, targetName: "RemoteMessaging")
@@ -55,12 +55,13 @@ final class RemoteMessagingModelMigrationTests {
         // THEN Assert fetching and save new object works fine.
         let context = migratedDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
         try context.performAndWait {
-            // Verify migration by accessing surfaces property
+            // Verify migration by accessing properties added after V1.
             let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
             let messages = try context.fetch(fetchRequest)
             #expect(messages.count == 1)
             let message = try #require(messages.first)
             #expect(message.surfaces == nil, "Migrated records should have nil surfaces")
+            #expect(message.impressionCount == 0, "Migrated records should start with no impressions")
         }
 
         // Test creating new record with surfaces
@@ -72,6 +73,7 @@ final class RemoteMessagingModelMigrationTests {
             try context.save()
             // Verify new functionality works
             #expect(newMessage.surfaces?.int16Value == RemoteMessageSurfaceType.newTabPage.rawValue)
+            #expect(newMessage.impressionCount == 0)
         }
 
         // Clean up

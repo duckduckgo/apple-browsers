@@ -87,6 +87,7 @@ final class SyncDialogControllerTests: XCTestCase {
     private var pixelKitMock: PixelKitMock!
     private var mockKeyValueStore: MockKeyValueStore!
     private var syncDialogController: SyncDialogController!
+    private var deviceNameProviderCallCount = 0
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
     lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!.defaultCredentialRecoveryKey()
     var cancellables: Set<AnyCancellable>!
@@ -104,6 +105,7 @@ final class SyncDialogControllerTests: XCTestCase {
         authenticator = MockUserAuthenticator()
         pixelKitMock = PixelKitMock()
         mockKeyValueStore = MockKeyValueStore()
+        deviceNameProviderCallCount = 0
 
         syncDialogController = SyncDialogController(
             syncService: ddgSyncing,
@@ -115,7 +117,11 @@ final class SyncDialogControllerTests: XCTestCase {
             },
             featureFlagger: featureFlagger,
             pixelFiring: pixelKitMock,
-            keyValueStore: mockKeyValueStore
+            keyValueStore: mockKeyValueStore,
+            deviceNameProvider: { [weak self] in
+                self?.deviceNameProviderCallCount += 1
+                return "Test Mac"
+            }
         )
     }
 
@@ -132,6 +138,11 @@ final class SyncDialogControllerTests: XCTestCase {
         pixelKitMock = nil
         mockKeyValueStore = nil
         super.tearDown()
+    }
+
+    func testInitializationDoesNotResolveDeviceName() {
+        XCTAssertNil(managementDialogModel.thisDeviceName)
+        XCTAssertEqual(deviceNameProviderCallCount, 0)
     }
 
     func testSyncSetupEndedFailedRelayEventIncludesPairingFailureContext() {
@@ -1546,6 +1557,8 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertEqual(managementDialogModel.thisDeviceName, "Test Mac")
+        XCTAssertEqual(deviceNameProviderCallCount, 1)
     }
 
     func testControllerDidFinishTransmittingRecoveryKey_whenV2EnabledForExistingHost_waitsForDevicesBeforeEndingFlow() async {

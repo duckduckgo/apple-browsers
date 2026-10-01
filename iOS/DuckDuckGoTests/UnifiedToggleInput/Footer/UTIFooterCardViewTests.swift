@@ -34,7 +34,80 @@ final class UTIFooterCardViewTests: XCTestCase {
     /// Longer than the room a titled card leaves beside its CTA and close button at phone width.
     private let wrappingTitle = "Advanced AI models limit reached for this billing period"
 
-    /// The card grows to fit the message instead of cutting it off.
+    func testSwitchingFromPromotionToPlainTitleRestoresOriginalPresentation() throws {
+        for message in [makeMessage(), makeNotice()] {
+            let sut = UTIFooterCardView()
+            sut.configure(with: UTIFooterMessageMapper().multiTabPromotionMessage(), animateIcon: false)
+
+            sut.configure(with: message, animateIcon: false)
+
+            let reference = UTIFooterCardView()
+            reference.configure(with: message, animateIcon: false)
+            let label = try XCTUnwrap(titleLabel(in: sut))
+            let referenceLabel = try XCTUnwrap(titleLabel(in: reference))
+            XCTAssertEqual(label.text, message.title)
+            XCTAssertEqual(label.font, referenceLabel.font)
+            XCTAssertEqual(label.accessibilityLabel, referenceLabel.accessibilityLabel)
+            if let title = label.attributedText {
+                title.enumerateAttribute(.attachment, in: NSRange(location: 0, length: title.length)) { value, _, _ in
+                    XCTAssertNil(value)
+                }
+            }
+        }
+    }
+
+    func testPrivacyUsesNativeLinkAndHidesItOnReuse() throws {
+        let sut = UTIFooterCardView()
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        sut.configure(with: message, animateIcon: false)
+        let textView = try XCTUnwrap((textStack(in: sut)?.arrangedSubviews ?? []).compactMap { $0 as? UTIFooterLinkTextView }.first)
+        let range = (message.title as NSString).range(of: "Learn more")
+        XCTAssertEqual(textView.attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL, message.link?.url)
+        XCTAssertFalse(textView.isHidden)
+        XCTAssertFalse(textView.canBecomeFirstResponder)
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+        XCTAssertTrue(textView.isHidden)
+        XCTAssertFalse(try XCTUnwrap(titleLabel(in: sut)).isHidden)
+    }
+
+    func testPrivacyLinkRejectsTrailingAndBelowTextWhitespace() throws {
+        let sut = UTIFooterLinkTextView()
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com"))
+        sut.configure(text: "Learn more", link: .init(text: "Learn more", url: url))
+        sut.frame = CGRect(x: 0, y: 0, width: 300, height: 80)
+        sut.layoutIfNeeded()
+        XCTAssertFalse(sut.point(inside: CGPoint(x: 299, y: 10), with: nil))
+        XCTAssertFalse(sut.point(inside: CGPoint(x: 3, y: 79), with: nil))
+        XCTAssertTrue(sut.point(inside: CGPoint(x: 3, y: 8), with: nil))
+    }
+
+    func testLocalizedLinksUseRenderedWrappedAndRightToLeftRanges() throws {
+        let cases: [(String, String, UISemanticContentAttribute)] = [
+            ("Dateien werden automatisch geprüft. %@", "Weitere Informationen zu diesen Dateien", .forceLeftToRight),
+            ("📎 %@：添付ファイルの取り扱いについて", "詳しく見る", .forceLeftToRight),
+            ("تُفحص الملفات تلقائيًا. %@", "معرفة المزيد", .forceRightToLeft)
+        ]
+        for (format, linkText, direction) in cases {
+            let sut = UTIFooterLinkTextView()
+            sut.semanticContentAttribute = direction
+            let message = UTIFooterMessageMapper().attachmentPrivacyMessage(format: format, learnMoreText: linkText)
+            sut.configure(text: message.title, link: try XCTUnwrap(message.link))
+            sut.frame = CGRect(x: 0, y: 0, width: 140, height: 180)
+            sut.layoutIfNeeded()
+            let range = (message.title as NSString).range(of: linkText)
+            XCTAssertEqual(sut.attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL, message.link?.url)
+            let start = try XCTUnwrap(sut.position(from: sut.beginningOfDocument, offset: range.location))
+            let end = try XCTUnwrap(sut.position(from: start, offset: range.length))
+            let textRange = try XCTUnwrap(sut.textRange(from: start, to: end))
+            let rects = sut.selectionRects(for: textRange).map(\.rect).filter { !$0.isEmpty }
+            XCTAssertFalse(rects.isEmpty, linkText)
+            for rect in rects {
+                XCTAssertTrue(sut.point(inside: CGPoint(x: rect.midX, y: rect.midY), with: nil), linkText)
+            }
+        }
+    }
+
     func test_cardHeight_growsWithAWrappedTitle() {
         let sut = UTIFooterCardView()
 
@@ -263,6 +336,30 @@ final class UTIFooterCardViewTests: XCTestCase {
         }
     }
 
+    /// One line of link copy is shorter than the room the card keeps for its controls, even hidden ones.
+    /// A text view stretched to that room draws its line at the top, leaving the icon centered below it.
+    func test_oneLineLinkCopy_isCenteredOnItsIcon() throws {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().termsOfServiceMessage(), animateIcon: false)
+        let wideCardWidth: CGFloat = 900
+        sut.frame = CGRect(x: 0, y: 0, width: wideCardWidth, height: 0)
+        sut.layoutIfNeeded()
+        let height = sut.systemLayoutSizeFitting(CGSize(width: wideCardWidth, height: UIView.layoutFittingCompressedSize.height),
+                                                 withHorizontalFittingPriority: .required,
+                                                 verticalFittingPriority: .fittingSizeLevel).height
+        sut.frame = CGRect(x: 0, y: 0, width: wideCardWidth, height: height)
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+
+        let linkText = try XCTUnwrap(linkTextView(in: sut))
+        let shield = try XCTUnwrap(sut.contentView.subviews.first { $0.accessibilityIdentifier == "AIChat.Footer.Icon.Shield" })
+        let oneLine = linkText.sizeThatFits(CGSize(width: linkText.bounds.width, height: CGFloat.greatestFiniteMagnitude)).height
+        XCTAssertLessThan(oneLine, UIFont.daxFootnoteRegular().lineHeight * 2, "The copy has to fit one line for this to mean anything")
+        XCTAssertEqual(linkText.bounds.height, oneLine, accuracy: 0.5)
+        let linkTextCenter = sut.contentView.convert(CGPoint(x: linkText.bounds.midX, y: linkText.bounds.midY), from: linkText)
+        XCTAssertEqual(shield.center.y, linkTextCenter.y, accuracy: 0.5)
+    }
+
     func testPurchaseAvailabilityRemovesAndRestoresRenderedButtonWhileKeepingNotice() throws {
         let card = UTIFooterCardView()
         let mapper = UTIFooterMessageMapper()
@@ -303,6 +400,11 @@ final class UTIFooterCardViewTests: XCTestCase {
             return 0
         }
         return card.convert(subview.bounds, from: subview).maxX
+    }
+
+    private func linkTextView(in card: UTIFooterCardView) -> UTIFooterLinkTextView? {
+        card.subviews.flatMap(\.subviews).compactMap { $0 as? UIStackView }.first?
+            .arrangedSubviews.compactMap { $0 as? UTIFooterLinkTextView }.first
     }
 
     private func layOut(_ card: UTIFooterCardView, atWidth width: CGFloat) {
@@ -380,7 +482,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: title,
                          subtitle: subtitle,
                          primaryAction: primaryAction,
-                         isDismissible: isDismissible)
+                         isDismissible: isDismissible,
+                         link: nil)
     }
 
     /// The Create Image switch card: a headline over body copy, with no CTA to compete for width.
@@ -391,7 +494,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "Now using 5.6 Luna",
                          subtitle: subtitle,
                          primaryAction: nil,
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 
     private func makeNotice(title: String = "Opus 4.8 uses limits up to 2-5x faster than basic models.") -> UTIFooterMessage {
@@ -399,7 +503,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: title,
                          subtitle: nil,
                          primaryAction: nil,
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 
     /// The blocked card as shipped: a short title beside a CTA wide enough to compress it, and no
@@ -409,7 +514,8 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "Daily limit reached",
                          subtitle: "Resets in 5 hours",
                          primaryAction: .init(title: "Start Using Weekly Limit"),
-                         isDismissible: false)
+                         isDismissible: false,
+                         link: nil)
     }
 
     private func makeIconlessMessage() -> UTIFooterMessage {
@@ -417,6 +523,7 @@ final class UTIFooterCardViewTests: XCTestCase {
                          title: "90% of weekly limit",
                          subtitle: "Resets in 2 days",
                          primaryAction: .init(title: "Switch Model"),
-                         isDismissible: true)
+                         isDismissible: true,
+                         link: nil)
     }
 }

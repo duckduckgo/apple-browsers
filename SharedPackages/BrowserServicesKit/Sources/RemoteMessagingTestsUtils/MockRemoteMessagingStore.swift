@@ -29,6 +29,7 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
     public var dismissRemoteMessageCalls = 0
     public var fetchDismissedRemoteMessageIDsCalls = 0
     public var updateRemoteMessageCalls = 0
+    public var recordRemoteMessageImpressionCalls = 0
 
     public var capturedSurfaces: RemoteMessageSurfaceType?
 
@@ -92,10 +93,19 @@ public class MockRemoteMessagingStore: RemoteMessagingStoring {
     public func updateRemoteMessage(withID id: String, asShown shown: Bool) {
         updateRemoteMessageCalls += 1
         if shown {
-            shownRemoteMessagesIDs.append(id)
+            if !shownRemoteMessagesIDs.contains(id) {
+                shownRemoteMessagesIDs.append(id)
+            }
         } else {
             shownRemoteMessagesIDs.removeAll(where: { $0 == id })
         }
+    }
+
+    public func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult {
+        recordRemoteMessageImpressionCalls += 1
+        let isFirstImpression = !shownRemoteMessagesIDs.contains(id)
+        updateRemoteMessage(withID: id, asShown: true)
+        return .recorded(isFirstImpression: isFirstImpression, impressionCount: nil)
     }
 
     public func resetRemoteMessages() {}

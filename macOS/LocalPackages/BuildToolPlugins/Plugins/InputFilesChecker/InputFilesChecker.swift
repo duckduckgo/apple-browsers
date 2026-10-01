@@ -196,8 +196,6 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
             return "DuckDuckGo" // Main app sources are in macOS/DuckDuckGo/
 
         // Utility/test tool targets
-        case "sandbox-test-tool":
-            return "sandbox-test-tool"
         case "tests-server":
             return "tests-server"
 

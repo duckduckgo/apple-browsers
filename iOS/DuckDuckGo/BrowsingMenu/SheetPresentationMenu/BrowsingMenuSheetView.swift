@@ -22,6 +22,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
+import UIComponents
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -251,6 +252,7 @@ extension BrowsingMenuModel {
             case favorite
             case fire
             case openBookmarks
+            case sitePermissions
         }
 
         enum Detail {
@@ -328,6 +330,9 @@ private struct MenuRowButton: View {
             }
         }
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
+        .if(entryData.tag == .sitePermissions) { view in
+            view.accessibilityIdentifier("BrowsingMenu.SitePermissions")
+        }
     }
 
     struct DetailView: View {
@@ -347,13 +352,7 @@ private struct MenuRowButton: View {
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textSecondary))
                     case .badge(let string):
-                        Text(string)
-                            .daxCallout()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color(singleUseColor: .fireModeAccent))
-                            .clipShape(RoundedRectangle(cornerRadius: 10.5))
+                        BadgeView(text: string)
                     }
                 }
             }

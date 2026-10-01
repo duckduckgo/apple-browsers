@@ -111,7 +111,7 @@ class FromWebViewTransition: WebViewTransition {
         }
 
         let theme = ThemeManager.shared.currentTheme
-        let webViewFrame = webView.convert(webView.bounds, to: nil)
+        let webViewFrame = webView.convert(webView.bounds, to: transitionContext.containerView)
 
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webViewFrame
@@ -126,9 +126,7 @@ class FromWebViewTransition: WebViewTransition {
 
         var initialContainerFrame = mainViewController.viewCoordinator.contentContainer.frame
         if isFloating {
-            initialContainerFrame = WebViewTransitionGeometry.webContentFrame(
-                from: initialContainerFrame,
-                topObscuredHeight: webView.scrollView.contentInset.top)
+            initialContainerFrame = webViewFrame
         } else {
             initialContainerFrame = adjustFrame(initialContainerFrame,
                                                 forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
@@ -294,9 +292,7 @@ class ToWebViewTransition: WebViewTransition {
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
                 if isFloating {
-                    destinationFrame = WebViewTransitionGeometry.webContentFrame(
-                        from: destinationFrame,
-                        topObscuredHeight: webView.scrollView.contentInset.top)
+                    destinationFrame = webView.convert(webView.bounds, to: transitionContext.containerView)
                 }
                 self.setCardFrame(destinationFrame, cornerRadius: 0, shadowOpacity: 0)
                 self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
@@ -316,9 +312,7 @@ class ToWebViewTransition: WebViewTransition {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
                     var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
                     if isFloating {
-                        destinationFrame = WebViewTransitionGeometry.webContentFrame(
-                            from: destinationFrame,
-                            topObscuredHeight: webView.scrollView.contentInset.top)
+                        destinationFrame = webView.convert(webView.bounds, to: transitionContext.containerView)
                     }
                     self.applyGridChromePose(
                         isVisible: false,

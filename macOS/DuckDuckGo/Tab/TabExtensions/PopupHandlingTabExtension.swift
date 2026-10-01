@@ -23,7 +23,7 @@ import ConcurrencyExtensions
 import ContentBlocking
 import FeatureFlags_macOS
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import OSLog
 import PrivacyConfig
 import TrackerRadarKit
@@ -125,6 +125,14 @@ final class PopupHandlingTabExtension {
                     case .scrollWheel:
                         break // Already filtered out above
                     }
+                }
+            }
+            .store(in: &cancellables)
+
+        permissionModel.popupDecisionRemoved
+            .sink { [weak self] in
+                MainActor.assumeMainThread {
+                    self?.popupsTemporarilyAllowedForCurrentPage = false
                 }
             }
             .store(in: &cancellables)
@@ -312,7 +320,8 @@ final class PopupHandlingTabExtension {
         if let sourceFrame = navigationAction.safeSourceFrame {
             let allowlist = popupBlockingConfig.allowlist
             let sourceHost = sourceFrame.securityOrigin.host
-            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist),
+               !permissionModel.isPopupBlockedByDefault(forDomain: sourceHost) {
                 Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
                 return .allowlistedDomain(sourceHost)
             }

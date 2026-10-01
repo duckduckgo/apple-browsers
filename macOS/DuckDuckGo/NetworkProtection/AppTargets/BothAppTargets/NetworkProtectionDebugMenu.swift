@@ -117,6 +117,14 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Show Excluded Sites", action: #selector(NetworkProtectionDebugMenu.showExcludedDomainsScreen(_:)))
+                .targetting(self)
+
+            NSMenuItem(title: "Show Excluded Apps", action: #selector(NetworkProtectionDebugMenu.showExcludedAppsScreen(_:)))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             NSMenuItem(title: "Adapter") {
                 NSMenuItem(title: "Restart Adapter", action: #selector(NetworkProtectionDebugMenu.restartAdapter(_:)))
                     .targetting(self)
@@ -302,6 +310,20 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     /// Removes the system extension and agents for DuckDuckGo VPN.
     ///
+    /// The VPN section only appears in Settings with an active subscription, so this is the
+    /// only way to reach the screen on a build without one.
+    @objc func showExcludedDomainsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNDomainExclusions()
+        }
+    }
+
+    @objc func showExcludedAppsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNAppExclusions()
+        }
+    }
+
     @objc func restartAdapter(_ sender: Any?) {
         Task { @MainActor in
             do {

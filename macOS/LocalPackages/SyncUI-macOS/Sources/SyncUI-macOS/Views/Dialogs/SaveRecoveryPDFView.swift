@@ -26,7 +26,7 @@ struct SaveRecoveryPDFView: View {
     var body: some View {
         SyncDialog {
             VStack(spacing: 20.0) {
-                Image(viewModel.isAppRebranded ? .syncRecoveryPDF : .syncRecoveryPDFLegacy)
+                Image(.syncRecoveryPDF)
                 SyncUIViews.TextHeader(text: UserText.saveRecoveryPDF)
                 SyncUIViews.TextDetailMultiline(text: UserText.recoveryPDFExplanation)
             }
@@ -76,7 +76,6 @@ struct SaveRecoveryPDFView: View {
 #if DEBUG
 #Preview("Default") {
     let model = ManagementDialogModel()
-    model.isAppRebranded = true
     let code = String(repeating: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ", count: 3)
     return SaveRecoveryPDFView(code: code)
         .environmentObject(model)

@@ -57,6 +57,9 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
         case [.microphone]:
             title = UserText.PermissionRecovery.microphoneTitle
             body = UserText.PermissionRecovery.microphoneBody
+        case [.location]:
+            title = UserText.PermissionRecovery.locationTitle
+            body = UserText.PermissionRecovery.locationBody
         case [.camera, .microphone]:
             title = UserText.PermissionRecovery.cameraAndMicrophoneTitle
             body = UserText.PermissionRecovery.cameraAndMicrophoneBody
@@ -85,6 +88,14 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
         )
     }
 
+    public static var voiceSearchSettings: PermissionReminderDialogViewModel {
+        PermissionReminderDialogViewModel(
+            title: UserText.VoiceSearchPermissionRecovery.title,
+            body: UserText.VoiceSearchPermissionRecovery.settingsBody,
+            actions: settingsActions
+        )
+    }
+
     public static var voiceChat: PermissionReminderDialogViewModel {
         PermissionReminderDialogViewModel(
             title: UserText.PermissionRecovery.microphoneTitle,
@@ -108,6 +119,8 @@ public struct PermissionReminderDialogViewModel: Equatable, Sendable {
             return UserText.PermissionRecovery.cameraToast
         case [.microphone]:
             return UserText.PermissionRecovery.microphoneToast
+        case [.location]:
+            return UserText.PermissionRecovery.locationToast
         case [.camera, .microphone]:
             return UserText.PermissionRecovery.cameraAndMicrophoneToast
         default:

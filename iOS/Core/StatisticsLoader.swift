@@ -106,8 +106,7 @@ public class StatisticsLoader {
     /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
     static func fireLegacySearchRetentionExperimentPixels() {
         let inProgressExperiments = [
-            iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue,
-            AutoconsentSubfeature.cookiePopupOptInDialogExperiment.rawValue
+            iOSBrowserConfigSubfeature.onboardingFlowByDownloadReasonExperiment.rawValue
         ]
         for subfeatureID in inProgressExperiments {
             for threshold in [4, 6, 11, 21, 30] {

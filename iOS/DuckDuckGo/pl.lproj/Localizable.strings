@@ -223,6 +223,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Wypróbuj gratis";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blokuje inwazyjne mechanizmy śledzące przed ich załadowaniem, skutecznie eliminując reklamy, które opierają się na śledzeniu.";
 
@@ -5850,3 +5853,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "Wszystkie czaty";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Pliki są automatycznie skanowane pod kątem nielegalnych treści. Oznaczone czaty mają ograniczone przechowywanie danych. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Dowiedz się więcej";

@@ -49,6 +49,35 @@ final class WebExtensionAPICompatibilityClassifierTests: XCTestCase {
             Issue(kind: .missing, api: "chrome.tabs.captureVisibleTab"))
     }
 
+    func testWhenATypeScriptDisposeHelperThrows_ThenTheSymbolIsMissing() {
+        XCTAssertEqual(
+            classify("TypeError: Symbol.dispose is not defined."),
+            Issue(kind: .missing, api: "js:Symbol.dispose"))
+        XCTAssertEqual(
+            classify("Symbol.asyncDispose is not defined."),
+            Issue(kind: .missing, api: "js:Symbol.asyncDispose"))
+    }
+
+    func testWhenAGlobalIsMissing_ThenItIsMissing() {
+        XCTAssertEqual(
+            classify("ReferenceError: Can't find variable: DisposableStack"),
+            Issue(kind: .missing, api: "js:DisposableStack"))
+    }
+
+    func testWhenABuiltInMemberIsMissing_ThenItIsMissing() {
+        XCTAssertEqual(
+            classify("Object.groupBy is not a function. (In 'Object.groupBy(items, key)', 'Object.groupBy' is undefined)"),
+            Issue(kind: .missing, api: "js:Object.groupBy"))
+        XCTAssertEqual(
+            classify("undefined is not an object (evaluating 'Intl.Segmenter.prototype')"),
+            Issue(kind: .missing, api: "js:Intl.Segmenter"))
+    }
+
+    func testWhenAChainStartsAtALocal_ThenItIsDropped() {
+        XCTAssertNil(classify("e.findLast is not a function. (In 'e.findLast(x)', 'e.findLast' is undefined)"))
+        XCTAssertNil(classify("Thing.dispose is not defined."))
+    }
+
     func testWhenWebKitRejectsACall_ThenItIsInvalidArgs() {
         XCTAssertEqual(
             classify("Invalid call to tabs.query(). The 'queryInfo' value is invalid, because an object is expected."),

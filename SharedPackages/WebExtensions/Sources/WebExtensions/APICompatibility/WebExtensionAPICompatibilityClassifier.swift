@@ -33,6 +33,12 @@ enum WebExtensionAPICompatibilityClassifier {
     private static let undefinedByDesign = "chrome.runtime.lastError"
     private static let apiRoots: Set<String> = ["chrome", "browser"]
     private static let globalObjects: Set<String> = ["globalThis", "self", "window"]
+    /// JavaScript built-ins a chain can start at for a missing language feature to be attributable,
+    /// such as `Object.groupBy`. A chain starting at a renamed local (`e.findLast`) is not.
+    private static let javaScriptBuiltIns: Set<String> = [
+        "Array", "Intl", "Iterator", "Map", "Math", "Object", "Promise", "Reflect", "Set", "String", "Symbol"
+    ]
+    static let javaScriptPrefix = "js:"
 
     private static func regex(_ pattern: String) -> NSRegularExpression {
         // swiftlint:disable:next force_try
@@ -45,6 +51,10 @@ enum WebExtensionAPICompatibilityClassifier {
     private static let invalidCall = regex("Invalid call to (\\w[\\w$.]*)\\(\\)\\. The '[^']*' value is invalid")
     private static let undefinedObject = regex("undefined is not an object \\(evaluating '([^']+)'\\)")
     private static let notAFunction = regex("(\(identifier)(?:\\.\(identifier))+) is not a function\\. \\(In ")
+    // TypeScript's `using` helpers throw "Symbol.dispose is not defined." when the symbol is missing.
+    private static let symbolNotDefined = regex("(Symbol\\.\(identifier)) is not defined\\.")
+    // JavaScriptCore's wording for a missing global, such as `DisposableStack`.
+    private static let missingVariable = regex("Can't find variable: (\(identifier))")
     private static let pathPattern = regex("^\(identifier)(\\.\(identifier))*$")
     private static let permissionNamePattern = regex("^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
 
@@ -53,13 +63,25 @@ enum WebExtensionAPICompatibilityClassifier {
         if let path = firstCapture(of: invalidCall, in: errorMessage) {
             return chromePath(from: path, requiresRoot: false).map { Issue(kind: .invalidArgs, api: $0) }
         }
+        if let symbol = firstCapture(of: symbolNotDefined, in: errorMessage) {
+            return Issue(kind: .missing, api: javaScriptPrefix + symbol)
+        }
+        if let name = firstCapture(of: missingVariable, in: errorMessage) {
+            return Issue(kind: .missing, api: javaScriptPrefix + name)
+        }
         if let chain = firstCapture(of: undefinedObject, in: errorMessage) {
             // The last segment is the one read off the undefined object, so the object is what is missing.
+            if let parent = javaScriptPath(from: chain, droppingLastSegment: true) {
+                return Issue(kind: .missing, api: parent)
+            }
             guard let parent = chromePath(from: chain, requiresRoot: true, droppingLastSegment: true),
                   !isUndefinedByDesign(parent) else { return nil }
             return Issue(kind: .missing, api: parent)
         }
         if let chain = firstCapture(of: notAFunction, in: errorMessage) {
+            if let path = javaScriptPath(from: chain) {
+                return Issue(kind: .missing, api: path)
+            }
             guard let path = chromePath(from: chain, requiresRoot: true), !isUndefinedByDesign(path) else { return nil }
             return Issue(kind: .missing, api: path)
         }
@@ -102,6 +124,22 @@ enum WebExtensionAPICompatibilityClassifier {
         }
         guard !segments.isEmpty else { return nil }
         return (["chrome"] + segments).joined(separator: ".")
+    }
+
+    /// `js:Object.groupBy` for a chain that starts at a JavaScript built-in, `nil` otherwise.
+    private static func javaScriptPath(from chain: String, droppingLastSegment: Bool = false) -> String? {
+        guard chain.count <= maximumPathLength, matches(pathPattern, chain) else { return nil }
+
+        var segments = chain.split(separator: ".").map(String.init)
+        if segments.count > 1, globalObjects.contains(segments[0]) {
+            segments.removeFirst()
+        }
+        guard let first = segments.first, javaScriptBuiltIns.contains(first) else { return nil }
+        if droppingLastSegment {
+            segments.removeLast()
+        }
+        guard !segments.isEmpty else { return nil }
+        return javaScriptPrefix + segments.joined(separator: ".")
     }
 
     private static func matches(_ expression: NSRegularExpression, _ string: String) -> Bool {

@@ -31,7 +31,7 @@ import WebKit
 /// Each browser window owns its own updater, because each window has its own navigation bar.
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
+final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NSMenuDelegate {
 
     private enum Constants {
         static let buttonSize: CGFloat = 28
@@ -134,6 +134,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         button.toolTip = context.webExtension.displayActionLabel ?? context.webExtension.displayName
         button.target = self
         button.action = #selector(toolbarButtonClicked)
+        button.menu = makeContextMenu(for: context)
 
         // The extension supplies its own artwork, so the button keeps no tint color.
         button.image = context.webExtension.actionIcon(for: Constants.iconSize)
@@ -147,6 +148,20 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         ])
 
         return button
+    }
+
+    private func makeContextMenu(for context: WKWebExtensionContext) -> NSMenu {
+        let menu = NSMenu()
+        menu.delegate = self
+
+        // The log names the extension the way the loader sanitizes it.
+        let item = NSMenuItem(title: "JavaScript API Compatibility…", action: #selector(showAPICompatibilityLog))
+        item.target = self
+        item.representedObject = [WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.displayName),
+                                  WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.version)]
+        menu.addItem(item)
+
+        return menu
     }
 
     private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
@@ -178,6 +193,19 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         }
 
         context.performAction(for: nil)
+    }
+
+    @objc private func showAPICompatibilityLog(sender: NSMenuItem) {
+        guard let nameAndVersion = sender.representedObject as? [String], nameAndVersion.count == 2 else { return }
+        WebExtensionAPICompatibilityLogPresenter.shared.show(extensionName: nameAndVersion[0], version: nameAndVersion[1])
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        // The item is offered wherever the Debug menu is.
+        let isAvailable = MainMenu.isDebugMenuAvailable(internalUserDecider: NSApp.delegateTyped.internalUserDecider)
+        menu.items.forEach { $0.isHidden = !isAvailable }
     }
 
     /// The presenter that hosts extension popups, owned by the manager's window/tab provider.

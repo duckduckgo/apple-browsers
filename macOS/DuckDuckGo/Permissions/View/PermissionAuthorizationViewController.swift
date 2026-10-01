@@ -69,9 +69,14 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private var swiftUIHostingView: NSView?
 
+    private var isFlowInProgress = false
+
     /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
     /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
-    private(set) var isAuthorizationInProgress: Bool = false
+    /// A query that was released or completed elsewhere, e.g. by a navigation, is no longer in progress.
+    var isAuthorizationInProgress: Bool {
+        isFlowInProgress && query?.isComplete == false
+    }
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
@@ -124,7 +129,7 @@ final class PermissionAuthorizationViewController: NSViewController {
         ])
 
         swiftUIHostingView = hostingView
-        isAuthorizationInProgress = true
+        isFlowInProgress = true
     }
 
     private func makeLegacyHostingView(for query: PermissionAuthorizationQuery) -> NSView {
@@ -167,8 +172,9 @@ final class PermissionAuthorizationViewController: NSViewController {
         )
         // Rebind on every attach: a cached view model may have been created by another presenter, e.g. before the tab moved windows.
         viewModel.finish = { [weak self, weak query] in
-            guard let self, let query, self.query === query else { return }
-            self.isAuthorizationInProgress = false
+            guard let self else { return }
+            if let currentQuery = self.query, currentQuery !== query { return }
+            self.isFlowInProgress = false
             self.dismiss()
         }
         query.parameters.authorizationViewModel = viewModel
@@ -177,7 +183,7 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private func handleDeny() {
         defer {
-            isAuthorizationInProgress = false
+            isFlowInProgress = false
             dismiss()
         }
         guard let query else { return }
@@ -188,7 +194,7 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private func handleAllow() {
         defer {
-            isAuthorizationInProgress = false
+            isFlowInProgress = false
             dismiss()
         }
         guard let query else { return }
@@ -200,7 +206,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func handleDismiss() {
-        isAuthorizationInProgress = false
+        isFlowInProgress = false
         query?.cancel()
         dismiss()
     }

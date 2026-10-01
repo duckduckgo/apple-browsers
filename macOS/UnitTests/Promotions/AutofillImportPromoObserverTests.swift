@@ -111,18 +111,22 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         XCTAssertEqual(received, [false, true, false])
     }
 
-    func testWhenTwoOverlaysShowThenVisibleUntilBothHide() {
+    func testWhenNewOverlayReplacesCurrentOneThenPreviousIsClosedFirst() {
         recordEmissions()
 
         sut.overlayDidShowImportPrompt(overlayA)
         sut.overlayDidShowImportPrompt(overlayB)
-        sut.overlayDidHideImportPrompt(overlayA)
         XCTAssertTrue(sut.isVisible)
+        XCTAssertEqual(received, [false, true, false, true])
+        XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
+
+        sut.overlayDidHideImportPrompt(overlayA)
+        XCTAssertTrue(sut.isVisible, "A late hide from the replaced overlay must not hide the current one")
+        XCTAssertEqual(received, [false, true, false, true])
 
         sut.overlayDidHideImportPrompt(overlayB)
         XCTAssertFalse(sut.isVisible)
-
-        XCTAssertEqual(received, [false, true, false])
+        XCTAssertEqual(received, [false, true, false, true, false])
     }
 
     func testWhenUnknownOrAlreadyHiddenOverlayHidesThenNothingChanges() {
@@ -131,12 +135,13 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         sut.overlayDidHideImportPrompt(overlayA)
         sut.overlayDidShowImportPrompt(overlayB)
         sut.overlayDidHideImportPrompt(overlayA)
-        sut.overlayDidShowImportPrompt(overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
-
         XCTAssertTrue(sut.isVisible, "A stray hide must not hide another overlay's prompt")
-        XCTAssertEqual(received, [false, true])
+
+        sut.overlayDidHideImportPrompt(overlayB)
+        sut.overlayDidHideImportPrompt(overlayB)
+
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertEqual(received, [false, true, false])
     }
 
     // MARK: - Result when hidden
@@ -145,9 +150,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         let cases: [(actions: [Action], expected: PromoResult)] = [
             ([], .ignored(cooldown: 0)),
             ([.startImport], .actioned),
-            ([.permanentlyDismiss], .ignored()),
-            ([.permanentlyDismiss, .startImport], .actioned),
-            ([.startImport, .permanentlyDismiss], .actioned)
+            ([.permanentlyDismiss], .ignored())
         ]
 
         for (actions, expected) in cases {
@@ -165,7 +168,6 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         sut.overlayDidShowImportPrompt(overlayA)
         sut.perform(.startImport, from: overlayB)
         sut.perform(.permanentlyDismiss, from: overlayB)
-        sut.overlayDidHideImportPrompt(overlayB)
         sut.overlayDidHideImportPrompt(overlayA)
 
         XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
@@ -180,17 +182,12 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         XCTAssertEqual(sut.resultWhenHidden, .actioned)
     }
 
-    func testWhenActionedOverlayHidesWhileAnotherIsVisibleThenResultResolvesWhenBothHidden() {
+    func testWhenReplacedOverlayWasPermanentlyDismissedThenItsOutcomeIsResolved() {
         sut.overlayDidShowImportPrompt(overlayA)
+        sut.perform(.permanentlyDismiss, from: overlayA)
         sut.overlayDidShowImportPrompt(overlayB)
-        sut.perform(.startImport, from: overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
 
-        XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0), "The result must not resolve while another overlay is still visible")
-
-        sut.overlayDidHideImportPrompt(overlayB)
-
-        XCTAssertEqual(sut.resultWhenHidden, .actioned)
+        XCTAssertEqual(sut.resultWhenHidden, .ignored())
     }
 
     func testWhenNewStretchHasNoActionThenResultResets() {

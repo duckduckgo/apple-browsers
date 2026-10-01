@@ -29,8 +29,9 @@ protocol AutofillImportPromoReporting: AnyObject {
 /// Observes the "Import passwords" item in the autofill dropdown.
 final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPromoReporting {
 
-    private var visibleOverlayOutcomes: [ObjectIdentifier: PromoResult] = [:]
-    private var pendingResult: PromoResult = .ignored(cooldown: 0)
+    // Only one overlay is on screen at a time; others may not have reported their hide yet.
+    private var currentOverlay: ObjectIdentifier?
+    private var currentOutcome: PromoResult = .ignored(cooldown: 0)
 
     // PromoService reads `resultWhenHidden` on its own queue.
     private let resolvedResultLock = NSLock()
@@ -52,57 +53,41 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     @MainActor
     func overlayDidShowImportPrompt(_ overlay: AnyObject) {
         let overlayID = ObjectIdentifier(overlay)
-        if visibleOverlayOutcomes[overlayID] == nil {
-            visibleOverlayOutcomes[overlayID] = .ignored(cooldown: 0)
+        guard currentOverlay != overlayID else { return }
+        if currentOverlay != nil {
+            // The previous overlay never reported its hide.
+            close()
         }
-        updateVisibility()
+        currentOverlay = overlayID
+        currentOutcome = .ignored(cooldown: 0)
+        visibilitySubject.send(true)
     }
 
     @MainActor
     func overlayDidStartImport(_ overlay: AnyObject) {
-        upgradeOutcome(of: ObjectIdentifier(overlay), to: .actioned)
+        guard currentOverlay == ObjectIdentifier(overlay) else { return }
+        currentOutcome = .actioned
     }
 
     @MainActor
     func overlayDidPermanentlyDismissImportPrompt(_ overlay: AnyObject) {
-        upgradeOutcome(of: ObjectIdentifier(overlay), to: .ignored())
+        guard currentOverlay == ObjectIdentifier(overlay) else { return }
+        currentOutcome = .ignored()
     }
 
     @MainActor
     func overlayDidHideImportPrompt(_ overlay: AnyObject) {
-        guard let outcome = visibleOverlayOutcomes.removeValue(forKey: ObjectIdentifier(overlay)) else { return }
-        pendingResult = Self.stronger(pendingResult, outcome)
-        updateVisibility()
+        guard currentOverlay == ObjectIdentifier(overlay) else { return }
+        close()
     }
 
     @MainActor
-    private func upgradeOutcome(of overlayID: ObjectIdentifier, to outcome: PromoResult) {
-        guard let current = visibleOverlayOutcomes[overlayID] else { return }
-        visibleOverlayOutcomes[overlayID] = Self.stronger(current, outcome)
-    }
-
-    private static func stronger(_ lhs: PromoResult, _ rhs: PromoResult) -> PromoResult {
-        func rank(_ result: PromoResult) -> Int {
-            switch result {
-            case .actioned: return 2
-            case .ignored(cooldown: nil): return 1
-            default: return 0
-            }
-        }
-        return rank(rhs) > rank(lhs) ? rhs : lhs
-    }
-
-    @MainActor
-    private func updateVisibility() {
-        let visible = !visibleOverlayOutcomes.isEmpty
-        guard visibilitySubject.value != visible else { return }
-        if !visible {
-            // Resolve before emitting: PromoService reads `resultWhenHidden` once it observes `false`.
-            resolvedResultLock.lock()
-            resolvedResult = pendingResult
-            resolvedResultLock.unlock()
-            pendingResult = .ignored(cooldown: 0)
-        }
-        visibilitySubject.send(visible)
+    private func close() {
+        // Resolve before emitting: PromoService reads `resultWhenHidden` once it observes `false`.
+        resolvedResultLock.lock()
+        resolvedResult = currentOutcome
+        resolvedResultLock.unlock()
+        currentOverlay = nil
+        visibilitySubject.send(false)
     }
 }

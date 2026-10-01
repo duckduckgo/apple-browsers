@@ -30,8 +30,9 @@ protocol KeyboardPresenting {
 
 }
 
-/// Keyboard rule for NTP landings behind `.alwaysShowKeyboardOnNewTabPage`.
-/// Callers check the flag; flag-off paths keep their own conditions.
+/// Keyboard rule for NTP landings behind `.alwaysShowKeyboardOnNewTabPage`: an NTP shows the keyboard
+/// when New Tab is on, unless the user dismissed it or onboarding is running.
+/// Callers check the flag and onboarding; flag-off paths keep their own conditions.
 struct NewTabPageKeyboardPolicy {
 
     static let appOpenBackgroundThreshold = TimeInterval(20)

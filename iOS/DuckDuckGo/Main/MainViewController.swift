@@ -2335,6 +2335,12 @@ class MainViewController: UIViewController {
         daxDialogsManager.subscriptionPromotionPending || isChatPathCompletionPending
     }
 
+    /// Contextual onboarding owns the New Tab Page while it runs, so behind the flag no landing raises
+    /// the keyboard over its dialogs. The Add Favorite flow borrows those dialogs but isn't onboarding.
+    private var isNewTabPageKeyboardHeldForOnboarding: Bool {
+        daxDialogsManager.isStillOnboarding() && !daxDialogsManager.isAddFavoriteFlow
+    }
+
     fileprivate func attachHomeScreen(isNewTab: Bool = false,
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
@@ -2807,7 +2813,7 @@ class MainViewController: UIViewController {
     func showKeyboardOnAppOpenIfAllowed() {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
-        if onNewTabPage, daxDialogsManager.isStillOnboarding() || isNewTabPageKeyboardBlockedByDialog { return }
+        if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return }
         // Does nothing while the tab switcher, Settings or another screen is presented.
         enterSearch()
     }

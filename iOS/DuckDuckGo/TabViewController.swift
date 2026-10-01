@@ -1273,16 +1273,13 @@ class TabViewController: UIViewController {
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
-        let webViewLayout = FloatingUILayoutPolicy.webViewLayout(
-            obscuredContentInsets: obscuredInsets,
-            addressBarPosition: appSettings.currentAddressBarPosition
-        )
+        let webViewLayout = FloatingUILayoutPolicy.webViewLayout(obscuredContentInsets: obscuredInsets)
         webViewTopAnchorConstraint?.constant = webViewLayout.topAnchorConstant
         webViewBottomAnchorConstraint?.constant = webViewLayout.bottomAnchorConstant
         obscuredInsets = webViewLayout.obscuredContentInsets
 
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
-            ? max(0, webViewLayout.topAnchorConstant - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
+            ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
             : 0
         pullToRefreshViewAdapter?.setTopOffset(refreshControlTopOffset)
         if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {

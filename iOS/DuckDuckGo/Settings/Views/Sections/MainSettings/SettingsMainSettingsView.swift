@@ -139,7 +139,8 @@ struct SettingsMainSettingsView: View {
                              image: Image(uiImage: DesignSystemImages.Color.Size24.key),
                              action: { viewModel.presentLegacyView(.autofill) },
                              disclosureIndicator: true,
-                             isButton: true))
+                             isButton: true)
+                .accessibilityIdentifier("Settings.Main.Passwords"))
         }
 
     }

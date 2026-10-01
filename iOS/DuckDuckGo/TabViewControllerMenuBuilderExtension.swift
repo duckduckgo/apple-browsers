@@ -255,6 +255,7 @@ extension TabViewController {
     private func buildAutoFillEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAutofillLogins,
                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.keyLogin : DesignSystemImages.Glyphs.Size24.key,
+                 accessibilityIdentifier: "Browser.Menu.Passwords",
                  action: { [weak self] in
             self?.onOpenAutofillLoginsAction()
         })

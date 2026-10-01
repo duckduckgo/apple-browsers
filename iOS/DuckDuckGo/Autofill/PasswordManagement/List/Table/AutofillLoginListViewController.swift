@@ -81,10 +81,12 @@ final class AutofillLoginListViewController: UIViewController {
     private var syncUpdatesCancellable: AnyCancellable?
 
     private lazy var addBarButtonItem: UIBarButtonItem = {
-        UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.add,
-                        style: .plain,
-                        target: self,
-                        action: #selector(addButtonPressed))
+        let button = UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.add,
+                                     style: .plain,
+                                     target: self,
+                                     action: #selector(addButtonPressed))
+        button.accessibilityIdentifier = "Autofill.Passwords.Add"
+        return button
     }()
 
     private lazy var moreButton: UIButton = {
@@ -141,6 +143,7 @@ final class AutofillLoginListViewController: UIViewController {
         searchController.searchBar.placeholder = UserText.autofillLoginListSearchPlaceholder
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
+        searchController.searchBar.searchTextField.accessibilityIdentifier = "Autofill.Passwords.Search"
 
         return searchController
     }()
@@ -152,6 +155,7 @@ final class AutofillLoginListViewController: UIViewController {
         tableView.estimatedRowHeight = 60
         tableView.registerCell(ofType: AutofillListItemTableViewCell.self)
         tableView.registerCell(ofType: AutofillBreakageReportTableViewCell.self)
+        tableView.accessibilityIdentifier = "Autofill.Passwords.List"
         return tableView
     }()
 
@@ -895,6 +899,7 @@ final class AutofillLoginListViewController: UIViewController {
         cell.item = item
         cell.accessoryType = .disclosureIndicator
         cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        cell.accessibilityIdentifier = "Autofill.Passwords.Item"
         return cell
     }
 

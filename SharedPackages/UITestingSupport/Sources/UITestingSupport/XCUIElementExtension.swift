@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CoreGraphics
 import XCTest
 
 public extension XCUIElement {
@@ -65,5 +66,75 @@ public extension XCUIElement {
         }
 
         XCTFail("Element was not revealed: \(element)", file: file, line: line)
+    }
+
+    private func waitForTextEntry(file: StaticString, line: UInt) -> Bool {
+        guard wait(
+            for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
+            timeout: UITestTimeouts.elementExistence) else {
+            XCTFail("Text-entry element did not become tappable.", file: file, line: line)
+            return false
+        }
+        return true
+    }
+
+    /// Focuses the element, enters text, and optionally presses Return.
+    func enterText(_ text: String,
+                   pressReturn: Bool = false,
+                   file: StaticString = #filePath,
+                   line: UInt = #line) {
+        guard waitForTextEntry(file: file, line: line) else { return }
+        tap()
+        typeText(text)
+        if pressReturn {
+            typeText("\n")
+        }
+    }
+
+    /// Replaces the current contents of a text-entry element by deleting backward from its insertion point.
+    ///
+    /// By default this uses the element's string value to determine how many characters to delete and assumes
+    /// tapping the element places the insertion point after that value. Secure fields are supported when their
+    /// masked value has the same character count as the current text. For a multiline field, callers can provide
+    /// its known current text and a normalized tap offset that places the insertion point at the visual end.
+    /// Fields that transform their displayed value as text is entered are not supported.
+    /// Non-secure values are verified before pressing Return; secure values require a caller's outcome assertion.
+    func replaceText(with text: String,
+                     currentText: String? = nil,
+                     normalizedTapOffset: CGVector? = nil,
+                     pressReturn: Bool = false,
+                     file: StaticString = #filePath,
+                     line: UInt = #line) {
+        guard waitForTextEntry(file: file, line: line) else { return }
+        let supportedElementTypes: [XCUIElement.ElementType] = [.textField, .secureTextField, .searchField, .textView]
+        guard supportedElementTypes.contains(elementType) else {
+            XCTFail("Element does not support text replacement.", file: file, line: line)
+            return
+        }
+
+        if let normalizedTapOffset {
+            coordinate(withNormalizedOffset: normalizedTapOffset).tap()
+        } else {
+            tap()
+        }
+
+        guard let textToDelete = currentText ?? value as? String else {
+            XCTFail("Text-entry element did not expose a string value.", file: file, line: line)
+            return
+        }
+
+        typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: textToDelete.count))
+        typeText(text)
+        if elementType != .secureTextField {
+            guard wait(
+                for: NSPredicate(format: "value == %@", text),
+                timeout: UITestTimeouts.elementExistence) else {
+                XCTFail("Text-entry element did not contain the replacement text.", file: file, line: line)
+                return
+            }
+        }
+        if pressReturn {
+            typeText("\n")
+        }
     }
 }

@@ -85,6 +85,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             .frame(width: NewTabPageGrid.Item.edgeSize)
         })
         .buttonStyle(.plain)
+        .accessibilityIdentifier("Favorites.Item")
     }
 }
 

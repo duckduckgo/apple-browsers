@@ -174,7 +174,7 @@ class DebugScreensViewModel: ObservableObject {
         case .controller, .action:
             return AnyView(FailedAssertionView("Unexpected view creation"))
 
-        case .view(_, let viewBuilder):
+        case .view(_, _, let viewBuilder):
             return AnyView(viewBuilder(self.dependencies))
         }
     }

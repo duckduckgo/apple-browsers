@@ -321,7 +321,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
-        try permissionController?.forget(identifier)
+        do {
+            try permissionController?.forget(identifier)
+        } catch {
+            // Consent cleanup must not leave an unloaded extension installed.
+            Logger.webExtensions.error("Could not remove extension permissions during uninstall: \(error.localizedDescription)")
+        }
         installationStore.remove(uniqueIdentifier: identifier)
         unloadedExtensionsCache.removeValue(forKey: identifier)
         dataClearingReloadIdentifiers.remove(identifier)

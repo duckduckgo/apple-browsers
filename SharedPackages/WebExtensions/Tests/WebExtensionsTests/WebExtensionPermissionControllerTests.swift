@@ -489,6 +489,61 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertNotNil(try store.settings(for: identifier)?.grantedPermissions["clipboardWrite"])
     }
 
+    func testFailedConsentDeletionStillInvalidatesPendingPromptsAndNotifications() async throws {
+        let controller = makeController()
+        let context = try await makeContext()
+        try await controller.prepare(context)
+        let savedSettings = try XCTUnwrap(store.settings(for: context.uniqueIdentifier))
+        keyValueStore.shouldThrowOnRemove = true
+        prompter.onPermissionRequest = {
+            do {
+                try controller.forget(context.uniqueIdentifier)
+                XCTFail("Expected consent deletion to fail")
+            } catch {
+                // The persistence failure must not keep the context active.
+            }
+        }
+
+        let granted = await controller.request(.init(permissions: [.clipboardWrite]), for: context)
+
+        XCTAssertFalse(granted)
+        context.setPermissionStatus(.grantedExplicitly, for: WKWebExtension.Permission.clipboardWrite)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(try store.settings(for: context.uniqueIdentifier), savedSettings)
+
+        keyValueStore.shouldThrowOnRemove = false
+        try controller.forget(context.uniqueIdentifier)
+        XCTAssertNil(try store.settings(for: context.uniqueIdentifier))
+    }
+
+    func testUninstallContinuesAfterConsentDeletionFailsAndReinstallRequiresFreshConsent() async throws {
+        let source = try makeExtensionURL()
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage)
+        try await manager.installExtension(from: source)
+        let identifier = try XCTUnwrap(manager.webExtensionIdentifiers.first)
+        let savedSettings = try XCTUnwrap(store.settings(for: identifier))
+        keyValueStore.shouldThrowOnRemove = true
+
+        try manager.uninstallExtension(identifier: identifier)
+
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertTrue(manager.webExtensionIdentifiers.isEmpty)
+        XCTAssertTrue(installationStore.removeCalled)
+        XCTAssertTrue(storage.removeExtensionCalled)
+        XCTAssertEqual(storage.removeExtensionIdentifier, identifier)
+        // Disk failure leaves orphaned consent under the old installation UUID.
+        XCTAssertEqual(try store.settings(for: identifier), savedSettings)
+
+        keyValueStore.shouldThrowOnRemove = false
+        try await manager.installExtension(from: source)
+        let newIdentifier = try XCTUnwrap(manager.webExtensionIdentifiers.first)
+        XCTAssertNotEqual(newIdentifier, identifier)
+        XCTAssertEqual(prompter.installationRequests.count, 2)
+        try manager.uninstallExtension(identifier: newIdentifier)
+    }
+
     private func makeManager(storage: WebExtensionStorageProvidingMock) -> WebExtensionManager {
         WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
                             windowTabProvider: WebExtensionWindowTabProvidingMock(),

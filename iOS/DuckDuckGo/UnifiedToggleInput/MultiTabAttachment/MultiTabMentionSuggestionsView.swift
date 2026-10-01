@@ -26,12 +26,19 @@ import UIKit
 final class MultiTabMentionSuggestionsView: UIView {
     private struct Action: AIChatQuickActionType {
         let suggestion: MultiTabMentionController.Suggestion
+        let icon: UIImage?
 
         var id: String { suggestion.candidate.tabId }
         var title: String { suggestion.candidate.title }
         var prompt: String { "" }
-        var icon: UIImage? {
-            DesignSystemImages.Glyphs.Size16.tabContent
+
+        init(suggestion: MultiTabMentionController.Suggestion) {
+            self.suggestion = suggestion
+            icon = FaviconsHelper.loadFaviconSync(
+                forDomain: suggestion.candidate.url.host,
+                usingCache: .tabs,
+                useFakeFavicon: true).image?.withRenderingMode(.alwaysOriginal)
+                ?? DesignSystemImages.Glyphs.Size16.globe.withRenderingMode(.alwaysTemplate)
         }
     }
 
@@ -65,6 +72,8 @@ final class MultiTabMentionSuggestionsView: UIView {
         guard self.suggestions != suggestions else { return }
         self.suggestions = suggestions
         actionsView.configure(with: suggestions.map(Action.init),
+                              preservesIconColors: true,
+                              showsAddAccessory: true,
                               isEnabled: { $0.suggestion.isEnabled })
         let rows = CGFloat(max(1, min(suggestions.count, Metrics.maximumVisibleRows)))
         scrollHeightConstraint.constant = rows * Metrics.chipHeight + (rows - 1) * Metrics.chipSpacing + 2 * Metrics.scrollPadding

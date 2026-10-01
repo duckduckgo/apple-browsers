@@ -187,6 +187,8 @@ jobs:
 
     - name: Run PIR e2e Tests
       id: run-tests
+      env:
+        SPM_FORCE_DEBUG: "1"
       run: |
         launchctl setenv PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 '${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}'
         set -o pipefail && xcodebuild test \

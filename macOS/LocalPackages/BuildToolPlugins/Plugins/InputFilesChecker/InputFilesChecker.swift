@@ -207,10 +207,12 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
 
             for file in target.inputFiles {
                 let filePath = URL(fileURLWithPath: file.path.string).standardizedFileURL.path
-                // Xcode also reports built products as unknown inputs. Keep checking project resources such as icon bundles.
-                if file.type == .unknown &&
-                    (filePath.hasPrefix(builtProductsPath + "/") || !filePath.hasPrefix(projectPathPrefix)) { continue }
-                if target.displayName.starts(with: "Unit Tests") && filePath == sharedPrivacyReferenceTests { continue }
+                if isIgnoredInputFile(file,
+                                      filePath: filePath,
+                                      targetName: target.displayName,
+                                      builtProductsPath: builtProductsPath,
+                                      projectPathPrefix: projectPathPrefix,
+                                      sharedPrivacyReferenceTests: sharedPrivacyReferenceTests) { continue }
                 guard !expectedPaths.contains(where: { filePath.hasPrefix($0 + "/") }) else { continue }
 
                 if filePath.hasPrefix(projectPathPrefix) {
@@ -240,6 +242,18 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         }
 
         try CombinedError(errors: errors).throwIfNonEmpty()
+    }
+
+    private func isIgnoredInputFile(_ file: File,
+                                    filePath: String,
+                                    targetName: String,
+                                    builtProductsPath: String,
+                                    projectPathPrefix: String,
+                                    sharedPrivacyReferenceTests: String) -> Bool {
+        // Xcode also reports built products as unknown inputs. Keep checking project resources such as icon bundles.
+        if file.type == .unknown &&
+            (filePath.hasPrefix(builtProductsPath + "/") || !filePath.hasPrefix(projectPathPrefix)) { return true }
+        return targetName.starts(with: "Unit Tests") && filePath == sharedPrivacyReferenceTests
     }
 
     private struct MisplacedInputFile {

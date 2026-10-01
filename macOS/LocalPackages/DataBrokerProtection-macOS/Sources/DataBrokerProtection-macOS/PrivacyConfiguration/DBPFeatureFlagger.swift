@@ -60,7 +60,7 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
     }
 
     public init(configurationManager: ConfigurationManager,
-         privacyConfigurationManager: PrivacyConfigurationManaging) {
+                privacyConfigurationManager: PrivacyConfigurationManaging) {
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: privacyConfigurationManager.internalUserDecider,
             privacyConfigManager: privacyConfigurationManager,

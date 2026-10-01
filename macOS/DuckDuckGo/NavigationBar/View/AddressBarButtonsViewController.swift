@@ -93,7 +93,13 @@ final class AddressBarButtonsViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let permissionManager: PermissionManagerProtocol
+    private let regularPermissionManager: PermissionManagerProtocol
+    private var permissionManager: PermissionManagerProtocol {
+        if let tab = tabViewModel?.tab, tab.burnerMode.isBurner {
+            return tab.permissionManager
+        }
+        return regularPermissionManager
+    }
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -346,7 +352,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.permissionManager = permissionManager
+        self.regularPermissionManager = permissionManager
         super.init(coder: coder)
     }
 

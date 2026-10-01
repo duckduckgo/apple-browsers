@@ -2814,6 +2814,9 @@ class MainViewController: UIViewController {
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
         if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return }
+        // The page is already on screen, so this is its own dialog. The last onboarding dialog counts
+        // itself as seen as soon as it appears, so the onboarding check alone misses it.
+        if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return }
         // Does nothing while the tab switcher, Settings or another screen is presented.
         enterSearchOnAppOpen()
     }

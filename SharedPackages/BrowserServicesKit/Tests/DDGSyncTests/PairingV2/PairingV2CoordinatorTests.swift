@@ -46,6 +46,7 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
     var allowPeerToJoinCalls: [(peerName: String?, peerKind: PairingV2DeviceKind)] = []
     var joinPeerCalls: [(peerName: String?, peerKind: PairingV2DeviceKind)] = []
     var didCreateSyncAccountCalls: [PairingV2DeviceKind] = []
+    var didCreateSyncAccountNegotiatedV2Point1Values: [Bool] = []
     var dismissConfirmationCallCount = 0
 
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
@@ -69,8 +70,9 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
         await dismissConfirmationHandler?()
     }
 
-    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
+    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind, isNegotiatedV2Point1: Bool) async {
         didCreateSyncAccountCalls.append(credentialKind)
+        didCreateSyncAccountNegotiatedV2Point1Values.append(isNegotiatedV2Point1)
     }
 }
 
@@ -1266,6 +1268,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(accountManager.createAccountCalls.map(\.deviceName), ["Mac"])
         XCTAssertEqual(accountManager.createAccountCalls.map(\.deviceType), ["desktop"])
         XCTAssertEqual(confirmationDelegate.didCreateSyncAccountCalls, [.ddg])
+        XCTAssertEqual(confirmationDelegate.didCreateSyncAccountNegotiatedV2Point1Values, [false])
         XCTAssertEqual(
             try decryptSentMessage(at: 0, from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto),
             .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest, name: "Mac", kind: .ddg))

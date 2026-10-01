@@ -615,7 +615,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         ]
         vc.viewModel.devices = devices
 
-        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
 
         XCTAssertEqual(vc.viewModel.devices, devices)
         let successDestination = SyncSettingsViewModel.SuccessDestination.fullRecoveryCode(isRecovery: false)
@@ -648,7 +648,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         ddgSyncing.account = makeSyncAccount(userId: "new-account")
         ddgSyncing.authState = .addingNewDevice
 
-        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
 
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
     }
@@ -660,7 +660,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.showSyncWithAnotherDevice()
         vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
 
-        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
 
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .alreadySyncing))
     }
@@ -672,7 +672,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.showSyncWithAnotherDevice()
         vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
 
-        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
 
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .alreadySyncing))
     }
@@ -685,7 +685,34 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
         ddgSyncing.account = makeSyncAccount(userId: "resulting-account")
 
-        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
+    }
+
+    @MainActor
+    func testWhenV20HostKeepsTheSameSyncAccountThenShowsFullRecoveryCodeScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "same-account")
+        ddgSyncing.authState = .active
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
+    }
+
+    @MainActor
+    func testWhenV20LoginKeepsTheSameSyncAccountThenShowsFullRecoveryCodeScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "same-account")
+        ddgSyncing.authState = .active
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+
+        vc.controllerDidCompleteLogin(registeredDevices: [],
+                                      isRecovery: false,
+                                      setupRole: .receiver(.exchange, .qrCode),
+                                      isNegotiatedV2Point1: false)
 
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
     }
@@ -710,6 +737,27 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
 
         XCTAssertEqual(spyVC.dismissVCAndShowDeviceSyncedToastCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenV21CreatesSyncAccountWithoutConnectingSheetThenDefersToastUntilCompletion() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true, isNegotiatedV2Point1: true)
+
+        XCTAssertEqual(spyVC.dismissVCAndShowDeviceSyncedToastCallCount, 0)
+
+        spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
+
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.fullRecoveryCode(isRecovery: false)))
     }
 
     @MainActor
@@ -821,6 +869,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func testWhenAccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
+        vc.codeCollectionIntent = .recoverData
         vc.viewModel.devices = [
             SyncSettingsViewModel.Device(id: "1", name: "iPhone", type: "iPhone", isThisDevice: true),
             SyncSettingsViewModel.Device(id: "2", name: "Macbook Pro", type: "Macbook Pro", isThisDevice: false)
@@ -830,7 +879,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             guard let self else { return [] }
             XCTAssert(ddgSyncing.disconnectCalled)
             loginCalled = true
-            throw SyncError.failedToDecryptValue("")
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"),
+                    RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
         guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
@@ -843,9 +893,12 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         await vc.controllerDidFindTwoAccountsDuringRecovery(
             recoveryKey,
             setupRole: .sharer,
-            shouldPromptBeforeSwitchingAccounts: false)
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: true)
 
         XCTAssertTrue(loginCalled)
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase,
+                       .success(.fullRecoveryCode(isRecovery: true)))
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {

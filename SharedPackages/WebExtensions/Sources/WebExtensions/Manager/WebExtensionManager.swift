@@ -70,7 +70,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     private struct InstalledExtensionsLoadSummary {
-        var failedIdentifiers: [String] = []
+        var failures: [(identifier: String, error: Error)] = []
         var successCount = 0
         var firstError: Error?
     }
@@ -550,9 +550,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let summary = processInstalledExtensionLoadResults(extensions: extensions, results: results, lifecycle: lifecycle)
 
-        for identifier in summary.failedIdentifiers {
-            // A consent denial or settings read failure must not delete an existing third-party extension.
-            if permissionController != nil, installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false {
+        for (identifier, error) in summary.failures {
+            // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
+            if installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false,
+               permissionController != nil,
+               error is WebExtensionLoader.PermissionPreparationError
+            {
                 continue
             }
             do {
@@ -562,13 +565,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
         }
 
-        if summary.failedIdentifiers.isEmpty {
+        if summary.failures.isEmpty {
             Logger.webExtensions.info("✅ Extension loading completed: \(summary.successCount) loaded")
             if summary.successCount > 0 {
                 pixelFiring.fire(.loaded)
             }
         } else {
-            Logger.webExtensions.error("❌ Extension loading completed with errors: \(summary.successCount) loaded, \(summary.failedIdentifiers.count) failed")
+            Logger.webExtensions.error("❌ Extension loading completed with errors: \(summary.successCount) loaded, \(summary.failures.count) failed")
             if let firstError = summary.firstError {
                 pixelFiring.fire(.loadError(error: firstError))
             }
@@ -613,7 +616,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 ) {
                     reportLifecycleEvent(event)
                 }
-                summary.failedIdentifiers.append(installedExtension.uniqueIdentifier)
+                summary.failures.append((identifier: installedExtension.uniqueIdentifier, error: error))
                 summary.firstError = summary.firstError ?? error
                 if let failureContext = lifecycle.reloadFailureContext(for: installedExtension.uniqueIdentifier) {
                     pixelFiring.fire(.reloadError(type: installedExtension.embeddedType,

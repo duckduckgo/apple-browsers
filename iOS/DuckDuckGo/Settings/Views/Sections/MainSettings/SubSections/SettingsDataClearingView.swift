@@ -73,6 +73,7 @@ struct SettingsDataClearingView: View {
                                  accessory: .rightDetail(viewModel.autoClearAccessibilityLabel),
                                   disclosureIndicator: true,
                                   isButton: true)
+                    .accessibilityIdentifier("Settings.DataClearing.AutomaticallyDelete")
             }
                 
             Section {
@@ -93,6 +94,7 @@ struct SettingsDataClearingView: View {
                 .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
             }
         }
+        .accessibilityIdentifier("Settings.List.DataClearing")
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,
                                     viewModel: settingsViewModel)

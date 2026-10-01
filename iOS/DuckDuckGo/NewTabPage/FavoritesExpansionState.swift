@@ -1,5 +1,5 @@
 //
-//  RedesignedNewTabPageEscapeHatchView.swift
+//  FavoritesExpansionState.swift
 //  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
@@ -17,21 +17,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Combine
 
-/// Renders the same eligible return-to-tab model as the production resting page.
-struct RedesignedNewTabPageEscapeHatchView: View {
-    @ObservedObject var pageModel: NewTabPageViewModel
-
-    var body: some View {
-        if let escapeHatch = pageModel.escapeHatch {
-            EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, Metrics.horizontalPadding)
-        }
-    }
-}
-
-private enum Metrics {
-    static let horizontalPadding: CGFloat = 16
+/// In-memory expansion state shared by a tab's resting and focused favorites views.
+final class FavoritesExpansionState: ObservableObject {
+    @Published var isExpanded = false
 }

@@ -59,22 +59,15 @@ private struct NewTabPageBlockContent<Content: View>: View {
             .fixedSize(horizontal: false, vertical: true)
             .background {
                 GeometryReader { geometry in
-                    Color.clear.preference(key: NewTabPageBlockHeightKey.self, value: geometry.size.height)
+                    Color.clear
+                        .onAppear { onHeightChanged?() }
+                        .onChange(of: geometry.size.height) { _ in
+                            onHeightChanged?()
+                        }
                 }
-            }
-            .onPreferenceChange(NewTabPageBlockHeightKey.self) { _ in
-                onHeightChanged?()
             }
             // UIKit can resize the host before SwiftUI finishes animating its content.
             // Keep the block's top edge fixed throughout that height change.
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-}
-
-private struct NewTabPageBlockHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }

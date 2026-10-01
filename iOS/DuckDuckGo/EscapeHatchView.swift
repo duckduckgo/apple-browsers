@@ -21,11 +21,14 @@ import SwiftUI
 
 /// Bundles the "Return to tab" card and the tab switcher pill so callers render them as a single unit.
 struct EscapeHatchView: View {
+    static let materialPadding: CGFloat = 8
+
     @ObservedObject var model: EscapeHatchModel
+    var usesMaterialBackground = false
 
     var body: some View {
         HStack(spacing: model.isReturnToTabCardVisible ? Metrics.spacing : 0) {
-            ReturnToTabCard(model: model)
+            ReturnToTabCard(model: model, showsBackground: !usesMaterialBackground)
                 .frame(maxWidth: model.isReturnToTabCardVisible ? .infinity : 0)
                 .clipped()
                 .opacity(model.isReturnToTabCardVisible ? 1 : 0)
@@ -33,12 +36,19 @@ struct EscapeHatchView: View {
 
             TabSwitcherPill(count: model.openTabCount,
                             isExpanded: !model.isReturnToTabCardVisible,
+                            showsBackground: !usesMaterialBackground,
                             onTap: model.onTabSwitcherTap)
                 .frame(maxWidth: model.isReturnToTabCardVisible ? TabSwitcherPill.compactSize : .infinity)
                 .frame(height: TabSwitcherPill.compactSize)
         }
         .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isReturnToTabCardVisible)
         .frame(height: TabSwitcherPill.compactSize)
+        .padding(usesMaterialBackground ? Self.materialPadding : 0)
+        .background {
+            if usesMaterialBackground {
+                RedesignedNewTabPageModuleBackground()
+            }
+        }
         .id(model.targetTab.uid)
     }
 

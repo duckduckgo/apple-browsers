@@ -165,7 +165,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
         // Then
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+            .init(pixel: DataClearingPixels.userActionBeforeCompletion, frequency: .dailyAndStandard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }

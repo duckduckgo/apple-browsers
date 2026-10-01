@@ -677,7 +677,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
-    func testV21AccountSwitchWithSimplifiedUICompletesAnimationBeforeShowingJoinerSuccess() async {
+    func testAccountSwitchWithSimplifiedUICompletesAnimationBeforeShowingJoinerSuccess() async {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "iPhone", deviceType: "iPhone", userId: "starting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.authState = .active
@@ -708,6 +708,34 @@ final class SyncDialogControllerTests: XCTestCase {
 
         XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
         XCTAssertEqual(syncDialogController.devices.count, 1)
+    }
+
+    func testPairingV2AccountSwitchWithoutDeferredReportShowsCompletionAfterSwitch() async throws {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "iPhone", deviceType: "iPhone", userId: "starting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+        ddgSyncing.spyLogin = { [weak self] _, _, _ in
+            guard let self else { return [] }
+            ddgSyncing.account = SyncAccount(deviceId: "2", deviceName: "iPhone", deviceType: "iPhone", userId: "resulting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+            return [RegisteredDevice(id: "2", name: "iPhone", type: "iPhone")]
+        }
+
+        let didSwitchAccounts = await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.exchange, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: false)
+
+        XCTAssertTrue(didSwitchAccounts)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+        syncDialogController.preparingToSyncAnimationDidFinish()
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
     }
 
     func testV21AccountSwitchReportFailureKeepsPresentedError() {
@@ -1582,7 +1610,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(dialog)
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenLegacyNegotiationCreatesNewHostAndWaitingForDevices_presentsRecoveryCode() async throws {
+    func testControllerDidFinishTransmittingRecoveryKey_whenNewHostWaitsForDevices_presentsRecoveryCode() async throws {
         let localDeviceId = "local-mac"
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
@@ -1604,7 +1632,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true, isNegotiatedV2Point1: false)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
         syncDialogController.devices = [
             SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId),
             SyncDevice(kind: .mobile, name: "Test Device", id: "joiner-id")
@@ -1614,7 +1642,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenLegacyNegotiationForNewHostAndOnlyLocalDeviceRegisters_staysOnConnectingScreen() async throws {
+    func testControllerDidFinishTransmittingRecoveryKey_whenNewHostHasNoDeviceChange_staysOnConnectingScreen() async throws {
         let localDeviceId = "local-mac"
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
@@ -1635,7 +1663,7 @@ final class SyncDialogControllerTests: XCTestCase {
             .store(in: &cancellables)
 
         syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true, isNegotiatedV2Point1: false)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
         syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
 
         await fulfillment(of: [successPresented], timeout: 0.3)
@@ -1661,14 +1689,14 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
         XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
         XCTAssertEqual(managementDialogModel.thisDeviceName, "Test Mac")
         XCTAssertEqual(deviceNameProviderCallCount, 1)
     }
 
-    func testControllerDidFinishTransmittingRecoveryKey_whenLegacyNegotiationUsesExistingHost_waitsForDevicesThenEndsFlow() async throws {
+    func testControllerDidFinishTransmittingRecoveryKey_whenExistingHostWaitsForDevices_thenShowsMinimalSuccess() async throws {
         let localDeviceId = "local-mac"
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
@@ -1678,15 +1706,15 @@ final class SyncDialogControllerTests: XCTestCase {
         _ = try await waitForSyncWithAnotherDeviceDialogCodes()
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
         syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
-        let expectation = expectation(description: "Existing-host flow ended")
+        let expectation = expectation(description: "Existing-host success dialog presented")
 
         managementDialogModel.$currentDialog
-            .filter { $0 == nil }
+            .filter { $0 == .pairingSuccess }
             .prefix(1)
             .sink { _ in expectation.fulfill() }
             .store(in: &cancellables)
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true, isNegotiatedV2Point1: false)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
 
         syncDialogController.devices = [
@@ -1695,7 +1723,7 @@ final class SyncDialogControllerTests: XCTestCase {
         ]
 
         await fulfillment(of: [expectation], timeout: 1)
-        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
     func testControllerDidFinishTransmittingRecoveryKey_refreshesDevicesUntilJoinerRegisters() async {
@@ -1777,7 +1805,7 @@ final class SyncDialogControllerTests: XCTestCase {
         _ = try await waitForSyncWithAnotherDeviceDialogCodes()
         managementDialogModel.currentDialog = .waitForOtherDevice
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
@@ -1797,7 +1825,7 @@ final class SyncDialogControllerTests: XCTestCase {
                                          primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.authState = .active
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
         XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
@@ -1936,7 +1964,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
         XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
 
-        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: true)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
         XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
@@ -2033,7 +2061,7 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
     }
 
-    func testControllerDidCompleteAccountConnection_whenV2EnabledForExistingHost_endsFlowWithoutSuccess() async throws {
+    func testControllerDidCompleteAccountConnection_whenV2EnabledForExistingHost_showsMinimalSuccess() async throws {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         managementDialogModel.currentDialog = .prepareToSync(.twoDevicePairing)
         ddgSyncing.account = SyncAccount.mock
@@ -2044,10 +2072,10 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: true, setupSource: .connect, codeSource: .pastedCode)
 
-        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
     }
 
-    func testV21LoginKeepsSameAccountThenShowsShortSuccess() async throws {
+    func testLoginKeepsSameAccountThenShowsShortSuccess() async throws {
         managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
         ddgSyncing.account = SyncAccount(deviceId: "local", deviceName: "Test Mac", deviceType: "desktop", userId: "same",
                                          primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
@@ -2064,8 +2092,7 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.controllerDidCompleteLogin(
             registeredDevices: [RegisteredDevice(id: "local", name: "Test Mac", type: "desktop")],
             isRecovery: false,
-            setupRole: .receiver(.exchange, .qrCode),
-            isNegotiatedV2Point1: true
+            setupRole: .receiver(.exchange, .qrCode)
         )
 
         await fulfillment(of: [successPresented], timeout: 2)

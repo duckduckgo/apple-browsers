@@ -53,11 +53,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var willPerformServerSyncOperationCalled = { }
     var didCreateSyncAccountCalled = { }
     var didCreateSyncAccountShouldShowSyncEnabled: Bool?
-    var didCreateSyncAccountIsNegotiatedV2Point1: Bool?
     var didCompleteAccountConnectionValue: Bool?
     var didCompleteLoginDevices: [RegisteredDevice]?
-    var didCompleteLoginIsNegotiatedV2Point1: Bool?
-    var didFinishTransmittingRecoveryKeyIsNegotiatedV2Point1: Bool?
     var didCompletePairingWithAlreadyConnectedAccountCalled = { }
     var didCompletePairingWithAlreadyConnectedAccountSetupRole: SyncSetupRole?
     var pairingV2JoinStatuses: [PairingV2JoinStatus] = []
@@ -79,9 +76,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
         didBeginTransmittingRecoveryKeyCalled()
     }
 
-    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool, isNegotiatedV2Point1: Bool) {
+    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
         didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange = shouldWaitForDevicesToChange
-        didFinishTransmittingRecoveryKeyIsNegotiatedV2Point1 = isNegotiatedV2Point1
         didFinishTransmittingRecoveryKeyCalled()
     }
 
@@ -114,9 +110,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
         shouldJoinPairingV2Peer
     }
 
-    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool, isNegotiatedV2Point1: Bool) {
+    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
         didCreateSyncAccountShouldShowSyncEnabled = shouldShowSyncEnabled
-        didCreateSyncAccountIsNegotiatedV2Point1 = isNegotiatedV2Point1
         didCreateSyncAccountCalled()
     }
 
@@ -124,9 +119,8 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
         didCompleteAccountConnectionValue = shouldShowSyncEnabled
     }
 
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole, isNegotiatedV2Point1: Bool) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
         didCompleteLoginDevices = registeredDevices
-        didCompleteLoginIsNegotiatedV2Point1 = isNegotiatedV2Point1
     }
 
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole) {
@@ -528,7 +522,6 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         await fulfillment(of: [willBeginTransmitting, didFinishTransmitting], timeout: 5)
         XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, true)
-        XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyIsNegotiatedV2Point1, false)
         await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
     }
@@ -665,7 +658,6 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         await fulfillment(of: [didFinishTransmitting], timeout: 5)
         XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
-        XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyIsNegotiatedV2Point1, true)
     }
 
     @MainActor

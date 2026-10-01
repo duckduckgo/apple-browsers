@@ -119,9 +119,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216731632905182
-    case dbpDeferredSecureVaultInit
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
     case dbpExtractedProfileRefresh
 
@@ -427,10 +424,18 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/0/1218855001659655
     case cpmMessagingHangRecovery
 
+    /// Remotely activated Web Extension background Web View graveyard treatment.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
+    case cpmBackgroundGraveyardTreatment
+
     /// Failsafe kill switch for deferring web-extension load/install until protected data is
     /// available. On by default; disable remotely to load/install immediately (previous flow).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
     case webExtensionProtectedDataLoadGate
+
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218932196689863
+    case webExtensionStateRestorationGate
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
     case embeddedExtension
@@ -690,8 +695,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
-        case .dbpDeferredSecureVaultInit:
-            Config(source: .remoteReleasable(DBPSubfeature.deferredSecureVaultInit), supportsLocalOverriding: true)
         case .dbpExtractedProfileRefresh:
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true)
         case .crashReportOptInStatusResetting:
@@ -892,8 +895,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
+        case .cpmBackgroundGraveyardTreatment:
+            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate))
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension))
         case .forceDarkModeOnWebsites:

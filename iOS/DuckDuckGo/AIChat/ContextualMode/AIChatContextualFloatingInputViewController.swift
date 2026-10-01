@@ -548,6 +548,13 @@ extension AIChatContextualFloatingInputViewController: UIGestureRecognizerDelega
     /// Taps on our own controls are the surface being used, not the user leaving it. Deferring to our
     /// hit test keeps one definition of which points this surface owns.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if gestureRecognizer === dragToDismissRecognizer {
+            var touchedView = touch.view
+            while let current = touchedView {
+                if current is MultiTabMentionSuggestionsView { return false }
+                touchedView = current.superview
+            }
+        }
         guard gestureRecognizer === dismissOnPageTapRecognizer else { return true }
         // Page only: the address bar dismisses this surface by taking focus, so its tap must land.
         gestureRecognizer.cancelsTouchesInView = isWithinWebContent(touch.view)

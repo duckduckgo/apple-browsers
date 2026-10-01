@@ -207,7 +207,6 @@ class FireExecutor: FireExecuting {
                                           idManager: idManager)
         self.aiChatDeleter = aiChatDeleter
         self.fireWorkers = [
-            AttachmentPrivacyNoticeFireWorker(displayStore: UTIAttachmentPrivacyNoticeDisplayStore()),
             URLCacheFireWorker(dataClearingWideEventService: dataClearingWideEventService),
             WebsiteDataFireWorker(websiteDataManager: websiteDataManager,
                                   dataStore: dataStore,
@@ -252,11 +251,13 @@ class FireExecutor: FireExecuting {
               applicationState: DataStoreWarmup.ApplicationState) async {
         // Drops reentrant calls. Callers should gate on `burnInProgress`
         if burnInProgress {
+            pixelsReporter.fireDroppedBurnPixel(request: request)
             assertionFailure("Shouldn't get called multiple times")
             return
         }
 
         burnInProgress = true
+        pixelsReporter.burnDidStart()
         defer {
             burnInProgress = false
         }

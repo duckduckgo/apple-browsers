@@ -59,6 +59,26 @@ final class UTIPixelReporterTests: XCTestCase {
                         duckAIEntrySource: duckAIEntrySource)
     }
 
+    func testAttachmentPrivacyPixelsReportNamesKindsSurfacesAndFrequency() {
+        let cases: [(AttachmentPrivacyPixel.Action, String)] = [
+            (.shown, "aichat_unified_input_attachment_privacy_shown"),
+            (.learnMoreTapped, "aichat_unified_input_attachment_privacy_learn_more_tapped")
+        ]
+        for surface in [UnifiedToggleInputPixelSurface.addressBar, .duckAI, .contextualChat] {
+            let reporter = makeReporter { self.context(surface: surface) }
+            for kind in [AttachmentPrivacyPixel.Kind.image, .file] {
+                for (action, name) in cases {
+                    reporter.reportAttachmentPrivacy(action, kind: kind)
+                    let call = pixelKitMock.actualFireCalls.last
+                    XCTAssertEqual(call?.pixel.name, name.replacingOccurrences(of: "privacy_", with: "privacy_\(kind.rawValue)_"))
+                    XCTAssertEqual(call?.pixel.parameters, ["surface": surface.rawValue])
+                    XCTAssertEqual(call?.frequency, .dailyAndCount)
+                }
+            }
+        }
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 12)
+    }
+
     // MARK: - Omnibar surface shown (toggle visibility from live context)
 
     func testWhenOmnibarSurfaceShownWithToggleVisibleThenPixelReportsToggleVisibleTrue() {

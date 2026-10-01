@@ -47,6 +47,40 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(confirmedHangCount, 1)
     }
 
+    func testGraveyardTreatmentAttributionFollowsTheFailureEpisode() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let provider = StubDiagnosticsProvider()
+        provider.nextTreatmentState = true
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        monitor.diagnosticsProvider = provider
+
+        XCTAssertFalse(beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other))
+        XCTAssertTrue(beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other))
+
+        XCTAssertEqual(pixelFiring.diagnostics.compactMap { $0 }.first?.pixelParameters[
+            CPMMessagingDiagnostics.ParameterName.backgroundGraveyardTreatmentEnabled
+        ], "true")
+        XCTAssertEqual(pixelFiring.diagnostics.compactMap { $0 }.last?.pixelParameters[
+            CPMMessagingDiagnostics.ParameterName.backgroundGraveyardTreatmentEnabled
+        ], "true")
+    }
+
+    func testHealthyTerminationResultDoesNotTagAnUnrelatedEpisode() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let provider = StubDiagnosticsProvider()
+        provider.nextTreatmentState = true
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        monitor.diagnosticsProvider = provider
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "healthy", navigationKind: .other))
+        XCTAssertFalse(beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other))
+        XCTAssertTrue(beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other))
+
+        XCTAssertNil(pixelFiring.diagnostics.compactMap { $0 }.last?.pixelParameters[
+            CPMMessagingDiagnostics.ParameterName.backgroundGraveyardTreatmentEnabled
+        ])
+    }
+
     func testRepeatedSessionRestorationFailuresDoNotStartStuckEpisode() {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
@@ -1255,10 +1289,16 @@ private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
 
     private(set) var requests: [Request] = []
     var diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: true, tabKnownToWebKit: true)
+    var nextTreatmentState: Bool?
 
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         requests.append(Request(tabIdentifier: tabIdentifier))
         return diagnostics
+    }
+
+    func consumeBackgroundGraveyardTreatmentState() -> Bool? {
+        defer { nextTreatmentState = nil }
+        return nextTreatmentState
     }
 }
 

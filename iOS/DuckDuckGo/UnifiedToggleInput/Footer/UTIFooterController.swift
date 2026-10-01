@@ -34,11 +34,15 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
+    /// The disclaimer on screen means the next Ask tap accepts the terms.
+    var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
+    var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let viewModel: DuckAiUsageWarningViewModel?
     private let highUsageNotice: UTIFooterHighUsageNoticeSource?
     private let attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource?
+    private let multiTabPromotion: UTIFooterMultiTabPromotionSource?
     private let mapper: UTIFooterMessageMapper
     private let measurement: DuckAiUsageWarningMeasurement
     private let highUsageMeasurement: DuckAiUsageWarningMeasurement
@@ -51,7 +55,12 @@ final class UTIFooterController {
     private var isInputBlocked = false
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
-    private var visibleIDs: Set<UTIFooterItem.ID> = []
+    private var visibleIDs: Set<UTIFooterItem.ID> = [] {
+        didSet {
+            guard isTermsOfServiceVisible != oldValue.contains(.termsConsent) else { return }
+            onTermsOfServiceVisibilityChanged?(isTermsOfServiceVisible)
+        }
+    }
     private var retainedMessageIDs: Set<UTIFooterItem.ID>?
     private var applicableIDs: Set<UTIFooterItem.ID> = []
     private var applicableHighUsageModelID: String?
@@ -59,11 +68,13 @@ final class UTIFooterController {
     private var isDismissing = false
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
+    var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
 
     init(viewModel: DuckAiUsageWarningViewModel?,
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
          highUsageNotice: UTIFooterHighUsageNoticeSource? = nil,
          attachmentPrivacyNotice: UTIFooterAttachmentPrivacyNoticeSource? = nil,
+         multiTabPromotion: UTIFooterMultiTabPromotionSource? = nil,
          mapper: UTIFooterMessageMapper = UTIFooterMessageMapper(),
          measurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
          highUsageMeasurement: DuckAiUsageWarningMeasurement = DuckAiUsageWarningMeasurement(),
@@ -74,6 +85,7 @@ final class UTIFooterController {
         self.viewModel = viewModel
         self.highUsageNotice = highUsageNotice
         self.attachmentPrivacyNotice = attachmentPrivacyNotice
+        self.multiTabPromotion = multiTabPromotion
         self.mapper = mapper
         self.measurement = measurement
         self.highUsageMeasurement = highUsageMeasurement
@@ -85,6 +97,11 @@ final class UTIFooterController {
     func refresh() {
         viewModel?.refresh()
         highUsageNotice?.refresh()
+        applyCurrentState()
+    }
+
+    func refreshMultiTabPromotion() {
+        guard multiTabPromotion?.isPresented == true || applicableIDs.contains(.multiTabPromotion) else { return }
         applyCurrentState()
     }
 
@@ -100,7 +117,6 @@ final class UTIFooterController {
         applicableHighUsageModelID = nil
         applicableWarning = nil
         visibleIDs = []
-
         updateInputBlock()
         presenter?.clearPendingFooterMessage()
     }
@@ -149,6 +165,8 @@ final class UTIFooterController {
         case .usageWarning:
             measurement.warningDismissed()
             viewModel?.dismiss()
+        case .multiTabPromotion:
+            multiTabPromotion?.dismiss()
         case .highUsage:
             highUsageMeasurement.warningDismissed()
             highUsageNotice?.dismissCurrent()
@@ -160,8 +178,11 @@ final class UTIFooterController {
         let next = Set(ids).intersection(currentMessages.map(\.id))
         let entered = next.subtracting(visibleIDs)
         visibleIDs = next
-        if entered.contains(.attachmentPrivacy) {
-            _ = attachmentPrivacyNotice?.recordDisplay()
+        if entered.contains(.multiTabPromotion) {
+            multiTabPromotion?.recordDisplay()
+        }
+        if entered.contains(.attachmentPrivacy), attachmentPrivacyNotice?.recordDisplay() == true {
+            if let kind = attachmentPrivacyNotice?.kind { onAttachmentPrivacyEvent?(.shown, kind) }
         }
         if !next.isDisjoint(with: [.usageWarning, .outOfUsage]), let warning = viewModel?.warning {
             measurement.cardBecameVisible(DuckAiUsageWarningExposure(warning: warning))
@@ -172,13 +193,25 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    func acceptTermsIfDisclaimerShown() {
-        guard visibleIDs.contains(.termsConsent), let termsOfServiceStore else { return }
-        termsOfServiceStore.recordAcceptedInNativeInput()
-        applyCurrentState()
+    /// Call only for an Ask tap. Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        guard let termsOfServiceStore else { return false }
+        if visibleIDs.contains(.termsConsent) {
+            termsOfServiceStore.recordAcceptedInNativeInput()
+            Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
+            applyCurrentState()
+        }
+        return termsOfServiceStore.hasAccepted
+    }
+
+    func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
+        guard id == .attachmentPrivacy, visibleIDs.contains(id), let kind = attachmentPrivacyNotice?.kind else { return }
+        onAttachmentPrivacyEvent?(.learnMoreTapped, kind)
     }
 
     func recordPromptSubmitted() {
+        multiTabPromotion?.recordPromptSubmitted()
         measurement.promptSubmitted()
         highUsageMeasurement.promptSubmitted()
         modelSwitchNotice = nil
@@ -219,7 +252,8 @@ final class UTIFooterController {
         switch action {
         case .switchToModel, .switchToFreeModel: return .switchModel
         case .tryForFree: return .upsell
-        case .startUsingWeeklyLimit, .none: return nil
+        case .startUsingWeeklyLimit: return .weeklyLimit
+        case .none: return nil
         }
     }
 
@@ -288,6 +322,9 @@ final class UTIFooterController {
             }
         }
         if let notice = highUsageNotice?.notice { items.append(.init(id: .highUsage, message: mapper.message(for: notice))) }
+        if multiTabPromotion?.isPresented == true {
+            items.append(.init(id: .multiTabPromotion, message: mapper.multiTabPromotionMessage()))
+        }
         return items
     }
 
@@ -300,37 +337,22 @@ final class UTIFooterController {
 
 // MARK: - Attachment privacy notice
 
-/// Resolves the disclosure from valid attachments and the display cap for the current browsing scope.
+/// Resolves the disclosure from valid attachments. It shows once per device: the first display sets
+/// a persistent flag, and a display already on screen stays until it ends.
 @MainActor
 final class UTIFooterAttachmentPrivacyNoticeSource {
 
-    enum DisplayScope: Equatable {
-        case normal
-        case fireTab(Tab?)
-
-        static func == (lhs: Self, rhs: Self) -> Bool {
-            switch (lhs, rhs) {
-            case (.normal, .normal): return true
-            case (.fireTab(let lhs), .fireTab(let rhs)): return lhs === rhs
-            default: return false
-            }
-        }
-    }
-
-    private let displayScope: () -> DisplayScope
     private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
     private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
-    private var displayedScope: DisplayScope?
+    private var isDisplayed = false
 
     private(set) var isPresented = false
     private(set) var kind: UTIAttachmentPrivacyKind?
 
     init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
-         displayScope: @escaping () -> DisplayScope = { .normal },
          displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
-        self.displayScope = displayScope
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled
         self.displayStore = displayStore
@@ -339,39 +361,24 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     func refresh() {
         kind = attachmentKind()
         let enabled = isEnabled()
-        let scope = displayScope()
-        if !enabled || kind == nil || displayedScope != scope { endDisplay() }
-        isPresented = enabled && kind != nil && (displayedScope != nil || count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit)
+        if !enabled || kind == nil { endDisplay() }
+        isPresented = enabled && kind != nil && (isDisplayed || !displayStore.hasShown)
     }
 
     func recordDisplay() -> Bool {
-        let scope = displayScope()
-        guard isPresented, displayedScope == nil,
-              count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit else { return false }
-        switch scope {
-        case .normal:
-            displayStore.recordDisplay()
-        case .fireTab(let tab):
-            tab?.attachmentPrivacyNoticeDisplayCount += 1
-        }
-        displayedScope = scope
+        guard isPresented, !isDisplayed, !displayStore.hasShown else { return false }
+        isDisplayed = true
+        displayStore.markShown()
         return true
     }
 
     func endDisplay() {
-        displayedScope = nil
+        isDisplayed = false
     }
 
     func clear() {
         endDisplay()
         isPresented = false
-    }
-
-    private func count(in scope: DisplayScope) -> Int {
-        switch scope {
-        case .normal: return displayStore.displayCount
-        case .fireTab(let tab): return tab?.attachmentPrivacyNoticeDisplayCount ?? 0
-        }
     }
 }
 

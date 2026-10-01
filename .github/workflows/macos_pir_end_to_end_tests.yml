@@ -203,6 +203,7 @@ jobs:
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
+          SPM_FORCE_DEBUG: "1"
           PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
 
     - name: Compute Compilation Cache hash

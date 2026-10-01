@@ -177,7 +177,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
+
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
+    case websitePermissionsPrompts
 
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
@@ -215,7 +220,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case onboardingAsync
 
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlocking
+    case onboardingNonBlockingV2
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
@@ -281,7 +286,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
@@ -843,12 +847,16 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    case stateRestorationGate
     /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Failsafe kill switch for the CPM background-view graveyard treatment.
+    case cpmBackgroundGraveyardTreatment
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

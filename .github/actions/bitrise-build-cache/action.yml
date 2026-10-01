@@ -1,16 +1,20 @@
-name: 'Setup Bitrise Build Cache'
-description: 'Sets up Bitrise build cache'
+name: 'Bitrise Build Cache'
+description: 'Activates or deactivates Bitrise build cache for Xcode'
 
 inputs:
   enabled:
-    description: 'Whether to enable caching'
+    description: 'Whether to enable caching. When not "1", the action does nothing regardless of the mode.'
     required: true
+  mode:
+    description: 'Either "activate" (default) to install and enable the cache, or "deactivate" to disable a previously activated cache'
+    required: false
+    default: 'activate'
   token:
-    description: 'Bitrise Build Cache API Token'
-    required: true
+    description: 'Bitrise Build Cache API Token (required in "activate" mode)'
+    required: false
   workspace-id:
-    description: 'Bitrise Workspace ID'
-    required: true
+    description: 'Bitrise Workspace ID (required in "activate" mode)'
+    required: false
 
 runs:
   using: 'composite'
@@ -22,12 +26,23 @@ runs:
           echo "Not a self-hosted runner, Bitrise Build Cache won't be enabled"
         elif [[ "${{ inputs.enabled }}" != "1" ]]; then
           echo "::warning::Bitrise Build Cache is disabled. Pass 'enabled: 1' to enabled it."
+        elif [[ "${{ inputs.mode }}" != "activate" && "${{ inputs.mode }}" != "deactivate" ]]; then
+          echo "::error::Unsupported mode '${{ inputs.mode }}'. Use 'activate' or 'deactivate'."
+          exit 1
+        elif [[ "${{ inputs.mode }}" == "activate" && ( -z "${{ inputs.token }}" || -z "${{ inputs.workspace-id }}" ) ]]; then
+          echo "::error::'token' and 'workspace-id' inputs are required in 'activate' mode."
+          exit 1
         fi
-    - id: bitrise-build-cache
-      if: runner.environment == 'self-hosted' && inputs.enabled == '1'
+    - id: bitrise-build-cache-activate
+      if: runner.environment == 'self-hosted' && inputs.enabled == '1' && inputs.mode == 'activate'
       shell: bash
       env:
         BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ inputs.token }}
         BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ inputs.workspace-id }}
       run: |
         ${{ github.action_path }}/setup_bitrise_build_cache.sh
+    - id: bitrise-build-cache-deactivate
+      if: runner.environment == 'self-hosted' && inputs.enabled == '1' && inputs.mode == 'deactivate'
+      shell: bash
+      run: |
+        ${{ github.action_path }}/deactivate_bitrise_build_cache.sh

@@ -211,11 +211,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isUsageWarningVisible = false
     private var createImageModelSwitchNotice: AIChatCreateImageModelSwitchNotice?
 
-    private lazy var attachmentPrivacyGate = AttachmentPrivacyDisclosureGate(
-        disclosure: AttachmentPrivacyDisclosure(
-            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
-            webKeySource: duckAiNativeStorageHandler
+    private lazy var attachmentPrivacyGate: AttachmentPrivacyDisclosureGate = {
+        let gate = AttachmentPrivacyDisclosureGate(
+            disclosure: AttachmentPrivacyDisclosure(
+                store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+                webKeySource: duckAiNativeStorageHandler
+            )
         )
+        gate.onDisplayStarted = { [weak self] kind in
+            self?.attachmentPrivacyPixelFirer.fireShown(kind: kind)
+        }
+        return gate
+    }()
+
+    private lazy var attachmentPrivacyPixelFirer = AttachmentPrivacyDisclosurePixelFirer(
+        surface: omnibarController.surface.attachmentPrivacyPixelSurface
     )
 
     /// Only the exposed band counts; the rest is behind the panel and costs nothing.
@@ -1276,17 +1286,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     // MARK: - Attachment privacy disclosure
 
     /// Images and files only: a page-context chip is not scanned, so the claim would not apply.
-    private var hasStagedFileOrImageAttachment: Bool {
-        !omnibarController.activeImageAttachments.isEmpty || !omnibarController.activeFileAttachments.isEmpty
+    private var stagedAttachmentKind: AttachmentPrivacyDisclosureKind? {
+        if !omnibarController.activeImageAttachments.isEmpty { return .image }
+        if !omnibarController.activeFileAttachments.isEmpty { return .file }
+        return nil
     }
 
     private var shouldShowAttachmentPrivacyDisclosure: Bool {
-        attachmentPrivacyGate.shouldShow(hasStagedAttachment: hasStagedFileOrImageAttachment,
+        attachmentPrivacyGate.shouldShow(attachmentKind: stagedAttachmentKind,
                                          tabID: omnibarController.currentTabUUID)
     }
 
     /// A new tab, so the staged attachment and the draft survive.
     private func openAttachmentPrivacyLearnMore() {
+        attachmentPrivacyPixelFirer.fireLearnMoreTapped()
         Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
                                                               source: .ui,
                                                               newTab: true,

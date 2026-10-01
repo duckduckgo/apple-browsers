@@ -280,59 +280,79 @@ final class AttachmentPrivacyDisclosureGateTests: XCTestCase {
     }
 
     func testNothingShowsWithoutAnAttachment() {
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: nil, tabID: "A"))
         XCTAssertFalse(store.hasShown)
     }
 
     func testStagingAnAttachmentClaimsTheDisplay() {
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: "A"))
         XCTAssertTrue(store.hasShown)
     }
 
     func testResolvingRepeatedlyWhileStagedKeepsShowing() {
         for _ in 0..<5 {
-            XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+            XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: "A"))
         }
     }
 
     /// Emptying the attachments ends the display, and the one display is already spent.
     func testRemovingAndReattachingDoesNotShowAgain() {
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "A"))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: "A"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: nil, tabID: "A"))
 
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: .file, tabID: "A"))
     }
 
     func testOnlyOneTabGetsTheDisplay() {
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: "A"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: .file, tabID: "B"))
     }
 
     func testReturningToTheShowingTabKeepsIt() {
-        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
-        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "B")
+        _ = gate.shouldShow(attachmentKind: .file, tabID: "A")
+        _ = gate.shouldShow(attachmentKind: .file, tabID: "B")
 
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: "A"))
     }
 
     func testAnotherTabsEmptyingLeavesTheShowingTabAlone() {
-        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
+        _ = gate.shouldShow(attachmentKind: .file, tabID: "A")
 
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: false, tabID: "B"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: nil, tabID: "B"))
 
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: "A"))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: "A"))
     }
 
     func testASurfaceWithoutATabShowsOnce() {
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
-        XCTAssertTrue(gate.shouldShow(hasStagedAttachment: true, tabID: nil))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: nil))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .file, tabID: nil))
+    }
+
+    func testTheKindOfTheStartedDisplayIsReported() {
+        var started: [AttachmentPrivacyDisclosureKind] = []
+        gate.onDisplayStarted = { started.append($0) }
+
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .image, tabID: "A"))
+        XCTAssertTrue(gate.shouldShow(attachmentKind: .image, tabID: "A"))
+
+        XCTAssertEqual(started, [.image])
+    }
+
+    func testADeniedDisplayIsNotReported() {
+        _ = gate.shouldShow(attachmentKind: .file, tabID: "A")
+        var started: [AttachmentPrivacyDisclosureKind] = []
+        gate.onDisplayStarted = { started.append($0) }
+
+        XCTAssertFalse(gate.shouldShow(attachmentKind: .file, tabID: "B"))
+
+        XCTAssertTrue(started.isEmpty)
     }
 
     func testADeniedTabNeverShows() {
-        _ = gate.shouldShow(hasStagedAttachment: true, tabID: "A")
+        _ = gate.shouldShow(attachmentKind: .file, tabID: "A")
 
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
-        XCTAssertFalse(gate.shouldShow(hasStagedAttachment: true, tabID: "B"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: .file, tabID: "B"))
+        XCTAssertFalse(gate.shouldShow(attachmentKind: .file, tabID: "B"))
     }
 }
 

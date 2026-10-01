@@ -29,6 +29,12 @@ extension Notification.Name {
     static let attachmentPrivacyDisclosureDidChange = Notification.Name("attachmentPrivacyDisclosureDidChange")
 }
 
+/// What is staged, which is what the disclosure is about. Raw values match the web contract.
+enum AttachmentPrivacyDisclosureKind: String {
+    case image
+    case file
+}
+
 // MARK: - Storage
 
 protocol AttachmentPrivacyDisclosureStoring: AnyObject {
@@ -159,6 +165,9 @@ final class AttachmentPrivacyDisclosureGate {
 
     private static let tablessKey = "no-tab"
 
+    /// Called when a display starts, which is the impression worth reporting.
+    var onDisplayStarted: ((AttachmentPrivacyDisclosureKind) -> Void)?
+
     private let disclosure: AttachmentPrivacyDisclosure
     private var showingTab: String?
 
@@ -166,9 +175,9 @@ final class AttachmentPrivacyDisclosureGate {
         self.disclosure = disclosure
     }
 
-    func shouldShow(hasStagedAttachment: Bool, tabID: String?) -> Bool {
+    func shouldShow(attachmentKind: AttachmentPrivacyDisclosureKind?, tabID: String?) -> Bool {
         let key = tabID ?? Self.tablessKey
-        guard hasStagedAttachment else {
+        guard let attachmentKind else {
             if showingTab == key { showingTab = nil }
             return false
         }
@@ -176,6 +185,7 @@ final class AttachmentPrivacyDisclosureGate {
         guard disclosure.claim() else { return false }
 
         showingTab = key
+        onDisplayStarted?(attachmentKind)
         return true
     }
 }

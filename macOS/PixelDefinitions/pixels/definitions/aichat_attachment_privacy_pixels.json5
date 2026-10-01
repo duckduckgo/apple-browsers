@@ -1,0 +1,62 @@
+// Duck.ai file-upload privacy disclosure pixels - the message under the Duck.ai input while an
+// image or a file is staged, gated by the `aiChatAttachmentPrivacyDisclosure` feature flag.
+//
+// What was attached is in the pixel name, so image and file are separate series; `surface` says
+// which native input reported it. The disclosure is shown once per install across every surface,
+// so `shown` is close to a one-off per user rather than a recurring impression.
+//
+// Not defined on purpose: a display inside Duck.ai itself. The web app asks native whether it may
+// show the disclosure and reports its own pixel, so a native one would double count.
+{
+    "m_mac_aichat_attachment_privacy_image_shown": {
+        "description": "Fires when the privacy disclosure appears under a Duck.ai input with an image staged. One per display, and the display is granted once per install across all surfaces.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the disclosure.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar", "new_tab_page"]
+            }
+        ]
+    },
+    "m_mac_aichat_attachment_privacy_file_shown": {
+        "description": "Fires when the privacy disclosure appears under a Duck.ai input with a file staged. One per display, and the display is granted once per install across all surfaces.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the disclosure.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar", "new_tab_page"]
+            }
+        ]
+    },
+    "m_mac_aichat_attachment_privacy_learn_more_tapped": {
+        "description": "Fires when the user taps Learn more in the privacy disclosure, which opens the Duck.ai privacy help page in a new tab and leaves the attachment staged.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input showed the disclosure.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar", "new_tab_page"]
+            }
+        ]
+    }
+}

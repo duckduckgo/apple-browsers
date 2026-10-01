@@ -177,9 +177,7 @@ func deletePixelParameters(of cleaner: HistoryCleaning, source: AIChatDeletePixe
     parameters["source"] = source?.rawValue
     if let report = cleaner.lastClearingReport {
         parameters["retried"] = String(report.wasRetried)
-        if let firstAttemptError = report.firstAttemptError {
-            parameters["first_attempt_error_code"] = String((firstAttemptError as NSError).code)
-        }
+        parameters["first_attempt_error_code"] = report.retriedErrorCode.map(String.init)
     }
     return parameters
 }

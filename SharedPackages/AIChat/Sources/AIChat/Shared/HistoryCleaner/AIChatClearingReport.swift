@@ -27,6 +27,15 @@ public struct AIChatClearingReport {
 
     public var wasRetried: Bool { attempts > 1 }
 
+    /// Reported for errors from outside the clearing script, such as WebKit or URL loading failures.
+    public static let pageLoadFailedCode = 7
+
+    /// The retried first attempt's failure as a bounded code: the clearing error code (2–6), or `pageLoadFailedCode`.
+    public var retriedErrorCode: Int? {
+        guard wasRetried, let error = firstAttemptError as NSError? else { return nil }
+        return error.domain == AIChatDataClearingUserScript.ClearError.errorDomain ? error.code : Self.pageLoadFailedCode
+    }
+
     public init(attempts: Int, firstAttemptError: Error?, firstAttemptTimings: AIChatClearingTimings) {
         self.attempts = attempts
         self.firstAttemptError = firstAttemptError

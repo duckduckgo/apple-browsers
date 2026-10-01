@@ -19,7 +19,9 @@
             {
                 "key": "first_attempt_error_code",
                 "type": "integer",
-                "description": "Error code of the failed first attempt when the clear was retried (see m_aichat_history_delete_failed for codes)."
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
             }
         ]
     },
@@ -47,7 +49,9 @@
             {
                 "key": "first_attempt_error_code",
                 "type": "integer",
-                "description": "Error code of the failed first attempt when the clear was retried (see m_aichat_history_delete_failed for codes)."
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
             }
         ]
     },
@@ -94,7 +98,9 @@
             {
                 "key": "first_attempt_error_code",
                 "type": "integer",
-                "description": "Error code of the failed first attempt when the clear was retried (see m_aichat_history_delete_failed for codes)."
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
             }
         ]
     },
@@ -117,7 +123,9 @@
             {
                 "key": "first_attempt_error_code",
                 "type": "integer",
-                "description": "Error code of the failed first attempt when the clear was retried (see m_aichat_history_delete_failed for codes)."
+                "minimum": 2,
+                "maximum": 7,
+                "description": "Sent only when the clear was retried: why the first attempt failed. 2-6 as the com.duckduckgo.aiChatDataClearing codes in m_aichat_history_delete_failed, 7 page failed to load (WebKit or URL loading error)."
             }
         ]
     },

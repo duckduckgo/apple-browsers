@@ -57,22 +57,21 @@ struct NewTabPageKeyboardPolicyTests {
     struct AfterFireCase: Sendable {
         let onNewTab: Bool
         let onDuckAITab: Bool
-        let searchInputToggleOn: Bool
         let stillOnboarding: Bool
         let showsKeyboard: Bool
     }
 
     @Test(
-        "After Fire New Tab decides, except on a Duck.ai tab or with Search & Duck.ai during onboarding",
+        "After Fire New Tab decides, except on a Duck.ai tab or during onboarding",
         arguments: [
-            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: true),
-            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: true),
-            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: true, showsKeyboard: true),
-            AfterFireCase(onNewTab: true, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: true, showsKeyboard: false),
-            AfterFireCase(onNewTab: true, onDuckAITab: true, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: false),
-            AfterFireCase(onNewTab: true, onDuckAITab: true, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: false),
-            AfterFireCase(onNewTab: false, onDuckAITab: false, searchInputToggleOn: false, stillOnboarding: false, showsKeyboard: false),
-            AfterFireCase(onNewTab: false, onDuckAITab: false, searchInputToggleOn: true, stillOnboarding: false, showsKeyboard: false)
+            AfterFireCase(onNewTab: true, onDuckAITab: false, stillOnboarding: false, showsKeyboard: true),
+            AfterFireCase(onNewTab: true, onDuckAITab: false, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: true, onDuckAITab: true, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: true, onDuckAITab: true, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: false, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: false, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: true, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: true, stillOnboarding: true, showsKeyboard: false)
         ],
         [false, true]
     )
@@ -82,7 +81,6 @@ struct NewTabPageKeyboardPolicyTests {
 
         let showsKeyboard = policy.showsKeyboardAfterFire(
             onDuckAITab: testCase.onDuckAITab,
-            searchInputToggleOn: testCase.searchInputToggleOn,
             stillOnboarding: testCase.stillOnboarding)
 
         #expect(showsKeyboard == testCase.showsKeyboard)

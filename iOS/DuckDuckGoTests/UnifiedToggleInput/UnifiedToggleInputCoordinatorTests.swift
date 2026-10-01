@@ -3366,6 +3366,19 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
     }
 
+    func test_appMenuLongPress_forwardsThroughChainToDelegate() {
+        XCTAssertEqual(mockDelegate.didRequestAppMenuLongPressCount, 0)
+        sut.unifiedToggleInputVCDidLongPressAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuLongPressCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuCount, 0)
+    }
+
+    func test_appMenuLongPress_suppressedWhileOnboardingLocked() {
+        sut.setOnboardingControlsLocked(true)
+        sut.unifiedToggleInputVCDidLongPressAppMenu(sut.viewController)
+        XCTAssertEqual(mockDelegate.didRequestAppMenuLongPressCount, 0)
+    }
+
     // MARK: - aiChatTabHideToggle truth table
 
     func test_aiChatTabHideToggle_off_onAITab_togglesShowsAccordingToUserSetting() {
@@ -3565,6 +3578,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var didRequestAIVoiceChatCount = 0
     var didRequestAIChatCount = 0
     var didRequestAppMenuCount = 0
+    var didRequestAppMenuLongPressCount = 0
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
         submittedPrompt = prompt
@@ -3589,6 +3603,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() { didRequestAppMenuCount += 1 }
+    func unifiedToggleInputDidRequestAppMenuLongPress() { didRequestAppMenuLongPressCount += 1 }
     var duckAIPromptSubmissionOrigins: [AIChatEntryPointSource?] = []
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
         duckAIPromptSubmissionOrigins.append(origin)

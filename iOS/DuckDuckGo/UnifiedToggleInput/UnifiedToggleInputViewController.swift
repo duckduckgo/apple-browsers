@@ -42,6 +42,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidLongPressAppMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
@@ -576,6 +577,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapAppMenu(self)
+    }
+
+    func unifiedToggleInputViewDidLongPressAppMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidLongPressAppMenu(self)
     }
 
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView) {

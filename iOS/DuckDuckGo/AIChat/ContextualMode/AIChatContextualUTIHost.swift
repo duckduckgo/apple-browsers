@@ -623,6 +623,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidRequestAppMenuLongPress() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         onEditModeChange?(isEditing)
     }

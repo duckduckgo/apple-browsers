@@ -1,7 +1,7 @@
 //
-//  DuckDuckGoUserAgent.swift
+//  SafariVersionReader.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,15 +17,18 @@
 //
 
 import Foundation
-import Common
-import FoundationExtensions
+import AppKitExtensions
 
-enum UserAgent {
+public enum SafariVersionReader {
 
-    static func duckDuckGoUserAgent(appVersion: String = AppVersion.shared.versionNumber,
-                                    appID: String = AppVersion.shared.identifier,
-                                    systemVersion: String = AppVersion.shared.osVersionMajorMinor) -> String {
-        return "ddg_mac/\(appVersion) (\(appID); macOS \(systemVersion))"
+    static let safariPath = "/Applications/Safari.app"
+
+    public static func getVersion() -> String? {
+        ApplicationVersionReader.getVersion(of: safariPath)
+    }
+
+    public static func getMajorVersion() -> Int? {
+        ApplicationVersionReader.getMajorVersion(of: safariPath)
     }
 
 }

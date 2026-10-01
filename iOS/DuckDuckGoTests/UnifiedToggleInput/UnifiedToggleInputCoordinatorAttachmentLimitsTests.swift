@@ -864,6 +864,7 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidRequestAppMenuLongPress() {}
 }
 
 private final class StubAIChatPreferences: AIChatPreferencesPersisting {

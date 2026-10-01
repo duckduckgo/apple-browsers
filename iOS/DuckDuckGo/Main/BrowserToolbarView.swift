@@ -246,8 +246,6 @@ final class BrowserToolbarView: UIView {
         view.backgroundColor = .clear
         return view
     }()
-    /// Icons sit here as a sibling of the glass, not inside `UIVisualEffectView.contentView`. Nested
-    /// glass interpolates on a different clock from `contentView` descendants when the pill moves.
     private let chromeContentHost: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -435,7 +433,7 @@ final class BrowserToolbarView: UIView {
 
         addSubview(chromeContainer)
         chromeContainer.addSubview(materialBackgroundView)
-        chromeContainer.addSubview(chromeContentHost)
+        materialBackgroundView.contentView.addSubview(chromeContentHost)
         chromeContentHost.addSubview(contentStack)
         contentStack.addArrangedSubview(expandedContentContainer)
         contentStack.addArrangedSubview(omnibarContainer)
@@ -464,10 +462,10 @@ final class BrowserToolbarView: UIView {
             materialBackgroundView.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
             materialBackgroundView.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
             materialBackgroundView.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
-            chromeContentHost.topAnchor.constraint(equalTo: chromeContainer.topAnchor),
-            chromeContentHost.leadingAnchor.constraint(equalTo: chromeContainer.leadingAnchor),
-            chromeContentHost.trailingAnchor.constraint(equalTo: chromeContainer.trailingAnchor),
-            chromeContentHost.bottomAnchor.constraint(equalTo: chromeContainer.bottomAnchor),
+            chromeContentHost.topAnchor.constraint(equalTo: materialBackgroundView.contentView.topAnchor),
+            chromeContentHost.leadingAnchor.constraint(equalTo: materialBackgroundView.contentView.leadingAnchor),
+            chromeContentHost.trailingAnchor.constraint(equalTo: materialBackgroundView.contentView.trailingAnchor),
+            chromeContentHost.bottomAnchor.constraint(equalTo: materialBackgroundView.contentView.bottomAnchor),
             materialBackgroundLeadingConstraint,
             materialBackgroundTrailingConstraint,
             materialBackgroundTopConstraint,
@@ -623,12 +621,16 @@ final class BrowserToolbarView: UIView {
         guard isFloatingStyleEnabled else { return }
         materialInterfaceStyle = interfaceStyle
         UIView.performWithoutAnimation {
-            materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+            if #available(iOS 26.0, *) {
+                materialBackgroundView.overrideUserInterfaceStyle = .unspecified
+                chromeContentHost.overrideUserInterfaceStyle = .unspecified
+            } else {
+                materialBackgroundView.overrideUserInterfaceStyle = interfaceStyle
+                chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
+            }
             materialBackgroundView.effect = nil
             materialBackgroundView.effect = materialEffect()
             materialBackgroundView.layoutIfNeeded()
-            // chromeContentHost is a sibling of materialBackgroundView, not a descendant — needs the override too.
-            chromeContentHost.overrideUserInterfaceStyle = interfaceStyle
         }
         scheduleHostedOmnibarMaterialRefresh()
     }

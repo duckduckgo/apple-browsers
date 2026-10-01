@@ -2294,6 +2294,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         guard !isOnboardingLocked else { return }
         delegate?.unifiedToggleInputDidRequestAppMenu()
     }
+
+    func unifiedToggleInputVCDidLongPressAppMenu(_ vc: UnifiedToggleInputViewController) {
+        guard !isOnboardingLocked else { return }
+        delegate?.unifiedToggleInputDidRequestAppMenuLongPress()
+    }
 }
 
 extension UnifiedToggleInputCoordinator {

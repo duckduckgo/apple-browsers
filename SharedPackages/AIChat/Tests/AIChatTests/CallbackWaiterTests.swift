@@ -1,5 +1,5 @@
 //
-//  NavigationCompletionWaiterTests.swift
+//  CallbackWaiterTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import XCTest
 @testable import AIChat
 
 @MainActor
-final class NavigationCompletionWaiterTests: XCTestCase {
+final class CallbackWaiterTests: XCTestCase {
 
     private enum TestError: Error, Equatable {
         case timeout
@@ -28,11 +28,11 @@ final class NavigationCompletionWaiterTests: XCTestCase {
         case terminated
     }
 
-    private var waiter: NavigationCompletionWaiter!
+    private var waiter: CallbackWaiter!
 
     override func setUp() {
         super.setUp()
-        waiter = NavigationCompletionWaiter()
+        waiter = CallbackWaiter()
     }
 
     override func tearDown() {
@@ -92,6 +92,15 @@ final class NavigationCompletionWaiterTests: XCTestCase {
         XCTAssertNoThrow(try result.get())
     }
 
+    func testWhenAWaitWithoutAHandleIsCompletedWithoutAHandleThenItSucceeds() async {
+        let result = await waiter.wait(timeout: 5, timeoutError: TestError.timeout) {
+            Task { @MainActor [unowned self] in waiter.complete(nil, with: .success(())) }
+            return nil
+        }
+
+        XCTAssertNoThrow(try result.get())
+    }
+
     func testWhenNavigationNeverReportsThenWaitTimesOut() async {
         let result = await wait(for: NSObject(), timeout: 0.05) {}
 
@@ -100,7 +109,7 @@ final class NavigationCompletionWaiterTests: XCTestCase {
 
     func testWhenPendingNavigationIsFailedThenWaitReturnsThatErrorImmediately() async {
         let result = await wait(for: NSObject()) { [unowned self] in
-            waiter.failPendingNavigation(with: TestError.terminated)
+            waiter.failPending(with: TestError.terminated)
         }
 
         XCTAssertThrowsError(try result.get()) { XCTAssertEqual($0 as? TestError, .terminated) }

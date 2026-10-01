@@ -93,6 +93,14 @@ struct StartupOnboardingDecision {
 
 enum FloatingGlassAppearancePolicy {
 
+    static func pageBackgroundColor(isNewTabPageVisible: Bool,
+                                    contentBackgroundColor: UIColor?,
+                                    underPageBackgroundColor: UIColor?,
+                                    siteThemeColor: UIColor?) -> UIColor? {
+        guard !isNewTabPageVisible else { return nil }
+        return contentBackgroundColor ?? siteThemeColor ?? underPageBackgroundColor
+    }
+
     static func interfaceStyle(isFireMode: Bool,
                                traitCollection: UITraitCollection,
                                pageBackgroundColor: UIColor?) -> UIUserInterfaceStyle {
@@ -368,8 +376,24 @@ class MainViewController: UIViewController {
     private var settledFloatingGlassInterfaceStyle: UIUserInterfaceStyle {
         FloatingGlassAppearancePolicy.interfaceStyle(
             isFireMode: tabManager.currentBrowsingMode == .fire,
-            traitCollection: traitCollection,
-            pageBackgroundColor: currentTab?.webView?.underPageBackgroundColor)
+            traitCollection: UITraitCollection(userInterfaceStyle: themeManager.currentInterfaceStyle),
+            pageBackgroundColor: settledFloatingGlassPageBackgroundColor)
+    }
+
+    private var settledFloatingGlassPageBackgroundColor: UIColor? {
+        floatingGlassPageBackgroundColor(contentBackgroundColor: currentTab?.floatingPageBackgroundColor)
+    }
+
+    private func floatingGlassPageBackgroundColor(contentBackgroundColor: UIColor?) -> UIColor? {
+        FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: isNewTabPageVisible,
+            contentBackgroundColor: contentBackgroundColor,
+            underPageBackgroundColor: currentTab?.webView?.underPageBackgroundColor,
+            siteThemeColor: currentTab?.webView?.themeColor)
+    }
+
+    var floatingTabSwitcherTransitionBackgroundColor: UIColor {
+        settledFloatingGlassPageBackgroundColor ?? themeManager.currentTheme.backgroundColor
     }
 
     private var lastWindowControlsRowState: (sharesRow: Bool, tabsBarHidden: Bool, topInset: CGFloat) = (false, false, -1)
@@ -472,12 +496,20 @@ class MainViewController: UIViewController {
                               isFloatingUIEnabled: isFloatingUIEnabled)
     }()
 
-    // Re-run the glass policy when WebKit's page-derived color changes; otherwise it only ran on tab-switch/trait changes.
+    // Refresh glass when page colors change.
     private var pageBackgroundColorObservation: NSKeyValueObservation?
+    private var siteThemeColorObservation: NSKeyValueObservation?
+    private var pageContentBackgroundColorObservation: NSKeyValueObservation?
 
     private func observePageBackgroundColor(for tab: TabViewController) {
         pageBackgroundColorObservation = tab.webView.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self, weak tab] _, _ in
             tab?.pullToRefreshViewAdapter?.webViewUnderPageBackgroundDidChange()
+            self?.refreshSettledFloatingGlassAppearance()
+        }
+        siteThemeColorObservation = tab.webView.observe(\.themeColor, options: [.initial, .new]) { [weak self] _, _ in
+            self?.refreshSettledFloatingGlassAppearance()
+        }
+        pageContentBackgroundColorObservation = tab.observe(\.floatingPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in
             self?.refreshSettledFloatingGlassAppearance()
         }
     }
@@ -1023,6 +1055,7 @@ class MainViewController: UIViewController {
 
         // Needs to be called here because sometimes the frames are not the expected size during didLoad
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        refreshSettledFloatingGlassAppearance()
 
         restorePendingDuckAIAnswerStepIfNeeded()
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
@@ -2300,6 +2333,8 @@ class MainViewController: UIViewController {
         }
 
         pageBackgroundColorObservation = nil
+        siteThemeColorObservation = nil
+        pageContentBackgroundColorObservation = nil
         refreshSettledFloatingGlassAppearance()
 
         // Reset chrome state on every NTP attach — the previous tab may have been a Duck.ai tab

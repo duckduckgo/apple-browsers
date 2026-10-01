@@ -43,7 +43,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     private let websiteDataStore: WKWebsiteDataStore
 
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
-    private let navigationWaiter = NavigationCompletionWaiter()
+    private let navigationWaiter = CallbackWaiter()
     /// Loading the local page normally takes under a second; this only catches loads that never end.
     private static let navigationTimeout: TimeInterval = 10
     private var webView: WKWebView?
@@ -106,7 +106,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         let sequence = AIChatClearingSequence(
             origins: URL.aiChatDomains,
             loadOrigin: { [weak self] origin in
-                await self?.launchClearingWebView(requestURL: origin) ?? .failure(CleanerError.webViewNotInitialized)
+                await self?.loadOriginWithListeningScript(origin, script: script) ?? .failure(CleanerError.webViewNotInitialized)
             },
             clear: { chatID in
                 await script.clearAIChatDataAsync(chatID: chatID)
@@ -174,6 +174,15 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         return aiChatDataClearing
     }
 
+    /// Loads the origin and waits for the clearing script to listen, so the clear message isn't lost.
+    @MainActor
+    private func loadOriginWithListeningScript(_ origin: URL, script: AIChatDataClearingUserScript) async -> Result<Void, Error> {
+        script.prepareForPageLoad()
+        let loaded = await launchClearingWebView(requestURL: origin)
+        guard case .success = loaded else { return loaded }
+        return await script.waitUntilReady()
+    }
+
     @MainActor
     private func launchClearingWebView(requestURL: URL) async -> Result<Void, Error> {
         guard let webView = webView else {
@@ -199,8 +208,8 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     @MainActor
     private func handleWebContentProcessTermination() {
         let error = AIChatDataClearingUserScript.ClearError.webContentProcessTerminated
-        navigationWaiter.failPendingNavigation(with: error)
-        aiChatDataClearingUserScript?.failPendingClear(with: error)
+        navigationWaiter.failPending(with: error)
+        aiChatDataClearingUserScript?.failPendingWaits(with: error)
     }
 
     @MainActor

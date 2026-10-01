@@ -1,7 +1,7 @@
 //
-//  BuildFlags.swift
+//  DataBrokerProtectionSettings+Environment.swift
 //
-//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,14 +16,19 @@
 //  limitations under the License.
 //
 
-enum BuildFlags {
+import Foundation
+import DataBrokerProtectionCore
+import Subscription
 
-    static var isProductionBuild: Bool {
-        let buildType = StandardApplicationBuildType()
-        if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
-            return false
-        } else {
-            return true
+public extension DataBrokerProtectionSettings {
+
+    /// Align VPN environment to the Subscription environment
+    func alignTo(subscriptionEnvironment: SubscriptionEnvironment) {
+        switch subscriptionEnvironment.serviceEnvironment {
+        case .production:
+            self.selectedEnvironment = .production
+        case .staging:
+            self.selectedEnvironment = .staging
         }
     }
 }

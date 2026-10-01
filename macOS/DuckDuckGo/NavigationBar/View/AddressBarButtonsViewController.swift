@@ -378,6 +378,7 @@ final class AddressBarButtonsViewController: NSViewController {
         configureAddressBarButton(askAIChatButton, image: .aiChat,
                                   cornerRadius: LayoutConstants.buttonCornerRadius,
                                   action: #selector(aiChatButtonAction(_:)))
+        askAIChatButton.alternateImage = .aiChatSolid
         askAIChatButton.normalTintColor = .button
         askAIChatButton.isHidden = true
 
@@ -385,6 +386,9 @@ final class AddressBarButtonsViewController: NSViewController {
         configureAddressBarButton(aiChatButton, image: .aiChat,
                                   cornerRadius: LayoutConstants.buttonCornerRadius,
                                   action: #selector(aiChatButtonAction(_:)))
+        // Shown when `updateAIChatButtonStateForSidebar` flips the button to `.toggle`/`.on`
+        // to signal that the AI Chat sidebar is open.
+        aiChatButton.alternateImage = .aiChatSolid
         aiChatButton.isHidden = true
 
         trailingAIChatDivider = makeAIChatDivider(animates: true)

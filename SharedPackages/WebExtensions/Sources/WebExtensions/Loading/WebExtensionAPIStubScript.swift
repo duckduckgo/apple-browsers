@@ -72,6 +72,14 @@ import Foundation
 /// every open and re-reads them to draw its checkbox, and the background page reads them too. Nothing
 /// in the app reads these values; they record the extension's choice so it reads back consistently.
 ///
+/// `chrome.idle` works too, on macOS. Bitwarden's "lock vault on idle / on system lock" timeouts
+/// register `idle.onStateChanged` and set `idle.setDetectionInterval`, and with inert stubs they never
+/// fire. The state itself — `locked`, `idle` or `active` — is only known to the app, so `queryState`
+/// asks it through a script message with a reply (`idleMessageHandlerName`); `onStateChanged` polls
+/// `queryState` while it has listeners and fires them when the answer changes. A page whose host has
+/// no such handler always hears `active`. `idle` is a *virtual* permission, like `privacy`, for the
+/// same reason: WebKit drops the grant. `getAutoLockDelay` answers `0`, which stands for "unknown".
+///
 /// Chrome also exposes enum-like constant objects on its namespaces — `scripting.ExecutionWorld`,
 /// `tabs.TAB_ID_NONE` and the `windows.WINDOW_ID_*` values — and extension code dereferences them
 /// right where it passes them, as call arguments. WebKit implements the calls but not the
@@ -102,6 +110,10 @@ public enum WebExtensionAPIStubScript {
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
     /// namespace wrappers stay alive along with the stubs installed on them.
     static let retentionPropertyName = "__ddgRetainedExtensionAPINamespaces"
+
+    /// Name of the script message handler `chrome.idle.queryState` asks for the idle state. It is
+    /// optional: a page with no handler of this name hears `active`.
+    public static let idleMessageHandlerName = "ddgWebExtensionIdle"
 
     /// Name of the script message handler the page reports unsupported API use to. It is optional:
     /// a page with no handler of this name reports nothing.
@@ -149,13 +161,13 @@ public enum WebExtensionAPIStubScript {
         }
 
         // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
-        // generic nestable stub; "offscreen" and "privacy" are purpose-shaped (see makeOffscreen and
-        // makePrivacy below).
+        // generic nestable stub; "offscreen", "privacy" and "idle" are purpose-shaped (see
+        // makeOffscreen, makePrivacy and makeIdle below).
         var missingNamespaces = [
             { name: "notifications" },
             { name: "offscreen", kind: "offscreen" },
             { name: "downloads" },
-            { name: "idle" },
+            { name: "idle", kind: "idle" },
             { name: "management" },
             { name: "privacy", kind: "privacy" },
             { name: "browsingData" },
@@ -736,6 +748,114 @@ public enum WebExtensionAPIStubScript {
             return privacy;
         }
 
+        var idleMessageHandlerName = "\(Self.idleMessageHandlerName)";
+        var idleStates = ["active", "idle", "locked"];
+        var idleDefaultDetectionInterval = 60;
+        // Chrome's lower bound for a detection interval, in seconds.
+        var idleMinimumDetectionInterval = 15;
+        var idlePollIntervalInMilliseconds = 15000;
+
+        function clampIdleDetectionInterval(seconds) {
+            var value = Math.floor(Number(seconds));
+            return isFinite(value) ? Math.max(idleMinimumDetectionInterval, value) : idleDefaultDetectionInterval;
+        }
+
+        // Asks the app for the idle state. Never rejects: no handler, a failed reply or an unknown
+        // answer all read as `active`.
+        function askForIdleState(detectionInterval) {
+            try {
+                var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+                var handler = handlers && handlers[idleMessageHandlerName];
+                if (!handler || typeof handler.postMessage !== "function") {
+                    return Promise.resolve("active");
+                }
+                return Promise.resolve(handler.postMessage({ detectionInterval: detectionInterval })).then(function(state) {
+                    return idleStates.indexOf(state) !== -1 ? state : "active";
+                }, function() {
+                    return "active";
+                });
+            } catch (error) {
+                return Promise.resolve("active");
+            }
+        }
+
+        // `chrome.idle`. While `onStateChanged` has listeners, a single timer polls the app and the
+        // listeners hear about changes only; the state before the first answer is `active`.
+        function makeIdle() {
+            var detectionInterval = idleDefaultDetectionInterval;
+            var listeners = [];
+            var timer = null;
+            var lastState = "active";
+            var isPolling = false;
+
+            function poll() {
+                if (isPolling) {
+                    return;
+                }
+                isPolling = true;
+                askForIdleState(detectionInterval).then(function(state) {
+                    isPolling = false;
+                    if (state === lastState) {
+                        return;
+                    }
+                    lastState = state;
+                    listeners.slice().forEach(function(listener) {
+                        try {
+                            listener(state);
+                        } catch (error) {
+                            console.info("[DuckDuckGo] An idle.onStateChanged listener threw: " + error);
+                        }
+                    });
+                });
+            }
+
+            var idle = {
+                queryState: function(seconds) {
+                    var callback = arguments.length > 1 ? arguments[arguments.length - 1] : undefined;
+                    return answerBothStyles(askForIdleState(clampIdleDetectionInterval(seconds)), callback);
+                },
+                setDetectionInterval: function(seconds) {
+                    detectionInterval = clampIdleDetectionInterval(seconds);
+                },
+                getAutoLockDelay: makeResolver(function() {
+                    return 0;
+                }),
+                onStateChanged: {
+                    addListener: function(listener) {
+                        if (typeof listener !== "function" || listeners.indexOf(listener) !== -1) {
+                            return;
+                        }
+                        listeners.push(listener);
+                        if (timer === null) {
+                            timer = setInterval(poll, idlePollIntervalInMilliseconds);
+                        }
+                    },
+                    removeListener: function(listener) {
+                        var index = listeners.indexOf(listener);
+                        if (index === -1) {
+                            return;
+                        }
+                        listeners.splice(index, 1);
+                        if (listeners.length === 0 && timer !== null) {
+                            clearInterval(timer);
+                            timer = null;
+                        }
+                    },
+                    hasListener: function(listener) {
+                        return listeners.indexOf(listener) !== -1;
+                    },
+                    hasListeners: function() {
+                        return listeners.length > 0;
+                    }
+                }
+            };
+
+            // The namespace owns the poll timer and the listeners, so it has to outlive the wrapper
+            // it hangs off.
+            retain(idle);
+            return idle;
+        }
+
         // Constants are handed out frozen, so an extension that walks one cannot reshape what the
         // next reader sees. Primitives — `tabs.TAB_ID_NONE` is just `-1` — pass straight through.
         function makeConstants(value) {
@@ -754,6 +874,9 @@ public enum WebExtensionAPIStubScript {
             }
             if (entry.kind === "privacy") {
                 return makePrivacy();
+            }
+            if (entry.kind === "idle") {
+                return makeIdle();
             }
             if (entry.kind === "constants") {
                 return makeConstants(entry.value);
@@ -808,10 +931,10 @@ public enum WebExtensionAPIStubScript {
         // Permissions WebKit rejects but this script provides itself, so they count as granted. The
         // loader does grant an extension's optional permissions, but WebKit silently drops the grant
         // for a name it does not implement, so the host would answer `false` (or throw) for these
-        // forever. `privacy` is backed by makePrivacy above; Bitwarden will not touch it until
+        // forever. `privacy` is backed by makePrivacy and `idle` by makeIdle above; Bitwarden will not touch it until
         // `contains` or `request` says it holds the permission. `permissions.onAdded` is not fired
         // for them: WebKit owns that event, and Bitwarden's Chrome path does not wait for it.
-        var virtualPermissionNames = ["privacy"];
+        var virtualPermissionNames = ["privacy", "idle"];
 
         function isVirtualPermission(name) {
             return virtualPermissionNames.indexOf(name) !== -1;

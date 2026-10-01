@@ -117,7 +117,7 @@ enum WebExtensionAPICompatibilityClassifier {
     }
 
     /// Permissions the stub script provides itself, so a manifest asking for them lacks nothing.
-    private static let permissionsProvidedByShims: Set<String> = ["privacy", "offscreen"]
+    private static let permissionsProvidedByShims: Set<String> = ["privacy", "offscreen", "idle"]
 
     /// Permissions a manifest asks for that WebKit dropped because it does not implement them.
     /// Host patterns are not API permissions and are skipped, as are the ones the stub script provides.

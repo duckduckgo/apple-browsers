@@ -111,6 +111,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1218855001685906
     case cpmMessagingHangRecovery
 
+    /// Remotely activated Web Extension background Web View graveyard treatment.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
+    case cpmBackgroundGraveyardTreatment
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
 
@@ -694,6 +698,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
+        case .cpmBackgroundGraveyardTreatment:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
+                   category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:

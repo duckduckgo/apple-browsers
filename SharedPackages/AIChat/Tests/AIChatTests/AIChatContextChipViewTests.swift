@@ -84,6 +84,15 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertEqual(sut.accessibilityLabel, "Updated")
     }
 
+    func testWhenNoPreferredWidthIsSetThenLoadingHugsDotsAndRestoresDefaultPill() {
+        let sut = AIChatContextChipView()
+        sut.configure(state: .loading)
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width, 59, accuracy: 0.5)
+
+        sut.configure(state: .attached(title: "Page", favicon: nil))
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width, 240, accuracy: 0.5)
+    }
+
     // MARK: - Suggested state
 
     func testSuggestedStateWrapsThePageTitleInTheAttachOffer() {

@@ -204,6 +204,9 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
+    // duckduckgo.com homepage chat suggestions
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -230,6 +233,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
+    private let aiChatURLProvider: () -> URL
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -259,7 +264,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
-         }) {
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+         aiChatURLProvider: @escaping () -> URL = { AIChatSettings().aiChatURL }) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -273,6 +280,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
+        self.aiChatURLProvider = aiChatURLProvider
         setUpSyncStatusObserver()
     }
 
@@ -283,8 +292,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Invoked by the front-end code when it intends to open the AI Chat interface.
     /// The front-end can provide a payload that will be used the next time the AI Chat view is displayed.
     /// This function stores the payload and triggers a notification to handle the AI Chat opening process.
+    /// With a `chatId` (the duckduckgo.com homepage's chat suggestions), reopens that chat in the
+    /// requesting tab via the same `chatID` URL the address bar's chat suggestions open.
     @MainActor
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let chatId = AIChatOpenChatParams.chatId(from: params) {
+            message.messageWebView?.load(URLRequest(url: aiChatURLProvider().withChatID(chatId)))
+            return nil
+        }
+
         var payload: AIChatPayload?
         if let paramsDict = params as? AIChatPayload {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
@@ -448,9 +464,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
-            supportsNativeTermsOfService: supportsNativeTermsOfService
+            supportsNativeTermsOfService: supportsNativeTermsOfService,
+            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message)
         )
         return config
+    }
+
+    // MARK: - Homepage chat suggestions
+
+    private func supportsHomePageChatSuggestions(for message: UserScriptMessage) -> Bool {
+        HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost) && homepageAiChatsProvider?.isSupported == true
+    }
+
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    /// Answered from native storage only (see `HomepageAiChatsProvider`).
+    @MainActor
+    func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
     }
 
     @MainActor

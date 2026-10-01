@@ -85,6 +85,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             originRules.append(.exact(hostname: customURLHostname))
             destinationRules.append(.exact(hostname: customURLHostname))
         }
+#if DEBUG
+        // Developer servers (<user>.duckduckgo.com, *.duckduck.com) serve the homepage under test,
+        // e.g. its Duck.ai chat suggestions. Messages only; nothing is pushed to these hosts.
+        originRules.append(.exactOrSubdomain(hostname: "duckduckgo.com"))
+        originRules.append(.exactOrSubdomain(hostname: "duckduck.com"))
+#endif
         self.messageOriginPolicy = .only(rules: originRules)
         self.messageDestinationPolicy = .only(rules: destinationRules)
         super.init()
@@ -265,6 +271,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.dictationStartFailed
         case .customizeResponsesModalClosed:
             return handler.customizeResponsesModalClosed
+        case .getAIChats:
+            return handler.getAIChats
         default:
             return nil
         }

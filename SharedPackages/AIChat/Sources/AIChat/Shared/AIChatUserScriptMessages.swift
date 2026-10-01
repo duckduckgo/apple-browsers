@@ -54,6 +54,11 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case getMigrationInfo
     case clearMigrationData
 
+    /// Requested (duckduckgo.com homepage → native) for the user's chats to list under the
+    /// homepage chat box. Answered from native storage only; see `HomepageAiChatsProvider`.
+    /// Picking one sends `openAIChat` with its `chatId`.
+    case getAIChats
+
     case voiceSessionStarted
     case voiceSessionEnded
 

@@ -134,7 +134,10 @@ final class UserScripts: UserScriptsProvider {
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
                                                           featureFlagger: featureFlagger,
-                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable)
+                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+                                                          homepageAiChatsProvider: HomepageAiChatsProvider(
+                                                            storageHandler: duckAiNativeStorageHandler,
+                                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)))
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))

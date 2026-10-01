@@ -74,15 +74,16 @@ struct NewTabPageBuilder {
     private func makeRedesignedNewTabPage(tab: Tab, openedAfterIdle: Bool) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
+        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+            NewTabPageSearchInputModel.Settings(
+                isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
+                // Must match the address bar's home-tab mode resolution.
+                defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
+        })
         let searchInputView = NewTabPageSearchInputView(
-            model: NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
-                NewTabPageSearchInputModel.Settings(
-                    isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                    isAIChatEnabled: aiChatSettings.isAIChatEnabled,
-                    isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-                    // Must match the address bar's home-tab mode resolution.
-                    defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
-            }),
+            model: searchInputModel,
             onActivate: { textEntryMode in
                 newTabPage?.beginSearch(textEntryMode: textEntryMode)
             },
@@ -137,7 +138,7 @@ struct NewTabPageBuilder {
                                   rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
             NewTabPageSwiftUIBlock(id: .messages,
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
-        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel)
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel)
         newTabPage = page
         return page
     }

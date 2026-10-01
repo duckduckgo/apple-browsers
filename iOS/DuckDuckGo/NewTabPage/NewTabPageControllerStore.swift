@@ -43,6 +43,8 @@ final class NewTabPageControllerStore {
               openedAfterIdle: Bool,
               daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         if !isNewTab, builder.usesRedesignedPage(for: tab), let page = pages.object(forKey: tab) {
+            // A retained page keeps its layout, but Last Used may have changed in another tab.
+            page.refreshSearchInputSettings()
             return page
         }
 

@@ -45,6 +45,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let favoritesModel: FavoritesViewModel?
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
+    private let searchInputModel: NewTabPageSearchInputModel?
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
@@ -102,11 +103,13 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     init(blocks: [any NewTabPageBlock],
          favoritesModel: FavoritesViewModel? = nil,
          pageModel: NewTabPageViewModel? = nil,
-         messagesModel: NewTabPageMessagesModel? = nil) {
+         messagesModel: NewTabPageMessagesModel? = nil,
+         searchInputModel: NewTabPageSearchInputModel? = nil) {
         self.blocks = blocks
         self.favoritesModel = favoritesModel
         self.pageModel = pageModel
         self.messagesModel = messagesModel
+        self.searchInputModel = searchInputModel
         super.init(nibName: nil, bundle: nil)
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
             self?.notifyRemoteMessageSurfaceChanged()
@@ -303,6 +306,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
+    }
+
+    func refreshSearchInputSettings() {
+        searchInputModel?.refreshSettings()
     }
 
     func beginSearch(textEntryMode: TextEntryMode) {

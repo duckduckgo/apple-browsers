@@ -3922,9 +3922,9 @@ class MainViewController: UIViewController {
 
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
 
-    /// Closes what was left open over the current New Tab Page on an idle return. It doesn't animate,
-    /// because the app-open keyboard and the launch prompt both decide 0.1s later and need the
-    /// screen gone by then.
+    /// Closes what was left open over the current New Tab Page on an idle return. It doesn't animate:
+    /// the launch prompt is chosen right after launch handling and the app-open keyboard 0.1s later,
+    /// and both need the screen gone.
     func closeScreensOverNewTabPageForIdleReturn() {
         guard presentedViewController != nil else { return }
         // Dismissing a tab switcher on an empty Fire page switches to Fire mode with no tab to show.
@@ -3933,7 +3933,10 @@ class MainViewController: UIViewController {
         }
         clearNavigationStack()
         // The page comes on screen now, so it opens the visit the foreground skipped while the screen was up.
-        startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
+        // A tab switcher left on the other browsing mode lands on that mode's tab, which may not be one.
+        if isNewTabPageVisible {
+            startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
+        }
     }
 
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.

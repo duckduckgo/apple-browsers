@@ -22,6 +22,14 @@ import Foundation
 import Testing
 @testable import DuckDuckGo
 
+/// A presenter UIKit refuses: it never calls the completion.
+@MainActor
+private final class NonCompletingModalPromptPresenter: ModalPromptPresenter {
+    var presentedViewController: UIViewController?
+
+    func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?) {}
+}
+
 @MainActor
 @Suite("Modal Prompt Coordination - Coordination Manager")
 final class ModalPromptCoordinationManagerTests {
@@ -441,6 +449,24 @@ final class ModalPromptCoordinationManagerTests {
                                    closeChecks: closeChecks,
                                    hasEligiblePrompt: false)
         sut.presentModalPromptIfNeeded(from: presenterMock)
+
+        // WHEN
+        let waits = sut.runOnceModalPromptCloses {}
+
+        // THEN
+        #expect(!waits)
+        #expect(!closeChecks.didCallSchedule)
+    }
+
+    @available(iOS 16, *)
+    @Test("Check No Close Handler Is Kept For A Prompt UIKit Refused", .timeLimit(.minutes(1)))
+    func whenEarlierPromptWasRefusedThenCloseHandlerIsNotKept() {
+        // GIVEN a legacy attempt whose presentation never completes, so its ID stays behind
+        let closeChecks = MockModalPromptScheduler()
+        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(), closeChecks: closeChecks)
+        sut.presentModalPromptIfNeeded(from: NonCompletingModalPromptPresenter())
+        schedulerMock.executeScheduledBlock()
+        #expect(sut.hasActiveOrPendingModalAttempt)
 
         // WHEN
         let waits = sut.runOnceModalPromptCloses {}

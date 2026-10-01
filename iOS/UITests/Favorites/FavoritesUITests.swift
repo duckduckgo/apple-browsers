@@ -66,7 +66,12 @@ final class FavoritesUITests: UITestCase {
             XCTAssertTrue(
                 bookmark.waitForExistence(timeout: UITestTimeouts.elementExistence),
                 "Favorite did not appear in Bookmarks.")
-            app.deleteBookmark(bookmark)
+            app.buttons["Bookmarks.Edit"].tapWhenHittable()
+            let removeBookmark = bookmark.buttons.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Remove")
+            ).firstMatch
+            removeBookmark.tapWhenHittable()
+            app.tables["Bookmarks.List"].buttons["Delete"].tapWhenHittable()
             app.assertBookmarksEmpty()
             app.closeBookmarksAfterEditing()
         }

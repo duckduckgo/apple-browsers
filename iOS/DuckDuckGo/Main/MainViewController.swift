@@ -7884,6 +7884,11 @@ extension MainViewController {
                                 suppressPostFireKeyboard: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+        // Read before the burn: the page it lands on marks onboarding's last dialog as seen as soon as it
+        // appears, before the keyboard below is decided. Flag-gated, because the check can update
+        // onboarding state.
+        let isKeyboardHeldForOnboarding = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && isNewTabPageKeyboardHeldForOnboarding
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
@@ -7917,8 +7922,7 @@ extension MainViewController {
                     let showKeyboardAfterFireButton = DispatchWorkItem {
                         let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
                             onDuckAITab: self.currentTab?.isAITab == true,
-                            searchInputToggleOn: self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                            stillOnboarding: self.daxDialogsManager.isStillOnboarding())
+                            stillOnboarding: isKeyboardHeldForOnboarding)
                         guard showsKeyboard, !self.isNewTabPageKeyboardBlockedByDialog else { return }
                         self.enterSearch()
                     }

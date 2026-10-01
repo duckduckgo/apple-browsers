@@ -365,7 +365,7 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
-    /// Opens the sheet onto the chat the search becomes, rather than loading Duck.ai over the results.
+    /// Sends `query` to a contextual chat over the results page, rather than loading Duck.ai in the tab.
     func submitSearchQuery(_ query: String, from presentingViewController: UIViewController) async {
         await presentSheet(from: presentingViewController,
                            skippingAutoAttach: true,

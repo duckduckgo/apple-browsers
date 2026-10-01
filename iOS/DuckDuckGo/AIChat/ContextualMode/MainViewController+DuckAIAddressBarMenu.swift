@@ -220,7 +220,6 @@ extension MainViewController {
         }
     }
 
-    /// Without contextual mode there is no sheet to open the search in, so it falls back to Duck.ai.
     private func askAboutCurrentSearchFromAddressBar(query: String, source: AIChatEntryPointSource) {
         guard aiChatContextualModeFeature.isAvailable, let currentTab else {
             openFreshDuckAIChatFromAddressBarMenu(source: source, query: query)

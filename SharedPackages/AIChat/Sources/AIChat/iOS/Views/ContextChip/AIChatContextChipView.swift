@@ -275,7 +275,6 @@ private extension AIChatContextChipView {
             accessibilityTraits = .none
 
         case .suggested:
-            // A fixed label rather than the page title, so there is nothing to truncate.
             let offer = UserText.askAboutPage
             let tint = UIColor(designSystemColor: .accentPrimary)
             isHidden = false

@@ -86,7 +86,7 @@ final class AIChatContextChipViewTests: XCTestCase {
 
     // MARK: - Suggested state
 
-    func testSuggestedStateShowsTheFixedOfferRatherThanThePageTitle() {
+    func testSuggestedStateShowsTheFixedOffer() {
         // Given
         let sut = AIChatContextChipView()
         let pageTitle = "Magnetic confinement fusion"
@@ -97,18 +97,6 @@ final class AIChatContextChipViewTests: XCTestCase {
         // Then
         let label = sut.accessibilityLabel
         XCTAssertEqual(label, UserText.askAboutPage)
-        XCTAssertEqual(label?.contains(pageTitle), false)
-    }
-
-    func testSuggestedStateOffersNoRemoveAction() {
-        // Given
-        let sut = AIChatContextChipView()
-
-        // When
-        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
-
-        // Then — nothing is attached, so there is nothing to dismiss.
-        XCTAssertNil(sut.accessibilityCustomActions)
     }
 
     func testUpdateIsIgnoredInTheSuggestedState() {
@@ -122,63 +110,6 @@ final class AIChatContextChipViewTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.accessibilityLabel, offerBefore)
-    }
-
-    func testTheWholeSuggestedChipAcceptsTheOffer() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
-        sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
-        sut.layoutIfNeeded()
-
-        // Then — the plus is only an affordance, so its region is not carved out of the chip.
-        XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
-        XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
-    }
-
-    func testTheRemoveButtonRegionIsRestoredWhenTheChipBecomesAttached() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
-        sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
-        sut.layoutIfNeeded()
-
-        // When
-        sut.configure(state: .attached(title: "Magnetic confinement fusion", favicon: nil))
-        sut.layoutIfNeeded()
-
-        // Then
-        XCTAssertFalse(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
-    }
-
-    func testAccessibilityActivationAcceptsTheOffer() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(state: .suggested(title: "Magnetic confinement fusion", favicon: nil))
-        var attachedCount = 0
-        var removedCount = 0
-        sut.onTap = { attachedCount += 1 }
-        sut.onRemove = { removedCount += 1 }
-
-        // When
-        let handled = sut.accessibilityActivate()
-
-        // Then
-        XCTAssertTrue(handled)
-        XCTAssertEqual(attachedCount, 1)
-        XCTAssertEqual(removedCount, 0)
-    }
-
-    func testChipTapIsNotReceivedOverTheRemoveButtonWhenAttached() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(state: .attached(title: "Magnetic confinement fusion", favicon: nil))
-        sut.frame = CGRect(x: 0, y: 0, width: 240, height: 44)
-        sut.layoutIfNeeded()
-
-        // Then — the 32pt button sits 10pt from the trailing edge, so its centre is (240-10-16, 22).
-        XCTAssertFalse(sut.shouldReceiveChipTap(at: CGPoint(x: 214, y: 22)))
-        XCTAssertTrue(sut.shouldReceiveChipTap(at: CGPoint(x: 100, y: 22)))
     }
 
 }

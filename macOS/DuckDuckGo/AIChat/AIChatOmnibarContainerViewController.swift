@@ -2545,24 +2545,24 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         // be themed without a deeper rewrite.)
         let focusRingColor = colorsProvider.accentPrimaryColor
         toolsButton.tintColor = toolButtonTintColor
-        toolsButton.hoverBackgroundColor = .buttonMouseOver
-        toolsButton.pressedBackgroundColor = .buttonMouseDown
+        toolsButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        toolsButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         toolsButton.focusRingColor = focusRingColor
         imageGenActiveButton.tintColor = toolButtonTintColor
-        imageGenActiveButton.hoverBackgroundColor = .buttonMouseOver
-        imageGenActiveButton.pressedBackgroundColor = .buttonMouseDown
+        imageGenActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageGenActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageGenActiveButton.focusRingColor = focusRingColor
         webSearchActiveButton.tintColor = toolButtonTintColor
-        webSearchActiveButton.hoverBackgroundColor = .buttonMouseOver
-        webSearchActiveButton.pressedBackgroundColor = .buttonMouseDown
+        webSearchActiveButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        webSearchActiveButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         webSearchActiveButton.focusRingColor = focusRingColor
         imageUploadButton.tintColor = toolButtonTintColor
-        imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-        imageUploadButton.pressedBackgroundColor = .buttonMouseDown
+        imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         imageUploadButton.focusRingColor = focusRingColor
         reasoningPickerButton.tintColor = toolButtonTintColor
-        reasoningPickerButton.hoverBackgroundColor = .buttonMouseOver
-        reasoningPickerButton.pressedBackgroundColor = .buttonMouseDown
+        reasoningPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+        reasoningPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
@@ -2597,10 +2597,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         NSAppearance.withAppearance(from: view) {
             shadowView.shadowColor = colorsProvider.addressBarShadowColor
             usageWarningShadowView.shadowColor = colorsProvider.addressBarShadowColor
-            imageUploadButton.hoverBackgroundColor = .buttonMouseOver
-            imageUploadButton.pressedBackgroundColor = .buttonMouseDown
-            modelPickerButton.hoverBackgroundColor = .buttonMouseOver
-            modelPickerButton.pressedBackgroundColor = .buttonMouseDown
+            imageUploadButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            imageUploadButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
+            modelPickerButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
+            modelPickerButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
         }
     }
 }

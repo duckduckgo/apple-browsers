@@ -83,7 +83,7 @@ final class CustomTitleColorPopUpButtonCell: NSPopUpButtonCell {
 
 final class NSPopUpButtonBackgroundColorCell: NSPopUpButtonCell {
 
-    private static let chevronsImage = NSImage.popUpButtonChevrons
+    private static let chevronsImage = NSImage(resource: .popUpButtonChevrons)
 
     fileprivate var colors: [String: NSMenuItemColor] = [:]
 

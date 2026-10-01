@@ -31,8 +31,8 @@ final class DownloadsViewController: NSViewController {
 
     private lazy var titleLabel = NSTextField(string: UserText.downloadsDialogTitle)
 
-    private lazy var openDownloadsFolderButton = MouseOverButton(image: .openDownloadsFolder, target: self, action: #selector(openDownloadsFolderAction))
-    private lazy var clearDownloadsButton = MouseOverButton(image: .clearDownloads, target: self, action: #selector(clearDownloadsAction))
+    private lazy var openDownloadsFolderButton = MouseOverButton(image: NSImage(resource: .openDownloadsFolder), target: self, action: #selector(openDownloadsFolderAction))
+    private lazy var clearDownloadsButton = MouseOverButton(image: NSImage(resource: .clearDownloads), target: self, action: #selector(clearDownloadsAction))
 
     private lazy var scrollView = NSScrollView()
     private lazy var tableView = NSTableView()
@@ -95,9 +95,9 @@ final class DownloadsViewController: NSViewController {
         openDownloadsFolderButton.toolTip = UserText.openDownloadsFolderTooltip
         openDownloadsFolderButton.cornerRadius = 4
         openDownloadsFolderButton.backgroundInset = CGPoint(x: 2, y: 2)
-        openDownloadsFolderButton.normalTintColor = .button
-        openDownloadsFolderButton.mouseDownColor = .buttonMouseDown
-        openDownloadsFolderButton.mouseOverColor = .buttonMouseOver
+        openDownloadsFolderButton.normalTintColor = NSColor(resource: .button)
+        openDownloadsFolderButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        openDownloadsFolderButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         clearDownloadsButton.translatesAutoresizingMaskIntoConstraints = false
         clearDownloadsButton.alignment = .center
@@ -109,9 +109,9 @@ final class DownloadsViewController: NSViewController {
         clearDownloadsButton.setAccessibilityIdentifier("DownloadsViewController.clearDownloadsButton")
         clearDownloadsButton.cornerRadius = 4
         clearDownloadsButton.backgroundInset = CGPoint(x: 2, y: 2)
-        clearDownloadsButton.normalTintColor = .button
-        clearDownloadsButton.mouseDownColor = .buttonMouseDown
-        clearDownloadsButton.mouseOverColor = .buttonMouseOver
+        clearDownloadsButton.normalTintColor = NSColor(resource: .button)
+        clearDownloadsButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        clearDownloadsButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder

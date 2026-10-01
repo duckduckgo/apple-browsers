@@ -72,5 +72,5 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo
     var otherPlatformsIcon: NSImage = DesignSystemImages.Color.Size16.downloads
-    var subscriberOffersIcon: NSImage = .subscriptionGift
+    var subscriberOffersIcon: NSImage = NSImage(resource: .subscriptionGift)
 }

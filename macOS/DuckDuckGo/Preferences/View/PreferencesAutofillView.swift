@@ -87,7 +87,7 @@ extension Preferences {
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(Color(.textSecondary))
                 }
 
                 if !NSApp.isSandboxed {

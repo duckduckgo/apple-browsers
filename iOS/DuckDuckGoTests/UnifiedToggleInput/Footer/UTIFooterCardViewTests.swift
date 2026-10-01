@@ -47,7 +47,7 @@ final class UTIFooterCardViewTests: XCTestCase {
             let referenceLabel = try XCTUnwrap(titleLabel(in: reference))
             XCTAssertEqual(label.text, message.title)
             XCTAssertEqual(label.font, referenceLabel.font)
-            XCTAssertNil(label.accessibilityLabel)
+            XCTAssertEqual(label.accessibilityLabel, referenceLabel.accessibilityLabel)
             if let title = label.attributedText {
                 title.enumerateAttribute(.attachment, in: NSRange(location: 0, length: title.length)) { value, _, _ in
                     XCTAssertNil(value)

@@ -42,7 +42,7 @@ public enum ChromeWebStoreURL {
         components.path = "/service/update2/crx"
         components.queryItems = [
             URLQueryItem(name: "response", value: "redirect"),
-            URLQueryItem(name: "prodversion", value: "9999.0.0.0"),
+            URLQueryItem(name: "prodversion", value: "154.0.0.0"),
             URLQueryItem(name: "acceptformat", value: "crx3"),
             URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
         ]
@@ -69,9 +69,11 @@ public enum ChromeWebStoreURL {
 
 @MainActor
 public protocol ChromeWebStoreCatalogProviding {
+    /// Checks if the web extension with a given `identifier` is supported by the browser.
     func contains(_ identifier: String) -> Bool
 }
 
+/// This class uses configuration from Privacy Config to decide about supported extensions.
 @MainActor
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
     private enum Subfeature: String, PrivacySubfeature {
@@ -87,6 +89,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     public func contains(_ identifier: String) -> Bool {
         let config = configurationManager.privacyConfig
+
         // Store integration remains available when site privacy protections are off,
         // matching C-S-S platformSpecificFeatures. Explicit feature exceptions still apply.
         guard ChromeWebStoreURL.isValidExtensionID(identifier),
@@ -97,6 +100,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
               let settingsJSON = config.settings(for: Subfeature.curatedExtensions),
               let data = settingsJSON.data(using: .utf8),
               let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+
         let internalCatalog = configurationManager.internalUserDecider.isInternalUser ? settings["catalogInternal"] as? [[String: Any]] : nil
         let catalog = internalCatalog ?? settings["catalog"] as? [[String: Any]] ?? []
         let featureSettings = config.settings(for: .extensionManagement)

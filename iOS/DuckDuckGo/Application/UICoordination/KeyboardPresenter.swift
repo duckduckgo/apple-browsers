@@ -45,9 +45,9 @@ struct NewTabPageKeyboardPolicy {
         return now.timeIntervalSince(lastBackgroundDate) > appOpenBackgroundThreshold
     }
 
-    /// New Tab governs every NTP; App Launch keeps its meaning for other tabs.
+    /// New Tab alone decides on an NTP; App Launch keeps its meaning for other tabs.
     func showsKeyboardOnAppOpen(onNewTabPage: Bool) -> Bool {
-        onNewTabPage ? onNewTab || onAppLaunch : onAppLaunch
+        onNewTabPage ? onNewTab : onAppLaunch
     }
 
 }

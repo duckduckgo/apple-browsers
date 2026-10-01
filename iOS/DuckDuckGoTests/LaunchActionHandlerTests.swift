@@ -481,11 +481,11 @@ struct NewTabPageKeyboardPolicyTests {
     }
 
     @Test(
-        "App open follows New Tab or App Launch on a New Tab Page, and App Launch elsewhere",
+        "App open follows New Tab on a New Tab Page, and App Launch elsewhere",
         arguments: [
             AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: true, showsKeyboard: true),
             AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: true, showsKeyboard: true),
-            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: true, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: true, showsKeyboard: false),
             AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: true, showsKeyboard: false),
             AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false),
             AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),

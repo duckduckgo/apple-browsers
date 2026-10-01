@@ -34,7 +34,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
         "branch" : "pr-releases/dominik/chrome-web-store-macos",
-        "revision" : "2b68819c08c7406a24ff01e308487a798a499101"
+        "revision" : "638733765a4423642fd569b8166fc1b476b3c458"
       }
     },
     {

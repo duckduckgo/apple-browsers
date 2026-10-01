@@ -612,7 +612,7 @@ extension AutoconsentUserScript {
             additionalParams["fromExtension"] = "0"
         }
 
-        management?.firePixel(pixel: pixel, additionalParameters: additionalParams)
+        management?.firePixel(pixel: pixel, topUrl: topUrl, additionalParameters: additionalParams)
     }
 
     private var serializedCPMErrors: String? {

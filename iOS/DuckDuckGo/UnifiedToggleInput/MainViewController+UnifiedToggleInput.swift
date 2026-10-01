@@ -523,6 +523,10 @@ private extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        coordinator.onFloatingReturnKeyAvailabilityChanged = { [weak self] in
+            self?.updateFloatingReturnKeyVisibility()
+        }
+
         coordinator.textChangePublisher
             .sink { [weak self] text in
                 self?.recordNewTabPageSessionTextEntry(text)

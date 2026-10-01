@@ -34,6 +34,8 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
+    /// The disclaimer on screen means the next send accepts the terms.
+    var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
@@ -53,7 +55,12 @@ final class UTIFooterController {
     private var isInputBlocked = false
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
-    private var visibleIDs: Set<UTIFooterItem.ID> = []
+    private var visibleIDs: Set<UTIFooterItem.ID> = [] {
+        didSet {
+            guard isTermsOfServiceVisible != oldValue.contains(.termsConsent) else { return }
+            onTermsOfServiceVisibilityChanged?(isTermsOfServiceVisible)
+        }
+    }
     private var retainedMessageIDs: Set<UTIFooterItem.ID>?
     private var applicableIDs: Set<UTIFooterItem.ID> = []
     private var applicableHighUsageModelID: String?
@@ -61,6 +68,7 @@ final class UTIFooterController {
     private var isDismissing = false
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
+    var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
 
     init(viewModel: DuckAiUsageWarningViewModel?,
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,

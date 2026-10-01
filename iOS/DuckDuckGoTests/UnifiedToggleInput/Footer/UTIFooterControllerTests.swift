@@ -1698,6 +1698,82 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
     }
 
+    // MARK: - Terms of Service visibility
+
+    func testWhenTheTermsAreResolvedButNotOnScreenThenTheDisclaimerIsNotReportedShown() {
+        var reported: [Bool] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+
+        sut.refresh()
+
+        XCTAssertFalse(sut.isTermsOfServiceVisible)
+        XCTAssertEqual(reported, [])
+    }
+
+    func testWhenTheTermsComeOnScreenThenTheDisclaimerIsReportedShown() {
+        var reported: [Bool] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+        sut.refresh()
+
+        sut.footerVisibilityChanged(isVisible: true)
+
+        XCTAssertTrue(sut.isTermsOfServiceVisible)
+        XCTAssertEqual(reported, [true])
+    }
+
+    func testWhenTermsAreAcceptedOnSendThenTheDisclaimerIsReportedHidden() {
+        var reported: [Bool] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        XCTAssertFalse(sut.isTermsOfServiceVisible)
+        XCTAssertEqual(reported, [true, false])
+    }
+
+    func testWhenThePoseResetsThenTheDisclaimerIsReportedHidden() {
+        var reported: [Bool] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.resetForPoseChange()
+
+        XCTAssertFalse(sut.isTermsOfServiceVisible)
+        XCTAssertEqual(reported, [true, false])
+    }
+
+    func testWhenSearchModeSuppressesTheFooterThenTheDisclaimerIsReportedHidden() {
+        var reported: [Bool] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.setSuppressed(true)
+
+        XCTAssertFalse(sut.isTermsOfServiceVisible)
+        XCTAssertEqual(reported, [true, false])
+    }
+
+    func testWhenOnlyAnotherCardIsOnScreenThenTheDisclaimerIsNotReportedShown() {
+        var reported: [Bool] = []
+        privacyKind = .image
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+        sut.refresh()
+
+        sut.footerVisibilityChanged(isVisible: true)
+
+        XCTAssertFalse(sut.isTermsOfServiceVisible)
+        XCTAssertEqual(reported, [])
+    }
+
     private var termsStore: DuckAiTermsOfServiceStore {
         DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults)
     }

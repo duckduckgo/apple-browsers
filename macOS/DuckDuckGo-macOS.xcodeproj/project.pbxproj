@@ -900,7 +900,6 @@
 		3706FCC3293F65D500E42796 /* userscript.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055BE27A1BA1D001AC618 /* userscript.js */; };
 		3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA585D85248FD31400E9A3E2 /* Assets.xcassets */; };
 		3706FCD6293F65D500E42796 /* httpsMobileV2FalsePositives.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B67742A255DBEB800025BD8 /* httpsMobileV2FalsePositives.json */; };
-		3706FCDB293F65D500E42796 /* Feedback.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA3863C427A1E28F00749AB5 /* Feedback.storyboard */; };
 		3706FCED293F65D500E42796 /* httpsMobileV2Bloom.bin in Resources */ = {isa = PBXBuildFile; fileRef = 4B677428255DBEB800025BD8 /* httpsMobileV2Bloom.bin */; };
 		3706FCEF293F65D500E42796 /* macos-config.json in Resources */ = {isa = PBXBuildFile; fileRef = 026ADE1326C3010C002518EE /* macos-config.json */; };
 		3706FCF0293F65D500E42796 /* httpsMobileV2BloomSpec.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B677427255DBEB800025BD8 /* httpsMobileV2BloomSpec.json */; };
@@ -3048,7 +3047,6 @@
 		AA13DCB4271480B0006D48D3 /* FireDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA13DCB3271480B0006D48D3 /* FireDialogViewModel.swift */; };
 		AA222CB92760F74E00321475 /* FaviconReferenceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA222CB82760F74E00321475 /* FaviconReferenceCache.swift */; };
 		AA2CB1352587C29500AA6FBE /* TabBarFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2CB1342587C29500AA6FBE /* TabBarFooter.swift */; };
-		AA3863C527A1E28F00749AB5 /* Feedback.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA3863C427A1E28F00749AB5 /* Feedback.storyboard */; };
 		AA3D531527A1ED9300074EC1 /* FeedbackWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D531427A1ED9300074EC1 /* FeedbackWindow.swift */; };
 		AA3D531727A1EEED00074EC1 /* FeedbackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D531627A1EEED00074EC1 /* FeedbackViewController.swift */; };
 		AA3D531B27A2F57E00074EC1 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D531A27A2F57E00074EC1 /* Feedback.swift */; };
@@ -6438,7 +6436,6 @@
 		AA13DCB3271480B0006D48D3 /* FireDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogViewModel.swift; sourceTree = "<group>"; };
 		AA222CB82760F74E00321475 /* FaviconReferenceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconReferenceCache.swift; sourceTree = "<group>"; };
 		AA2CB1342587C29500AA6FBE /* TabBarFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarFooter.swift; sourceTree = "<group>"; };
-		AA3863C427A1E28F00749AB5 /* Feedback.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Feedback.storyboard; sourceTree = "<group>"; };
 		AA3D531427A1ED9300074EC1 /* FeedbackWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackWindow.swift; sourceTree = "<group>"; };
 		AA3D531627A1EEED00074EC1 /* FeedbackViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewController.swift; sourceTree = "<group>"; };
 		AA3D531A27A2F57E00074EC1 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
@@ -11161,7 +11158,6 @@
 		AA3D531827A2F24C00074EC1 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				AA3863C427A1E28F00749AB5 /* Feedback.storyboard */,
 				371C0A2827E33EDC0070591F /* FeedbackPresenter.swift */,
 				AA3D531427A1ED9300074EC1 /* FeedbackWindow.swift */,
 				AA3D531627A1EEED00074EC1 /* FeedbackViewController.swift */,
@@ -14909,7 +14905,6 @@
 				84C96E492CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
 				3706FCD6293F65D500E42796 /* httpsMobileV2FalsePositives.json in Resources */,
 				B5D20882300076B100B5671D /* vpn-animation.json in Resources */,
-				3706FCDB293F65D500E42796 /* Feedback.storyboard in Resources */,
 				B658BAB72B0F848D00D1F2C7 /* Localizable.xcstrings in Resources */,
 				CD2AB5C62C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				7B122A992DE4717400B84F63 /* AppStoreInfoPlist.xcstrings in Resources */,
@@ -15158,7 +15153,6 @@
 				84C96E472CF9BB6400A80A01 /* malwareHashPrefixes.json in Resources */,
 				4B677435255DBEB800025BD8 /* httpsMobileV2FalsePositives.json in Resources */,
 				B5D20883300076B100B5671D /* vpn-animation.json in Resources */,
-				AA3863C527A1E28F00749AB5 /* Feedback.storyboard in Resources */,
 				B658BAB62B0F845D00D1F2C7 /* Localizable.xcstrings in Resources */,
 				CD2AB5C52C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */,

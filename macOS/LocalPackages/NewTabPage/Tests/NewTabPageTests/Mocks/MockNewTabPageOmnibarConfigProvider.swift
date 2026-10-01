@@ -117,9 +117,9 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     @MainActor
     var showAttachmentPrivacyDisclaimer = false
 
-    private(set) var attachmentPrivacyDisclaimerShownKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind] = []
+    private(set) var attachmentPrivacyDisclaimerShownKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
     @MainActor
-    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind) {
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
         attachmentPrivacyDisclaimerShownKinds.append(kind)
     }
 

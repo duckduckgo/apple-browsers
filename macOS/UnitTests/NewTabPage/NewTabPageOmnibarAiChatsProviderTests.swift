@@ -360,7 +360,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var usageLimitsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     @MainActor var showAttachmentPrivacyDisclaimer: Bool { false }
     @MainActor
-    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind) {}
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {}
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }

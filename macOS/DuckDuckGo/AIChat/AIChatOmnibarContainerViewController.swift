@@ -1299,7 +1299,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// A new tab, so the staged attachment and the draft survive.
     private func openAttachmentPrivacyLearnMore() {
-        attachmentPrivacyPixelFirer.fireLearnMoreTapped()
+        if let stagedAttachmentKind {
+            attachmentPrivacyPixelFirer.fireLearnMoreTapped(kind: stagedAttachmentKind)
+        }
         Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
                                                               source: .ui,
                                                               newTab: true,

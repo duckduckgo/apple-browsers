@@ -507,15 +507,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     @MainActor
-    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind) {
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
         attachmentPrivacyDisclosure?.claim()
         // Reported whatever the claim answers: the page has already rendered it, so it is an
         // impression either way.
-        let pixelKind: AttachmentPrivacyDisclosureKind = switch kind {
-        case .image: .image
-        case .file: .file
-        }
-        AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireShown(kind: pixelKind)
+        AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireShown(kind: .init(kind))
     }
 
     @MainActor

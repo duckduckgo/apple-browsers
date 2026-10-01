@@ -6,7 +6,11 @@
 // so `shown` is close to a one-off per user rather than a recurring impression.
 //
 // Not defined on purpose: a display inside Duck.ai itself. The web app asks native whether it may
-// show the disclosure and reports its own pixel, so a native one would double count.
+// show the disclosure and reports its own pixel, so a native one would double count. iOS does report
+// it, because there the disclosure is drawn by the native input even inside the Duck.ai tab.
+//
+// The tail of each name matches iOS's `aichat_unified_input_attachment_privacy_*` series, so the two
+// platforms can be read together; `unified_input` is their input's name and has no macOS meaning.
 {
     "m_mac_aichat_attachment_privacy_image_shown": {
         "description": "Fires when the privacy disclosure appears under a Duck.ai input with an image staged. One per display, and the display is granted once per install across all surfaces.",
@@ -42,8 +46,8 @@
             }
         ]
     },
-    "m_mac_aichat_attachment_privacy_learn_more_tapped": {
-        "description": "Fires when the user taps Learn more in the privacy disclosure, which opens the Duck.ai privacy help page in a new tab and leaves the attachment staged.",
+    "m_mac_aichat_attachment_privacy_image_learn_more_tapped": {
+        "description": "Fires when the user taps Learn more in the privacy disclosure with an image staged, which opens the Duck.ai privacy help page in a new tab and leaves the attachment staged.",
         "owners": ["jotaemepereira"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
@@ -53,7 +57,24 @@
             "channel",
             {
                 "key": "surface",
-                "description": "Which native input showed the disclosure.",
+                "description": "Which native input reported the disclosure.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar", "new_tab_page"]
+            }
+        ]
+    },
+    "m_mac_aichat_attachment_privacy_file_learn_more_tapped": {
+        "description": "Fires when the user taps Learn more in the privacy disclosure with a file staged, which opens the Duck.ai privacy help page in a new tab and leaves the attachment staged.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the disclosure.",
                 "type": "string",
                 "enum": ["address_bar", "prompt_bar", "new_tab_page"]
             }

@@ -28,7 +28,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     var removeSuggestionHandler: ((String) -> Void)?
     var openCustomizeResponsesHandler: (() -> Void)?
     var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
-    private(set) var openAttachmentPrivacyLearnMoreCallCount = 0
+    private(set) var openAttachmentPrivacyLearnMoreKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -84,7 +84,7 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     }
 
     @MainActor
-    func openAttachmentPrivacyLearnMore() {
-        openAttachmentPrivacyLearnMoreCallCount += 1
+    func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        openAttachmentPrivacyLearnMoreKinds.append(kind)
     }
 }

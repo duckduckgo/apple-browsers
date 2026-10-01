@@ -35,30 +35,28 @@ final class AttachmentPrivacyDisclosurePixelTests: XCTestCase {
         super.tearDown()
     }
 
-    func testAnImageAndAFileAreSeparateSeries() {
+    /// The tail of each name matches iOS's, so the two platforms' series can be read together.
+    func testEveryActionIsSplitByWhatWasAttached() {
         let firer = makeFirer(surface: .addressBar)
 
         firer.fireShown(kind: .image)
         firer.fireShown(kind: .file)
+        firer.fireLearnMoreTapped(kind: .image)
+        firer.fireLearnMoreTapped(kind: .file)
 
         XCTAssertEqual(pixelFiring.firedPixels.map(\.name), [
             "aichat_attachment_privacy_image_shown",
-            "aichat_attachment_privacy_file_shown"
+            "aichat_attachment_privacy_file_shown",
+            "aichat_attachment_privacy_image_learn_more_tapped",
+            "aichat_attachment_privacy_file_learn_more_tapped"
         ])
-    }
-
-    func testLearnMoreIsOneSeriesAcrossSurfaces() {
-        makeFirer(surface: .addressBar).fireLearnMoreTapped()
-        makeFirer(surface: .newTabPage).fireLearnMoreTapped()
-
-        XCTAssertEqual(Set(pixelFiring.firedPixels.map(\.name)), ["aichat_attachment_privacy_learn_more_tapped"])
-        XCTAssertEqual(pixelFiring.firedPixels.compactMap { $0.parameters?["surface"] }, ["address_bar", "new_tab_page"])
     }
 
     func testTheSurfaceIsReported() {
         makeFirer(surface: .promptBar).fireShown(kind: .file)
+        makeFirer(surface: .newTabPage).fireLearnMoreTapped(kind: .file)
 
-        XCTAssertEqual(pixelFiring.firedPixels.first?.parameters?["surface"], "prompt_bar")
+        XCTAssertEqual(pixelFiring.firedPixels.compactMap { $0.parameters?["surface"] }, ["prompt_bar", "new_tab_page"])
     }
 
     func testEveryPixelIsDailyAndCount() {

@@ -309,19 +309,28 @@ public extension NewTabPageDataModel {
         let active: Bool
     }
 
-    // MARK: - omnibar_attachmentPrivacyDisclaimerShown
+    // MARK: - Attachment privacy
+
+    /// Which attachment the disclaimer is about. Native never sees the attach, so the page has to
+    /// say, for the pixel.
+    enum OmnibarAttachmentPrivacyKind: String, Codable {
+        case image, file
+    }
 
     struct OmnibarAttachmentPrivacyDisclaimerShown: Codable, Equatable {
 
-        /// Which attachment triggered the disclaimer. Native never sees the attach, so the page
-        /// has to say, for the pixel.
-        public enum Kind: String, Codable {
-            case image, file
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
         }
+    }
 
-        public let kind: Kind
+    struct OmnibarOpenAttachmentPrivacyLearnMore: Codable, Equatable {
 
-        public init(kind: Kind) {
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
             self.kind = kind
         }
     }

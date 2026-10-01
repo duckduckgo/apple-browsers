@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import NewTabPage
 import os.log
 import PixelKit
 
@@ -28,46 +29,40 @@ enum AttachmentPrivacyDisclosurePixelSurface: String {
 }
 
 /// The file-upload privacy disclosure's pixels. What was attached is in the name rather than in a
-/// parameter, so image and file are separate series; the surface is a parameter.
+/// parameter, so image and file are separate series — iOS splits the same way, and the tail of the
+/// name matches theirs so both platforms can be read together. The surface is a parameter.
 ///
 /// Duck.ai's own display is not reported here: the web app asks native for the display and fires
-/// its own pixel, so reporting it again would double count.
-enum AttachmentPrivacyDisclosurePixel: PixelKit.Event {
+/// its own pixel, so reporting it again would double count. iOS does report it, because there the
+/// disclosure is drawn by the native input even inside the Duck.ai tab.
+struct AttachmentPrivacyDisclosurePixel: PixelKit.Event {
 
-    case imageShown(AttachmentPrivacyDisclosurePixelSurface)
-    case fileShown(AttachmentPrivacyDisclosurePixelSurface)
-    case learnMoreTapped(AttachmentPrivacyDisclosurePixelSurface)
+    enum Action: String {
+        case shown
+        case learnMoreTapped = "learn_more_tapped"
+    }
 
     private enum Parameter {
         static let surface = "surface"
     }
 
-    static func shown(kind: AttachmentPrivacyDisclosureKind,
-                      surface: AttachmentPrivacyDisclosurePixelSurface) -> AttachmentPrivacyDisclosurePixel {
-        switch kind {
-        case .image: return .imageShown(surface)
-        case .file: return .fileShown(surface)
-        }
-    }
+    let action: Action
+    let kind: AttachmentPrivacyDisclosureKind
+    let surface: AttachmentPrivacyDisclosurePixelSurface
 
-    var name: String {
-        switch self {
-        case .imageShown: return "aichat_attachment_privacy_image_shown"
-        case .fileShown: return "aichat_attachment_privacy_file_shown"
-        case .learnMoreTapped: return "aichat_attachment_privacy_learn_more_tapped"
-        }
-    }
+    var name: String { "aichat_attachment_privacy_\(kind.rawValue)_\(action.rawValue)" }
 
-    var parameters: [String: String]? {
-        [Parameter.surface: surface.rawValue]
-    }
+    var parameters: [String: String]? { [Parameter.surface: surface.rawValue] }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
+}
 
-    private var surface: AttachmentPrivacyDisclosurePixelSurface {
-        switch self {
-        case .imageShown(let surface), .fileShown(let surface), .learnMoreTapped(let surface):
-            return surface
+extension AttachmentPrivacyDisclosureKind {
+
+    init(_ kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        switch kind {
+        case .image: self = .image
+        case .file: self = .file
         }
     }
 }
@@ -83,11 +78,11 @@ struct AttachmentPrivacyDisclosurePixelFirer {
     }
 
     func fireShown(kind: AttachmentPrivacyDisclosureKind) {
-        fire(.shown(kind: kind, surface: surface))
+        fire(.init(action: .shown, kind: kind, surface: surface))
     }
 
-    func fireLearnMoreTapped() {
-        fire(.learnMoreTapped(surface))
+    func fireLearnMoreTapped(kind: AttachmentPrivacyDisclosureKind) {
+        fire(.init(action: .learnMoreTapped, kind: kind, surface: surface))
     }
 
     private func fire(_ pixel: AttachmentPrivacyDisclosurePixel) {

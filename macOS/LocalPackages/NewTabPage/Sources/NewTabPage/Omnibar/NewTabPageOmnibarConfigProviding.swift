@@ -94,7 +94,7 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     /// The page rendered the disclaimer. Native spends the display and fires the pixel.
     @MainActor
-    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown.Kind)
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind)
 
     /// Fires when the display is spent on any surface, so the client re-pushes the config and an
     /// open NTP stops offering the disclaimer.

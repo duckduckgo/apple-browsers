@@ -397,7 +397,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func openAttachmentPrivacyLearnMore(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        actionHandler.openAttachmentPrivacyLearnMore()
+        guard let action: NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        actionHandler.openAttachmentPrivacyLearnMore(kind: action.kind)
         return nil
     }
 

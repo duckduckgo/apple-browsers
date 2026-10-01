@@ -891,10 +891,19 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
-    func testOpenAttachmentPrivacyLearnMoreIsForwardedToTheActionHandler() async throws {
-        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore)
+    func testOpenAttachmentPrivacyLearnMoreForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore(kind: .file)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore, parameters: action)
 
-        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreCallCount, 1)
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds, [.file])
+    }
+
+    @MainActor
+    func testWhenTheLearnMoreKindIsUnrecognisedThenNothingIsForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds.isEmpty == true)
     }
 
     // MARK: - usage limits

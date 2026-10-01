@@ -92,7 +92,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("NTP.escapeHatch.showAll")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.showAll")
     }
 
     // MARK: - Body
@@ -138,7 +138,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel(Text(accessibilityLabel))
             .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
-            .accessibilityIdentifier("NTP.escapeHatch.card")
+            .accessibilityIdentifier("NewTabPage.escapeHatch.card")
             .accessibilityAction(named: Text(swipeActionLabel), onSwipeCommit)
 
             menuView
@@ -229,7 +229,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
                 .contentShape(Circle())
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
-        .accessibilityIdentifier("NTP.escapeHatch.moreButton")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.moreButton")
         .onFrameUpdate(in: .global, using: RedesignedEscapeHatchMenuFrameKey.self, perform: onMenuFrameChange)
     }
 }

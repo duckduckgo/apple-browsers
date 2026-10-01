@@ -22,18 +22,19 @@ import XCTest
 
 final class AIChatDebugSettingsTests: XCTestCase {
 
+    private let suiteName = "AIChatDebugSettingsTests"
     private var userDefaults: UserDefaults!
     private var settings: AIChatDebugSettings!
 
     override func setUp() {
         super.setUp()
-        userDefaults = UserDefaults(suiteName: #file)
-        userDefaults.removePersistentDomain(forName: #file)
+        userDefaults = UserDefaults(suiteName: suiteName)
+        userDefaults.removePersistentDomain(forName: suiteName)
         settings = AIChatDebugSettings(userDefault: userDefaults)
     }
 
     override func tearDown() {
-        userDefaults.removePersistentDomain(forName: #file)
+        userDefaults.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
 

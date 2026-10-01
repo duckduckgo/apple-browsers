@@ -70,7 +70,7 @@ struct RedesignedEscapeHatchView: View {
         case .fire:
             return DesignSystemImages.Color.Size96.fireTab
         case .aiChat:
-            return UIImage(resource: .duckAIDefault)
+            return DesignSystemImages.Color.Size16.duckAI
         case .regular:
             return nil
         }
@@ -99,8 +99,8 @@ struct RedesignedEscapeHatchView: View {
                 } label: {
                     Text(UserText.settingsAfterInactivityLabel)
                     Text(model.afterInactivityOptionBinding.wrappedValue.description)
-                        .foregroundColor(.secondary)
-                        .font(.subheadline)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .daxSubheadRegular()
                     Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
                         .foregroundColor(Color(designSystemColor: .icons))
                 }

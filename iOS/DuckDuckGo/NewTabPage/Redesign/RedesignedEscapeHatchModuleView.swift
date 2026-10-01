@@ -61,9 +61,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
                     .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.headerIconContainerWidth)
                 Text(UserText.escapeHatchReturnToLabel)
-                    .font(.custom(Metrics.headerTitleFontName, size: Metrics.headerFontSize, relativeTo: .subheadline))
-                    .fontWeight(.bold)
-                    .tracking(Metrics.headerTitleTracking)
+                    .daxButton()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .lineLimit(1)
             }
@@ -79,7 +77,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
         Button(action: onShowAllTap) {
             HStack(spacing: Metrics.showAllLabelToArrowSpacing) {
                 Text(UserText.escapeHatchShowAllLabel)
-                    .font(.custom(Metrics.showAllFontName, size: Metrics.headerFontSize, relativeTo: .subheadline))
+                    .daxSubheadRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .lineLimit(1)
                 Image(uiImage: DesignSystemImages.Glyphs.Size10.chevronRight)
@@ -117,7 +115,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
                 Color(designSystemColor: .destructivePrimary)
                 Text(swipeActionLabel)
                     .daxSubheadRegular()
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(designSystemColor: .destructiveContentPrimary))
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .padding(.horizontal, Metrics.modulePadding)
@@ -260,12 +258,9 @@ private enum Metrics {
     static let headerMinimumSpacing: CGFloat = 8
     static let headerIconContainerWidth: CGFloat = 18
     static let headerIconToTitleSpacing: CGFloat = 6
-    static let headerFontSize: CGFloat = 15
-    static let headerTitleFontName = "DuckSansProduct-Bold"
-    static let headerTitleTracking: CGFloat = -0.43
-    static let showAllFontName = "DuckSansProduct-Regular"
     static let showAllLabelToArrowSpacing: CGFloat = 8
     static let showAllArrowSize: CGFloat = 20
+    // The design uses a 9% accent tint; DRK does not have an equivalent semantic fill.
     static let showAllArrowBackgroundOpacity: CGFloat = 0.09
 
     static let bodySpacing: CGFloat = 12

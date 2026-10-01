@@ -417,7 +417,9 @@ final class FeedbackViewController: NSViewController {
             return true
         }
         addKeyEquivalent("\r", modifierFlags: .command) { [weak self] _ in
-            guard let self, submitButton.isEnabled else { return false }
+            // The key equivalent lives on the root view, so it keeps firing once the thank-you
+            // view has replaced the form — gate it on the form actually being on screen.
+            guard let self, !contentView.isHidden, submitButton.isEnabled else { return false }
             submitButtonAction(self)
             return true
         }
@@ -611,6 +613,8 @@ final class FeedbackViewController: NSViewController {
         setContentViewHeight(Constants.thankYouContentHeight, animated: true)
         contentView.isHidden = true
         thankYouView.isHidden = false
+        // Feedback has been sent: nothing may submit it a second time.
+        submitButton.isEnabled = false
     }
 
     private weak var unsupportedOsChildView: NSView?

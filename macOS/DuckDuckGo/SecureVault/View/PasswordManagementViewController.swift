@@ -101,6 +101,7 @@ final class PasswordManagementViewController: NSViewController {
     private var lockScreen: NSView!
     private var lockScreenIconImageView: NSImageView!
     private var lockScreenDurationLabel: NSTextField!
+    private var lockScreenPreferencesLabel: NSTextField!
     private var lockScreenOpenInPreferencesButton: LinkButton!
 
     var emptyStateCancellable: AnyCancellable?
@@ -376,12 +377,10 @@ final class PasswordManagementViewController: NSViewController {
         lockScreenDurationLabel = NSTextField(labelWithString: "")
         lockScreenDurationLabel.translatesAutoresizingMaskIntoConstraints = false
         lockScreenDurationLabel.alignment = .center
-        lockScreenDurationLabel.textColor = .blackWhite60
 
-        let preferencesLabel = NSTextField(labelWithString: UserText.pmLockScreenPreferencesLabel)
-        preferencesLabel.translatesAutoresizingMaskIntoConstraints = false
-        preferencesLabel.font = .systemFont(ofSize: 13)
-        preferencesLabel.textColor = .blackWhite60
+        lockScreenPreferencesLabel = NSTextField(labelWithString: UserText.pmLockScreenPreferencesLabel)
+        lockScreenPreferencesLabel.translatesAutoresizingMaskIntoConstraints = false
+        lockScreenPreferencesLabel.font = .systemFont(ofSize: 13)
 
         lockScreenOpenInPreferencesButton = LinkButton(title: UserText.pmLockScreenPreferencesLink,
                                                        target: self,
@@ -392,7 +391,7 @@ final class PasswordManagementViewController: NSViewController {
         lockScreenOpenInPreferencesButton.contentTintColor = NSColor(designSystemColor: .textLink,
                                                                      palette: themeManagerModel.designColorPalette)
 
-        let preferencesStack = NSStackView(views: [preferencesLabel, lockScreenOpenInPreferencesButton])
+        let preferencesStack = NSStackView(views: [lockScreenPreferencesLabel, lockScreenOpenInPreferencesButton])
         preferencesStack.translatesAutoresizingMaskIntoConstraints = false
         preferencesStack.orientation = .horizontal
         preferencesStack.alignment = .firstBaseline
@@ -1664,6 +1663,8 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         backgroundView.backgroundColor = colorsProvider.passwordManagerLockScreenBackgroundColor
 
         let palette = theme.palette
+        lockScreenDurationLabel.textColor = palette.textSecondary
+        lockScreenPreferencesLabel.textColor = palette.textSecondary
         searchField.borderColor = palette.controlsBorderPrimary
         searchField.borderHighlightColor = palette.accentPrimary
         searchField.innerBackgroundColor = palette.surfaceTertiary

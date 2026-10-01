@@ -462,7 +462,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
-            permissionController?.didUnload(identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
             // The extension and its native handlers are still active when unload fails.

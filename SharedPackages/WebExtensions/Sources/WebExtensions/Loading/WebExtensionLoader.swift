@@ -40,6 +40,7 @@ public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
+    @MainActor
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
 
     /// Reloads an already-parsed extension into the controller, reusing the in-memory
@@ -152,6 +153,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
     }
 
+    @MainActor
     public func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
         let context = controller.extensionContexts.first {
             $0.uniqueIdentifier == identifier
@@ -162,6 +164,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         try controller.unload(context)
+        permissionController?.didUnload(identifier)
     }
 
     @MainActor

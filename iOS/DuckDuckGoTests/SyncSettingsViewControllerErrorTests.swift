@@ -624,6 +624,20 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenJoinerWaitsThenReceivesCodeThenReturnsToConnecting() {
+        for isRecovery in [false, true] {
+            vc.codeCollectionIntent = isRecovery ? .recoverData : .syncAnotherDevice
+            vc.viewModel.connectingSheetPhase = .connecting(isRecovery: isRecovery)
+            vc.controllerDidUpdatePairingV2JoinStatus(.unknown)
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .waitingForOtherDevice)
+
+            vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: isRecovery))
+        }
+    }
+
+    @MainActor
     func testWhenControllerDidCreateSyncAccountWithoutShowingSyncEnabledThenDoesNotPresentCompletionUI() {
         let spyVC = SpySyncSettingsViewController(
             syncService: ddgSyncing,

@@ -1873,6 +1873,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow, true)
         XCTAssertTrue(didFinishReportingAccountSwitch)
         XCTAssertTrue(didSendRecoveryCodeDone)
+        XCTAssertEqual(delegate.pairingV2JoinStatuses, [.waiting])
         XCTAssertNil(delegate.didErrorErrors)
     }
 

@@ -595,7 +595,9 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         guard isPresentingConnectingSheet else { return }
         switch status {
         case .waiting:
-            return
+            if case .waitingForOtherDevice = viewModel.connectingSheetPhase {
+                viewModel.connectingSheetPhase = .connecting(isRecovery: codeCollectionIntent == .recoverData)
+            }
         case .unknown:
             viewModel.connectingSheetPhase = .waitingForOtherDevice
         }

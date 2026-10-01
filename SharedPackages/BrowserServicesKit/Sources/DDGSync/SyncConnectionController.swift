@@ -707,7 +707,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         return try await coordinator.pollUntilFinished(
             timeout: pairingV2PollingTimeout,
             pollInterval: pairingV2PollIntervalNanoseconds) { state in
-            if let status = self.pairingV2JoinStatus(for: state), status != lastReportedJoinStatus {
+            if let status = coordinator.joinStatus, status != lastReportedJoinStatus {
                 lastReportedJoinStatus = status
                 await self.delegate?.controllerDidUpdatePairingV2JoinStatus(status)
             }
@@ -748,17 +748,6 @@ public class SyncConnectionController: SyncConnectionControlling {
              .completed(.alreadyConnected),
              .failed:
             return false
-        }
-    }
-
-    private func pairingV2JoinStatus(for state: PairingV2State) -> PairingV2JoinStatus? {
-        switch state {
-        case .hostWaitingForJoinStatus:
-            return .waiting
-        case .hostJoinOutcomeUnknown:
-            return .unknown
-        default:
-            return nil
         }
     }
 

@@ -1521,13 +1521,13 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
-    func testPostPairingConfirmationDialog_whenV2EnabledForJoiner_returnsWaitForOtherDeviceDialog() {
+    func testPostPairingConfirmationDialog_whenV2EnabledForJoiner_returnsConnectingDialog() {
         let dialog = SyncDialogController.postPairingConfirmationDialog(
             isSimplifiedSyncSetupV2Enabled: true,
             setupRole: .receiver(.exchange, .qrCode)
         )
 
-        XCTAssertEqual(dialog, .waitForOtherDevice)
+        XCTAssertEqual(dialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testPostPairingConfirmationDialog_whenV2EnabledForHost_returnsNil() {
@@ -1672,6 +1672,15 @@ final class SyncDialogControllerTests: XCTestCase {
         syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenCodeArrives_restoresConnectingDialog() {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+        managementDialogModel.currentDialog = .waitForOtherDevice
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
     func testControllerDidUpdatePairingV2JoinStatus_afterTransmitting_keepsHostOnConnectingUntilUnknown() async {

@@ -82,7 +82,7 @@ final class KeyboardPresenter: KeyboardPresenting {
         PixelKit.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.mainViewController.enterSearch()
+            self.mainViewController.enterSearchOnAppOpen()
         }
     }
 

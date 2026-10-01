@@ -42,8 +42,8 @@ final class NewTabPageSessionWideEventData: WideEventData {
         case newTabOpenedAfterFire = "new_tab_opened_after_fire"
     }
 
-    /// The keyboard mode the app decided on when the visit started, not the live
-    /// keyboard state later in the visit.
+    /// The keyboard mode the app decided on when the visit started, including the keyboard it
+    /// raises a moment later when the app opens. Not the live keyboard state later in the visit.
     enum LaunchKeyboardMode: String, Codable, CaseIterable {
         case up
         case down

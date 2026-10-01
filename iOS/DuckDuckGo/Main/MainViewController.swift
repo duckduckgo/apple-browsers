@@ -2815,6 +2815,16 @@ class MainViewController: UIViewController {
         guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
         if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return }
         // Does nothing while the tab switcher, Settings or another screen is presented.
+        enterSearchOnAppOpen()
+    }
+
+    /// The app-open keyboard. The New Tab Page visit started with the keyboard down, because the app
+    /// decides on it a moment later, so the visit is told the keyboard came up.
+    func enterSearchOnAppOpen() {
+        guard presentedViewController == nil else { return }
+        if isNewTabPageVisible {
+            newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+        }
         enterSearch()
     }
 

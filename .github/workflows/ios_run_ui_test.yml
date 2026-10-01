@@ -1,0 +1,187 @@
+name: iOS - Run UI Test
+
+# Reusable helper that runs a single UITestCase class, on one simulator, in one user mode.
+# Called by ios_ui_tests.yml once per (device × test) matrix combination, per user-mode leg.
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: iOS
+
+on:
+  workflow_call:
+    inputs:
+      test:
+        description: "The UITestCase class to run"
+        required: true
+        type: string
+      device:
+        description: "Stable device key: iphone or ipad"
+        required: true
+        type: string
+      device-name:
+        description: "Simulator name"
+        required: true
+        type: string
+      ios-version:
+        description: "Selected iOS simulator version"
+        required: true
+        type: string
+      user-mode:
+        description: "'production' = production behaviour (release-gating). 'internal' = isInternalUser=true (advance warning, non-gating)."
+        required: true
+        type: string
+      build-artifact-name:
+        description: "Immutable build artifact name"
+        required: true
+        type: string
+
+jobs:
+  run-ui-test:
+    name: ${{ inputs.test }} (${{ inputs.device }}${{ inputs.user-mode == 'internal' && ', internal' || '' }})
+    runs-on: ['image:osx-tahoe-26', ui-tests]
+
+    # Internal-mode failures are advance warning for features still gated to internal users; they
+    # must not fail the overall workflow. Setting continue-on-error here (a normal job inside the
+    # reusable workflow) is what makes the calling leg pass on internal failures — a job that
+    # `uses:` a reusable workflow cannot set continue-on-error itself.
+    continue-on-error: ${{ inputs.user-mode == 'internal' }}
+
+    timeout-minutes: 45
+
+    env:
+      IOS_VERSION: ${{ inputs.ios-version }}
+      TEST_CLASS: ${{ inputs.test }}
+      DEVICE: ${{ inputs.device }}
+      DEVICE_NAME: ${{ inputs.device-name }}
+      USER_MODE: ${{ inputs.user-mode }}
+      INTERNAL_USER_MODE: ${{ inputs.user-mode == 'internal' && 'true' || 'false' }}
+
+    steps:
+    - name: Check out the code
+      id: checkout
+      uses: actions/checkout@v6
+
+    - name: Print macOS version
+      run: sw_vers
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: ${{ env.IOS_VERSION }}
+        device-name: ${{ inputs.device-name }}
+
+    - name: Validate simulator selection
+      env:
+        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+      run: |
+        expected_prefix="platform=iOS Simulator,name=$DEVICE_NAME,OS="
+        actual_os="${DESTINATION#"$expected_prefix"}"
+        if [[ "$DESTINATION" != "$expected_prefix"* || -z "$actual_os" || "$actual_os" == *,* ]]; then
+          echo "::error::Requested an iOS Simulator named '$DEVICE_NAME', but simulator selection returned '$DESTINATION'."
+          exit 1
+        fi
+
+    - name: Download build products
+      uses: actions/download-artifact@v7
+      with:
+        name: ${{ inputs.build-artifact-name }}
+        path: iOS/build-artifact
+
+    - name: Extract build products
+      run: |
+        mkdir -p DerivedData
+        tar -xzf build-artifact/build-products.tar.gz -C DerivedData
+        case "$DEVICE" in
+          iphone) test_plan='UI Tests' ;;
+          ipad) test_plan='iPad UI Tests' ;;
+          *)
+            echo "::error::Unsupported device key '$DEVICE'."
+            exit 1
+            ;;
+        esac
+        pattern="iOS UI Tests_${test_plan}_*.xctestrun"
+        count=$(find DerivedData/Build/Products -type f -name "$pattern" | wc -l | tr -d ' ')
+        if [[ "$count" != 1 ]]; then
+          echo "::error::Expected one '$pattern' file, found $count."
+          find DerivedData/Build/Products -type f -name '*.xctestrun' -print
+          exit 1
+        fi
+        find DerivedData/Build/Products -type f -name "$pattern" -print -quit > xctestrun-path
+
+    - name: Run UI Tests
+      id: run-ui-tests
+      env:
+        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+      run: |
+        : > ui-tests.log
+        xctestrun_path=$(<xctestrun-path)
+        set -o pipefail && env TEST_RUNNER_INTERNAL_USER_MODE="$INTERNAL_USER_MODE" \
+          xcodebuild test-without-building \
+          -xctestrun "$xctestrun_path" \
+          -destination "$DESTINATION" \
+          -resultBundlePath TestResults.xcresult \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
+          "-only-testing:UI Tests/$TEST_CLASS" \
+        | tee ui-tests.log \
+        | xcbeautify
+
+    - name: Prepare test report
+      if: always() && steps.checkout.outcome == 'success'
+      run: |
+        file="${TEST_CLASS}-${DEVICE}-${USER_MODE}.xml"
+        invalid="reports/${file%.xml}.invalid"
+        test_id="$TEST_CLASS ($DEVICE_NAME, iOS $IOS_VERSION, $USER_MODE)"
+        mkdir -p reports
+        touch "$invalid"
+
+        if [[ ! -s ui-tests.log ]]; then
+          echo "::error::UI test log is missing or empty."
+          exit 1
+        fi
+        xcbeautify --report junit --report-path reports --junit-report-filename "$file" < ui-tests.log
+        # Replace the default test suite name with the test id for better grouping in the test report
+        sed -i '' "s/Selected tests/${test_id}/" "reports/$file"
+        test_count=$(xmllint --xpath 'count(//testcase)' "reports/$file")
+        if [[ "$test_count" == 0 ]]; then
+          echo "::error::JUnit report contains no test cases."
+          exit 1
+        fi
+        xcrun xcresulttool get test-results summary \
+          --path TestResults.xcresult --compact > results-summary.json
+        if ! jq -e '(.totalTestCount | type) == "number" and ((.skippedTests // 0) | type) == "number" and (.totalTestCount > (.skippedTests // 0))' results-summary.json >/dev/null; then
+          echo "::error::xcresult contains no executed tests."
+          exit 1
+        fi
+        rm "$invalid"
+
+    # Upload test report as artifact for the test-report job
+    # that publishes a combined report for all test cases
+    - name: Upload test report
+      if: always()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "ios-testreport-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}"
+        path: "iOS/reports/*"
+        if-no-files-found: error
+        retention-days: 1
+
+    - name: Upload test logs
+      if: always()
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "ios-uitest-logs-${{ inputs.test }}-${{ inputs.device }}-${{ inputs.user-mode }}-attempt${{ github.run_attempt }}"
+        path: |
+          iOS/ui-tests.log
+          iOS/TestResults.xcresult
+          iOS/results-summary.json
+        if-no-files-found: warn
+        retention-days: 7

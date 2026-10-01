@@ -64,6 +64,16 @@ final class PermissionReminderDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary, .secondary])
     }
 
+    func testWhenVoiceSearchIsEnabledFromSettingsThenReminderUsesPrivateVoiceCopyAndSettingsActions() {
+        let viewModel = PermissionReminderDialogViewModel.voiceSearchSettings
+
+        XCTAssertEqual(viewModel.title, "DuckDuckGo needs to access your microphone")
+        XCTAssertEqual(viewModel.body, "Microphone permissions are needed if you want to use our private voice features.")
+        XCTAssertEqual(viewModel.actions.map(\.action), [.changePermissions, .cancel])
+        XCTAssertEqual(viewModel.actions.map(\.title), ["Change Permissions", "Cancel"])
+        XCTAssertEqual(viewModel.actions.map(\.style), [.primary, .secondary])
+    }
+
     func testVoiceChatReminderUsesDuckAICopyWithoutHideVoiceSearch() {
         let viewModel = PermissionReminderDialogViewModel.voiceChat
 

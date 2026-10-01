@@ -61,6 +61,7 @@ public class Tab: NSObject, NSCoding {
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
+    let favoritesExpansionState = FavoritesExpansionState()
     /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
     ///
     /// Deliberately outlives the provisional load that starts it: a provisional load replaced before

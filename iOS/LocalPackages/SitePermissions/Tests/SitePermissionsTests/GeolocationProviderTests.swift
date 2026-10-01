@@ -286,7 +286,7 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     func testWhenCurrentLocationRequestUsesCacheThenItReportsActivityWithoutRestartingUpdates() async throws {
-        // Allow Once ends when capture finishes, even when the result comes from the cache.
+        // Cached delivery reports activity without keeping Core Location updates running.
         let harness = try Harness()
         var seedResult: GeolocationPositionResult?
         harness.provider.startWatch(withID: "seed", context: harness.context) {
@@ -311,34 +311,87 @@ final class GeolocationProviderTests: XCTestCase {
         XCTAssertEqual(harness.locationManager.startUpdatingCallCount, initialStartCount)
     }
 
-    func testWhenCurrentLocationRequestCompletesThenPermissionStatusReflectsExpiredAllowOnce() async throws {
-        // The coordinator must mark capture as finished before the provider checks whether another request would prompt.
-        var queryState = GeolocationPermissionState.granted
-        let harness = try Harness(queryPermission: { _ in queryState })
-        var becameActive = false
-        harness.provider.locationActivityHandler = { state in
-            if state == .active {
-                becameActive = true
-            } else if state == .inactive && becameActive {
-                queryState = .prompt
+    func testWhenCurrentLocationRequestCompletesThenAllowOnceIsReusedForCachedRequestAndWatchUntilRevoked() async throws {
+        var permissionCoordinator: SitePermissionsCoordinator?
+        var promptCount = 0
+        let harness = try Harness(
+            requestPermission: { context, completion in
+                permissionCoordinator?.request(
+                    SitePermissionRequest(context: context, permissionTypes: [.location]),
+                    promptHandler: { _, respond in
+                        promptCount += 1
+                        respond(.allowOnce)
+                    },
+                    completion: completion
+                )
+            },
+            queryPermission: { context in
+                permissionCoordinator?.queryState(for: .location, context: context) ?? .denied
             }
-        }
+        )
+        let context = harness.context
+        let coordinator = SitePermissionsCoordinator(
+            store: SitePermissionsStore(storage: MockKeyValueStore().keyedStoring()),
+            systemPermissionClient: harness.systemPermissionClient,
+            isFireMode: false,
+            currentContext: { tabID, frameID in
+                tabID == context.tabID && frameID == context.requestingFrameID ? context : nil
+            },
+            recoveryHandler: { _, completion in completion() }
+        )
+        permissionCoordinator = coordinator
+        harness.provider.locationActivityHandler = coordinator.updateGeolocationCaptureState
         var statusStates = [GeolocationPermissionState]()
-        let initialState = harness.provider.permissionState(withID: "status", context: harness.context) {
+        let initialState = harness.provider.permissionState(withID: "status", context: context) {
             statusStates.append($0)
             return true
         }
 
-        let request = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
+        let request = Task { await harness.provider.requestCurrentPosition(context: context) }
         await waitUntil { harness.provider.isLocationActive }
-        harness.send([CLLocation(latitude: 37.3317, longitude: -122.0301)])
-        _ = await request.value
+        let firstLocation = CLLocation(latitude: 37.3317, longitude: -122.0301)
+        harness.send([firstLocation])
+        let result = await request.value
 
-        XCTAssertEqual(initialState, .granted)
-        XCTAssertEqual(statusStates, [.prompt])
+        XCTAssertEqual(result, .success(.init(location: firstLocation)))
+        XCTAssertEqual(initialState, .prompt)
+        XCTAssertEqual(statusStates, [.granted])
+        XCTAssertEqual(coordinator.queryState(for: .location, context: context), .granted)
+        XCTAssertFalse(harness.provider.isLocationActive)
+        XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 1)
+
+        let cachedResult = await harness.provider.requestCurrentPosition(context: context, options: .init(maximumAge: 60))
+        XCTAssertEqual(cachedResult, .success(.init(location: firstLocation)))
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 1)
+        XCTAssertFalse(harness.provider.isLocationActive)
+
+        var watchResults = [GeolocationPositionResult]()
+        harness.provider.startWatch(withID: "watch", context: context) {
+            watchResults.append($0)
+            return true
+        }
+        await waitUntil { harness.provider.isLocationActive }
+        let nextLocation = CLLocation(latitude: 51.5072, longitude: -0.1276)
+        harness.send([nextLocation])
+        harness.provider.cancelWatch(withID: "watch")
+
+        XCTAssertEqual(watchResults, [.success(.init(location: nextLocation))])
+        XCTAssertEqual(promptCount, 1)
+        XCTAssertEqual(statusStates, [.granted])
+        XCTAssertEqual(coordinator.queryState(for: .location, context: context), .granted)
+        XCTAssertFalse(harness.provider.isLocationActive)
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 2)
+        XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 2)
+
+        coordinator.revokeManagementSessionState(for: [.location], at: context.topLevelSite)
+        harness.provider.revokeActivePermission()
+
+        XCTAssertEqual(coordinator.queryState(for: .location, context: context), .prompt)
+        XCTAssertEqual(statusStates, [.granted, .prompt])
+        XCTAssertEqual(harness.locationManager.startUpdatingCallCount, 2)
     }
 
-    func testWhenWatchIsPausedThenItKeepsAllowOnceUntilCancelledOrPermissionIsRemoved() async throws {
+    func testWhenWatchIsPausedOrCancelledThenItKeepsAllowOnceUnlessPermissionIsRemoved() async throws {
         // Hiding the tab pauses capture; it must not consume the page's Allow Once decision.
         for revokeWhileSuspended in [false, true] {
             var permissionCoordinator: SitePermissionsCoordinator?
@@ -413,8 +466,8 @@ final class GeolocationProviderTests: XCTestCase {
 
                 harness.provider.cancelWatch(withID: "watch")
 
-                XCTAssertEqual(coordinator.queryState(for: .location, context: context), .prompt)
-                XCTAssertEqual(statusStates, [.prompt])
+                XCTAssertEqual(coordinator.queryState(for: .location, context: context), .granted)
+                XCTAssertTrue(statusStates.isEmpty)
                 XCTAssertEqual(harness.locationManager.stopUpdatingCallCount, 2)
             }
             XCTAssertEqual(promptCount, 1)

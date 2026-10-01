@@ -87,7 +87,8 @@ extension MainViewController {
             aiChatSyncCleaner: aiChatSyncCleaner,
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
-            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            floatingUIManager: floatingUIManager
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -520,6 +521,10 @@ private extension MainViewController {
                 self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.onFloatingReturnKeyAvailabilityChanged = { [weak self] in
+            self?.updateFloatingReturnKeyVisibility()
+        }
 
         coordinator.textChangePublisher
             .sink { [weak self] text in
@@ -1433,8 +1438,21 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onMenuPressed()
     }
 
+    func unifiedToggleInputDidRequestAppMenuLongPress() {
+        onMenuLongPressed()
+    }
+
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         applyEditModeChrome(isEditing)
+    }
+
+    /// Deliberately not `loadUrlRespectingAIBoundary`: that only spawns a tab when the navigation
+    /// crosses the AI/web boundary, so from the address bar it would load in place and take the
+    /// user's pending attachment with it.
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {
+        omniBar.endEditing()
+        recordNewTabPageSessionDeparture()
+        loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {

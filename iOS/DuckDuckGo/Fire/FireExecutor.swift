@@ -167,6 +167,7 @@ class FireExecutor: FireExecuting {
          historyCleanerProvider: HistoryCleanerProvider? = nil,
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
+         sitePermissionsStore: SitePermissionsStore,
          aiChatSyncCleaner: AIChatSyncCleaning,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
@@ -220,7 +221,7 @@ class FireExecutor: FireExecuting {
             TextZoomFireWorker(fireproofing: fireproofing,
                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                dataClearingWideEventService: dataClearingWideEventService),
-            PermissionsFireWorker(store: SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
+            PermissionsFireWorker(store: sitePermissionsStore,
                                   fireproofing: fireproofing,
                                   dataClearingWideEventService: dataClearingWideEventService),
             HistoryFireWorker(historyManager: historyManager,
@@ -250,11 +251,13 @@ class FireExecutor: FireExecuting {
               applicationState: DataStoreWarmup.ApplicationState) async {
         // Drops reentrant calls. Callers should gate on `burnInProgress`
         if burnInProgress {
+            pixelsReporter.fireDroppedBurnPixel(request: request)
             assertionFailure("Shouldn't get called multiple times")
             return
         }
 
         burnInProgress = true
+        pixelsReporter.burnDidStart()
         defer {
             burnInProgress = false
         }

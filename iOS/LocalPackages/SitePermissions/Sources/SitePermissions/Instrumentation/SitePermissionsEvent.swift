@@ -45,6 +45,7 @@ public enum SitePermissionsEvent: Equatable, Sendable {
         case allowOnce = "allow_once"
         case allowAlways = "allow_always"
         case never
+        case dismissed
     }
 
     public enum SystemPromptResult: String, Equatable, Sendable {

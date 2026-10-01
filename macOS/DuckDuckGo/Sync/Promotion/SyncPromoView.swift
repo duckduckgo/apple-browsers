@@ -186,15 +186,9 @@ struct SyncPromoView: View {
     private func verticalLayoutView(topPadding: CGFloat) -> some View {
         VStack(alignment: .center, spacing: 16) {
 
-            if viewModel.isAppRebranded {
-                Image(.syncStart128)
-                    .resizable()
-                    .frame(width: 96, height: 72)
-            } else {
-                Image(.syncStartLegacy128)
-                    .resizable()
-                    .frame(width: 96, height: 72)
-            }
+            Image(.syncStart128)
+                .resizable()
+                .frame(width: 96, height: 72)
 
             VStack(spacing: 8) {
                 title
@@ -258,19 +252,19 @@ struct SyncPromoView: View {
 #if DEBUG
 
 #Preview("Compact") {
-    SyncPromoView(viewModel: SyncPromoViewModel(isAppRebranded: false, touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
+    SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
                   layout: .compact)
         .frame(height: 115)
 }
 
 #Preview("Horizontal") {
-    SyncPromoView(viewModel: SyncPromoViewModel(isAppRebranded: false, touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
+    SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
                   layout: .horizontal)
         .frame(height: 80)
 }
 
 #Preview("Vertical") {
-    SyncPromoView(viewModel: SyncPromoViewModel(isAppRebranded: false, touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
+    SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
                   layout: .vertical)
         .frame(height: 300)
 }
@@ -278,7 +272,7 @@ struct SyncPromoView: View {
 #Preview("Auto") {
     ResizablePreviewView(maxSize: CGSize(width: 500, height: 500),
                          minSize: CGSize(width: 224, height: 80)) {
-        SyncPromoView(viewModel: SyncPromoViewModel(isAppRebranded: false, touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
+        SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
                       layout: .auto)
     }
 }

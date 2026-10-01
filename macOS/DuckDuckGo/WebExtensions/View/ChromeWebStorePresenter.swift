@@ -39,7 +39,7 @@ final class ChromeWebStorePresenter: NSObject, ChromeWebStorePresenting {
         spinner.style = .spinning
         spinner.startAnimation(nil)
         let cancelButton = NSButton(title: UserText.cancel, target: self, action: #selector(cancelRequested))
-        cancelButton.keyEquivalent = "\u{1b}"
+        cancelButton.keyEquivalent = "\u{1b}" // Esc
         let stack = NSStackView(views: [label, spinner, cancelButton])
         stack.orientation = .vertical
         stack.spacing = 12

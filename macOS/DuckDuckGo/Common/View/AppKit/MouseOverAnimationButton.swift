@@ -280,6 +280,8 @@ final class MouseOverAnimationButton: AddressBarButton {
     }
 
     private func animate() {
+        guard !showsAnimationInSuperview || !isHidden else { return }
+
         hideImage()
         showAnimation()
         currentAnimationView?.play()

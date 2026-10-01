@@ -20,6 +20,7 @@
 import Foundation
 import UIKit
 import PixelKit
+import WebExtensions
 import os.log
 
 @MainActor
@@ -28,7 +29,7 @@ protocol AutoconsentManaging: AnyObject {
     var detectedByPatternsCache: Set<String> { get set }
     var detectedByBothCache: Set<String> { get set }
     var detectedOnlyRulesCache: Set<String> { get set }
-    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String])
+    func firePixel(pixel: AutoconsentPixel, topUrl: URL?, additionalParameters: [String: String])
     func clearCache() -> Result<Void, Error>
     func clearCache(forDomains domains: [String]) -> Result<Void, Error>
 }
@@ -38,7 +39,9 @@ final class AutoconsentManagement: AutoconsentManaging {
 
     var sitesNotifiedCache = Set<String>()
 
-    var pixelCounter = [String: Int]()
+    /// Event counts for the summary pixels, per site rank bucket of the top-level URL.
+    /// Counts under `nil` have no bucket, because the site rank data could not be loaded.
+    var pixelCounter = [CPMSiteRank?: [String: Int]]()
 
     var detectedByPatternsCache = Set<String>()
     var detectedByBothCache = Set<String>()
@@ -48,7 +51,10 @@ final class AutoconsentManagement: AutoconsentManaging {
     private var pendingSummaryTask: DispatchWorkItem?
     private var pendingAdditionalParams: [String: String] = [:]
 
-    init() {
+    private let siteRankLookup: CPMSiteRankLookup
+
+    init(siteRankLookup: CPMSiteRankLookup = CPMSiteRankLookup()) {
+        self.siteRankLookup = siteRankLookup
         setupNotificationObservers()
     }
 
@@ -91,7 +97,8 @@ final class AutoconsentManagement: AutoconsentManaging {
         fireSummaryPixel()
     }
 
-    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String] = [:]) {
+    /// - Parameter topUrl: the URL of the tab. It is only used to find the site rank bucket for the summary pixel, and is never sent.
+    func firePixel(pixel: AutoconsentPixel, topUrl: URL?, additionalParameters: [String: String] = [:]) {
         // Only schedule summary task if counter is currently empty
         if pixelCounter.isEmpty {
             // Cancel any existing pending task (shouldn't happen but safety first)
@@ -115,7 +122,7 @@ final class AutoconsentManagement: AutoconsentManaging {
         }
 
         // increment counter
-        pixelCounter[pixel.key, default: 0] += 1
+        pixelCounter[siteRankLookup.siteRank(for: topUrl), default: [:]][pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
         PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParameters, includeAppVersionParameter: true)
@@ -123,7 +130,12 @@ final class AutoconsentManagement: AutoconsentManaging {
 
     func fireSummaryPixel() {
         if !pixelCounter.isEmpty {
-            PixelKit.fire(AutoconsentPixel.summary(events: pixelCounter), frequency: .standard, withAdditionalParameters: pendingAdditionalParams, includeAppVersionParameter: true)
+            // one summary pixel per site rank bucket
+            for (siteRank, events) in pixelCounter {
+                var parameters = pendingAdditionalParams
+                parameters["siteRank"] = siteRank?.rawValue
+                PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters, includeAppVersionParameter: true)
+            }
             pixelCounter = [:]
             pendingAdditionalParams = [:]
             detectedByPatternsCache.removeAll()

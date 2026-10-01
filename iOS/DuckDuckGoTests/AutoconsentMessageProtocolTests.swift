@@ -27,6 +27,7 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import FeatureFlags_iOS
+import PixelKit
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 
@@ -136,6 +137,51 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
                 expectedMode: testCase.expectedMode
             )
         }
+    }
+
+    @MainActor
+    func testWhenNativeAutoconsentPixelFiresThenTopUrlIsPassedForTheSiteRank() {
+        let management = MockAutoconsentManagement()
+        userScript.management = management
+
+        sendInit(url: "https://www.google.com/")
+
+        XCTAssertEqual(management.lastTopUrl, URL(string: "https://www.google.com/"))
+    }
+
+    @MainActor
+    func testWhenSummaryPixelFiresThenOnePixelIsSentPerSiteRank() {
+        var firedPixels: [(name: String, parameters: [String: String])] = []
+        PixelKit.setUp(
+            dryRun: false,
+            appVersion: "1.0.0",
+            session: "test",
+            defaultHeaders: [:],
+            defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!
+        ) { name, _, parameters, _, _, completion in
+            firedPixels.append((name, parameters))
+            completion(true, nil)
+        }
+        defer { PixelKit.tearDown() }
+
+        let management = AutoconsentManagement()
+        let parameters = ["consentHeuristicEnabled": "tier1"]
+        management.firePixel(pixel: .acInit, topUrl: URL(string: "https://www.google.com/"), additionalParameters: parameters)
+        management.firePixel(pixel: .acInit, topUrl: URL(string: "https://example.com/"), additionalParameters: parameters)
+        management.firePixel(pixel: .popupFound, topUrl: URL(string: "https://example.com/"), additionalParameters: parameters)
+        management.fireSummaryPixel()
+
+        let summaries = firedPixels.filter { $0.name.contains("autoconsent_summary") }.map(\.parameters)
+        XCTAssertEqual(summaries.count, 2)
+        let top10k = summaries.first { $0["siteRank"] == "top10k" }
+        let other = summaries.first { $0["siteRank"] == "other" }
+        XCTAssertEqual(top10k?["init"], "1")
+        XCTAssertEqual(top10k?["popup-found"], "0")
+        XCTAssertEqual(other?["init"], "1")
+        XCTAssertEqual(other?["popup-found"], "1")
+        XCTAssertEqual(other?["consentHeuristicEnabled"], "tier1")
+        // daily pixels have no site rank
+        XCTAssertTrue(firedPixels.filter { !$0.name.contains("autoconsent_summary") }.allSatisfy { $0.parameters["siteRank"] == nil })
     }
 
     @MainActor

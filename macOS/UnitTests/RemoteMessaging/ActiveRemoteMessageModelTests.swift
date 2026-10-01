@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import XCTest
 import NewTabPage
+@_spi(Testing) import PixelKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
@@ -102,6 +103,57 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         XCTAssertFalse(store.hasShownRemoteMessage(withID: message.id))
         await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
         XCTAssertTrue(store.hasShownRemoteMessage(withID: message.id))
+    }
+
+    func testWhenMetricsEnabledMessageIsShownThenShownAndShownUniquePixelsAreFired() async {
+        message = RemoteMessageModel(
+            id: "1",
+            surfaces: .newTabPage,
+            content: .small(titleText: "test", descriptionText: "desc"),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: true
+        )
+        store.scheduledRemoteMessage = message
+        let pixelFiring = PixelKitMock()
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { },
+            pixelFiring: pixelFiring
+        )
+
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map { $0.pixel.name }, [
+            "m_mac_remote_message_shown",
+            "m_mac_remote_message_shown_unique"
+        ])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.additionalParameters), [
+            ["message": message.id],
+            ["message": message.id]
+        ])
+    }
+
+    func testWhenMetricsDisabledMessageIsShownThenNoPixelIsFired() async {
+        store.scheduledRemoteMessage = message
+        let pixelFiring = PixelKitMock()
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { },
+            pixelFiring: pixelFiring
+        )
+
+        await model.markRemoteMessageAsShown(withID: message.id, on: .newTabPage)
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testWhenMessageIsShownAgainThenEachImpressionIsRecorded() async {

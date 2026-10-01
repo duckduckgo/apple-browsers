@@ -74,18 +74,22 @@ final class ActiveRemoteMessageModel: ObservableObject {
      */
     let navigateToSoftwareUpdateHandler: () async -> Void
 
+    private let pixelFiring: (any PixelKitFiring)?
+
     convenience init(remoteMessagingClient: RemoteMessagingClient,
                      openURLHandler: @escaping (URL) async -> Void,
                      navigateToFeedbackHandler: @escaping () async -> Void,
                      navigateToPIRHandler: @escaping () async -> Void,
-                     navigateToSoftwareUpdateHandler: @escaping () async -> Void) {
+                     navigateToSoftwareUpdateHandler: @escaping () async -> Void,
+                     pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.init(
             remoteMessagingStore: remoteMessagingClient.store,
             remoteMessagingAvailabilityProvider: remoteMessagingClient.remoteMessagingAvailabilityProvider,
             openURLHandler: openURLHandler,
             navigateToFeedbackHandler: navigateToFeedbackHandler,
             navigateToPIRHandler: navigateToPIRHandler,
-            navigateToSoftwareUpdateHandler: navigateToSoftwareUpdateHandler
+            navigateToSoftwareUpdateHandler: navigateToSoftwareUpdateHandler,
+            pixelFiring: pixelFiring
         )
     }
 
@@ -99,7 +103,8 @@ final class ActiveRemoteMessageModel: ObservableObject {
         surveyURLRefresher: @escaping (String) -> String = ActiveRemoteMessageModel.defaultSurveyURLRefresher,
         navigateToFeedbackHandler: @escaping () async -> Void,
         navigateToPIRHandler: @escaping () async -> Void,
-        navigateToSoftwareUpdateHandler: @escaping () async -> Void
+        navigateToSoftwareUpdateHandler: @escaping () async -> Void,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.store = remoteMessagingStore
         self.openURLHandler = openURLHandler
@@ -107,6 +112,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
         self.navigateToFeedbackHandler = navigateToFeedbackHandler
         self.navigateToPIRHandler = navigateToPIRHandler
         self.navigateToSoftwareUpdateHandler = navigateToSoftwareUpdateHandler
+        self.pixelFiring = pixelFiring
 
         let messagesDidChangePublisher = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .asVoid()
@@ -180,7 +186,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
         }()
 
         if let pixel {
-            PixelKit.fire(pixel, withAdditionalParameters: ["message": remoteMessage.id])
+            pixelFiring?.fire(pixel, options: .parameters(["message": remoteMessage.id]))
         }
     }
 
@@ -201,12 +207,12 @@ final class ActiveRemoteMessageModel: ObservableObject {
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
 
         if remoteMessage.isMetricsEnabled {
-            PixelKit.fire(GeneralPixel.remoteMessageShown, withAdditionalParameters: ["message": messageID])
+            pixelFiring?.fire(GeneralPixel.remoteMessageShown, options: .parameters(["message": messageID]))
         }
         if isFirstImpression {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
-                PixelKit.fire(GeneralPixel.remoteMessageShownUnique, withAdditionalParameters: ["message": messageID])
+                pixelFiring?.fire(GeneralPixel.remoteMessageShownUnique, options: .parameters(["message": messageID]))
             }
         }
     }

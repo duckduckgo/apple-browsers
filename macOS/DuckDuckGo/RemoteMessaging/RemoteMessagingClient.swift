@@ -35,6 +35,12 @@ protocol RemoteMessagingStoreProviding {
 }
 
 struct DefaultRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring {
         RemoteMessagingStore(
             database: database,
@@ -43,7 +49,7 @@ struct DefaultRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
             autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent> { event, _, _, _ in
                 switch event {
                 case .messageAutoDismissed(let messageID):
-                    PixelKit.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
+                    pixelFiring?.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
                 }
             },
             enforcesMaxImpressions: true,

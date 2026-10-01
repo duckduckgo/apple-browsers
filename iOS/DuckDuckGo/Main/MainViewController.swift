@@ -2420,8 +2420,10 @@ class MainViewController: UIViewController {
 
         let chatPathCompletionPending = isChatPathCompletionPending
         // Resolved before the instrumentation call below, so the wide event records the mode
-        // the app decided on rather than racing the keyboard to observe it.
+        // the app decided on rather than racing the keyboard to observe it. Behind the flag a new tab
+        // also waits for onboarding, like every other New Tab Page landing.
         let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+            && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2862,7 +2864,7 @@ class MainViewController: UIViewController {
               tabManager.currentTabsModel.currentTab?.isHomeTab == true,
               NewTabPageKeyboardPolicy().showsKeyboardOnInAppLanding,
               !isNewTabPageKeyboardBlockedByDialog,
-              !daxDialogsManager.isStillOnboarding() else { return }
+              !isNewTabPageKeyboardHeldForOnboarding else { return }
         enterSearch()
     }
 

@@ -20,7 +20,7 @@ import Combine
 import Common
 import FoundationExtensions
 import History
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import SnapshotTestingSupport
 import os.log
 import PrivacyConfig

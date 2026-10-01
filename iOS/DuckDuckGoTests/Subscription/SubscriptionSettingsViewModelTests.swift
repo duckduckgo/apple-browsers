@@ -22,8 +22,7 @@ import Combine
 @testable import DuckDuckGo
 @testable import Subscription
 import SubscriptionTestingUtilities
-import Networking
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import Persistence
 
 @MainActor

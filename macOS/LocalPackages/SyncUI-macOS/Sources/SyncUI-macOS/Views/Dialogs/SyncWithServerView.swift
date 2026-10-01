@@ -25,7 +25,7 @@ struct SyncWithServerView: View {
     var body: some View {
         let syncWithServerSubtitle1 = model.isAIChatSyncEnabled ? UserText.syncWithServerSubtitle1Updated : UserText.syncWithServerSubtitle1
         SyncDialog(spacing: 20.0) {
-            Image(model.isAppRebranded ? .syncServer96 : .syncServer96Legacy)
+            Image(.syncServer96)
             SyncUIViews.TextHeader(text: UserText.syncWithServerTitle)
             SyncUIViews.TextDetailMultiline(text: syncWithServerSubtitle1)
             SyncUIViews.TextDetailMultiline(text: UserText.syncWithServerSubtitle2)

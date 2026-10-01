@@ -37,6 +37,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     case loaded
     case loadError(error: Error)
+    case reloadError(parameters: [String: String])
 
     // MARK: - Embedded Extensions
 
@@ -110,6 +111,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "m_mac_web_extension_loaded"
         case .loadError:
             return "m_mac_web_extension_load_error"
+        case .reloadError:
+            return "debug_web_extension_reload_failed"
         case .embeddedInstalled:
             return "m_mac_web_extension_embedded_installed"
         case .embeddedUpgraded:
@@ -205,6 +208,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
         case .debugCPM(let metadata):
             return metadata.parameters
+        case .reloadError(let parameters):
+            return parameters
         default:
             return nil
         }
@@ -212,7 +217,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM:
+        case .debugCPM, .reloadError:
             return .none
         default:
             return .platformDefault
@@ -289,6 +294,14 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .loaded
         case .loadError(let error):
             pixel = .loadError(error: error)
+        case .reloadError(let type, let trigger, let phase, let error):
+            let metadata = WebExtensionReloadErrorPixelMetadata(
+                type: type,
+                trigger: trigger,
+                phase: phase,
+                error: error
+            )
+            pixel = .reloadError(parameters: metadata.parameters)
         case .embeddedInstalled(let type):
             guard let macPixel = type.installedPixel else { return }
             pixel = macPixel
@@ -323,7 +336,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         }
-        if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+        if case .reloadError = event {
+            frequency = .dailyAndCount
+        } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
             frequency = metadata.frequency.pixelKitFrequency
         } else {
             frequency = .dailyAndStandard

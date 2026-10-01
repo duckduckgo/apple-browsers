@@ -275,10 +275,8 @@ private extension DataImportFileUploadCoordinator {
 
         presentingViewController.present(summaryViewController, animated: true)
 
-        if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
-            try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
-            try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
-        }
+        try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+        try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
     }
 }
 

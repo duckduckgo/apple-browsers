@@ -57,6 +57,8 @@ extension WebsitePermissionsViewState {
                 return UserText.permissionCenterExternalApps
             case .popups:
                 return UserText.permissionPopups
+            case .autoplay:
+                return UserText.permissionAutoplay
             }
         }
 
@@ -74,6 +76,8 @@ extension WebsitePermissionsViewState {
                 return DesignSystemImages.Glyphs.Size16.openIn
             case .popups:
                 return DesignSystemImages.Glyphs.Size16.popupBlocked
+            case .autoplay:
+                return DesignSystemImages.Glyphs.Size16.permissionAutoplay
             }
         }
 

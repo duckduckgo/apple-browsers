@@ -927,6 +927,51 @@ final class AIChatOmnibarControllerTests: XCTestCase {
                        "File data is sent as base64")
     }
 
+    func testWhenSubmitWithOnlyFileAttachmentAndNoText_ThenPromptIsSubmittedWithFiles() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "pdf-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.addFileAttachmentToActiveTab(makeFileAttachment(fileName: "spec.pdf"))
+        controller.updateText("")
+
+        XCTAssertTrue(controller.hasSendableAttachments)
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertTrue(mockTabOpener.openAIChatTabCalled)
+        let prompt = AIChatPromptHandler.shared.consumeData()
+        guard case let .query(query) = prompt?.tool else {
+            XCTFail("Expected a `.query` tool in the submitted prompt")
+            return
+        }
+        XCTAssertEqual(query.prompt, "")
+        XCTAssertEqual(query.files?.first?.fileName, "spec.pdf")
+    }
+
+    func testWhenSubmitWithOnlyFileAttachmentUnsupportedByModel_ThenNothingHappens() async {
+        mockModelsService.modelsToReturn = [
+            makeRemoteModel(id: "text-model", supportedFileTypes: [], entityHasAccess: true)
+        ]
+        mockPreferences.selectedModelId = "text-model"
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        controller.addFileAttachmentToActiveTab(makeFileAttachment(fileName: "spec.pdf"))
+        controller.updateText("   ")
+
+        XCTAssertFalse(controller.hasSendableAttachments)
+
+        controller.submit()
+        await Task.yield()
+
+        XCTAssertFalse(mockTabOpener.openAIChatTabCalled)
+    }
+
     func testWhenSubmitWithFileAttachments_ThenSharedStateClearsFileAttachments() async {
         mockModelsService.modelsToReturn = [
             makeRemoteModel(id: "pdf-model", supportedFileTypes: ["application/pdf"], entityHasAccess: true)
@@ -2427,6 +2472,22 @@ final class AIChatOmnibarControllerTests: XCTestCase {
         let items = controller.modelPickerItems(selectedModelId: nil, freeModelsOnly: true)
 
         XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
+    }
+
+    /// A row the user's plan can't pick has nothing to offer in a menu about switching model.
+    func testModelPickerItems_hidesGatedModels_dropsTheGatedSection() async {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarSubscriptionUpsell.rawValue] = true
+        await loadModels([
+            makeRemoteModel(id: "free-a", accessTier: ["free", "plus", "pro"]),
+            makeRemoteModel(id: "plus-only", accessTier: ["plus"]),
+            makeRemoteModel(id: "pro-only", accessTier: ["pro"]),
+        ], tier: nil, trialEligible: true)
+
+        let items = controller.modelPickerItems(selectedModelId: nil, hidesGatedModels: true)
+
+        XCTAssertEqual(accessibleRows(items).map(\.id), ["free-a"])
+        XCTAssertTrue(gatedRows(items).isEmpty)
         XCTAssertEqual(separatorCount(items), 0, "Nothing to divide off — there is no second section")
     }
 

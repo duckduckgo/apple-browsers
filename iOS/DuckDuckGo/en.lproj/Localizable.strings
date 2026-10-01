@@ -190,6 +190,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Try for Free";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.";
 
@@ -270,6 +273,12 @@
 
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take Photo";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Learn more";
 
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "That message is too long to send with attachments.";

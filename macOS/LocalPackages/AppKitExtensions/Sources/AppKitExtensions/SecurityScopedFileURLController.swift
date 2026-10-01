@@ -69,12 +69,7 @@ public final class SecurityScopedFileURLController {
 #if DEBUG
             guard NSApp.isSandboxed else { return }
             url.ensureUrlIsNotWritable {
-            #if SANDBOX_TEST_TOOL
-                Logger.fileDownload.log("❗️ url \(url.path) is still writable after stopping access to it")
-                fatalError("❗️ url \(url.path) is still writable after stopping access to it")
-            #else
                 breakByRaisingSigInt("❗️ url \(url.path) is still writable after stopping access to it")
-            #endif
             }
 #endif
         }

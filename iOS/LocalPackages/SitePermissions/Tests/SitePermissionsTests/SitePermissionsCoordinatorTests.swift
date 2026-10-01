@@ -32,32 +32,131 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(SitePermissionCaptureState(.muted), .paused)
     }
 
-    func testWhenStoredDenyExistsThenItWinsWithoutPrompting() throws {
-        let harness = try Harness()
-        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
-        harness.store.setPersistentDecision(.deny, for: .microphone, at: harness.site)
-        var didPrompt = false
-        var resolution: SitePermissionResolution?
+    func testWhenCombinedRequestHasStoredAllowAndDenyThenItFailsInEitherDirection() throws {
+        for deniedType in [SitePermissionType.camera, .microphone] {
+            let harness = try Harness()
+            let allowedType: SitePermissionType = deniedType == .camera ? .microphone : .camera
+            harness.store.setPersistentDecision(.allow, for: allowedType, at: harness.site)
+            harness.store.setPersistentDecision(.deny, for: deniedType, at: harness.site)
+            harness.authorizationRequester = { _ in
+                XCTFail("Site denial must not request system authorization")
+                return .authorized
+            }
+            var resolution: SitePermissionResolution?
 
-        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
-            didPrompt = true
-        }, completion: { resolution = $0 })
+            harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+                XCTFail("Stored Deny must not prompt")
+            }, completion: { resolution = $0 })
 
-        XCTAssertEqual(resolution, .deny(systemBlocks: []))
-        XCTAssertFalse(didPrompt)
+            XCTAssertEqual(resolution, .deny(systemBlocks: []), "Denied \(deniedType)")
+            XCTAssertEqual(harness.store.permissions(for: harness.site), [allowedType: .allow, deniedType: .deny])
+            harness.coordinator.request(harness.request([allowedType]), promptHandler: { _, _ in
+                XCTFail("The independently allowed permission must still work")
+            }, completion: { resolution = $0 })
+            XCTAssertEqual(resolution, .grant)
+        }
     }
 
-    func testWhenStoredAllowExistsUnderGlobalNeverThenItStillGrants() throws {
-        let harness = try Harness()
-        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
-        harness.store.setGlobalDefault(.deny, for: .camera)
-        var resolution: SitePermissionResolution?
+    func testWhenGlobalNeverAppliesThenOnlyAnExplicitSiteAllowGrantsForEveryPermissionType() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness()
+            harness.store.setGlobalDefault(.deny, for: permissionType)
+            var resolution: SitePermissionResolution?
+            let promptHandler: SitePermissionsCoordinator.PromptHandler = { _, _ in
+                XCTFail("Global Never and explicit Allow must both avoid a site prompt")
+            }
 
-        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
-            XCTFail("Stored Allow must not prompt")
-        }, completion: { resolution = $0 })
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: promptHandler) { resolution = $0 }
 
-        XCTAssertEqual(resolution, .grant)
+            XCTAssertEqual(resolution, .deny(systemBlocks: []), "Undecided \(permissionType)")
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).requestedPermissionTypesThisVisit.isEmpty)
+
+            harness.store.setPersistentDecision(.allow, for: permissionType, at: harness.site)
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: promptHandler) { resolution = $0 }
+
+            XCTAssertEqual(resolution, .grant, "Explicit Allow for \(permissionType)")
+            XCTAssertEqual(harness.store.permissions(for: harness.site), [permissionType: .allow])
+            XCTAssertEqual(harness.store.globalDefault(for: permissionType), .deny)
+        }
+    }
+
+    func testWhenSiteDecisionChangesThenOtherPermissionTypesAndGlobalDefaultsRemainIndependent() throws {
+        for changedType in SitePermissionType.allCases {
+            for decision in [SitePermissionDecision.ask, .deny] {
+                let harness = try Harness()
+                for permissionType in SitePermissionType.allCases {
+                    harness.store.setPersistentDecision(.allow, for: permissionType, at: harness.site)
+                    harness.store.setGlobalDefault(.ask, for: permissionType)
+                }
+                if decision == .ask {
+                    harness.store.resetDecision(for: changedType, at: harness.site)
+                } else {
+                    harness.store.setPersistentDecision(decision, for: changedType, at: harness.site)
+                }
+                harness.coordinator.revokeManagementSessionState(for: [changedType], at: harness.site)
+
+                for permissionType in SitePermissionType.allCases {
+                    let expectedDecision: SitePermissionDecision = permissionType == changedType ? decision : .allow
+                    XCTAssertEqual(harness.store.decision(for: permissionType, at: harness.site), expectedDecision)
+                    XCTAssertEqual(harness.store.globalDefault(for: permissionType), .ask)
+                    let expectedState: SitePermissionQueryState
+                    switch expectedDecision {
+                    case .allow: expectedState = .granted
+                    case .ask: expectedState = .prompt
+                    case .deny: expectedState = .denied
+                    }
+                    XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), expectedState)
+                }
+            }
+        }
+    }
+
+    func testWhenGlobalDefaultChangesThenOtherPermissionTypesRemainIndependentAndNoSiteRecordIsCreated() throws {
+        for changedType in SitePermissionType.allCases {
+            for decision in [GlobalSitePermissionDecision.ask, .deny] {
+                let harness = try Harness()
+                let unchangedDecision: GlobalSitePermissionDecision = decision == .ask ? .deny : .ask
+                for permissionType in SitePermissionType.allCases {
+                    harness.store.setGlobalDefault(unchangedDecision, for: permissionType)
+                }
+                harness.store.setGlobalDefault(decision, for: changedType)
+
+                for permissionType in SitePermissionType.allCases {
+                    let expectedDecision = permissionType == changedType ? decision : unchangedDecision
+                    XCTAssertEqual(harness.store.globalDefault(for: permissionType), expectedDecision)
+                    XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context),
+                                   expectedDecision == .ask ? .prompt : .denied)
+                }
+                XCTAssertTrue(harness.store.storedSites.isEmpty)
+            }
+        }
+    }
+
+    func testWhenSiblingHostHasStoredDecisionThenItDoesNotDecideTheCurrentHostRequest() throws {
+        let sibling = try XCTUnwrap(SitePermissionKey(storedHost: "a.example.com"))
+        let currentSite = try XCTUnwrap(SitePermissionKey(storedHost: "b.example.com"))
+        for permissionType in SitePermissionType.allCases {
+            for siblingDecision in [SitePermissionDecision.allow, .deny] {
+                let context = SitePermissionRequestContext(tabID: "tab-1", topLevelSite: currentSite,
+                                                           requestingFrameID: 42, webContentProcessGeneration: 1, navigationGeneration: 1)
+                let harness = try Harness(context: context)
+                harness.store.setPersistentDecision(siblingDecision, for: permissionType, at: sibling)
+                var prompts = [SitePermissionPrompt]()
+                var resolution: SitePermissionResolution?
+
+                harness.coordinator.request(harness.request([permissionType]), promptHandler: { prompt, respond in
+                    prompts.append(prompt)
+                    respond(.neverAllow)
+                }, completion: { resolution = $0 })
+
+                XCTAssertEqual(prompts, [SitePermissionPrompt(site: currentSite, permissionTypes: [permissionType], isFireMode: false)])
+                XCTAssertEqual(resolution, .deny(systemBlocks: []))
+                XCTAssertEqual(harness.store.storedSites, [sibling, currentSite])
+                XCTAssertEqual(harness.store.permissions(for: sibling), [permissionType: siblingDecision])
+                XCTAssertEqual(harness.store.permissions(for: currentSite), [permissionType: .deny])
+            }
+        }
     }
 
     func testWhenExplicitAskAndNoGlobalDenyExistThenRequestPrompts() throws {
@@ -69,7 +168,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             receivedPrompt = prompt
         }, completion: { _ in })
 
-        XCTAssertEqual(receivedPrompt, SitePermissionPrompt(site: harness.site, permissionTypes: [.camera]))
+        XCTAssertEqual(receivedPrompt, SitePermissionPrompt(site: harness.site, permissionTypes: [.camera], isFireMode: false))
     }
 
     func testWhenGlobalNeverAppliesToUnresolvedTypeThenCombinedRequestDeclinesSilently() throws {
@@ -87,16 +186,390 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertFalse(didPrompt)
     }
 
-    func testWhenCombinedStoredStateIsPartialAllowAndAskThenOneCombinedPromptIsShown() throws {
-        let harness = try Harness()
-        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
-        var prompts = [SitePermissionPrompt]()
+    func testWhenEitherMediaTypeIsBlockedThenCombinedRequestDeclinesButOtherTypeAlonePrompts() throws {
+        let mediaTypes: Set<SitePermissionType> = [.camera, .microphone]
+        for blockedType in mediaTypes {
+            for isSiteDecision in [false, true] {
+                let harness = try Harness()
+                let otherTypes = mediaTypes.subtracting([blockedType])
+                if isSiteDecision {
+                    harness.store.setPersistentDecision(.deny, for: blockedType, at: harness.site)
+                } else {
+                    harness.store.setGlobalDefault(.deny, for: blockedType)
+                }
+                var resolution: SitePermissionResolution?
+                harness.coordinator.request(harness.request(mediaTypes), promptHandler: { _, _ in
+                    XCTFail("A combined WebKit grant would bypass the blocked permission")
+                }, completion: { resolution = $0 })
 
-        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { prompt, _ in
-            prompts.append(prompt)
+                XCTAssertEqual(resolution, .deny(systemBlocks: []))
+                XCTAssertEqual(harness.coordinator.queryState(for: blockedType, context: harness.context), .denied)
+
+                var prompts = [SitePermissionPrompt]()
+                harness.coordinator.request(harness.request(otherTypes), promptHandler: { prompt, _ in
+                    prompts.append(prompt)
+                }, completion: { _ in })
+
+                XCTAssertEqual(prompts, [SitePermissionPrompt(site: harness.site, permissionTypes: otherTypes, isFireMode: false)])
+            }
+        }
+    }
+
+    func testCombinedRequestsRespectFireModeOverridesWithoutChangingStoredDecisions() throws {
+        let harness = try Harness(isFireMode: true)
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.store.setPersistentDecision(.deny, for: .microphone, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .microphone, at: harness.site)
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .denied)
+        XCTAssertEqual(harness.coordinator.queryState(for: .microphone, context: harness.context), .granted)
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+            XCTFail("A combined request must respect the Fire-mode denial")
+        }, completion: { resolution = $0 })
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
+        XCTAssertEqual(harness.store.decision(for: .microphone, at: harness.site), .deny)
+    }
+
+    func testPermissionQueryMatchesNextRequestAcrossStoredGlobalAndSystemPrecedence() async throws {
+        struct Scenario {
+            let stored: SitePermissionDecision?
+            let global: GlobalSitePermissionDecision
+            let system: SystemPermissionAuthorizationState
+            let queryState: SitePermissionQueryState
+            let expectsPrompt: Bool
+            let resolution: SitePermissionResolution
+        }
+        let scenarios = [
+            Scenario(stored: nil, global: .ask, system: .authorized,
+                     queryState: .prompt, expectsPrompt: true, resolution: .grant),
+            Scenario(stored: .ask, global: .ask, system: .authorized,
+                     queryState: .prompt, expectsPrompt: true, resolution: .grant),
+            Scenario(stored: nil, global: .deny, system: .authorized,
+                     queryState: .denied, expectsPrompt: false, resolution: .deny(systemBlocks: [])),
+            Scenario(stored: .deny, global: .ask, system: .authorized,
+                     queryState: .denied, expectsPrompt: false, resolution: .deny(systemBlocks: [])),
+            Scenario(stored: .allow, global: .deny, system: .authorized,
+                     queryState: .granted, expectsPrompt: false, resolution: .grant),
+            Scenario(stored: .allow, global: .ask, system: .notDetermined,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .notDetermined,
+                                                              timing: .preexisting)])),
+            Scenario(stored: .allow, global: .ask, system: .denied,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .denied,
+                                                              timing: .preexisting)])),
+            Scenario(stored: .allow, global: .ask, system: .restricted,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .restricted,
+                                                              timing: .preexisting)])),
+            Scenario(stored: .allow, global: .ask, system: .unavailable,
+                     queryState: .denied, expectsPrompt: false,
+                     resolution: .deny(systemBlocks: [.init(permissionType: .location,
+                                                              state: .unavailable,
+                                                              timing: .preexisting)]))
+        ]
+
+        for scenario in scenarios {
+            let harness = try Harness()
+            harness.store.setGlobalDefault(scenario.global, for: .location)
+            switch scenario.stored {
+            case .ask?:
+                harness.store.resetDecision(for: .location, at: harness.site)
+            case let decision?:
+                harness.store.setPersistentDecision(decision, for: .location, at: harness.site)
+            case nil:
+                break
+            }
+            harness.systemStates[.location] = scenario.system
+
+            XCTAssertEqual(
+                harness.coordinator.queryState(for: .location, context: harness.context),
+                scenario.queryState
+            )
+
+            var didPrompt = false
+            let requestCompleted = expectation(description: "Request matching \(scenario.queryState) query completes")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                didPrompt = true
+                respond(.allowOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, scenario.resolution)
+                requestCompleted.fulfill()
+            })
+
+            await fulfillment(of: [requestCompleted], timeout: 1)
+            XCTAssertEqual(didPrompt, scenario.expectsPrompt)
+        }
+    }
+
+    func testPermissionQueryTransitionTableCoversEverySourceAndSystemState() async throws {
+        enum SourceState: CaseIterable, Equatable {
+            case noDecision
+            case storedAsk
+            case storedAllow
+            case storedDeny
+            case globalNever
+            case allowOnce
+            case denyOnce
+        }
+
+        let systemStates: [SystemPermissionAuthorizationState] = [
+            .notDetermined,
+            .authorized,
+            .denied,
+            .restricted,
+            .unavailable
+        ]
+        for sourceState in SourceState.allCases {
+            for systemState in systemStates {
+                let harness = try Harness()
+                switch sourceState {
+                case .noDecision:
+                    break
+                case .storedAsk:
+                    harness.store.resetDecision(for: .location, at: harness.site)
+                case .storedAllow:
+                    harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
+                case .storedDeny:
+                    harness.store.setPersistentDecision(.deny, for: .location, at: harness.site)
+                case .globalNever:
+                    harness.store.setGlobalDefault(.deny, for: .location)
+                case .allowOnce, .denyOnce:
+                    let activated = expectation(description: "Activate \(sourceState)")
+                    harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                        respond(sourceState == .allowOnce ? .allowOnce : .denyOnce)
+                    }, completion: { _ in activated.fulfill() })
+                    await fulfillment(of: [activated], timeout: 1)
+                    if sourceState == .allowOnce {
+                        harness.coordinator.updateGeolocationCaptureState(.active)
+                        harness.coordinator.updateGeolocationCaptureState(.inactive)
+                    }
+                }
+                harness.systemStates[.location] = systemState
+
+                let expectedState: SitePermissionQueryState
+                switch sourceState {
+                case .storedDeny, .globalNever, .denyOnce:
+                    expectedState = .denied
+                case .storedAllow, .allowOnce:
+                    expectedState = systemState == .authorized ? .granted : .denied
+                case .noDecision, .storedAsk:
+                    expectedState = .prompt
+                }
+
+                XCTAssertEqual(
+                    harness.coordinator.queryState(for: .location, context: harness.context),
+                    expectedState,
+                    "Unexpected query state for \(sourceState), OS \(systemState)"
+                )
+
+                var promptCount = 0
+                var resolution: SitePermissionResolution?
+                harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                    promptCount += 1
+                    respond(.denyOnce)
+                }, completion: { resolution = $0 })
+
+                switch expectedState {
+                case .prompt:
+                    XCTAssertEqual(promptCount, 1, "Expected one prompt for \(sourceState), OS \(systemState)")
+                    XCTAssertEqual(resolution, .deny(systemBlocks: []))
+                case .granted:
+                    XCTAssertEqual(promptCount, 0, "Granted state must not prompt for \(sourceState), OS \(systemState)")
+                    XCTAssertEqual(resolution, .grant)
+                case .denied:
+                    XCTAssertEqual(promptCount, 0, "Denied state must not prompt for \(sourceState), OS \(systemState)")
+                    guard case .some(.deny) = resolution else {
+                        XCTFail("Expected denial for \(sourceState), OS \(systemState); got \(String(describing: resolution))")
+                        continue
+                    }
+                }
+            }
+        }
+    }
+
+    func testManagerDenyWhilePromptIsPendingWinsWithoutBeingOverwritten() throws {
+        let harness = try Harness()
+        var respond: ((SitePermissionPromptDecision) -> Void)?
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, promptResponse in
+            respond = promptResponse
+        }, completion: { resolution = $0 })
+
+        harness.store.setPersistentDecision(.deny, for: .location, at: harness.site)
+        respond?(.allowWhileUsingSite)
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .deny)
+    }
+
+    func testPermissionQueryAndRequestBothRejectStaleOrClosedContext() throws {
+        for isClosed in [false, true] {
+            let harness = try Harness()
+            let context = harness.context
+            if isClosed {
+                harness.coordinator.close()
+            } else {
+                harness.context = harness.context(changingNavigationGenerationTo: 2)
+            }
+            var didPrompt = false
+            var didComplete = false
+
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: context), .denied)
+            harness.coordinator.request(
+                SitePermissionRequest(context: context, permissionTypes: [.location]),
+                promptHandler: { _, _ in didPrompt = true },
+                completion: { _ in didComplete = true }
+            )
+
+            XCTAssertFalse(didPrompt)
+            XCTAssertFalse(didComplete)
+        }
+    }
+
+    func testPermissionQueryMatchesNextRequestForActivePageDecision() async throws {
+        let cases: [(SitePermissionPromptDecision, SitePermissionQueryState, SitePermissionResolution)] = [
+            (.denyOnce, .denied, .deny(systemBlocks: [])),
+            (.allowOnce, .granted, .grant)
+        ]
+
+        for (decision, queryState, expectedResolution) in cases {
+            let harness = try Harness()
+            let initialRequestCompleted = expectation(description: "Activate \(decision)")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                respond(decision)
+            }, completion: { _ in
+                initialRequestCompleted.fulfill()
+            })
+            await fulfillment(of: [initialRequestCompleted], timeout: 1)
+
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), queryState)
+
+            var didPrompt = false
+            let repeatedRequestCompleted = expectation(description: "Request after \(decision) completes")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+                didPrompt = true
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, expectedResolution)
+                repeatedRequestCompleted.fulfill()
+            })
+            await fulfillment(of: [repeatedRequestCompleted], timeout: 1)
+            XCTAssertFalse(didPrompt)
+        }
+    }
+
+    func testPermissionQueryReturnsImmediatelyWhileFIFOIsBusyAndMatchesNextRequest() async throws {
+        let harness = try Harness()
+        var cameraResponder: ((SitePermissionPromptDecision) -> Void)?
+        var locationResponder: ((SitePermissionPromptDecision) -> Void)?
+        var promptedTypes = [Set<SitePermissionType>]()
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { prompt, respond in
+            promptedTypes.append(prompt.permissionTypes)
+            cameraResponder = respond
         }, completion: { _ in })
 
-        XCTAssertEqual(prompts, [SitePermissionPrompt(site: harness.site, permissionTypes: [.camera, .microphone])])
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .prompt)
+        XCTAssertEqual(promptedTypes, [[.camera]])
+
+        let locationCompleted = expectation(description: "Location request completes after camera request")
+        harness.coordinator.request(harness.request([.location]), promptHandler: { prompt, respond in
+            promptedTypes.append(prompt.permissionTypes)
+            locationResponder = respond
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            locationCompleted.fulfill()
+        })
+        XCTAssertEqual(promptedTypes, [[.camera]])
+
+        cameraResponder?(.denyOnce)
+        XCTAssertEqual(promptedTypes, [[.camera], [.location]])
+        locationResponder?(.allowOnce)
+        await fulfillment(of: [locationCompleted], timeout: 1)
+    }
+
+    func testWhenCombinedRequestHasOneStoredAllowThenTheOtherPermissionStillRequiresAChoice() async throws {
+        for allowedType in [SitePermissionType.camera, .microphone] {
+            for decision in [SitePermissionPromptDecision.denyOnce, .allowWhileUsingSite] {
+                let harness = try Harness()
+                let undecidedType: SitePermissionType = allowedType == .camera ? .microphone : .camera
+                harness.store.setPersistentDecision(.allow, for: allowedType, at: harness.site)
+                var prompts = [SitePermissionPrompt]()
+                var respond: ((SitePermissionPromptDecision) -> Void)?
+                var resolution: SitePermissionResolution?
+                let completed = expectation(description: "Combined request with \(allowedType) allowed, choosing \(decision)")
+
+                harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { prompt, responder in
+                    prompts.append(prompt)
+                    respond = responder
+                }, completion: {
+                    resolution = $0
+                    completed.fulfill()
+                })
+
+                XCTAssertEqual(prompts, [SitePermissionPrompt(site: harness.site, permissionTypes: [.camera, .microphone], isFireMode: false)])
+                XCTAssertNil(resolution)
+                XCTAssertNil(harness.store.decision(for: undecidedType, at: harness.site))
+                try XCTUnwrap(respond)(decision)
+                await fulfillment(of: [completed], timeout: 1)
+
+                XCTAssertEqual(resolution, decision == .denyOnce ? .deny(systemBlocks: []) : .grant)
+                XCTAssertEqual(harness.store.decision(for: allowedType, at: harness.site), .allow)
+                XCTAssertEqual(harness.store.decision(for: undecidedType, at: harness.site), decision == .denyOnce ? nil : .allow)
+            }
+        }
+    }
+
+    func testWhenOneSystemPermissionIsDeniedThenCombinedRequestFailsButTheOtherResourceStillGrants() async throws {
+        for deniedType in [SitePermissionType.camera, .microphone] {
+            for hasStoredAllow in [false, true] {
+                let harness = try Harness()
+                let allowedType: SitePermissionType = deniedType == .camera ? .microphone : .camera
+                harness.systemStates[deniedType] = .denied
+                if hasStoredAllow {
+                    for permissionType in [SitePermissionType.camera, .microphone] {
+                        harness.store.setPersistentDecision(.allow, for: permissionType, at: harness.site)
+                    }
+                }
+                harness.authorizationRequester = { _ in
+                    XCTFail("A preexisting block must not request system authorization")
+                    return .authorized
+                }
+                var recoveries = [SitePermissionRecovery]()
+                harness.recoveryHandler = { recovery, completion in
+                    recoveries.append(recovery)
+                    completion()
+                }
+                let completed = expectation(description: "Combined request with system \(deniedType) denied")
+                harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+                    XCTAssertFalse(hasStoredAllow)
+                    respond(.allowWhileUsingSite)
+                }, completion: { resolution in
+                    XCTAssertEqual(resolution, .deny(systemBlocks: [
+                        SitePermissionSystemBlock(permissionType: deniedType, state: .denied, timing: .preexisting)
+                    ]))
+                    completed.fulfill()
+                })
+                await fulfillment(of: [completed], timeout: 1)
+
+                XCTAssertEqual(recoveries, [.reminder(permissionTypes: [deniedType])])
+                XCTAssertEqual(harness.store.permissions(for: harness.site), [.camera: .allow, .microphone: .allow])
+                var independentResolution: SitePermissionResolution?
+                harness.coordinator.request(harness.request([allowedType]), promptHandler: { _, _ in
+                    XCTFail("The permitted resource must retain its saved Allow")
+                }, completion: { independentResolution = $0 })
+                XCTAssertEqual(independentResolution, .grant)
+                XCTAssertEqual(recoveries.count, 1)
+                XCTAssertNil(harness.store.decision(for: .location, at: harness.site))
+            }
+        }
     }
 
     func testWhenAllowOnceCaptureEndsThenNextRequestPromptsAgain() async throws {
@@ -119,6 +592,8 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptCount, 0)
 
         harness.coordinator.captureDidEnd([.camera])
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .prompt)
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera])
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
             promptCount += 1
         }, completion: { _ in })
@@ -146,6 +621,70 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(harness.coordinator.captureState(for: .camera), .paused)
         XCTAssertEqual(harness.coordinator.captureState(for: .microphone), .active)
+    }
+
+    func testManagementSnapshotShowsCommittedPageCaptureBeforeRequestsAndAfterProvisionalNavigation() throws {
+        let harness = try Harness()
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.setCameraCaptureStateForTesting(.active)
+        webView.setMicrophoneCaptureStateForTesting(.muted)
+        harness.coordinator.observeMediaCapture(in: webView)
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+
+        for resetsPage in [false, true] {
+            if resetsPage {
+                harness.coordinator.pageDidChange(.navigation)
+            }
+            let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertEqual(snapshot.captureStates, [.camera: .active, .microphone: .paused])
+            XCTAssertTrue(snapshot.showsMenuEntry)
+            XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+            XCTAssertTrue(snapshot.requestedPermissionTypesThisVisit.isEmpty)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: otherSite).captureStates.isEmpty)
+        }
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.denyOnce)
+        }, completion: { _ in })
+        harness.committedSite = nil
+        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).captureStates.isEmpty)
+    }
+
+    func testLocationAllowOnceSurvivesCaptureEndAndGlobalNeverAppliesAfterReload() async throws {
+        for isFireMode in [false, true] {
+            let harness = try Harness(isFireMode: isFireMode)
+            let granted = expectation(description: "Allow Once grants")
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                respond(.allowOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, .grant)
+                granted.fulfill()
+            })
+            await fulfillment(of: [granted], timeout: 1)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+            harness.coordinator.updateGeolocationCaptureState(.active)
+            harness.coordinator.updateGeolocationCaptureState(.inactive)
+            harness.coordinator.pageDidChange(.sameDocumentNavigation)
+            XCTAssertEqual(harness.coordinator.captureState(for: .location), .inactive)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+
+            harness.store.setGlobalDefault(.deny, for: .location)
+            var repeatedResolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+                XCTFail("The page's explicit Allow Once must survive inactivity and override the global default")
+            }, completion: { repeatedResolution = $0 })
+            XCTAssertEqual(repeatedResolution, .grant)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+
+            harness.coordinator.pageDidChange(.reload)
+            XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .denied)
+            var deniedResolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+                XCTFail("An expired page grant must not bypass global Never")
+            }, completion: { deniedResolution = $0 })
+            XCTAssertEqual(deniedResolution, .deny(systemBlocks: []))
+        }
     }
 
     func testInitialInactiveObservationAndActivePausedTransitionsRetainAllowOnceUntilCaptureEnds() async throws {
@@ -188,7 +727,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptCount, 1)
     }
 
-    func testCaptureEndExpiresOnlyTheMatchingAllowOncePermission() async throws {
+    func testCaptureEndRepromptsOnlyTheMatchingAllowOncePermission() async throws {
         let harness = try Harness()
         let grantCompletion = expectation(description: "Combined Allow Once becomes active")
         harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
@@ -205,6 +744,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         webView.setMicrophoneCaptureStateForTesting(.active)
         webView.setCameraCaptureStateForTesting(.muted)
         webView.setCameraCaptureStateForTesting(.none)
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera, .microphone])
 
         var microphoneResolution: SitePermissionResolution?
         harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, _ in
@@ -227,6 +767,113 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(harness.coordinator.captureState(for: .microphone), .inactive)
         XCTAssertEqual(microphonePromptCount, 1)
+    }
+
+    func testWhenCombinedPromptIsNeverAllowedThenEveryRequestedPermissionIsRevoked() async throws {
+        let harness = try Harness()
+        let grantCompletion = expectation(description: "Camera Allow Once becomes active")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            grantCompletion.fulfill()
+        })
+        await fulfillment(of: [grantCompletion], timeout: 1)
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        harness.coordinator.observeMediaCapture(in: webView)
+        webView.setCameraCaptureStateForTesting(.active)
+
+        var revokedPermissionTypes = [Set<SitePermissionType>]()
+        var revokedSites = [SitePermissionKey]()
+        harness.revocationHandler = { permissionTypes, site in
+            revokedPermissionTypes.append(permissionTypes)
+            revokedSites.append(site)
+        }
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { prompt, respond in
+            XCTAssertEqual(prompt.permissionTypes, [.camera, .microphone])
+            respond(.neverAllow)
+        }, completion: { resolution = $0 })
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        XCTAssertEqual(revokedPermissionTypes, [[.camera, .microphone]])
+        XCTAssertEqual(revokedSites, [harness.site])
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
+        XCTAssertEqual(harness.store.decision(for: .microphone, at: harness.site), .deny)
+    }
+
+    func testWhenFireModeCombinedPromptIsNeverAllowedThenPausedCaptureIsRevokedWithoutPersisting() async throws {
+        let harness = try Harness(isFireMode: true)
+        let grantCompletion = expectation(description: "Camera Allow Once becomes active")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            grantCompletion.fulfill()
+        })
+        await fulfillment(of: [grantCompletion], timeout: 1)
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        harness.coordinator.observeMediaCapture(in: webView)
+        webView.setCameraCaptureStateForTesting(.muted)
+
+        var revokedPermissionTypes = [Set<SitePermissionType>]()
+        harness.revocationHandler = { permissionTypes, _ in revokedPermissionTypes.append(permissionTypes) }
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+            respond(.neverAllow)
+        }, completion: { _ in })
+
+        XCTAssertEqual(revokedPermissionTypes, [[.camera, .microphone]])
+        XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
+        XCTAssertNil(harness.store.decision(for: .microphone, at: harness.site))
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions,
+                       [.camera: .deny, .microphone: .deny])
+    }
+
+    func testWhenSinglePermissionIsNeverAllowedWithoutCaptureThenItIsRevoked() throws {
+        for permissionType: SitePermissionType in [.camera, .microphone, .location] {
+            let harness = try Harness()
+            var revokedPermissionTypes = [Set<SitePermissionType>]()
+            var revokedSites = [SitePermissionKey]()
+            harness.revocationHandler = { permissionTypes, site in
+                revokedPermissionTypes.append(permissionTypes)
+                revokedSites.append(site)
+            }
+            var resolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                respond(.neverAllow)
+            }, completion: { resolution = $0 })
+
+            XCTAssertEqual(resolution, .deny(systemBlocks: []))
+            XCTAssertEqual(revokedPermissionTypes, [[permissionType]])
+            XCTAssertEqual(revokedSites, [harness.site])
+            XCTAssertEqual(harness.store.decision(for: permissionType, at: harness.site), .deny)
+        }
+    }
+
+    func testWhenCombinedPromptIsDeniedOnceThenRunningCaptureIsKept() async throws {
+        let harness = try Harness()
+        let grantCompletion = expectation(description: "Camera Allow Once becomes active")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            grantCompletion.fulfill()
+        })
+        await fulfillment(of: [grantCompletion], timeout: 1)
+        let webView = MediaCaptureWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        harness.coordinator.observeMediaCapture(in: webView)
+        webView.setCameraCaptureStateForTesting(.active)
+
+        var revokedPermissionTypes = [Set<SitePermissionType>]()
+        harness.revocationHandler = { permissionTypes, _ in revokedPermissionTypes.append(permissionTypes) }
+        var resolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+            respond(.denyOnce)
+        }, completion: { resolution = $0 })
+
+        XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        // Dismissing a prompt refuses only the new request; it keeps capture the page already has.
+        XCTAssertTrue(revokedPermissionTypes.isEmpty)
     }
 
     func testReplacingObservationAndClosingInvalidateOldObservations() throws {
@@ -288,16 +935,23 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
             respond(.denyOnce)
         }, completion: { firstResolution = $0 })
         XCTAssertEqual(firstResolution, .deny(systemBlocks: []))
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .denied)
+        XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
+        XCTAssertFalse(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
 
         var promptCount = 0
-        var repeatedResolution: SitePermissionResolution?
-        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
-            promptCount += 1
-        }, completion: { repeatedResolution = $0 })
-        XCTAssertEqual(repeatedResolution, .deny(systemBlocks: []))
-        XCTAssertEqual(promptCount, 0)
+        let repeatedRequests: [Set<SitePermissionType>] = [[.camera], [.camera, .microphone]]
+        for permissionTypes in repeatedRequests {
+            var repeatedResolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request(permissionTypes), promptHandler: { _, _ in
+                promptCount += 1
+            }, completion: { repeatedResolution = $0 })
+            XCTAssertEqual(repeatedResolution, .deny(systemBlocks: []))
+            XCTAssertEqual(promptCount, 0)
+        }
 
         harness.coordinator.pageDidChange(.reload)
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .prompt)
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
             promptCount += 1
         }, completion: { _ in })
@@ -340,23 +994,28 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
     }
 
     func testWhenPageOrProcessEndsThenAllowOnceDoesNotSurvive() async throws {
-        for change in [SitePermissionPageChange.reload, .navigation, .webContentProcessReplacement] {
-            let harness = try Harness()
-            let grantCompletion = expectation(description: "Grant completes before \(change)")
-            harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
-                respond(.allowOnce)
-            }, completion: { resolution in
-                XCTAssertEqual(resolution, .grant)
-                grantCompletion.fulfill()
-            })
-            await fulfillment(of: [grantCompletion], timeout: 1)
+        for isFireMode in [false, true] {
+            for permissionType in SitePermissionType.allCases {
+                for change in [SitePermissionPageChange.reload, .navigation, .webContentProcessReplacement] {
+                    let harness = try Harness(isFireMode: isFireMode)
+                    let grantCompletion = expectation(description: "\(permissionType) grant completes before \(change)")
+                    harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                        respond(.allowOnce)
+                    }, completion: { resolution in
+                        XCTAssertEqual(resolution, .grant)
+                        grantCompletion.fulfill()
+                    })
+                    await fulfillment(of: [grantCompletion], timeout: 1)
 
-            harness.coordinator.pageDidChange(change)
-            var didPrompt = false
-            harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
-                didPrompt = true
-            }, completion: { _ in })
-            XCTAssertTrue(didPrompt)
+                    harness.coordinator.pageDidChange(change)
+                    XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+                    var didPrompt = false
+                    harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, _ in
+                        didPrompt = true
+                    }, completion: { _ in })
+                    XCTAssertTrue(didPrompt)
+                }
+            }
         }
     }
 
@@ -421,6 +1080,107 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptedTypes, [[.camera], [.microphone]])
         responders[1](.allowOnce)
         await fulfillment(of: [secondCompletion], timeout: 1)
+    }
+
+    func testWhenSeparateTabsRequestTheSamePermissionThenTheirPromptsAndTemporaryDecisionsAreIndependent() async throws {
+        let storage = MockKeyValueStore()
+        let first = try Harness(keyValueStore: storage)
+        let secondContext = SitePermissionRequestContext(tabID: "tab-2", topLevelSite: first.site,
+                                                        requestingFrameID: 42, webContentProcessGeneration: 1, navigationGeneration: 1)
+        let second = try Harness(context: secondContext, keyValueStore: storage)
+        var firstResponder: ((SitePermissionPromptDecision) -> Void)?
+        var secondResponder: ((SitePermissionPromptDecision) -> Void)?
+        var firstResolution: SitePermissionResolution?
+        var secondResolution: SitePermissionResolution?
+        first.coordinator.request(first.request([.microphone]), promptHandler: { _, respond in
+            firstResponder = respond
+        }, completion: { firstResolution = $0 })
+        let secondCompleted = expectation(description: "The second tab grants while the first prompt remains pending")
+        second.coordinator.request(second.request([.microphone]), promptHandler: { _, respond in
+            secondResponder = respond
+        }, completion: {
+            secondResolution = $0
+            secondCompleted.fulfill()
+        })
+
+        XCTAssertNotNil(firstResponder)
+        try XCTUnwrap(secondResponder)(.allowOnce)
+        await fulfillment(of: [secondCompleted], timeout: 1)
+        XCTAssertEqual(secondResolution, .grant)
+        XCTAssertNil(firstResolution)
+        try XCTUnwrap(firstResponder)(.denyOnce)
+
+        XCTAssertEqual(firstResolution, .deny(systemBlocks: []))
+        XCTAssertEqual(first.coordinator.queryState(for: .microphone, context: first.context), .denied)
+        XCTAssertEqual(second.coordinator.queryState(for: .microphone, context: second.context), .granted)
+        first.coordinator.close()
+        XCTAssertEqual(second.coordinator.queryState(for: .microphone, context: second.context), .granted)
+        XCTAssertTrue(first.store.storedSites.isEmpty)
+        XCTAssertTrue(second.store.storedSites.isEmpty)
+    }
+
+    func testWhenMediaPermissionsResetThenMediaDismissesBeforeQueuedLocationPrompts() throws {
+        let mediaRequests: [Set<SitePermissionType>] = [[.camera], [.microphone], [.camera, .microphone]]
+        for permissionTypes in mediaRequests {
+            let harness = try Harness()
+            var events = [String]()
+            var respondToMedia: ((SitePermissionPromptDecision) -> Void)?
+            harness.coordinator.request(harness.request(permissionTypes), promptHandler: { _, respond in
+                events.append("media prompt")
+                respondToMedia = respond
+            }, completion: { _ in
+                XCTFail("The caller resolves canceled media bridge replies")
+            })
+            harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+                events.append("location prompt")
+                respond(.denyOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, .deny(systemBlocks: []))
+                events.append("location completion")
+            })
+
+            harness.coordinator.resetMediaPermissions {
+                events.append("media dismissal")
+            }
+
+            XCTAssertEqual(events, ["media prompt", "media dismissal", "location prompt", "location completion"])
+            try XCTUnwrap(respondToMedia)(.neverAllow)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenMediaPermissionsResetThenActiveLocationAndItsSessionGrantSurvive() async throws {
+        let harness = try Harness()
+        var respondToLocation: ((SitePermissionPromptDecision) -> Void)?
+        let locationCompleted = expectation(description: "Location completes after media rollback")
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+            respondToLocation = respond
+        }, completion: { resolution in
+            XCTAssertEqual(resolution, .grant)
+            locationCompleted.fulfill()
+        })
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+            XCTFail("Queued media requests must be discarded")
+        }, completion: { _ in
+            XCTFail("The caller resolves canceled media bridge replies")
+        })
+
+        harness.coordinator.resetMediaPermissions {
+            XCTFail("The active location prompt must remain visible")
+        }
+        try XCTUnwrap(respondToLocation)(.allowOnce)
+        await fulfillment(of: [locationCompleted], timeout: 1)
+
+        harness.coordinator.resetMediaPermissions {
+            XCTFail("No media presentation remains")
+        }
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+        var nextLocationResolution: SitePermissionResolution?
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+            XCTFail("The location session grant must survive media rollback")
+        }, completion: { nextLocationResolution = $0 })
+        XCTAssertEqual(nextLocationResolution, .grant)
+        XCTAssertNil(harness.store.decision(for: .location, at: harness.site))
     }
 
     func testWhenFirstQueuedRequestChoosesNeverAllowThenSecondIsSilentlyDenied() throws {
@@ -566,6 +1326,50 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(resolutions, [.deny(systemBlocks: []), .deny(systemBlocks: [])])
         XCTAssertEqual(microphonePromptCount, 1)
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
+    }
+
+    func testWhenFireModeManagementDeniesPermissionThenPendingRequestsCancelAndOtherPermissionsContinue() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness(isFireMode: true)
+            harness.store.resetDecision(for: permissionType, at: harness.site)
+            let storedPermissions = harness.store.permissions(for: harness.site)
+            let queuedTypes: Set<SitePermissionType> = permissionType == .location ? [.location] : [.camera, .microphone]
+            let otherType: SitePermissionType = permissionType == .camera ? .microphone : .camera
+            var responder: ((SitePermissionPromptDecision) -> Void)?
+            var resolutions = [SitePermissionResolution]()
+            var cancellationCount = 0
+            var otherPromptCount = 0
+            harness.cancellationHandler = { cancellationCount += 1 }
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                responder = respond
+            }, completion: { resolutions.append($0) })
+            harness.coordinator.request(harness.request(queuedTypes), promptHandler: { _, _ in
+                XCTFail("The denied queued request must not prompt")
+            }, completion: { resolutions.append($0) })
+            harness.coordinator.request(harness.request([otherType]), promptHandler: { _, respond in
+                otherPromptCount += 1
+                respond(.denyOnce)
+            }, completion: { _ in })
+
+            XCTAssertNotNil(responder)
+            XCTAssertTrue(resolutions.isEmpty)
+            XCTAssertEqual(otherPromptCount, 0)
+
+            harness.coordinator.applyFireModeManagementDecision(.deny, for: permissionType, at: harness.site)
+
+            XCTAssertEqual(cancellationCount, 1)
+            XCTAssertEqual(resolutions, [.deny(systemBlocks: []), .deny(systemBlocks: [])])
+            XCTAssertEqual(otherPromptCount, 1)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .denied)
+            XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions[permissionType], .deny)
+            XCTAssertEqual(harness.store.permissions(for: harness.site), storedPermissions)
+
+            try XCTUnwrap(responder)(.allowWhileUsingSite)
+
+            XCTAssertEqual(cancellationCount, 1)
+            XCTAssertEqual(resolutions, [.deny(systemBlocks: []), .deny(systemBlocks: [])])
+            XCTAssertEqual(harness.store.permissions(for: harness.site), storedPermissions)
+        }
     }
 
     func testWhenPermissionIsRemovedDuringSystemAuthorizationThenLateGrantIsIgnored() async throws {
@@ -867,7 +1671,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         finishRecovery?()
 
         XCTAssertEqual(events, ["resolution", "recovery", "nextPrompt"])
-        XCTAssertEqual(secondPrompt, SitePermissionPrompt(site: harness.site, permissionTypes: [.microphone]))
+        XCTAssertEqual(secondPrompt, SitePermissionPrompt(site: harness.site, permissionTypes: [.microphone], isFireMode: false))
     }
 
     func testWhenCompletionReleasesRequestContextThenRecoveryRetainsFIFOUnlessPageResets() throws {
@@ -1071,6 +1875,206 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertTrue(requestedTypes.isEmpty)
     }
 
+    func testWhenFirePromptAllowsSiteThenChoiceSurvivesCaptureReloadAndRevisitUntilTabCloses() async throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try Harness(isFireMode: true)
+            let granted = expectation(description: "Fire session grant")
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                respond(.allowWhileUsingSite)
+            }, completion: {
+                XCTAssertEqual($0, .grant)
+                granted.fulfill()
+            })
+            await fulfillment(of: [granted], timeout: 1)
+
+            harness.coordinator.captureDidEnd([permissionType])
+            for change in [SitePermissionPageChange.reload, .navigation, .webContentProcessReplacement] {
+                harness.coordinator.pageDidChange(change)
+                harness.context = harness.context(changingNavigationGenerationTo: harness.context.navigationGeneration + 1)
+                var resolution: SitePermissionResolution?
+                harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, _ in
+                    XCTFail("Fire Always Allow must survive capture end and page changes")
+                }, completion: { resolution = $0 })
+                XCTAssertEqual(resolution, .grant)
+                let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+                XCTAssertEqual(snapshot.storedPermissions[permissionType], .allow)
+                XCTAssertTrue(snapshot.showsMenuEntry)
+                XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+            }
+
+            let originalContext = harness.context
+            let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example.com")!))
+            harness.coordinator.pageDidChange(.navigation)
+            harness.context = SitePermissionRequestContext(tabID: originalContext.tabID,
+                                                            topLevelSite: otherSite,
+                                                            requestingFrameID: originalContext.requestingFrameID,
+                                                            webContentProcessGeneration: originalContext.webContentProcessGeneration,
+                                                            navigationGeneration: originalContext.navigationGeneration + 1)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+            XCTAssertFalse(harness.coordinator.managementSnapshot(for: otherSite).showsMenuEntry)
+
+            harness.coordinator.pageDidChange(.navigation)
+            harness.context = originalContext
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .granted)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+
+            harness.coordinator.close()
+            XCTAssertFalse(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            let newTab = try Harness(isFireMode: true)
+            XCTAssertEqual(newTab.coordinator.queryState(for: permissionType, context: newTab.context), .prompt)
+        }
+    }
+
+    func testWhenSystemDeniesFireAlwaysAllowThenSessionChoiceAndRecoverySurviveReload() async throws {
+        let harness = try Harness(isFireMode: true)
+        harness.systemStates[.location] = .notDetermined
+        harness.authorizationRequester = { permissionType in
+            harness.systemStates[permissionType] = .denied
+            return .denied
+        }
+        var recoveries = [SitePermissionRecovery]()
+        harness.recoveryHandler = { recovery, completion in
+            recoveries.append(recovery)
+            completion()
+        }
+        let denied = expectation(description: "System denial completes")
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, respond in
+            respond(.allowWhileUsingSite)
+        }, completion: {
+            XCTAssertEqual($0, .deny(systemBlocks: [
+                SitePermissionSystemBlock(permissionType: .location, state: .denied, timing: .afterRequest)
+            ]))
+            denied.fulfill()
+        })
+        await fulfillment(of: [denied], timeout: 1)
+        XCTAssertEqual(recoveries, [.toast(permissionTypes: [.location])])
+
+        harness.coordinator.pageDidChange(.reload)
+        harness.coordinator.request(harness.request([.location]), promptHandler: { _, _ in
+            XCTFail("System denial must preserve the Fire site's Allow choice")
+        }, completion: {
+            XCTAssertEqual($0, .deny(systemBlocks: [
+                SitePermissionSystemBlock(permissionType: .location, state: .denied, timing: .preexisting)
+            ]))
+        })
+        XCTAssertEqual(recoveries.last, .reminder(permissionTypes: [.location]))
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions[.location], .allow)
+        XCTAssertEqual(snapshot.systemBlockedPermissionTypes, [.location])
+        XCTAssertTrue(harness.store.storedSites.isEmpty)
+    }
+
+    func testWhenAnotherSiteIsRevokedThenFireOverrideClearsWithoutRevokingCurrentPageGrant() async throws {
+        let harness = try Harness(isFireMode: true)
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example.com")!))
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: otherSite)
+        harness.coordinator.pageDidChange(.navigation)
+        let granted = expectation(description: "Current page temporary grant")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: {
+            XCTAssertEqual($0, .grant)
+            granted.fulfill()
+        })
+        await fulfillment(of: [granted], timeout: 1)
+
+        harness.store.setPersistentDecision(.deny, for: .camera, at: otherSite)
+        harness.coordinator.revokeManagementSessionState(for: [.camera], at: otherSite)
+
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: otherSite).storedPermissions[.camera], .deny)
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .granted)
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [.camera])
+    }
+
+    func testWhenFireSheetDeniesAndAsksThenSessionChangesWithoutAffectingOrdinaryOrOtherFireTabs() throws {
+        let keyValueStore = MockKeyValueStore()
+        let fireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+        let ordinaryTab = try Harness(isFireMode: false, keyValueStore: keyValueStore)
+        let otherFireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+        let sut = SitePermissionsSheetViewModel(
+            snapshot: fireTab.coordinator.managementSnapshot(for: fireTab.site),
+            store: fireTab.store,
+            displayedPermissionTypes: Set(SitePermissionType.allCases),
+            onDecisionChanged: {
+                fireTab.coordinator.applyFireModeManagementDecision($0.to, for: $0.permissionType, at: fireTab.site)
+            }
+        )
+
+        for permissionType in SitePermissionType.allCases {
+            sut.select(.deny, for: permissionType)
+            sut.refresh(with: fireTab.coordinator.managementSnapshot(for: fireTab.site))
+            XCTAssertEqual(sut.rows.first { $0.permissionType == permissionType }?.options, [.askEachTime, .deny])
+            XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), .denied)
+            XCTAssertEqual(ordinaryTab.coordinator.queryState(for: permissionType, context: ordinaryTab.context), .prompt)
+            XCTAssertEqual(otherFireTab.coordinator.queryState(for: permissionType, context: otherFireTab.context), .prompt)
+            XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+
+            sut.select(.askEachTime, for: permissionType)
+            XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), .prompt)
+            XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenFireSheetRemovesAndUndoesThenOrdinaryTabReadsDurableStateAndFireSessionIsRestoredSeparately() throws {
+        let keyValueStore = MockKeyValueStore()
+        let fireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+        let ordinaryTab = try Harness(isFireMode: false, keyValueStore: keyValueStore)
+        fireTab.store.setPersistentDecision(.allow, for: .camera, at: fireTab.site)
+        fireTab.store.resetDecision(for: .location, at: fireTab.site)
+        fireTab.coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: fireTab.site)
+        fireTab.coordinator.applyFireModeManagementDecision(.deny, for: .microphone, at: fireTab.site)
+        var removal: SitePermissionsRemoval?
+        let sut = SitePermissionsSheetViewModel(
+            snapshot: fireTab.coordinator.managementSnapshot(for: fireTab.site),
+            store: fireTab.store,
+            onRemovePermissions: {
+                removal = $0
+                fireTab.coordinator.removeManagementSessionState(for: $0.permissionTypes, at: fireTab.site)
+            }
+        )
+        XCTAssertEqual(ordinaryTab.coordinator.queryState(for: .camera, context: ordinaryTab.context), .granted)
+
+        sut.removePermissions()
+
+        XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+        XCTAssertTrue(fireTab.coordinator.managementSnapshot(for: fireTab.site).storedPermissions.isEmpty)
+        XCTAssertTrue(ordinaryTab.coordinator.managementSnapshot(for: ordinaryTab.site).storedPermissions.isEmpty)
+        for permissionType in SitePermissionType.allCases {
+            XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), .prompt)
+            XCTAssertEqual(ordinaryTab.coordinator.queryState(for: permissionType, context: ordinaryTab.context), .prompt)
+        }
+
+        let removed = try XCTUnwrap(removal)
+        fireTab.coordinator.restoreFireModeManagementState(for: removed.permissionTypes, at: fireTab.site)
+        fireTab.store.restore(removed.snapshot)
+
+        XCTAssertEqual(fireTab.store.permissions(for: fireTab.site), [.camera: .allow, .location: .ask])
+        XCTAssertEqual(ordinaryTab.coordinator.queryState(for: .camera, context: ordinaryTab.context), .granted)
+        let restoredFire = fireTab.coordinator.managementSnapshot(for: fireTab.site)
+        XCTAssertEqual(restoredFire.storedPermissions, [.camera: .deny, .microphone: .deny, .location: .ask])
+        XCTAssertTrue(restoredFire.ephemeralPermissionTypes.isEmpty)
+        XCTAssertTrue(restoredFire.captureStates.isEmpty)
+    }
+
+    func testWhenFireRemovalIsUndoneAfterNewChoicesThenNewDurableRecordAndFireOverrideRemain() throws {
+        let harness = try Harness(isFireMode: true)
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.store.resetDecision(for: .location, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: harness.site)
+        let snapshot = harness.store.removePermissions(for: harness.site)
+        harness.coordinator.removeManagementSessionState(for: [.camera, .location], at: harness.site)
+        harness.store.setPersistentDecision(.deny, for: .microphone, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.ask, for: .camera, at: harness.site)
+
+        harness.coordinator.restoreFireModeManagementState(for: [.camera, .location], at: harness.site)
+        harness.store.restore(snapshot)
+
+        XCTAssertEqual(harness.store.permissions(for: harness.site), [.microphone: .deny])
+        XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions,
+                       [.camera: .ask, .microphone: .deny])
+        XCTAssertEqual(harness.coordinator.queryState(for: .camera, context: harness.context), .prompt)
+    }
+
     func testWhenFireModeUserChoosesPersistentOptionsThenOnlyMemoryChanges() async throws {
         let harness = try Harness(isFireMode: true)
         harness.store.setGlobalDefault(.deny, for: .microphone)
@@ -1099,6 +2103,7 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertNil(harness.store.decision(for: .camera, at: harness.site))
 
         harness.coordinator.captureDidEnd([.camera])
+        harness.coordinator.applyFireModeManagementDecision(.ask, for: .camera, at: harness.site)
         harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
             respond(.neverAllow)
         }, completion: { _ in })
@@ -1110,6 +2115,44 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         }, completion: { resolution = $0 })
         XCTAssertEqual(resolution, .deny(systemBlocks: []))
     }
+
+    func testFirePromptChoicesDoNotPersistOrAffectOrdinaryTabs() async throws {
+        let permissionSets: [Set<SitePermissionType>] = [
+            [.camera], [.microphone], [.camera, .microphone], [.location]
+        ]
+
+        for permissionTypes in permissionSets {
+            for decision in [SitePermissionPromptDecision.allowOnce, .neverAllow] {
+                let keyValueStore = MockKeyValueStore()
+                let fireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+                let completed = expectation(description: "Fire \(permissionTypes) \(decision) completes")
+
+                fireTab.coordinator.request(fireTab.request(permissionTypes), promptHandler: { prompt, respond in
+                    XCTAssertTrue(prompt.isFireMode)
+                    XCTAssertEqual(prompt.permissionTypes, permissionTypes)
+                    respond(decision)
+                }, completion: { resolution in
+                    XCTAssertEqual(resolution, decision == .allowOnce ? .grant : .deny(systemBlocks: []))
+                    completed.fulfill()
+                })
+                await fulfillment(of: [completed], timeout: 1)
+
+                XCTAssertTrue(fireTab.store.storedSites.isEmpty)
+                let ordinaryTab = try Harness(keyValueStore: keyValueStore)
+                let otherFireTab = try Harness(isFireMode: true, keyValueStore: keyValueStore)
+                for permissionType in permissionTypes {
+                    XCTAssertEqual(ordinaryTab.coordinator.queryState(for: permissionType, context: ordinaryTab.context), .prompt)
+                    XCTAssertEqual(otherFireTab.coordinator.queryState(for: permissionType, context: otherFireTab.context), .prompt)
+                }
+
+                fireTab.coordinator.pageDidChange(.reload)
+                for permissionType in permissionTypes {
+                    let expectedState: SitePermissionQueryState = decision == .allowOnce ? .prompt : .denied
+                    XCTAssertEqual(fireTab.coordinator.queryState(for: permissionType, context: fireTab.context), expectedState)
+                }
+            }
+        }
+    }
 }
 
 @MainActor
@@ -1119,6 +2162,7 @@ private final class Harness {
     let site: SitePermissionKey
     let isFireMode: Bool
     var context: SitePermissionRequestContext
+    var committedSite: SitePermissionKey?
     var systemStates: [SitePermissionType: SystemPermissionAuthorizationState] = [
         .camera: .authorized,
         .microphone: .authorized,
@@ -1127,6 +2171,7 @@ private final class Harness {
     var authorizationRequester: (SitePermissionType) async -> SystemPermissionAuthorizationState = { _ in .authorized }
     var recoveryHandler: SitePermissionsCoordinator.RecoveryHandler = { _, completion in completion() }
     var cancellationHandler: () -> Void = {}
+    var revocationHandler: SitePermissionsCoordinator.RevocationHandler = { _, _ in }
     var eventHandler: SitePermissionsCoordinator.EventHandler = { _ in }
 
     lazy var coordinator = SitePermissionsCoordinator(
@@ -1138,6 +2183,7 @@ private final class Harness {
                   context.requestingFrameID == frameID else { return nil }
             return context
         },
+        currentSite: { [weak self] in self?.committedSite },
         authorizationState: { [weak self] permissionType in
             self?.systemStates[permissionType] ?? .unavailable
         },
@@ -1153,6 +2199,9 @@ private final class Harness {
             recoveryHandler(recovery, completion)
         },
         cancellationHandler: { [weak self] in self?.cancellationHandler() },
+        revocationHandler: { [weak self] permissionTypes, site in
+            self?.revocationHandler(permissionTypes, site)
+        },
         eventHandler: { [weak self] event in
             self?.eventHandler(event)
         })
@@ -1163,6 +2212,7 @@ private final class Harness {
         let context = try context ?? Self.makeContext()
         self.context = context
         site = context.topLevelSite
+        committedSite = context.topLevelSite
         self.isFireMode = isFireMode
         store = SitePermissionsStore(storage: keyValueStore.keyedStoring())
     }

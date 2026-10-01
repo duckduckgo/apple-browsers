@@ -22,7 +22,7 @@ import FoundationExtensions
 
 @testable import DuckDuckGo
 @_spi(Testing) import Persistence
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 final class AdAttributionFetcherTests: XCTestCase {
 

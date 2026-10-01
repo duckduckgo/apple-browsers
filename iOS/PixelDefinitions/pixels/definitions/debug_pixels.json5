@@ -61,70 +61,214 @@
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_initialization_failed_after_other": {
         "description": "Fires once daily when the CPM dashboard remains waiting after an ordinary page navigation finishes loading.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_initialization_failed_after_tab_crash": {
         "description": "Fires once daily when the CPM dashboard remains waiting on the first eligible navigation after a tab crash.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_initialization_failed_after_extension_reload": {
         "description": "Fires once daily when the CPM dashboard remains waiting on the first eligible navigation after an extension reload.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_messaging_stuck_session_restoration": {
         "description": "Fires when a session-restoration failure is confirmed by a later regular navigation failure.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_messaging_stuck_tab_crash": {
         "description": "Fires when a post-tab-crash failure is followed by a failed non-restoration navigation begun after that failure.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_messaging_stuck_extension_reload": {
         "description": "Fires when an extension-reload failure is confirmed by a later regular navigation failure.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_messaging_stuck_other": {
         "description": "Fires when an ordinary-navigation failure is followed by a failed non-restoration navigation begun after that failure.",
         "owners": ["mallexxx"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": [
+            "appVersion",
+            "extension_context_loaded",
+            "memory_pressure_critical",
+            "network_process_restarted",
+            "extension_context_errors",
+            "background_view_create_count",
+            "background_view_alive",
+            "background_view_leaked_count",
+            "background_web_process_alive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_web_process_responsive",
+            "background_events",
+            "cpm_app_version_change",
+            "cpm_app_launch_age"
+        ]
     },
     "debug_web_extension_cpm_messaging_recovered_without_extension_reload": {
         "description": "Fires when CPM recovers on a previously failed tab or from a stuck episode without reloading the extension.",
         "owners": ["mallexxx"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "cpm_recovery_from"]
     },
     "debug_web_extension_cpm_messaging_recovered_after_extension_reload": {
         "description": "Fires when CPM recovers on a previously failed tab or from a stuck episode after the extension reloads.",
         "owners": ["mallexxx"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "cpm_recovery_from"]
     },
     "debug_web_extension_cpm_messaging_extension_reload_failed": {
         "description": "Fires when the first CPM measurement using a successful extension-reload generation also times out.",
@@ -132,6 +276,22 @@
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "debug_web_extension_reload_failed": {
+        "description": "Fires when unloading or loading a web extension context fails during a reload. Parameters distinguish the reload trigger, failed phase, extension type, and original/underlying error domains and codes.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "web_extension_type",
+            "web_extension_reload_trigger",
+            "web_extension_reload_phase",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
     },
     "m_pixel_fire_suppressed_storage_error": {
         "description": "Fired when a daily or unique pixel is suppressed because the storage write for its last-fire date failed. Indicates a broken pixel store that would otherwise cause repeated firing.",

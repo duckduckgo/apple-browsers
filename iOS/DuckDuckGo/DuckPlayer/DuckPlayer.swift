@@ -406,10 +406,15 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     // Add a convenience initializer that creates a new presenter
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
                      featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-                     userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+                     userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                     floatingUIManager: FloatingUIManaging? = nil) {
+        let floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        )
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
-                  nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies))
+                  nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies,
+                                                                 floatingUIManager: floatingUIManager))
     }
 
     deinit {

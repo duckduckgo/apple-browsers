@@ -20,8 +20,8 @@ import Testing
 @testable import EventHub
 
 /// Component-level data-parameter behaviour that the telemetry specification does not state as a case:
-/// a `null` value, and the guard that stops a pixel firing when none of its data parameters resolve.
-/// The specification's own data-parameter cases, T-DAT-1 to T-DAT-5, live in `TelemetrySpecTests`.
+/// a `null` value, and an immediate pixel firing without parameters when its only data parameter is
+/// absent. The specification's own data-parameter cases, T-DAT-1 to T-DAT-5, live in `TelemetrySpecTests`.
 @Suite("EventHub data parameters")
 struct EventHubDataParameterTests {
     static let immediateDataConfig = """
@@ -40,14 +40,13 @@ struct EventHubDataParameterTests {
         #expect(f.fired.first?.parameters["loginState"] == "null")
     }
 
-    @Test("an immediate pixel does not fire when its only data param is absent")
-    func immediatePixelDoesNotFireWhenOnlyDataParamAbsent() {
-        // A pixel that declares data parameters but resolves none of them has nothing to report. A
-        // pixel declaring no parameters at all still fires on the event alone — see
-        // `EventHubImmediatePixelTests`.
+    @Test("an immediate pixel fires without parameters when its only data param is absent")
+    func immediatePixelFiresWithoutParametersWhenOnlyDataParamAbsent() {
+        // Delivery alone decides firing; a parameter with no value is omitted rather than cancelling it.
         let f = EventHubFixture.active(Self.immediateDataConfig)
         f.manager.handleWebEvent(EventHubFixture.eventWithData("login", dataJSON: #"{ "other": "x" }"#), tabID: .new())
-        #expect(f.fired.isEmpty)
+        #expect(f.fired.count == 1)
+        #expect(f.fired.first?.parameters.isEmpty == true)
     }
 
 }

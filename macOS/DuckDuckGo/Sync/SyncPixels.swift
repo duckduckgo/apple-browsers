@@ -127,6 +127,15 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     }
 }
 
+enum SyncDeviceNamePixel: PixelKit.Event {
+    case computerNameUnavailable
+
+    var namePrefix: PixelKitNamePrefix { .none }
+    var name: String { "sync_computer_name_unavailable_mac" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
 enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
     /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
     /// every call site that fires this type.

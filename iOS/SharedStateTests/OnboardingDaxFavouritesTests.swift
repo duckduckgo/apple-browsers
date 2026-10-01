@@ -159,6 +159,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
                                         appSettings: AppSettingsMock(),
+                                        sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: MockAIChatSyncCleaning())
         makeHost = { homePageConfiguration in
             MainViewController(
@@ -645,6 +646,7 @@ private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
     func dismissRemoteMessage(withID id: String) async {}
     func fetchDismissedRemoteMessageIDs() -> [String] { [] }
     func updateRemoteMessage(withID id: String, asShown shown: Bool) async {}
+    func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult { .notRecorded }
     func resetRemoteMessages() async {}
 }
 

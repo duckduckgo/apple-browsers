@@ -19,7 +19,7 @@
 import AIChat
 import AppKit
 import Combine
-import Navigation
+import DDGNavigation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -40,6 +40,13 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         config.shouldDisplayTranslationMenuItem = true
         coordinator = SelectionActionAIChatCoordinatorMock()
         pageContext = PageContextMock()
+    }
+
+    override func tearDown() {
+        config = nil
+        coordinator = nil
+        pageContext = nil
+        super.tearDown()
     }
 
     func testSummarizeSuppressesAutoPageContext() {

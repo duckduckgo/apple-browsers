@@ -27,14 +27,14 @@ let package = Package(
         .library(name: "Waitlist-macOS", targets: ["Waitlist-macOS"]),
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Networking"),
         .package(path: "../SwiftUIExtensions"),
     ],
     targets: [
         .target(
             name: "Waitlist-macOS",
             dependencies: [
-                .product(name: "Networking", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
             ],
             swiftSettings: [

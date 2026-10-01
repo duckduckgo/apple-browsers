@@ -22,6 +22,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+import SubscriptionTestingUtilities
 import UIKit
 import UserScript
 import WebKit
@@ -37,6 +38,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var mockToggleModeStorage: MockToggleModeStorage!
     private var mockSubmissionMetrics: MockSwitchBarSubmissionMetrics!
     private var mockFeatureDiscovery: MockFeatureDiscovery!
+    private var subscriptionManager: SubscriptionManagerMock!
     private var retainedBridgeReadyWebView: WKWebView?
     private var retainedBridgeReadyBroker: UserScriptMessageBroker?
     private var cancellables = Set<AnyCancellable>()
@@ -47,10 +49,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         mockToggleModeStorage = MockToggleModeStorage()
         mockSubmissionMetrics = MockSwitchBarSubmissionMetrics()
         mockFeatureDiscovery = MockFeatureDiscovery()
+        subscriptionManager = SubscriptionManagerMock()
         sut = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             toggleModeStorage: mockToggleModeStorage,
             switchBarSubmissionMetrics: mockSubmissionMetrics,
             featureDiscovery: mockFeatureDiscovery,
@@ -63,6 +67,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     override func tearDown() {
         cancellables.removeAll()
         sut = nil
+        subscriptionManager = nil
         mockDelegate = nil
         mockPreferences = nil
         mockToggleModeStorage = nil
@@ -71,6 +76,36 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         retainedBridgeReadyWebView = nil
         retainedBridgeReadyBroker = nil
         super.tearDown()
+    }
+
+    func testRejectedStaleModelSelectionDoesNotCreatePendingChoice() {
+        mockPreferences.selectedModelId = "free"
+        sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),
+                                 makeModel(id: "paid", access: false, accessTier: ["plus"])]
+        subscriptionManager.hasAppStoreProductsAvailable = false
+
+        sut.handleModelSelection("paid")
+        sut.modelStore.models = [makeModel(id: "free", access: true), makeModel(id: "paid", access: true)]
+        sut.modelStore.onModelsUpdated?()
+
+        XCTAssertEqual(sut.persistedModelId, "free")
+        XCTAssertEqual(mockPreferences.selectedModelId, "free")
+    }
+
+    func testAvailabilityRefreshUpdatesPickerAndHeaderWithoutChangingSelection() async throws {
+        mockPreferences.selectedModelId = "free"
+        sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),
+                                 makeModel(id: "paid", access: false, accessTier: ["plus"])]
+        for available in [false, true] {
+            let refreshed = expectation(description: "header availability refreshed")
+            sut.onSubscriptionUpsellAvailabilityChanged = { refreshed.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [refreshed], timeout: 1)
+
+            let menu = try XCTUnwrap(sut.viewController.modelPickerMenu)
+            XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.flatMap(\.children).count, available ? 2 : 1)
+            XCTAssertEqual(sut.persistedModelId, "free")
+        }
     }
 
     // MARK: - Paste handler wiring
@@ -115,6 +150,122 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertFalse(sut.isAITabState)
         XCTAssertEqual(sut.pixelSurface, .contextualChat)
+    }
+
+    // MARK: - Tab mentions
+
+    func testWhenContextualMentionsAreEnabledThenShowsSuggestionsAndRejectsSelectionAfterDisabling() async throws {
+        sut = makeMentionCoordinator(host: .contextualChat)
+        let feature = MentionAttachmentFeature()
+        let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
+        let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: { [tab] })
+        var attachCount = 0
+        sut.onPageContextAttachRequested = { attachCount += 1 }
+        sut.configureTabAttachments(source: source, feature: feature)
+        let handler = try XCTUnwrap(sut.viewController.mentionHandler)
+        let textView = MentionTestTextView()
+        let window = UIWindow()
+        window.addSubview(textView)
+        defer { window.subviews.forEach { $0.removeFromSuperview() } }
+        textView.text = "@wiki"
+        textView.selectedRange = NSRange(location: 5, length: 0)
+        let presented = expectation(description: "Contextual mention suggestions")
+        var suggestions: [MultiTabMentionController.Suggestion]?
+        sut.onTabMentionSuggestionsChanged = {
+            suggestions = $0
+            if $0 != nil { presented.fulfill() }
+        }
+
+        handler.textDidChange(in: textView)
+        await fulfillment(of: [presented], timeout: 1)
+        let candidate = try XCTUnwrap(suggestions?.first?.candidate)
+        XCTAssertEqual(candidate.tabId, "wiki")
+
+        feature.state = .unavailable
+        sut.selectTabMention(candidate)
+
+        XCTAssertNil(suggestions)
+        XCTAssertEqual(attachCount, 0)
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        XCTAssertEqual(textView.text, "@wiki")
+    }
+
+    func testWhenContextualMentionsAreDisabledThenDoesNotReadTabsOrPresentSuggestions() async {
+        sut = makeMentionCoordinator(host: .contextualChat)
+        let feature = MentionAttachmentFeature()
+        feature.state = .unavailable
+        var candidateReadCount = 0
+        let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: {
+            candidateReadCount += 1
+            return []
+        })
+        let presented = expectation(description: "Disabled feature must not present suggestions")
+        presented.isInverted = true
+        sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
+        sut.configureTabAttachments(source: source, feature: feature)
+        let textView = MentionTestTextView()
+        let window = UIWindow()
+        window.addSubview(textView)
+        defer { window.subviews.forEach { $0.removeFromSuperview() } }
+        textView.text = "@wiki"
+        textView.selectedRange = NSRange(location: 5, length: 0)
+
+        sut.viewController.mentionHandler?.textDidChange(in: textView)
+        sut.viewController.mentionHandler?.selectionDidChange(in: textView)
+
+        await fulfillment(of: [presented], timeout: 0.1)
+        XCTAssertNil(sut.viewController.mentionHandler)
+        XCTAssertEqual(candidateReadCount, 0)
+        XCTAssertEqual(textView.text, "@wiki")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testWhenMentionsAreConfiguredOutsideContextualThenSearchAndDuckAIStayInactive() async throws {
+        sut = makeMentionCoordinator(host: .omnibar)
+        let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
+        var candidateReadCount = 0
+        let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: {
+            candidateReadCount += 1
+            return [tab]
+        })
+        sut.configureTabAttachments(source: source, feature: MentionAttachmentFeature())
+        let handler = try XCTUnwrap(sut.viewController.mentionHandler)
+        let textView = MentionTestTextView()
+        let window = UIWindow()
+        window.addSubview(textView)
+        defer { window.subviews.forEach { $0.removeFromSuperview() } }
+        textView.text = "@wiki"
+        textView.selectedRange = NSRange(location: 5, length: 0)
+        let states: [(UnifiedToggleInputDisplayState, TextEntryMode)] = [
+            (.omnibar(.active), .search),
+            (.omnibar(.active), .aiChat),
+            (.aiTab(.expanded), .aiChat)
+        ]
+
+        for (state, mode) in states {
+            sut.displayState = state
+            sut.syncInputModeFromExternalSource(mode)
+            let presented = expectation(description: "No mention suggestions in \(state), \(mode)")
+            presented.isInverted = true
+            sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
+
+            handler.textDidChange(in: textView)
+            handler.selectionDidChange(in: textView)
+
+            await fulfillment(of: [presented], timeout: 0.1)
+        }
+        XCTAssertEqual(candidateReadCount, 0)
+        XCTAssertEqual(textView.text, "@wiki")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    private func makeMentionCoordinator(host: UnifiedToggleInputHost) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(host: host, isToggleEnabled: host == .omnibar,
+                                      preferences: mockPreferences, subscriptionManager: subscriptionManager,
+                                      toggleModeStorage: mockToggleModeStorage, featureDiscovery: mockFeatureDiscovery,
+                                      contextualStart: .expandedPreSubmit,
+                                      updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+                                      updatedCreateImageFeature: MockUpdatedCreateImageFeature(isAvailable: false))
     }
 
     // MARK: - Display State: contextual boot
@@ -399,6 +550,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Bound-chat prompt submission reporting
 
     func testWhenPromptGoesToBoundChatThenTheSubmissionIsReportedOnce() {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true,
+                                            duckAIWideEventInstrumentation: instrumentation)
+        sut.delegate = mockDelegate
+        sut.activateForTab("tab-A")
         sut.duckAIEntrySourceProvider = { .addressBarIcon }
         let userScript = makeBridgeReadyUserScript()
         sut.bindToTab(userScript, hasExistingChat: true)
@@ -407,6 +563,10 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, [.addressBarIcon])
         XCTAssertNil(mockDelegate.submittedPrompt, "A bound chat takes the prompt directly, without navigation")
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, 1)
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.scope, .tab("tab-A"))
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.wasQueued, false)
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.didSendBridgeMessage, true)
     }
 
     func testWhenNoChatIsBoundThenTheSubmissionIsNotReportedAsBoundChat() {
@@ -414,6 +574,96 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
         XCTAssertEqual(mockDelegate.submittedPrompt, "a new prompt")
+    }
+
+    func testWhenTabContextIsPendingThenDeliveryIsReportedOnlyAfterDispatch() async {
+        await assertDeferredPromptReporting(expectedDelivery: true)
+    }
+
+    func testWhenPendingPromptIsStoppedThenDeliveryIsNotReported() async {
+        await assertDeferredPromptReporting(expectedDelivery: false) { _ in
+            self.sut.didPressStopGeneratingButton.send()
+        }
+    }
+
+    func testWhenNewChatCancelsPendingPromptThenDeliveryIsNotReported() async {
+        await assertDeferredPromptReporting(expectedDelivery: false) { script in
+            script.submitStartChatAction()
+        }
+    }
+
+    func testWhenWebViewChangesBeforeDispatchThenDeliveryIsNotReported() async {
+        let replacement = WKWebView()
+        await assertDeferredPromptReporting(expectedDelivery: false) { script in
+            script.webView = replacement
+        }
+    }
+
+    func testWhenBrokerIsRemovedBeforeDispatchThenDeliveryIsNotReported() async {
+        await assertDeferredPromptReporting(expectedDelivery: false) { script in
+            script.broker = nil
+        }
+    }
+
+    func testWhenImmediatePromptCannotDispatchThenDeliveryIsNotReported() {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true,
+                                            duckAIWideEventInstrumentation: instrumentation)
+        sut.delegate = mockDelegate
+        sut.activateForTab("tab-A")
+        let userScript = makeBridgeReadyUserScript()
+        userScript.broker = nil
+        sut.bindToTab(userScript, hasExistingChat: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertTrue(instrumentation.promptDeliveryUpdates.isEmpty)
+    }
+
+    private func assertDeferredPromptReporting(expectedDelivery: Bool,
+                                               invalidate: (AIChatUserScript) -> Void = { _ in }) async {
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let scope = DuckAIWideEventFlowScope.contextual(UUID())
+        sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                            duckAIWideEventInstrumentation: instrumentation,
+                                            duckAIWideEventFlowScope: scope)
+        sut.delegate = mockDelegate
+        let userScript = makeBridgeReadyUserScript()
+        sut.bindToTab(userScript, hasExistingChat: true)
+        let started = expectation(description: "Waiting for tab context")
+        let submitted = expectation(description: "Existing submission callback")
+        submitted.isInverted = !expectedDelivery
+        var continuation: CheckedContinuation<[AIChatPageContextData], Never>?
+        userScript.attachedTabContextsProvider = {
+            MultiTabAttachmentRequest(contexts: {
+                await withCheckedContinuation {
+                    continuation = $0
+                    started.fulfill()
+                }
+            }, didConsume: {})
+        }
+        userScript.onPromptSubmitted = { submitted.fulfill() }
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "follow-up", mode: .aiChat)
+        await fulfillment(of: [started], timeout: 1)
+
+        XCTAssertEqual(instrumentation.submissionStartedScopes, [scope])
+        XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
+        XCTAssertTrue(instrumentation.promptDeliveryUpdates.isEmpty)
+
+        invalidate(userScript)
+        continuation?.resume(returning: [])
+        await fulfillment(of: [submitted], timeout: expectedDelivery ? 1 : 0.1)
+
+        XCTAssertEqual(mockDelegate.duckAIPromptSubmissionOrigins, expectedDelivery ? [.contextualChat] : [])
+        XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, expectedDelivery ? 1 : 0)
+        if expectedDelivery {
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.scope, scope)
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.wasQueued, false)
+            XCTAssertEqual(instrumentation.promptDeliveryUpdates.first?.didSendBridgeMessage, true)
+        }
     }
 
     // MARK: - Recovery Picker Session Pixels
@@ -826,7 +1076,9 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_activateFromOmnibar_withPrefilledAIChatText_selectsAllText() throws {
         let text = "test prompt"
         sut.activateFromOmnibar(prefilledText: text, inputMode: .aiChat)
-        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: sut.viewController.view))
+        // Scoped to the text entry: the footer card carries a text view of its own.
+        let textEntry = try XCTUnwrap(firstDescendant(of: SwitchBarTextEntryView.self, in: sut.viewController.view))
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: textEntry))
 
         XCTAssertFalse(textView.isHidden)
         assertAllTextIsSelected(in: textView, expectedLength: text.utf16.count)
@@ -3373,4 +3625,13 @@ final class MockSwitchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding 
     func process(_ text: String, for submissionMode: TextEntryMode) {
         processedSubmissions.append((text, submissionMode))
     }
+}
+
+private final class MentionAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
+    var state: AIChatContextualAttachMoreTabsState = .available(maximumTabAttachmentCount: 3)
 }

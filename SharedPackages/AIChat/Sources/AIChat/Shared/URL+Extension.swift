@@ -85,6 +85,15 @@ extension URL {
         return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName } != true
     }
 
+    /// The homepage composer submits to Duck.ai with `origin=funnel_home_website`, which survives the
+    /// redirect to duck.ai and the SPA's later URL cleanup; nothing else sets it.
+    public var isDuckAIOpenedFromHomepage: Bool {
+        guard isDuckAIURL else { return false }
+        return queryItems?.contains {
+            $0.name == AIChatURLParameters.originName && $0.value == AIChatURLParameters.homepageFunnelOriginValue
+        } == true
+    }
+
     /// Returns `true` if the URL points to Duck AI voice mode (`?mode=voice`).
     public var isDuckAIVoiceMode: Bool {
         guard isDuckAIURL else { return false }

@@ -40,6 +40,7 @@ let package = Package(
         .package(path: "../Persistence"),
         .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
         .package(path: "../DebugServer"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
@@ -100,6 +101,7 @@ let package = Package(
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
             resources: [

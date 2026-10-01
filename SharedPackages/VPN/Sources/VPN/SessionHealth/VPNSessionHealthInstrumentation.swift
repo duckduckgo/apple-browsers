@@ -28,8 +28,12 @@ import WideEvent
 /// It answers one question: did an already-running VPN stay healthy, including while nominally connected but not routing.
 public protocol VPNSessionHealthInstrumentation: AnyObject, Sendable {
 
+    /// Issued when a start begins, before any await: a stop invalidates it, so a start completing after the tunnel stopped is ignored.
+    func tunnelStartRequested() -> UUID
+
     /// Opens a new event for a physical start, resumes the event already open rather than starting one for a reconnect, a wake, or the end of a snooze.
-    func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason)
+    /// Physical starts are ignored unless `attemptID` is the latest one issued and no stop happened since.
+    func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason, attemptID: UUID?)
 
     /// Resumes the event already open for a restart that carries no start reason: the monitors coming back up after a failed reasserting configuration update.
     func tunnelResumed()
@@ -84,7 +88,17 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     private let now: @Sendable () -> Date
 
     private let lock = NSLock()
-    private var currentEvent: VPNSessionHealthWideEventData?
+
+    private var pendingStartAttemptID: UUID?
+
+    private var currentEventID: String?
+    private var currentEvent: VPNSessionHealthWideEventData? {
+         guard let currentEventID else {
+             return nil
+         }
+
+         return wideEvent.getFlowData(VPNSessionHealthWideEventData.self, globalID: currentEventID)
+     }
 
     public init(wideEvent: WideEventManaging,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
@@ -99,13 +113,23 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     // MARK: - Lifecycle
 
-    public func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason) {
-        Logger.networkProtectionSessionHealth.debug("tunnelStarted: reason=\(String(describing: reason), privacy: .public)")
+    public func tunnelStartRequested() -> UUID {
+        lock.lock()
+        defer { lock.unlock() }
+
+        let attemptID = UUID()
+        pendingStartAttemptID = attemptID
+
+        return attemptID
+    }
+
+    public func tunnelStarted(reason: PacketTunnelProvider.AdapterStartReason, attemptID: UUID?) {
+        Logger.networkProtectionSessionHealth.debug("tunnelStarted: reason=\(String(describing: reason), privacy: .public) attemptID=\(attemptID?.uuidString ?? "none", privacy: .public)")
         switch reason {
         case .manual:
-            beginEvent(reason: .physicalTunnelStartManual)
+            beginEvent(reason: .physicalTunnelStartManual, attemptID: attemptID)
         case .onDemand:
-            beginEvent(reason: .physicalTunnelStartOnDemand)
+            beginEvent(reason: .physicalTunnelStartOnDemand, attemptID: attemptID)
         case .reconnected, .wake, .snoozeEnded:
             tunnelResumed()
         }
@@ -176,12 +200,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     public func tunnelStopped(reason: NEProviderStopReason) {
         Logger.networkProtectionSessionHealth.debug("tunnelStopped: reason=\(reason.rawValue, privacy: .public)")
-        applyTransition { $0.markingStopped(reason.asEventEndReason, at: $1) }
+        applyTransitionAndComplete { $0.finalized(for: reason.asEventEndReason, at: $1) }
     }
 
     public func tunnelCancelledWithError() {
         Logger.networkProtectionSessionHealth.debug("tunnelCancelledWithError")
-        applyTransition { $0.markingCancelledWithError(at: $1) }
+        applyTransitionAndComplete { $0.finalizedAfterCancellation(at: $1) }
     }
 }
 
@@ -193,7 +217,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         lock.lock()
         defer { lock.unlock() }
 
-        guard let previous = currentEvent, !previous.hasEnded else {
+        guard let previous = currentEvent else {
             return
         }
 
@@ -201,18 +225,35 @@ private extension DefaultVPNSessionHealthInstrumentation {
         var next = transition(previous, timestamp)
         next.lastObservedAt = timestamp
 
-        if completeEventIfEnded(next) {
-            currentEvent = nil
-            return
-        }
-
-        currentEvent = next
         wideEvent.updateFlow(next)
     }
 
-    func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason) {
+    func applyTransitionAndComplete(_ transition: (VPNSessionHealthWideEventData, Date) -> (event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome)) {
         lock.lock()
         defer { lock.unlock() }
+
+        // Cleared even without an open event: a start still in flight must not open one after the stop.
+        pendingStartAttemptID = nil
+
+        guard let previous = currentEvent else {
+            return
+        }
+
+        let timestamp = now()
+        var (event, outcome) = transition(previous, timestamp)
+        event.lastObservedAt = timestamp
+
+        completeEvent(event: event, outcome: outcome)
+    }
+
+    func beginEvent(reason: VPNSessionHealthWideEventData.EventStartReason, attemptID: UUID?) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard let attemptID, attemptID == pendingStartAttemptID else {
+            Logger.networkProtectionSessionHealth.log("Ignoring stale start attempt: \(attemptID?.uuidString ?? "none", privacy: .public)")
+            return
+        }
 
         completeEventBeforeRestartInLock()
 
@@ -232,7 +273,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
 private extension DefaultVPNSessionHealthInstrumentation {
 
     func beginEventInLock(_ fresh: VPNSessionHealthWideEventData) {
-        currentEvent = fresh
+        currentEventID = fresh.globalData.id
         wideEvent.startFlow(fresh)
     }
 
@@ -242,8 +283,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        currentEvent = nil
-        completeEventIfEnded(previous.markingStopped(.restartedWithoutStop, at: now()))
+        let completed = previous.finalized(for: .restartedWithoutStop, at: now())
+        completeEvent(event: completed.event, outcome: completed.outcome)
     }
 
     func completeOrphanedEvents() {
@@ -252,25 +293,24 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
         for orphan in orphans {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
-            completeEventIfEnded(orphan.markingOrphanedSessionEnded(at: now()))
+
+            let completed = orphan.finalizedAfterOrphanRecovery(at: now())
+            completeEvent(event: completed.event, outcome: completed.outcome)
         }
     }
 
     @discardableResult
-    func completeEventIfEnded(_ data: VPNSessionHealthWideEventData) -> Bool {
-        guard let status = data.outcome?.status else {
-            return false
-        }
-
+    func completeEvent(event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome) -> Bool {
         guard isTelemetryEnabled() else {
-            wideEvent.discardFlow(data)
+            wideEvent.discardFlow(event)
             return true
         }
 
+        let status = outcome.status
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
-        logPixelDetails(data)
+        logPixelDetails(event)
 
-        wideEvent.completeFlow(data, status: status) { success, error in
+        wideEvent.completeFlow(event, status: status) { success, error in
             if success {
                 Logger.networkProtectionSessionHealth.log("vpn_session_health pixel completion succeeded")
             } else {

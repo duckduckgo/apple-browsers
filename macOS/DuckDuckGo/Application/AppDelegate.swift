@@ -48,6 +48,7 @@ import History
 import HistoryView
 import Lottie
 import MetricKit
+import HangMetrics
 import Network
 import Networking
 import NetworkProtectionIPC
@@ -99,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
     private var hangReportingFeatureMonitor: HangReportingFeatureMonitor?
+    private let hangMetricsService: HangMetricsService
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -109,6 +111,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
+    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
+        let versionChange: CPMAppSessionDiagnostics.VersionChange?
+        switch applicationUpdateDetector.isApplicationUpdated() {
+        case .updated: versionChange = .updated
+        case .downgraded: versionChange = .downgraded
+        case .noChange: versionChange = nil
+        }
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -222,6 +233,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let websitePermissionDefaults: WebsitePermissionDefaults
     let notificationService: UserNotificationAuthorizationServicing
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
@@ -279,6 +291,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
+
+    let aiChatBrowserToolsService: AIChatBrowserToolsService
     let aiChatPreferences: AIChatPreferences
     let promptBarPreferences: PromptBarPreferences
     private(set) var aiChatHistoryCleaner: AIChatHistoryCleaning!
@@ -885,6 +899,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager,
+                                                              historyCoordinator: historyCoordinator)
+
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -907,20 +925,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
+        let websitePermissionDefaults = WebsitePermissionDefaults(
+            storage: WebsitePermissionDefaultsUserDefaultsStorage(keyValueStore: keyValueStore),
+            featureFlagger: featureFlagger,
+            autoplayPreferences: autoplayPreferences
+        )
+        self.websitePermissionDefaults = websitePermissionDefaults
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride)
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
 #endif
         notificationService = UserNotificationAuthorizationService()
 
@@ -1215,6 +1239,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watchdog = Watchdog(eventMapper: eventMapper)
         watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
+        hangMetricsService = HangMetricsService()
+
 #if !DEBUG
         if AppVersion.runType == .normal {
             hangReportingFeatureMonitor = HangReportingFeatureMonitor(
@@ -1492,39 +1518,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
-        if featureFlagger.isFeatureOn(.promoQueue) {
-            let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
-            self.subscriptionPromoDelegate = subscriptionPromoDelegate
-            let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
-            let dependencies = PromoDependencies(
-                keyValueStore: keyValueStore,
-                isExternallyActivated: urlEventHandlerResult.willOpenWindows,
-                isNewUserProvider: { AppDelegate.isNewUser },
-                isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
-                    NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
-                        ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
-                        : OnboardingActionsManager.isOnboardingFinished
-                },
-                activeRemoteMessageModel: activeRemoteMessageModel,
-                defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
-                sessionRestoreCoordinator: sessionRestorePromptCoordinator,
-                subscriptionPromoDelegate: subscriptionPromoDelegate,
-                featureFlagger: featureFlagger,
-                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                windowControllersManager: windowControllersManager,
-                syncService: syncService,
-                syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
-                pinningManager: pinningManager,
-                cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
-                duckPlayerOverlayObserver: duckPlayerOverlayObserver,
-                updateController: updateController,
-                updateNotificationBridge: updateNotificationPromoBridge,
-                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-                quitSurveyPromoObserver: quitSurveyPromoObserver
-            )
-            promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
-            NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
-        }
+        let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
+        self.subscriptionPromoDelegate = subscriptionPromoDelegate
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
+        let dependencies = PromoDependencies(
+            keyValueStore: keyValueStore,
+            isExternallyActivated: urlEventHandlerResult.willOpenWindows,
+            isNewUserProvider: { AppDelegate.isNewUser },
+            isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
+                NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
+                ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
+                : OnboardingActionsManager.isOnboardingFinished
+            },
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: sessionRestorePromptCoordinator,
+            subscriptionPromoDelegate: subscriptionPromoDelegate,
+            featureFlagger: featureFlagger,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            windowControllersManager: windowControllersManager,
+            syncService: syncService,
+            syncBookmarksAdapter: syncDataProviders?.bookmarksAdapter,
+            pinningManager: pinningManager,
+            cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate,
+            duckPlayerOverlayObserver: duckPlayerOverlayObserver,
+            updateController: updateController,
+            updateNotificationBridge: updateNotificationPromoBridge,
+            brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
+            quitSurveyPromoObserver: quitSurveyPromoObserver
+        )
+        promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
+        NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
 
         setUpAutoClearHandler()
         bitwardenManager?.initCommunication()
@@ -1651,6 +1675,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
         _ = newTabPageCoordinator
         promoService?.applicationDidBecomeActive()
+
+        hangMetricsService.resume()
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -2146,6 +2172,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             let coordinator = WebExtensionLifecycleCoordinator(
                 manager: webExtensionManager,
+                initialLoadGateEnabledProvider: { [weak self] in
+                    self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+                },
                 pixelFiring: MacOSWebExtensionPixelFiring()
             ) { [weak self] in
                 self?.enabledEmbeddedExtensionTypes() ?? []
@@ -2177,6 +2206,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
+            initialLoadGateEnabledProvider: { [weak self] in
+                self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+            },
             pixelFiring: MacOSWebExtensionPixelFiring()
         ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []

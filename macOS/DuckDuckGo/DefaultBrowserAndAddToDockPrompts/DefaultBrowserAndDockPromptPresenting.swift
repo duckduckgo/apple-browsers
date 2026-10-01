@@ -57,19 +57,6 @@ protocol DefaultBrowserAndDockPromptPresenting {
                          onNoShow: (() -> Void)?)
 }
 
-extension DefaultBrowserAndDockPromptPresenting {
-    func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
-                         bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
-                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
-        tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider,
-                        bannerViewHandler: bannerViewHandler,
-                        inactiveUserModalWindowProvider: inactiveUserModalWindowProvider,
-                        expectedType: nil,
-                        forceShow: false,
-                        onNoShow: nil)
-    }
-}
-
 enum DefaultBrowserAndDockPromptPresentationType: Equatable {
     case active(ActiveUserPrompt)
     case inactive
@@ -121,7 +108,8 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     /// **PROMPT ORCHESTRATOR**
     ///
-    /// Called from `MainViewController.showSetAsDefaultAndAddToDockIfNeeded()` when a window becomes key.
+    /// Called from `DefaultBrowserAndDockPromoDelegate.show(history:force:)` when the Promo Queue
+    /// selects one of the `default-browser-and-dock-*` promos.
     /// This is the main entry point for displaying any type of default browser/dock prompt.
     ///
     /// **Decision Flow:**

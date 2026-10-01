@@ -89,6 +89,10 @@ struct CPMMessagingMeasurement: Equatable, Sendable {
 @MainActor
 public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
+    /// Called once when a failure episode is confirmed as a CPM messaging hang. The first
+    /// initialization failure only begins the episode; the next qualifying failure confirms it.
+    var onConfirmedHang: (() -> Void)?
+
     private enum TimeoutOutcome: Sendable {
         case reportFailure
         case cancelMeasurement
@@ -143,6 +147,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
     /// Debug-only switch that makes dashboard responses invisible to the health algorithm.
     public private(set) var isCPMMessagingBreakageSimulationEnabled = false
+
+    /// Supplies PII-free attribution facts for failure and stuck pixels.
+    public weak var diagnosticsProvider: CPMMessagingDiagnosticsProviding?
 
     /// Navigation state is keyed by the app's stable tab identifier. The extension's numeric tab
     /// identifier is learned from the first unambiguous response and retained only for correlation.
@@ -435,7 +442,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func closeEpisodeForCurrentGeneration() {
         guard let episode, episode.reloadGeneration == nil else { return }
         if episode.isStuck {
-            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload)
+            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck))
         }
         self.episode = nil
     }
@@ -612,7 +619,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         } else {
             failureReason = measurement.navigationKind.failureReason
         }
-        pixelFiring.fire(.cpmInitializationFailed(reason: failureReason))
+        fireWithDiagnostics(tabIdentifier: measurement.tabIdentifier) { diagnostics in
+            .cpmInitializationFailed(reason: failureReason, diagnostics: diagnostics)
+        }
         if isPostExtensionReload {
             pixelFiring.fire(.cpmMessagingExtensionReloadFailed)
         }
@@ -640,7 +649,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
            measurement.identifier > episode.confirmationMustBeginAfter {
             episode.isStuck = true
             didBecomeStuck = true
-            pixelFiring.fire(.cpmMessagingStuck(reason: episode.failureReason))
+            let stuckReason = episode.failureReason
+            fireWithDiagnostics(tabIdentifier: measurement.tabIdentifier) { diagnostics in
+                .cpmMessagingStuck(reason: stuckReason, diagnostics: diagnostics)
+            }
+            onConfirmedHang?()
         }
 
         if isPostExtensionReload {
@@ -648,6 +661,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
         self.episode = episode
         return didBecomeStuck
+    }
+
+    private func fireWithDiagnostics(tabIdentifier: String,
+                                     makeEvent: (CPMMessagingDiagnostics?) -> WebExtensionPixelEvent) {
+        let diagnostics = diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
+        pixelFiring.fire(makeEvent(diagnostics))
     }
 
     /// Records a CPM dashboard response and closes any active health episode.
@@ -671,10 +690,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
         let didThisMeasurementFail = record.state == .failed
         if episode.isStuck || didThisMeasurementFail || episode.failedTabIdentifiers.contains(measurement.tabIdentifier) {
+            let source: CPMMessagingRecoverySource = episode.isStuck ? .messagingStuck : .initializationFailed
             if episode.reloadGeneration != nil {
-                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload)
+                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload(from: source))
             } else {
-                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload)
+                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: source))
             }
         }
         self.episode = nil

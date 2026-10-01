@@ -29,6 +29,9 @@ enum SubscriptionOnboardingLaunchFailureReason: String {
     case missingPersistor
     /// The checklist came back empty — something is wrong with the entitlement read
     case emptyChecklist
+    /// The screen meant to present onboarding was already presenting something else, or was no longer
+    /// attached to a window, at the moment the cover tried to present.
+    case notPresentable
 }
 
 enum SubscriptionPixel: PixelKit.Event {
@@ -59,7 +62,6 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionVPNShortcutClick
     case subscriptionVPNNotificationClick
     // Subscription Onboarding Flow
-    case subscriptionOnboardingFlowStarted(entryPoint: String, isDuckAIEnabled: Bool)
     case subscriptionOnboardingStepShown(step: String, entryPoint: String)
     case subscriptionOnboardingStepCompleted(step: String, entryPoint: String)
     case subscriptionOnboardingStepSkipped(step: String, entryPoint: String)
@@ -92,7 +94,6 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
         case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
             // Subscription Onboarding Flow
-        case .subscriptionOnboardingFlowStarted: return "subscription_onboarding_flow_started"
         case .subscriptionOnboardingStepShown(let step, _): return "subscription_onboarding_step_shown_\(step)"
         case .subscriptionOnboardingStepCompleted(let step, _): return "subscription_onboarding_step_completed_\(step)"
         case .subscriptionOnboardingStepSkipped(let step, _): return "subscription_onboarding_step_skipped_\(step)"
@@ -109,7 +110,6 @@ enum SubscriptionPixel: PixelKit.Event {
         static let platformKey = "platform"
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
-        static let duckAIEnabledKey = "duck_ai_enabled"
         static let reasonKey = "reason"
     }
 
@@ -138,9 +138,6 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
                 .subscriptionVPNAddressBarClick(let isSubscriptionActive):
             return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
-        case .subscriptionOnboardingFlowStarted(let entryPoint, let isDuckAIEnabled):
-            return [SubscriptionPixelsDefaults.entryPointKey: entryPoint,
-                    SubscriptionPixelsDefaults.duckAIEnabledKey: String(isDuckAIEnabled)]
         case .subscriptionOnboardingStepShown(_, let entryPoint),
                 .subscriptionOnboardingStepCompleted(_, let entryPoint),
                 .subscriptionOnboardingStepSkipped(_, let entryPoint):
@@ -172,7 +169,6 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionVPNWidgetClick,
                 .subscriptionVPNShortcutClick,
                 .subscriptionVPNNotificationClick,
-                .subscriptionOnboardingFlowStarted,
                 .subscriptionOnboardingStepShown,
                 .subscriptionOnboardingStepCompleted,
                 .subscriptionOnboardingStepSkipped,
@@ -216,4 +212,27 @@ enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
         case .automaticSignOut: return [.pixelSource]
         }
     }
+}
+
+// A separate definition so the name stays byte-identical to the other platforms': `SubscriptionPixel`
+// above omits the platform marker, which this pixel's siblings (`app-settings_vpn_click` and friends)
+// carry.
+enum SubscriptionPartnershipsHubPixel: PixelKit.Event {
+    /// Fired when the user taps Subscriber Offers in the DuckDuckGo Subscription section of Settings.
+    case subscriberOffersSettingsClick
+
+    /// The name is already fully qualified: it is shared verbatim with Android and Windows, which is
+    /// also why it keeps the `m_` prefix and the `partner-benefits` segment that predate the
+    /// "Subscriber Offers" rename.
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .subscriberOffersSettingsClick: return "m_privacy-pro_app-settings_partner-benefits_click"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }

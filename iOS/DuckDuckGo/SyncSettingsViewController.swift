@@ -59,6 +59,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     weak var scanCodeViewModel: ScanOrPasteCodeViewModel?
     weak var scanCodeNavigationController: UINavigationController?
     var codeCollectionIntent: CodeCollectionIntent?
+    private var startingSyncAccountUserId: String?
 
     let userAuthenticator = UserAuthenticator(reason: UserText.syncUserUserAuthenticationReason,
                                               cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
@@ -412,6 +413,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
     private func startPairingIfNecessary() {
         if let pairingInfo {
+            captureStartingSyncAccount()
             if pairingInfo.isPairingV2 {
                 startPairingV2DeepLink(pairingInfo)
             } else if isLegacyExchangeDeepLink(pairingInfo) {
@@ -513,7 +515,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
         PixelKit.fire(Pixel.Event.syncLogin, options: .parameters(sourcePixelParameters))
-        presentSuccessScreen(destination: .joiner(isRecovery: codeCollectionIntent == .recoverData))
+        presentSuccessScreen(destination: successDestinationForFlow(isRecovery: codeCollectionIntent == .recoverData))
     }
 
     var isPresentingConnectingSheet: Bool {
@@ -524,6 +526,24 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         enableAutoRestoreByDefaultIfNeeded()
         refreshAutoRestoreDecisionState()
         viewModel.showSuccess(recoveryCode: recoveryCode, destination: destination)
+    }
+
+    func captureStartingSyncAccount() {
+        switch syncService.authState {
+        case .active, .addingNewDevice:
+            startingSyncAccountUserId = syncService.account?.userId
+        case .initializing, .inactive:
+            startingSyncAccountUserId = nil
+        }
+    }
+
+    private func successDestinationForFlow(isRecovery: Bool = false) -> SyncSettingsViewModel.SuccessDestination {
+        guard !isRecovery,
+              let startingSyncAccountUserId,
+              startingSyncAccountUserId == syncService.account?.userId else {
+            return .fullRecoveryCode(isRecovery: isRecovery)
+        }
+        return .alreadySyncing
     }
 
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool {
@@ -573,7 +593,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        let successDestination = SyncSettingsViewModel.SuccessDestination.host
+        let successDestination = successDestinationForFlow()
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         presentSuccessScreen(destination: successDestination)
     }
@@ -616,7 +636,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
-        let successDestination = SyncSettingsViewModel.SuccessDestination.host
+        let successDestination = successDestinationForFlow()
         let parameters = syncSetupPixelParameters(setupSource: .exchange,
                                                   path: SyncSetupPixelValue.pairing,
                                                   peerKind: pairingV2PeerKind?.syncSetupPeerKind,
@@ -674,7 +694,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 await connectionController.cancel()
             }
         }
-        presentSuccessScreen(destination: .joiner(isRecovery: codeCollectionIntent == .recoverData))
+        presentSuccessScreen(destination: successDestinationForFlow(isRecovery: codeCollectionIntent == .recoverData))
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             // .sharer reaches here only via the connect flow (exchange-sharer terminates in controllerDidFinishTransmittingRecoveryKey).
             let parameters = syncSetupPixelParameters(setupSource: .connect,

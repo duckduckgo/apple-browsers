@@ -78,7 +78,7 @@ public struct SimplifiedConnectingSheetView: View {
 
 #Preview("Device Connected") {
     RebrandedPreview(isRebranded: true) {
-        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(.joiner(isRecovery: false))))
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(.fullRecoveryCode(isRecovery: false))))
     }
 }
 
@@ -94,7 +94,7 @@ public struct SimplifiedConnectingSheetView: View {
 }
 
 #Preview("Recovery Completed") {
-    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(.joiner(isRecovery: true))))
+    SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(.fullRecoveryCode(isRecovery: true))))
 }
 
 private extension SyncSettingsViewModel {

@@ -27,13 +27,13 @@ struct SyncSuccessView: View {
     @ObservedObject var model: SyncSettingsViewModel
     let destination: SyncSettingsViewModel.SuccessDestination
 
-    private var isHost: Bool {
-        if case .host = destination { return true }
+    private var showsRecoveryCode: Bool {
+        if case .fullRecoveryCode = destination { return true }
         return false
     }
 
     private var isRecovery: Bool {
-        if case .joiner(let recovery) = destination {
+        if case .fullRecoveryCode(let recovery) = destination {
             return recovery
         }
         return false
@@ -52,7 +52,7 @@ struct SyncSuccessView: View {
             List {
                 headerSection
 
-                if !isHost && !isRecovery {
+                if showsRecoveryCode {
                     recoveryCodeSection
 
                     if model.isAutoRestoreFeatureAvailable {
@@ -74,12 +74,12 @@ struct SyncSuccessView: View {
 
     private var title: String {
         switch destination {
-        case .host:
-            UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
-        case .joiner(let isRecovery):
+        case .fullRecoveryCode(let isRecovery):
             isRecovery
                 ? UserText.simplifiedRecoveryCompleteTitle
                 : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
+        case .alreadySyncing:
+            UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
         }
     }
 
@@ -122,7 +122,7 @@ struct SyncSuccessView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .accessibility(identifier: "SyncSuccessTitle")
 
-                if !isHost {
+                if showsRecoveryCode {
                     Text(description)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -204,25 +204,25 @@ private extension SyncSettingsViewModel {
 
 #Preview("Device Added") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), destination: .joiner(isRecovery: false))
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .fullRecoveryCode(isRecovery: false))
     }
 }
 
 #Preview("Device Added – Host") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), destination: .host)
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .alreadySyncing)
     }
 }
 
 #Preview("Device Added – No Auto-Restore") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .joiner(isRecovery: false))
+        SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .fullRecoveryCode(isRecovery: false))
     }
 }
 
 #Preview("Recovery Complete") {
     RebrandedPreview(isRebranded: true) {
-        SyncSuccessView(model: .syncSuccessPreview(), destination: .joiner(isRecovery: true))
+        SyncSuccessView(model: .syncSuccessPreview(), destination: .fullRecoveryCode(isRecovery: true))
     }
 }
 

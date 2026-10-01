@@ -36,7 +36,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     func testWhenInstallationIsDeniedThenNoConsentIsStored() async throws {
         let controller = makeController()
         let context = try await makeContext()
-        prompter.installationResponse = nil
+        prompter.installationResponse = .denied
 
         do {
             try await controller.prepare(context)
@@ -64,7 +64,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
 
     func testWhenRelaunchedThenPrivateAccessAndGrantsAreRestoredWithoutPrompting() async throws {
         let context = try await makeContext()
-        prompter.installationResponse = true
+        prompter.installationResponse = .granted(privateDataAccess: true)
         try await makeController().prepare(context)
 
         let restored = WKWebExtensionContext(for: context.webExtension)
@@ -99,7 +99,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         let context = try await makeContext()
         try await controller.prepare(context)
         let previous = try store.settings(for: context.uniqueIdentifier)
-        prompter.permissionResponse = false
+        prompter.permissionResponse = .denied
 
         let granted = await controller.request(.init(permissions: [.init("clipboardWrite")]), for: context)
 
@@ -174,7 +174,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     func testWhenRemovedThenAllConsentIsForgottenAndLateNotificationsCannotRestoreIt() async throws {
         let controller = makeController()
         let context = try await makeContext()
-        prompter.installationResponse = true
+        prompter.installationResponse = .granted(privateDataAccess: true)
         try await controller.prepare(context)
         try controller.forget(context.uniqueIdentifier)
         NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
@@ -184,7 +184,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertFalse(granted)
         XCTAssertTrue(prompter.permissionRequests.isEmpty)
 
-        prompter.installationResponse = false
+        prompter.installationResponse = .granted(privateDataAccess: false)
         let reinstalled = WKWebExtensionContext(for: context.webExtension)
         reinstalled.uniqueIdentifier = context.uniqueIdentifier
         try await controller.prepare(reinstalled)
@@ -268,7 +268,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         let storage = WebExtensionStorageProvidingMock()
         storage.resolvedExtensionURL = source
         let manager = makeManager(storage: storage)
-        prompter.installationResponse = nil
+        prompter.installationResponse = .denied
 
         do {
             try await manager.installExtension(from: source)
@@ -287,7 +287,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         let storage = WebExtensionStorageProvidingMock()
         storage.resolvedExtensionURL = source
         let manager = makeManager(storage: storage)
-        prompter.installationResponse = true
+        prompter.installationResponse = .granted(privateDataAccess: true)
         try await manager.installExtension(from: source)
         let identifier = try XCTUnwrap(manager.webExtensionIdentifiers.first)
 
@@ -312,7 +312,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         storage.resolvedExtensionURL = source
         let manager = makeManager(storage: storage)
         installationStore.add(InstalledWebExtension(uniqueIdentifier: "legacy", filename: "extension", name: nil, version: nil))
-        prompter.installationResponse = nil
+        prompter.installationResponse = .denied
 
         await manager.loadInstalledExtensions()
 
@@ -330,7 +330,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         let manager = makeManager(storage: storage)
         try await manager.installExtension(from: source)
         let context = try XCTUnwrap(manager.loadedExtensions.first)
-        prompter.permissionResponse = false
+        prompter.permissionResponse = .denied
 
         let (permissions, _) = await manager.webExtensionController(manager.controller,
                                                                   promptForPermissions: [.init("clipboardWrite")],
@@ -389,18 +389,18 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class PermissionPrompterMock: WebExtensionPermissionPrompting {
-    var installationResponse: Bool? = false
-    var permissionResponse = true
+    var installationResponse: WebExtensionPermissionInstallationPromptResult = .granted(privateDataAccess: false)
+    var permissionResponse: WebExtensionPermissionPromptResult = .granted
     var installationRequests: [WebExtensionPermissionRequest] = []
     var permissionRequests: [WebExtensionPermissionRequest] = []
     var onPermissionRequest: (() -> Void)?
 
-    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> Bool? {
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
         installationRequests.append(permissions)
         return installationResponse
     }
 
-    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool {
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         permissionRequests.append(permissions)
         onPermissionRequest?()
         return permissionResponse

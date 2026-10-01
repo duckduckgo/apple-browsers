@@ -23,17 +23,30 @@ import SwiftUI
 struct RedesignedFocusedSearchModulesView: View {
     let favoritesModel: FavoritesViewModel?
     let messagesModel: NewTabPageMessagesModel?
+    var escapeHatch: EscapeHatchModel?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                if let messagesModel {
-                    RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+                    if let escapeHatch {
+                        EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 16)
+                    }
+                    if let messagesModel {
+                        RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
+                    }
                 }
-                RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+                .padding(.leading, geometry.safeAreaInsets.leading)
+                .padding(.trailing, geometry.safeAreaInsets.trailing)
             }
+            // Clip at the page edges, not the landscape safe-area edges. The content keeps
+            // its safe-area alignment while the message shadows can extend into the margins.
+            .ignoresSafeArea(.container, edges: .horizontal)
+            .scrollDismissesKeyboardIfAvailable()
         }
         .background(Color(designSystemColor: .background))
-        .scrollDismissesKeyboardIfAvailable()
     }
 }

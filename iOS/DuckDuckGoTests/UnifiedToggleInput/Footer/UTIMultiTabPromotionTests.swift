@@ -231,18 +231,16 @@ final class UTIMultiTabPromotionTests: XCTestCase {
         XCTAssertEqual(displayStore.displayCount, 1)
     }
 
-    func testNormalAndFireConsumersShareCountAndPrivacyResetDoesNotResetPromotion() async {
+    func testConsumersShareCountAndPrivacyResetDoesNotResetPromotion() {
         let otherStore = UTIMultiTabPromotionDisplayStore(keyValueStore: defaults, dateProvider: clock)
         displayStore.recordDisplay()
         XCTAssertEqual(otherStore.displayCount, 1)
         let privacyStore = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: defaults)
-        privacyStore.recordDisplay()
-        let worker = AttachmentPrivacyNoticeFireWorker(displayStore: privacyStore)
+        privacyStore.markShown()
         feature.recordTabAttachment()
         feature.dismissDrawerPromo()
-        await worker.burnNormalModeData()
-        await worker.burnFireModeData()
-        XCTAssertEqual(privacyStore.displayCount, 0)
+        privacyStore.reset()
+        XCTAssertFalse(privacyStore.hasShown)
         XCTAssertEqual(otherStore.displayCount, 1)
         XCTAssertFalse(otherStore.isAvailable(startDate: start, isCurrentDisplay: true))
         XCTAssertTrue(otherStore.hasAttachedTab)

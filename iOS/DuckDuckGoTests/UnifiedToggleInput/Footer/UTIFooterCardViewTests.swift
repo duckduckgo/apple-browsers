@@ -47,7 +47,7 @@ final class UTIFooterCardViewTests: XCTestCase {
             let referenceLabel = try XCTUnwrap(titleLabel(in: reference))
             XCTAssertEqual(label.text, message.title)
             XCTAssertEqual(label.font, referenceLabel.font)
-            XCTAssertNil(label.accessibilityLabel)
+            XCTAssertEqual(label.accessibilityLabel, referenceLabel.accessibilityLabel)
             if let title = label.attributedText {
                 title.enumerateAttribute(.attachment, in: NSRange(location: 0, length: title.length)) { value, _, _ in
                     XCTAssertNil(value)
@@ -137,6 +137,20 @@ final class UTIFooterCardViewTests: XCTestCase {
         sut.configure(with: makeMessage(), animateIcon: false)
 
         XCTAssertGreaterThan(height(of: sut), UTIFooterCardView.overlap + 34)
+    }
+
+    func test_cardHeight_dropsTheTopGapWhenStackedUnderAnotherCard() {
+        let sut = UTIFooterCardView()
+        sut.configure(with: makeMessage(), animateIcon: false)
+        let standalone = height(of: sut)
+
+        sut.isBelowAnotherCard = true
+        let stacked = height(of: sut)
+
+        XCTAssertEqual(standalone - stacked, 12, accuracy: 0.5)
+
+        sut.isBelowAnotherCard = false
+        XCTAssertEqual(height(of: sut), standalone, accuracy: 0.5)
     }
 
     /// The whole message has to be readable, reset line beside it or not.
@@ -380,6 +394,20 @@ final class UTIFooterCardViewTests: XCTestCase {
                 XCTAssertEqual(subtitleLabel(in: card)?.text, message.subtitle)
                 XCTAssertGreaterThan(height(of: card), 0)
             }
+        }
+    }
+
+    func test_infoIcon_matchesTheShieldTint() {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().attachmentPrivacyMessage(), animateIcon: false)
+        let info = try? XCTUnwrap(infoIcon(in: sut))
+        let shield = sut.subviews.flatMap(\.subviews).compactMap { $0 as? UIImageView }
+            .first { $0.accessibilityIdentifier == "AIChat.Footer.Icon.Shield" }
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            let expected = UIColor(designSystemColor: .iconsSecondary).resolvedColor(with: traits)
+            XCTAssertEqual(info?.tintColor.resolvedColor(with: traits), expected)
+            XCTAssertEqual(shield?.tintColor.resolvedColor(with: traits), expected)
         }
     }
 

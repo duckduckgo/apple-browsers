@@ -20,18 +20,17 @@
 import Foundation
 import Persistence
 
-protocol UTIFooterDisplayStoring {
-    var displayCount: Int { get }
-    func recordDisplay()
+protocol UTIAttachmentPrivacyNoticeDisplayStoring {
+    var hasShown: Bool { get }
+    func markShown()
     func reset()
 }
 
-struct UTIAttachmentPrivacyNoticeDisplayStore: UTIFooterDisplayStoring {
-    static let displayLimit = 3
+struct UTIAttachmentPrivacyNoticeDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring {
 
     /// Registry confirmation is tracked in Asana 1217505446430505.
     private enum Key: String {
-        case displayCount = "aichat.attachment-privacy-notice.display-count"
+        case shown = "aichat.attachment-privacy-notice.shown"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -40,18 +39,16 @@ struct UTIAttachmentPrivacyNoticeDisplayStore: UTIFooterDisplayStoring {
         self.keyValueStore = keyValueStore
     }
 
-    var displayCount: Int {
-        max(0, (try? keyValueStore.object(forKey: Key.displayCount.rawValue) as? Int) ?? 0)
+    var hasShown: Bool {
+        (try? keyValueStore.object(forKey: Key.shown.rawValue) as? Bool) ?? false
     }
 
-    func recordDisplay() {
-        let count = displayCount
-        guard count < Self.displayLimit else { return }
-        try? keyValueStore.set(count + 1, forKey: Key.displayCount.rawValue)
+    func markShown() {
+        try? keyValueStore.set(true, forKey: Key.shown.rawValue)
     }
 
     func reset() {
-        try? keyValueStore.removeObject(forKey: Key.displayCount.rawValue)
+        try? keyValueStore.removeObject(forKey: Key.shown.rawValue)
     }
 }
 

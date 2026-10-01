@@ -23,23 +23,23 @@ protocol AutofillImportPromoReporting: AnyObject {
     @MainActor func overlayDidShowImportPrompt(_ overlay: AnyObject)
     @MainActor func overlayDidStartImport(_ overlay: AnyObject)
     @MainActor func overlayDidPermanentlyDismissImportPrompt(_ overlay: AnyObject)
-    @MainActor func overlayDidHideImportPrompt(_ overlay: AnyObject)
+    @MainActor func overlayWillDisappear(_ overlay: AnyObject)
 }
 
-enum AutofillImportPromoState {
+private enum AutofillImportPromoState {
     case initial
-    case permanentlyDismissed
     case importStarted
+    case permanentlyDismissed
 }
 
 /// Observes the "Import passwords" item in the autofill dropdown.
 final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPromoReporting {
 
     // Only one overlay is on screen at a time; others may not have reported their hide yet.
-    private var currentOverlay: ObjectIdentifier?
+    @MainActor private var currentOverlay: ObjectIdentifier?
     private var promoState: AutofillImportPromoState = .initial
 
-    // PromoService reads `resultWhenHidden` on its own queue; hold the state for a closed promo so it can be used for the result.
+    // PromoService reads `resultWhenHidden` on its own queue; hold the state for a closed promo to determine the result.
     private let closedPromoStateLock = NSLock()
     private var closedPromoState: AutofillImportPromoState = .initial
 
@@ -53,8 +53,8 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
         defer { closedPromoStateLock.unlock() }
         switch closedPromoState {
         case .initial: return .ignored(cooldown: 0)
-        case .permanentlyDismissed: return .ignored()
         case .importStarted: return .actioned
+        case .permanentlyDismissed: return .ignored()
         }
     }
 
@@ -86,7 +86,7 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     }
 
     @MainActor
-    func overlayDidHideImportPrompt(_ overlay: AnyObject) {
+    func overlayWillDisappear(_ overlay: AnyObject) {
         guard currentOverlay == ObjectIdentifier(overlay) else { return }
         close()
     }

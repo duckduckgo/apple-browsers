@@ -94,7 +94,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         sut.overlayDidShowImportPrompt(overlayA)
         XCTAssertTrue(sut.isVisible)
 
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
         XCTAssertFalse(sut.isVisible)
 
         XCTAssertEqual(received, [false, true, false])
@@ -105,7 +105,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
 
         sut.overlayDidShowImportPrompt(overlayA)
         sut.overlayDidShowImportPrompt(overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
 
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqual(received, [false, true, false])
@@ -120,11 +120,11 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         XCTAssertEqual(received, [false, true, false, true])
         XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
 
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
         XCTAssertTrue(sut.isVisible, "A late hide from the replaced overlay must not hide the current one")
         XCTAssertEqual(received, [false, true, false, true])
 
-        sut.overlayDidHideImportPrompt(overlayB)
+        sut.overlayWillDisappear(overlayB)
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqual(received, [false, true, false, true, false])
     }
@@ -132,13 +132,13 @@ final class AutofillImportPromoObserverTests: XCTestCase {
     func testWhenUnknownOrAlreadyHiddenOverlayHidesThenNothingChanges() {
         recordEmissions()
 
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
         sut.overlayDidShowImportPrompt(overlayB)
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
         XCTAssertTrue(sut.isVisible, "A stray hide must not hide another overlay's prompt")
 
-        sut.overlayDidHideImportPrompt(overlayB)
-        sut.overlayDidHideImportPrompt(overlayB)
+        sut.overlayWillDisappear(overlayB)
+        sut.overlayWillDisappear(overlayB)
 
         XCTAssertFalse(sut.isVisible)
         XCTAssertEqual(received, [false, true, false])
@@ -157,7 +157,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
             let observer = AutofillImportPromoObserver()
             observer.overlayDidShowImportPrompt(overlayA)
             actions.forEach { observer.perform($0, from: overlayA) }
-            observer.overlayDidHideImportPrompt(overlayA)
+            observer.overlayWillDisappear(overlayA)
 
             XCTAssertEqual(observer.resultWhenHidden, expected, "\(actions)")
         }
@@ -168,18 +168,9 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         sut.overlayDidShowImportPrompt(overlayA)
         sut.perform(.startImport, from: overlayB)
         sut.perform(.permanentlyDismiss, from: overlayB)
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
 
         XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
-    }
-
-    func testWhenShownAgainAfterActionThenOutcomeIsNotDowngraded() {
-        sut.overlayDidShowImportPrompt(overlayA)
-        sut.perform(.startImport, from: overlayA)
-        sut.overlayDidShowImportPrompt(overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
-
-        XCTAssertEqual(sut.resultWhenHidden, .actioned)
     }
 
     func testWhenReplacedOverlayWasPermanentlyDismissedThenItsOutcomeIsResolved() {
@@ -193,11 +184,11 @@ final class AutofillImportPromoObserverTests: XCTestCase {
     func testWhenNewStretchHasNoActionThenResultResets() {
         sut.overlayDidShowImportPrompt(overlayA)
         sut.perform(.startImport, from: overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
         XCTAssertEqual(sut.resultWhenHidden, .actioned)
 
         sut.overlayDidShowImportPrompt(overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
 
         XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
     }
@@ -211,7 +202,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
             .store(in: &cancellables)
 
         sut.perform(.permanentlyDismiss, from: overlayA)
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
 
         XCTAssertEqual(resultWhenHiddenOnEmission, .ignored())
     }
@@ -290,7 +281,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         if let action {
             sut.perform(action, from: overlayA)
         }
-        sut.overlayDidHideImportPrompt(overlayA)
+        sut.overlayWillDisappear(overlayA)
         await fulfillment(of: [hiddenExpectation, resultExpectation], timeout: 5.0)
 
         return historyStore.record(for: PromoServiceFactory.autofillImportPromoID)

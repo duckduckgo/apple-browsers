@@ -84,45 +84,17 @@ final class ContentOverlayViewControllerImportPromoTests: XCTestCase {
         XCTAssertEqual(reporter.calls, [])
     }
 
-    func testWhenViewWillDisappearTwiceAfterShowThenHideIsReportedOnce() {
-        showImportPrompt()
-
+    func testWhenViewWillDisappearThenItIsReportedEveryTime() {
         sut.viewWillDisappear()
         sut.viewWillDisappear()
 
-        XCTAssertEqual(reporter.calls, [.shown(overlayID), .hidden(overlayID)])
+        XCTAssertEqual(reporter.calls, [.willDisappear(overlayID), .willDisappear(overlayID)])
     }
 
-    func testWhenViewWillDisappearWithoutShowThenNothingIsReported() {
-        sut.viewWillDisappear()
-
-        XCTAssertEqual(reporter.calls, [])
-    }
-
-    func testWhenPermanentlyDismissedWhileShowingThenDismissalIsReported() {
-        showImportPrompt()
-
+    func testWhenPermanentlyDismissedThenDismissalIsReported() {
         sut.autofillDidPermanentlyDismissCredentialsImportPrompt()
 
-        XCTAssertEqual(reporter.calls, [.shown(overlayID), .permanentlyDismissed(overlayID)])
-    }
-
-    func testWhenPermanentlyDismissedWhileNotShowingThenNothingIsReported() {
-        sut.autofillDidPermanentlyDismissCredentialsImportPrompt()
-        showImportPrompt()
-        sut.viewWillDisappear()
-        sut.autofillDidPermanentlyDismissCredentialsImportPrompt()
-
-        XCTAssertEqual(reporter.calls, [.shown(overlayID), .hidden(overlayID)])
-    }
-
-    func testWhenShownAgainAfterHideThenEachStretchIsReported() {
-        showImportPrompt()
-        sut.viewWillDisappear()
-        showImportPrompt()
-        sut.viewWillDisappear()
-
-        XCTAssertEqual(reporter.calls, [.shown(overlayID), .hidden(overlayID), .shown(overlayID), .hidden(overlayID)])
+        XCTAssertEqual(reporter.calls, [.permanentlyDismissed(overlayID)])
     }
 }
 
@@ -132,7 +104,7 @@ private final class MockAutofillImportPromoReporter: AutofillImportPromoReportin
         case shown(ObjectIdentifier)
         case importStarted(ObjectIdentifier)
         case permanentlyDismissed(ObjectIdentifier)
-        case hidden(ObjectIdentifier)
+        case willDisappear(ObjectIdentifier)
     }
 
     private(set) var calls: [Call] = []
@@ -149,8 +121,8 @@ private final class MockAutofillImportPromoReporter: AutofillImportPromoReportin
         calls.append(.permanentlyDismissed(ObjectIdentifier(overlay)))
     }
 
-    func overlayDidHideImportPrompt(_ overlay: AnyObject) {
-        calls.append(.hidden(ObjectIdentifier(overlay)))
+    func overlayWillDisappear(_ overlay: AnyObject) {
+        calls.append(.willDisappear(ObjectIdentifier(overlay)))
     }
 }
 

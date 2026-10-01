@@ -32,6 +32,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private var context: JSContext!
     private var exceptions: [String] = []
     private var scheduledTimers: [ScheduledTimer] = []
+    private var scheduledIntervals: [ScheduledTimer] = []
     /// Backs the fake `chrome.storage.local`, as JSON per key, so it outlives a context: two
     /// contexts made in one test see the same storage, like two pages of one extension.
     private var storageLocalItems: [String: String] = [:]
@@ -45,6 +46,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context = nil
         exceptions = []
         scheduledTimers = []
+        scheduledIntervals = []
         storageLocalItems = [:]
         try super.tearDownWithError()
     }
@@ -138,8 +140,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     func testWhenStubIsCalled_ThenItReturnsAPromise() throws {
         try evaluateStubScript()
 
-        try assertTrue("typeof chrome.idle.queryState(60) === 'object'")
-        try assertTrue("typeof chrome.idle.queryState(60).then === 'function'")
+        try assertTrue("typeof chrome.downloads.download({}) === 'object'")
+        try assertTrue("typeof chrome.downloads.download({}).then === 'function'")
     }
 
     func testWhenStubIsCalledWithTrailingCallback_ThenTheCallbackIsInvokedWithUndefined() throws {
@@ -442,7 +444,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -462,7 +464,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -483,7 +485,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         var unknownCallbackResult = 'pending';
         var grantedCallbackResult = 'pending';
-        chrome.permissions.contains({ permissions: ['idle'] }, function(result) { unknownCallbackResult = result; });
+        chrome.permissions.contains({ permissions: ['downloads'] }, function(result) { unknownCallbackResult = result; });
         chrome.permissions.contains({ permissions: ['nativeMessaging'] }, function(result) { grantedCallbackResult = result; });
         """)
         try assertNoExceptions()
@@ -496,7 +498,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['idle'] }); })()")
+        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['downloads'] }); })()")
 
         try assertTrue("permissionsResult === false")
     }
@@ -505,7 +507,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
         try assertTrue("permissionsResult === false")
 
         try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['nativeMessaging'] })")
@@ -516,7 +518,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['idle', 'nativeMessaging'] })")
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['downloads', 'nativeMessaging'] })")
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.removed.length === 1 && permissionsLog.removed[0] === 'nativeMessaging'")
@@ -532,7 +534,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         context.evaluateScript("""
         var permissionsError = 'pending';
-        chrome.permissions.contains({ permissions: ['idle'] }).then(function() {
+        chrome.permissions.contains({ permissions: ['downloads'] }).then(function() {
             permissionsError = 'unexpectedly resolved';
         }, function(error) {
             permissionsError = String(error && error.message);
@@ -548,13 +550,13 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         chrome.permissions.contains = function(descriptor) {
             permissionsLog.contains.push(descriptor);
-            throw invalidPermissionError('contains', 'idle');
+            throw invalidPermissionError('contains', 'downloads');
         };
         """)
         try assertNoExceptions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -563,11 +565,11 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
 
-        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'idle' permission\") !== -1; }).length === 1")
+        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'downloads' permission\") !== -1; }).length === 1")
     }
 
     func testWhenPermissionsIsWrapped_ThenTheNamespaceEventsAndGetAllAreUntouched() throws {
@@ -596,6 +598,212 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.contains.length === 1")
+    }
+
+    // MARK: - Idle
+
+    func testWhenIdleIsQueried_ThenTheReplyIsHandedToThePromiseAndTheCallback() throws {
+        try installFakeIdleHandler(reply: "locked")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseState = 'pending';
+        var callbackState = 'pending';
+        chrome.idle.queryState(120, function(state) { callbackState = state; }).then(function(state) { promiseState = state; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'locked' && callbackState === 'locked'")
+        try assertTrue("idleRequests.length === 1 && idleRequests[0].detectionInterval === 120")
+    }
+
+    func testWhenIdleIsQueriedWithoutACallback_ThenTheStatesAreResolvedAsGiven() throws {
+        try installFakeIdleHandler(reply: "idle")
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'idle'")
+    }
+
+    func testWhenTheIdleHandlerFails_ThenQueryStateAnswersActive() throws {
+        try installFakeIdleHandler(reply: "idle", fails: true)
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active'")
+    }
+
+    func testWhenTheIdleHandlerAnswersAnUnknownState_ThenQueryStateAnswersActive() throws {
+        try installFakeIdleHandler(reply: "asleep")
+        try evaluateStubScript()
+
+        context.evaluateScript("var promiseState = 'pending'; chrome.idle.queryState(60).then(function(state) { promiseState = state; });")
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active'")
+    }
+
+    func testWhenThereIsNoIdleHandler_ThenQueryStateAnswersActiveWithBothStyles() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseState = 'pending';
+        var callbackState = 'pending';
+        chrome.idle.queryState(60, function(state) { callbackState = state; }).then(function(state) { promiseState = state; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseState === 'active' && callbackState === 'active'")
+    }
+
+    func testWhenTheDetectionIntervalIsBelowChromesMinimum_ThenItIsClampedTo15() throws {
+        try installFakeIdleHandler(reply: "active")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        chrome.idle.queryState(1);
+        chrome.idle.queryState(0);
+        chrome.idle.queryState(90.7);
+        chrome.idle.queryState('soon');
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("JSON.stringify(idleRequests.map(function(r) { return r.detectionInterval; })) === '[15,15,90,60]'")
+    }
+
+    func testWhenTheDetectionIntervalIsSet_ThenPollingUsesItClampedAndTheDefaultIs60() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("chrome.idle.onStateChanged.addListener(function() {});")
+        firePolls()
+        try assertTrue("idleRequests[0].detectionInterval === 60")
+
+        context.evaluateScript("chrome.idle.setDetectionInterval(5);")
+        firePolls()
+        try assertTrue("idleRequests[1].detectionInterval === 15")
+
+        context.evaluateScript("chrome.idle.setDetectionInterval(300);")
+        firePolls()
+        try assertTrue("idleRequests[2].detectionInterval === 300")
+    }
+
+    func testWhenTheStateChanges_ThenListenersAreFiredOnlyOnTheChange() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+        context.evaluateScript("var heard = []; chrome.idle.onStateChanged.addListener(function(state) { heard.push(state); });")
+        try assertNoExceptions()
+
+        firePolls()
+        try assertTrue("heard.length === 0")
+
+        context.evaluateScript("idleReply = 'idle';")
+        firePolls()
+        firePolls()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\"]'")
+
+        context.evaluateScript("idleReply = 'locked';")
+        firePolls()
+        context.evaluateScript("idleReply = 'active';")
+        firePolls()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\",\"locked\",\"active\"]'")
+    }
+
+    func testWhenSeveralListenersAreAdded_ThenASingleTimerPollsEvery15Seconds() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        function first() {}
+        function second() {}
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(second);
+        """)
+        try assertNoExceptions()
+
+        XCTAssertEqual(scheduledIntervals.count, 1)
+        XCTAssertEqual(scheduledIntervals.first?.delay, 15000)
+        try assertTrue("chrome.idle.onStateChanged.hasListener(first) && chrome.idle.onStateChanged.hasListener(second)")
+    }
+
+    func testWhenTheLastListenerIsRemoved_ThenThePollingStops() throws {
+        try installFakeIdleHandler(reply: "active")
+        try installFakeIntervals()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        function first() {}
+        function second() {}
+        chrome.idle.onStateChanged.addListener(first);
+        chrome.idle.onStateChanged.addListener(second);
+        chrome.idle.onStateChanged.removeListener(first);
+        """)
+        try assertNoExceptions()
+        try assertTrue("clearedIntervals.length === 0 && chrome.idle.onStateChanged.hasListeners()")
+
+        context.evaluateScript("chrome.idle.onStateChanged.removeListener(second);")
+        try assertNoExceptions()
+        try assertTrue("clearedIntervals.length === 1 && !chrome.idle.onStateChanged.hasListeners()")
+    }
+
+    func testWhenAListenerThrows_ThenTheOthersStillHearTheChange() throws {
+        try installFakeIdleHandler(reply: "idle")
+        try installFakeIntervals()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var heard = [];
+        chrome.idle.onStateChanged.addListener(function() { throw new Error('boom'); });
+        chrome.idle.onStateChanged.addListener(function(state) { heard.push(state); });
+        """)
+
+        firePolls()
+
+        try assertNoExceptions()
+        try assertTrue("JSON.stringify(heard) === '[\"idle\"]'")
+    }
+
+    func testWhenAutoLockDelayIsQueried_ThenItResolvesZero() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("var delay = 'pending'; chrome.idle.getAutoLockDelay().then(function(value) { delay = value; });")
+        try assertNoExceptions()
+
+        try assertTrue("delay === 0")
+    }
+
+    func testWhenIdleNamespaceExists_ThenItIsNotReplaced() throws {
+        context.evaluateScript("var original = { custom: true }; chrome.idle = original;")
+        try evaluateStubScript()
+
+        try assertTrue("chrome.idle === original")
+    }
+
+    func testWhenIdleIsAskedAbout_ThenTheVirtualPermissionIsGrantedWithoutAskingTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+    }
+
+    func testWhenIdleIsRequestedWithAnotherPermission_ThenOnlyTheOtherOneReachesTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle', 'nativeMessaging'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("JSON.stringify(permissionsLog.request) === '[{\"permissions\":[\"nativeMessaging\"]}]'")
     }
 
     // MARK: - Virtual Permissions
@@ -627,7 +835,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'downloads'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -893,6 +1101,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenAWorkingShimIsUsed_ThenNothingIsReported() throws {
         try installFakeReporting()
+        try installFakeIntervals()
         try evaluateStubScript()
 
         context.evaluateScript("""
@@ -900,6 +1109,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         chrome.storage.managed.get();
         chrome.storage.managed.onChanged.addListener(function() {});
         chrome.privacy.services.passwordSavingEnabled.get();
+        chrome.idle.queryState(60);
+        chrome.idle.setDetectionInterval(30);
+        chrome.idle.onStateChanged.addListener(function() {});
+        chrome.idle.getAutoLockDelay();
         """)
         try assertNoExceptions()
 
@@ -911,10 +1124,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakeReporting()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['idle'] })")
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['idle'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
 
-        try assertReports("[{\"kind\":\"missing\",\"api\":\"permission:idle\"}]")
+        try assertReports("[{\"kind\":\"missing\",\"api\":\"permission:downloads\"}]")
     }
 
     func testWhenThePageRaisesAnError_ThenItsMessageIsReportedForClassification() throws {
@@ -1292,10 +1505,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
     /// rejects the whole call with its validation error as soon as one name is not among them.
     /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy` and `idle` are
-    /// unknown — the stub script answers for `privacy` itself, so `idle` stands in for a truly unknown name.
+    /// unknown — the stub script answers for those itself, so `downloads` stands in for a truly unknown name.
     private func installFakePermissions() throws {
         context.evaluateScript("""
-        var unknownPermissions = ['privacy', 'idle', 'offscreen'];
+        var unknownPermissions = ['privacy', 'idle', 'offscreen', 'downloads'];
         var grantedPermissions = ['nativeMessaging'];
         var permissionsLog = { contains: [], request: [], remove: [], removed: [] };
 
@@ -1398,6 +1611,44 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private func assertReports(_ json: String, file: StaticString = #filePath, line: UInt = #line) throws {
         let escaped = json.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'")
         try assertTrue("JSON.stringify(reports) === '\(escaped)'", file: file, line: line)
+    }
+
+    /// A page whose host answers `chrome.idle.queryState` through the idle message handler: it
+    /// resolves with `idleReply` (read at call time, so a test can change it) or rejects, and
+    /// `idleRequests` collects what the script posted.
+    private func installFakeIdleHandler(reply: String, fails: Bool = false) throws {
+        context.evaluateScript("""
+        var idleRequests = [];
+        var idleReply = "\(reply)";
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.idleMessageHandlerName)": {
+                postMessage: function(payload) {
+                    idleRequests.push(payload);
+                    return \(fails ? "Promise.reject(new Error('nope'))" : "Promise.resolve(idleReply)");
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// `setInterval` and `clearInterval` that park the poll for the test to fire.
+    private func installFakeIntervals() throws {
+        let scheduleInterval: @convention(block) (JSValue, Double) -> Int = { [weak self] callback, delay in
+            self?.scheduledIntervals.append(ScheduledTimer(callback: callback, delay: delay))
+            return self?.scheduledIntervals.count ?? 0
+        }
+        let clearInterval: @convention(block) (JSValue) -> Void = { [weak self] _ in
+            self?.context.evaluateScript("clearedIntervals.push(true);")
+        }
+        context.setObject(scheduleInterval, forKeyedSubscript: "setInterval" as NSString)
+        context.setObject(clearInterval, forKeyedSubscript: "clearInterval" as NSString)
+        context.evaluateScript("var clearedIntervals = [];")
+        try assertNoExceptions()
+    }
+
+    private func firePolls() {
+        scheduledIntervals.forEach { $0.callback.call(withArguments: []) }
     }
 
     private func fireScheduledTimers() {

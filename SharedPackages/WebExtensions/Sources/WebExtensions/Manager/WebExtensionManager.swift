@@ -128,6 +128,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Receives the API compatibility reports of extension pages, including the ones in tabs.
     private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
 
+#if os(macOS)
+    /// Answers `chrome.idle.queryState` for extension pages, including the ones in tabs.
+    private let idleHandler = WebExtensionIdleMessageHandler()
+#endif
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
@@ -201,6 +206,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
                                                                                 name: WebExtensionAPIStubScript.compatibilityMessageHandlerName)
 
+#if os(macOS)
+        // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
+#endif
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -231,6 +242,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return (WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
                     WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version))
         }
+
+#if os(macOS)
+        idleHandler.isLoadedExtension = { [weak self] url in
+            self?.extensionContext(for: url) != nil
+        }
+#endif
 
         if let scriptletConfiguration {
             let coordinator = WebExtensionScriptletCoordinator(
@@ -747,6 +764,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func handleAPICompatibilityMessage(_ message: WKScriptMessage) {
         apiCompatibilityHandler.handle(message)
     }
+
+#if os(macOS)
+    /// Answers an idle state request from an extension page in a tab, where the controller's own
+    /// message handlers are not installed.
+    public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        idleHandler.reply(to: message, replyHandler: replyHandler)
+    }
+#endif
 
     @MainActor
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {

@@ -34,7 +34,7 @@ import WebKit
 /// The script runs in every frame of every tab, but returns right away unless the frame is an
 /// extension page (`webkit-extension:`), so ordinary web content is untouched.
 @available(macOS 15.4, *)
-final class WebExtensionPageStubUserScript: NSObject, UserScript {
+final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessageHandlerWithReply {
 
     /// Third-party extensions can only be installed by internal users, so nobody else needs the
     /// script.
@@ -54,10 +54,29 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript {
     /// DuckDuckGo uses for its own scripts would not be seen by the extension.
     let requiresRunInPageContentWorld: Bool = true
 
-    /// The stub script reports the unsupported APIs an extension touches through this handler.
-    let messageNames: [String] = [WebExtensionAPIStubScript.compatibilityMessageHandlerName]
+    /// The stub script reports the unsupported APIs an extension touches through the first handler
+    /// and asks for the `chrome.idle` state through the second, which answers.
+    let messageNames: [String] = [WebExtensionAPIStubScript.compatibilityMessageHandlerName,
+                                  WebExtensionAPIStubScript.idleMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
+    }
+
+    /// A script registered with a reply handler receives all its messages here, so the compatibility
+    /// reports, which expect no answer, are acknowledged with an empty one.
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        guard let manager = NSApp.delegateTyped.webExtensionManager as? WebExtensionManager else {
+            replyHandler(nil, "Web extensions are unavailable")
+            return
+        }
+        if message.name == WebExtensionAPIStubScript.idleMessageHandlerName {
+            manager.handleIdleMessage(message, replyHandler: replyHandler)
+        } else {
+            manager.handleAPICompatibilityMessage(message)
+            replyHandler(nil, nil)
+        }
     }
 }

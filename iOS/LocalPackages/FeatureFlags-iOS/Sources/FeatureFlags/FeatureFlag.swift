@@ -597,6 +597,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    public enum PerformanceOptimizedPaywallsCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     /// Cohorts for the `subscriptionOnboardingFreeTrialsSep2026` ABN test.
     public enum SubscriptionOnboardingFreeTrialsSep2026Cohort: String, FeatureFlagCohortDescribing {
         case control
@@ -709,7 +714,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProOnboardingPromotion:
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .performanceOptimizedPaywalls:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls))
+            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls), cohortType: PerformanceOptimizedPaywallsCohort.self)
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub))
         case .subscriptionPromoForReinstallers:

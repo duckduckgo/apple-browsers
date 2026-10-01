@@ -252,6 +252,7 @@ extension URL {
                                 "origin",
                                 "using",
                                 "experiment_mobileannualtrials2_ios",
+                                "experiment_perfpaywall",
                                 SubscriptionURL.QueryParameter.trial,
                                 SubscriptionURL.QueryParameter.personalInformationRemoval]
             components.queryItems = queryItems.filter { !ignoredNames.contains($0.name) }

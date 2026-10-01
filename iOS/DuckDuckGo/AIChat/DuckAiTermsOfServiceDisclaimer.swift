@@ -17,10 +17,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
+import os.log
 
 /// The UTI footer's Terms of Service rules, for the iPad inputs that have no UTI: required until the
-/// user accepts on either side, and sending with it on screen is the acceptance.
+/// user accepts on either side, and tapping Ask with it on screen is the acceptance.
 struct DuckAiTermsOfServiceDisclaimer {
 
     private let feature: DuckAiNativeTermsOfServiceFeatureProviding
@@ -41,12 +43,15 @@ struct DuckAiTermsOfServiceDisclaimer {
         return mapper.termsOfServiceMessage()
     }
 
-    /// `visibleMessage` is what the input's card shows right now; a send made without seeing the
-    /// disclaimer accepts nothing, and the web app shows its own card for that prompt instead.
+    var hasAccepted: Bool { store.hasAccepted }
+
+    /// Call only for an Ask tap. `visibleMessage` is what the input's card shows right now; a send made
+    /// without seeing the disclaimer accepts nothing, and the web app shows its own card for that prompt instead.
     @discardableResult
     func acceptIfShown(_ visibleMessage: UTIFooterMessage?) -> Bool {
         guard let visibleMessage, visibleMessage == message else { return false }
         store.recordAcceptedInNativeInput()
+        Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
         return true
     }
 }

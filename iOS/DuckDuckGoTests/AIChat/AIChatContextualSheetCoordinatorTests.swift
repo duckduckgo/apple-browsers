@@ -291,7 +291,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.chipState, .placeholder)
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?")
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false)
 
         XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
@@ -307,9 +307,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             return
         }
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page")
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false)
 
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
+    }
+
+    /// A chip never taps Ask, so its prompt goes out without claiming the Terms of Service.
+    @MainActor
+    func testWhenTheSummarizePageChipIsTappedInTheBasicInputThenThePromptCarriesTermsAcceptedFalse() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var submittedTermsAccepted: [Bool] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, let termsAccepted) = effect { submittedTermsAccepted.append(termsAccepted) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSelectQuickAction: .summarizePage)
+
+        XCTAssertEqual(submittedTermsAccepted, [false])
     }
 
     @MainActor

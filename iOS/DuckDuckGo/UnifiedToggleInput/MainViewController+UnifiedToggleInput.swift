@@ -1364,7 +1364,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
         recordDuckAISessionPromptSubmittedOnCurrentTab()
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
@@ -1381,7 +1381,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
+                   termsAccepted: termsAccepted)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {

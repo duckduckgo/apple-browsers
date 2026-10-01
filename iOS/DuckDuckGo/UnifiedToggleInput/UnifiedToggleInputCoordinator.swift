@@ -280,7 +280,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
 
-    /// Sending with the disclaimer on screen accepts the terms, so only the Ask button sends and Return adds a new line.
+    /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.
     private var isTermsOfServiceDisclaimerShown: Bool {
         footerController?.isTermsOfServiceVisible == true
     }
@@ -940,7 +940,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func submitProgrammatic(text: String) {
-        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat)
+        unifiedToggleInputVC(viewController, didSubmitText: text, mode: .aiChat, trigger: .programmatic)
     }
 
     // MARK: - Edit mode
@@ -1520,8 +1520,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         featureDiscovery.markDuckAIPromptSubmitted()
     }
 
+    /// Suggestions sent from outside the input never tap Ask, so they accept nothing.
     func prepareExternalPromptSubmission() -> (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
-        footerController?.acceptTermsIfDisclaimerShown()
+        Logger.aiChat.debug("[TermsOfService] External prompt submission: acceptance not recorded, termsAccepted=false")
         let configuration = promptSubmissionConfiguration
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
@@ -2031,7 +2032,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         insertNewlineFromFloatingReturnKey()
     }
 
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode) {
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger) {
         commitCurrentToggleState()
 
         switch mode {
@@ -2052,11 +2053,20 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             delegate?.unifiedToggleInputDidSubmitQuery(text)
             didSubmitQuery.send(text)
         case .aiChat:
-            handleAIChatSubmission(text: text)
+            handleAIChatSubmission(text: text, trigger: trigger)
         }
     }
 
-    private func handleAIChatSubmission(text: String) {
+    /// Only an Ask tap accepts the Terms of Service. Returns whether the prompt carries `termsAccepted: true`.
+    private func acceptTermsOfServiceIfAskTapped(_ trigger: TextSubmissionTrigger) -> Bool {
+        guard trigger == .sendButton else {
+            Logger.aiChat.debug("[TermsOfService] Prompt sent without Ask (\(trigger.rawValue, privacy: .public)): acceptance not recorded, termsAccepted=false")
+            return false
+        }
+        return footerController?.acceptTermsIfDisclaimerShown() ?? false
+    }
+
+    private func handleAIChatSubmission(text: String, trigger: TextSubmissionTrigger) {
         let userScript = boundUserScript
         let tools = toolsController.selectedToolsForSubmission()
 
@@ -2072,7 +2082,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let files = selectedModelSupportsFileUpload
                 ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
                 : nil
-            footerController?.acceptTermsIfDisclaimerShown()
+            _ = acceptTermsOfServiceIfAskTapped(trigger)
             footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()
             exitEditMode(reply: .submit(prompt: text, images: images, files: files))
@@ -2094,7 +2104,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
-        footerController?.acceptTermsIfDisclaimerShown()
+        let termsAccepted = acceptTermsOfServiceIfAskTapped(trigger)
         footerController?.recordPromptSubmitted()
 
         let configuration = promptSubmissionConfiguration
@@ -2116,7 +2126,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
-        deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools, userScript: userScript)
+        deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools,
+                            termsAccepted: termsAccepted, userScript: userScript)
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
         featureDiscovery.markDuckAIPromptSubmitted()
@@ -2127,6 +2138,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                                      files: [AIChatNativePrompt.NativePromptFile]?,
                                      configuration: PromptSubmissionConfiguration,
                                      tools: [AIChatRAGTool]?,
+                                     termsAccepted: Bool,
                                      userScript: AIChatUserScript?) {
         if isContextualChatState, userScript == nil {
             markActiveChatPromptSubmitted()
@@ -2136,7 +2148,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 tools: tools,
                 reasoningEffort: configuration.reasoningEffort,
                 images: images,
-                files: files
+                files: files,
+                termsAccepted: termsAccepted
             )
             delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
@@ -2167,12 +2180,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             let origin = pixelReporter.currentPromptOrigin()
             userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools,
                                     reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest,
+                                    termsAccepted: termsAccepted,
                                     onPromptDispatched: { [weak self] in
                 self?.delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: origin)
                 self?.recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: true)
             })
         } else {
-            delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort, images: images, files: files)
+            delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort,
+                                                        images: images, files: files, termsAccepted: termsAccepted)
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
         }
     }
@@ -2312,7 +2327,7 @@ private extension UnifiedToggleInputCoordinator {
         if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, inputMode == .aiChat {
             viewController.handler.submitAIChatAttachmentOnlyPrompt()
         } else {
-            viewController.handler.submitText(currentText)
+            viewController.handler.submitText(currentText, trigger: .sendButton)
         }
     }
 

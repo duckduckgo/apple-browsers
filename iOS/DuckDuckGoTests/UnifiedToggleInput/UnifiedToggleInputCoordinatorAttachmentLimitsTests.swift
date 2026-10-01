@@ -346,7 +346,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         XCTAssertEqual(sut.viewController.currentAttachments.count, 6)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(delegate.submittedImages?.count, 3)
         XCTAssertEqual(delegate.submittedFiles?.count, 3)
@@ -361,7 +361,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.delegate = delegate
         sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(delegate.submittedPrompt, "")
         XCTAssertEqual(delegate.submittedFiles?.count, 1)
@@ -430,7 +430,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.delegate = delegate
         sut.addFileAttachment(makeFileAttachment(fileName: "too-many-pages.pdf", pageCount: 9))
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(delegate.submittedPrompt)
         XCTAssertNil(delegate.submittedFiles)
@@ -477,7 +477,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.first?.fileAttachment?.data, fileData)
         XCTAssertNil(sut.viewController.attachmentValidationMessage)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "use the file", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "use the file", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(delegate.submittedPrompt, "use the file")
         XCTAssertEqual(delegate.submittedFiles?.count, 1)
@@ -640,7 +640,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
         sut.updateInputMode(.search, animated: false)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "example", mode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "example", mode: .search, trigger: .sendButton)
 
         XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
         XCTAssertNil(sut.viewController.attachmentValidationMessage)
@@ -656,7 +656,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.setText("example")
         sut.updateInputMode(.search, animated: false)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "example", mode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "example", mode: .search, trigger: .sendButton)
 
         XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
         XCTAssertNil(sut.viewController.attachmentValidationMessage)
@@ -707,7 +707,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
 
         sut.updateSelectedModel("non-image-model")
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
         XCTAssertNil(delegate.submittedImages)
@@ -723,7 +723,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addFileAttachment(makeFileAttachment(fileName: "a.pdf"))
         sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 0, filesUsed: 3, fileSizeBytesUsed: 0)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(delegate.submittedFiles)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
@@ -740,7 +740,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.addImageAttachment(image: image, fileName: "a.jpg")
         sut.attachmentUsage = AIChatAttachmentUsage(imagesUsed: 5, filesUsed: 0, fileSizeBytesUsed: 0)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(delegate.submittedImages)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
@@ -851,7 +851,7 @@ private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedImages = images
         submittedFiles = files

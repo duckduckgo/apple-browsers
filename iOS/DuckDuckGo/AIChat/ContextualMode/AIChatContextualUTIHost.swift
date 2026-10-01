@@ -596,7 +596,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            tools: [AIChatRAGTool]?,
                                            reasoningEffort: AIChatReasoningEffort?,
                                            images: [AIChatNativePrompt.NativePromptImage]?,
-                                           files: [AIChatNativePrompt.NativePromptFile]?) {
+                                           files: [AIChatNativePrompt.NativePromptFile]?,
+                                           termsAccepted: Bool) {
         guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
@@ -606,7 +607,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                                    tools: tools,
                                                    pageContext: chipViewModel.pendingAttachedContextData,
                                                    reasoningEffort: reasoningEffort,
-                                                   tabAttachmentRequest: takeTabAttachmentRequest())
+                                                   tabAttachmentRequest: takeTabAttachmentRequest(),
+                                                   termsAccepted: termsAccepted)
         commitDeferredBindIfNeeded()
         onPromptDelivered?()
     }

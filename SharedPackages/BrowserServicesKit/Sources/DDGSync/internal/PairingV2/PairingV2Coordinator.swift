@@ -28,7 +28,7 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     /// Dismisses a pending host or joiner confirmation without treating it as a user decision.
     func pairingV2CoordinatorDismissConfirmation() async
     /// Notifies the app that Pairing V2 created a local account before preparing a recovery code.
-    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind, isNegotiatedV2Point1: Bool) async
+    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
 }
 
 /// Pairing V2 timing defaults and remote configuration bounds.
@@ -612,8 +612,7 @@ final class PairingV2Coordinator {
         } catch {
             throw PairingV2Error.accountCreationFailed
         }
-        await confirmationDelegate?.pairingV2CoordinatorDidCreateSyncAccount(credentialKind: credentialKind,
-                                                                             isNegotiatedV2Point1: negotiatedVersion >= .v2Point1)
+        await confirmationDelegate?.pairingV2CoordinatorDidCreateSyncAccount(credentialKind: credentialKind)
     }
 
     private func sendRecoveryCode(_ recoveryCode: String, failureStage: PairingV2FailureStage?) async throws {

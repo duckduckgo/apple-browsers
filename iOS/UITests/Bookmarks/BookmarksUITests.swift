@@ -58,7 +58,7 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Delete the bookmark") { _ in
             app.openBookmarks()
-            app.deleteBookmark(bookmark)
+            app.deleteBookmarkFromEditor(bookmark)
             app.assertBookmarksEmpty()
         }
     }
@@ -109,7 +109,7 @@ final class BookmarksUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Delete the bookmark from the nested folder") { _ in
-            app.deleteBookmark(bookmark)
+            app.deleteBookmarkFromEditor(bookmark)
             XCTAssertTrue(
                 bookmark.wait(
                     for: NSPredicate(format: "exists == false"),
@@ -120,7 +120,7 @@ final class BookmarksUITests: UITestCase {
 
         XCTContext.runActivity(named: "Delete the non-empty folder hierarchy") { _ in
             app.openBookmarks()
-            app.deleteBookmarkFolder(folder)
+            app.deleteBookmarkFolder(folder, expectedChildCount: 1)
             app.assertBookmarksEmpty()
         }
     }
@@ -170,7 +170,7 @@ final class BookmarksUITests: UITestCase {
         }
 
         XCTContext.runActivity(named: "Delete the folder and its bookmarks") { _ in
-            app.deleteBookmarkFolder(folder)
+            app.deleteBookmarkFolder(folder, expectedChildCount: 4)
             app.assertBookmarksEmpty()
         }
     }

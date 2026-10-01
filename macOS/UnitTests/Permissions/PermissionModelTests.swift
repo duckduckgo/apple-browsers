@@ -1039,6 +1039,14 @@ final class PermissionModelTests: XCTestCase {
         withExtendedLifetime(c) { waitForExpectations(timeout: 1) }
     }
 
+    func testWhenAlwaysAllowIsSavedWhileCameraQueryIsPendingThenRequestIsGrantedAndDecisionIsPreserved() {
+        assertSavedCameraDecisionResolvesPendingQuery(.allow, expectedGranted: true)
+    }
+
+    func testWhenNeverAllowIsSavedWhileCameraQueryIsPendingThenRequestIsDeniedAndDecisionIsPreserved() {
+        assertSavedCameraDecisionResolvesPendingQuery(.deny, expectedGranted: false)
+    }
+
     func testWhenDeniedPermissionIsStoredThenQueryIsDenied() {
         permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .camera)
         permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .microphone)
@@ -1864,6 +1872,38 @@ final class PermissionModelTests: XCTestCase {
         // Query should NOT be shown - user's "Never Allow" decision should be respected
         // even when system permission is disabled
         XCTAssertFalse(queryShown)
+    }
+
+    private func assertSavedCameraDecisionResolvesPendingQuery(
+        _ decision: PersistedPermissionDecision,
+        expectedGranted: Bool,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
+        systemPermissionManagerMock.authorizationStates[.camera] = .authorized
+        webView.urlValue = URL.duckDuckGo
+        let domain = URL.duckDuckGo.host!
+        permissionManagerMock.setPermission(.ask, forDomain: domain, permissionType: .camera)
+
+        var grantedResult: Bool?
+        var completionCount = 0
+        model.permissions([.camera], requestedForDomain: domain) { (granted: Bool) in
+            grantedResult = granted
+            completionCount += 1
+        }
+        XCTAssertNotNil(model.authorizationQuery, file: file, line: line)
+        XCTAssertNil(grantedResult, file: file, line: line)
+
+        permissionManagerMock.setPermission(decision, forDomain: domain, permissionType: .camera)
+        permissionManagerMock.permissionSubject.send((domain, .camera, .decisionChanged(decision)))
+
+        XCTAssertEqual(grantedResult, expectedGranted, file: file, line: line)
+        XCTAssertEqual(completionCount, 1, file: file, line: line)
+        XCTAssertNil(model.authorizationQuery, file: file, line: line)
+        XCTAssertEqual(permissionManagerMock.persistedDecision(forDomain: domain, permissionType: .camera),
+                       decision, file: file, line: line)
     }
 
 }

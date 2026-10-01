@@ -300,7 +300,7 @@ final class PermissionModel {
                 fallthrough
             case (.allow, .requested):
                 while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
-                    query.handleDecision(grant: decision == .allow)
+                    query.handleDecision(grant: decision == .allow, remember: true)
                 }
             default: break
             }

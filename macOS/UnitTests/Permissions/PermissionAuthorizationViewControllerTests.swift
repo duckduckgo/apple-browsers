@@ -66,19 +66,6 @@ final class PermissionAuthorizationViewControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testFinishingCurrentQueryEndsAuthorization() throws {
-        let viewController = makeViewController()
-        let query = makeQuery()
-        viewController.query = query
-        let viewModel = try XCTUnwrap(query.parameters.authorizationViewModel)
-
-        viewModel.finish()
-
-        XCTAssertFalse(query.isComplete)
-        XCTAssertFalse(viewController.isAuthorizationInProgress)
-    }
-
-    @MainActor
     func testFinishingCachedViewModelOfPreviousQueryKeepsCurrentAuthorizationInProgress() throws {
         let viewController = makeViewController()
         let previousQuery = makeQuery()

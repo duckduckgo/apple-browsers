@@ -1,5 +1,5 @@
 {
-  "originHash" : "ac01eafab7b8c0e98b1be8c809aefc752e1d8a3f6ade94c526426815b36098a3",
+  "originHash" : "91e2df5657486c4a92241138150ee8ec19ec42cb445cc017768037bce0d007dd",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56",
         "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "content-scope-scripts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
+      "state" : {
+        "revision" : "a214261ab72f7002242d5626ae5cb1b97b7968da",
+        "version" : "17.13.0"
       }
     },
     {
@@ -173,15 +182,6 @@
       }
     },
     {
-      "identity" : "swift-issue-reporting",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
-      "state" : {
-        "revision" : "75b000cea2ca6d7527a57e1b9cc0bdf21a9abe9f",
-        "version" : "2.1.1"
-      }
-    },
-    {
       "identity" : "swift-numerics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-numerics.git",
@@ -242,6 +242,15 @@
       "state" : {
         "revision" : "13fd026384b1af11048451061cc1b21434990668",
         "version" : "1.1.3"
+      }
+    },
+    {
+      "identity" : "xctest-dynamic-overlay",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "state" : {
+        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
+        "version" : "1.13.1"
       }
     },
     {

@@ -60,7 +60,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         var isGeometryValid = true
     }
 
-    private let backgroundImageView = UIImageView(image: UIImage(named: "background-pond-light"))
+    private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -126,7 +126,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
         view.backgroundColor = UIColor(designSystemColor: .background)
         view.clipsToBounds = true
-        updateBackgroundAppearance()
         addSubviews()
         installBlocks()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
@@ -153,11 +152,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
                                            height: backgroundSize)
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        updateBackgroundAppearance()
-    }
-
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         // Reattachment and keyboard transitions temporarily change the viewport and safe area.
@@ -167,11 +161,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
            scrollView.contentOffset != preservedOffset {
             scrollView.setContentOffset(preservedOffset, animated: false)
         }
-    }
-
-    private func updateBackgroundAppearance() {
-        // Keep the dark surface until matching dark artwork is available.
-        backgroundImageView.isHidden = traitCollection.userInterfaceStyle == .dark
     }
 
     @objc private func customizeButtonTapped() {

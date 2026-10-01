@@ -134,7 +134,10 @@ class FromWebViewTransition: WebViewTransition {
         }
         setCardFrame(initialContainerFrame, cornerRadius: 0, shadowOpacity: 0)
         imageContainer.backgroundColor = theme.backgroundColor
-        imageView.frame = imageContainer.bounds
+        imageView.frame = WebViewTransitionGeometry.destinationImageFrame(
+            for: imageContainer.bounds.size,
+            previewSize: preview.size,
+            alignsWithContainerBottom: isFloating)
         imageView.image = preview
 
         let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
@@ -308,7 +311,8 @@ class ToWebViewTransition: WebViewTransition {
                 }
                 self.setCardFrame(destinationFrame, cornerRadius: 0, shadowOpacity: 0)
                 self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
-                                                                                       previewSize: preview?.size)
+                                                                                       previewSize: preview?.size,
+                                                                                       alignsWithContainerBottom: isFloating)
                 self.imageView.alpha = 1
                 self.solidBackground.alpha = 1
                 if !self.tabSwitcherSettings.isGridViewEnabled {

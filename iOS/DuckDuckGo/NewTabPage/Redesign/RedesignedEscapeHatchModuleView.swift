@@ -260,7 +260,6 @@ private enum Metrics {
     static let headerIconToTitleSpacing: CGFloat = 6
     static let showAllLabelToArrowSpacing: CGFloat = 8
     static let showAllArrowSize: CGFloat = 20
-    // The design uses a 9% accent tint; DRK does not have an equivalent semantic fill.
     static let showAllArrowBackgroundOpacity: CGFloat = 0.09
 
     static let bodySpacing: CGFloat = 12

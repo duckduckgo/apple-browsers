@@ -286,7 +286,7 @@ struct ReturnToTabCard: View {
 }
 
 /// Holds FaviconViewModel in @StateObject so it's created once per domain instead of on every body.
-private struct DomainFaviconView: View {
+struct DomainFaviconView: View {
     let domain: String
 
     @StateObject private var viewModel: FaviconViewModel

@@ -2560,6 +2560,9 @@
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Return to %1$@, %2$@";
 
+/* Button in the escape hatch module header that opens the tab switcher */
+"escapeHatch.showAll.label" = "Show All";
+
 /* Swipe action that closes the open tab referenced by the escape hatch card */
 "escapeHatch.swipeAction.closeTab" = "Close Tab";
 

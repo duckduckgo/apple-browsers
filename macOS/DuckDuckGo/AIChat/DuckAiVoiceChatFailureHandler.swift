@@ -59,7 +59,7 @@ final class DuckAiVoiceChatFailureHandler: DuckAiVoiceChatFailureHandling {
     private let permissionCenterPresenter: DuckAiVoiceChatPermissionCenterPresenting
     private let pixelFiring: PixelFiring?
 
-    init(microphoneAuthorizationStatusProvider: @escaping () -> AVAuthorizationStatus = { AVCaptureDevice.authorizationStatus(for: .audio) },
+    init(microphoneAuthorizationStatusProvider: @escaping () -> AVAuthorizationStatus = { AVCaptureDevice.systemAuthorizationStatus(for: .audio) },
          permissionCenterPresenter: DuckAiVoiceChatPermissionCenterPresenting,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.microphoneAuthorizationStatusProvider = microphoneAuthorizationStatusProvider

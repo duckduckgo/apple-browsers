@@ -395,7 +395,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         let popover = PrivacyDashboardPopover(
             entryPoint: entryPoint,
             contentBlocking: contentBlocking,
-            permissionManager: permissionManager,
+            permissionManager: tabViewModel.tab.burnerMode.isBurner ? tabViewModel.tab.permissionManager : permissionManager,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences
         )
         popover.delegate = self

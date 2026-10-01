@@ -93,7 +93,13 @@ final class AddressBarButtonsViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let permissionManager: PermissionManagerProtocol
+    private let regularPermissionManager: PermissionManagerProtocol
+    private var permissionManager: PermissionManagerProtocol {
+        if let tab = tabViewModel?.tab, tab.burnerMode.isBurner {
+            return tab.permissionManager
+        }
+        return regularPermissionManager
+    }
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -346,7 +352,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.permissionManager = permissionManager
+        self.regularPermissionManager = permissionManager
         super.init(coder: coder)
     }
 
@@ -876,6 +882,11 @@ final class AddressBarButtonsViewController: NSViewController {
         let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
+        // A pending permission authorization query — e.g. getUserMedia with no prior decision, or
+        // a duck.ai mic request waiting on the macOS System Settings step — needs the shield as an
+        // anchor for its popover, so it overrides the suppressions below for the duration of the
+        // request. The query clears on user decision/dismiss and the suppression resumes.
+        let hasPendingAuthorizationQuery = tabViewModel.permissionAuthorizationQuery != nil
 
         if isDuckAiVoiceChatSystemMicDenied(forDomain: domain) && !isAIChatPanelActive {
             // While the OS denies mic access on duck.ai under the voice-chat flag, keep the
@@ -885,19 +896,15 @@ final class AddressBarButtonsViewController: NSViewController {
             // The voice-chat failure handler still surfaces the remediation popover (force-showing
             // the shield transiently) when mic use is actually attempted and fails.
             permissionCenterButton.isShown = true
-        } else if shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
+        } else if !hasPendingAuthorizationQuery && shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
             // On duck.ai, the mic permission is auto-granted by migration and the voice chat
             // FE owns the in-page UI for active mic usage — so we don't need the shield to
-            // appear for mic alone. It surfaces only via the OS-denied branch above.
+            // appear for mic alone. It surfaces only via the OS-denied branch above, or while
+            // a mic request is waiting on the authorization popover.
             permissionCenterButton.isShown = false
         } else {
             // `isAIChatPanelActive` normally suppresses the shield (clean omnibar on duck.ai
-            // and when the AI chat sidebar is active). A pending permission authorization
-            // query — e.g. getUserMedia with no prior decision, as happens when the duck.ai
-            // native voice flow feature flag is off — needs the shield as an anchor for its
-            // allow/deny popover, so we override the suppression for the duration of the
-            // request. The query clears on user decision/dismiss and the suppression resumes.
-            let hasPendingAuthorizationQuery = tabViewModel.permissionAuthorizationQuery != nil
+            // and when the AI chat sidebar is active), except while a query is pending.
             permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
                 isPermissionCenterPopoverShown: isPermissionCenterPopoverShown,
                 isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
@@ -939,7 +946,7 @@ final class AddressBarButtonsViewController: NSViewController {
               domain == URL.duckAi.host else {
             return false
         }
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        switch AVCaptureDevice.systemAuthorizationStatus(for: .audio) {
         case .denied, .restricted: return true
         case .authorized, .notDetermined: return false
         @unknown default: return false

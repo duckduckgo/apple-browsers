@@ -19,8 +19,42 @@
 import Foundation
 import AVFoundation
 
+/// Temporarily intercepts `AVCaptureDevice.authorizationStatus(for:)` while WebKit handles a camera/microphone request.
+///
+/// Why: before WebKit asks its UI delegate (`webView(_:requestMediaCapturePermissionFor:...)`) about a
+/// `getUserMedia` call, it checks macOS access itself by reading `AVCaptureDevice.authorizationStatus(for:)`.
+/// When macOS has denied access, WebKit rejects the call right there and the delegate never runs, so the app
+/// can neither learn which device was requested nor show its own prompt. When macOS hasn't decided yet, WebKit
+/// shows the macOS prompt itself, before the delegate and therefore before the website prompt.
+///
+/// `queryPermission` can't replace the hook. WebKit calls it before that check, but only uses a granted answer
+/// (to mark the request as having persistent access) and checks macOS access whatever it returns. It also always
+/// asks about both "camera" and "microphone", so it doesn't say which devices the page requested.
+///
+/// How it works:
+/// 1. `PermissionModel.prepareForMediaPermissionRequest()` calls `swizzleAuthorizationStatusForMediaType(with:)`
+///    from WebKit's preflight callback (`queryPermission` from Safari 26's WebKit, `checkUserMediaPermissionForURL`
+///    before that), before WebKit reads the status. This exchanges the class method's implementation with
+///    `swizzled_authorizationStatus(for:)` and stores the replacement closure.
+/// 2. While installed, every main-thread `authorizationStatus(for:)` call gets the real macOS status and passes it
+///    through the closure, which can change it. With `websitePermissionsPrompts` on, the closure reports
+///    `.authorized`, so WebKit always reaches the delegate and the website prompt shows its System Settings step
+///    instead. With the flag off, it records which devices macOS denied and leaves the status unchanged. Only
+///    `checkUserMediaPermissionForURL` installs the hook with the flag off, so this recording only happens on
+///    older WebKit versions that still call it.
+/// 3. The hook is process-wide and must not outlive the request. `PermissionModel` restores it when the request
+///    reaches the delegate, once both devices have been checked, or after a 5-second fallback. Each install returns
+///    an identifier, and `restoreAuthorizationStatusForMediaType(ifMatching:)` ignores stale identifiers, so a late
+///    fallback can't remove a newer request's hook.
+/// 4. App code that needs the real macOS status, such as `SystemPermissionManager` and the Duck.ai mic checks,
+///    calls `systemAuthorizationStatus(for:)`, which bypasses the hook.
 extension AVCaptureDevice {
+    private typealias AuthorizationStatusImplementation = @convention(c) (AnyClass, Selector, NSString) -> AVAuthorizationStatus
+
+    /// The replacement closure while the hook is installed; `nil` means `authorizationStatus(for:)` is untouched.
     private static var authorizationStatusForMediaType: ((AVMediaType, inout AVAuthorizationStatus) -> Void)?
+    /// Identifies the current installation, so only its owner (or an unconditional restore) can remove it.
+    private static var authorizationStatusSwizzleID: UUID?
     private static var isSwizzled: Bool { authorizationStatusForMediaType != nil }
 
     private static let originalAuthorizationStatusForMediaType = {
@@ -29,24 +63,45 @@ extension AVCaptureDevice {
     private static let swizzledAuthorizationStatusForMediaType = {
         class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))
     }()
+    /// AVFoundation's own implementation, captured before the first exchange so it can be called directly
+    /// whether or not the hook is installed.
+    private static let systemAuthorizationStatusImplementation: AuthorizationStatusImplementation? = {
+        guard let originalAuthorizationStatusForMediaType else { return nil }
+        return unsafeBitCast(method_getImplementation(originalAuthorizationStatusForMediaType), to: AuthorizationStatusImplementation.self)
+    }()
 
-    static func swizzleAuthorizationStatusForMediaType(with replacement: @escaping ((AVMediaType, inout AVAuthorizationStatus) -> Void)) {
+    /// Installs the hook and routes main-thread `authorizationStatus(for:)` calls through `replacement`.
+    ///
+    /// - Parameter replacement: Receives the media type and the real macOS status, and may change the status.
+    /// - Returns: An identifier for `restoreAuthorizationStatusForMediaType(ifMatching:)`, or `nil` when a hook is
+    ///   already installed. In that case the existing installation keeps running and the caller doesn't own it.
+    @discardableResult
+    static func swizzleAuthorizationStatusForMediaType(with replacement: @escaping ((AVMediaType, inout AVAuthorizationStatus) -> Void)) -> UUID? {
         dispatchPrecondition(condition: .onQueue(.main))
-        guard !self.isSwizzled else { return }
+        guard !self.isSwizzled else { return nil }
         guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
-              let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType
+              let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType,
+              systemAuthorizationStatusImplementation != nil
         else {
             assertionFailure("Methods not available")
-            return
+            return nil
         }
 
         method_exchangeImplementations(originalAuthorizationStatusForMediaType, swizzledAuthorizationStatusForMediaType)
         self.authorizationStatusForMediaType = replacement
+        let identifier = UUID()
+        authorizationStatusSwizzleID = identifier
+        return identifier
     }
 
-    static func restoreAuthorizationStatusForMediaType() {
+    /// Removes the hook so `authorizationStatus(for:)` returns the real macOS status again.
+    ///
+    /// - Parameter identifier: The identifier returned when the hook was installed. Pass it from delayed or
+    ///   per-tab cleanup, so a stale call can't remove a newer installation. `nil` removes any installation.
+    static func restoreAuthorizationStatusForMediaType(ifMatching identifier: UUID? = nil) {
         dispatchPrecondition(condition: .onQueue(.main))
         guard self.isSwizzled else { return }
+        guard identifier == nil || identifier == authorizationStatusSwizzleID else { return }
         guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
               let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType
         else {
@@ -56,10 +111,27 @@ extension AVCaptureDevice {
 
         method_exchangeImplementations(originalAuthorizationStatusForMediaType, swizzledAuthorizationStatusForMediaType)
         self.authorizationStatusForMediaType = nil
+        authorizationStatusSwizzleID = nil
     }
 
+    /// The real macOS authorization status, unaffected by the hook.
+    ///
+    /// App permission checks must use this instead of `authorizationStatus(for:)`: while a request is being
+    /// intercepted, `authorizationStatus(for:)` can report `.authorized` even though macOS denied access.
+    @objc dynamic
+    static func systemAuthorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
+        guard let systemAuthorizationStatusImplementation else {
+            assertionFailure("Authorization status implementation not available")
+            return .denied
+        }
+        // Selector dispatch can race with restoring the hook; this implementation is captured before the first exchange.
+        return systemAuthorizationStatusImplementation(self, #selector(authorizationStatus(for:)), mediaType.rawValue as NSString)
+    }
+
+    /// Runs as `authorizationStatus(for:)` while the hook is installed. Only main-thread calls are passed to the
+    /// replacement closure, because WebKit's preflight runs there and the closure touches main-thread state.
     @objc dynamic private static func swizzled_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        var result = self.swizzled_authorizationStatus(for: mediaType) // call the original
+        var result = systemAuthorizationStatus(for: mediaType)
         if Thread.isMainThread,
            let authorizationStatusForMediaType = Self.authorizationStatusForMediaType {
             authorizationStatusForMediaType(mediaType, &result)

@@ -90,6 +90,21 @@ extension Tab: WKUIDelegate {
         self.popupHandling?.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
     }
 
+    @objc(_webView:queryPermission:forOrigin:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 queryPermission name: String,
+                 forOrigin origin: WKSecurityOrigin,
+                 completionHandler: @escaping (WKPermissionDecision) -> Void) {
+        // Modern WebKit uses this callback before system validation instead of checkUserMediaPermissionForURL.
+        // Only a granted answer changes WebKit's behaviour, and system validation runs either way, so the
+        // AVCaptureDevice hook is still needed to reach the website prompt first.
+        permissions.queryMediaPermission(name)
+        completionHandler(.prompt)
+    }
+
+    // Legacy: WebKit before Safari 26 calls this; Safari 26's WebKit calls queryPermission above instead
+    // (WebKit commit 75d48825d9). macOS 12–13, and macOS 14–15 without Safari 26, still use this path.
+    // Remove it once the minimum supported macOS always ships Safari 26 or later (macOS 26).
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
     func webView(_ webView: WKWebView,
                  checkUserMediaPermissionFor url: NSURL?,

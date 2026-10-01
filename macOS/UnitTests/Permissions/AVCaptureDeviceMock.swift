@@ -17,6 +17,7 @@
 //
 
 import AVFoundation
+@testable import DuckDuckGo_Privacy_Browser
 
 final class AVCaptureDeviceMock: AVCaptureDevice {
 
@@ -24,8 +25,14 @@ final class AVCaptureDeviceMock: AVCaptureDevice {
         didSet {
             switch (oldValue, authorizationStatuses) {
             case (.none, .some), (.some, .none):
+                // Capture the real system implementation before installing either mock.
+                if oldValue == nil {
+                    _ = AVCaptureDevice.systemAuthorizationStatus(for: .audio)
+                }
                 method_exchangeImplementations(originalAuthorizationStatusForMediaType,
                                                swizzledAuthorizationStatusForMediaType)
+                method_exchangeImplementations(originalSystemAuthorizationStatusForMediaType,
+                                               swizzledSystemAuthorizationStatusForMediaType)
             default:
                 break
             }
@@ -39,13 +46,25 @@ final class AVCaptureDeviceMock: AVCaptureDevice {
         class_getClassMethod(AVCaptureDevice.self, #selector(mocked_authorizationStatus(for:)))!
     }()
 
+    private static let originalSystemAuthorizationStatusForMediaType = {
+        class_getClassMethod(AVCaptureDevice.self, #selector(systemAuthorizationStatus(for:)))!
+    }()
+    private static let swizzledSystemAuthorizationStatusForMediaType = {
+        class_getClassMethod(AVCaptureDevice.self, #selector(mocked_systemAuthorizationStatus(for:)))!
+    }()
+
 }
 
 extension AVCaptureDevice {
 
     @objc
     static func mocked_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        (self as? AVCaptureDeviceMock.Type)!.authorizationStatuses![mediaType] ?? .notDetermined
+        AVCaptureDeviceMock.authorizationStatuses?[mediaType] ?? .notDetermined
+    }
+
+    @objc
+    static func mocked_systemAuthorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
+        AVCaptureDeviceMock.authorizationStatuses?[mediaType] ?? .notDetermined
     }
 
 }

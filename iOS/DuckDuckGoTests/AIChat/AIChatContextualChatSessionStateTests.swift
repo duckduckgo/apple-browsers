@@ -2415,6 +2415,74 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.suggestedContext, "The offer belonged to the page we left")
     }
 
+    // MARK: - Offered back after detaching
+
+    private func arrangeAttachedPage(title: String = "Tokamak") {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+        sessionState.updateContext(makeTestContext(title: title))
+    }
+
+    func testWhenAnAttachedPageIsDetachedThenItIsOfferedBack() {
+        var deliveredTargets: PageContextDeliveryTargets?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(_, let targets) = effect { deliveredTargets = targets }
+            }
+            .store(in: &cancellables)
+        arrangeAttachedPage()
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak")
+        XCTAssertEqual(deliveredTargets, .utiSuggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenTheOfferLeftByDetachingIsAcceptedThenThePageIsAttachedAgain() {
+        arrangeAttachedPage()
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenAPreviouslyDeclinedPageIsAttachedAndDetachedThenItIsOfferedAgain() {
+        arrangeOfferConditions()
+        let context = makeTestContext(title: "Tokamak")
+        sessionState.updateContext(context)
+        sessionState.dismissSuggestedContext()
+
+        sessionState.beginManualAttach()
+        sessionState.updateContext(context)
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak", "Attaching it again withdraws the earlier decline")
+    }
+
+    func testWhenThePlaceholderFlagIsOffThenDetachingOffersNothing() {
+        arrangeAttachedPage()
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenTheUnifiedToggleInputIsInactiveThenDetachingOffersNothing() {
+        arrangeAttachedPage()
+        sessionState.updateUnifiedToggleInputActive(false)
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
     private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {
         ids.map { id in
             ContextualSuggestedPrompt(id: id, label: id, prompt: "\(id).", icon: nil)

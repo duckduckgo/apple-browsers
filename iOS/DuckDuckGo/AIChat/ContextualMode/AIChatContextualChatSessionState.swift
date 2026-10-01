@@ -476,7 +476,18 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
         pushDetachedContextToSuggestionsSurfaceIfNeeded(context)
         emitDeliveryIfNeeded(nil)
+        offerDetachedContext(context)
         Logger.aiChat.debug("[SessionState] Chip downgraded to placeholder via coordinator")
+    }
+
+    /// Unlike a navigation offer, this ignores the auto-attach setting and any earlier decline:
+    /// the user just acted on this page.
+    private func offerDetachedContext(_ context: AIChatPageContext) {
+        guard featureFlagger.isFeatureOn(.contextualPagePlaceholder), isUnifiedToggleInputActive else { return }
+        declinedOfferURL = nil
+        suggestedContext = context
+        emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))
+        Logger.aiChat.debug("[SessionState] Offered the detached page back")
     }
 
     // MARK: - Context Management

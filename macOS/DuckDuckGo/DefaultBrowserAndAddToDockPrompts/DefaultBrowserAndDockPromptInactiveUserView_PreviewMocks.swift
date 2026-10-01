@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 #if DEBUG
 extension DefaultBrowserAndDockPromptInactiveUserViewModel {
 
     static var setAsDefault: DefaultBrowserAndDockPromptInactiveUserViewModel {
         DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: UserText.setAsDefaultInactiveUserPromptMessage,
-            image: .daxSearch,
+            image: NSImage(resource: .daxSearch),
             primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
             dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
             primaryButtonAction: {},
@@ -33,7 +35,7 @@ extension DefaultBrowserAndDockPromptInactiveUserViewModel {
     static var addToDock: DefaultBrowserAndDockPromptInactiveUserViewModel {
         DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: UserText.addToDockInactiveUserPromptMessage,
-            image: .daxSearch,
+            image: NSImage(resource: .daxSearch),
             primaryButtonLabel: UserText.addToDockInactiveUserPrimaryAction,
             dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
             primaryButtonAction: {},
@@ -44,7 +46,7 @@ extension DefaultBrowserAndDockPromptInactiveUserViewModel {
     static var addToDockAndSetAsDefault: DefaultBrowserAndDockPromptInactiveUserViewModel {
         DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage,
-            image: .daxSearch,
+            image: NSImage(resource: .daxSearch),
             primaryButtonLabel: UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction,
             dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
             primaryButtonAction: {},

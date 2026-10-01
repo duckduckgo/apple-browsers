@@ -1016,7 +1016,7 @@ final class AddressBarButtonsViewController: NSViewController {
         imageButton.image = nil
         switch controllerMode {
         case .browsing where tabViewModel.isShowingErrorPage:
-            imageButton.image = .web
+            imageButton.image = NSImage(resource: .web)
         case .browsing:
             // When editing (address bar focused), show favicon if available
             // When browsing (not editing), show globe for local HTTP sites
@@ -1024,7 +1024,7 @@ final class AddressBarButtonsViewController: NSViewController {
             if isTextFieldEditorFirstResponder, let favicon = tabViewModel.favicon {
                 imageButton.image = favicon
             } else {
-                imageButton.image = .web
+                imageButton.image = NSImage(resource: .web)
             }
         case .editing(.text), .editing(.url), .editing(.openTabSuggestion), .editing(.aiChat):
             /// Per the redesign, the address bar no longer shows a leading icon in any editing state — the user-
@@ -1050,9 +1050,9 @@ final class AddressBarButtonsViewController: NSViewController {
         // Privacy entry point button
         let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
         privacyDashboardButton.isAnimationEnabled = !isFlaggedAsMalicious
-        privacyDashboardButton.normalTintColor = isFlaggedAsMalicious ? .fireButtonRedPressed : .privacyEnabled
-        privacyDashboardButton.mouseOverTintColor = isFlaggedAsMalicious ? .alertRedHover : privacyDashboardButton.mouseOverTintColor
-        privacyDashboardButton.mouseDownTintColor = isFlaggedAsMalicious ? .alertRedPressed : privacyDashboardButton.mouseDownTintColor
+        privacyDashboardButton.normalTintColor = isFlaggedAsMalicious ? NSColor(resource: .fireButtonRedPressed) : NSColor(resource: .privacyEnabled)
+        privacyDashboardButton.mouseOverTintColor = isFlaggedAsMalicious ? NSColor(resource: .alertRedHover) : privacyDashboardButton.mouseOverTintColor
+        privacyDashboardButton.mouseDownTintColor = isFlaggedAsMalicious ? NSColor(resource: .alertRedPressed) : privacyDashboardButton.mouseDownTintColor
 
         /// `hasPendingBarInput` covers `.text(userTyped: true)`, `.url(userTyped: true)`, and `.suggestion` —
         /// any state where the bar is showing the user's pending edit (typed draft or autocomplete suggestion
@@ -1152,10 +1152,10 @@ final class AddressBarButtonsViewController: NSViewController {
                 shieldAnimationView.isHidden = true
                 shieldDotAnimationView.isHidden = true
                 privacyDashboardButton.isAnimationEnabled = false
-                privacyDashboardButton.image = .redAlertCircle16
-                privacyDashboardButton.normalTintColor = .alertRed
-                privacyDashboardButton.mouseOverTintColor = .alertRedHover
-                privacyDashboardButton.mouseDownTintColor = .alertRedPressed
+                privacyDashboardButton.image = NSImage(resource: .redAlertCircle16)
+                privacyDashboardButton.normalTintColor = NSColor(resource: .alertRed)
+                privacyDashboardButton.mouseOverTintColor = NSColor(resource: .alertRedHover)
+                privacyDashboardButton.mouseDownTintColor = NSColor(resource: .alertRedPressed)
             } else if isShieldDotVisible {
                 shieldAnimationView.isHidden = true
                 shieldDotAnimationView.isHidden = true
@@ -1405,8 +1405,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let moreOptionsMenuIconsProvider = theme.iconsProvider.moreOptionsMenuIconsProvider
         zoomButton.image = (zoomState == .zoomedOut) ? moreOptionsMenuIconsProvider.zoomOutIcon : moreOptionsMenuIconsProvider.zoomInIcon
-        zoomButton.backgroundColor = isPopoverShown ? .buttonMouseDown : nil
-        zoomButton.mouseOverColor = isPopoverShown ? nil : .buttonMouseOver
+        zoomButton.backgroundColor = isPopoverShown ? NSColor(resource: .buttonMouseDown) : nil
+        zoomButton.mouseOverColor = isPopoverShown ? nil : NSColor(resource: .buttonMouseOver)
         zoomButton.isHidden = !shouldShowZoom
         zoomButton.normalTintColor = theme.colorsProvider.iconsColor
     }
@@ -1848,8 +1848,8 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         guard button.isVisible else { return }
 
-        button.backgroundColor = .buttonMouseDown
-        button.mouseOverColor = .buttonMouseDown
+        button.backgroundColor = NSColor(resource: .buttonMouseDown)
+        button.mouseOverColor = NSColor(resource: .buttonMouseDown)
         (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
         (popover.contentViewController as? PopupBlockedViewController)?.query = query
         query.wasShownOnce = true
@@ -1861,7 +1861,7 @@ final class AddressBarButtonsViewController: NSViewController {
                   button.isVisible else {
                 // Tab is no longer selected or button became hidden - reset button state
                 button.backgroundColor = .clear
-                button.mouseOverColor = .buttonMouseOver
+                button.mouseOverColor = NSColor(resource: .buttonMouseOver)
                 return
             }
             popover.show(positionedBelow: button.bounds.insetFromLineOfDeath(flipped: button.isFlipped), in: button)
@@ -2131,8 +2131,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterPopover = popover
 
         // Set button to active/pressed state
-        permissionCenterButton.backgroundColor = .buttonMouseDown
-        permissionCenterButton.mouseOverColor = .buttonMouseDown
+        permissionCenterButton.backgroundColor = NSColor(resource: .buttonMouseDown)
+        permissionCenterButton.mouseOverColor = NSColor(resource: .buttonMouseDown)
 
         // Register for close notification to reset button state
         NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
@@ -2212,8 +2212,8 @@ final class AddressBarButtonsViewController: NSViewController {
             popover?.close()
         }
 
-        youTubeAdBlockButton.backgroundColor = .buttonMouseDown
-        youTubeAdBlockButton.mouseOverColor = .buttonMouseDown
+        youTubeAdBlockButton.backgroundColor = NSColor(resource: .buttonMouseDown)
+        youTubeAdBlockButton.mouseOverColor = NSColor(resource: .buttonMouseDown)
 
         popover.show(positionedBelow: youTubeAdBlockButton.bounds.insetFromLineOfDeath(flipped: youTubeAdBlockButton.isFlipped), in: youTubeAdBlockButton)
         return true
@@ -2400,8 +2400,8 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.selectionInnerBorderColor = selectionBorder
 
         if isBurner {
-            toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
-            toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
+            toggleControl.focusBorderColor = NSColor(resource: .burnerAccent).withAlphaComponent(0.8)
+            toggleControl.outerBorderColor = NSColor(resource: .burnerAccent).withAlphaComponent(0.2)
         } else {
             toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
             toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
@@ -2867,7 +2867,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case let authPopover as PermissionAuthorizationPopover:
             if let button = popover.positioningView as? AddressBarButton {
                 button.backgroundColor = .clear
-                button.mouseOverColor = .buttonMouseOver
+                button.mouseOverColor = NSColor(resource: .buttonMouseOver)
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
@@ -2886,7 +2886,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PopupBlockedPopover:
             if let button = popover.positioningView as? AddressBarButton {
                 button.backgroundColor = .clear
-                button.mouseOverColor = .buttonMouseOver
+                button.mouseOverColor = NSColor(resource: .buttonMouseOver)
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
@@ -2897,10 +2897,10 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             }
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
-            permissionCenterButton.mouseOverColor = .buttonMouseOver
+            permissionCenterButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         case is YouTubeAdBlockPopover:
             youTubeAdBlockButton.backgroundColor = .clear
-            youTubeAdBlockButton.mouseOverColor = .buttonMouseOver
+            youTubeAdBlockButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
             youTubeAdBlockPopover = nil
             youTubeAdBlockViewModel = nil
         default:

@@ -426,7 +426,7 @@ private struct PasswordManagementSortButton: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 4)
-                .foregroundColor(showHoverState ? .secureVaultCategoryDefault : .clear)
+                .foregroundColor(showHoverState ? Color(.secureVaultCategoryDefault) : .clear)
                 .frame(width: Constants.buttonSize, height: Constants.buttonSize)
 
             Menu {

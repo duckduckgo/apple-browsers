@@ -230,6 +230,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// "Sort by name permanently" — permanently reorders a bookmark folder's direct children alphabetically.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
     case bookmarksReorderByName
+
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1219073365875860?focus=true
+    case pageSignals
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

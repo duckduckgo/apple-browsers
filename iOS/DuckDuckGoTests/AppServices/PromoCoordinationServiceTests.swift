@@ -239,16 +239,16 @@ final class PromoCoordinationServiceTests {
         }
     }
 
-    // MARK: - Pending Modal Prompt
+    // MARK: - Launch Prompt Close Handler
 
     @Test(
-        "Check Pending Modal Prompt Mirrors The Coordination Manager",
+        "Check The Launch Prompt Close Handler Goes To The Coordination Manager",
         arguments: [true, false],
         [PromoCoordinationMode.legacy, .coordinated]
     )
-    func whenManagerReportsPendingAttemptThenServiceReportsPendingModalPrompt(isPending: Bool, mode: PromoCoordinationMode) {
+    func whenWaitingForLaunchPromptThenCoordinationManagerHoldsTheHandler(isPending: Bool, mode: PromoCoordinationMode) {
         // GIVEN
-        managerMock.hasActiveOrPendingModalAttempt = isPending
+        managerMock.runOnceModalPromptClosesResult = isPending
         sut = PromoCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             modalPromptCoordinationManager: managerMock,
@@ -258,8 +258,31 @@ final class PromoCoordinationServiceTests {
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
         )
 
+        // WHEN
+        let waits = sut.runOnceModalPromptCloses {}
+
         // THEN
-        #expect(sut.isModalPromptPending == isPending)
+        #expect(waits == isPending)
+        #expect((managerMock.capturedModalPromptCloseHandler != nil) == isPending)
+    }
+
+    @Test("Check Backgrounding Stops Waiting For The Launch Prompt To Close")
+    func whenAppIsBackgroundedThenLaunchPromptCloseHandlerIsDropped() {
+        // GIVEN
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+        )
+
+        // WHEN
+        sut.handleAppBackgrounded()
+
+        // THEN
+        #expect(managerMock.cancelModalPromptCloseHandlerCallCount == 1)
     }
 
 

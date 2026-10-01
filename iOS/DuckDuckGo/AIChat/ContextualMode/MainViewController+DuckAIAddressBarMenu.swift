@@ -191,7 +191,7 @@ extension MainViewController {
                     self?.askAboutCurrentPageFromAddressBar()
                 case .search(let query):
                     // TODO: fire a dedicated "ask about search" pixel
-                    self?.openFreshDuckAIChatFromAddressBarMenu(source: source, query: query)
+                    self?.askAboutCurrentSearchFromAddressBar(query: query, source: source)
                 }
             },
             onRecentChats: { [weak self] in
@@ -220,9 +220,22 @@ extension MainViewController {
         }
     }
 
+    /// Without contextual mode there is no sheet to open the search in, so it falls back to Duck.ai.
+    private func askAboutCurrentSearchFromAddressBar(query: String, source: AIChatEntryPointSource) {
+        guard aiChatContextualModeFeature.isAvailable, let currentTab else {
+            openFreshDuckAIChatFromAddressBarMenu(source: source, query: query)
+            return
+        }
+        omniBar.endEditing()
+        fireAIChatEntryPointPixel(source: .contextualChat, opensNewTab: false, hasPrompt: true)
+        Task { @MainActor in
+            await currentTab.presentContextualAIChat(withSearchQuery: query, from: self)
+        }
+    }
+
     /// `openAIChat()` rather than `openAIChatFromAddressBar`: the latter sends the omnibar's text as
-    /// a prompt whenever the field is being edited. New Chat opens empty (`query == nil`); the SERP
-    /// "Continue in Duck.ai" action passes the search query and auto-sends it.
+    /// a prompt whenever the field is being edited. New Chat opens empty (`query == nil`); the
+    /// search fallback passes the query and auto-sends it.
     private func openFreshDuckAIChatFromAddressBarMenu(source: AIChatEntryPointSource, query: String? = nil) {
         omniBar.endEditing()
         // iPad has no unified toggle input, so the boundary rule would load the chat over the page.

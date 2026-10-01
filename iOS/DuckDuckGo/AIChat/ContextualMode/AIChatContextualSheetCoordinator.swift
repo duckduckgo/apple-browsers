@@ -334,7 +334,8 @@ final class AIChatContextualSheetCoordinator {
     func presentSheet(from presentingViewController: UIViewController,
                       restoreURL: URL? = nil,
                       skippingAutoAttach: Bool = false,
-                      attachingPage: Bool = false) async {
+                      attachingPage: Bool = false,
+                      opensOntoSubmittedChat: Bool = false) async {
         let restoreURL = await vettedRestoreURL(restoreURL)
         await discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
@@ -360,8 +361,16 @@ final class AIChatContextualSheetCoordinator {
         if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController)
+            presentNewSheet(from: presentingViewController, opensOntoSubmittedChat: opensOntoSubmittedChat)
         }
+    }
+
+    /// Opens the sheet onto the chat the search becomes, rather than loading Duck.ai over the results.
+    func submitSearchQuery(_ query: String, from presentingViewController: UIViewController) async {
+        await presentSheet(from: presentingViewController,
+                           skippingAutoAttach: true,
+                           opensOntoSubmittedChat: true)
+        sheetViewController?.submitSearchQuery(query)
     }
 
     /// Presents the suggestion chips and the input floating over the page, with no sheet.

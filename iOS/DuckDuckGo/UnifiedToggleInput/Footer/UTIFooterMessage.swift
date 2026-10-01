@@ -40,6 +40,7 @@ struct UTIFooterItem: Equatable, Identifiable {
         case modelSwitch
         case usageWarning
         case highUsage
+        case multiTabPromotion
     }
 
     enum MessageType {
@@ -53,7 +54,7 @@ struct UTIFooterItem: Equatable, Identifiable {
         case .termsConsent: return .required
         case .outOfUsage, .attachmentPrivacy: return .required
         case .modelSwitch: return .action
-        case .usageWarning, .highUsage: return .informational
+        case .usageWarning, .highUsage, .multiTabPromotion: return .informational
         }
     }
 
@@ -77,6 +78,13 @@ struct UTIFooterMessage: Equatable {
         case info
         case modelSwitch
         case shield
+        case gift
+    }
+
+    struct TitleFormatting: Equatable {
+        let emphasizedText: String
+        let attachmentPlaceholder: String
+        let attachmentAccessibilityLabel: String
     }
 
     struct PrimaryAction: Equatable {
@@ -95,19 +103,22 @@ struct UTIFooterMessage: Equatable {
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
     let link: Link?
+    let titleFormatting: TitleFormatting?
 
     init(icon: Icon,
          title: String,
          subtitle: String?,
          primaryAction: PrimaryAction?,
          isDismissible: Bool,
-         link: Link? = nil) {
+         link: Link? = nil,
+         titleFormatting: TitleFormatting? = nil) {
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
         self.primaryAction = primaryAction
         self.isDismissible = isDismissible
         self.link = link
+        self.titleFormatting = titleFormatting
     }
 }
 

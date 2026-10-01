@@ -19,9 +19,9 @@
 
 struct AttachmentPrivacyNoticeFireWorker: FireExecutorWorker {
 
-    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private let displayStore: UTIFooterDisplayStoring
 
-    init(displayStore: UTIAttachmentPrivacyNoticeDisplayStoring) {
+    init(displayStore: UTIFooterDisplayStoring) {
         self.displayStore = displayStore
     }
 

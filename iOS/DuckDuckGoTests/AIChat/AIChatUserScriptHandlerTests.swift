@@ -1205,16 +1205,36 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
     }
 
-    /// The iPad inputs don't show the disclaimer yet.
-    func testWhenNativeTermsOfServiceFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupport() {
+    /// duck.ai on iPad keeps its own Terms of Service, even though the iPad inputs show the disclaimer.
+    func testWhenNativeTermsOfServiceFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupportInAnyDisplayMode() {
         mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
         MockDevicePlatform.isIphone = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
         mockAIChatContextualModeFeature.isAvailable = true
         mockUnifiedToggleInputFeature.isAvailable = true
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
 
-        XCTAssertEqual(configValues()?.supportsNativeChatInput, true)
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
+            aiChatUserScriptHandler.displayMode = displayMode
+            XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false, "\(displayMode)")
+        }
+    }
+
+    /// An acceptance in the iPad address bar or sheet stays native; duck.ai still asks on its own.
+    func testWhenAcceptedInAnIPadInputThenPulledPromptCarriesNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        aiChatUserScriptHandler.displayMode = .fullTab
+        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
+        AIChatPromptHandler.shared.setData(.queryPrompt("hello", autoSubmit: true))
+
+        let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
+
+        XCTAssertNotNil(prompt)
+        XCTAssertNil(prompt?.termsAccepted)
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker())
     }
 
     func testWhenNativeTermsOfServiceIsUnsupportedThenPromptsCarryNoMarker() {

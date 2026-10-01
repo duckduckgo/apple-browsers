@@ -53,39 +53,9 @@ final class MultiTabAttachmentPickerViewModel: ObservableObject {
     }
 
     var filteredItems: [Item] {
-        filter(items, query: query)
-    }
-
-    private func filter(_ items: [Item], query: String) -> [Item] {
-        guard !query.isEmpty else { return items }
-        let normalizedQuery = query.lowercased()
-
-        struct ScoredItem {
-            let item: Item
-            let score: Int
-            let inputIndex: Int
-        }
-
-        let scoredItems: [ScoredItem] = items.enumerated().compactMap { index, item in
-            var score = 0
-            if item.candidate.title.lowercased().contains(normalizedQuery) {
-                score += 2
-            }
-            if item.candidate.url.absoluteString.lowercased().contains(normalizedQuery) {
-                score += 1
-            }
-            guard score > 0 else { return nil }
-            return ScoredItem(item: item, score: score, inputIndex: index)
-        }
-
-        return scoredItems
-            .sorted { lhs, rhs in
-                if lhs.score != rhs.score {
-                    return lhs.score > rhs.score
-                }
-                return lhs.inputIndex < rhs.inputIndex
-            }
-            .map(\.item)
+        let candidates = MultiTabAttachmentCandidateFilter.filter(items.map(\.candidate), query: query)
+        let itemsByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+        return candidates.compactMap { itemsByID[$0.tabId] }
     }
 
     func isSelected(_ item: Item) -> Bool {

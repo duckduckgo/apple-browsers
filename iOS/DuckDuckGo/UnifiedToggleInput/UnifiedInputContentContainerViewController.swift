@@ -88,6 +88,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let isFloatingUIEnabled: Bool
+    private let floatingUIManager: FloatingUIManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
@@ -173,11 +174,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         floatingUIManager: FloatingUIManaging? = nil) {
+        let floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        )
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        self.isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        self.floatingUIManager = floatingUIManager
+        self.isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -802,7 +808,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
-            internalUserCommands: ntpDeps.internalUserCommands
+            internalUserCommands: ntpDeps.internalUserCommands,
+            floatingUIManager: floatingUIManager
         )
         controller.hideBorderView()
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the

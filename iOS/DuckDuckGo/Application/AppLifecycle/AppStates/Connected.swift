@@ -58,6 +58,7 @@ struct Connected: ConnectedHandling {
                                                         appSettings: appDependencies.appSettings,
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
+                                                        isFloatingUIFeatureEnabledForCurrentLaunch: mainCoordinator.isFloatingUIFeatureEnabledForCurrentLaunch,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
@@ -94,6 +95,7 @@ struct Connected: ConnectedHandling {
                                                         appSettings: appDependencies.appSettings,
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
+                                                        isFloatingUIFeatureEnabledForCurrentLaunch: mainCoordinator.isFloatingUIFeatureEnabledForCurrentLaunch,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)
@@ -124,6 +126,7 @@ struct Connected: ConnectedHandling {
                                                         appSettings: appDependencies.appSettings,
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
+                                                        isFloatingUIFeatureEnabledForCurrentLaunch: mainCoordinator.isFloatingUIFeatureEnabledForCurrentLaunch,
                                                         aiChatSettings: appDependencies.aiChatSettings,
                                                         aiChatAddressBarExperience: mainCoordinator.controller.aiChatAddressBarExperience,
                                                         mobileCustomization: mainCoordinator.controller.mobileCustomization)

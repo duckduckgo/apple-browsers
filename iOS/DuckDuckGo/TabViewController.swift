@@ -207,6 +207,7 @@ class TabViewController: UIViewController {
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
+    var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []
     private var fullscreenStateObserver: NSKeyValueObservation?
@@ -328,8 +329,11 @@ class TabViewController: UIViewController {
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
     private var contextualOnboardingTopInset: CGFloat = 0
     let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
-    lazy var floatingUIManager = FloatingUIManager(featureFlagger: featureFlagger,
-                                                   unifiedToggleInputFeature: unifiedToggleInputFeature)
+    let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
+    lazy var floatingUIManager = FloatingUIManager(
+        isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
+        unifiedToggleInputFeature: unifiedToggleInputFeature
+    )
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
@@ -645,6 +649,7 @@ class TabViewController: UIViewController {
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                                    featureFlagger: FeatureFlagger,
+                                   isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
                                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    autoconsentManagement: AutoconsentManaging,
@@ -686,6 +691,7 @@ class TabViewController: UIViewController {
                                  contextualOnboardingLogic: contextualOnboardingLogic,
                                  onboardingPixelReporter: onboardingPixelReporter,
                                  featureFlagger: featureFlagger,
+                                 isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                  contentScopeExperimentManager: contentScopeExperimentManager,
                                  textZoomCoordinator: textZoomCoordinator,
                                  autoconsentManagement: autoconsentManagement,
@@ -762,8 +768,9 @@ class TabViewController: UIViewController {
 
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
-                                    featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                    userScriptsDependencies: userScriptsDependencies)
+                                    featureFlagger: featureFlagger,
+                                    userScriptsDependencies: userScriptsDependencies,
+                                    floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
             let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
@@ -828,6 +835,8 @@ class TabViewController: UIViewController {
     private let pageContextPageChanges = PassthroughSubject<Void, Never>()
     private let pageContextProcessTerminations = PassthroughSubject<Void, Never>()
 
+    private lazy var pageContextHandler = makePageContextHandler()
+
     private func makePageContextHandler() -> AIChatPageContextHandler {
         AIChatPageContextHandler(
             webViewProvider: { [weak self] in self?.webView },
@@ -847,12 +856,12 @@ class TabViewController: UIViewController {
                          url: webView.url,
                          isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
-                         isAttachable: self.makePageContextHandler().isCurrentPageAttachable(),
+                         isAttachable: self.pageContextHandler.isCurrentPageAttachable(),
                          hasTerminatedProcess: self.pageContextProcessTerminated)
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
                                      webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
         collect: { [weak self] url, isValid in
-            guard let handler = self?.makePageContextHandler() else { return .unavailable }
+            guard let handler = self?.pageContextHandler else { return .unavailable }
             return await handler.collectContext(for: url, isValid: isValid)
         }, loadIfNeeded: { [weak self] in
             self?.loadPageForTabAttachmentIfNeeded()
@@ -873,7 +882,6 @@ class TabViewController: UIViewController {
     }
 
     lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
-        let pageContextHandler = makePageContextHandler()
         let coordinator = AIChatContextualSheetCoordinator(
             voiceSearchHelper: voiceSearchHelper,
             aiChatSettings: aiChatSettings,
@@ -882,6 +890,7 @@ class TabViewController: UIViewController {
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
             unifiedToggleInputFeature: unifiedToggleInputFeature,
+            floatingUIManager: floatingUIManager,
             pageContextHandler: pageContextHandler,
             tabURLPublishers: AIChatTabURLPublishers(originating: urlPublisher, didFinish: didFinishURLPublisher),
             isFireTab: tabModel.fireTab,
@@ -912,6 +921,7 @@ class TabViewController: UIViewController {
          onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
          urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
          featureFlagger: FeatureFlagger,
+         isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
          textZoomCoordinator: TextZoomCoordinating,
          autoconsentManagement: AutoconsentManaging,
@@ -960,6 +970,8 @@ class TabViewController: UIViewController {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
+            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement
@@ -1260,14 +1272,21 @@ class TabViewController: UIViewController {
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
+        let webViewLayout = FloatingUILayoutPolicy.webViewLayout(
+            obscuredContentInsets: obscuredInsets,
+            addressBarPosition: appSettings.currentAddressBarPosition
+        )
+        webViewTopAnchorConstraint?.constant = webViewLayout.topAnchorConstant
+        webViewBottomAnchorConstraint?.constant = webViewLayout.bottomAnchorConstant
+        obscuredInsets = webViewLayout.obscuredContentInsets
+
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
-            ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
+            ? max(0, webViewLayout.topAnchorConstant - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
             : 0
         pullToRefreshViewAdapter?.setTopOffset(refreshControlTopOffset)
         if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
             scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
         }
-        webViewBottomAnchorConstraint?.constant = 0
         if additionalSafeAreaInsets != .zero {
             additionalSafeAreaInsets = .zero
         }
@@ -1283,6 +1302,7 @@ class TabViewController: UIViewController {
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
         applyContextualOnboardingTopInset(0)
+        webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
@@ -2317,13 +2337,15 @@ class TabViewController: UIViewController {
     private func pinWebViewToContainer() {
         webView.translatesAutoresizingMaskIntoConstraints = false
 
-        // Retained so the fullscreen round-trip re-activates the same objects, preserving the bottom
-        // constant. Rebuilt when a different web view is attached.
+        // Retained so the fullscreen round-trip re-activates the same objects, preserving constants.
+        // Rebuilt when a different web view is attached.
         if webViewLayoutConstraints.first?.firstItem !== webView {
+            let topConstraint = webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor)
             let bottomConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+            webViewTopAnchorConstraint = topConstraint
             webViewBottomAnchorConstraint = bottomConstraint
             webViewLayoutConstraints = [
-                webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+                topConstraint,
                 webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
                 bottomConstraint,
                 webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
@@ -2379,7 +2401,9 @@ class TabViewController: UIViewController {
     /// painted content valid, so WebKit animates to fullscreen instead of re-rendering from blank.
     private func onScreenWebViewRect(in host: UIView) -> CGRect {
         var rect = webViewContainer.bounds
-        rect.size.height += webViewBottomAnchorConstraint?.constant ?? 0
+        let topOffset = webViewTopAnchorConstraint?.constant ?? 0
+        rect.origin.y += topOffset
+        rect.size.height += (webViewBottomAnchorConstraint?.constant ?? 0) - topOffset
         return webViewContainer.convert(rect, to: host)
     }
 

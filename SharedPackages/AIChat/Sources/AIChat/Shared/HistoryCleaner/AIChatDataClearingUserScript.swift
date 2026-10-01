@@ -51,6 +51,8 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
         case notReady
         case timeout
         case failedFromScript
+        case navigationTimeout
+        case webContentProcessTerminated
 
         static var errorDomain: String = "com.duckduckgo.aiChatDataClearing"
 
@@ -59,6 +61,8 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             case .notReady: return "AIChatDataClearingUserScript not ready to clear data"
             case .timeout: return "AIChatDataClearingUserScript timed out waiting for response from script"
             case .failedFromScript: return "AIChatDataClearingUserScript reported failure from script"
+            case .navigationTimeout: return "AIChatDataClearingUserScript timed out waiting for the page to load"
+            case .webContentProcessTerminated: return "AIChatDataClearingUserScript web content process terminated"
             }
         }
 
@@ -67,6 +71,16 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             case .notReady: return 1
             case .timeout: return 2
             case .failedFromScript: return 3
+            case .navigationTimeout: return 5
+            case .webContentProcessTerminated: return 6
+            }
+        }
+
+        /// Whether the page must be reloaded before the next clear: a late reply may still arrive, or the page is gone.
+        var requiresPageReload: Bool {
+            switch self {
+            case .timeout, .webContentProcessTerminated: return true
+            case .notReady, .failedFromScript, .navigationTimeout: return false
             }
         }
     }
@@ -139,6 +153,12 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
                 self?.finish(result: .failure(ClearError.timeout))
             }
         }
+    }
+
+    /// Fails a clear that is still waiting for the script, e.g. because its page is gone.
+    @MainActor
+    func failPendingClear(with error: ClearError) {
+        finish(result: .failure(error))
     }
 
     // MARK: - Private helpers

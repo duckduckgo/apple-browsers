@@ -27,8 +27,8 @@ struct AIChatClearingSequence {
     let loadOrigin: @MainActor (URL) async -> Result<Void, Error>
     /// Clears one chat, or everything when `chatID` is `nil`, on the currently loaded origin.
     let clear: @MainActor (_ chatID: String?) async -> Result<Void, Error>
-    /// Whether a failed clear may still get a late reply, which would complete the next request.
-    let mayReplyLate: (Error) -> Bool
+    /// Whether the page must be reloaded after this failed clear, before clearing the next chat.
+    let requiresReload: (Error) -> Bool
 
     /// An origin that left this many chats in a row unanswered won't answer the rest, so waiting on each would only add timeouts.
     private static let unansweredChatsBeforeSkippingOrigin = 2
@@ -55,13 +55,12 @@ struct AIChatClearingSequence {
         var needsReload = false
         var unansweredInARow = 0
         for chatID in chatIDs {
-            // Reloading drops the late reply, so it can't complete this chat's request.
             if needsReload, let error = await loadOrigin(origin).error {
                 return errors + [error]
             }
             let error = await clear(chatID).error
             errors += [error].compactMap { $0 }
-            needsReload = error.map(mayReplyLate) ?? false
+            needsReload = error.map(requiresReload) ?? false
             unansweredInARow = needsReload ? unansweredInARow + 1 : 0
             if unansweredInARow == Self.unansweredChatsBeforeSkippingOrigin {
                 return errors

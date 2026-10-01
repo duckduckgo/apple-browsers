@@ -43,7 +43,9 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     private let websiteDataStore: WKWebsiteDataStore
 
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
-    private var navigationContinuation: CheckedContinuation<Result<Void, Error>, Never>?
+    private let navigationWaiter = NavigationCompletionWaiter()
+    /// Loading the local page normally takes under a second; this only catches loads that never end.
+    private static let navigationTimeout: TimeInterval = 10
     private var webView: WKWebView?
     private var coordinator: Coordinator?
     private var contentScopeUserScript: ContentScopeUserScript?
@@ -109,7 +111,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
             clear: { chatID in
                 await script.clearAIChatDataAsync(chatID: chatID)
             },
-            mayReplyLate: { ($0 as? AIChatDataClearingUserScript.ClearError) == .timeout }
+            requiresReload: { ($0 as? AIChatDataClearingUserScript.ClearError)?.requiresPageReload ?? false }
         )
         finish(result: await sequence.run(chatIDs: chatIDs))
     }
@@ -178,17 +180,27 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
             return .failure(CleanerError.webViewNotInitialized)
         }
 
-        return await withCheckedContinuation { continuation in
-            self.navigationContinuation = continuation
-
+        let result = await navigationWaiter.wait(timeout: Self.navigationTimeout,
+                                                 timeoutError: AIChatDataClearingUserScript.ClearError.navigationTimeout) {
             webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
         }
+        if case .failure = result {
+            webView.stopLoading()
+        }
+        return result
     }
 
     @MainActor
-    private func completeNavigation(with result: Result<Void, Error>) {
-        navigationContinuation?.resume(returning: result)
-        navigationContinuation = nil
+    private func completeNavigation(_ navigation: WKNavigation?, with result: Result<Void, Error>) {
+        navigationWaiter.complete(navigation, with: result)
+    }
+
+    /// WebKit reports no navigation failure when the page's process dies, so fail whatever is waiting on it.
+    @MainActor
+    private func handleWebContentProcessTermination() {
+        let error = AIChatDataClearingUserScript.ClearError.webContentProcessTerminated
+        navigationWaiter.failPendingNavigation(with: error)
+        aiChatDataClearingUserScript?.failPendingClear(with: error)
     }
 
     @MainActor
@@ -219,15 +231,19 @@ extension WebViewAIChatJSDataCleaner {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            cleaner?.completeNavigation(with: .success(()))
+            cleaner?.completeNavigation(navigation, with: .success(()))
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            cleaner?.completeNavigation(with: .failure(error))
+            cleaner?.completeNavigation(navigation, with: .failure(error))
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            cleaner?.completeNavigation(with: .failure(error))
+            cleaner?.completeNavigation(navigation, with: .failure(error))
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            cleaner?.handleWebContentProcessTermination()
         }
     }
 }

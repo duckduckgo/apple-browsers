@@ -434,6 +434,61 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         try manager.uninstallExtension(identifier: context.uniqueIdentifier)
     }
 
+    func testDirectLoaderUnloadInvalidatesPendingPromptsAndLateNotificationsButPreservesConsent() async throws {
+        let permissions = makeController()
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = try makeExtensionURL()
+        let loader = WebExtensionLoader(storageProvider: storage, permissionController: permissions)
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let identifier = UUID().uuidString
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+        let context = try XCTUnwrap(controller.extensionContexts.first)
+        let savedSettings = try XCTUnwrap(store.settings(for: identifier))
+        prompter.onPermissionRequest = {
+            do {
+                try loader.unloadExtension(identifier: identifier, from: controller)
+            } catch {
+                XCTFail("Unload failed: \(error)")
+            }
+        }
+
+        let granted = await permissions.request(.init(permissions: [.clipboardWrite]), for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertTrue(controller.extensionContexts.isEmpty)
+        context.setPermissionStatus(.grantedExplicitly, for: WKWebExtension.Permission.clipboardWrite)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+        XCTAssertEqual(try store.settings(for: identifier), savedSettings)
+
+        // Reloading still uses the saved consent and creates fresh tracking.
+        prompter.onPermissionRequest = nil
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+        let reloaded = try XCTUnwrap(controller.extensionContexts.first)
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+        XCTAssertFalse(reloaded.hasPermission(.clipboardWrite))
+        let grantedAfterReload = await permissions.request(.init(permissions: [.clipboardWrite]), for: reloaded)
+        XCTAssertTrue(grantedAfterReload)
+        try loader.unloadExtension(identifier: identifier, from: controller)
+    }
+
+    func testFailedLoaderUnloadKeepsPermissionTrackingForTheLoadedContext() async throws {
+        let permissions = makeController()
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = try makeExtensionURL()
+        let loader = WebExtensionLoader(storageProvider: storage, permissionController: permissions)
+        let controller = FailingUnloadWebExtensionController(configuration: .nonPersistent())
+        let identifier = UUID().uuidString
+        try await loader.loadWebExtension(identifier: identifier, into: controller)
+        let context = try XCTUnwrap(controller.extensionContexts.first)
+
+        XCTAssertThrowsError(try loader.unloadExtension(identifier: identifier, from: controller))
+
+        XCTAssertTrue(controller.extensionContexts.contains(context))
+        let granted = await permissions.request(.init(permissions: [.clipboardWrite]), for: context)
+        XCTAssertTrue(granted)
+        XCTAssertNotNil(try store.settings(for: identifier)?.grantedPermissions["clipboardWrite"])
+    }
+
     private func makeManager(storage: WebExtensionStorageProvidingMock) -> WebExtensionManager {
         WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
                             windowTabProvider: WebExtensionWindowTabProvidingMock(),
@@ -511,5 +566,12 @@ private final class CountingPermissionStore: WebExtensionPermissionStoring {
 
     func removeSettings(for identifier: String) throws {
         try wrapped.removeSettings(for: identifier)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class FailingUnloadWebExtensionController: WKWebExtensionController {
+    override func unload(_ extensionContext: WKWebExtensionContext) throws {
+        throw NSError(domain: "WebExtensionPermissionControllerTests", code: 1)
     }
 }

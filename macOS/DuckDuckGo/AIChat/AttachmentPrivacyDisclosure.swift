@@ -24,6 +24,17 @@ import os.log
 import Persistence
 import PrivacyConfig
 
+extension Notification.Name {
+    /// Surfaces that cache the answer — the NTP omnibar config — re-read on this.
+    static let attachmentPrivacyDisclosureDidChange = Notification.Name("attachmentPrivacyDisclosureDidChange")
+}
+
+/// What is staged, which is what the disclosure is about. Raw values match the web contract.
+enum AttachmentPrivacyDisclosureKind: String {
+    case image
+    case file
+}
+
 // MARK: - Storage
 
 protocol AttachmentPrivacyDisclosureStoring: AnyObject {
@@ -95,12 +106,14 @@ final class AttachmentPrivacyDisclosure {
         guard !hasBeenShown() else { return false }
 
         store.markShown()
+        NotificationCenter.default.post(name: .attachmentPrivacyDisclosureDidChange, object: nil)
         return true
     }
 
     func reset() {
         store.reset()
         try? webKeySource?.deleteEntry(key: Self.webEntryKey)
+        NotificationCenter.default.post(name: .attachmentPrivacyDisclosureDidChange, object: nil)
     }
 
     private var isEnabled: Bool {
@@ -152,6 +165,9 @@ final class AttachmentPrivacyDisclosureGate {
 
     private static let tablessKey = "no-tab"
 
+    /// Called when a display starts, which is the impression worth reporting.
+    var onDisplayStarted: ((AttachmentPrivacyDisclosureKind) -> Void)?
+
     private let disclosure: AttachmentPrivacyDisclosure
     private var showingTab: String?
 
@@ -159,9 +175,9 @@ final class AttachmentPrivacyDisclosureGate {
         self.disclosure = disclosure
     }
 
-    func shouldShow(hasStagedAttachment: Bool, tabID: String?) -> Bool {
+    func shouldShow(attachmentKind: AttachmentPrivacyDisclosureKind?, tabID: String?) -> Bool {
         let key = tabID ?? Self.tablessKey
-        guard hasStagedAttachment else {
+        guard let attachmentKind else {
             if showingTab == key { showingTab = nil }
             return false
         }
@@ -169,6 +185,7 @@ final class AttachmentPrivacyDisclosureGate {
         guard disclosure.claim() else { return false }
 
         showingTab = key
+        onDisplayStarted?(attachmentKind)
         return true
     }
 }

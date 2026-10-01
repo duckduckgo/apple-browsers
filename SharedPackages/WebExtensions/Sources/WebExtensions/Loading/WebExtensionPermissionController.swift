@@ -171,10 +171,11 @@ public final class WebExtensionPermissionController {
     }
 
     func forget(_ identifier: String) throws {
-        try store.removeSettings(for: identifier)
+        // Invalidate pending prompts and notifications even if disk cleanup fails.
         observations.removeValue(forKey: identifier)
         lastSavedSettings.removeValue(forKey: identifier)
         contexts.removeValue(forKey: identifier)
+        try store.removeSettings(for: identifier)
     }
 
     func didUnload(_ identifier: String) {

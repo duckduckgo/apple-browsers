@@ -330,41 +330,22 @@ final class UTIFooterController {
 
 // MARK: - Attachment privacy notice
 
-/// Resolves the disclosure from valid attachments and the display cap for the current browsing scope.
+/// Resolves the disclosure from valid attachments. It shows once per device: the first display sets
+/// a persistent flag, and a display already on screen stays until it ends.
 @MainActor
 final class UTIFooterAttachmentPrivacyNoticeSource {
 
-    enum DisplayScope: Equatable {
-        case normal
-        case fireTab(Tab?)
-
-        static func == (lhs: Self, rhs: Self) -> Bool {
-            switch (lhs, rhs) {
-            case (.normal, .normal): return true
-            case (.fireTab(let lhs), .fireTab(let rhs)): return lhs === rhs
-            default: return false
-            }
-        }
-    }
-
-    private let displayScope: () -> DisplayScope
     private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
-    private let displayStore: UTIFooterDisplayStoring
-    private var displayedScope: DisplayScope?
-
-    /// Travels with the in-memory draft; ending an appearance does not reset it.
-    var hasCountedDraft = false
-    var onDraftCounted: (() -> Void)?
+    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private var isDisplayed = false
 
     private(set) var isPresented = false
     private(set) var kind: UTIAttachmentPrivacyKind?
 
     init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
-         displayScope: @escaping () -> DisplayScope = { .normal },
-         displayStore: UTIFooterDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
-        self.displayScope = displayScope
+         displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled
         self.displayStore = displayStore
@@ -373,43 +354,24 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     func refresh() {
         kind = attachmentKind()
         let enabled = isEnabled()
-        let scope = displayScope()
-        if !enabled || kind == nil || displayedScope != scope { endDisplay() }
-        isPresented = enabled && kind != nil && (displayedScope != nil || count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit)
+        if !enabled || kind == nil { endDisplay() }
+        isPresented = enabled && kind != nil && (isDisplayed || !displayStore.hasShown)
     }
 
     func recordDisplay() -> Bool {
-        let scope = displayScope()
-        guard isPresented, displayedScope == nil,
-              count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit else { return false }
-        displayedScope = scope
-        if !hasCountedDraft {
-            hasCountedDraft = true
-            switch scope {
-            case .normal:
-                displayStore.recordDisplay()
-            case .fireTab(let tab):
-                tab?.attachmentPrivacyNoticeDisplayCount += 1
-            }
-            onDraftCounted?()
-        }
+        guard isPresented, !isDisplayed, !displayStore.hasShown else { return false }
+        isDisplayed = true
+        displayStore.markShown()
         return true
     }
 
     func endDisplay() {
-        displayedScope = nil
+        isDisplayed = false
     }
 
     func clear() {
         endDisplay()
         isPresented = false
-    }
-
-    private func count(in scope: DisplayScope) -> Int {
-        switch scope {
-        case .normal: return displayStore.displayCount
-        case .fireTab(let tab): return tab?.attachmentPrivacyNoticeDisplayCount ?? 0
-        }
     }
 }
 

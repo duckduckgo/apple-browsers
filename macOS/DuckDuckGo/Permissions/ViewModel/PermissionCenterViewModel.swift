@@ -136,6 +136,7 @@ enum PopupDecision: Hashable {
     case allowForThisVisit
     case notify
     case alwaysAllow
+    case neverAllow
 
 }
 
@@ -200,6 +201,10 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Whether "Only allow pop-ups for this visit" option should be shown (based on feature flags)
     var showAllowPopupsForThisVisitOption: Bool {
         featureFlagger.isFeatureOn(.popupBlocking)
+    }
+
+    var showPopupsNeverAllowOption: Bool {
+        permissionManager.defaultDecision(for: .popups) == .deny
     }
 
     // MARK: - Initialization
@@ -394,6 +399,10 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
+        case .neverAllow:
+            permissionManager.removePermission(forDomain: domain, permissionType: .popups)
+            resetTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = false
         }
     }
 
@@ -404,6 +413,8 @@ final class PermissionCenterViewModel: ObservableObject {
             return .allowForThisVisit
         } else if persistedValue == .allow {
             return .alwaysAllow
+        } else if persistedValue == .deny {
+            return .neverAllow
         } else {
             return .notify
         }
@@ -451,13 +462,26 @@ final class PermissionCenterViewModel: ObservableObject {
         displaysAutoplayDiscovery && permissionItems.contains { $0.permissionType == .autoplayPolicy }
     }
 
-    /// Opens the General settings pane, scrolled to the Permissions section where the all-sites autoplay preference lives
+    /// Where the all-sites autoplay preference lives: its own category in Website Permissions once
+    /// that pane exists, and the Permissions section of General preferences otherwise.
+    private var autoplaySettingsDestination: PreferencesDestination {
+        featureFlagger.isFeatureOn(.websitePermissionsSettings) ? .websitePermission(.autoplay) : .generalPermissions
+    }
+
+    /// The disclaimer's link text, which names the destination and so has to follow it.
+    var autoplaySettingsLinkTitle: String {
+        featureFlagger.isFeatureOn(.websitePermissionsSettings)
+            ? UserText.permissionCenterAutoplayDisclaimerWebsitePermissionsLink
+            : UserText.permissionCenterAutoplayDisclaimerSettingsLink
+    }
+
+    /// Opens the settings pane holding the all-sites autoplay preference
     func openAutoplaySettings() {
         if displaysAutoplayDiscovery {
             pixelFiring?.fire(AutoplayPromoPixel.settingsLinkClicked)
         }
 
-        openSettings?(.generalPermissions)
+        openSettings?(autoplaySettingsDestination)
         dismissPopover()
     }
 
@@ -543,15 +567,9 @@ final class PermissionCenterViewModel: ObservableObject {
             otherPermissions.append(.autoplayPolicy)
         }
 
-        // On duck.ai with the voice-chat flag on, `DuckAiVoiceChatPermissionOverride` forces
-        // `.microphone` to `.allow` at read time. A regular editable row here would read the
-        // masked `.allow` through the override and let the user make a change that's silently
-        // re-masked, so drop it. The OS-denied remediation surface lives in
-        // `SystemDisabledPermissionInfoView`, anchored to the address-bar shield — not in the
-        // Permission Center. With the flag off, the override returns nil and the real
-        // persisted decision (if any) is the user's actual state, so the row stays.
-        if featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow), domain == URL.duckAi.host {
-            otherPermissions.removeAll { $0 == .microphone }
+        let nativeVoiceFlowEnabled = featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow)
+        otherPermissions.removeAll {
+            !$0.isUserEditable(forDomain: domain, nativeVoiceFlowEnabled: nativeVoiceFlowEnabled)
         }
 
         return (externalSchemePermissions, otherPermissions)

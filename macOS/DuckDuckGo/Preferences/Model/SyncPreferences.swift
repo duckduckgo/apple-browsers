@@ -27,7 +27,7 @@ import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
 import PDFKit
-import Navigation
+import DDGNavigation
 import PixelKit
 import os.log
 import PrivacyConfig
@@ -204,6 +204,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     private let syncPausedStateManager: any SyncPausedStateManaging
     let syncSettingsHandler: SyncSettingsViewHandling
+    private let pixelFiring: PixelFiring?
 
     private func updateSyncFeatureFlags(_ syncFeatureFlags: SyncFeatureFlags) {
         isDataSyncingAvailable = syncFeatureFlags.contains(.dataSyncing)
@@ -234,7 +235,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
-        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -245,6 +247,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncFeatureFlags = syncService.featureFlags
         self.syncPausedStateManager = syncPausedStateManager
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
         self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
         self.isAIChatSyncEnabled = featureFlagger.isFeatureOn(.aiChatSync)
         self.isSimplifiedSyncSetupV2Enabled = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
@@ -405,6 +408,11 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .store(in: &cancellables)
     }
 
+    @MainActor
+    func settingsScreenDidAppear() {
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.settingsScreenShown(isSyncEnabled: isSyncEnabled))
+    }
+
     // MARK: - Delegation to syncSettingsHandler
 
     @MainActor
@@ -413,8 +421,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeviceDetails(_ device: SyncDevice) {
-        syncSettingsHandler.presentDeviceDetails(device)
+    func presentDeviceDetails(_ device: SyncDevice) async {
+        await syncSettingsHandler.presentDeviceDetails(device)
     }
 
     @MainActor
@@ -423,8 +431,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeleteAccount() {
-        syncSettingsHandler.presentDeleteAccount()
+    func presentDeleteAccount() async {
+        await syncSettingsHandler.presentDeleteAccount()
     }
 
     @MainActor
@@ -444,6 +452,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     @MainActor
     func saveRecoveryPDF() {
-        syncSettingsHandler.saveRecoveryPDF()
+        syncSettingsHandler.saveRecoveryPDF(requiresAuthentication: true)
     }
 }

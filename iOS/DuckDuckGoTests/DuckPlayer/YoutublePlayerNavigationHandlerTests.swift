@@ -23,6 +23,7 @@ import Combine
 import PrivacyConfig
 import Core
 import BrowserServicesKitTestsUtils
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
 
@@ -38,6 +39,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
     var handler: WebDuckPlayerNavigationHandler!
     var tabNavigator: MockDuckPlayerTabNavigator!
     var nativeUIPresenter: MockDuckPlayerNativeUIPresenting!
+    var pixelKitMock: PixelKitMock!
 
     override func setUp() {
         super.setUp()
@@ -55,16 +57,14 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Create and assign the mock tab navigator
         tabNavigator = MockDuckPlayerTabNavigator()
 
+        pixelKitMock = PixelKitMock()
         handler = WebDuckPlayerNavigationHandler(duckPlayer: player,
                                               featureFlagger: featureFlagger,
                                               appSettings: mockAppSettings,
-                                              pixelFiring: PixelFiringMock.self,
-                                              dailyPixelFiring: PixelFiringMock.self)
+                                              pixelFiring: pixelKitMock)
 
         // Inject the mock tab navigator
         handler.tabNavigationHandler = tabNavigator
-
-        PixelFiringMock.tearDown()
     }
 
     override func tearDown() {
@@ -76,7 +76,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger = nil
         tabNavigator = nil
         handler = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
     }
 

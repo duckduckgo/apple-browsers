@@ -21,6 +21,7 @@ import XCTest
 import Core
 import Onboarding
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PixelExperimentKit
 @testable import DuckDuckGo
@@ -28,6 +29,7 @@ import PixelExperimentKit
 final class OnboardingPixelReporterTests: XCTestCase {
     private static let suiteName = "testing_onboarding_pixel_store"
     private var sut: OnboardingPixelReporter!
+    private var pixelKitMock: PixelKitMock!
     private var statisticsStoreMock: MockStatisticsStore!
     private var now: Date!
     private var userDefaultsMock: UserDefaults!
@@ -35,6 +37,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
     private var sharedPixelsStorageMock: (any KeyedStoring<OnboardingSharedPixelsKeys>)!
 
     override func setUpWithError() throws {
+        pixelKitMock = PixelKitMock()
         statisticsStoreMock = MockStatisticsStore()
         statisticsStoreMock.atb = "TESTATB"
         now = Date()
@@ -44,13 +47,12 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sharedPixelHandlerMock = MockOnboardingSharedPixelHandling()
         initSharedPixelsStorageMock()
         MockExperimentPixelFiring.reset()
-        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock, downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self))
+        sut = OnboardingPixelReporter(pixelFiring: pixelKitMock, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock, downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self))
         try super.setUpWithError()
     }
 
     override func tearDownWithError() throws {
-        OnboardingPixelFireMock.tearDown()
-        OnboardingUniquePixelFireMock.tearDown()
+        pixelKitMock = nil
         sharedPixelsStorageMock = nil
         sharedPixelHandlerMock = nil
         statisticsStoreMock = nil
@@ -72,21 +74,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureOnboardingIntroImpressionThenLegacyIntroShownUniqueAndWelcomeShownPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroShownUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureOnboardingIntroImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_preonboarding_intro_shown_unique")
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.welcome(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -97,21 +97,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureSkipOnboardingCTAIsCalledThenLegacySkipPressedAndWelcomeDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroSkipOnboardingCTAPressed
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureSkipOnboardingCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_preonboarding_skip-onboarding-pressed")
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.welcome(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -122,21 +120,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureConfirmSkipOnboardingCTAIsCalledThenLegacyConfirmSkipPressedAndSkipOnboardingEngageSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroConfirmSkipOnboardingCTAPressed
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureConfirmSkipOnboardingCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_preonboarding_confirm-skip-onboarding-pressed")
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.skipOnboarding(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -147,21 +143,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureCancelSkipOnboardingCTAIsCalledThenLegacyResumePressedAndSkipOnboardingDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroResumeOnboardingCTAPressed
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureResumeOnboardingCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_preonboarding_resume-onboarding-pressed")
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.skipOnboarding(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -172,21 +166,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureBrowserComparisonImpressionThenLegacyComparisonChartShownUniqueAndSetDefaultShownSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroComparisonChartShownUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureSetDefaultBrowserImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_preonboarding_comparison_chart_shown_unique")
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -197,21 +189,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureChooseBrowserCTAActionThenLegacyChooseBrowserPressedAndSetDefaultEngageSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseBrowserCTAPressed
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureChooseBrowserCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_preonboarding_choose_browser_pressed")
-        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.setDefault(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -222,15 +212,15 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAiComparisonImpressionThenAiComparisonShownSharedPixelFires() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
 
         // WHEN
         sut.measureAiIntroImpression()
 
         // THEN
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.aiIntro(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
@@ -240,15 +230,15 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAiComparisonCTAActionThenAiComparisonEngageSharedPixelFires() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
 
         // WHEN
         sut.measureAiIntroCTAAction()
 
         // THEN
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.aiIntro(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
@@ -258,15 +248,15 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureStartOnboardingCTAActionThenWelcomeEngageSharedPixelFires() {
         // GIVEN
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
 
         // WHEN
         sut.measureStartOnboardingCTAAction()
 
         // THEN
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.welcome(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -282,8 +272,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureAutoRestoreOnboardingRestoreCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
     }
 
     func testWhenMeasureAutoRestoreOnboardingSkipCTAActionThenLegacySkipTappedUniquePixelFires() {
@@ -294,8 +284,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureAutoRestoreOnboardingSkipCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
     }
 
     func testWhenMeasureAutoRestoreOnboardingPromptShownThenLegacyPixelFiresWithoutSharedPixels() {
@@ -307,8 +297,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureAutoRestoreOnboardingPromptShown()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
@@ -345,21 +335,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureCustomSearchIsCalledThenLegacySearchCustomUniqueAndSearchCustomSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingContextualSearchCustomUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureCustomSearch()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_onboarding_search_custom_unique")
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.clicked(.custom))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -370,21 +358,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureCustomSiteIsCalledThenLegacySiteCustomUniqueAndVisitSiteCustomSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingContextualSiteCustomUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureCustomSite()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_onboarding_visit_site_custom_unique")
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.visitSite(.clicked(.custom))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -395,19 +381,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureSecondVisitIsCalledAndStoreDoesNotContainPixelThenPixelIsNotFired() {
         // GIVEN
         XCTAssertNil(userDefaultsMock.value(forKey: "com.duckduckgo.ios.site-visited"))
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         // WHEN
         sut.measureSecondSiteVisit()
 
         // THEN
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
     }
 
     func testWhenMeasureSecondVisitIsCalledThenFiresOnlyOnSecondTime() {
@@ -416,48 +400,44 @@ final class OnboardingPixelReporterTests: XCTestCase {
         userDefaultsMock.set(true, forKey: key)
         XCTAssertTrue(userDefaultsMock.bool(forKey: key))
         let expectedPixel = Pixel.Event.onboardingContextualSecondSiteVisitUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         // WHEN
         sut.measureSecondSiteVisit()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_second_sitevisit_unique")
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
     }
 
     func testWhenMeasurePrivacyDashboardOpenedForFirstTimeThenPrivacyDashboardFirstTimeOpenedPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.privacyDashboardFirstTimeOpenedUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
 
         // WHEN
         sut.measurePrivacyDashboardOpenedForFirstTime()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, "m_privacy_dashboard_first_time_used_unique")
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
     func testWhenMeasurePrivacyDashboardOpenedForFirstTimeThenFromOnboardingParameterIsSetToTrue() {
         // GIVEN
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         // WHEN
         sut.measurePrivacyDashboardOpenedForFirstTime()
 
         // THEN
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams["from_onboarding"], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters?["from_onboarding"], "true")
     }
 
     func testWhenMeasurePrivacyDashboardOpenedForFirstTimeThenDaysSinceInstallParameterIsSet() {
@@ -465,13 +445,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
         let installDate = Date(timeIntervalSince1970: 1722348000) // 30th July 2024 GMT
         now = Date(timeIntervalSince1970: 1722607200) // 1st August 2024 GMT
         statisticsStoreMock.installDate = installDate
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters ?? [:], [:])
 
         // WHEN
         sut.measurePrivacyDashboardOpenedForFirstTime()
 
         // THEN
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams["daysSinceInstall"], "3")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.additionalParameters?["daysSinceInstall"], "3")
     }
 
     // MARK: - Dax Dialogs
@@ -479,18 +459,16 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureScreenImpressionIsCalledThenLegacyUniquePixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.daxDialogsSerpUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
 
         // WHEN
         sut.measureScreenImpression(event: expectedPixel)
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
@@ -503,8 +481,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureScreenImpression(event: expectedPixel)
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
@@ -517,8 +495,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureScreenImpression(event: expectedPixel)
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
@@ -530,7 +508,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureScreenImpression(.searchResults(.shown))
 
         // THEN
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchResults(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
@@ -540,19 +518,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureEndOfJourneyDialogCTAActionIsCalledThenLegacyEndOfJourneyDismissedAndEndEngageSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.daxDialogsEndOfJourneyDismissed
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureEndOfJourneyDialogCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.end(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -667,8 +643,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureDuckAIFireButtonCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
     }
 
     func testWhenMeasureDuckAIFinalDialogImpressionThenLegacyFinalDialogShownUniquePixelFires() {
@@ -679,8 +655,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureDuckAIFinalDialogImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
     }
 
     func testWhenMeasureDuckAIFinalDialogCTAActionThenEndEngageSharedPixelFires() {
@@ -708,8 +684,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureDuckAIQuerySelectionImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, .onboardingIntroDuckAIToggleImpressionUnique)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, Pixel.Event.onboardingIntroDuckAIToggleImpressionUnique.name)
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchChatToggle(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
@@ -753,19 +729,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureTrySearchDialogNewTabDismissButtonTappedThenLegacyDismissTappedAndSearchDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingTrySearchDialogNewTabDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureTrySearchDialogNewTabDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.search(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -776,19 +750,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureTryVisitSiteDialogNewTabDismissButtonTappedThenLegacyDismissTappedAndVisitSiteDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingTryVisitSiteDialogNewTabDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureTryVisitSiteDialogNewTabDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.visitSite(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -799,19 +771,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureTryVisitSiteDialogDismissButtonTappedThenLegacyDismissTappedAndVisitSiteDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingTryVisitSiteDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureTryVisitSiteDialogDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.visitSite(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -822,19 +792,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureSearchResultDialogDismissButtonTappedThenLegacyDismissTappedAndSearchResultsDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingSearchResultDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureSearchResultDialogDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchResults(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -845,19 +813,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureTrackersDialogDismissButtonTappedThenLegacyDismissTappedAndTrackersBlockedDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingTrackersDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureTrackersDialogDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.trackersBlocked(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -868,19 +834,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureFireDialogDismissButtonTappedThenLegacyDismissTappedAndFireButtonDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingFireDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureFireDialogDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.fireButton(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -891,19 +855,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureEndOfJourneyDialogNewTabDismissButtonTappedThenLegacyDismissTappedAndEndDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingEndOfJourneyDialogNewTabDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureEndOfJourneyDialogNewTabDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.end(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -914,19 +876,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureEndOfJourneyDialogDismissButtonTappedThenLegacyDismissTappedAndEndDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingEndOfJourneyDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureEndOfJourneyDialogDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.end(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -937,19 +897,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureSubscriptionPromoDialogNewTabDismissButtonTappedThenLegacyDismissTappedAndSubscriptionPromoDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingSubscriptionDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureSubscriptionDialogNewTabDismissButtonTapped()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.subscriptionPromo(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -962,19 +920,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureChooseAppIconImpressionIsCalledThenLegacyChooseIconImpressionUniqueAndAppIconColorShownSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseAppIconImpressionUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureChooseAppIconImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.appIconColor(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -985,19 +941,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureChooseNonDefaultAppIconIsCalledThenLegacyChooseCustomIconColorPressedAndAppIconColorClickedSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseCustomAppIconColorCTAPressed
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureChooseAppIconColor(.green)
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.appIconColor(.clicked(.green))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1013,9 +967,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureChooseAppIconColor(.defaultAppIcon)
 
         // THEN
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.appIconColor(.clicked(.red))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1026,19 +979,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAddressBarPositionSelectionImpressionIsCalledThenLegacyChooseAddressBarImpressionUniqueAndAddressBarPositionShownSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseAddressBarImpressionUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureAddressBarPositionSelectionImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.addressBarPosition(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1049,19 +1000,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureChooseBottomAddressBarPositionIsCalledThenLegacyBottomAddressBarSelectedAndAddressBarBottomSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroBottomAddressBarSelected
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureChooseAddressBarPosition(.bottom)
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.addressBarPosition(.clicked(.bottom))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1077,9 +1026,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureChooseAddressBarPosition(.top)
 
         // THEN
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.addressBarPosition(.clicked(.top))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1092,19 +1040,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAddToDockPromoImpressionsIsCalledThenLegacyPromoImpressionsUniqueAndAddToDockShownSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockPromoImpressionsUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureAddToDockPromoImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.addToDock(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1115,19 +1061,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAddToDockPromoShowTutorialCTAActionIsCalledThenLegacyShowTutorialTappedAndAddToDockEngageSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockPromoShowTutorialCTATapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureAddToDockPromoShowTutorialCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.addToDock(.clicked(.engage))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1138,19 +1082,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAddToDockPromoDismissCTAActionThenLegacyPromoDismissTappedAndAddToDockDismissSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockPromoDismissCTATapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureAddToDockPromoDismissCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.addToDock(.clicked(.dismiss))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1161,19 +1103,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureAddToDockTutorialDismissCTAActionIsCalledThenonboardingAddToDockTutorialDismissCTAPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockTutorialDismissCTATapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureAddToDockTutorialDismissCTAAction()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
         XCTAssertTrue(sharedPixelHandlerMock.eventsFired.isEmpty)
     }
 
@@ -1182,19 +1122,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureSearchExperienceSelectionImpressionIsCalledThenLegacyChooseSearchExperienceImpressionUniqueAndSearchExperienceShownSharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseSearchExperienceImpressionUnique
-        XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingUniquePixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureSearchExperienceSelectionImpression()
 
         // THEN
-        XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .legacyInitial })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .legacyInitial })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.shown)])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1205,19 +1143,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenMeasureChooseAIChatIsCalledThenLegacyAIChatSelectedAndSearchExperienceSearchPlusDuckAISharedPixelsFire() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroAIChatSelected
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureChooseAIChat()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.clicked(.searchPlusDuckAI))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
@@ -1229,19 +1165,17 @@ final class OnboardingPixelReporterTests: XCTestCase {
         // GIVEN
         sharedPixelsStorageMock.onboardingVariant = nil
         let expectedPixel = Pixel.Event.onboardingIntroSearchOnlySelected
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertNil(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard }))
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [])
 
         // WHEN
         sut.measureChooseSearchOnly()
 
         // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.frequency == .standard })
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last(where: { $0.frequency == .standard })?.pixel.name, expectedPixel.name)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
 
         XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [.searchExperience(.clicked(.searchOnly))])
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)

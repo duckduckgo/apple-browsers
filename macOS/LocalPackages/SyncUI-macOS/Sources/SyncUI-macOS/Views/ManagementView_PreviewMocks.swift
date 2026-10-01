@@ -27,7 +27,6 @@ final class PreviewManagementViewModel: ManagementViewModel {
     let isAccountRecoveryAvailable = true
     let isAppVersionNotSupported: Bool
     let isAIChatSyncEnabled = true
-    let isAppRebranded = true
     let isSimplifiedSyncSetupV2Enabled: Bool
 
     let isSyncEnabled: Bool
@@ -92,8 +91,8 @@ final class PreviewManagementViewModel: ManagementViewModel {
         self.devices = devices
     }
 
-    func presentDeleteAccount() {}
-    func presentDeviceDetails(_ device: SyncDevice) {}
+    func presentDeleteAccount() async {}
+    func presentDeviceDetails(_ device: SyncDevice) async {}
     func presentRemoveDevice(_ device: SyncDevice) {}
     func saveRecoveryPDF() {}
     func refreshDevices() {}
@@ -101,6 +100,7 @@ final class PreviewManagementViewModel: ManagementViewModel {
     func manageLogins() {}
     func manageCreditCards() {}
     func manageIdentities() {}
+    func settingsScreenDidAppear() {}
     func syncWithAnotherDevicePressed() async {}
     func syncWithServerPressed() async {}
     func recoverDataPressed() async {}

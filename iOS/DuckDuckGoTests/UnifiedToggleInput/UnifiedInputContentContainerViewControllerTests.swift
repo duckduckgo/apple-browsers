@@ -65,7 +65,6 @@ private final class MockUnifiedInputSwitchBarHandler: SwitchBarHandling {
     var currentText: String = ""
     var currentToggleState: TextEntryMode = .search
     var isVoiceSearchEnabled = false
-    var isAIVoiceChatEnabled = false
     var hasUserInteractedWithText = false
     var isCurrentTextValidURL = false
     var buttonState: SwitchBarButtonState = .noButtons
@@ -82,7 +81,7 @@ private final class MockUnifiedInputSwitchBarHandler: SwitchBarHandling {
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }

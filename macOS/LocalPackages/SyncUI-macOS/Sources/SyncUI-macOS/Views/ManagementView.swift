@@ -56,6 +56,9 @@ public struct ManagementView<ViewModel>: View where ViewModel: ManagementViewMod
                 legacyContent
             }
         }
+        .onAppear {
+            model.settingsScreenDidAppear()
+        }
     }
 
     @ViewBuilder
@@ -97,8 +100,7 @@ struct ManagementView_Previews: PreviewProvider {
             .init(name: "Enabled", state: .enabled)
         ],
         configure: { model in
-            DesignSystemRebrand.isAppRebranded = { true }
-            return ScrollView {
+            ScrollView {
                 ManagementView(model: model)
                     .padding()
             }

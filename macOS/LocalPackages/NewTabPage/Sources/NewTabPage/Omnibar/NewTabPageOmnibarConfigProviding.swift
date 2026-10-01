@@ -42,6 +42,17 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isImageGenerationEnabled: Bool { get }
 
+    /// Whether Create Image activation is resolved natively, including automatic model switching.
+    var isUpdatedCreateImageEnabled: Bool { get }
+
+    /// The accessible image-capable model selected natively for an updated Create Image submission.
+    @MainActor
+    var imageGenerationModelId: String? { get }
+
+    /// Switches to an accessible image-capable model when needed and returns native-localized notice copy.
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+
     var isWebSearchEnabled: Bool { get }
 
     /// Whether the "Customize Responses" tool is shown in the NTP omnibar Tools menu.
@@ -59,6 +70,22 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// "user is about to prompt" signal. `requestingWebView` resolves burner mode; `nil` uses the key window.
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?)
+
+    /// A method, not a value: the high-usage notice is keyed off the selected model, so it has to be
+    /// re-resolved per read.
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits?
+
+    @MainActor
+    func dismissUsageLimits()
+
+    /// `modelId` is set when the user picked a model, primary or from the chevron menu.
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome
+
+    /// Published so the client can push `omnibar_onConfigUpdate` when web republishes the usage
+    /// snapshot, or the user settles a message, keeping an open NTP in sync without a reload.
+    var usageLimitsPublisher: AnyPublisher<Void, Never> { get }
 
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an

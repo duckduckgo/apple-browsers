@@ -20,6 +20,7 @@
 import Foundation
 import RemoteMessaging
 import Core
+import PixelKit
 
 enum RemoteMessagePixelDismissType: String {
     case closeButton = "close_button"
@@ -52,11 +53,11 @@ extension RemoteMessagingPixelReporting {
 }
 
 final class RemoteMessagePixelReporter: RemoteMessagingPixelReporting {
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private let parameterRandomiser: (SubscriptionDataReportingUseCase, _ parameters: [String: String]) -> [String: String]
 
     init(
-        pixelFiring: PixelFiring.Type = Pixel.self,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         parameterRandomiser: @escaping (SubscriptionDataReportingUseCase, [String: String]) -> [String: String]
     ) {
         self.pixelFiring = pixelFiring
@@ -123,6 +124,6 @@ final class RemoteMessagePixelReporter: RemoteMessagingPixelReporting {
         let randomisedParameter = parameterRandomiser(.messageID(remoteMessageID), [PixelParameters.message: "\(remoteMessageID)"])
         let parameters = randomisedParameter.merging(additionalParameters) { $1 }
 
-        pixelFiring.fire(pixel, withAdditionalParameters: parameters)
+        pixelFiring?.fire(pixel, options: .parameters(parameters))
     }
 }

@@ -22,6 +22,7 @@ import VPN
 import Subscription
 import Core
 import FeatureFlags_iOS
+import PixelKit
 
 struct NetworkProtectionRootView: View {
 
@@ -60,9 +61,8 @@ struct NetworkProtectionRootView: View {
         NetworkProtectionStatusView(statusModel: statusViewModel, feedbackFormModel: feedbackFormModel)
             .navigationTitle(UserText.netPNavTitle)
             .onFirstAppear {
-                Pixel.fire(
-                    pixel: .subscriptionVPNSettings,
-                    withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
+                PixelKit.fire(Pixel.Event.subscriptionVPNSettings,
+                              options: .parameters(self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn)))
             }
     }
 }

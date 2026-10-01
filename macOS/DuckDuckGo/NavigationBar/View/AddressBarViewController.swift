@@ -185,11 +185,7 @@ final class AddressBarViewController: NSViewController {
 
     /// True when the nav bar should render at its tall / focused height
     var shouldUseTallAddressBarLayout: Bool {
-        guard themeManager.isAppRebranded else {
-            return selectionState.isSelected || selectionState.isInAIChatMode || mode.isEditing
-        }
-
-        return selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
+        selectionState.isSelected && isSearchOrChatSuggestionsWindowVisible
     }
 
     let themeManager: ThemeManaging
@@ -970,7 +966,7 @@ final class AddressBarViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Keep the suggestions shadow aligned with the panel by applying the same vertical offset.
-        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset(isAppRebranded: themeManager.isAppRebranded)
+        let offset = AddressBarTextField.SuggestionWindowSizes.shadowOffset
         frame.origin.y += offset
         frame.size.height -= offset
 
@@ -1022,7 +1018,6 @@ final class AddressBarViewController: NSViewController {
         bottomSeparatorView.isHidden = !themeManager.isAppRebranded
 
         let colorsProvider = theme.colorsProvider
-        let navigationBarBackgroundColor = colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             // Keep selected appearance when AI chat is active (OR) isBurner, even if window loses key status
@@ -1038,7 +1033,7 @@ final class AddressBarViewController: NSViewController {
                     activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
                 }
                 activeBackgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
-                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
+                switchToTabBox.backgroundColor = colorsProvider.activeSwitchToTabBackgroundColor
 
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
@@ -1053,7 +1048,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
 
-                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
+                switchToTabBox.backgroundColor = colorsProvider.inactiveSwitchToTabBackgroundColor
 
                 activeOuterBorderView.isHidden = true
 
@@ -1728,4 +1723,10 @@ fileprivate extension NSView {
         self is NSButton || self is LottieAnimationView || self is CustomToggleControl
     }
 
+}
+
+extension NSUserInterfaceItemIdentifier {
+    /// Tags the update-notification toast's content view controller so the address bar's
+    /// `childWindows` observer can allow-list its window instead of treating it as a competing panel.
+    static let updateNotificationPopover = NSUserInterfaceItemIdentifier("updateNotificationPopover")
 }

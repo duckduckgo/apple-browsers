@@ -928,6 +928,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
         // There should be source + target tabs.
         XCTAssertEqual(app.tabs.count, 2)
         try app.tabs.element(boundBy: 1).closeTab()
+        XCTAssertTrue(app.wait(for: .keyPath(\.tabs.count, equalTo: 1), timeout: UITests.Timeouts.elementExistence))
 
         // Cmd+Shift click from panel should open selected tab.
         panelBookmarkItem = panelBookmarkTargetItem(in: mainWindow)
@@ -1008,6 +1009,7 @@ final class TabNavigationMenuItemTests: UITestCase, TabNavigationTestHelpers {
         XCTAssertFalse(app.webViews["Page #16"].exists) // Should open in background
         XCTAssertEqual(app.tabs.count, 2)
         try app.tabs.element(boundBy: 1).closeTab()
+        XCTAssertTrue(app.wait(for: .keyPath(\.tabs.count, equalTo: 1), timeout: UITests.Timeouts.elementExistence))
 
         // Command shift click should open in foreground
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {

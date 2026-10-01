@@ -736,7 +736,7 @@ final class JobQueueManagerTests: XCTestCase {
             return XCTFail("Expected pixel to be fired")
         }
 
-        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent, _) = lastEvent {
+        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent, _, _) = lastEvent {
             XCTAssertEqual(actionId, "action-id")
             XCTAssertEqual(message, "something happened")
             XCTAssertEqual(dataBroker, "broker.com")
@@ -775,7 +775,7 @@ final class JobQueueManagerTests: XCTestCase {
             return XCTFail("Expected pixel to be fired")
         }
 
-        if case let .actionFailedError(_, _, _, _, _, stepType, parent, _) = lastEvent {
+        if case let .actionFailedError(_, _, _, _, _, stepType, parent, _, _) = lastEvent {
             XCTAssertNil(stepType)
             XCTAssertNil(parent)
         } else {

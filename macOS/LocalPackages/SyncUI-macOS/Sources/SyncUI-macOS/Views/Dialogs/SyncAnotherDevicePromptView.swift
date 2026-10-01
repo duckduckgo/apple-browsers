@@ -37,6 +37,7 @@ struct SyncAnotherDevicePromptView: View {
                 }
             }
         } buttons: {
+            Spacer()
             Button {
                 Task {
                     await model.delegate?.syncThisDeviceOnlyFromPrompt()
@@ -75,8 +76,7 @@ struct SyncAnotherDevicePromptView: View {
 
 #if DEBUG
 #Preview("Default") {
-    DesignSystemRebrand.isAppRebranded = { true }
-    return SyncAnotherDevicePromptView()
+    SyncAnotherDevicePromptView()
         .environmentObject(ManagementDialogModel())
 }
 

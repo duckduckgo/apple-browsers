@@ -484,6 +484,164 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.freeTrialEligibility, .eligible)
     }
 
+    // MARK: - imageGenerationFallbackModel
+
+    func test_imageGenerationFallbackModel_isNilWithoutModels() {
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    func test_imageGenerationFallbackModel_skipsModelsThatCannotGenerateImages() {
+        sut.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
+    }
+
+    func test_imageGenerationFallbackModel_takesTheFirstImageCapableModelTheBackendOffers() {
+        sut.models = [
+            makeModel(id: "first-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-model", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "first-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_isNilWithoutEntityAccess() {
+        sut.models = [makeModel(id: "image-capable", access: false, supportedTools: [.imageGeneration])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    func test_imageGenerationFallbackModel_isNilWhenTheModelCannotGenerateImages() {
+        sut.models = [makeModel(id: "text-only", access: true, supportedTools: [.webSearch])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    // MARK: - imageGenerationFallbackModel: editorial label preference
+
+    func test_imageGenerationFallbackModel_prefersAnEndorsedModelOverAnEarlierUnlabelledOne() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-image-model", access: true, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "endorsed-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresACaveatLabelAndKeepsBackendOrder() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "caveat-image-model", access: true, supportedTools: [.imageGeneration], label: .usesLimitsFaster)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "unlabelled-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnUnknownLabelAndKeepsBackendOrder() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "unknown-label-image-model",
+                      access: true,
+                      supportedTools: [.imageGeneration],
+                      label: .unknown("FUTURE_LABEL"))
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "unlabelled-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_withoutAnyLabelsFallsBackToBackendOrder() {
+        sut.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "first-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-model", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "first-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnEndorsedModelTheUserCannotAccess() {
+        sut.models = [
+            makeModel(id: "accessible-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-gated-model", access: false, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "accessible-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnEndorsedModelThatCannotGenerateImages() {
+        sut.models = [
+            makeModel(id: "endorsed-text-model", access: true, supportedTools: [.webSearch], label: .everydayUse),
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
+    }
+
+    func testWhenInitialProductFetchResolvesThenHeaderUpsellUsesAvailability() async {
+        for available in [false, true] {
+            subscriptionManager.hasResolvedAppStoreProducts = false
+            subscriptionManager.hasAppStoreProductsAvailable = false
+            sut = makeSUT(isUpdatedModelPickerEnabled: false)
+
+            XCTAssertTrue(sut.shouldShowHeaderUpsell)
+            XCTAssertFalse(sut.allowsSubscriptionUpsell)
+
+            let productsUpdated = expectation(description: "product availability updated")
+            sut.onModelsUpdated = { productsUpdated.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [productsUpdated], timeout: 1)
+            XCTAssertTrue(sut.shouldShowHeaderUpsell)
+
+            let resolved = expectation(description: "header refreshed after initial product fetch")
+            sut.onModelsUpdated = { resolved.fulfill() }
+            subscriptionManager.hasResolvedAppStoreProducts = true
+            await fulfillment(of: [resolved], timeout: 1)
+
+            XCTAssertEqual(sut.shouldShowHeaderUpsell, available)
+            XCTAssertEqual(sut.allowsSubscriptionUpsell, available)
+            sut.onModelsUpdated = nil
+        }
+    }
+
+    func testAvailabilityRefreshPreservesCatalogAndChoicesWithoutFetchingForBothPickerVariants() async {
+        for updated in [true, false] {
+            subscriptionManager.hasAppStoreProductsAvailable = true
+            sut = makeSUT(isUpdatedModelPickerEnabled: updated)
+            sut.models = [makeModel(id: "free", access: true, supportedReasoningEffort: [.none, .low]),
+                          makeModel(id: "paid", access: false)]
+            sut.updateSelectedModel("free", isNewChatContext: true)
+            sut.updateSelectedReasoningMode(.reasoning)
+            for available in [false, true] {
+                let refresh = expectation(description: "availability refreshed")
+                sut.onModelsUpdated = { refresh.fulfill() }
+                subscriptionManager.hasAppStoreProductsAvailable = available
+                await fulfillment(of: [refresh], timeout: 1)
+
+                XCTAssertEqual(sut.allowsSubscriptionUpsell, available)
+                XCTAssertEqual(sut.models.map(\.id), ["free", "paid"])
+                XCTAssertEqual(sut.persistedModelId, "free")
+                XCTAssertEqual(sut.selectedReasoningMode, .reasoning)
+                XCTAssertEqual(modelsService.fetchCount, 0)
+                if !updated { XCTAssertEqual(sut.freeTrialEligibility, .unknown) }
+            }
+            sut.onModelsUpdated = nil
+        }
+    }
+
+    func testAvailabilityNotificationReReadsManagerEligibilityInsteadOfPublisherValue() async {
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        let refresh = expectation(description: "availability refreshed")
+        sut.onModelsUpdated = { refresh.fulfill() }
+
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        await fulfillment(of: [refresh], timeout: 1)
+
+        XCTAssertTrue(sut.allowsSubscriptionUpsell)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(isUpdatedModelPickerEnabled: Bool) -> UTIModelStore {
@@ -508,7 +666,8 @@ final class UTIModelStoreTests: XCTestCase {
         supportsImageUpload: Bool = false,
         supportedFileTypes: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
-        supportedReasoningEffort: [AIChatReasoningEffort] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        label: AIChatModelLabel? = nil
     ) -> AIChatModel {
         AIChatModel(
             id: id,
@@ -518,7 +677,8 @@ final class UTIModelStoreTests: XCTestCase {
             supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             entityHasAccess: access,
-            supportedReasoningEffort: supportedReasoningEffort
+            supportedReasoningEffort: supportedReasoningEffort,
+            label: label
         )
     }
 }
@@ -541,5 +701,10 @@ private final class StubModelsService: AIChatModelsProviding {
 
     var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
 
-    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
+    private(set) var fetchCount = 0
+
+    func fetchModels() async throws -> AIChatModelsResponse {
+        fetchCount += 1
+        return try result.get()
+    }
 }

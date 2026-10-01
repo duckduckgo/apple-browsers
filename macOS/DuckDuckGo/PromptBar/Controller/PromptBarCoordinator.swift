@@ -18,33 +18,26 @@
 
 import AppKit
 import Combine
-import FeatureFlags_macOS
-import PrivacyConfig
 
 /// Owns the Prompt Bar's entry points: the global shortcut and the menu bar icon click.
 @MainActor
 final class PromptBarCoordinator {
 
-    private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
     private let shortcutRegistrar: GlobalShortcutRegistering
     private let presenter: PromptBarPresenting
 
     private var shortcutCancellable: AnyCancellable?
 
-    init(featureFlagger: FeatureFlagger,
-         preferences: PromptBarPreferences,
+    init(preferences: PromptBarPreferences,
          shortcutRegistrar: GlobalShortcutRegistering,
          presenter: PromptBarPresenting) {
-        self.featureFlagger = featureFlagger
         self.preferences = preferences
         self.shortcutRegistrar = shortcutRegistrar
         self.presenter = presenter
     }
 
     func start() {
-        guard featureFlagger.isFeatureOn(.promptBar) else { return }
-
         shortcutCancellable = preferences.effectiveKeyboardShortcutPublisher
             .sink { [weak self] shortcut in
                 self?.applyShortcut(shortcut)
@@ -53,7 +46,6 @@ final class PromptBarCoordinator {
 
     /// - Parameter source: The entry point that asked, which is what the visibility pixels report.
     func togglePromptBar(source: PromptBarPresentationSource) {
-        guard featureFlagger.isFeatureOn(.promptBar) else { return }
         presenter.toggle(source: source)
     }
 

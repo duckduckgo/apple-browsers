@@ -93,6 +93,9 @@ final class TunnelMonitorsTests: XCTestCase {
             onConnectionTestResult: { result in
                 hooksBox.lastConnectionTestResult = result
             },
+            onTunnelFailureResult: { result in
+                hooksBox.tunnelFailureResults.append(result)
+            },
             onFailureRecoveryConfigUpdate: { result in
                 hooksBox.lastFailureRecoveryConfigUpdate = result
                 if let error = hooksBox.failureRecoveryConfigUpdateError {
@@ -308,6 +311,29 @@ final class TunnelMonitorsTests: XCTestCase {
 
     // MARK: - Tunnel-failure callback
 
+    func testTunnelFailureCallbackForwardsHealthTransitionsButNotPathChanges() async throws {
+        try await monitors.start(testImmediately: false)
+
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await tunnelFailureMonitor.fire(.failureRecovered)
+        await tunnelFailureMonitor.fire(.networkPathChanged("test"))
+
+        XCTAssertEqual(hooks.tunnelFailureResults.count, 2)
+
+        guard hooks.tunnelFailureResults.count == 2 else {
+            return
+        }
+
+        guard case .failureDetected = hooks.tunnelFailureResults[0] else {
+            return XCTFail("Expected failure detection first")
+        }
+        guard case .failureRecovered = hooks.tunnelFailureResults[1] else {
+            return XCTFail("Expected recovery second")
+        }
+
+        await waitForSpawnedTasks()
+    }
+
     func testTunnelFailureCallback_firesReportTunnelFailureEvent() async throws {
         try await monitors.start(testImmediately: false)
         await tunnelFailureMonitor.fire(.networkPathChanged("eth0"))
@@ -502,6 +528,7 @@ private final class TunablesBox: @unchecked Sendable {
 private final class HooksBox: @unchecked Sendable {
     var reconfigureForMigrationCount = 0
     var reconfigureForMigrationError: Error?
+    var tunnelFailureResults: [NetworkProtectionTunnelFailureMonitor.Result] = []
     var lastConnectionTestResult: ConnectionTestingResult?
     var lastFailureRecoveryConfigUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
     var failureRecoveryConfigUpdateError: Error?

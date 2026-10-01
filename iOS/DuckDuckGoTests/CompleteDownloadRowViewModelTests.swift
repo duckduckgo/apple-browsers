@@ -19,21 +19,12 @@
 
 import BrowserServicesKit
 import Contacts
-import Core
 import Foundation
 import Testing
 @testable import DuckDuckGo
 
 @Suite("CompleteDownloadRowViewModel", .serialized)
 final class CompleteDownloadRowViewModelTests {
-
-    init() {
-        PixelFiringMock.tearDown()
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
 
     @available(iOS 17, *)
     @Test("Returns a prepared event for a single-VEVENT .ics file", .timeLimit(.minutes(1)))
@@ -99,8 +90,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "multi.vcf", contents: Fixtures.multipleContacts)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     pixelFiring: PixelFiringMock.self)
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         let contact = viewModel.preparePreviewContact()
 
         // We present the first contact and ignore the rest.
@@ -114,8 +104,7 @@ final class CompleteDownloadRowViewModelTests {
         let url = try writeTempFile(name: "broken.vcf", contents: "not a vCard")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let viewModel = CompleteDownloadRowViewModel(fileURL: url,
-                                                     pixelFiring: PixelFiringMock.self)
+        let viewModel = CompleteDownloadRowViewModel(fileURL: url)
         #expect(viewModel.preparePreviewContact() == nil)
     }
 
@@ -129,36 +118,32 @@ final class CompleteDownloadRowViewModelTests {
         #expect(viewModel.preparePreviewContact() == nil)
     }
 
-    // MARK: - ContactCardView.Coordinator (Downloads-list editor pixels)
+    // MARK: - ContactCardView.Coordinator
 
     @available(iOS 16, *)
-    @Test("Coordinator fires the saved pixel and calls onSaved when the contact is added", .timeLimit(.minutes(1)))
+    @Test("Coordinator calls onSaved when the contact is added", .timeLimit(.minutes(1)))
     func contactCardCoordinatorReportsSave() {
         var didSave = false
         var didDismiss = false
         let coordinator = ContactCardView.Coordinator(onSaved: { didSave = true },
-                                                      onDismiss: { didDismiss = true },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      onDismiss: { didDismiss = true })
         coordinator.complete(saved: true)
 
         #expect(didSave)
         #expect(didDismiss)
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.vcardContactEditorSaved.name })
     }
 
     @available(iOS 16, *)
-    @Test("Coordinator fires the cancelled pixel and skips onSaved on Cancel", .timeLimit(.minutes(1)))
+    @Test("Coordinator skips onSaved on Cancel", .timeLimit(.minutes(1)))
     func contactCardCoordinatorReportsCancel() {
         var didSave = false
         var didDismiss = false
         let coordinator = ContactCardView.Coordinator(onSaved: { didSave = true },
-                                                      onDismiss: { didDismiss = true },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      onDismiss: { didDismiss = true })
         coordinator.cancelButtonTapped()
 
         #expect(!didSave)
         #expect(didDismiss)
-        #expect(PixelFiringMock.allPixelsFired.contains { $0.pixelName == Pixel.Event.vcardContactEditorCancelled.name })
     }
 
     @available(iOS 16, *)
@@ -166,8 +151,7 @@ final class CompleteDownloadRowViewModelTests {
     func contactCardCoordinatorCompletesOnce() {
         var dismissCount = 0
         let coordinator = ContactCardView.Coordinator(onSaved: {},
-                                                      onDismiss: { dismissCount += 1 },
-                                                      pixelFiring: PixelFiringMock.self)
+                                                      onDismiss: { dismissCount += 1 })
         coordinator.complete(saved: false)
         coordinator.complete(saved: true) // dismantle/swipe arriving after an explicit completion
 

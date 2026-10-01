@@ -22,7 +22,7 @@ import Combine
 import CoreData
 import XCTest
 
-@testable import Core
+@testable import DuckDuckGo
 
 public class MockBookmarksSearchStore: BookmarksSearchStore {
     

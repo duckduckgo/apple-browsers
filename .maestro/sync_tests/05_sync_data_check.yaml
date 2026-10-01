@@ -6,13 +6,13 @@ name: 05_sync_data_check
 
 ---
 # IMPORTANT: This test is strictly related to 04_sync_data_setup
-#            and it will fail if 04 is not executed before. 
-#            The test is split in two different flow to accomodate 
-#            for Maestro CI max execution time. 
+#            and it will fail if 04 is not executed before.
+#            The test is split into two flows to accommodate
+#            for Maestro CI max execution time.
 
 - runFlow:
     file: ../shared/sync_setup.yaml
-    
+
 #  Copy Recovery Code
 - tapOn: Browsing menu
 - tapOn: Settings
@@ -25,7 +25,7 @@ name: 05_sync_data_check
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
-    # Set Dev environment
+# Set Dev environment
 - runFlow:
     file: ../shared/set_sync_dev_environment.yaml
 

@@ -26,6 +26,7 @@ import Combine
 import Core
 import BrowserServicesKit
 import DuckPlayer
+import PixelKit
 
 final class YoutubeOverlayUserScript: NSObject, Subfeature {
 
@@ -149,15 +150,15 @@ extension YoutubeOverlayUserScript {
 
         switch pixelName {
         case "play.use":
-            Pixel.fire(pixel: Pixel.Event.duckPlayerViewFromYoutubeViaMainOverlay, debounce: 2)
+            PixelKit.fire(Pixel.Event.duckPlayerViewFromYoutubeViaMainOverlay, frequency: .debounce(seconds: 2))
             duckPlayerStorage.userInteractedWithDuckPlayer = true
 
         case "play.do_not_use":
-            Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeWatchHere, debounce: 2)
+            PixelKit.fire(Pixel.Event.duckPlayerOverlayYoutubeWatchHere, frequency: .debounce(seconds: 2))
             duckPlayerStorage.userInteractedWithDuckPlayer = true
 
         case "overlay":
-            Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeImpressions, debounce: 2)
+            PixelKit.fire(Pixel.Event.duckPlayerOverlayYoutubeImpressions, frequency: .debounce(seconds: 2))
 
         default:
             break

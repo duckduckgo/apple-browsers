@@ -37,27 +37,34 @@ final class UnifiedSuggestionsHost {
     private var isAddressBarAtBottom: Bool
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchTopInset: CGFloat = 0
+    private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
     private var cancellables = Set<AnyCancellable>()
-    /// Built once on first `.favorites` render; NTP has a heavy init, so don't rebuild per body pass.
-    private var cachedFavoritesController: NewTabPageViewController?
+    let favoritesPresentation: FocusedFavoritesPresentation
+    private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
+    private var redesignedPresentationCancellable: AnyCancellable?
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
-    private func memoizedFavoritesController() -> NewTabPageViewController? {
-        if let cachedFavoritesController { return cachedFavoritesController }
-        cachedFavoritesController = config.favoritesProvider()
-        return cachedFavoritesController
+    var isShowingRedesignedSearchModules: Bool {
+        hostingController?.rootView.showsRedesignedSearchModules ?? false
+    }
+
+    func setEscapeHatch(_ model: EscapeHatchModel?) {
+        guard escapeHatch !== model else { return }
+        escapeHatch = model
+        rebuildRootView()
     }
 
     func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
-        cachedFavoritesController?.setOpenedAfterIdle(openedAfterIdle)
+        favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
     }
 
     init(config: UnifiedSuggestionsHostConfig) {
         self.config = config
+        self.favoritesPresentation = FocusedFavoritesPresentation(makeViewController: config.favoritesProvider)
         self.isAddressBarAtBottom = config.isAddressBarAtBottom
         self.listViewModel = SuggestionsListViewModel(source: config.source)
         self.viewModel = UnifiedSuggestionsViewModel(
@@ -88,8 +95,11 @@ final class UnifiedSuggestionsHost {
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
-        let hosting = UIHostingController(rootView: view)
+            favoritesPresentation: favoritesPresentation,
+            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
+            showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
+            escapeHatch: escapeHatch)
+        let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -105,6 +115,27 @@ final class UnifiedSuggestionsHost {
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
+    }
+
+    func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
+        guard enabled != (redesignedSearchPresentation != nil) else { return }
+        redesignedPresentationCancellable = nil
+        if enabled {
+            let presentation = RedesignedFocusedSearchPresentation(
+                inputsPublisher: config.inputsPublisher,
+                dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
+                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher())
+            redesignedSearchPresentation = presentation
+            redesignedPresentationCancellable = presentation.$showsSearchModules
+                .sink { [weak self] showsSearchModules in
+                    // Use the emitted value: @Published sends before the stored value changes.
+                    self?.rebuildRootView(showsRedesignedSearchModules: showsSearchModules)
+                    self?.onContentChanged?()
+                }
+        } else {
+            redesignedSearchPresentation = nil
+            rebuildRootView()
+        }
     }
 
     var isShowingLogo: Bool { viewModel.isShowingLogo }
@@ -132,7 +163,17 @@ final class UnifiedSuggestionsHost {
     }
 
     /// Resets the dismiss/morph state on each focus.
-    func prepareForActivation() {
+    func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
+        if let favoritesExpansionState,
+           let model = favoritesPresentation.viewController?.favoritesModel,
+           model.expansionState !== favoritesExpansionState {
+            // This host survives tab changes. Bind to the selected tab without animating from the previous tab's state.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                model.expansionState = favoritesExpansionState
+            }
+        }
         viewModel.prepareForActivation()
     }
 
@@ -199,6 +240,8 @@ final class UnifiedSuggestionsHost {
     }
 
     func tearDown() {
+        redesignedPresentationCancellable = nil
+        redesignedSearchPresentation = nil
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
@@ -212,11 +255,28 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Private
 
-    private func rebuildRootView() {
+    private func rebuildRootView(showsRedesignedSearchModules: Bool? = nil) {
         guard let hosting = hostingController else { return }
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
-            favoritesProvider: { [weak self] in self?.memoizedFavoritesController() })
+            favoritesPresentation: favoritesPresentation,
+            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
+            showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false,
+            escapeHatch: escapeHatch)
+        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
+    }
+}
+
+/// The redesigned modules use the favorites controller's models without mounting that controller.
+/// Report visibility from their actual host, so hierarchy and modal checks still apply.
+private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
+
+    func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
+        rootView.usesRedesignedNewTabPageLayout &&
+        rootView.showsRedesignedSearchModules &&
+        !rootView.viewModel.isFireTab &&
+        !rootView.viewModel.isFadingOut &&
+        rootView.favoritesPresentation.hasAppearedRemoteMessage(withID: messageID)
     }
 }

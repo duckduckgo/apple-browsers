@@ -19,6 +19,7 @@
 
 import XCTest
 @testable import Core
+@testable import DuckDuckGo
 import WebKit
 @_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
@@ -182,6 +183,22 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "SubdomainCookie" })
         XCTAssertTrue(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "DotSubdomainCookie" })
         XCTAssertFalse(mockHttpCookieStore.cookiesThatWereDeleted.contains { $0.name == "OtherCookie" })
+    }
+
+    func test_WhenClearingData_ThenFireproofableStepListsOnlyTheTypesItDeletes() async {
+        let dataStore = MockWebsiteDataStore()
+
+        await makeWebCacheManager().clear(dataStore: dataStore)
+
+        XCTAssertEqual(dataStore.requestedDataRecordTypes.last, WebCacheManager.fireproofableDataTypesExceptCookies)
+    }
+
+    func test_WhenClearingForDomains_ThenFireproofableStepListsOnlyTheTypesItDeletes() async {
+        let dataStore = MockWebsiteDataStore()
+
+        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["example.com"])
+
+        XCTAssertEqual(dataStore.requestedDataRecordTypes.last, WebCacheManager.fireproofableDataTypesExceptCookies)
     }
 
     // MARK: - Domain-Specific Clearing Tests

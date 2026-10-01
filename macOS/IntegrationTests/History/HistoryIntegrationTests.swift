@@ -20,7 +20,7 @@ import Combine
 import Common
 import FoundationExtensions
 import History
-import Navigation
+import DDGNavigation
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest

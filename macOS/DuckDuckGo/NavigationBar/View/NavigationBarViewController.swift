@@ -84,6 +84,8 @@ final class NavigationBarViewController: NSViewController {
     private var feedbackButtonSpacer: NSView?
     private var feedbackTipController: QuickFeedbackTipController?
     private var internalUserCancellable: AnyCancellable?
+    /// Owns the toolbar buttons of the loaded web extensions. `nil` when web extensions are unavailable.
+    private var webExtensionNavigationBarUpdater: AnyObject?
     private var fireWindowBackgroundView: NSImageView?
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -153,6 +155,7 @@ final class NavigationBarViewController: NSViewController {
 
     private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
+    private var autofillPinningPromoCompletion: ((PromoResult) -> Void)?
 
     private var urlCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -166,6 +169,7 @@ final class NavigationBarViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    private let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating
     private let featureFlagger: FeatureFlagger
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
     private let searchPreferences: SearchPreferences
@@ -176,6 +180,7 @@ final class NavigationBarViewController: NSViewController {
     private let tabsPreferences: TabsPreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
+    private let pixelFiring: (any PixelKitFiring)?
     private let pinningManager: PinningManager
 
     let themeManager: ThemeManaging
@@ -197,8 +202,8 @@ final class NavigationBarViewController: NSViewController {
 
     private let networkProtectionButtonModel: NetworkProtectionNavBarButtonModel
 
-    private var isOnboardingFinished: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
+    private var isOnboardingReadyForPrompts: Bool {
+        Application.appDelegate.isOnboardingReadyForPrompts
     }
 
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
@@ -236,6 +241,7 @@ final class NavigationBarViewController: NSViewController {
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
+                       brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating = NSApp.delegateTyped.brokenSitePromptPresentationCoordinator,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                        adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
                        searchPreferences: SearchPreferences,
@@ -252,6 +258,7 @@ final class NavigationBarViewController: NSViewController {
                        accessibilityPreferences: AccessibilityPreferences,
                        pinningManager: PinningManager,
                        memoryUsageMonitor: MemoryUsageMonitor,
+                       pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -274,6 +281,7 @@ final class NavigationBarViewController: NSViewController {
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
+                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
                 featureFlagger: featureFlagger,
                 adBlockingAvailability: adBlockingAvailability,
                 searchPreferences: searchPreferences,
@@ -290,6 +298,7 @@ final class NavigationBarViewController: NSViewController {
                 accessibilityPreferences: accessibilityPreferences,
                 pinningManager: pinningManager,
                 memoryUsageMonitor: memoryUsageMonitor,
+                pixelFiring: pixelFiring,
                 showTab: showTab
             )
         }!
@@ -310,6 +319,7 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
+        brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating,
         featureFlagger: FeatureFlagger,
         adBlockingAvailability: AdBlockingAvailabilityProviding,
         searchPreferences: SearchPreferences,
@@ -326,6 +336,7 @@ final class NavigationBarViewController: NSViewController {
         accessibilityPreferences: AccessibilityPreferences,
         pinningManager: PinningManager,
         memoryUsageMonitor: MemoryUsageMonitor,
+        pixelFiring: (any PixelKitFiring)?,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -342,8 +353,7 @@ final class NavigationBarViewController: NSViewController {
             autofillPopoverPresenter: autofillPopoverPresenter,
             vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             pinningManager: pinningManager,
-            isBurner: tabCollectionViewModel.isBurner,
-            isAppRebranded: themeManager.isAppRebranded
+            isBurner: tabCollectionViewModel.isBurner
         )
 
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -367,6 +377,7 @@ final class NavigationBarViewController: NSViewController {
         self.permissionManager = permissionManager
         self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
+        self.brokenSitePromptPresentationCoordinator = brokenSitePromptPresentationCoordinator
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
         self.searchPreferences = searchPreferences
@@ -378,6 +389,7 @@ final class NavigationBarViewController: NSViewController {
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
+        self.pixelFiring = pixelFiring
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         self.memoryUsageDisplayer = MemoryUsageDisplayer(memoryUsageMonitor: memoryUsageMonitor, featureFlagger: featureFlagger)
@@ -403,6 +415,9 @@ final class NavigationBarViewController: NSViewController {
     }
 
     deinit {
+        autofillPinningPromoCompletion?(.ignored())
+        autofillPinningPromoCompletion = nil
+
 #if DEBUG
         addressBarViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         if isLazyVar(named: "downloadsProgressView", initializedIn: self) {
@@ -527,7 +542,19 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
+        setupWebExtensionButtons()
+
         memoryUsageDisplayer.setUpMemoryMonitorView()
+    }
+
+    private func setupWebExtensionButtons() {
+        if #available(macOS 15.4, *) {
+            let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
+                                                          themeManager: themeManager,
+                                                          container: menuButtons)
+            updater.startUpdating()
+            webExtensionNavigationBarUpdater = updater
+        }
     }
 
     override func viewWillAppear() {
@@ -544,6 +571,10 @@ final class NavigationBarViewController: NSViewController {
         updateNavigationBarForCurrentWidth()
         sessionRestorePromptCoordinator.markUIReady()
         setupAsBurnerWindowIfNeeded(theme: theme)
+    }
+
+    func windowWillClose() {
+        resolveAutofillPinningPromo(with: .ignored())
     }
 
     override func viewWillLayout() {
@@ -971,11 +1002,6 @@ final class NavigationBarViewController: NSViewController {
                                                object: nil)
 
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showPasswordsPinningOption(_:)),
-                                               name: .passwordsPinningPrompt,
-                                               object: nil)
-
-        NotificationCenter.default.addObserver(self,
                                                selector: #selector(showAutoconsentFeedback(_:)),
                                                name: AutoconsentUserScript.newSitePopupHiddenNotification,
                                                object: nil)
@@ -1227,9 +1253,17 @@ final class NavigationBarViewController: NSViewController {
     private func subscribeToTabContent() {
         urlCancellable = tabCollectionViewModel.selectedTabViewModel?.tab.$content
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] _ in
+            .sink(receiveValue: { [weak self] content in
                 self?.updatePasswordManagementButton()
+                self?.updateWebExtensionButtonsVisibility(for: content)
             })
+    }
+
+    /// Web extension buttons apply to a web page only, so tabs that show native content hide them.
+    private func updateWebExtensionButtonsVisibility(for content: TabContent) {
+        guard #available(macOS 15.4, *),
+              let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
     }
 
     private func subscribeToDownloads() {
@@ -1574,22 +1608,6 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    @objc private func showPasswordsPinningOption(_ sender: Notification) {
-        guard view.window?.isKeyWindow == true else { return }
-
-        DispatchQueue.main.async {
-            self.popovers.showAutofillOnboardingPopover(from: self.passwordManagementButton,
-                                                        withDelegate: self) { [weak self] didAddShortcut in
-                guard let self else { return }
-                self.popovers.closeAutofillOnboardingPopover()
-
-                if didAddShortcut {
-                    pinningManager.pin(.autofill)
-                }
-            }
-        }
-    }
-
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
         DispatchQueue.main.async { [weak self] in
             guard self?.view.window?.isKeyWindow == true,
@@ -1611,7 +1629,7 @@ final class NavigationBarViewController: NSViewController {
     @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
         guard brokenSitePromptLimiter.shouldShowToast(),
               let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
-              isOnboardingFinished
+              isOnboardingReadyForPrompts
         else { return }
         showBrokenSitePrompt()
     }
@@ -1632,9 +1650,12 @@ final class NavigationBarViewController: NSViewController {
         },
                                                           onDismiss: {
             self.brokenSitePromptLimiter.didDismissToast()
+            // Fires from viewDidDisappear on every close path, including the CTA, so it is the promo's single hide signal.
+            self.brokenSitePromptPresentationCoordinator.promptDidHide()
         }
         )
         popoverMessage.show(onParent: self, relativeTo: privacyButton, behavior: .semitransient)
+        brokenSitePromptPresentationCoordinator.promptDidShow()
     }
 
     func toggleDownloadsPopover(keepButtonVisible: Bool) {
@@ -2208,7 +2229,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu) {
@@ -2220,6 +2241,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": SyncDeviceButtonTouchpoint.moreMenu.rawValue]))
         DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .moreMenu, completion: nil)
     }
 
@@ -2280,6 +2302,14 @@ extension NavigationBarViewController: NSPopoverDelegate {
 
     /// We check references here because these popovers might be on other windows.
     func popoverDidClose(_ notification: Notification) {
+        if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
+            popovers.autofillOnboardingPopoverClosed()
+            resolveAutofillPinningPromo(with: .ignored())
+            guard view.window?.isVisible == true else { return }
+            updatePasswordManagementButton()
+            return
+        }
+
         guard view.window?.isVisible == true else { return }
         if let popover = popovers.downloadsPopover, notification.object as AnyObject? === popover {
             popovers.downloadsPopoverClosed()
@@ -2295,9 +2325,6 @@ extension NavigationBarViewController: NSPopoverDelegate {
             updatePasswordManagementButton()
         } else if let popover = popovers.savePaymentMethodPopover, notification.object as AnyObject? === popover {
             popovers.savePaymentMethodPopoverClosed()
-            updatePasswordManagementButton()
-        } else if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
-            popovers.autofillOnboardingPopoverClosed()
             updatePasswordManagementButton()
         }
     }
@@ -2461,4 +2488,51 @@ extension NavigationBarViewController: SharingMenuDelegate {
 extension Notification.Name {
     static let ToggleNetworkProtectionInMainWindow = Notification.Name("com.duckduckgo.vpn.toggle-popover-in-main-window")
     static let OpenUnifiedFeedbackForm = Notification.Name("com.duckduckgo.subscription.open-unified-feedback-form")
+}
+
+// MARK: - AutofillToolbarPinningPromoPresenting
+
+extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
+
+    func presentAutofillToolbarPinningPromo(completion: @escaping (PromoResult) -> Void) {
+        autofillPinningPromoCompletion = completion
+
+        // The trigger is posted from the save popover's `viewWillDisappear`, so that popover is still
+        // shown when we get here and `closeTransientPopovers()` would refuse. Presenting on the next
+        // run loop lets it finish closing first.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                completion(.noChange)
+                return
+            }
+            guard autofillPinningPromoCompletion != nil else { return }
+
+            let didPresent = popovers.showAutofillOnboardingPopover(from: passwordManagementButton,
+                                                                         withDelegate: self) { [weak self] didAddShortcut in
+                guard let self else { return }
+                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
+                if didAddShortcut {
+                    pinningManager.pin(.autofill)
+                }
+                popovers.closeAutofillOnboardingPopover()
+            }
+
+            if !didPresent {
+                resolveAutofillPinningPromo(with: .noChange)
+            }
+        }
+    }
+
+    func retractAutofillToolbarPinningPromo() {
+        autofillPinningPromoCompletion = nil
+        popovers.closeAutofillOnboardingPopover()
+    }
+
+    /// Both the CTA path and `popoverDidClose` funnel through here, and the completion is cleared on the
+    /// way out, so whichever fires first wins and the second is inert.
+    private func resolveAutofillPinningPromo(with result: PromoResult) {
+        let completion = autofillPinningPromoCompletion
+        autofillPinningPromoCompletion = nil
+        completion?(result)
+    }
 }

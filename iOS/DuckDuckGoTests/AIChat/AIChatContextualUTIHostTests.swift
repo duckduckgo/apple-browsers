@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Core
 import UIKit
 import XCTest
 @testable import DuckDuckGo
@@ -46,7 +47,10 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
     private func makeSUT(
         initialAttachedContext: AIChatPageContext? = nil,
-        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered
+        initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
+        attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
+        tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
         sut = AIChatContextualUTIHost(
             originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
@@ -54,8 +58,46 @@ final class AIChatContextualUTIHostTests: XCTestCase {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             hasActiveChat: { [weak self] in self?.hasActiveChat ?? false },
             isAutoAttachEnabled: { [weak self] in self?.autoAttachEnabled ?? false },
-            isFireTab: false
+            isFireTab: false,
+            attachMoreTabsFeature: attachMoreTabsFeature,
+            tabAttachmentSource: tabAttachmentSource,
+            isCurrentPageAttachInProgress: isCurrentPageAttachInProgress
         )
+    }
+
+    func testMultiTabProviderIsNotInvokedWhileFeatureDisabled() {
+        makeSUT(attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), aiChatSettings: MockAIChatSettingsProvider()))
+        sut.attachedTabContextsProvider = {
+            XCTFail("Disabled feature must not invoke the attachment provider")
+            return nil
+        }
+        let script = makeTestUserScript()
+        sut.bindToUserScript(script)
+
+        XCTAssertNil(script.attachedTabContextsProvider?())
+    }
+
+    func testMultiTabProviderObservesFeatureChangesAfterBinding() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        makeSUT(attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: flagger, aiChatSettings: MockAIChatSettingsProvider()))
+        var requestCount = 0
+        sut.attachedTabContextsProvider = {
+            requestCount += 1
+            return MultiTabAttachmentRequest(contexts: { [] }, didConsume: {})
+        }
+        let script = makeTestUserScript()
+        sut.bindToUserScript(script)
+        XCTAssertNil(script.attachedTabContextsProvider?())
+
+        flagger.enabledFeatureFlags = [.aiChatContextualAttachMoreTabs]
+        XCTAssertNotNil(script.attachedTabContextsProvider?())
+        XCTAssertEqual(requestCount, 1)
+
+        flagger.enabledFeatureFlags = []
+        XCTAssertNil(script.attachedTabContextsProvider?())
+        XCTAssertEqual(requestCount, 1)
     }
 
     func test_chipAttachAction_firesAttachCallback() {
@@ -130,34 +172,64 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.clearAttachedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
-    func test_showAttachAffordanceKeepsPlaceholderHiddenWithoutClearingDeliveredAttachment() {
+    func test_setSuggestedContext_showsTheOfferWithoutAttachingIt() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .delivered)
+        makeSUT()
 
-        sut.showAttachAffordance()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
-        XCTAssertFalse(sut.chipViewModel.isVisible)
-        XCTAssertEqual(sut.attachedContextURL, url)
+        XCTAssertEqualState(sut.chipViewModel.state, .suggested(title: "Page A", favicon: nil))
+        XCTAssertNil(sut.attachedContextURL)
         XCTAssertNil(sut.chipViewModel.pendingAttachedContextData)
     }
 
-    func test_showAttachAffordanceDoesNotOverridePendingAttachment() {
+    func test_clearSuggestedContext_removesTheOffer() {
         let url = URL(string: "https://example.com/a")!
         originatingURL.send(url)
-        makeSUT(initialAttachedContext: makeContext(title: "Page A", url: url.absoluteString), initialAttachmentDeliveryState: .pendingSubmit)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
 
-        sut.showAttachAffordance()
+        sut.clearSuggestedContext()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .attached(title: "Page A", favicon: nil))
-        XCTAssertTrue(sut.chipViewModel.isVisible)
-        XCTAssertEqual(sut.attachedContextURL, url)
-        XCTAssertEqual(sut.chipViewModel.pendingAttachedContextData?.url, url.absoluteString)
+        XCTAssertNil(sut.chipViewModel.state)
+    }
+
+    func test_chipTapOnASuggestion_forwardsAcceptanceNotAnAttachRequest() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var acceptCallCount = 0
+        var attachCallCount = 0
+        sut.onSuggestionAccepted = { acceptCallCount += 1 }
+        sut.onAttachRequested = { attachCallCount += 1 }
+
+        sut.chipViewModel.tapToAttach()
+
+        XCTAssertEqual(acceptCallCount, 1)
+        XCTAssertEqual(attachCallCount, 0)
+    }
+
+    func test_chipRemoveOnASuggestion_forwardsDismissalNotARemoval() {
+        let url = URL(string: "https://example.com/a")!
+        originatingURL.send(url)
+        makeSUT()
+        sut.setSuggestedContext(makeContext(title: "Page A", url: url.absoluteString))
+        var dismissCallCount = 0
+        var removeCallCount = 0
+        sut.onSuggestionDismissed = { dismissCallCount += 1 }
+        sut.onRemoveRequested = { removeCallCount += 1 }
+
+        sut.chipViewModel.tapToRemove()
+
+        XCTAssertEqual(dismissCallCount, 1)
+        XCTAssertEqual(removeCallCount, 0)
+        XCTAssertNil(sut.chipViewModel.state)
     }
 
     func test_setAttachedContextWithSameURLAfterDelivered_makesContextPendingAgain() {
@@ -193,7 +265,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 
         sut.prepareForNewChat()
 
-        XCTAssertEqualState(sut.chipViewModel.state, .placeholder)
+        XCTAssertNil(sut.chipViewModel.state)
         XCTAssertNil(sut.attachedContextURL)
     }
 
@@ -323,6 +395,81 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertEqual(inputView.frame.maxY, second.view.keyboardLayoutGuide.layoutFrame.minY)
     }
 
+    func testTabMenuSharesCurrentPagePendingAndDeliveredState() throws {
+        let url = URL(string: "https://example.com/page")!
+        let context = makeContext(title: "Current page", url: url.absoluteString)
+        let source = makeTabSource(url: url)
+        makeSUT(initialAttachedContext: context, initialAttachmentDeliveryState: .delivered,
+                attachMoreTabsFeature: FixedTabAttachmentFeature(state: .available(maximumTabAttachmentCount: 1)),
+                tabAttachmentSource: source)
+        let parent = UIViewController()
+        sut.mount(in: parent)
+        let input = try XCTUnwrap(parent.children.first as? UnifiedToggleInputViewController)
+
+        var actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions.map(\.state), [.off, .off])
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+
+        sut.setAttachedContext(context, deliveryState: .pendingSubmit)
+        actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions.map(\.state), [.on, .off])
+        XCTAssertTrue(actions[1].attributes.contains(.disabled))
+
+        sut.clearAttachedContext()
+        actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions.map(\.state), [.off, .off])
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+    }
+
+    func testTabMenuReservesCurrentPageSlotDuringExistingCollection() throws {
+        let url = URL(string: "https://example.com/page")!
+        var isCollecting = true
+        makeSUT(attachMoreTabsFeature: FixedTabAttachmentFeature(state: .available(maximumTabAttachmentCount: 1)),
+                tabAttachmentSource: makeTabSource(url: url),
+                isCurrentPageAttachInProgress: { isCollecting })
+        let parent = UIViewController()
+        sut.mount(in: parent)
+        let input = try XCTUnwrap(parent.children.first as? UnifiedToggleInputViewController)
+
+        var actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions[0].state, .on)
+        XCTAssertTrue(actions[1].attributes.contains(.disabled))
+
+        isCollecting = false
+        sut.refreshPageContextAttachability()
+        actions = try recentTabActions(in: input)
+        XCTAssertEqual(actions[0].state, .off)
+        XCTAssertFalse(actions[1].attributes.contains(.disabled))
+    }
+
+    func testDisabledTabFeaturePreservesCurrentPageActionWithoutReadingTabs() throws {
+        let source = MultiTabAttachmentSource(currentTabID: "current", mode: .normal, tabsProvider: {
+            XCTFail("Disabled multi-tab feature must not request candidates")
+            return []
+        })
+        makeSUT(attachMoreTabsFeature: FixedTabAttachmentFeature(state: .unavailable), tabAttachmentSource: source)
+        let parent = UIViewController()
+        sut.mount(in: parent)
+        let input = try XCTUnwrap(parent.children.first as? UnifiedToggleInputViewController)
+        let menu = try XCTUnwrap(input.attachmentMenu)
+        let actions = menu.children.compactMap { $0 as? UIAction }
+
+        XCTAssertTrue(actions.contains { $0.title == UserText.aiChatAttachmentOptionAskAboutPage && !$0.attributes.contains(.disabled) })
+        XCTAssertFalse(actions.contains { $0.title == UserText.aiChatAttachmentOptionAddTabs })
+    }
+
+    private func makeTabSource(url: URL) -> MultiTabAttachmentSource {
+        let tabs = [Tab(uid: "current", link: Link(title: "Current page", url: url), fireTab: false),
+                    Tab(uid: "other", link: Link(title: "Other page", url: url), fireTab: false)]
+        return MultiTabAttachmentSource(currentTabID: "current", mode: .normal, tabsProvider: { tabs })
+    }
+
+    private func recentTabActions(in input: UnifiedToggleInputViewController) throws -> [UIAction] {
+        let menu = try XCTUnwrap(input.attachmentMenu)
+        let recent = try XCTUnwrap(menu.children.first as? UIMenu)
+        return recent.children.compactMap { $0 as? UIAction }
+    }
+
     private func makeContext(title: String, url: String) -> AIChatPageContext {
         AIChatPageContext(
             contextData: AIChatPageContextData(
@@ -339,17 +486,28 @@ final class AIChatContextualUTIHostTests: XCTestCase {
 }
 
 private func XCTAssertEqualState(
-    _ actual: AIChatContextChipView.State,
+    _ actual: AIChatContextChipView.State?,
     _ expected: AIChatContextChipView.State,
     file: StaticString = #filePath,
     line: UInt = #line
 ) {
     switch (actual, expected) {
-    case (.placeholder, .placeholder):
-        return
+    case let (.suggested(actualTitle, _), .suggested(expectedTitle, _)):
+        XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
     case let (.attached(actualTitle, _), .attached(expectedTitle, _)):
         XCTAssertEqual(actualTitle, expectedTitle, file: file, line: line)
+    case (.loading, .loading):
+        return
     default:
-        XCTFail("Expected \(expected), got \(actual)", file: file, line: line)
+        XCTFail("Expected \(expected), got \(String(describing: actual))", file: file, line: line)
     }
+}
+
+private struct FixedTabAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
+    let state: AIChatContextualAttachMoreTabsState
 }

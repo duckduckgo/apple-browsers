@@ -22,6 +22,25 @@ import DesignResourcesKitIcons
 
 enum OmniBarMetrics {
     static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+
+    /// The size of the omnibar's controls and leading icon slot.
+    static let itemSize: CGFloat = 44
+    /// The space between the field edge and its content.
+    static let contentHorizontalInset: CGFloat = 2
+    /// The notification lozenge's equal top, leading, and bottom gaps from the field edge.
+    static let notificationLozengeInset: CGFloat = 3
+
+    static var leadingItemCenterFromFieldEdge: CGFloat {
+        contentHorizontalInset + itemSize / 2
+    }
+
+    static var notificationLozengeHeight: CGFloat {
+        itemSize - 2 * notificationLozengeInset
+    }
+
+    static func notificationIconLeadingPadding(forIconWidth width: CGFloat) -> CGFloat {
+        leadingItemCenterFromFieldEdge - notificationLozengeInset - width / 2
+    }
 }
 
 enum OmniBarLayoutMode {
@@ -139,6 +158,18 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
     /// keeps its glass). Pass `false` to restore the standard per-position appearance.
     func setFloatingMinimalChromeBar(_ enabled: Bool)
+}
+
+extension OmniBarView {
+    /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
+    /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
+    var restingSearchFieldSize: CGSize {
+        let size = searchContainer.bounds.size
+        if size.width > 0, size.height > 0 {
+            return size
+        }
+        return CGSize(width: frame.width, height: expectedHeight)
+    }
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.

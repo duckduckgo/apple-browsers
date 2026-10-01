@@ -4,9 +4,10 @@
         <attribute name="allow" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="domainEncrypted" attributeType="Transformable" valueTransformerName="NSStringTransformer"/>
         <attribute name="isRemoved" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="lastModified" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="permissionType" attributeType="String"/>
     </entity>
     <elements>
-        <element name="PermissionManagedObject" positionX="-63" positionY="-18" width="128" height="89"/>
+        <element name="PermissionManagedObject" positionX="-63" positionY="-18" width="128" height="104"/>
     </elements>
 </model>

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppUpdaterShared
 import CrashReportingShared
 @_spi(Testing) import Persistence

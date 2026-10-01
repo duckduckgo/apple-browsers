@@ -1,20 +1,13 @@
 appId: com.duckduckgo.mobile.ios
-# Recovers a Sync account from a recovery code via the simplified UI:
-# "Use Recovery Code" -> authenticate -> "Recover your synced data" sheet ->
-# manually paste the code. Starts on the logged-out Sync settings screen.
+# Recovers a Sync account from a recovery code:
+# "I Have a Recovery Code" -> authenticate -> "Recover your synced data" sheet ->
+# "Enter Code" tab -> paste the code. Starts on the logged-out Sync settings screen.
+# On success the recovery-complete screen is shown, which this flow dismisses with Done.
 ---
 
-- assertVisible: Use Recovery Code
-- tapOn: Use Recovery Code
-# Authenticate only if prompted — beginRecoverFlow authenticates before presenting
-# the recovery confirmation sheet, but the auth session may still be valid.
-- runFlow:
-    when:
-      visible: Passcode field
-    commands:
-      - tapOn: Passcode field
-      - inputText: "0000"
-      - pressKey: Enter
+- assertVisible: I Have a Recovery Code
+- tapOn: I Have a Recovery Code
+# Authenticate only if prompted — the auth session may still be valid from a recent step.
 - runFlow:
     when:
       visible: Unlock device to set up Sync & Backup
@@ -28,7 +21,22 @@ appId: com.duckduckgo.mobile.ios
       visible: Allows you to upload photographs and videos
     commands:
         - tapOn: "Allow"
-- tapOn: Manually Enter Code
-- tapOn: Paste
-- assertVisible:
-    id: "device"
+- extendedWaitUntil:
+    visible: Enter Code
+    timeout: 30000
+- tapOn: Enter Code
+# The scan tab requests camera permission when its intro animation ends; dismiss the
+# prompt if it raced in before we switched tabs.
+- runFlow:
+    when:
+      visible: Allows you to upload photographs and videos
+    commands:
+        - tapOn: "Allow"
+- tapOn: Paste Sync Code
+# Recovery-complete success screen (match the title by id for consistency with the other flows).
+- extendedWaitUntil:
+    visible:
+      id: "SyncSuccessTitle"
+    timeout: 60000
+- tapOn:
+    id: "SyncSuccessDoneButton"

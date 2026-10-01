@@ -347,6 +347,9 @@ enum GeneralPixel: PixelKit.Event {
     case onboardingStepCompleteSystemSettings
     case onboardingStepCompleteCustomize
     case onboardingFinalStepComplete
+    case onboardingSkipped
+    case onboardingBrowsingBeforeCompletion
+    case onboardingContextualDismissed
 
     // MARK: - Advanced Usage
 
@@ -447,6 +450,7 @@ enum GeneralPixel: PixelKit.Event {
     case feedbackReportingFailed
 
     case blankNavigationOnBurnFailed
+    case blankNavigationOnBurnTimedOut
 
     case historyRemoveFailed
     case historyReloadFailed
@@ -1130,6 +1134,9 @@ enum GeneralPixel: PixelKit.Event {
         case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-system-settings"
         case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
         case .onboardingFinalStepComplete: return "m_mac_onboarding_final-step-complete"
+        case .onboardingSkipped: return "m_mac_onboarding_skipped"
+        case .onboardingBrowsingBeforeCompletion: return "onboarding_browsing-before-completion_u"
+        case .onboardingContextualDismissed: return "onboarding_contextual-dismissed_u"
 
         // "Advanced" usage
         case .windowFullscreen: return "m_mac_window_fullscreen"
@@ -1244,6 +1251,8 @@ enum GeneralPixel: PixelKit.Event {
 
         case .blankNavigationOnBurnFailed:
             return "blank_navigation_on_burn_failed"
+        case .blankNavigationOnBurnTimedOut:
+            return "blank_navigation_on_burn_timed_out"
 
         case .historyRemoveFailed:
             return "history_remove_failed"
@@ -1852,6 +1861,9 @@ enum GeneralPixel: PixelKit.Event {
                 .onboardingStepCompleteSystemSettings,
                 .onboardingStepCompleteCustomize,
                 .onboardingFinalStepComplete,
+                .onboardingSkipped,
+                .onboardingBrowsingBeforeCompletion,
+                .onboardingContextualDismissed,
                 .windowFullscreen,
                 .windowSplitScreen,
                 .pictureInPictureVideoPlayback,
@@ -1893,6 +1905,7 @@ enum GeneralPixel: PixelKit.Event {
                 .secureVaultError,
                 .feedbackReportingFailed,
                 .blankNavigationOnBurnFailed,
+                .blankNavigationOnBurnTimedOut,
                 .historyRemoveFailed,
                 .historyReloadFailed,
                 .historyCleanEntriesFailed,

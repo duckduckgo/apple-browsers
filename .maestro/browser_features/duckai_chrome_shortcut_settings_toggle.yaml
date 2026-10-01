@@ -12,7 +12,7 @@ tags:
 - runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
 
 - assertVisible:
-    id: "Browser.TabsBar.AIChatChip"
+    id: "Browser.TabsBar.AIChatMenuButton"
 
 # Turn the Tab Bar shortcut OFF.
 - runFlow: ../shared/open_manage_duckai_shortcuts.yaml
@@ -26,7 +26,7 @@ tags:
 
 # Back in the browser, the chrome shortcut is hidden.
 - assertNotVisible:
-    id: "Browser.TabsBar.AIChatChip"
+    id: "Browser.TabsBar.AIChatMenuButton"
 
 # Turn the Tab Bar shortcut back ON.
 - runFlow: ../shared/open_manage_duckai_shortcuts.yaml
@@ -40,4 +40,4 @@ tags:
 
 # The chrome shortcut reappears.
 - assertVisible:
-    id: "Browser.TabsBar.AIChatChip"
+    id: "Browser.TabsBar.AIChatMenuButton"

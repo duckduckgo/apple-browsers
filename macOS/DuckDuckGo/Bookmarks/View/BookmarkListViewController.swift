@@ -109,13 +109,7 @@ final class BookmarkListViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             treeController: treeController,
             dragDropManager: dragDropManager,
-            sortMode: sortBookmarksViewModel.selectedSortMode,
-            presentFaviconsFetcherOnboarding: { [weak self] in
-                guard let self, let window = self.view.window else {
-                    return
-                }
-                self.faviconsFetcherOnboarding?.presentOnboardingIfNeeded(in: window)
-            }
+            sortMode: sortBookmarksViewModel.selectedSortMode
         )
     }()
 
@@ -127,14 +121,6 @@ final class BookmarkListViewController: NSViewController {
     }
     private var lastOutlineScrollPosition: NSRect?
 
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
-        }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
-
     private var documentView = FlippedView()
 
     private var documentViewHeightConstraint: NSLayoutConstraint?
@@ -145,7 +131,7 @@ final class BookmarkListViewController: NSViewController {
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
-        let model = SyncPromoViewModel(isAppRebranded: themeManager.isAppRebranded, touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks)
@@ -733,7 +719,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func onImportClicked() {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
     }
 
     private func showManageBookmarks() {

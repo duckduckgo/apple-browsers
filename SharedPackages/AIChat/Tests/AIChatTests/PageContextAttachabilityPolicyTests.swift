@@ -118,6 +118,8 @@ final class PageContextAttachabilityPolicyTests: XCTestCase {
         XCTAssertEqual(policy.verdict(url: url("file:///Users/me/doc.pdf"), mimeType: nil).preventionReason, "pdf")
     }
 
+    /// The blocklist policy alone doesn't reject local files; the platform gates prevent every
+    /// `file://` page ahead of the policy, independent of the remote config.
     func testWhenFileURLHTMLThenAttachable() {
         XCTAssertTrue(policy.verdict(url: url("file:///Users/me/page.html"), mimeType: nil).isAttachable)
     }

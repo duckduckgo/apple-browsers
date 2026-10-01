@@ -58,6 +58,18 @@ enum SyncUIViewsV2 {
         }
     }
 
+    struct TextDetailMultilineMarkdown: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+        }
+    }
+
     struct TextDetailSecondary: View {
         let text: String
 

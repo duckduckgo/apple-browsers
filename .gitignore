@@ -80,7 +80,6 @@ default.profraw
 
 # Cursor
 .cursor/*
-!.cursor/BUGBOT.md
 !.cursor/rules/
 
 # AI assistants
@@ -105,3 +104,6 @@ privacy-configuration/
 **/__Snapshots__/
 !macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/
 !macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/**
+
+# Codex will sometimes create artifacts, e.g. screenshots and videos in this location.
+.codex-artifacts/

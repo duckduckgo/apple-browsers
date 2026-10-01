@@ -26,7 +26,7 @@ struct SaveRecoveryPDFView: View {
     var body: some View {
         SyncDialog {
             VStack(spacing: 20.0) {
-                Image(viewModel.isAppRebranded ? .syncRecoveryPDF : .syncRecoveryPDFLegacy)
+                Image(.syncRecoveryPDF)
                 SyncUIViews.TextHeader(text: UserText.saveRecoveryPDF)
                 SyncUIViews.TextDetailMultiline(text: UserText.recoveryPDFExplanation)
             }
@@ -41,13 +41,13 @@ struct SaveRecoveryPDFView: View {
                     .frame(width: 340)
                 HStack {
                     Button {
-                        viewModel.delegate?.copyCode()
+                        viewModel.delegate?.copyCode(code)
                     } label: {
                         Text(UserText.recoveryPDFCopyCodeButton)
                             .frame(width: 155, height: 28)
                     }
                     Button {
-                        viewModel.delegate?.saveRecoveryPDF()
+                        viewModel.delegate?.saveRecoveryPDF(requiresAuthentication: true)
                     } label: {
                         Text(UserText.recoveryPDFSavePDFButton)
                             .frame(width: 155, height: 28)
@@ -72,3 +72,12 @@ struct SaveRecoveryPDFView: View {
         .frame(width: 420)
     }
 }
+
+#if DEBUG
+#Preview("Default") {
+    let model = ManagementDialogModel()
+    let code = String(repeating: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ", count: 3)
+    return SaveRecoveryPDFView(code: code)
+        .environmentObject(model)
+}
+#endif

@@ -19,6 +19,7 @@
 
 import Combine
 import Foundation
+import UserNotifications
 import VPN
 
 /// Drives the VPN activation screen, from the pre-VPN connection info through to reporting completion.
@@ -35,11 +36,14 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     typealias ConnectionInfoState = SubscriptionOnboardingPrefetcher.FetchState<SubscriptionOnboardingConnectionInfo>
 
     /// Shown in the IP row of an info card until the corresponding fetch resolves (or when it has no value.
-    static let ipPlaceholder = "-.-.-"
+    static let ipPlaceholder = "XXX.XXX.XX.XXX"
     /// Shown in the location row of an info card until the corresponding fetch resolves.
-    static let locationPlaceholder = "-,-"
+    static let locationPlaceholder = "XX,XX"
 
     @Published private(set) var connectionState: ConnectionState
+
+    /// Whether `turnOnVPN()` is in flight.
+    @Published private(set) var isActivating = false
 
     /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
@@ -58,26 +62,33 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private let vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding
     private let serverInfoObserver: ConnectionServerInfoObserver
     private let errorObserver: ConnectionErrorObserver
-    private weak var delegate: SubscriptionOnboardingSectionDelegate?
+    private let onComplete: () -> Void
+    private let onNext: () -> Void
     private let locale: Locale
 
     private var hasReportedCompletion = false
     private var hasAttemptedActivation = false
     private var cancellables = Set<AnyCancellable>()
 
+    /// Safety net for a stuck `isActivating` if none of the controller's reset signals ever fire.
+    private static let activationTimeout: TimeInterval = 15
+    private var activationTimeoutTask: Task<Void, Never>?
+
     init(prefetcher: SubscriptionOnboardingPrefetcher,
          vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
          vpnLocationProvider: SubscriptionOnboardingVPNLocationProviding = DefaultSubscriptionOnboardingVPNLocationProvider(),
          serverInfoObserver: ConnectionServerInfoObserver = AppDependencyProvider.shared.serverInfoObserver,
          errorObserver: ConnectionErrorObserver = AppDependencyProvider.shared.connectionErrorObserver,
-         delegate: SubscriptionOnboardingSectionDelegate? = nil,
+         onComplete: @escaping () -> Void = {},
+         onNext: @escaping () -> Void = {},
          locale: Locale = .current) {
         self.prefetcher = prefetcher
         self.vpnController = vpnController
         self.vpnLocationProvider = vpnLocationProvider
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
-        self.delegate = delegate
+        self.onComplete = onComplete
+        self.onNext = onNext
         self.locale = locale
         self.connectionState = vpnController.isConnected ? .on : .off
     }
@@ -97,6 +108,14 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                                                                     country: attributes.country,
                                                                     locale: locale)
     }
+
+    /// Whether the original (pre-VPN) info has loaded — gates the non-blurred real-IP card.
+    var isOriginalInfoAvailable: Bool {
+        if case .loaded = originalConnectionInfo { return true }
+        return false
+    }
+    /// Whether the VPN egress IP or location has arrived — gates the new-IP card.
+    var isVPNInfoAvailable: Bool { vpnServerInfo.serverAddress != nil || vpnServerInfo.serverLocation != nil }
 
     /// The "(Nearest)" indicator the existing VPN status/location UI shows when the "nearest available"
     var vpnLocationNearestIndicator: String? {
@@ -133,22 +152,30 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     func onDisappear() {
         cancellables.removeAll()
-    }
-
-    /// Leaves this section, going back to the previous one.
-    func goBack() {
-        delegate?.sectionDidRequestGoBack()
+        activationTimeoutTask?.cancel()
     }
 
     /// Finishes this section, moving the flow to the next one.
     func advance() {
-        delegate?.sectionDidRequestAdvance()
+        onNext()
     }
 
     /// Starts the VPN.
     func turnOnVPN() async {
         hasAttemptedActivation = true
+        isActivating = true
+        scheduleActivationTimeout()
         await vpnController.start()
+    }
+
+    /// Pauses the activation timeout while the system configuration alert is on screen
+    func setConfigAlertShowing(_ isShowing: Bool) {
+        guard isActivating else { return }
+        if isShowing {
+            activationTimeoutTask?.cancel()
+        } else {
+            scheduleActivationTimeout()
+        }
     }
 
     /// Whether a VPN configuration is already installed. When it isn't, starting shows the system permission prompt
@@ -173,6 +200,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .sink { [weak self] in
                 self?.didDenyVPNPermission = true
                 self?.didFailToStartVPN = false
+                self?.isActivating = false
             }
             .store(in: &cancellables)
 
@@ -185,6 +213,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                 guard self?.hasAttemptedActivation == true else { return }
                 self?.didFailToStartVPN = true
                 self?.didDenyVPNPermission = false
+                self?.isActivating = false
             }
             .store(in: &cancellables)
 
@@ -211,6 +240,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         if isConnected {
             didDenyVPNPermission = false
             didFailToStartVPN = false
+            isActivating = false
             reportCompletionIfNeeded()
         }
     }
@@ -218,7 +248,22 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private func reportCompletionIfNeeded() {
         guard !hasReportedCompletion else { return }
         hasReportedCompletion = true
-        delegate?.sectionDidComplete(.vpn)
+        onComplete()
+    }
+}
+
+// MARK: - Activation timeout
+
+private extension SubscriptionOnboardingVPNActivationViewModel {
+    func scheduleActivationTimeout() {
+        activationTimeoutTask?.cancel()
+        activationTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.activationTimeout * 1_000_000_000))
+            guard !Task.isCancelled, let self, self.isActivating else { return }
+            self.didFailToStartVPN = true
+            self.didDenyVPNPermission = false
+            self.isActivating = false
+        }
     }
 }
 
@@ -244,11 +289,14 @@ protocol SubscriptionOnboardingVPNControlling {
 final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNControlling {
     private let tunnelController: NetworkProtectionTunnelController
     private let connectionObserver: ConnectionStatusObserver
+    private let notificationsAuthorization: NotificationsAuthorizationControlling
 
     init(tunnelController: NetworkProtectionTunnelController = AppDependencyProvider.shared.networkProtectionTunnelController,
-         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver) {
+         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver,
+         notificationsAuthorization: NotificationsAuthorizationControlling = NotificationsAuthorizationController()) {
         self.tunnelController = tunnelController
         self.connectionObserver = connectionObserver
+        self.notificationsAuthorization = notificationsAuthorization
     }
 
     var isConnected: Bool {
@@ -270,7 +318,10 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
     }
 
     func start() async {
-        await tunnelController.start()
+        guard !isConnected else { return }
+        let status = await notificationsAuthorization.authorizationStatus
+        let mightPrompt = status == .notDetermined || status == .provisional
+        await tunnelController.start(suppressNotificationAuthorizationRequest: mightPrompt)
     }
 
     func isVPNConfigured() async -> Bool {
@@ -396,7 +447,8 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
                         isNearestSelected: Bool = false,
                         didDenyVPNPermission: Bool = false,
-                        didFailToStartVPN: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+                        didFailToStartVPN: Bool = false,
+                        isActivating: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             prefetcher: .preview(connectionInfo: originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading),
@@ -409,6 +461,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
         viewModel.vpnServerInfo = serverInfo
         viewModel.didDenyVPNPermission = didDenyVPNPermission
         viewModel.didFailToStartVPN = didFailToStartVPN
+        viewModel.isActivating = isActivating
         return viewModel
     }
 

@@ -49,21 +49,51 @@ actor AppSwitcherSnapshotCleaner {
             snapshotItems = try fileManager.contentsOfDirectory(at: snapshotsDirectory,
                                                                 includingPropertiesForKeys: nil,
                                                                 options: [])
+        } catch CocoaError.fileReadNoSuchFile {
+            // This system-owned directory may be absent. In that case, there are no snapshots at
+            // this path to clear.
+            return
         } catch {
             let errorDescription = error.localizedDescription
             Logger.general.error("Failed to enumerate app switcher snapshots: \(errorDescription, privacy: .public)")
-            pixelFiring?.fire(DataClearingPixels.appSwitcherSnapshotEnumerationFailed(error), frequency: .dailyAndCount)
+            pixelFiring?.fire(AppSwitcherSnapshotClearingPixel.failed(error), frequency: .dailyAndCount)
             return
         }
 
+        var firstRemovalError: Error?
         for snapshotItem in snapshotItems {
             do {
                 try fileManager.removeItem(at: snapshotItem)
+            } catch CocoaError.fileNoSuchFile {
+                // The desired state is already reached if the item disappears after enumeration.
+                continue
             } catch {
+                firstRemovalError = firstRemovalError ?? error
                 let itemName = snapshotItem.lastPathComponent
                 let errorDescription = error.localizedDescription
                 Logger.general.error("Failed to remove snapshot \(itemName, privacy: .public): \(errorDescription, privacy: .public)")
             }
         }
+
+        if let firstRemovalError {
+            pixelFiring?.fire(AppSwitcherSnapshotClearingPixel.failed(firstRemovalError), frequency: .dailyAndCount)
+        }
     }
+}
+
+private enum AppSwitcherSnapshotClearingPixel: PixelKit.Event {
+    case failed(Error)
+
+    var name: String { "app-switcher_snapshot_clearing_failed" }
+
+    var parameters: [String: String]? { nil }
+
+    var error: NSError? {
+        switch self {
+        case .failed(let error):
+            return error as NSError
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }

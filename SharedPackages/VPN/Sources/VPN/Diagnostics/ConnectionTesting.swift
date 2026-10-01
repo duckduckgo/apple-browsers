@@ -18,7 +18,7 @@
 
 import Foundation
 
-public enum ConnectionTestingResult {
+public enum ConnectionTestingResult: Equatable {
     case connected
     case reconnected(failureCount: Int)
     case disconnected(failureCount: Int)

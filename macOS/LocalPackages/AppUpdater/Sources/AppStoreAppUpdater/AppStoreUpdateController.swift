@@ -66,7 +66,6 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
     public let notificationPresenter: UpdateNotificationPresenting
 
     public var lastUpdateCheckDate: Date?
-    public var lastUpdateNotificationShownDate: Date = .distantPast
 
     /// Automatic updates for App Store users cannot be enabled from the browser.
     public var areAutomaticUpdatesEnabled: Bool = false
@@ -217,9 +216,9 @@ extension UpdateControllerFactory: AppStoreUpdateControllerFactory {
                     Logger.updates.log("App Store: no update available")
                     updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
                 }
-            }
 
-            showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+                showUpdateNotificationIfNeeded(isOnboardingFinished: isOnboardingFinished)
+            }
 
             // Record check time for rate limiting
             await updateCheckState.recordCheckTime()

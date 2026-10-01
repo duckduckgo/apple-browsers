@@ -24,6 +24,22 @@ import XCTest
 @MainActor
 final class UnifiedToggleInputToolbarViewTests: XCTestCase {
 
+    func test_emptyInput_whenAIVoiceChatBecomesInactive_showsDisabledSubmitButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isAIVoiceChatActive = true
+
+        guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
+            XCTFail("Expected to find submit button")
+            return
+        }
+        XCTAssertTrue(submitButton.isEnabled)
+
+        sut.isAIVoiceChatActive = false
+
+        XCTAssertFalse(submitButton.isEnabled)
+    }
+
     func test_compactWidthWithLongModelName_keepsSubmitButtonVisible() {
         let sut = UnifiedToggleInputToolbarView()
         sut.translatesAutoresizingMaskIntoConstraints = false
@@ -114,6 +130,118 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(selectedToolClearButton?.isEnabled ?? false)
     }
 
+    /// A spent allowance leaves the card's own CTA as the only live control.
+    func test_isInputBlockedByUsageLimit_disablesToolbarConfigurationButtons() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isImageButtonEnabled = true
+        sut.selectedTool = .webSearch
+
+        let attachmentButton = findButton(accessibilityLabel: UserText.aiChatToolbarAttachButtonAccessibilityLabel, in: sut)
+        let toolsButton = findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)
+        let reasoningButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Reasoning", in: sut)
+        let modelChipButton = findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.ModelChip", in: sut)
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(attachmentButton?.isEnabled ?? true)
+        XCTAssertFalse(toolsButton?.isEnabled ?? true)
+        XCTAssertFalse(reasoningButton?.isEnabled ?? true)
+        XCTAssertFalse(modelChipButton?.isEnabled ?? true)
+
+        sut.isInputBlockedByUsageLimit = false
+
+        XCTAssertTrue(attachmentButton?.isEnabled ?? false)
+        XCTAssertTrue(toolsButton?.isEnabled ?? false)
+        XCTAssertTrue(reasoningButton?.isEnabled ?? false)
+        XCTAssertTrue(modelChipButton?.isEnabled ?? false)
+    }
+
+    func test_isInputBlockedByUsageLimit_disablesTheSubmitButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+
+        let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
+        XCTAssertTrue(submitButton?.isEnabled ?? false)
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
+    /// Voice is a way into a chat the allowance can't pay for either, so it greys out with submit.
+    func test_isInputBlockedByUsageLimit_disablesTheVoiceButton() {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isAIVoiceChatActive = true
+
+        let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
+        XCTAssertTrue(submitButton?.isEnabled ?? false, "Voice is live on an empty input")
+
+        sut.isInputBlockedByUsageLimit = true
+
+        XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
+    // MARK: - Ask submit button
+
+    func test_usesAskSubmitButton_showsTheAskTitleInsteadOfTheArrow() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+
+        sut.usesAskSubmitButton = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        XCTAssertNil(submitButton.image(for: .normal))
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.duckAIAskButtonTitle)
+        XCTAssertTrue(submitButton.isEnabled)
+    }
+
+    func test_usesAskSubmitButton_keepsTheVoiceButtonOnAnEmptyInput() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = false
+        sut.isAIVoiceChatActive = true
+
+        sut.usesAskSubmitButton = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertNil(submitButton.title(for: .normal))
+        XCTAssertNotNil(submitButton.image(for: .normal))
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
+    }
+
+    func test_usesAskSubmitButton_widensTheButtonToFitTheTitleAndKeepsItTappable() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        let container = makeContainer(for: sut)
+
+        sut.usesAskSubmitButton = true
+        container.layoutIfNeeded()
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        let titleWidth = try XCTUnwrap(submitButton.titleLabel).intrinsicContentSize.width
+        XCTAssertGreaterThan(submitButton.bounds.width, titleWidth)
+        XCTAssertEqual(submitButton.bounds.height, 40)
+        let trailingEdge = CGPoint(x: submitButton.bounds.maxX - 1, y: submitButton.bounds.midY)
+        XCTAssertTrue(submitButton.hitTest(trailingEdge, with: nil) === submitButton)
+    }
+
+    func test_usesAskSubmitButton_whenTurnedOff_restoresTheCircularArrow() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        let container = makeContainer(for: sut)
+        sut.usesAskSubmitButton = true
+        container.layoutIfNeeded()
+
+        sut.usesAskSubmitButton = false
+        container.layoutIfNeeded()
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertNil(submitButton.title(for: .normal))
+        XCTAssertNotNil(submitButton.image(for: .normal))
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
+        XCTAssertEqual(submitButton.bounds.size, CGSize(width: 40, height: 40))
+    }
+
     func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
         let sut = UnifiedToggleInputToolbarView()
         sut.isImageButtonEnabled = false
@@ -180,6 +308,22 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         if #available(iOS 16.0, *) {
             XCTAssertEqual(attachmentButton?.preferredMenuElementOrder, .fixed)
         }
+    }
+
+    private static let submitButtonIdentifier = "AIChat.Toolbar.Button.Submit"
+
+    private func makeContainer(for sut: UnifiedToggleInputToolbarView) -> UIView {
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 56))
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.layoutIfNeeded()
+        return container
     }
 
     private func findButton(accessibilityLabel: String, in view: UIView) -> UIButton? {

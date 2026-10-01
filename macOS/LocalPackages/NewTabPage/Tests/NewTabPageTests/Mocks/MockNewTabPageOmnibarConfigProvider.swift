@@ -55,6 +55,19 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isImageGenerationEnabled: Bool = false
 
+    var isUpdatedCreateImageEnabled: Bool = false
+
+    var imageGenerationModelId: String?
+
+    var activateImageGenerationResult: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+    private(set) var activateImageGenerationCallCount = 0
+
+    @MainActor
+    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        activateImageGenerationCallCount += 1
+        return activateImageGenerationResult
+    }
+
     var isWebSearchEnabled: Bool = false
 
     var isCustomizeResponsesEnabled: Bool = false
@@ -74,6 +87,31 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         refreshUsageLimitsCallCount += 1
+    }
+
+    var usageLimitsResult: NewTabPageDataModel.OmnibarUsageLimits?
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? {
+        usageLimitsResult
+    }
+
+    private(set) var dismissUsageLimitsCallCount = 0
+    @MainActor
+    func dismissUsageLimits() {
+        dismissUsageLimitsCallCount += 1
+    }
+
+    var selectUsageLimitsCtaOutcome = NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome.handled
+    private(set) var selectUsageLimitsCtaModelIds: [String?] = []
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome {
+        selectUsageLimitsCtaModelIds.append(modelId)
+        return selectUsageLimitsCtaOutcome
+    }
+
+    let usageLimitsSubject = PassthroughSubject<Void, Never>()
+    var usageLimitsPublisher: AnyPublisher<Void, Never> {
+        usageLimitsSubject.eraseToAnyPublisher()
     }
 
     @Published var isAttachTabsEnabled: Bool = false

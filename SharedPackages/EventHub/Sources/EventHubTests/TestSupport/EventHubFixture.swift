@@ -38,6 +38,7 @@ final class EventHubFixture {
     private let backingStore: InMemoryKeyValueStore
     private let backingRepository: EventHubKeyValueStore
     private let spyPixelFiring = SpyPixelFiring()
+    private let spyConversionReporting = SpyConversionReporting()
 
     // The manager mutates all three of these on its own queue, asynchronously, so every test-side read
     // fences first. Reading `state(of:)`/`count(of:)` needs no such treatment: `activePixelStates` is
@@ -45,12 +46,15 @@ final class EventHubFixture {
     var store: InMemoryKeyValueStore { manager.settle(); return backingStore }
     var repository: EventHubKeyValueStore { manager.settle(); return backingRepository }
     var fired: [FiredPixel] { manager.settle(); return spyPixelFiring.fired }
+    var requested: [String] { manager.settle(); return spyConversionReporting.requested }
 
     private let enabledSubject: CurrentValueSubject<Bool, Never>
     private let settingsSubject: CurrentValueSubject<[String: Any]?, Never>
+    private let experimentSettingsSubject: CurrentValueSubject<[String: String], Never>
     private let settingsJSON: String
 
-    private init(store: InMemoryKeyValueStore, settingsJSON: String, enabled: Bool, hasSettings: Bool) {
+    private init(store: InMemoryKeyValueStore, settingsJSON: String, enabled: Bool, hasSettings: Bool,
+                 experimentSettings: [String: String], enrolled: Set<String>) {
         self.backingStore = store
         self.settingsJSON = settingsJSON
         self.scheduler = ManualEventHubScheduler(startMillis: Int64(Self.start.timeIntervalSince1970 * 1000))
@@ -59,17 +63,29 @@ final class EventHubFixture {
         self.backingRepository = EventHubKeyValueStore(store: store, parser: parser)
         self.enabledSubject = CurrentValueSubject(enabled)
         self.settingsSubject = CurrentValueSubject(hasSettings ? settingsDictionary(settingsJSON) : nil)
+        self.experimentSettingsSubject = CurrentValueSubject(experimentSettings)
+        self.spyConversionReporting.enrolled = enrolled
 
         let settingsProvider = TestSettingsProviding(enabled: enabledSubject.eraseToAnyPublisher(), settings: settingsSubject.eraseToAnyPublisher())
 
         self.manager = EventHub(store: backingRepository, parser: parser, settings: settingsProvider,
-                                 scheduler: scheduler, pixelFiring: spyPixelFiring)
+                                 scheduler: scheduler, pixelFiring: spyPixelFiring,
+                                 conversionReporting: spyConversionReporting,
+                                 experimentSettings: experimentSettingsSubject.eraseToAnyPublisher())
         scheduler.settle = { [weak manager = self.manager] in manager?.settle() }
     }
 
     /// A foregrounded fixture with config applied — the common "active period" starting point.
-    static func active(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubFixture {
-        let fixture = EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
+    ///
+    /// - Parameters:
+    ///   - experimentSettings: the raw `settings` JSON of each experiment subfeature, keyed by
+    ///     subfeature ID, that experiment metrics are parsed out of. Empty for telemetry-only tests.
+    ///   - enrolled: the experiments the (simulated) experiment framework considers active. Requests
+    ///     for anything else are dropped by `SpyConversionReporting`, as the real framework drops them.
+    static func active(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true,
+                       experimentSettings: [String: String] = [:], enrolled: Set<String> = []) -> EventHubFixture {
+        let fixture = EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled,
+                                      hasSettings: hasSettings, experimentSettings: experimentSettings, enrolled: enrolled)
         fixture.manager.onAppForegrounded()
         fixture.manager.onConfigChanged()
         return fixture
@@ -77,7 +93,8 @@ final class EventHubFixture {
 
     /// A backgrounded fixture (config not yet applied) — for foreground-gating scenarios.
     static func background(_ settingsJSON: String, enabled: Bool = true, hasSettings: Bool = true) -> EventHubFixture {
-        EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled, hasSettings: hasSettings)
+        EventHubFixture(store: InMemoryKeyValueStore(), settingsJSON: settingsJSON, enabled: enabled,
+                        hasSettings: hasSettings, experimentSettings: [:], enrolled: [])
     }
 
     static func webEvent(_ type: String) -> [String: Any] {
@@ -110,6 +127,22 @@ final class EventHubFixture {
 
     func setSettings(_ json: String) { settingsSubject.send(settingsDictionary(json)) }
 
+    /// Replaces the experiment settings, as a remote-config update would — the metrics registry is
+    /// rebuilt wholesale, so removing a metric here is the kill switch M-LIF-2 and M-LIF-4 exercise.
+    func setExperimentSettings(_ settings: [String: String]) { experimentSettingsSubject.send(settings) }
+
+    /// Replaces the set of experiments the framework considers active, as an enrollment (M-LIF-1,
+    /// M-LIF-3) or an experiment being disabled in config (M-LIF-5) would.
+    ///
+    /// Fences first, unlike `setSettings`/`setEnabled`: those reach the manager through a publisher and
+    /// so land on its queue *behind* any event already dispatched, whereas this mutates the spy
+    /// directly from the test thread. Without the fence an event from a previous phase could still be
+    /// in flight and be judged against the new enrollment.
+    func setEnrolled(_ experiments: Set<String>) {
+        manager.settle()
+        spyConversionReporting.enrolled = experiments
+    }
+
     func advance(by interval: TimeInterval) { scheduler.advance(by: interval) }
 
     /// Moves virtual time forward but leaves the armed period-end callback pending, so a test can act
@@ -131,7 +164,9 @@ final class EventHubFixture {
         manager.onAppBackgrounded()
         scheduler.advance(by: Self.writeBehindFlush)
 
-        let fixture = EventHubFixture(store: backingStore, settingsJSON: settingsJSON, enabled: enabledSubject.value, hasSettings: true)
+        let fixture = EventHubFixture(store: backingStore, settingsJSON: settingsJSON, enabled: enabledSubject.value,
+                                      hasSettings: true, experimentSettings: experimentSettingsSubject.value,
+                                      enrolled: spyConversionReporting.enrolled)
         fixture.manager.onAppForegrounded()
         fixture.manager.onConfigChanged()
         return fixture

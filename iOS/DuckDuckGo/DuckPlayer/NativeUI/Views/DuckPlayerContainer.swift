@@ -27,6 +27,7 @@ public enum DuckPlayerContainer {
         static let springDuration: Double = 0.5
         static let springBounce: Double = 0.2
         static let initialOffsetValue: Double = 500.0
+        static let presentedOffset: CGFloat = 10
         static let dragThreshold: CGFloat = 50
         static let dragAreaHeight: CGFloat = 44
         static let contentTopPadding: CGFloat = 24
@@ -104,12 +105,14 @@ public enum DuckPlayerContainer {
         let allowDragGesture: Bool
         /// Drops the sheet chrome (panel background + top border) so the content floats as a capsule.
         let floatingStyle: Bool
+        let showsSheetChrome: Bool
         let content: (PresentationMetrics) -> Content
         let onDismiss: (Bool) -> Void
         let onPresentDuckPlayer: () -> Void
 
         public init(
-            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, floatingStyle: Bool = false, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
+            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, floatingStyle: Bool = false,
+            showsSheetChrome: Bool = true, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
             @ViewBuilder content: @escaping (PresentationMetrics) -> Content
         ) {
             self.viewModel = viewModel
@@ -117,6 +120,7 @@ public enum DuckPlayerContainer {
             self.showDragHandle = showDragHandle
             self.allowDragGesture = allowDragGesture
             self.floatingStyle = floatingStyle
+            self.showsSheetChrome = showsSheetChrome
             self.content = content
             self.onDismiss = onDismiss
             self.onPresentDuckPlayer = onPresentDuckPlayer
@@ -129,6 +133,7 @@ public enum DuckPlayerContainer {
                 showDragHandle: showDragHandle,
                 allowDragGesture: allowDragGesture,
                 floatingStyle: floatingStyle,
+                showsSheetChrome: showsSheetChrome,
                 content: content,
                 onHeightChange: { sheetHeight = $0 },
                 onDismiss: onDismiss,
@@ -160,7 +165,7 @@ public enum DuckPlayerContainer {
 // MARK: - Private
 
 private func calculateSheetOffset(for visible: Bool, containerHeight: Double) -> Double {
-    visible ? 10 : containerHeight
+    visible ? Double(DuckPlayerContainer.Constants.presentedOffset) : containerHeight
 }
 
 @MainActor
@@ -188,6 +193,7 @@ private struct SheetView<Content: View>: View {
     let showDragHandle: Bool
     let allowDragGesture: Bool
     let floatingStyle: Bool
+    let showsSheetChrome: Bool
     let content: (DuckPlayerContainer.PresentationMetrics) -> Content
     let onHeightChange: (Double) -> Void
     let onDismiss: (Bool) -> Void
@@ -296,11 +302,16 @@ private struct SheetView<Content: View>: View {
         .onWidthChange { newWidth in
             sheetWidth = newWidth
         }
-        .padding(.bottom, floatingStyle ? DuckPlayerContainer.Constants.floatingBottomPadding : DuckPlayerContainer.Constants.legacyBottomPadding)
-        .background(floatingStyle ? Color.clear : Color(designSystemColor: .panel))
+        .padding(
+            .bottom,
+            floatingStyle || !showsSheetChrome
+                ? DuckPlayerContainer.Constants.floatingBottomPadding
+                : DuckPlayerContainer.Constants.legacyBottomPadding
+        )
+        .background(floatingStyle || !showsSheetChrome ? Color.clear : Color(designSystemColor: .panel))
         .overlay(
             Group {
-                if !floatingStyle {
+                if !floatingStyle && showsSheetChrome {
                     Rectangle()
                         .fill(Color(uiColor: UIColor { traitCollection in
                             switch traitCollection.userInterfaceStyle {

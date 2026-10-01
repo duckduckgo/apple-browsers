@@ -100,10 +100,11 @@ public enum DataBrokerProtectionSharedPixels {
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let isFreeScan = "free_scan"
+        public static let isSilentFailure = "isSilentFailure"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String, isFreeScan: Bool?)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?, isFreeScan: Bool?, isSilentFailure: Bool)
     case otherError(error: Error, dataBroker: String, version: String, isFreeScan: Bool?)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
@@ -169,6 +170,10 @@ public enum DataBrokerProtectionSharedPixels {
 
     // Temporary Freemium PIR monitoring
     case freemiumPIRMaintenanceScanSkipped
+
+    // Challenge baseline pixels
+    case mainFrameChallengeDetected(dataBroker: String, brokerVersion: String)
+    case challengeClearanceObserved(dataBroker: String, brokerVersion: String)
 
     // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -295,6 +300,10 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             // Temporary Freemium PIR monitoring
         case .freemiumPIRMaintenanceScanSkipped: return "dbp_freemium_pir_maintenance_scan_skipped"
 
+            // Challenge baseline pixels
+        case .mainFrameChallengeDetected: return "dbp_challenge_main-frame_detected_macos"
+        case .challengeClearanceObserved: return "dbp_challenge_clearance_observed_macos"
+
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
         case .weeklyReportStalledOptOuts: return "dbp_event_weekly-report_stalled-optouts"
@@ -356,13 +365,14 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version]
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan):
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent, let isFreeScan, let isSilentFailure):
             let params = ["actionID": actionId,
                           "message": message,
                           Consts.dataBrokerParamKey: dataBroker,
                           Consts.dataBrokerVersionKey: version,
                           Consts.stepTypeKey: stepType?.rawValue ?? "unknown",
-                          Consts.parentKey: dataBrokerParent ?? ""]
+                          Consts.parentKey: dataBrokerParent ?? "",
+                          Consts.isSilentFailure: isSilentFailure.description]
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
         case .otherError(let error, let dataBroker, let version, let isFreeScan):
             let params = ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
@@ -543,6 +553,12 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
         case .freemiumUpsell,
                 .freemiumPIRMaintenanceScanSkipped:
             return [:]
+        case .mainFrameChallengeDetected(let dataBroker, let brokerVersion),
+                .challengeClearanceObserved(let dataBroker, let brokerVersion):
+            return [
+                Consts.dataBrokerParamKey: dataBroker,
+                Consts.dataBrokerVersionKey: brokerVersion
+            ]
         case .scanningEventNewMatch(let dataBrokerURL),
                 .scanningEventReAppearance(let dataBrokerURL):
             return [Consts.dataBrokerParamKey: dataBrokerURL]
@@ -644,6 +660,16 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
         }
     }
 
+    public var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .mainFrameChallengeDetected,
+                .challengeClearanceObserved:
+            return .none
+        default:
+            return .platformDefault
+        }
+    }
+
     public var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .httpError,
@@ -690,6 +716,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .firstScan,
                 .freemiumUpsell,
                 .freemiumPIRMaintenanceScanSkipped,
+                .mainFrameChallengeDetected,
+                .challengeClearanceObserved,
                 .weeklyReportBackgroundTaskSession,
                 .weeklyReportStalledScans,
                 .weeklyReportStalledOptOuts,
@@ -771,7 +799,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .secureVaultDatabaseRecreated:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .httpError(let error, _, _, _, _),
-                    .actionFailedError(let error, _, _, _, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _, _, _),
                     .otherError(let error, _, _, _):
                 pixelKit.fire(DebugEvent(event, error: error).prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .databaseError(let error, _),
@@ -847,6 +875,9 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix))
             case .freemiumPIRMaintenanceScanSkipped:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
+            case .mainFrameChallengeDetected,
+                    .challengeClearanceObserved:
+                pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)
             case .updateDataBrokersFailure(_, _, _, let error):

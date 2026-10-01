@@ -194,9 +194,7 @@ extension Preferences {
                         .padding(.leading, 19)
                     }
 
-                    if model.shouldShowPromptBarPreferences {
-                        PromptBarPreferencesView(preferences: model.promptBarPreferences)
-                    }
+                    PromptBarPreferencesView(preferences: model.promptBarPreferences)
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 

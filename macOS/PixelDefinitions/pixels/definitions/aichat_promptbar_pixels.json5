@@ -118,6 +118,59 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_promptbar_create_image_model_switched": {
+        "description": "Fired when selecting Create Image in the Prompt Bar switches an unsupported model to an accessible image-capable model",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "from_model_id",
+                "type": "string",
+                "description": "Identifier of the unsupported model selected before the switch"
+            },
+            {
+                "key": "to_model_id",
+                "type": "string",
+                "description": "Identifier of the image-capable model selected automatically"
+            },
+            {
+                "key": "from_model_privacy_preserving",
+                "type": "boolean",
+                "description": "Whether the model selected before the switch had extra privacy protections"
+            },
+            {
+                "key": "entry_point",
+                "type": "string",
+                "enum": ["tools_menu"],
+                "description": "Where the user selected Create Image"
+            }
+        ]
+    },
+    "m_mac_aichat_promptbar_create_image_model_switch_notice_dismissed": {
+        "description": "Fired when the user dismisses the model-switch notice shown after selecting Create Image in the Prompt Bar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_create_image_unavailable": {
+        "description": "Fired when Create Image in the Prompt Bar cannot find an accessible image-capable model",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_promptbar_create_image_submitted_with_unsupported_model": {
+        "description": "Error monitor fired when a Create Image prompt is submitted from the Prompt Bar while the selected model is known not to support image generation",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
     "m_mac_aichat_promptbar_web_search_activated": {
         "description": "Fired when user selects the Web Search tool in the Prompt Bar to enter web search mode",
         "owners": ["Bunn"],

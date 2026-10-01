@@ -112,7 +112,7 @@ struct BannerView: View {
             } label: {
                 Text(viewModel.primaryAction.title)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: themeManager.isAppRebranded ? .themedActionButton : .legacyActionButton))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
 
             if let secondaryAction = viewModel.secondaryAction {
                 Button {
@@ -120,7 +120,7 @@ struct BannerView: View {
                 } label: {
                     Text(secondaryAction.title)
                 }
-                .buttonStyle(DismissActionButtonStyle(stateColors: themeManager.isAppRebranded ? .themedDismissButton : .legacyDismissButton))
+                .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             }
         }
     }

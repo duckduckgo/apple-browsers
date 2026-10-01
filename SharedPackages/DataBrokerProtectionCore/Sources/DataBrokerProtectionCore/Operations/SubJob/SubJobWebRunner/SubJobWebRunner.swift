@@ -106,7 +106,8 @@ public extension SubJobWebRunning {
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         if !stageCalculator.isRetrying {
-            retriesCountOnError = 1
+            // Scripts are not idempotent, so a failed one is never re-run. Authors handle their own retries.
+            retriesCountOnError = action is ExecuteScriptAction ? 0 : 1
         }
 
         return false
@@ -395,9 +396,12 @@ public extension SubJobWebRunning {
                                                                                delegate: self,
                                                                                isFakeBroker: isFakeBroker,
                                                                                executionConfig: executionConfig,
+                                                                               challengePixelDataBroker: context.dataBroker.url,
+                                                                               challengePixelBrokerVersion: context.dataBroker.version,
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
-                                                                               contentBlocking: contentBlocking)
+                                                                               contentBlocking: contentBlocking,
+                                                                               pixelHandler: pixelHandler)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)
@@ -565,6 +569,27 @@ public extension SubJobWebRunning {
             if actionsHandler?.stepType == .optOut {
                 stageCalculator.fireOptOutConditionNotFound()
             }
+
+            await executeNextStep()
+            return
+        }
+
+        if let executeScriptAction = actionsHandler?.currentAction() as? ExecuteScriptAction,
+           executeScriptAction.failSilently,
+           case DataBrokerProtectionError.actionFailed(let actionID, let message) = error {
+            Logger.action.log(loggerContext(for: executeScriptAction),
+                              message: "Script action failed silently, continuing with regular action execution")
+
+            // Fired here rather than through the status reporting delegate, which would mark the job failed.
+            pixelHandler.fire(.actionFailedError(error: error,
+                                                 actionId: actionID,
+                                                 message: message,
+                                                 dataBroker: context.dataBroker.url,
+                                                 version: context.dataBroker.version,
+                                                 stepType: actionsHandler?.stepType,
+                                                 dataBrokerParent: context.dataBroker.parent,
+                                                 isFreeScan: stageCalculator.isFreeScan,
+                                                 isSilentFailure: true))
 
             await executeNextStep()
             return

@@ -336,6 +336,10 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
         return subfeatureData.settings
     }
 
+    public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {
+        subfeatures(for: feature).compactMapValues(\.settings)
+    }
+
     public func userEnabledProtection(forDomain domain: String) {
         let domainToRemove = locallyUnprotected.unprotectedDomains.first { unprotectedDomain in
             unprotectedDomain.punycodeEncodedHostname.lowercased() == domain

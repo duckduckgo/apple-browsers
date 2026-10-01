@@ -22,25 +22,23 @@ import Testing
 import RemoteMessaging
 import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
 @Suite("RMF - Pixel Reporter Tests", .serialized)
 final class RemoteMessagingPixelReporterTests {
     private let mockParameterRandomiser: MockParameterRandomiser
+    private let pixelKitMock = PixelKitMock()
     private let sut: RemoteMessagePixelReporter
 
     init() {
         let mockParameterRandomiser = MockParameterRandomiser()
         self.mockParameterRandomiser = mockParameterRandomiser
         sut = RemoteMessagePixelReporter(
-            pixelFiring: PixelFiringMock.self,
+            pixelFiring: pixelKitMock,
             parameterRandomiser: { useCase, parameters in
                 mockParameterRandomiser.mergeRandomizedParameters(for: useCase, with: parameters)
             }
         )
-    }
-
-    deinit {
-        PixelFiringMock.tearDown()
     }
 
     // MARK: - Message Appeared Tests
@@ -49,15 +47,15 @@ final class RemoteMessagingPixelReporterTests {
     func whenMessageAppearsForFirstTimeThenBothPixelsFire() {
         // GIVEN
         let message = makeRemoteMessage(id: "test-message-1", isMetricsEnabled: true)
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
 
         // WHEN
         sut.measureRemoteMessageAppeared(message, hasAlreadySeenMessage: false)
 
         // THEN
-        let capturedPixels = PixelFiringMock.allPixelsFired.compactMap(\.pixelName)
-        #expect(!PixelFiringMock.allPixelsFired.isEmpty)
-        #expect(PixelFiringMock.allPixelsFired.count == 2)
+        let capturedPixels = pixelKitMock.actualFireCalls.map(\.pixel.name)
+        #expect(!pixelKitMock.actualFireCalls.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.count == 2)
         #expect(capturedPixels.first == Pixel.Event.remoteMessageShown.name)
         #expect(capturedPixels.last == Pixel.Event.remoteMessageShownUnique.name)
     }
@@ -66,15 +64,15 @@ final class RemoteMessagingPixelReporterTests {
     func whenMessageAppearsAgainThenOnlyShownPixelFires() {
         // GIVEN
         let message = makeRemoteMessage(id: "test-message-1", isMetricsEnabled: true)
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
 
         // WHEN
         sut.measureRemoteMessageAppeared(message, hasAlreadySeenMessage: true)
 
         // THEN
-        #expect(!PixelFiringMock.allPixelsFired.isEmpty)
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.allPixelsFired.first?.pixelName == Pixel.Event.remoteMessageShown.name)
+        #expect(!pixelKitMock.actualFireCalls.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.name == Pixel.Event.remoteMessageShown.name)
     }
 
     @Test("Check Message ID Is Included In Parameters")
@@ -89,7 +87,7 @@ final class RemoteMessagingPixelReporterTests {
         // THEN
         #expect(mockParameterRandomiser.didCallMergeRandomizedParameters)
         #expect(mockParameterRandomiser.capturedParameters[PixelParameters.message] == "test-message-1")
-        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.message] == "randomised-parameter-1")
     }
 
     @Test("Check No Pixels Fire When Metrics Are Disabled")
@@ -101,7 +99,7 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageAppeared(message, hasAlreadySeenMessage: false)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     // MARK: - Dismiss Tests
@@ -115,9 +113,9 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message, dismissType: .closeButton)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == "close_button")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageDismissed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.dismissType] == "close_button")
     }
 
     @Test("Check Dismissed Pixel Fires With Pull Down Type")
@@ -129,9 +127,9 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message, dismissType: .pullDown)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == "pull_down")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageDismissed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.dismissType] == "pull_down")
     }
 
     @Test("Check Dismissed Pixel Fires With Primary Action Type")
@@ -143,9 +141,9 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == "primary_action")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageDismissed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.dismissType] == "primary_action")
     }
 
     @Test("Check Dismissed Pixel Fires With Item Action Type")
@@ -157,9 +155,9 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message, dismissType: .itemAction)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == "item_action")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageDismissed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.dismissType] == "item_action")
     }
 
     @Test("Check Dismissed Pixel Fires Without Dismiss Type When Nil")
@@ -171,9 +169,9 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message, dismissType: nil)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == nil)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageDismissed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.dismissType] == nil)
     }
 
     @Test("Check Default Extension Method Works")
@@ -185,9 +183,9 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message) // Using extension default
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == nil)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageDismissed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.dismissType] == nil)
     }
 
     // MARK: - Action Tests
@@ -201,8 +199,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageActionClicked(message)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageActionClicked.name)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageActionClicked.name)
     }
 
     @Test("Check Primary Action Clicked Pixel Fires")
@@ -214,8 +212,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessagePrimaryActionClicked(message)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessagePrimaryActionClicked.name)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessagePrimaryActionClicked.name)
     }
 
     @Test("Check Secondary Action Clicked Pixel Fires")
@@ -227,8 +225,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageSecondaryActionClicked(message)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageSecondaryActionClicked.name)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageSecondaryActionClicked.name)
     }
 
     // MARK: - Sheet Tests
@@ -246,10 +244,10 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageSheetShown(message, sheetResult: sheetResult)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageSheet.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
-        #expect(PixelFiringMock.lastParams?[PixelParameters.sheetResult] == "\(sheetResult)")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageSheet.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.message] == "randomised-parameter-1")
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.sheetResult] == "\(sheetResult)")
     }
 
     // MARK: - Card Tests
@@ -265,10 +263,10 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageCardShown(message, cardId: cardId)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageCardShown.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
-        #expect(PixelFiringMock.lastParams?[PixelParameters.card] == cardId)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageCardShown.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.message] == "randomised-parameter-1")
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.card] == cardId)
     }
 
     @Test("Check Card Clicked Pixel Fires With Card ID")
@@ -282,10 +280,10 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageCardClicked(message, cardId: cardId)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageCardClicked.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
-        #expect(PixelFiringMock.lastParams?[PixelParameters.card] == cardId)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageCardClicked.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.message] == "randomised-parameter-1")
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.card] == cardId)
     }
 
     // MARK: - Metrics Disabled Tests
@@ -299,7 +297,7 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageDismissed(message, dismissType: .closeButton)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @Test("Check No Pixel Fires When Metrics Disabled For Actions")
@@ -313,8 +311,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageSecondaryActionClicked(message)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
-        #expect(PixelFiringMock.lastParams == nil)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == nil)
     }
 
     @Test("Check No Pixel Fires When Metrics Disabled For Sheet")
@@ -326,8 +324,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageSheetShown(message, sheetResult: true)
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
-        #expect(PixelFiringMock.lastParams == nil)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == nil)
     }
 
     @Test("Check No Pixel Fires When Metrics Disabled For Cards")
@@ -340,8 +338,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageCardClicked(message, cardId: "card-789")
 
         // THEN
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
-        #expect(PixelFiringMock.lastParams == nil)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == nil)
     }
 
     @Test("Check Image Load Success Pixel Fires")
@@ -351,9 +349,9 @@ final class RemoteMessagingPixelReporterTests {
 
         sut.measureRemoteMessageImageLoadSuccess(message)
 
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageImageLoadSuccess.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageImageLoadSuccess.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.message] == "randomised-parameter-1")
     }
 
     @Test("Check Image Load Failed Pixel Fires")
@@ -363,9 +361,9 @@ final class RemoteMessagingPixelReporterTests {
 
         sut.measureRemoteMessageImageLoadFailed(message)
 
-        #expect(PixelFiringMock.allPixelsFired.count == 1)
-        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageImageLoadFailed.name)
-        #expect(PixelFiringMock.lastParams?[PixelParameters.message] == "randomised-parameter-1")
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.remoteMessageImageLoadFailed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PixelParameters.message] == "randomised-parameter-1")
     }
 
     @Test("Check No Image Pixel Fires When Metrics Disabled")
@@ -375,8 +373,8 @@ final class RemoteMessagingPixelReporterTests {
         sut.measureRemoteMessageImageLoadSuccess(message)
         sut.measureRemoteMessageImageLoadFailed(message)
 
-        #expect(PixelFiringMock.allPixelsFired.isEmpty)
-        #expect(PixelFiringMock.lastParams == nil)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == nil)
     }
 }
 

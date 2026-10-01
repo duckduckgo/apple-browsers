@@ -48,6 +48,7 @@ let package = Package(
         .package(path: "../Common"),
         .package(path: "../Persistence"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../DebugServer"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0")
@@ -97,7 +98,7 @@ let package = Package(
                 "AIChat",
                 "AIChatTestingUtilities",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
-                .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),

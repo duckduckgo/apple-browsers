@@ -66,12 +66,30 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
+    var isInputBlockedByUsageLimit: Bool = false {
+        didSet {
+            guard oldValue != isInputBlockedByUsageLimit else { return }
+            updateSubmitButtonAppearance()
+            updateToolbarControlsEnabledState()
+        }
+    }
+
     var usesNewPromptSubmitStyle: Bool = false {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// Swaps the arrow for an "Ask" label while the Terms of Service disclaimer shows.
+    var usesAskSubmitButton: Bool = false {
+        didSet {
+            guard oldValue != usesAskSubmitButton else { return }
+            updateSubmitButtonAppearance()
+        }
+    }
+
     private var isFireTab: Bool = false
     private var preservesSubmitStyleDuringDismissal = false
+    private var preservesAskTitleDuringDismissal = false
     private var isImageButtonAvailable = true
 
     func refreshFireMode(fireMode: Bool) {
@@ -90,20 +108,31 @@ final class UnifiedToggleInputToolbarView: UIView {
     func prepareForToolbarVisibilityChange(showToolbar: Bool) {
         if showToolbar {
             preservesSubmitStyleDuringDismissal = false
+            preservesAskTitleDuringDismissal = false
         } else {
             preservesSubmitStyleDuringDismissal = preservesSubmitStyleDuringDismissal || usesNewPromptSubmitStyle
+            preservesAskTitleDuringDismissal = preservesAskTitleDuringDismissal || usesAskSubmitButton
         }
         updateSubmitButtonAppearance()
     }
 
     func finalizeToolbarShown() {
-        guard preservesSubmitStyleDuringDismissal else { return }
+        guard preservesSubmitStyleDuringDismissal || preservesAskTitleDuringDismissal else { return }
         preservesSubmitStyleDuringDismissal = false
+        preservesAskTitleDuringDismissal = false
         updateSubmitButtonAppearance()
     }
 
     var modelName: String = "4o-mini" {
         didSet { updateModelChipConfiguration() }
+    }
+
+    var isModelChipMenuIndicatorHidden: Bool = false {
+        didSet {
+            guard oldValue != isModelChipMenuIndicatorHidden else { return }
+            updateModelChipConfiguration()
+            modelChipButton.isUserInteractionEnabled = !isModelChipMenuIndicatorHidden
+        }
     }
 
     var selectedTool: AIChatRAGTool? {
@@ -259,9 +288,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     private lazy var modelChipButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = modelName
-        config.image = UIImage(systemName: "chevron.down")?.withConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
-        )
+        config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
         config.imagePlacement = .trailing
         config.imagePadding = Constants.chipSpacing
         config.titleLineBreakMode = .byTruncatingTail
@@ -378,12 +405,16 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.Submit"
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
-            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
-        ])
+        button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize).isActive = true
         return button
+    }()
+
+    private lazy var submitButtonWidthConstraint: NSLayoutConstraint = {
+        let constraint = submitButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
+        constraint.isActive = true
+        return constraint
     }()
 
     private lazy var stopButton: CircularButton = {
@@ -501,8 +532,13 @@ private extension UnifiedToggleInputToolbarView {
         return button
     }
 
+    static let modelChipMenuIndicatorImage = UIImage(systemName: "chevron.down")?.withConfiguration(
+        UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+    )
+
     private func updateModelChipConfiguration() {
         modelChipButton.configuration?.title = modelName
+        modelChipButton.configuration?.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
     }
 
     private func updateModelPickerPrimaryAction() {
@@ -533,6 +569,7 @@ private extension UnifiedToggleInputToolbarView {
 
     func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
+        let showsAskTitle = (usesAskSubmitButton || preservesAskTitleDuringDismissal) && !showVoice
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -543,11 +580,21 @@ private extension UnifiedToggleInputToolbarView {
                 return DesignSystemImages.Glyphs.Size24.arrowUp
             }
         }()
-        submitButton.setImage(icon, for: .normal)
+        let askTitle = showsAskTitle ? UserText.duckAIAskButtonTitle : nil
+        submitButton.setImage(askTitle == nil ? icon : nil, for: .normal)
+        submitButton.setTitle(askTitle, for: .normal)
+        submitButton.accessibilityLabel = askTitle ?? UserText.aiChatToolbarSubmitButtonAccessibilityLabel
+        submitButtonWidthConstraint.constant = askTitle.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.toolButtonSize)
+        } ?? Constants.toolButtonSize
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
-        let isActive = submitAllowed || showVoice
+        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive
-        if showVoice {
+        // The blocked button keeps its icon and takes the inactive submit fill: the voice and
+        // return-key styles have no disabled state of their own.
+        if isInputBlockedByUsageLimit {
+            submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+        } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {
             submitButton.applyReturnKeyStyle()
@@ -567,7 +614,7 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     func updateToolbarControlsEnabledState() {
-        let controlsAreEnabled = !isGenerating
+        let controlsAreEnabled = !isGenerating && !isInputBlockedByUsageLimit
         imageButton.isEnabled = controlsAreEnabled && isImageButtonAvailable
         toolsButton.isEnabled = controlsAreEnabled
         reasoningButton.isEnabled = controlsAreEnabled

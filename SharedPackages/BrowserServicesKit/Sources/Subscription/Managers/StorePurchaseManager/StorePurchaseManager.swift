@@ -303,9 +303,11 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             let applicableProductIdentifiers = storeSubscriptionConfiguration.subscriptionIdentifiers(for: storefrontRegion)
             let storeKitProducts = try await productFetcher.products(for: applicableProductIdentifiers)
             var availableProducts: [AppStoreSubscriptionProduct] = []
-            for product in storeKitProducts {
-                let product = await AppStoreSubscriptionProduct.create(product: product)
-                availableProducts.append(product)
+            if subscriptionFeatureFlagger?.isFeatureOn(.useSubscriptionNoProductsOverride) != true {
+                for product in storeKitProducts {
+                    let product = await AppStoreSubscriptionProduct.create(product: product)
+                    availableProducts.append(product)
+                }
             }
             Logger.subscriptionStorePurchaseManager.log("updateAvailableProducts fetched \(availableProducts.count) products for \(storefrontCountryCode ?? "<nil>", privacy: .public)")
 
@@ -650,6 +652,7 @@ public extension UserDefaults {
 
     enum Constants {
         static let storefrontRegionOverrideKey = "Subscription.debug.storefrontRegionOverride"
+        static let noSubscriptionProductsOverrideKey = "Subscription.debug.noProductsOverride"
         static let usaValue = "usa"
         static let rowValue = "row"
         static let hasPurchasePendingTransactionKey = "Subscription.hasPurchasePendingTransaction"
@@ -677,6 +680,11 @@ public extension UserDefaults {
                 removeObject(forKey: Constants.storefrontRegionOverrideKey)
             }
         }
+    }
+
+    dynamic var noSubscriptionProductsOverride: Bool {
+        get { bool(forKey: Constants.noSubscriptionProductsOverrideKey) }
+        set { set(newValue, forKey: Constants.noSubscriptionProductsOverrideKey) }
     }
 
     /// Indicates that a subscription purchase entered the pending state (e.g., Ask to Buy, payment issues).

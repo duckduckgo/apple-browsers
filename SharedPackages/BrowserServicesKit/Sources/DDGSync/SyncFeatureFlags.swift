@@ -108,8 +108,12 @@ public protocol SyncFeatureFlagProviding {
     func isPairingV2ScanningEnabled() -> Bool
     /// Allows this client to present Pairing V2 codes to peers.
     func isPairingV2CodeEnabled() -> Bool
+    /// Allows this client to negotiate and use Exchange protocol v2.1.
+    func canUseExchangeV2Point1() -> Bool
     /// Allows this client to create and register account_info keys for the unified device list.
     func canWriteUnifiedDeviceList() -> Bool
+    /// Allows legacy-only device renames to use PATCH so stale unified device info is cleared.
+    func canUsePatchEndpointForLegacyDeviceRename() -> Bool
     /// Allows this client to read decrypted metadata from the unified device list.
     func canReadUnifiedDeviceList() -> Bool
 }
@@ -119,18 +123,24 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
     private let isScopedAccessCredentialsEnabledCallback: () -> Bool
     private let isPairingV2ScanningEnabledCallback: () -> Bool
     private let isPairingV2CodeEnabledCallback: () -> Bool
+    private let canUseExchangeV2Point1Callback: () -> Bool
     private let canWriteUnifiedDeviceListCallback: () -> Bool
+    private let canUsePatchEndpointForLegacyDeviceRenameCallback: () -> Bool
     private let canReadUnifiedDeviceListCallback: () -> Bool
 
     public init(isScopedAccessCredentialsEnabled: @escaping () -> Bool,
                 isPairingV2ScanningEnabled: @escaping () -> Bool,
                 isPairingV2CodeEnabled: @escaping () -> Bool,
+                canUseExchangeV2Point1: @escaping () -> Bool,
                 canWriteUnifiedDeviceList: @escaping () -> Bool,
+                canUsePatchEndpointForLegacyDeviceRename: @escaping () -> Bool,
                 canReadUnifiedDeviceList: @escaping () -> Bool) {
         self.isScopedAccessCredentialsEnabledCallback = isScopedAccessCredentialsEnabled
         self.isPairingV2ScanningEnabledCallback = isPairingV2ScanningEnabled
         self.isPairingV2CodeEnabledCallback = isPairingV2CodeEnabled
+        self.canUseExchangeV2Point1Callback = canUseExchangeV2Point1
         self.canWriteUnifiedDeviceListCallback = canWriteUnifiedDeviceList
+        self.canUsePatchEndpointForLegacyDeviceRenameCallback = canUsePatchEndpointForLegacyDeviceRename
         self.canReadUnifiedDeviceListCallback = canReadUnifiedDeviceList
     }
 
@@ -146,8 +156,16 @@ public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
         isPairingV2CodeEnabledCallback()
     }
 
+    public func canUseExchangeV2Point1() -> Bool {
+        canUseExchangeV2Point1Callback()
+    }
+
     public func canWriteUnifiedDeviceList() -> Bool {
         canWriteUnifiedDeviceListCallback()
+    }
+
+    public func canUsePatchEndpointForLegacyDeviceRename() -> Bool {
+        canUsePatchEndpointForLegacyDeviceRenameCallback()
     }
 
     public func canReadUnifiedDeviceList() -> Bool {

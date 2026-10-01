@@ -159,6 +159,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                         featureFlagger: featureFlagger,
                                         privacyConfigurationManager: mockConfigManager,
                                         appSettings: AppSettingsMock(),
+                                        sitePermissionsStore: tabManager.sitePermissionsStore,
                                         aiChatSyncCleaner: MockAIChatSyncCleaning())
         makeHost = { homePageConfiguration in
             MainViewController(
@@ -645,6 +646,7 @@ private final class ActivationRemoteMessagingStore: RemoteMessagingStoring {
     func dismissRemoteMessage(withID id: String) async {}
     func fetchDismissedRemoteMessageIDs() -> [String] { [] }
     func updateRemoteMessage(withID id: String, asShown shown: Bool) async {}
+    func recordRemoteMessageImpression(withID id: String) async -> RemoteMessageImpressionResult { .notRecorded }
     func resetRemoteMessages() async {}
 }
 
@@ -652,7 +654,6 @@ private final class InactiveConditionalHostSwitchBarHandler: SwitchBarHandling {
     var currentText = ""
     var currentToggleState = TextEntryMode.search
     var isVoiceSearchEnabled = false
-    var isAIVoiceChatEnabled = false
     var hasUserInteractedWithText = false
     var isCurrentTextValidURL = false
     var buttonState = SwitchBarButtonState.noButtons
@@ -669,7 +670,7 @@ private final class InactiveConditionalHostSwitchBarHandler: SwitchBarHandling {
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }

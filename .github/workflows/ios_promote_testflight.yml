@@ -14,7 +14,7 @@ on:
 
 jobs:
   promote-testflight-to-appstore:
-    runs-on: bitrise:macos26-m4
+    runs-on: [image:osx-tahoe-26, m4pro]
 
     steps:
     - name: Check out the code

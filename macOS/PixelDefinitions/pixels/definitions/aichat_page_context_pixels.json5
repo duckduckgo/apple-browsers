@@ -37,7 +37,17 @@
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "context_type",
+                "description": "Which carrier the page was handed over in: pdf for a document tab, markdown for a regular web page. The daily variant dedupes by pixel name, so read the pdf/markdown split from the count variant.",
+                "type": "string",
+                "enum": ["pdf", "markdown"]
+            }
+        ]
     },
     "m_mac_aichat_page_context_extraction_failed": {
         "description": "Fired when Duck.ai page-context extraction was attempted but produced no usable content",
@@ -74,6 +84,12 @@
                 "description": "Bucketed request-to-result time. Present only when a result arrived.",
                 "type": "string",
                 "enum": ["under_1s", "1_to_5s", "over_5s"]
+            },
+            {
+                "key": "context_type",
+                "description": "Which carrier the page was handed over in: pdf for a document tab, markdown for a regular web page. The daily variant dedupes by pixel name, so read the pdf/markdown split from the count variant.",
+                "type": "string",
+                "enum": ["pdf", "markdown"]
             }
         ]
     },
@@ -88,9 +104,9 @@
             "channel",
             {
                 "key": "category",
-                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, internalPage for native special pages (non-web tab content, about:blank, Duck.ai), or documentTooLarge for a PDF over the size ceiling native will hand across the JS bridge.",
+                "description": "The prevention category: a blocklist media category key from aiPageContextBlocklist, internalPage for native special pages (non-web tab content, about:blank, Duck.ai), documentTooLarge for a PDF over the size ceiling native will hand across the JS bridge, or localFile for a page loaded from disk (file://), which is excluded from page context.",
                 "type": "string",
-                "enum": ["pdf", "image", "video", "audio", "internalPage", "documentTooLarge"]
+                "enum": ["pdf", "image", "video", "audio", "internalPage", "documentTooLarge", "localFile"]
             },
             {
                 "key": "reason",

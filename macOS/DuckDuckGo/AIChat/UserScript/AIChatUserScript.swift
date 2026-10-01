@@ -44,6 +44,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.browserTools?.register(self)
+        }
     }
 
     /// Arms the two-phase open-settings handshake. Called when a Duck.ai tab is opened
@@ -54,8 +58,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         openSettingsMessageCount = 0
     }
 
-    init(handler: AIChatUserScriptHandling, urlSettings: any KeyedStoring<AIChatDebugURLSettings>) {
+    private let browserTools: AIChatBrowserToolsService?
+
+    init(handler: AIChatUserScriptHandling,
+         urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
+         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService) {
         self.handler = handler
+        self.browserTools = browserTools
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -202,6 +211,24 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatOpenTabs
         case .getAIChatTabContent:
             return handler.getAIChatTabContent
+
+        // Browser tools. Answered regardless of the feature flag: the catalog is empty when it is
+        // off, so `tools/list` comes back empty rather than leaving the front end waiting.
+        case .initialize:
+            return handler.mcpInitialize
+        case .notificationsInitialized:
+            return handler.mcpNotificationsInitialized
+        case .toolsList:
+            return handler.mcpToolsList
+        case .toolsCall:
+            // The script is the pusher: a prompt raised by this call goes back to the page that made it.
+            return { [weak self] params, message in
+                guard let self else { return nil }
+                return await self.handler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
+            }
+        case .elicitationResponse:
+            return handler.mcpElicitationResponse
+
         case .reportMetric:
             return handler.reportMetric
         case .togglePageContextTelemetry:
@@ -241,5 +268,38 @@ final class AIChatUserScript: NSObject, Subfeature {
         default:
             return nil
         }
+    }
+}
+
+extension AIChatUserScript: AIChatElicitationPushing {
+
+    @MainActor
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        guard let webView, let broker else { return false }
+        broker.push(method: AIChatUserScriptMessages.elicitationCreate.rawValue, params: params, for: self, into: webView)
+        return true
+    }
+}
+
+extension AIChatUserScript: AIChatBrowserToolsPushing {
+
+    var pushTargetWebView: WKWebView? { webView }
+
+    @MainActor
+    func pushToolsListChanged() {
+        pushToDuckAI(.toolsListChanged, params: nil)
+    }
+
+    @MainActor
+    func pushTabChanged(_ data: AIChatTabChangedData) {
+        pushToDuckAI(.aiChatTabChanged, params: data)
+    }
+
+    /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.
+    private func pushToDuckAI(_ message: AIChatUserScriptMessages, params: Encodable?) {
+        guard let webView, let broker,
+              let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+        broker.push(method: message.rawValue, params: params, for: self, into: webView)
     }
 }

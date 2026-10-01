@@ -74,28 +74,30 @@ final class FullscreenControllerTests: XCTestCase {
     }
 }
 
-final class MainViewControllerDefaultBrowserPromptTests: XCTestCase, MainViewControllerFactory {
+final class MainViewControllerDefaultBrowserPromptUIHostingTests: XCTestCase, MainViewControllerFactory {
 
     @MainActor
-    func testDefaultBrowserPromptNotTriggeredInPopupWindow() {
-        let presenter = DefaultBrowserAndDockPromptPresentingMock()
-        let sut = makeMainViewController(isPopup: true, defaultBrowserPromptPresenter: presenter)
+    func testWhenInPopUpWindowThenUIHostingReportsIsInPopUpWindow() {
+        let sut: DefaultBrowserAndDockPromptUIHosting = makeMainViewController(isPopup: true, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
 
-        _ = sut.view
-        sut.windowDidBecomeKey()
-
-        XCTAssertEqual(presenter.tryToShowPromptCallCount, 0)
+        XCTAssertTrue(sut.isInPopUpWindow)
     }
 
     @MainActor
-    func testDefaultBrowserPromptShownInRegularWindow() {
-        let presenter = DefaultBrowserAndDockPromptPresentingMock()
-        let sut = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: presenter)
+    func testWhenInRegularWindowThenUIHostingDoesNotReportIsInPopUpWindow() {
+        let sut: DefaultBrowserAndDockPromptUIHosting = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
 
-        _ = sut.view
-        sut.windowDidBecomeKey()
+        XCTAssertFalse(sut.isInPopUpWindow)
+    }
 
-        XCTAssertEqual(presenter.tryToShowPromptCallCount, 1)
+    @MainActor
+    func testWhenViewIsNotInKeyWindowThenNoAnchorIsProvided() {
+        let viewController = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
+        _ = viewController.view
+        let sut: DefaultBrowserAndDockPromptUIHosting = viewController
+
+        XCTAssertNil(sut.providePopoverAnchor())
+        XCTAssertNil(sut.provideModalAnchor())
     }
 
 }

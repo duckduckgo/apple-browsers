@@ -24,7 +24,10 @@ import DDGSync
 import Bookmarks
 import AIChat
 import PixelKit
+import WideEvent
+import Persistence
 import PrivacyConfig
+import SitePermissions
 import UserScript
 import WebKit
 import WKAbstractions
@@ -146,6 +149,7 @@ class FireExecutor: FireExecuting {
     
     // MARK: - Init
     
+    @MainActor
     init(tabManager: TabManaging,
          downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          websiteDataManager: WebsiteDataManaging,
@@ -163,6 +167,7 @@ class FireExecutor: FireExecuting {
          historyCleanerProvider: HistoryCleanerProvider? = nil,
          appSettings: AppSettings,
          privacyStats: PrivacyStatsProviding? = nil,
+         sitePermissionsStore: SitePermissionsStore,
          aiChatSyncCleaner: AIChatSyncCleaning,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
@@ -216,6 +221,9 @@ class FireExecutor: FireExecuting {
             TextZoomFireWorker(fireproofing: fireproofing,
                                textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                dataClearingWideEventService: dataClearingWideEventService),
+            PermissionsFireWorker(store: sitePermissionsStore,
+                                  fireproofing: fireproofing,
+                                  dataClearingWideEventService: dataClearingWideEventService),
             HistoryFireWorker(historyManager: historyManager,
                               dataClearingWideEventService: dataClearingWideEventService),
             PrivacyStatsFireWorker(privacyStats: privacyStats,
@@ -243,11 +251,13 @@ class FireExecutor: FireExecuting {
               applicationState: DataStoreWarmup.ApplicationState) async {
         // Drops reentrant calls. Callers should gate on `burnInProgress`
         if burnInProgress {
+            pixelsReporter.fireDroppedBurnPixel(request: request)
             assertionFailure("Shouldn't get called multiple times")
             return
         }
 
         burnInProgress = true
+        pixelsReporter.burnDidStart()
         defer {
             burnInProgress = false
         }
@@ -276,15 +286,23 @@ class FireExecutor: FireExecuting {
         let shouldBurnAIChats = shouldBurnAIHistory(request)
         
         // Pre-fetch domains once for tab scope when tabs or data burning is needed
-        let domains: [String]?
+        let domainResult: Result<[String], Error>?
         if case .tab(let viewModel) = request.scope, shouldBurnTabs || shouldBurnData {
-            domains = await Array(viewModel.visitedDomains())
+            do {
+                domainResult = .success(Array(try await viewModel.visitedDomains()))
+            } catch {
+                domainResult = .failure(error)
+            }
         } else {
-            domains = nil
+            domainResult = nil
         }
+        let domains = domainResult.map { (try? $0.get()) ?? [] }
         
         // Start async tasks
-        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(request: request, applicationState: applicationState, domains: domains) : ()
+        async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(
+            request: request,
+            applicationState: applicationState,
+            domainResult: domainResult) : ()
         
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request) : ()
 
@@ -387,9 +405,9 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnDataWithDelegateCallbacks(request: FireRequest,
                                                applicationState: DataStoreWarmup.ApplicationState,
-                                               domains: [String]?) async {
+                                               domainResult: Result<[String], Error>?) async {
         delegate?.willStartBurningData(fireRequest: request)
-        await burnData(scope: request.scope, applicationState: applicationState, domains: domains)
+        await burnData(scope: request.scope, applicationState: applicationState, domainResult: domainResult)
         delegate?.didFinishBurningData(fireRequest: request)
     }
     
@@ -475,22 +493,22 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnData(scope: FireRequest.Scope,
                           applicationState: DataStoreWarmup.ApplicationState,
-                          domains: [String]?) async {
+                          domainResult: Result<[String], Error>?) async {
         await dataStoreWarmupWorker.setApplicationState(applicationState)
-        await dataStoreWarmupWorker.execute(scope: scope, domains: domains, fireModeCapability: fireModeCapability)
+        await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
         
         let measurement = pixelsReporter.beginMeasurement()
 
         await withTaskGroup(of: Void.self) { group in
             for worker in fireWorkers {
                 group.addTask {
-                    await worker.execute(scope: scope, domains: domains, fireModeCapability: self.fireModeCapability)
+                    await worker.execute(scope: scope, domainResult: domainResult, fireModeCapability: self.fireModeCapability)
                 }
             }
         }
         let duration = pixelsReporter.duration(of: measurement)
         pixelsReporter.fireDataClearingCompletionPixel(dataClearingCompletionPixel(for: scope,
-                                                                                  domains: domains,
+                                                                                  domains: domainResult.map { (try? $0.get()) ?? [] },
                                                                                   duration: duration))
     }
 
@@ -574,10 +592,10 @@ class FireExecutor: FireExecuting {
         switch result {
         case .success:
             await recordAIChatsClearDate(trigger: trigger)
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount)
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -600,10 +618,10 @@ class FireExecutor: FireExecuting {
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount)
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
-            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed, error: error)
+            PixelKit.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount)
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

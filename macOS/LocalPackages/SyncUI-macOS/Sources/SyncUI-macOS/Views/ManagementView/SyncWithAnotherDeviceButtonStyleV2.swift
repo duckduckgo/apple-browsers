@@ -35,7 +35,7 @@ struct SyncWithAnotherDeviceButtonStyleV2: ButtonStyle {
         return configuration.label
             .lineLimit(1)
             .frame(height: 32)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 12)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)
             .cornerRadius(16)

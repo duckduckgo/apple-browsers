@@ -317,8 +317,7 @@ enum ReorderBookmarkManagerTestFactory {
         let bookmarkManager = LocalBookmarkManager(
             bookmarkStore: bookmarkStore,
             sortRepository: SortRepository(storedSortMode: sortMode),
-            appearancePreferences: .mock,
-            pixelFiring: nil)
+            appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         return (bookmarkManager, bookmarkStore)
     }

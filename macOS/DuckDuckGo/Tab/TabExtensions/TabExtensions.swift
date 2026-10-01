@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AppUpdaterShared
 import AutoconsentStats
 import BrowserServicesKit
@@ -30,6 +31,7 @@ import MaliciousSiteProtection
 import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
+import WebExtensions
 import WebKit
 
 /**
@@ -94,6 +96,8 @@ protocol TabExtensionDependencies {
     var permissionManager: PermissionManagerProtocol { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     var eventHub: EventHubManaging { get }
+    var webExtensionManagerProvider: @MainActor () -> WebExtensionManaging? { get }
+    var webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter? { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -107,6 +111,7 @@ typealias TabExtensionsBuilderArguments = (
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
+    reportBrokenSite: (NSWindow?) -> Void,
     titlePublisher: AnyPublisher<String?, Never>,
     errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,
@@ -136,6 +141,7 @@ extension TabExtensionsBuilder {
     @MainActor
     mutating func registerExtensions(with args: TabExtensionsBuilderArguments, dependencies: TabExtensionDependencies) {
         let userScripts = args.userScriptsPublisher
+        let tabCrashSubject = PassthroughSubject<Void, Never>()
 
         let httpsUpgrade = add {
             HTTPSUpgradeTabExtension(httpsUpgrade: dependencies.privacyFeatures.httpsUpgrade)
@@ -159,7 +165,10 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            PrivacyDashboardTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking,
+            PrivacyDashboardTabExtension(tabIdentifier: args.tabID,
+                                         webExtensionManagerProvider: dependencies.webExtensionManagerProvider,
+                                         webExtensionInitialLoadWaiterProvider: dependencies.webExtensionInitialLoadWaiterProvider,
+                                         contentBlocking: dependencies.privacyFeatures.contentBlocking,
                                          certificateTrustEvaluator: dependencies.certificateTrustEvaluator,
                                          contentScopeExperimentsManager: dependencies.contentScopeExperimentsManager,
                                          autoconsentUserScriptPublisher: userScripts.map(\.?.autoconsentUserScript),
@@ -167,6 +176,7 @@ extension TabExtensionsBuilder {
                                          didUpgradeToHttpsPublisher: httpsUpgrade.didUpgradeToHttpsPublisher,
                                          trackersPublisher: contentBlocking.trackersPublisher,
                                          webViewPublisher: args.webViewFuture,
+                                         tabCrashPublisher: tabCrashSubject,
                                          maliciousSiteProtectionStateProvider: { specialErrorPageTabExtension.state })
         }
 
@@ -206,7 +216,6 @@ extension TabExtensionsBuilder {
         add {
             AutoplayPolicyTabExtension(
                 autoplayPreferences: dependencies.autoplayPreferences,
-                featureFlagger: dependencies.featureFlagger,
                 permissionManager: dependencies.permissionManager,
                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                 telemetryScriptPublisher: userScripts.compactMap { $0 }
@@ -337,6 +346,8 @@ extension TabExtensionsBuilder {
                 contentPublisher: args.contentPublisher,
                 webViewPublisher: args.webViewFuture,
                 webViewErrorPublisher: args.errorPublisher,
+                onTabCrash: { tabCrashSubject.send() },
+                reportBrokenSite: args.reportBrokenSite,
                 tabCrashAggregator: dependencies.tabCrashAggregator
             )
         }
@@ -349,13 +360,6 @@ extension TabExtensionsBuilder {
             add {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
-        }
-
-        add {
-            InternalFeedbackFormTabExtension(
-                webViewPublisher: args.webViewFuture,
-                internalUserDecider: dependencies.featureFlagger.internalUserDecider
-            )
         }
 
         add {

@@ -22,6 +22,7 @@ import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 import Core
+import PixelKit
 
 class SwitchBarTextEntryView: UIView {
 
@@ -93,6 +94,7 @@ class SwitchBarTextEntryView: UIView {
     var style: Style = .multiLine {
         didSet {
             guard style != oldValue else { return }
+            defer { mentionHandler?.dismiss() }
             let wasFirstResponder = textView.isFirstResponder || textField.isFirstResponder
 
             // Unhide and populate the incoming control before touching first responder.
@@ -237,6 +239,8 @@ class SwitchBarTextEntryView: UIView {
     var onTextInputActivated: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
+    weak var mentionHandler: TextEntryMentionHandling?
+
     /// Injected paste handler for the multi-line (Duck.ai) control. Attachments are Duck.ai-only, so the single-line search field doesn't receive it. Nil leaves default paste.
     weak var attachmentPasteHandler: AttachmentPasteHandling? {
         didSet {
@@ -279,6 +283,7 @@ class SwitchBarTextEntryView: UIView {
     var currentTextSelection: UITextRange? {
         get { usesTextField ? textField.selectedTextRange : textView.selectedTextRange }
         set {
+            defer { mentionHandler?.dismiss() }
             if usesTextField {
                 textField.selectedTextRange = newValue
             } else {
@@ -422,6 +427,7 @@ class SwitchBarTextEntryView: UIView {
             guard let self else { return }
             self.hasBeenInteractedWith = true
             self.fireClearButtonPressedPixel()
+            self.mentionHandler?.dismiss()
 
             if self.usesTextField {
                 self.textField.text = ""
@@ -501,6 +507,7 @@ class SwitchBarTextEntryView: UIView {
     /// dispatch, so clearing it here would clobber `textView.text` mid-collapse. The real handler
     /// reset happens at dismiss completion via the coordinator's `clearText()`.
     func applyDismissSnapshot(_ snapshot: UTIDismissSnapshot) {
+        defer { mentionHandler?.dismiss() }
         if usesTextField {
             textField.text = snapshot.text
         } else {
@@ -533,6 +540,7 @@ class SwitchBarTextEntryView: UIView {
             updateButtonState(animated: false)
         } else {
             if textView.text != currentText {
+                defer { mentionHandler?.dismiss() }
                 textView.text = currentText
                 updatePlaceholderVisibility()
             }
@@ -686,7 +694,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateVoiceButtonStyle() {
         handler.hidesVoiceButton = voiceButtonAppearance == .hidden
-        let showsAIVoiceChatButton = handler.isAIVoiceChatEnabled && handler.currentToggleState == .aiChat
+        let showsAIVoiceChatButton = handler.currentToggleState == .aiChat
         switch voiceButtonAppearance {
         case .automatic:
             buttonsView.voiceButtonStyle = showsAIVoiceChatButton ? .aiVoiceAccent : .microphone
@@ -903,6 +911,7 @@ class SwitchBarTextEntryView: UIView {
                         let isNewLineInsertion = text == (self.textView.text ?? "") + "\n"
 
                         guard !isUserActivelyTyping || isNewLineInsertion else { return }
+                        defer { self.mentionHandler?.dismiss() }
                         self.textView.text = text
                         self.updatePlaceholderVisibility()
                         self.updateTextViewHeight()
@@ -968,6 +977,7 @@ class SwitchBarTextEntryView: UIView {
 
     @discardableResult
     override func resignFirstResponder() -> Bool {
+        mentionHandler?.dismiss()
         return usesTextField ? textField.resignFirstResponder() : textView.resignFirstResponder()
     }
 
@@ -986,18 +996,9 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
-    func moveCaretToStart() {
-        if usesTextField {
-            let start = textField.beginningOfDocument
-            textField.selectedTextRange = textField.textRange(from: start, to: start)
-        } else {
-            let start = textView.beginningOfDocument
-            textView.selectedTextRange = textView.textRange(from: start, to: start)
-            textView.scrollRangeToVisible(NSRange(location: 0, length: 0))
-        }
-    }
-
     func setQueryText(_ text: String) {
+        // Cancel mention updates scheduled by programmatic text or selection changes.
+        defer { mentionHandler?.dismiss() }
         if usesTextField {
             textField.text = text
         } else {
@@ -1137,6 +1138,7 @@ class SwitchBarTextEntryView: UIView {
 extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
+        mentionHandler?.selectionDidChange(in: textView)
         guard canExpandOnSelectionChange else { return }
         canExpandOnSelectionChange = false
         // A selection change (e.g. the select-all on focus) only needs the expandable-height
@@ -1150,6 +1152,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         fireTextAreaFocusedPixel()
     }
 
+    func textViewDidEndEditing(_ textView: UITextView) {
+        mentionHandler?.dismiss()
+    }
+
     func textViewDidChange(_ textView: UITextView) {
         hasBeenInteractedWith = true
         
@@ -1158,6 +1164,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateTextViewHeight()
         handler.updateCurrentText((textView.text ?? "").strippingDictationPlaceholder)
         handler.markUserInteraction()
+
+        mentionHandler?.textDidChange(in: textView)
 
         // On iPad, reload input views on each keystroke (old behavior, without fade-out animation)
         // On iPhone, skip reloadInputViews() as it causes the publisher to deliver
@@ -1169,6 +1177,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Refusing the edit rather than clearing `isEditable`: that would end editing and take the
+        // keyboard, and the card explaining the block down with it.
+        guard !handler.isInputBlockedByUsageLimit else { return false }
         if text == "\n" {
             if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true
@@ -1218,15 +1229,15 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
 private extension SwitchBarTextEntryView {
     func fireTextAreaFocusedPixel() {
         let parameters = ["orientation": UIDevice.current.orientation.orientationDescription]
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarTextAreaFocused, withAdditionalParameters: parameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarTextAreaFocused, options: .parameters(parameters))
     }
     
     func fireClearButtonPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarClearButtonPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarClearButtonPressed, options: .parameters(handler.modeParameters))
     }
     
     func fireKeyboardGoPressedPixel() {
-        Pixel.fire(pixel: .aiChatExperimentalOmnibarKeyboardGoPressed, withAdditionalParameters: handler.modeParameters)
+        PixelKit.fire(Pixel.Event.aiChatExperimentalOmnibarKeyboardGoPressed, options: .parameters(handler.modeParameters))
     }
 }
 

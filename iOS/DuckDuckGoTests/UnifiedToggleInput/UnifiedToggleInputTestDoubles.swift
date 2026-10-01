@@ -26,6 +26,8 @@ final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     private(set) var submissionStartedModelIds: [String?] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []
     private(set) var promptInterpretedAsURLScopes: [DuckAIWideEventFlowScope] = []
+    private(set) var promptDeliveryUpdates: [(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?)] = []
+    var onPromptDeliveryUpdated: ((Bool?) -> Void)?
 
     func submissionStarted(scope: DuckAIWideEventFlowScope,
                            modelId: String?,
@@ -43,7 +45,10 @@ final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
         submissionStartedScopes.append(scope)
         submissionStartedModelIds.append(modelId)
     }
-    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {}
+    func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {
+        promptDeliveryUpdates.append((scope, wasQueued, didSendBridgeMessage))
+        onPromptDeliveryUpdated?(didSendBridgeMessage)
+    }
     func frontendSubmissionAcknowledged(scope: DuckAIWideEventFlowScope) {}
     func chatStatusChanged(_ status: AIChatStatusValue, scope: DuckAIWideEventFlowScope) {}
     func stopGeneratingTapped(scope: DuckAIWideEventFlowScope) {}
@@ -53,4 +58,34 @@ final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     func sheetDismissedDuringGeneration(scope: DuckAIWideEventFlowScope) {}
     func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error) {}
     func promptInterpretedAsURL(scope: DuckAIWideEventFlowScope) { promptInterpretedAsURLScopes.append(scope) }
+}
+
+/// Records the Create Image pixels without firing them. Shared by the switcher's tests and the
+/// footer's, which own different halves of the same seam.
+final class MockCreateImagePixelFiring: CreateImagePixelFiring {
+    private(set) var switches: [CreateImageModelSwitch] = []
+    private(set) var unavailableCount = 0
+    private(set) var noticeDismissedCount = 0
+
+    var isEmpty: Bool {
+        switches.isEmpty && unavailableCount == 0 && noticeDismissedCount == 0
+    }
+
+    func modelSwitched(_ change: CreateImageModelSwitch) {
+        switches.append(change)
+    }
+
+    func createImageUnavailable() {
+        unavailableCount += 1
+    }
+
+    func modelSwitchNoticeDismissed() {
+        noticeDismissedCount += 1
+    }
+
+    func reset() {
+        switches = []
+        unavailableCount = 0
+        noticeDismissedCount = 0
+    }
 }

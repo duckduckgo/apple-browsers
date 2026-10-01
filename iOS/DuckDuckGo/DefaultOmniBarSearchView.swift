@@ -68,17 +68,11 @@ final class DefaultOmniBarSearchView: UIView {
     private let mainStackView = UIStackView()
     private var mainStackLeadingConstraint: NSLayoutConstraint?
 
-    var contentVerticalOffset: CGFloat = 0 {
-        didSet {
-            mainStackView.transform = CGAffineTransform(translationX: 0, y: contentVerticalOffset)
-        }
-    }
-
-    init() {
+    init(centersContentVertically: Bool = false) {
         super.init(frame: .zero)
 
         setUpSubviews()
-        setUpConstraints()
+        setUpConstraints(centersContentVertically: centersContentVertically)
         setUpProperties()
     }
 
@@ -120,6 +114,7 @@ final class DefaultOmniBarSearchView: UIView {
 
     private func setUpSubviews() {
         addSubview(mainStackView)
+        addSubview(notificationContainer)
 
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
@@ -128,8 +123,6 @@ final class DefaultOmniBarSearchView: UIView {
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
         mainStackView.addSubview(privacyInfoContainer)
-
-        mainStackView.addSubview(notificationContainer)
 
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
@@ -145,33 +138,35 @@ final class DefaultOmniBarSearchView: UIView {
         leftIconContainer.addSubview(dismissButtonView)
     }
 
-    private func setUpConstraints() {
+    private func setUpConstraints(centersContentVertically: Bool) {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleContainer.translatesAutoresizingMaskIntoConstraints = false
         modeToggleView.translatesAutoresizingMaskIntoConstraints = false
 
-        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor)
+        let leadingConstraint = mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor,
+                                                                       constant: OmniBarMetrics.contentHorizontalInset)
         mainStackLeadingConstraint = leadingConstraint
 
         NSLayoutConstraint.activate([
             leadingConstraint,
-            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mainStackView.topAnchor.constraint(equalTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor,
+                                                     constant: -OmniBarMetrics.contentHorizontalInset),
 
-            notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
+            notificationContainer.leadingAnchor.constraint(equalTo: mainStackView.leadingAnchor,
+                                                           constant: -OmniBarMetrics.contentHorizontalInset),
             notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
             notificationContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
-            notificationContainer.heightAnchor.constraint(equalTo: textField.heightAnchor, constant: 4),
+            notificationContainer.heightAnchor.constraint(equalTo: textField.heightAnchor),
 
             leftIconContainerPlaceholder.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
             leftIconContainerPlaceholder.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
             leftIconContainerPlaceholder.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
             leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
 
-            privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
-            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            // Shares a centre with the loupe it swaps in and out of the slot with.
+            privacyInfoContainer.centerXAnchor.constraint(equalTo: leftIconContainer.centerXAnchor),
+            privacyInfoContainer.centerYAnchor.constraint(equalTo: leftIconContainer.centerYAnchor),
             privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
             privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28),
 
@@ -180,6 +175,19 @@ final class DefaultOmniBarSearchView: UIView {
             modeToggleView.trailingAnchor.constraint(equalTo: modeToggleContainer.trailingAnchor, constant: -6),
             modeToggleView.centerYAnchor.constraint(equalTo: modeToggleContainer.centerYAnchor)
         ])
+
+        if centersContentVertically {
+            NSLayoutConstraint.activate([
+                mainStackView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                mainStackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+                mainStackView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                mainStackView.topAnchor.constraint(equalTo: topAnchor),
+                mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        }
 
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: reloadButton)
@@ -257,6 +265,11 @@ final class DefaultOmniBarSearchView: UIView {
 
     func setLeftIconAreaHidden(_ hidden: Bool) {
         leftIconContainerPlaceholder.isHidden = hidden
-        mainStackLeadingConstraint?.constant = hidden ? 16 : 0
+        mainStackLeadingConstraint?.constant = hidden ? Metrics.textOnlyLeadingInset : OmniBarMetrics.contentHorizontalInset
+    }
+
+    private enum Metrics {
+        /// Text inset used when the leading icon slot is hidden.
+        static let textOnlyLeadingInset: CGFloat = 16
     }
 }

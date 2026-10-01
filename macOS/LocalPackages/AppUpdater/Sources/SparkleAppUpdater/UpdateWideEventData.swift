@@ -18,7 +18,7 @@
 
 import AppUpdaterShared
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Data model for Sparkle update cycle Wide Events.
 ///

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Cocoa
 import Combine
 import Common
@@ -24,6 +26,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Networking
 import Subscription

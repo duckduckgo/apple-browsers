@@ -186,6 +186,16 @@ extension NSAlert {
         return alert
     }
 
+    static func syncCloseSetupConfirmation() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.syncCloseSetupConfirmationTitleV2
+        alert.informativeText = UserText.syncCloseSetupConfirmationMessageV2
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: UserText.syncCloseSetupConfirmationActionV2)
+        alert.addButton(withTitle: UserText.cancel)
+        return alert
+    }
+
     static func dataSyncingDisabledByFeatureFlag(showLearnMore: Bool, upgradeRequired: Bool = false) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.syncPausedTitle

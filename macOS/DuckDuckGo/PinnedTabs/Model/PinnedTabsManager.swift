@@ -31,12 +31,23 @@ final class PinnedTabsManager {
 
     let didUnpinTabPublisher: AnyPublisher<Int, Never>
 
-    func pin(_ tab: Tab, at index: Int? = nil, firePixel: Bool = true) {
-        if let index = index {
-            tabCollection.insert(tab, at: index)
+    /// Pins a newly created tab when `sourceCollection` is `nil`; otherwise moves the existing tab
+    /// from that collection without reporting a WebKit close/open lifecycle transition.
+    @MainActor
+    @discardableResult
+    func pinTab(_ tab: Tab, from sourceCollection: TabCollection?, at index: Int? = nil, firePixel: Bool = true) -> Bool {
+        let destinationIndex = index ?? tabCollection.tabs.endIndex
+        let didInsert: Bool
+        if let sourceCollection {
+            guard let sourceIndex = sourceCollection.firstIndex(of: tab) else {
+                Logger.pinnedTabs.debug("PinnedTabsManager: unable to find tab in source collection")
+                return false
+            }
+            didInsert = sourceCollection.moveTab(at: sourceIndex, to: tabCollection, at: destinationIndex)
         } else {
-            tabCollection.append(tab: tab)
+            didInsert = tabCollection.insert(tab, at: destinationIndex)
         }
+        guard didInsert else { return false }
 
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userPinnedTab, frequency: .dailyAndStandard)
@@ -44,15 +55,35 @@ final class PinnedTabsManager {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
+        return true
     }
 
     @MainActor
-    func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> AnyTab? {
+    func removePinnedTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> AnyTab? {
         guard let tab = tabCollection.tabs[safe: index] else {
-            Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
+            Logger.pinnedTabs.debug("PinnedTabsManager: unable to remove pinned tab")
             return nil
         }
         guard tabCollection.removeTab(at: index, published: published) else {
+            Logger.pinnedTabs.debug("PinnedTabsManager: unable to remove pinned tab")
+            return nil
+        }
+        didUnpinTabSubject.send(index)
+
+        if firePixel {
+            PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
+        }
+        if #available(macOS 15.4, *), case .loaded(let loadedTab) = tab,
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: loadedTab)
+        }
+        return tab
+    }
+
+    @MainActor
+    func unpinTab(at index: Int, movingTo destinationCollection: TabCollection, at destinationIndex: Int, firePixel: Bool = true) -> AnyTab? {
+        guard let tab = tabCollection.tabs[safe: index],
+              tabCollection.moveTab(at: index, to: destinationCollection, at: destinationIndex) else {
             Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
         }

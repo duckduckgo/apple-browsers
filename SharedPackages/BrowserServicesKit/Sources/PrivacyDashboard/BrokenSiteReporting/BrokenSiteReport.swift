@@ -17,7 +17,7 @@
 //
 //  Implementation guidelines: https://app.asana.com/0/1198207348643509/1200202563872939/f
 
-import Navigation
+import DDGNavigation
 import Foundation
 import Common
 import FoundationExtensions
@@ -114,12 +114,12 @@ public struct BrokenSiteReport {
     let autoplayBlockingMode: String?
     let loadedWebExtensions: String?
     let adBlockingExtensionScriptletsVersion: String?
+    let isAfterTabTermination: Bool
 #if os(iOS)
     let siteType: SiteType
     let model: String
     let variant: String
     let isAfterSuppressedXSafariRedirect: Bool
-    let isAfterTabTermination: Bool
 #endif
 
 #if os(macOS)
@@ -156,6 +156,7 @@ public struct BrokenSiteReport {
         privacyExperiments: String,
         isPirEnabled: Bool?,
         isForceDarkModeEnabled: Bool?,
+        isAfterTabTermination: Bool = false,
         lastTabSuspension: String?,
         autoplayBlockingMode: String? = nil,
         pageLoadTiming: WKPageLoadTiming?,
@@ -191,6 +192,7 @@ public struct BrokenSiteReport {
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
         self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.isAfterTabTermination = isAfterTabTermination
         self.lastTabSuspension = lastTabSuspension
         self.autoplayBlockingMode = autoplayBlockingMode
         self.pageLoadTiming = pageLoadTiming
@@ -367,15 +369,16 @@ public struct BrokenSiteReport {
         if let autoplayBlockingMode {
             result["autoplayBlockingMode"] = autoplayBlockingMode
         }
+
+        if isAfterTabTermination {
+            result["isAfterTabTermination"] = "true"
+        }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
         result["model"] = model
         result["variant"] = variant
         if isAfterSuppressedXSafariRedirect {
             result["isAfterSuppressedXSafariRedirect"] = "true"
-        }
-        if isAfterTabTermination {
-            result["isAfterTabTermination"] = "true"
         }
 #endif
 

@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Core
+import PixelKit
 
 class EmailSignupPromptViewController: UIViewController {
 
@@ -57,7 +58,7 @@ class EmailSignupPromptViewController: UIViewController {
 
         setupEmailSignupPromptView()
 
-        Pixel.fire(pixel: .emailIncontextPromptDisplayed)
+        PixelKit.fire(Pixel.Event.emailIncontextPromptDisplayed)
     }
 
     private func setupEmailSignupPromptView() {
@@ -76,7 +77,7 @@ class EmailSignupPromptViewController: UIViewController {
 
 extension EmailSignupPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        Pixel.fire(pixel: .emailIncontextPromptDismissed)
+        PixelKit.fire(Pixel.Event.emailIncontextPromptDismissed)
 
         completion(false)
     }
@@ -85,7 +86,7 @@ extension EmailSignupPromptViewController: UISheetPresentationControllerDelegate
 extension EmailSignupPromptViewController: EmailSignupPromptViewModelDelegate {
 
     func emailSignupPromptViewModelDidSelect(_ viewModel: EmailSignupPromptViewModel) {
-        Pixel.fire(pixel: .emailIncontextPromptConfirmed)
+        PixelKit.fire(Pixel.Event.emailIncontextPromptConfirmed)
 
         dismiss(animated: true)
         completion(true)
@@ -93,14 +94,14 @@ extension EmailSignupPromptViewController: EmailSignupPromptViewModelDelegate {
 
     func emailSignupPromptViewModelDidReject(_ viewModel: EmailSignupPromptViewModel) {
         inContextEmailSignupPromptDismissedPermanentlyAt = Date().timeIntervalSince1970
-        Pixel.fire(pixel: .emailIncontextPromptDismissedPersistent)
+        PixelKit.fire(Pixel.Event.emailIncontextPromptDismissedPersistent)
 
         completion(false)
         dismiss(animated: true)
     }
 
     func emailSignupPromptViewModelDidClose(_ viewModel: EmailSignupPromptViewModel) {
-        Pixel.fire(pixel: .emailIncontextPromptDismissed)
+        PixelKit.fire(Pixel.Event.emailIncontextPromptDismissed)
 
         completion(false)
         dismiss(animated: true)

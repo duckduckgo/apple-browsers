@@ -18,6 +18,7 @@
 //
 
 import Core
+import PixelKit
 
 /// Whether a coordinated launch modal was already shown earlier in this session, so the Duck.ai
 /// sync promo can yield to it. See Asana 1216108902675922.
@@ -35,12 +36,12 @@ final class AIChatSyncPromoViewModel {
 
     private let syncPromoManager: SyncPromoManaging
     private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
-    private let pixelFiring: any PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private var impressionRecorded = false
 
     init(syncPromoManager: SyncPromoManaging,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         pixelFiring: any PixelFiring.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.syncPromoManager = syncPromoManager
         self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.pixelFiring = pixelFiring
@@ -59,13 +60,13 @@ final class AIChatSyncPromoViewModel {
               !impressionRecorded else { return false }
 
         impressionRecorded = true
-        pixelFiring.fire(.syncPromoDisplayed, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(pixelParameters))
         syncPromoManager.recordImpressionFor(.aiChat)
         return true
     }
 
     func handleCTATap() -> Action {
-        pixelFiring.fire(.syncPromoConfirmed, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(pixelParameters))
         syncPromoManager.markPromoHandledFor(.aiChat)
         return .requestSyncSetup
     }

@@ -25,6 +25,7 @@ import History
 import HistoryView
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import AIChat
 

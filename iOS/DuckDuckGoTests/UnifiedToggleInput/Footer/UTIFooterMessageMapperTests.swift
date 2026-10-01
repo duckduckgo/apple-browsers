@@ -27,6 +27,33 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     private let sut = UTIFooterMessageMapper(resetDescriber: UTIFooterResetDescriber(locale: Locale(identifier: "en_US")))
 
+    func test_attachmentPrivacyMessage_usesApprovedCopyAndInlineLink() {
+        let message = sut.attachmentPrivacyMessage()
+
+        XCTAssertEqual(message.title,
+                       "Files are automatically scanned for illegal content. Flagged chats have limited data retention. Learn more")
+        XCTAssertNil(message.subtitle)
+        XCTAssertNil(message.primaryAction)
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertEqual(message.link?.text, "Learn more")
+        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
+    }
+
+    func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {
+        let cases = [
+            ("Dateien werden geprüft. %@", "Weitere Informationen"),
+            ("%@：添付ファイルの取り扱い", "詳しく見る"),
+            ("تُفحص الملفات. %@", "معرفة المزيد")
+        ]
+        for (format, label) in cases {
+            let message = sut.attachmentPrivacyMessage(format: format, learnMoreText: label)
+            XCTAssertEqual(message.title, String(format: format, label))
+            XCTAssertEqual(message.link?.text, label)
+            XCTAssertTrue(message.title.contains(label))
+            XCTAssertFalse(message.isDismissible)
+        }
+    }
+
     // MARK: - Headlines
 
     func test_message_approachingNamesTheWindowAndThePercentage() {
@@ -94,8 +121,8 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Action titles
 
-    /// Named or not, stepping down a tier or across to a free model — all one word.
-    func test_message_everyModelSwitchReadsSwitch() {
+    /// Named or not, stepping down a tier or across to a free model — all read the same generic title.
+    func test_message_everyModelSwitchReadsSwitchModel() {
         let named = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
                                                                          modelShortName: "5.4 mini"))
         let unnamed = DuckAiUsageAction.switchToModel(DuckAiModelSuggestion(modelId: "gpt-5.4-mini",
@@ -104,17 +131,17 @@ final class UTIFooterMessageMapperTests: XCTestCase {
                                                                             modelShortName: "5.4 mini"))
 
         XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: named)).primaryAction?.title,
-                       "Switch")
+                       "Switch Model")
         XCTAssertEqual(sut.message(for: warning(.approaching, window: .daily, action: unnamed)).primaryAction?.title,
-                       "Switch")
+                       "Switch Model")
         XCTAssertEqual(sut.message(for: warning(.weeklyReachedDegraded, window: .weekly, action: free)).primaryAction?.title,
-                       "Switch")
+                       "Switch Model")
     }
 
     func test_message_upsellCopyFollowsTrialEligibility() {
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: true))).primaryAction?.title,
-                       "Try for free")
+                       "Try Subscription for Free")
         XCTAssertEqual(sut.message(for: warning(.freeReached, window: .daily,
                                                 action: .tryForFree(isTrialEligible: false))).primaryAction?.title,
                        "Subscribe")
@@ -125,7 +152,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertEqual(sut.message(for: warning(.dailyReached, window: .daily,
                                                 action: .startUsingWeeklyLimit(entries: entries))).primaryAction?.title,
-                       "Start using weekly limit")
+                       "Start Using Weekly Limit")
     }
 
     /// One id whichever window ran out, so the window picks the noun.
@@ -140,9 +167,10 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
     // MARK: - Dismissal
 
-    func test_message_dismissibilityComesFromTheWarning() {
+    func test_message_onlyBelowLimitWarningsCanBeDismissed() {
         XCTAssertTrue(sut.message(for: warning(.approaching, window: .weekly, isDismissible: true)).isDismissible)
         XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: false)).isDismissible)
+        XCTAssertFalse(sut.message(for: warning(.weeklyReached, window: .weekly, isDismissible: true)).isDismissible)
     }
 
     // MARK: - High-usage model notice
@@ -166,8 +194,108 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertTrue(sut.message(for: notice).isDismissible)
     }
 
+    // MARK: - Terms of Service
+
+    /// Required: nothing closes it before the user has seen what sending agrees to.
+    func test_termsOfServiceMessage_hasNoCloseButtonAndNoAction() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertFalse(message.isDismissible)
+        XCTAssertNil(message.primaryAction)
+    }
+
+    func test_termsOfServiceMessage_linksThePhraseToThePrivacyTerms() throws {
+        let message = sut.termsOfServiceMessage()
+        let link = try XCTUnwrap(message.link)
+
+        XCTAssertTrue(message.title.contains(link.text))
+        XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {
+        let message = sut.termsOfServiceMessage()
+
+        XCTAssertEqual(message.icon, .shield)
+        XCTAssertNil(message.subtitle)
+    }
+
+    // MARK: - Create Image model switch
+
+    /// The title names the model now in use; the subtitle names the one it replaced. Getting these
+    /// the wrong way round produces copy that is grammatical and completely misleading.
+    func test_message_modelSwitchNamesTheNewModelInTheTitleAndThePreviousOneInTheSubtitle() {
+        let message = sut.message(for: createImageSwitchNotice(previousShortName: "Mistral", newShortName: "5.6 Luna"))
+
+        XCTAssertEqual(message.title, "Now using 5.6 Luna")
+        XCTAssertEqual(message.subtitle, "Mistral doesn't support image creation.")
+    }
+
+    func test_message_modelSwitchUsesTheSwitchIcon() {
+        XCTAssertEqual(sut.message(for: createImageSwitchNotice()).icon, .modelSwitch)
+    }
+
+    func test_message_modelSwitchOffersNoActionAndCanBeDismissed() {
+        let message = sut.message(for: createImageSwitchNotice())
+
+        XCTAssertNil(message.primaryAction)
+        XCTAssertTrue(message.isDismissible)
+    }
+
+    func test_message_modelSwitchAwayFromAPrivacyPreservingModelSaysSoInTheSubtitle() {
+        let message = sut.message(for: createImageSwitchNotice(previousShortName: "Gemma",
+                                              newShortName: "5.6 Luna",
+                                              previousProvider: .oss))
+
+        XCTAssertEqual(message.title, "Now using 5.6 Luna")
+        XCTAssertEqual(message.subtitle,
+                       "Gemma can't create images. Zero Provider Visibility won't apply until you switch back.")
+    }
+
+    func test_message_modelSwitchAwayFromANonOSSModelKeepsTheStandardSubtitle() {
+        for provider in [AIChatModel.ModelProvider.openAI, .anthropic, .meta, .mistral, .unknown] {
+            let message = sut.message(for: createImageSwitchNotice(previousShortName: "Whatever", previousProvider: provider))
+
+            XCTAssertEqual(message.subtitle, "Whatever doesn't support image creation.",
+                           "unexpected subtitle for provider \(provider)")
+        }
+    }
+
+    func testUnavailablePurchaseOmitsBothUpsellLabelsAndPreservesLimitInformation() {
+        for isTrialEligible in [true, false] {
+            let warning = warning(.freeReached, window: .daily, isDismissible: false,
+                                  action: .tryForFree(isTrialEligible: isTrialEligible))
+            let available = sut.message(for: warning)
+            let unavailable = sut.message(for: warning, allowsSubscriptionUpsell: false)
+
+            XCTAssertNotNil(available.primaryAction)
+            XCTAssertNil(unavailable.primaryAction)
+            XCTAssertEqual(unavailable.title, available.title)
+            XCTAssertEqual(unavailable.subtitle, available.subtitle)
+            XCTAssertEqual(unavailable.icon, available.icon)
+            XCTAssertFalse(unavailable.isDismissible)
+            XCTAssertTrue(warning.blocksInput)
+        }
+    }
+
     // MARK: - Helpers
 
+    private func createImageSwitchNotice(previousShortName: String = "Mistral",
+                                         newShortName: String = "5.6 Luna",
+                                         previousProvider: AIChatModel.ModelProvider = .mistral) -> CreateImageModelSwitchNotice {
+        CreateImageModelSwitchNotice(
+            previousModel: model(shortName: previousShortName, provider: previousProvider),
+            newModel: model(shortName: newShortName, provider: .openAI)
+        )
+    }
+
+    private func model(shortName: String, provider: AIChatModel.ModelProvider) -> AIChatModel {
+        AIChatModel(id: shortName.lowercased(),
+                    name: shortName,
+                    shortName: shortName,
+                    provider: provider,
+                    supportsImageUpload: false,
+                    entityHasAccess: true)
+    }
     private let notice = DuckAiHighUsageModelNotice(modelId: "claude-opus-4-8", modelShortName: "Opus 4.8")
 
     private func warning(_ message: DuckAiUsageMessage,

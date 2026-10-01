@@ -27,4 +27,8 @@ public extension Locale {
     var isEnglishLanguage: Bool {
         Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false
     }
+
+    var isEnglishUnitedStates: Bool {
+        languageCode == "en" && regionCode == "US"
+    }
 }

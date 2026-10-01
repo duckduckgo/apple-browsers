@@ -31,50 +31,18 @@ final class IPadDuckAIControlsFeatureTests: XCTestCase {
 
     // MARK: - Tests
 
-    func testWhenFeatureOnAndNotIphoneThenIsAvailable() {
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckAIBarControls])
+    func testWhenNotIphoneThenIsAvailable() {
         MockDevicePlatform.isIphone = false
 
-        let feature = IPadDuckAIControlsFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
+        let feature = IPadDuckAIControlsFeature(devicePlatform: MockDevicePlatform.self)
 
         XCTAssertTrue(feature.isAvailable)
     }
 
-    func testWhenFeatureOnAndIphoneThenIsNotAvailable() {
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadDuckAIBarControls])
+    func testWhenIphoneThenIsNotAvailable() {
         MockDevicePlatform.isIphone = true
 
-        let feature = IPadDuckAIControlsFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
-
-        XCTAssertFalse(feature.isAvailable)
-    }
-
-    func testWhenFeatureOffAndNotIphoneThenIsNotAvailable() {
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        MockDevicePlatform.isIphone = false
-
-        let feature = IPadDuckAIControlsFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
-
-        XCTAssertFalse(feature.isAvailable)
-    }
-
-    func testWhenFeatureOffAndIphoneThenIsNotAvailable() {
-        let mockFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        MockDevicePlatform.isIphone = true
-
-        let feature = IPadDuckAIControlsFeature(
-            featureFlagger: mockFlagger,
-            devicePlatform: MockDevicePlatform.self
-        )
+        let feature = IPadDuckAIControlsFeature(devicePlatform: MockDevicePlatform.self)
 
         XCTAssertFalse(feature.isAvailable)
     }

@@ -18,8 +18,7 @@
 
 import XCTest
 @testable import Configuration
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 final class ConfigurationFetcherTests: XCTestCase {
 

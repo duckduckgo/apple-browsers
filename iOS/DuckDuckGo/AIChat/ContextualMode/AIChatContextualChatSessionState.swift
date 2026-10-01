@@ -85,7 +85,7 @@ struct SheetViewState {
 }
 
 enum SheetEffect {
-    case submitPrompt(prompt: String, context: AIChatPageContextData?)
+    case submitPrompt(prompt: String, context: AIChatPageContextData?, termsAccepted: Bool)
     case reloadWebView
     case deliverPageContext(AIChatPageContextData?, targets: PageContextDeliveryTargets)
     case clearPrompt
@@ -96,7 +96,7 @@ struct PageContextDeliveryTargets: OptionSet {
 
     static let utiChip = PageContextDeliveryTargets(rawValue: 1 << 0)
     static let frontendBridge = PageContextDeliveryTargets(rawValue: 1 << 1)
-    static let utiAttachAffordance = PageContextDeliveryTargets(rawValue: 1 << 2)
+    static let utiSuggestedContext = PageContextDeliveryTargets(rawValue: 1 << 2)
 }
 
 // MARK: - Session State
@@ -145,6 +145,8 @@ final class AIChatContextualChatSessionState {
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
+    private var declinedOfferURL: URL?
+
     @Published private(set) var viewState = SheetViewState(
         content: .nativeInput,
         isExpandButtonEnabled: true,
@@ -169,12 +171,21 @@ final class AIChatContextualChatSessionState {
 
     /// Flag to track a manual attach flow in progress
     private var isManualAttachInProgress = false
+    private var isAutomaticAttachInProgress = false
+
+    var isPageContextAttachInProgress: Bool {
+        isManualAttachInProgress || isAutomaticAttachInProgress
+    }
     private var isManualAttachFromFrontend = false
+
+    /// True while the loading chip is showing;
+    private var isDocumentChipLoading = false
 
     /// Flag to prevent duplicate navigation processing
     private var isProcessingNavigation = false
 
     private var pendingSignalsOnlyCollection = false
+    private(set) var suggestedContext: AIChatPageContext?
     private var suppressesAutoAttachForSelectionEntry = false
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
@@ -242,10 +253,6 @@ final class AIChatContextualChatSessionState {
         aiChatSettings.isAutomaticContextAttachmentEnabled
     }
 
-    var supportsMultipleContexts: Bool {
-        featureFlagger.isFeatureOn(.multiplePageContexts)
-    }
-
     var showsSuggestionsStartSurface: Bool {
         featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
     }
@@ -263,7 +270,7 @@ final class AIChatContextualChatSessionState {
     // MARK: - Frontend Chat State Transitions
 
     /// Call when user submits a prompt from native input
-    func handlePromptSubmission(_ prompt: String, url: URL? = nil) {
+    func handlePromptSubmission(_ prompt: String, url: URL? = nil, termsAccepted: Bool = false) {
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] Chat start request ignored - preserving .restoredChat state")
             return
@@ -291,7 +298,7 @@ final class AIChatContextualChatSessionState {
         }
 
         rebuildViewState()
-        emit(.submitPrompt(prompt: prompt, context: contextData))
+        emit(.submitPrompt(prompt: prompt, context: contextData, termsAccepted: termsAccepted))
     }
 
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator
@@ -324,6 +331,19 @@ final class AIChatContextualChatSessionState {
         guard !unsubmittedSelections.isEmpty else { return }
         submittedSelectionIDs.formUnion(unsubmittedSelections.map(\.id))
         pixelHandler.firePromptSubmittedWithSelections(count: unsubmittedSelections.count)
+    }
+
+    func acceptSuggestedContext() {
+        guard let context = suggestedContext else { return }
+        suggestedContext = nil
+        attachContextFromSuggestionTap(context)
+    }
+
+    func dismissSuggestedContext() {
+        guard let context = suggestedContext else { return }
+        declinedOfferURL = URL(string: context.contextData.url)
+        suggestedContext = nil
+        Logger.aiChat.debug("[SessionState] Suggested context dismissed")
     }
 
     func attachContextFromSuggestionTap(_ context: AIChatPageContext) {
@@ -393,11 +413,18 @@ final class AIChatContextualChatSessionState {
         chipState = .placeholder
         contextualChatURL = nil
         deliveredContextURLWithNoNavigationSince = nil
+        declinedOfferURL = nil
         userDowngradedToPlaceholder = false
+        isAutomaticAttachInProgress = false
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
+        isDocumentChipLoading = false
         isProcessingNavigation = false
         pendingSignalsOnlyCollection = false
+        if suggestedContext != nil {
+            suggestedContext = nil
+            emit(.deliverPageContext(nil, targets: .utiSuggestedContext))
+        }
         suggestionsResolveTask?.cancel()
         suggestionsTimeoutTask?.cancel()
         suggestions = []
@@ -454,6 +481,26 @@ final class AIChatContextualChatSessionState {
 
     // MARK: - Context Management
 
+    func beginAutomaticAttach() {
+        isAutomaticAttachInProgress = true
+    }
+
+    func cancelAutomaticAttach() {
+        isAutomaticAttachInProgress = false
+    }
+
+    /// A pending selection can be removed before collection has produced a visible page chip.
+    func removePendingPageAttachment() {
+        let wasPending = isPageContextAttachInProgress
+        cancelManualAttach()
+        cancelAutomaticAttach()
+        if wasPending {
+            userDowngradedToPlaceholder = true
+            suppressesAutoAttachForSelectionEntry = true
+        }
+        downgradeToPlaceholder()
+    }
+
     /// Begin a manual attach operation (user tapped "Attach Page")
     func beginManualAttach(fromFrontend: Bool = false) {
         Logger.aiChat.debug("[SessionState] Manual attach requested (frontend: \(fromFrontend))")
@@ -470,7 +517,13 @@ final class AIChatContextualChatSessionState {
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
-        if shouldAutoCollectContext, userDowngradedToPlaceholder {
+        declinedOfferURL = nil
+        // Clear the offer on the chip too, or it lingers stale after navigation.
+        if suggestedContext != nil {
+            suggestedContext = nil
+            emit(.deliverPageContext(nil, targets: .utiSuggestedContext))
+        }
+        if userDowngradedToPlaceholder {
             userDowngradedToPlaceholder = false
             Logger.aiChat.debug("[SessionState] Page navigation cleared temporary context removal")
         }
@@ -497,8 +550,7 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
-    func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
-        guard shouldAutoCollectContext else { return false }
+    private func shouldCollectPage(for pageURL: URL?) -> Bool {
         guard !hasUserOptedOutOfContext else { return false }
         guard let pageURL else { return true }
         guard let attachedContext = intendedAttachedContext,
@@ -508,22 +560,30 @@ final class AIChatContextualChatSessionState {
         return false
     }
 
+    func shouldTriggerAutoCollect(for pageURL: URL? = nil) -> Bool {
+        shouldAutoCollectContext && shouldCollectPage(for: pageURL)
+    }
+
+    func shouldOfferPageContext(for pageURL: URL? = nil) -> Bool {
+        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+            && !shouldAutoCollectContext
+            && isUnifiedToggleInputActive
+            && hasActiveChat
+            && !hasDeclinedOffer(for: pageURL)
+            && shouldCollectPage(for: pageURL)
+    }
+
+    private func hasDeclinedOffer(for pageURL: URL?) -> Bool {
+        guard let declinedOfferURL, let pageURL else { return false }
+        return declinedOfferURL.equals(pageURL, by: .sameDocument)
+    }
+
     /// Sends a null context as a navigation signal.
-    /// Used when auto-collect is OFF but multiple contexts are supported,
-    /// so the FE can show the "Add page content" button for the new page.
+    /// Used when auto-collect is OFF, so the FE can show the "Ask about page"
+    /// button for the new page.
     func notifyFrontendOfMultiContextNavigation() {
-        guard supportsMultipleContexts else { return }
-
-        var targets: PageContextDeliveryTargets = []
-        if shouldDeliverToFrontendBridge(nil) {
-            targets.insert(.frontendBridge)
-        }
-        if shouldShowUTIAttachAffordanceForMultiContextNavigation() {
-            targets.insert(.utiAttachAffordance)
-        }
-
-        guard !targets.isEmpty else { return }
-        emit(.deliverPageContext(nil, targets: targets))
+        guard shouldDeliverToFrontendBridge(nil) else { return }
+        emit(.deliverPageContext(nil, targets: .frontendBridge))
         Logger.aiChat.debug("[SessionState] Sent null context navigation signal")
     }
 
@@ -557,6 +617,12 @@ final class AIChatContextualChatSessionState {
         suppressesAutoAttachForSelectionEntry = false
     }
 
+    func setDocumentChipLoading(_ isLoading: Bool) {
+        guard isDocumentChipLoading != isLoading else { return }
+        isDocumentChipLoading = isLoading
+        rebuildViewState()
+    }
+
     func beginLoadingSuggestions() {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
         suggestionsResolveTask?.cancel()
@@ -568,6 +634,7 @@ final class AIChatContextualChatSessionState {
 
     /// Updates the latest page context and determines attach behavior based on internal state.
     func updateContext(_ context: AIChatPageContext?) {
+        isAutomaticAttachInProgress = false
         resolveSuggestionsIfLoading(from: context)
 
         if pendingSignalsOnlyCollection {
@@ -579,6 +646,13 @@ final class AIChatContextualChatSessionState {
             if let context {
                 let payload = signalsOnlyPayload(from: context.contextData)
                 emit(.deliverPageContext(payload, targets: .frontendBridge))
+                if context.contextData.hasAttachedPage,
+                   shouldOfferPageContext(for: URL(string: context.contextData.url)),
+                   !suppressesAutoAttachForSelectionEntry {
+                    handleOfferedContext(context)
+                }
+            } else {
+                cancelManualAttach()
             }
             return
         }
@@ -609,6 +683,8 @@ final class AIChatContextualChatSessionState {
             handleManualAttach(context)
         } else if shouldAutoCollectContext, !suppressesAutoAttachForSelectionEntry {
             handleAutoAttach(context)
+        } else if shouldOfferPageContext(for: URL(string: context.contextData.url)), !suppressesAutoAttachForSelectionEntry {
+            handleOfferedContext(context)
         } else {
             Logger.aiChat.debug("[SessionState] Context updated without chip change (auto-attach OFF)")
         }
@@ -632,6 +708,7 @@ final class AIChatContextualChatSessionState {
 
     /// Ends in-flight attach work when a sheet session ends.
     func handleSheetDismissed() {
+        isAutomaticAttachInProgress = false
         if isManualAttachInProgress {
             isManualAttachInProgress = false
             isManualAttachFromFrontend = false
@@ -642,8 +719,9 @@ final class AIChatContextualChatSessionState {
     }
 
     /// Clears manual context when reopening on a different page.
-    /// Auto-attach-off manual context remains sticky while the sheet is open, including across
-    /// navigation and same-page reopen, but it should not leak into another page's sheet session.
+    /// Auto-attach-off manual context stays sticky while the sheet is open — across same-page reopen and
+    /// navigation that still yields context — but an empty collect on navigation clears it (mirroring
+    /// auto-attach on), and it should not leak into another page's sheet session.
     func clearManualContextIfStale(for currentPageURL: URL?) -> Bool {
         guard !shouldAutoCollectContext,
               case .attached(let context) = chipState,
@@ -693,19 +771,13 @@ final class AIChatContextualChatSessionState {
 
         let shouldDeliver: Bool
         switch frontendState {
-        case .chatWithoutInitialContext, .restoredChat:
+        case .chatWithoutInitialContext, .restoredChat, .chatWithInitialContext:
             shouldDeliver = true
-        case .chatWithInitialContext:
-            shouldDeliver = supportsMultipleContexts
         case .noChat:
             shouldDeliver = false
         }
-        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), multipleContexts=\(self.supportsMultipleContexts), uti=\(self.isUnifiedToggleInputActive))")
+        Logger.aiChat.debug("[SessionState] shouldDeliverToFrontendBridge=\(shouldDeliver) (frontendState=\(self.frontendState), uti=\(self.isUnifiedToggleInputActive))")
         return shouldDeliver
-    }
-
-    func shouldShowUTIAttachAffordanceForMultiContextNavigation() -> Bool {
-        isUnifiedToggleInputActive && hasActiveChat && !shouldAutoCollectContext
     }
 
 }
@@ -735,6 +807,16 @@ private extension AIChatContextualChatSessionState {
         isManualAttachInProgress = false
         isManualAttachFromFrontend = false
         pixelHandler.endManualAttach()
+    }
+
+    func handleOfferedContext(_ context: AIChatPageContext) {
+        guard !isStaleEchoOfDeliveredContext(context.contextData) else {
+            Logger.aiChat.debug("[SessionState] Ignoring stale echo for already-delivered context")
+            return
+        }
+        suggestedContext = context
+        emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))
+        Logger.aiChat.debug("[SessionState] Offered page context")
     }
 
     func handleAutoAttach(_ context: AIChatPageContext) {
@@ -829,11 +911,13 @@ private extension AIChatContextualChatSessionState {
     /// Beyond one attachment a single-line suggestion can no longer say which part of the prompt it
     /// acts on.
     private var shouldHideSuggestions: Bool {
-        attachmentCount > 1
+        attachmentCount > 1 || isDocumentChipLoading
     }
 
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
-        // These are all page-scoped, so beside an attached selection they act on the wrong thing.
+        if isDocumentChipLoading {
+            return []
+        }
         if !attachedSelections.isEmpty, frontendState == .noChat {
             return []
         }
@@ -886,7 +970,8 @@ private extension AIChatContextualChatSessionState {
             pageTypeSignals: context?.contextData.pageTypeSignals,
             url: context?.contextData.url,
             uiLocale: Locale.current.identifier,
-            scope: attachedSelections.isEmpty ? .page : .selection
+            scope: attachedSelections.isEmpty ? .page : .selection,
+            isDocument: context?.contextData.mimeType == AIChatPageContextData.pdfMIMEType
         )
 
         suggestionsResolveTask?.cancel()
@@ -921,7 +1006,7 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: suggestionsLoadState,
+            suggestionsLoadState: isDocumentChipLoading ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

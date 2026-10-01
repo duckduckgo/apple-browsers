@@ -160,4 +160,31 @@ final class KeyValueFileStoreTests {
         #expect(try s.object(forKey: "set") == nil)
         #expect(try s.object(forKey: "dict") as? [String: Int] == ["a": 1, "b": 2])
     }
+
+    // MARK: - Snapshot Tests
+
+    @available(iOS 16, macOS 13, *)
+    @Test("allObjects returns everything the store holds", .timeLimit(.minutes(1)))
+    func allObjectsReturnsEverythingTheStoreHolds() throws {
+        let name = UUID().uuidString
+        let store = try KeyValueFileStore(location: Self.tempDir, name: name)
+
+        try store.set("a value", forKey: "a")
+        try store.set(42, forKey: "b")
+
+        let all = try store.allObjects()
+
+        #expect(all.count == 2)
+        #expect(all["a"] as? String == "a value")
+        #expect(all["b"] as? Int == 42)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("allObjects is empty for a store with no file yet", .timeLimit(.minutes(1)))
+    func allObjectsIsEmptyForAStoreWithNoFileYet() throws {
+        let name = UUID().uuidString
+        let store = try KeyValueFileStore(location: Self.tempDir, name: name)
+
+        #expect(try store.allObjects().isEmpty)
+    }
 }

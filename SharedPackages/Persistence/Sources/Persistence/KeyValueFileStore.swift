@@ -102,6 +102,19 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
         return internalRepresentation[key]
     }
 
+    /// A snapshot of every key and value the store holds.
+    ///
+    /// Reads the whole file, so it is for bulk work such as a one-off migration rather than for
+    /// routine access. Use `object(forKey:)` for a single value.
+    public func allObjects() throws -> [String: Any] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+
+        return try internalRepresentation ?? load()
+    }
+
     public func set(_ value: Any?, forKey key: String) throws {
         lock.lock()
         defer {

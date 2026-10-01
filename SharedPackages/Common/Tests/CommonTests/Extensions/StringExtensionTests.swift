@@ -29,4 +29,17 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual("🤔.com".punycodeEncodedHostname, "xn--wp9h.com")
     }
 
+    func testWhenHostnameContainsCompatibilityCharacters_ThenItIsNormalizedBeforeEncoding() {
+        XCTAssertEqual("ＧＯＯ．ＧＬ".punycodeEncodedHostname, "goo.gl")
+    }
+
+    func testWhenPunycodePrefixIsUppercase_ThenHostnameIsDecoded() {
+        XCTAssertEqual("XN--LS8H.LA".punycodeDecodedHostname, "💩.LA")
+    }
+
+    func testWhenPunycodePayloadIsMalformed_ThenHostnameIsNotDecoded() {
+        XCTAssertNil("xn--y-z".punycodeDecodedHostname)
+        XCTAssertNil("xn--abcd".punycodeDecodedHostname)
+    }
+
 }

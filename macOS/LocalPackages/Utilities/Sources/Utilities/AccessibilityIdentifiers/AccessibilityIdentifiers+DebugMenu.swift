@@ -29,8 +29,12 @@ public extension AccessibilityIdentifiers {
         /// `debug://failure?simulatedError=hostNotFound` (UI tests only; error kind that must not auto-reload on tab reactivation).
         public static let openFailureURLSchemeHostNotFoundQueryDemoPage = "DebugMenu.openFailureURLSchemeHostNotFoundQueryDemoPage"
 
+        public static let simulateCPMBreakage = "DebugMenu.simulateCPMBreakage"
+
         /// `MainMenu` updates the menu item title by state; UI tests detect on/off from the title (checkmarks are unreliable in XCUITest).
         public static let failureURLSchemeSimulateConnectionErrorMenuTitleOff = "Simulate debug://failure connection error (Off)"
         public static let failureURLSchemeSimulateConnectionErrorMenuTitleOn = "Simulate debug://failure connection error (On)"
+        public static let simulateCPMBreakageMenuTitleOff = "Simulate CPM Messaging Breakage (Off)"
+        public static let simulateCPMBreakageMenuTitleOn = "Simulate CPM Messaging Breakage (On)"
     }
 }

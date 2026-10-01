@@ -20,36 +20,39 @@
 import AIChat
 import Core
 import Foundation
+import PixelKit
 
 /// Maps a `PageContextExtractionOutcome` to the iOS extraction-measurement pixels.
 protocol PageContextExtractionPixelFiring {
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?)
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType)
 }
 
 final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring {
 
     private let firePixel: (Pixel.Event, [String: String]) -> Void
 
-    init(firePixel: @escaping (Pixel.Event, [String: String]) -> Void = { DailyPixel.fireDailyAndCount(pixel: $0, withAdditionalParameters: $1) }) {
+    init(firePixel: @escaping (Pixel.Event, [String: String]) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, options: .parameters($1)) }) {
         self.firePixel = firePixel
     }
 
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?) {
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType) {
         switch outcome {
         case .success:
-            // success carries no discriminating params
-            firePixel(.aiChatPageContextExtractionSuccess, [:])
+            firePixel(.aiChatPageContextExtractionSuccess, ["context_type": contextType.rawValue])
         case .failure(let reason):
-            var params = ["reason": reason.rawValue, "trigger": trigger.rawValue]
+            var params = ["reason": reason.rawValue, "trigger": trigger.rawValue, "context_type": contextType.rawValue]
             if let latency {
                 params["latency"] = latency.rawValue
             }
             firePixel(.aiChatPageContextExtractionFailed, params)
         case .prevented(let category):
+            // `category` already names the page kind, so no context_type here.
             firePixel(.aiChatPageContextExtractionPrevented,
                       ["category": category, "reason": "non_attachable", "trigger": trigger.rawValue])
         }

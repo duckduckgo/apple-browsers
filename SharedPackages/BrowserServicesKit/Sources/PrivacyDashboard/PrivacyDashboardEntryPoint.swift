@@ -29,6 +29,9 @@ public enum PrivacyDashboardEntryPoint: Equatable {
     /// The report broken site screen opened from a browser error page.
     case errorPage
 
+    /// The final broken-site report form opened after repeated WebKit terminations.
+    case webKitTerminationErrorPage
+
     /// The toggle report screen, which is triggered whenever the user toggles off protection (from outside of Privacy Dashboard)
     /// This is only available on iOS, as macOS does not have an option to disable protection outside of the dashboard.
     case toggleReport(completionHandler: (Bool) -> Void)
@@ -40,6 +43,7 @@ public enum PrivacyDashboardEntryPoint: Equatable {
         switch self {
         case .dashboard: return .primaryScreen
         case .report, .errorPage: return .breakageForm
+        case .webKitTerminationErrorPage: return .breakageFormFinalStep
         case .prompt: return .breakageForm
         case .toggleReport: return .toggleReport
         }
@@ -51,6 +55,7 @@ public enum PrivacyDashboardEntryPoint: Equatable {
             (.dashboard, .dashboard),
             (.report, .report),
             (.errorPage, .errorPage),
+            (.webKitTerminationErrorPage, .webKitTerminationErrorPage),
             (.toggleReport, .toggleReport),
             (.prompt, .prompt):
             return true

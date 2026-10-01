@@ -42,7 +42,7 @@ struct SyncWithAnotherDeviceView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(spacing: 20.0) {
-                Image(model.isAppRebranded ? .syncPair96 : .syncPair96Legacy)
+                Image(.syncPair96)
                 SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
             }
 
@@ -193,7 +193,7 @@ struct SyncWithAnotherDeviceView: View {
                         .frame(height: 28)
                     }
                     Button {
-                        model.delegate?.copyCode()
+                        model.delegate?.copyCode(codeForDisplayOrPasting)
                         showCopyConfirmation = true
                     } label: {
                         HStack {

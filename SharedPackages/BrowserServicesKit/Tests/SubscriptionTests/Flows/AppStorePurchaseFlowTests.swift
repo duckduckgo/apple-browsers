@@ -18,10 +18,9 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
-@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 @available(iOS 15.0, *)
 final class AppStorePurchaseFlowTests: XCTestCase {
@@ -146,7 +145,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultSubscription = .success(subscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
 
         XCTAssertEqual(result, .success(.completed))
     }
@@ -157,7 +156,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultSubscription = .success(subscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
 
         XCTAssertEqual(result, .failure(.missingEntitlements))
     }
@@ -168,7 +167,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultSubscription = .success(expiredSubscription)
         subscriptionManagerMock.confirmPurchaseResponse = .success(expiredSubscription)
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
 
         XCTAssertEqual(result, .failure(.purchaseFailed(AppStoreRestoreFlowError.subscriptionExpired)))
     }
@@ -178,7 +177,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         subscriptionManagerMock.confirmPurchaseResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.badRequest))
 
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
         switch result {
         case .success:
             XCTFail("Unexpected success")
@@ -192,6 +191,35 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         }
     }
 
+    // MARK: - userDidPurchaseSubscription Notification Tests
+
+    func test_completeSubscriptionPurchase_withSuccess_postsUserDidPurchaseSubscription() async {
+        subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
+
+        let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default)
+
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+
+        await fulfillment(of: [notificationPosted], timeout: 1.0)
+    }
+
+    func test_completeSubscriptionPurchase_withMissingEntitlements_doesNotPostUserDidPurchaseSubscription() async {
+        subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
+
+        let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default)
+        notificationPosted.isInverted = true
+
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+
+        await fulfillment(of: [notificationPosted], timeout: 1.0)
+    }
+
     // MARK: - PendingTransactionHandler Tests
 
     func test_completeSubscriptionPurchase_withSuccess_callsHandleSubscriptionActivated() async {
@@ -202,7 +230,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
         // When
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
 
         // Then
         XCTAssertEqual(result, .success(.completed))
@@ -217,7 +245,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
 
         // When
-        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
+        let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
 
         // Then
         XCTAssertEqual(result, .failure(.missingEntitlements))

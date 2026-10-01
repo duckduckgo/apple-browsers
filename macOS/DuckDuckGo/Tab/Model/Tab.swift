@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
@@ -28,7 +29,7 @@ import Foundation
 import FoundationExtensions
 import History
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import Onboarding
 import os.log
 import PageRefreshMonitor
@@ -37,6 +38,7 @@ import PrivacyConfig
 import SERPSettings
 import SpecialErrorPages
 import UserScript
+import WebExtensions
 import WebKit
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
@@ -74,6 +76,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
         let eventHub: EventHubManaging
+        let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+        let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -115,6 +119,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     private(set) var userContentController: UserContentController?
     private(set) var specialPagesUserScript: SpecialPagesUserScript?
+    private(set) var onboardingActionsManager: OnboardingActionsManager?
 
     @MainActor
     convenience init(id: String? = nil,
@@ -163,7 +168,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatSessionStore: AIChatSessionStoring? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
                      themeManager: ThemeManaging? = nil,
-                     eventHub: EventHubManaging? = nil
+                     eventHub: EventHubManaging? = nil,
+                     webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager },
+                     webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = {
+                         guard #available(macOS 15.4, *) else { return nil }
+                         return NSApp.delegateTyped.webExtensionLifecycleCoordinator?.initialLoadWaiter
+                     }
     ) {
 
         let duckPlayer = duckPlayer
@@ -231,7 +241,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
                   themeManager: themeManager ?? NSApp.delegateTyped.themeManager,
-                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub
+                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub,
+                  webExtensionManagerProvider: webExtensionManagerProvider,
+                  webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider
         )
     }
 
@@ -283,7 +295,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatSessionStore: AIChatSessionStoring,
          tabCrashAggregator: TabCrashAggregator,
          themeManager: ThemeManaging,
-         eventHub: EventHubManaging
+         eventHub: EventHubManaging,
+         webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -309,8 +323,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.themeManager = themeManager
 
         self.specialPagesUserScript = SpecialPagesUserScript()
-        specialPagesUserScript?
-            .withAllSubfeatures()
+        self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
                                                  contentBlocking: privacyFeatures.contentBlocking,
@@ -334,7 +347,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
-                                      geolocationService: geolocationService)
+                                      geolocationService: geolocationService,
+                                      featureFlagger: featureFlagger)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()
         let userScriptsPublisher = userContentControllerPromise.future
@@ -369,7 +383,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           autoplayPreferences: autoplayPreferences,
                                                           permissionManager: permissionManager,
                                                           webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                          eventHub: eventHub)
+                                                          eventHub: eventHub,
+                                                          webExtensionManagerProvider: webExtensionManagerProvider,
+                                                          webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
@@ -379,6 +395,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                                                                             setContent: { tabGetter()?.setContent($0) },
                                                                             closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
+                                                                            reportBrokenSite: { sourceWindow in
+                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .webKitTerminationErrorPage, in: sourceWindow)
+                                                                            },
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                                                                             userScriptsPublisher: userScriptsPublisher,
@@ -517,7 +536,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
-    /// used by BSK: Navigation.DistributedNavigationDelegate
+    /// used by BSK: DDGNavigation.DistributedNavigationDelegate
     var shouldDisableLongDecisionMakingChecks: Bool = false
     func disableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = true }
     func enableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = false }
@@ -597,6 +616,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     var contentChangeEnabled = true
+
+    /// Called before an actual tab close, never for moves or internal replacement.
+    var onClose: (@MainActor () -> Void)?
 
     var isLazyLoadingInProgress = false
 
@@ -992,7 +1014,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return
         }
 
-        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+        let onboarding = NonBlockingOnboarding(featureFlagger: Application.appDelegate.featureFlagger)
+        let updater = Application.appDelegate.onboardingContextualDialogsManager
+        if onboarding.isNonBlocking {
+            onboarding.initializeContextualOnboarding(updater)
+        } else {
+            updater.state = .notStarted
+        }
         setContent(.onboarding)
     }
 
@@ -1312,7 +1340,7 @@ extension Tab {
 private extension Tab {
 
     func refreshAutoplayState(videoPlaybackDetected: Bool, videoAutoplayDetected: Bool) {
-        let isEligible = featureFlagger.isFeatureOn(.autoplayPolicy) && content.urlForWebView?.isHttpOrHttps == true
+        let isEligible = content.urlForWebView?.isHttpOrHttps == true
 
         // Please do note that both conditions (`PlaybackDetected` + `AutoplayDetected`) may not necessarily be both true simultaneously
         // Our Autoplay Policy may prevent Playback, but we might detect Videos with Autoplay.
@@ -1491,6 +1519,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didStart(_ navigation: Navigation) {
+        if navigation.url.isHttpOrHttps, navigation.navigationAction.navigationType != .alternateHtmlLoad {
+            Application.appDelegate.windowControllersManager.recordBrowsingBeforeOnboardingCompletion()
+        }
         delegate?.tabDidStartNavigation(self)
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil

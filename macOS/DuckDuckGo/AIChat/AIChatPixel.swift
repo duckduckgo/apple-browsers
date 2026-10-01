@@ -119,6 +119,9 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button (or middle-clicks the pill).
     case aiChatNewChatTitleBarMenu
 
+    /// Event Trigger: User picks "Chats" from the tab-bar Duck.ai menu button.
+    case aiChatChatsTitleBarMenu
+
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
@@ -148,10 +151,10 @@ enum AIChatPixel: PixelKit.Event {
     // MARK: - Page Context Extraction
 
     /// Event Trigger: Page-context extraction produced usable content.
-    case aiChatPageContextExtractionSuccess
+    case aiChatPageContextExtractionSuccess(contextType: String)
 
     /// Event Trigger: Page-context extraction was attempted but produced no usable content.
-    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?)
+    case aiChatPageContextExtractionFailed(reason: String, trigger: String, latency: String?, contextType: String)
 
     /// Event Trigger: Page-context extraction was skipped because the page is not attachable (blocklisted media type or special page).
     case aiChatPageContextExtractionPrevented(category: String, trigger: String)
@@ -328,6 +331,12 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: The address bar's reasoning picker opened showing at least one gated effort.
     case aiChatAddressBarReasoningPickerShown(origin: String)
 
+    /// Event Trigger: User taps a gated model or reasoning effort in the address bar picker.
+    case aiChatAddressBarGatedRowClick(origin: String)
+
+    /// Event Trigger: User taps a gated model or reasoning effort in the New Tab Page picker.
+    case aiChatNtpGatedRowClick(origin: String)
+
     // MARK: - Duck.ai Subscription Funnel (frontend-reported)
 
     /// Event Trigger: A Duck.ai subscription-funnel entry point is shown in the web frontend, reported over the `reportMetric` bridge. `origin` is the entry point.
@@ -364,6 +373,18 @@ enum AIChatPixel: PixelKit.Event {
 
     /// Event Trigger: User submits a prompt while image generation mode is active
     case aiChatAddressBarImageGenerationSubmitted
+
+    /// Event Trigger: Selecting Create Image switches an unsupported model to an image-capable model.
+    case aiChatAddressBarCreateImageModelSwitched(fromModelId: String, toModelId: String, fromModelPrivacyPreserving: Bool)
+
+    /// Event Trigger: User dismisses the model-switch notice shown after selecting Create Image.
+    case aiChatAddressBarCreateImageModelSwitchNoticeDismissed
+
+    /// Event Trigger: Create Image cannot find an accessible image-capable model.
+    case aiChatAddressBarCreateImageUnavailable
+
+    /// Error monitor: a Create Image prompt is submitted while the selected model is known not to support image generation.
+    case aiChatAddressBarCreateImageSubmittedWithUnsupportedModel
 
     // MARK: - Web Search Mode
 
@@ -583,6 +604,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_tabbar_button_clicked"
         case .aiChatNewChatTitleBarMenu:
             return "aichat_new_chat_title_bar_menu"
+        case .aiChatChatsTitleBarMenu:
+            return "aichat_chats_title_bar_menu"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -732,6 +755,10 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_addressbar_model_picker_shown"
         case .aiChatAddressBarReasoningPickerShown:
             return "aichat_addressbar_reasoning_picker_shown"
+        case .aiChatAddressBarGatedRowClick:
+            return "aichat_addressbar_gated_row_click"
+        case .aiChatNtpGatedRowClick:
+            return "aichat_ntp_gated_row_click"
         case .aiChatSubscriptionFunnelImpression:
             return "aichat_subscription-funnel_impression"
         case .aiChatSubscriptionFunnelClick:
@@ -754,6 +781,14 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_addressbar_image_generation_deactivated"
         case .aiChatAddressBarImageGenerationSubmitted:
             return "aichat_addressbar_image_generation_submitted"
+        case .aiChatAddressBarCreateImageModelSwitched:
+            return "aichat_addressbar_create_image_model_switched"
+        case .aiChatAddressBarCreateImageModelSwitchNoticeDismissed:
+            return "aichat_addressbar_create_image_model_switch_notice_dismissed"
+        case .aiChatAddressBarCreateImageUnavailable:
+            return "aichat_addressbar_create_image_unavailable"
+        case .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel:
+            return "aichat_addressbar_create_image_submitted_with_unsupported_model"
         case .aiChatAddressBarWebSearchActivated:
             return "aichat_addressbar_web_search_activated"
         case .aiChatAddressBarWebSearchDeactivated:
@@ -873,12 +908,12 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
+                .aiChatChatsTitleBarMenu,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
                 .aiChatAttachSelection,
-                .aiChatPageContextExtractionSuccess,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -921,6 +956,9 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarCreateImageModelSwitchNoticeDismissed,
+                .aiChatAddressBarCreateImageUnavailable,
+                .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel,
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
@@ -972,11 +1010,20 @@ enum AIChatPixel: PixelKit.Event {
             ]
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType, "origin": origin]
+        case .aiChatAddressBarCreateImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
+            return [
+                "from_model_id": fromModelId,
+                "to_model_id": toModelId,
+                "from_model_privacy_preserving": String(fromModelPrivacyPreserving),
+                "entry_point": "tools_menu"
+            ]
         case .aiChatAddressBarSubscriptionUpsellShown(let origin),
                 .aiChatNtpSubscriptionUpsellShown(let origin):
             return ["origin": origin]
         case .aiChatAddressBarModelPickerShown(let origin),
                 .aiChatAddressBarReasoningPickerShown(let origin),
+                .aiChatAddressBarGatedRowClick(let origin),
+                .aiChatNtpGatedRowClick(let origin),
                 .aiChatNtpModelPickerShown(let origin),
                 .aiChatNtpModelPickerTryForFreeShown(let origin),
                 .aiChatNtpModelPickerUpgradeShown(let origin),
@@ -1012,8 +1059,10 @@ enum AIChatPixel: PixelKit.Event {
             return ["fileCount": String(fileCount)]
         case .aiChatAddressBarFileValidationFailed(let reason):
             return ["reason": reason]
-        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency):
-            var params = ["reason": reason, "trigger": trigger]
+        case .aiChatPageContextExtractionSuccess(let contextType):
+            return ["context_type": contextType]
+        case .aiChatPageContextExtractionFailed(let reason, let trigger, let latency, let contextType):
+            var params = ["reason": reason, "trigger": trigger, "context_type": contextType]
             if let latency {
                 params["latency"] = latency
             }
@@ -1084,6 +1133,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSidebarFloatingTabActivated,
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
+                .aiChatChatsTitleBarMenu,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -1146,6 +1196,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpSubscriptionUpsellShown,
                 .aiChatAddressBarModelPickerShown,
                 .aiChatAddressBarReasoningPickerShown,
+                .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick,
                 .aiChatNtpModelPickerShown,
                 .aiChatNtpModelPickerTryForFreeShown,
                 .aiChatNtpModelPickerUpgradeShown,
@@ -1194,6 +1246,10 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarImageGenerationActivated,
                 .aiChatAddressBarImageGenerationDeactivated,
                 .aiChatAddressBarImageGenerationSubmitted,
+                .aiChatAddressBarCreateImageModelSwitched,
+                .aiChatAddressBarCreateImageModelSwitchNoticeDismissed,
+                .aiChatAddressBarCreateImageUnavailable,
+                .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel,
                 .aiChatAddressBarWebSearchActivated,
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
@@ -1213,6 +1269,17 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpCustomizeResponsesOpened,
                 .serpSettingsUnrecognizedValue:
             return [.pixelSource]
+        }
+    }
+
+    // Native gated-row pixels omit the legacy platform prefix used by existing AI Chat pixels.
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .aiChatAddressBarGatedRowClick,
+                .aiChatNtpGatedRowClick:
+            return .none
+        default:
+            return .platformDefault
         }
     }
 

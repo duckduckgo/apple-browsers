@@ -177,7 +177,6 @@ final class BrokenSiteReporterTests: XCTestCase {
         XCTAssertEqual(report.requestParameters["reportFlow"], "error_page")
     }
 
-#if os(iOS)
     func testWhenReportIsAfterTabTerminationThenParameterIsIncluded() {
         let report = makeReport(cookieConsentInfo: nil, isAfterTabTermination: true)
 
@@ -189,7 +188,6 @@ final class BrokenSiteReporterTests: XCTestCase {
 
         XCTAssertNil(report.requestParameters["isAfterTabTermination"])
     }
-#endif
 
     private func makeReport(cookieConsentInfo: CookieConsentInfo?,
                             reportFlow: BrokenSiteReport.Source = .appMenu,
@@ -252,6 +250,7 @@ final class BrokenSiteReporterTests: XCTestCase {
                          privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil,
                          isForceDarkModeEnabled: nil,
+                         isAfterTabTermination: isAfterTabTermination,
                          lastTabSuspension: nil,
                          pageLoadTiming: nil)
 #endif

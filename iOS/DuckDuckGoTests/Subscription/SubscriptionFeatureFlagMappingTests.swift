@@ -30,6 +30,11 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
     let internalUserDecider = MockInternalUserDecider()
     let userDefaults = UserDefaults(suiteName: "SubscriptionFeatureFlagMappingTests")!
 
+    override func setUp() {
+        super.setUp()
+        userDefaults.noSubscriptionProductsOverride = false
+    }
+
     func testWhenInternalUserOnSandboxButNoOverrideThenItIsNotUsed() {
         // Given
         internalUserDecider.isInternalUser = true
@@ -44,6 +49,7 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         // Then
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionNoProductsOverride))
     }
 
     func testWhenInternalUserOnSandboxAndOverrideSetToUSAThenItIsUsed() {
@@ -60,6 +66,7 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         // Then
         XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionNoProductsOverride))
     }
 
     func testWhenInternalUserOnSandboxAndOverrideSetToROWThenItIsUsed() {
@@ -76,6 +83,22 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         // Then
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
         XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionNoProductsOverride))
+    }
+
+    func testWhenInternalUserOnSandboxAndNoProductsOverrideEnabledThenItIsUsed() {
+        // Given
+        internalUserDecider.isInternalUser = true
+        let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        userDefaults.noSubscriptionProductsOverride = true
+
+        // When
+        let subscriptionFeatureFlagMapping = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: userDefaults)
+
+        // Then
+        XCTAssertTrue(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionNoProductsOverride))
     }
 
     func testWhenOnSandboxAndWithOverrideSetButInternalUserDisabledThenOverrideIsNotUsed() {
@@ -83,6 +106,7 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         internalUserDecider.isInternalUser = false
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
         userDefaults.storefrontRegionOverride = .usa
+        userDefaults.noSubscriptionProductsOverride = true
 
         // When
         let subscriptionFeatureFlagMapping = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
@@ -92,6 +116,7 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         // Then
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionNoProductsOverride))
     }
 
     func testWhenInternalUserAndOverrideSetButOnProductionThenOverrideIsNotUsed() {
@@ -99,6 +124,7 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         internalUserDecider.isInternalUser = true
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
         userDefaults.storefrontRegionOverride = .restOfWorld
+        userDefaults.noSubscriptionProductsOverride = true
 
         // When
         let subscriptionFeatureFlagMapping = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
@@ -108,5 +134,6 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         // Then
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionUSARegionOverride))
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionROWRegionOverride))
+        XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.useSubscriptionNoProductsOverride))
     }
 }

@@ -5,7 +5,7 @@
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_fire_window_configuration_startup-fire-window_disabled": {
         "description": "Daily pixel fired when fire window is disabled for startup",

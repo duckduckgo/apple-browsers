@@ -28,6 +28,7 @@ import SyncDataProviders
 import WidgetKit
 import os.log
 import Core
+import PixelKit
 
 public protocol FavoritesDisplayModeStoring: AnyObject {
     var favoritesDisplayMode: FavoritesDisplayMode { get set }
@@ -37,7 +38,7 @@ public class BookmarksFaviconsFetcherErrorHandler: EventMapping<BookmarksFavicon
 
     public init() {
         super.init { event, _, _, _ in
-            Pixel.fire(pixel: .bookmarksFaviconsFetcherFailed, error: event.underlyingError)
+            PixelKit.fire(Pixel.Event.bookmarksFaviconsFetcherFailed.withError(event.underlyingError))
         }
     }
 
@@ -171,7 +172,7 @@ public final class SyncBookmarksAdapter {
             }
             stateStore = try BookmarksFaviconsFetcherStateStore(applicationSupportURL: url)
         } catch {
-            Pixel.fire(pixel: .bookmarksFaviconsFetcherStateStoreInitializationFailed, error: error)
+            PixelKit.fire(Pixel.Event.bookmarksFaviconsFetcherStateStoreInitializationFailed.withError(error))
             Logger.sync.error("Failed to initialize BookmarksFaviconsFetcherStateStore:: \(error.localizedDescription, privacy: .public)")
             return nil
         }
@@ -233,7 +234,7 @@ public final class SyncBookmarksAdapter {
                 let nsError = error as NSError
                 let processedErrors = CoreDataErrorsParser.parse(error: nsError)
                 let params = processedErrors.errorPixelParameters
-                Pixel.fire(pixel: .favoritesCleanupFailed, error: error, withAdditionalParameters: params)
+                PixelKit.fire(Pixel.Event.favoritesCleanupFailed.withError(error), options: .parameters(params))
             }
         }
     }

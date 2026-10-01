@@ -20,7 +20,7 @@ import XCTest
 import BrowserServicesKit
 import Subscription
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 
 @testable import DuckDuckGo_Privacy_Browser
 

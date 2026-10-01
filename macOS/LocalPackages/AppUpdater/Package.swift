@@ -13,12 +13,14 @@ let package = Package(
         .library(name: "AppUpdaterTestHelpers", targets: ["AppUpdaterTestHelpers"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.9.6"),
+        .package(path: "../../../SharedPackages/WideEvent"),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", exact: "2.10.0"),
         .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/Common"),
         .package(path: "../../../SharedPackages/Persistence"),
         .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Networking"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../FeatureFlags-macOS"),
     ],
@@ -26,13 +28,14 @@ let package = Package(
         .target(
             name: "AppUpdaterShared",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
-                .product(name: "Navigation", package: "BrowserServicesKit"),
+                .product(name: "DDGNavigation", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
@@ -58,6 +61,7 @@ let package = Package(
         .target(
             name: "SparkleAppUpdater",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "AppUpdaterShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
@@ -107,13 +111,14 @@ let package = Package(
                 "AppStoreAppUpdater",
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",
-                .product(name: "NetworkingTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
             ]
         ),
         .testTarget(
             name: "SparkleAppUpdaterTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "SparkleAppUpdater",
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",

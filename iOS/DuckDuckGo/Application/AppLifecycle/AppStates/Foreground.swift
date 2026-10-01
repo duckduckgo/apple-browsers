@@ -105,7 +105,7 @@ struct Foreground: ForegroundHandling {
             userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
                                                  featureFlagger: appDependencies.featureFlagger,
-                                                 isModalPromptPending: { appDependencies.mainCoordinator.isModalPromptPending }),
+                                                 runOnceModalPromptCloses: { appDependencies.mainCoordinator.runOnceModalPromptCloses($0) }),
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnEvaluator: idleReturnEvaluator,
             featureFlagger: appDependencies.featureFlagger,

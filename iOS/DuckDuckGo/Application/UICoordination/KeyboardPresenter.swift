@@ -74,20 +74,20 @@ final class KeyboardPresenter: KeyboardPresenting {
 
     private let mainViewController: any AppOpenKeyboardHandling
     private let featureFlagger: FeatureFlagger
-    private let isModalPromptPending: () -> Bool
+    private let runOnceModalPromptCloses: (@escaping @MainActor () -> Void) -> Bool
     private let pixelFiring: (any PixelKitFiring)?
     private let onAppLaunch: () -> Bool
     private let schedule: (@escaping () -> Void) -> Void
 
     init(mainViewController: any AppOpenKeyboardHandling,
          featureFlagger: FeatureFlagger,
-         isModalPromptPending: @escaping () -> Bool = { false },
+         runOnceModalPromptCloses: @escaping (@escaping @MainActor () -> Void) -> Bool = { _ in false },
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
          schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
         self.featureFlagger = featureFlagger
-        self.isModalPromptPending = isModalPromptPending
+        self.runOnceModalPromptCloses = runOnceModalPromptCloses
         self.pixelFiring = pixelFiring
         self.onAppLaunch = onAppLaunch
         self.schedule = schedule
@@ -108,7 +108,11 @@ final class KeyboardPresenter: KeyboardPresenting {
             if flagOn, !isCurrentRequest(requestID) { return }
             schedule { [self] in
                 if flagOn {
-                    guard isCurrentRequest(requestID), !isModalPromptPending() else { return }
+                    guard isCurrentRequest(requestID) else { return }
+                    let waitsForLaunchPrompt = runOnceModalPromptCloses { [weak self] in
+                        self?.showKeyboardAfterLaunchPrompt(requestID: requestID)
+                    }
+                    guard !waitsForLaunchPrompt else { return }
                     mainViewController.showKeyboardOnAppOpenIfAllowed()
                 } else {
                     mainViewController.enterSearchOnAppOpen()
@@ -120,6 +124,15 @@ final class KeyboardPresenter: KeyboardPresenting {
             mainViewController.closeScreensOverNewTabPageForIdleReturn(completion: scheduleKeyboard)
         } else {
             scheduleKeyboard()
+        }
+    }
+
+    private func showKeyboardAfterLaunchPrompt(requestID: UUID) {
+        guard isCurrentRequest(requestID) else { return }
+        // Let a prompt's destination finish opening before deciding whether to focus.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+            guard isCurrentRequest(requestID) else { return }
+            mainViewController.showKeyboardOnAppOpenIfAllowed()
         }
     }
 

@@ -99,6 +99,40 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
     }
 
     @available(iOS 16, *)
+    @Test("Coordinated Close Handler Runs Once The Root Leaves The Screen", .timeLimit(.minutes(1)))
+    func whenCoordinatedRootLeavesTheScreenThenCloseHandlerRunsOnce() throws {
+        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
+        let attachmentChecker = MockModalPromptRootAttachmentChecker()
+        let closeChecks = MockModalPromptScheduler()
+        sut = ModalPromptCoordinationManager(
+            providers: [MockModalPromptProvider()],
+            cooldownManager: cooldownManagerMock,
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            modalPromptScheduling: schedulerMock,
+            rootAttachmentChecker: attachmentChecker,
+            closeCheckScheduling: closeChecks
+        )
+        var handlerRunCount = 0
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: try acquireModalLease())
+        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
+
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        schedulerMock.executeScheduledBlock()
+        let root = try #require(presenterMock.capturedViewController)
+        attachmentChecker.markAttached(root)
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 0)
+
+        // The attempt stays active until the next reconcile, but the root has gone.
+        attachmentChecker.attachedRoots.removeAll()
+        closeChecks.executeScheduledBlock()
+        #expect(handlerRunCount == 1)
+        #expect(sut.hasActiveOrPendingModalAttempt)
+    }
+
+    @available(iOS 16, *)
     @Test("Coordinated Selection Respects Provider Eligibility And Order", .timeLimit(.minutes(1)))
     func whenCoordinatedProvidersHaveDifferentEligibilityThenFirstEligiblePromptIsSelected() throws {
         // Every provider here forces its own answer, so this covers the eligibility gate and provider order only. The

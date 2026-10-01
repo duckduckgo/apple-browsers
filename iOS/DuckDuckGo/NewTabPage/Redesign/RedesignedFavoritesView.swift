@@ -33,7 +33,7 @@ struct RedesignedFavoritesView: View {
 
     private var isExpanded: Bool { model.expansionState.isExpanded }
 
-    private var collapsedCapacity: Int { columns.count * Metrics.collapsedRowCount }
+    private var collapsedCapacity: Int { columns.count }
 
     private var hasOverflow: Bool { model.allFavorites.count > collapsedCapacity }
 
@@ -42,13 +42,10 @@ struct RedesignedFavoritesView: View {
     }
 
     private var collapsedHeight: CGFloat {
-        let rowCount = Metrics.collapsedRowCount
         let estimatedRowHeight = Metrics.tileSize + Metrics.iconToTitleSpacing + UIFont.daxCaption1().lineHeight * 2
-        return (0..<rowCount).reduce(CGFloat(0)) { height, row in
-            let favorites = model.allFavorites.dropFirst(row * columns.count).prefix(columns.count)
-            let rowHeight = favorites.compactMap { collapsedItemHeights[$0.id] }.max() ?? estimatedRowHeight
-            return height + rowHeight
-        } + CGFloat(rowCount - 1) * Metrics.rowSpacing
+        return model.allFavorites.prefix(columns.count)
+            .compactMap { collapsedItemHeights[$0.id] }
+            .max() ?? estimatedRowHeight
     }
 
     private var expansionAnimation: Animation? {
@@ -286,7 +283,6 @@ private enum Metrics {
     static let collapseIconSize: CGFloat = 12
     static let collapseIconBackgroundSize: CGFloat = 20
     static let columnCount = 5
-    static let collapsedRowCount = 1
     static let columnSpacing: CGFloat = 8
     static let rowSpacing: CGFloat = 20
     static let iconToTitleSpacing: CGFloat = 6

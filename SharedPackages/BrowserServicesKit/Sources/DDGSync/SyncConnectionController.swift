@@ -21,7 +21,7 @@ import Foundation
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerWillBeginTransmittingRecoveryKey() async
-    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool)
+    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool, isNegotiatedV2Point1: Bool)
 
     func controllerDidReceiveRecoveryKey()
 
@@ -35,10 +35,10 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus)
 
-    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool)
+    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool, isNegotiatedV2Point1: Bool)
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
 
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole)
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole, isNegotiatedV2Point1: Bool)
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole)
 
     @discardableResult
@@ -720,10 +720,14 @@ public class SyncConnectionController: SyncConnectionControlling {
                                            setupRole: SyncSetupRole) async {
         switch completion {
         case .loggedIn:
-            await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [], isRecovery: false, setupRole: setupRole)
+            await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [],
+                                                       isRecovery: false,
+                                                       setupRole: setupRole,
+                                                       isNegotiatedV2Point1: coordinator.negotiatedVersion >= .v2Point1)
         case .recoveryCodeSent(let credentialKind):
             let shouldWaitForDevicesToChange = credentialKind == .ddg && !coordinator.supportsRecoveryCodeDone
-            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange)
+            await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange,
+                                                                       isNegotiatedV2Point1: coordinator.negotiatedVersion >= .v2Point1)
         case .alreadyConnected:
             await delegate?.controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: setupRole)
         }
@@ -753,7 +757,10 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool, setupRole: SyncSetupRole) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
-        await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices, isRecovery: isRecovery, setupRole: setupRole)
+        await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices,
+                                                   isRecovery: isRecovery,
+                                                   setupRole: setupRole,
+                                                   isNegotiatedV2Point1: false)
     }
 
     private func remoteConnect() throws -> RemoteConnecting {
@@ -787,7 +794,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 return
             }
 
-            delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+            delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true, isNegotiatedV2Point1: false)
             (await state.getExchanger())?.stopPolling()
         }
     }
@@ -895,7 +902,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         if syncService.account == nil {
             do {
                 try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
-                await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+                await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true, isNegotiatedV2Point1: false)
                 shouldShowSyncEnabled = false
             } catch {
                 Task {
@@ -1096,7 +1103,8 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
         await delegate?.controllerDismissPairingV2Confirmation()
     }
 
-    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
-        await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: credentialKind == .ddg)
+    func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind, isNegotiatedV2Point1: Bool) async {
+        await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: credentialKind == .ddg,
+                                                       isNegotiatedV2Point1: isNegotiatedV2Point1)
     }
 }

@@ -111,6 +111,7 @@ final class SyncDialogController {
     private var pairingV2PeerKind: PairingV2DeviceKind?
     private var pairingV2ConfirmationRequest: PendingPairingConfirmation?
     private var pairingV2ConfirmationWasDismissedByController = false
+    private var didCreateSyncAccountDuringPairing = false
     private var displayedCodeSetupSource: SyncSetupSource?
     private var pendingSyncSuccessDialog: ManagementDialogKind?
     private var startingSyncAccountUserId: String?
@@ -257,6 +258,7 @@ final class SyncDialogController {
     }
 
     private func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {
+        didCreateSyncAccountDuringPairing = false
         captureStartingSyncAccount()
         Task {
             await connectionController.syncCodeEntered(code: recoveryCode, canScanLegacyURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes), codeSource: codeSource)
@@ -272,10 +274,20 @@ final class SyncDialogController {
         }
     }
 
-    private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool) {
-        let successDialog = successDialogForCurrentAccount()
+    private func completeV2HostFlow(shouldWaitForDevicesToChange: Bool, isNegotiatedV2Point1: Bool = false) {
+        let successDialog: ManagementDialogKind?
+        if isNegotiatedV2Point1 {
+            successDialog = successDialogForCurrentAccount()
+        } else {
+            successDialog = didCreateSyncAccountDuringPairing ? .saveRecoveryCode(recoveryCode ?? "") : nil
+        }
+        didCreateSyncAccountDuringPairing = false
         let complete: (SyncDialogController) -> Void = { controller in
-            controller.completeAfterPreparingToSyncAnimation(successDialog)
+            if let successDialog {
+                controller.completeAfterPreparingToSyncAnimation(successDialog)
+            } else {
+                controller.managementDialogModel.endFlow()
+            }
         }
 
         if shouldWaitForDevicesToChange {
@@ -317,6 +329,7 @@ final class SyncDialogController {
 
     private func startPollingForRecoveryKey(isRecovery: Bool) {
         pairingV2PeerKind = nil
+        didCreateSyncAccountDuringPairing = false
         captureStartingSyncAccount()
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
@@ -416,6 +429,7 @@ final class SyncDialogController {
     }
 
     private func startLegacyRecoveryFlow() {
+        didCreateSyncAccountDuringPairing = false
         captureStartingSyncAccount()
         let recoveryCode = recoveryCode ?? "" // Only called if Sync enabled therefore will never be blank
         codeForDisplayOrPasting = recoveryCode
@@ -429,6 +443,7 @@ final class SyncDialogController {
 
     private func startPollingForPublicKey() {
         pairingV2PeerKind = nil
+        didCreateSyncAccountDuringPairing = false
         captureStartingSyncAccount()
         Task { @MainActor in
             defer { managementDialogModel.isConnectingAnotherDevice = false }
@@ -767,6 +782,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func didEndFlow() {
+        didCreateSyncAccountDuringPairing = false
         pendingSyncSuccessDialog = nil
         managementDialogModel.isPreparingToSyncAnimationPaused = false
         let controller = self.connectionController
@@ -909,7 +925,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         }
     }
 
-    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
+    func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool, isNegotiatedV2Point1: Bool = false) {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.exchange,
                                                                       flowVersion: syncSetupFlowVersion,
                                                                       peerKind: pairingV2PeerKind?.syncSetupPeerKind,
@@ -917,7 +933,8 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         pairingV2PeerKind = nil
 
         if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
-            completeV2HostFlow(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange)
+            completeV2HostFlow(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange,
+                               isNegotiatedV2Point1: isNegotiatedV2Point1)
             return
         }
 
@@ -1008,11 +1025,12 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         return peerName
     }
 
-    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool) {
+    func controllerDidCreateSyncAccount(shouldShowSyncEnabled: Bool, isNegotiatedV2Point1: Bool = false) {
         let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
         PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
 
         if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
+            didCreateSyncAccountDuringPairing = true
             return
         }
 
@@ -1029,7 +1047,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
 
         if managementDialogModel.isSimplifiedSyncSetupV2Enabled {
-            completeV2HostFlow(shouldWaitForDevicesToChange: false)
+            completeV2HostFlow(shouldWaitForDevicesToChange: false, isNegotiatedV2Point1: false)
             return
         }
 
@@ -1039,21 +1057,16 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         }
     }
 
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole, isNegotiatedV2Point1: Bool = false) {
         self.codeForDisplayOrPasting = self.recoveryCode
         self.stringForQR = self.recoveryCode
         mapDevices(registeredDevices)
         PixelKit.fire(GeneralPixel.syncLogin)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let successDialog = self.managementDialogModel.isSimplifiedSyncSetupV2Enabled
+            let successDialog = self.managementDialogModel.isSimplifiedSyncSetupV2Enabled && isNegotiatedV2Point1
                 ? self.successDialogForCurrentAccount(isRecovery: isRecovery)
                 : .saveRecoveryCode(self.recoveryCode ?? "")
-            if self.managementDialogModel.isSimplifiedSyncSetupV2Enabled,
-               self.managementDialogModel.isPreparingToSyncAnimationPaused {
-                self.completeAfterPreparingToSyncAnimation(successDialog)
-            } else {
-                self.presentDialog(for: successDialog)
-            }
+            self.completeAfterPreparingToSyncAnimation(successDialog)
         }
         guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
             PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.connect,
@@ -1083,7 +1096,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerDidFinishReportingAccountSwitch(didSucceed: Bool) {
         if didSucceed && managementDialogModel.isSimplifiedSyncSetupV2Enabled {
-            completeAfterPreparingToSyncAnimation(.saveRecoveryCode(recoveryCode ?? ""))
+            completeAfterPreparingToSyncAnimation(successDialogForCurrentAccount())
         } else if didSucceed || managementDialogModel.syncErrorMessage == nil {
             managementDialogModel.endFlow()
         }

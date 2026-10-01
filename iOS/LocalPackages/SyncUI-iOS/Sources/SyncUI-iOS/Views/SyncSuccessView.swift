@@ -28,7 +28,7 @@ struct SyncSuccessView: View {
     let destination: SyncSettingsViewModel.SuccessDestination
 
     private var showsRecoveryCode: Bool {
-        if case .fullRecoveryCode = destination { return true }
+        if case .fullRecoveryCode(let recovery) = destination { return !recovery }
         return false
     }
 
@@ -73,14 +73,9 @@ struct SyncSuccessView: View {
     }
 
     private var title: String {
-        switch destination {
-        case .fullRecoveryCode(let isRecovery):
-            isRecovery
-                ? UserText.simplifiedRecoveryCompleteTitle
-                : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
-        case .alreadySyncing:
-            UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
-        }
+        isRecovery
+            ? UserText.simplifiedRecoveryCompleteTitle
+            : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
     }
 
     private var description: String {
@@ -122,7 +117,7 @@ struct SyncSuccessView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .accessibility(identifier: "SyncSuccessTitle")
 
-                if showsRecoveryCode {
+                if showsRecoveryCode || isRecovery {
                     Text(description)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))

@@ -848,16 +848,25 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
         guard managementDialogModel.isSimplifiedSyncSetupV2Enabled,
-              let currentDialog = managementDialogModel.currentDialog,
-              case .prepareToSync = currentDialog else {
+              let currentDialog = managementDialogModel.currentDialog else {
             return
         }
 
+        switch currentDialog {
+        case .prepareToSync, .waitForOtherDevice:
+            break
+        default:
+            return
+        }
         switch status {
         case .waiting:
-            return
+            if case .waitForOtherDevice = currentDialog {
+                presentDialog(for: .prepareToSync(.twoDevicePairing))
+            }
         case .unknown:
-            presentDialog(for: .waitForOtherDevice)
+            if case .prepareToSync = currentDialog {
+                presentDialog(for: .waitForOtherDevice)
+            }
         }
     }
 
@@ -943,7 +952,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         guard isSimplifiedSyncSetupV2Enabled, case .receiver = setupRole else {
             return nil
         }
-        return .waitForOtherDevice
+        return .prepareToSync(.twoDevicePairing)
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {

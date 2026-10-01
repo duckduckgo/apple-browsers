@@ -77,7 +77,7 @@ struct SubscriptionOnboardingFreeTrialCalendarCard: View {
     private let model: SubscriptionOnboardingFreeTrialCalendarCardModel
 
     private enum Metrics {
-        static let maxWidth: CGFloat = 360
+        static let maxWidth: CGFloat = 480
         static let cornerRadius: CGFloat = 26
         static let contentPadding: CGFloat = 24
         static let contentSpacing: CGFloat = 16

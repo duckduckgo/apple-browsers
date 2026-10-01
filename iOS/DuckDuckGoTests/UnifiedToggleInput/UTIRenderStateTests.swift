@@ -531,4 +531,5 @@ private final class RecordingPromptDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidRequestAppMenuLongPress() {}
 }

@@ -38,8 +38,6 @@ public final class AIChatContextChipView: UIView {
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
-        /// The offer is faded as a whole rather than part by part, so its outline, glyphs and label
-        /// keep one relationship to each other.
         static let suggestedOpacity: CGFloat = 0.5
         static let suggestedDashPattern: [NSNumber] = [8, 4]
 
@@ -85,7 +83,6 @@ public final class AIChatContextChipView: UIView {
 
     private var fixedWidthConstraint: NSLayoutConstraint!
     private var titleTrailingToRemoveButtonConstraint: NSLayoutConstraint!
-    private var titleTrailingToContentConstraint: NSLayoutConstraint!
 
     // MARK: - Properties
 
@@ -204,8 +201,7 @@ public final class AIChatContextChipView: UIView {
     }
 
     /// Without this the recogniser, which spans the pill, would swallow taps on the remove button.
-    /// A button that is hidden, or shown only as an affordance, keeps its frame, so its region has
-    /// to stay tappable.
+    /// A hidden or non-interactive button keeps its frame, so its region stays tappable.
     func shouldReceiveChipTap(at point: CGPoint) -> Bool {
         guard !removeButton.isHidden, removeButton.isUserInteractionEnabled else { return true }
         return !removeButtonHitRect.contains(point)
@@ -270,7 +266,6 @@ private extension AIChatContextChipView {
             applyBorder(color: UIColor(designSystemColor: .lines))
             fixedWidthConstraint.isActive = false
             titleTrailingToRemoveButtonConstraint.isActive = false
-            titleTrailingToContentConstraint.isActive = false
             showLoadingView()
             isUserInteractionEnabled = false
             chipTapRecognizer.isEnabled = false
@@ -280,8 +275,7 @@ private extension AIChatContextChipView {
             accessibilityTraits = .none
 
         case .suggested:
-            // A fixed label rather than the page title: nothing to truncate, and it echoes the menu
-            // entry that opens the sheet.
+            // A fixed label rather than the page title, so there is nothing to truncate.
             let offer = UserText.askAboutPage
             let tint = UIColor(designSystemColor: .accentPrimary)
             isHidden = false
@@ -292,15 +286,13 @@ private extension AIChatContextChipView {
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
-            applyPillLayout(withRemoveButton: true)
-            // The plus is an affordance, not its own control: the whole pill accepts the offer, so
-            // the button is left out of the touch handling entirely.
+            applyPillLayout()
+            // The plus is an affordance, not a control: the whole pill accepts the offer.
             removeButton.isHidden = false
             removeButton.isUserInteractionEnabled = false
             removeButton.setImage(DesignSystemImages.Glyphs.Size16.add.withRenderingMode(.alwaysTemplate), for: .normal)
             removeButton.tintColor = tint
             removeButton.backgroundColor = UIColor(designSystemColor: .accentGlowPrimary)
-            // No site is named yet, so the generic glyph stands in rather than a page's own favicon.
             faviconView.tintColor = tint
             faviconView.image = fallbackFavicon()
             faviconView.backgroundColor = .clear
@@ -325,7 +317,7 @@ private extension AIChatContextChipView {
             titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
-            applyPillLayout(withRemoveButton: true)
+            applyPillLayout()
             removeButton.isHidden = false
             removeButton.isUserInteractionEnabled = true
             removeButton.setImage(DesignSystemImages.Glyphs.Size16.close.withRenderingMode(.alwaysTemplate), for: .normal)
@@ -347,13 +339,10 @@ private extension AIChatContextChipView {
         }
     }
 
-    /// `.loading` drops the fixed geometry, so the pill states have to put it back. Without a remove
-    /// button the title runs to the trailing edge instead of stopping short of a hidden one.
-    func applyPillLayout(withRemoveButton hasRemoveButton: Bool) {
+    /// `.loading` drops the fixed geometry, so the pill states have to put it back.
+    func applyPillLayout() {
         fixedWidthConstraint.isActive = true
-        titleTrailingToRemoveButtonConstraint.isActive = false
-        titleTrailingToContentConstraint.isActive = false
-        (hasRemoveButton ? titleTrailingToRemoveButtonConstraint : titleTrailingToContentConstraint).isActive = true
+        titleTrailingToRemoveButtonConstraint.isActive = true
     }
 
     func applyDashedBorder(color: UIColor) {
@@ -379,7 +368,6 @@ private extension AIChatContextChipView {
 
         // Dropped by `.loading`, which hugs its spinner instead.
         titleTrailingToRemoveButtonConstraint = titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing)
-        titleTrailingToContentConstraint = titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: chipContentView.trailingAnchor, constant: -Constants.contentSpacing)
 
         NSLayoutConstraint.activate([
             width,

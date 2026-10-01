@@ -113,6 +113,8 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                     onDragActivityChanged(false)
                 })
                 .onDrop(of: [metadata.type], delegate: dropDelegate(for: item))
+                // Expose the nested hosting controller's buttons when the grid is inside a SwiftUI ScrollView.
+                .accessibilityElement(children: .contain)
             } else if let preview {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {

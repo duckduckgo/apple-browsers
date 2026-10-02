@@ -59,15 +59,21 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     func testRemoteGatesAreReevaluatedOnEachRequest() throws {
         let catalog = try makeCatalog()
-        for disabledFeature in [PrivacyFeature.chromeWebstorePatching, .extensionManagement] {
-            config.isFeatureEnabledCheck = { feature, _ in feature != disabledFeature }
-            XCTAssertFalse(catalog.contains(identifier))
-        }
-        config.isFeatureEnabledCheck = { _, _ in true }
-        config.isSubfeatureEnabledCheck = { _, _ in false }
-        XCTAssertFalse(catalog.contains(identifier))
-        config.isSubfeatureEnabledCheck = { _, _ in true }
         XCTAssertTrue(catalog.contains(identifier))
+
+        config.isFeatureEnabledCheck = { feature, _ in feature != .chromeWebstorePatching }
+        XCTAssertFalse(catalog.contains(identifier), PrivacyFeature.chromeWebstorePatching.rawValue)
+        config.isFeatureEnabledCheck = { _, _ in true }
+        XCTAssertTrue(catalog.contains(identifier))
+
+        for disabledSubfeature in [ExtensionManagementSubfeature.isLaunchedExtensions, .curatedExtensions] {
+            config.isSubfeatureEnabledCheck = { subfeature, _ in
+                (subfeature as? ExtensionManagementSubfeature) != disabledSubfeature
+            }
+            XCTAssertFalse(catalog.contains(identifier), disabledSubfeature.rawValue)
+            config.isSubfeatureEnabledCheck = { _, _ in true }
+            XCTAssertTrue(catalog.contains(identifier), disabledSubfeature.rawValue)
+        }
     }
 
     func testDisablingSiteProtectionsKeepsCuratedExtensionAvailable() throws {
@@ -113,6 +119,9 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
                 "extensionManagement": [
                     "state": "enabled",
                     "features": [
+                        "isLaunchedExtensions": [
+                            "state": "enabled"
+                        ],
                         "curatedExtensions": [
                             "state": "enabled",
                             "settings": ["catalog": [["id": identifier]]]

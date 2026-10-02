@@ -4,7 +4,7 @@
         "owners": ["jleandroperez"],
         "meta": {
             "type": "macos-vpn-session-health",
-            "version": "0.0"
+            "version": "0.1"
         },
         "feature": {
             "name": "vpn-session-health",
@@ -60,6 +60,18 @@
                         "type": "string",
                         "description": "Wall-clock length of the event, bucketed (lower end of bucket, in seconds). Includes paused periods.",
                         "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+                    },
+                    "event_duration_exceeds_process_lifetime": {
+                        "type": "boolean",
+                        "description": "Whether the unbucketed wall-clock event duration is strictly greater than elapsed wall-clock time since the current tunnel provider initialized, captured at completion or orphan recovery. Both durations include sleep. Recovered sessions may legitimately exceed the current process lifetime."
+                    },
+                    "process_id_changed": {
+                        "type": "boolean",
+                        "description": "Present only as true when the PID at session start differs from the completing or orphan-recovering process PID. Omitted when PIDs match or the starting PID is unavailable. Equal PIDs do not guarantee the same process instance because PIDs can be reused."
+                    },
+                    "app_version_changed": {
+                        "type": "boolean",
+                        "description": "Present only as true when the app version at session start differs from the completing or orphan-recovering process app version. Omitted when versions match."
                     },
                     "time_to_first_error_seconds_bucketed": {
                         "type": "string",

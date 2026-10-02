@@ -73,6 +73,8 @@ tmp
 #VSCode
 buildServer.json
 .vscode/launch.json
+# VSCode/Cursor setup for the macOS browser package (macOS/DuckDuckGo)
+!/.vscode/launch.json
 default.profraw
 
 # Claude

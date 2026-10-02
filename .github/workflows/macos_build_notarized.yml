@@ -226,7 +226,7 @@ jobs:
           echo "Overriding build number to ${{ inputs.build-number-override }}"
           echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
         fi
-        plist_path="DuckDuckGo/Info.plist"
+        plist_path="DuckDuckGoAppBundle/Info.plist"
         /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
           || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
 

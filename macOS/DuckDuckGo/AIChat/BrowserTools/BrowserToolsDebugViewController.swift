@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if DEBUG || REVIEW
-
 import AIChat
 import AppKit
 import UserScript
@@ -751,5 +749,3 @@ private struct SyntheticUserScriptMessage: UserScriptMessage {
     var isMainFrame: Bool { true }
     var messageWebView: WKWebView? { webView }
 }
-
-#endif

@@ -18,6 +18,7 @@
 
 import AIChat
 import AIChatDebugServer
+import AppKitExtensions
 import DebugServer
 import AppKit
 import os.log
@@ -39,6 +40,7 @@ final class AIChatDebugMenu: NSMenu {
         self.debugStorage = if let debugStorage { debugStorage } else { UserDefaults.standard.keyedStoring() }
         super.init(title: "")
 
+        let buildType = StandardApplicationBuildType()
         buildItems {
             NSMenuItem(title: "Web Communication") {
                 NSMenuItem(title: "Set Custom URL", action: #selector(setCustomURL))
@@ -61,16 +63,14 @@ final class AIChatDebugMenu: NSMenu {
 
             storageServerMenuItem
 
-#if DEBUG || REVIEW
-            NSMenuItem.separator()
+            if buildType.isDebugBuild || buildType.isReviewBuild {
+                NSMenuItem.separator()
 
-            NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
-                .targetting(self)
-#endif
+                NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
+                    .targetting(self)
+            }
         }
     }
-
-#if DEBUG || REVIEW
 
     // MARK: - Browser Tools
 
@@ -82,8 +82,6 @@ final class AIChatDebugMenu: NSMenu {
             .lastKeyMainWindowController?.mainViewController.aiChatCoordinator as? AIChatCoordinator
         coordinator?.showBrowserToolsDebugPanel()
     }
-
-#endif
 
     // MARK: - Duck.ai Usage Warnings
 

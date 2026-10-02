@@ -203,8 +203,8 @@ final class DuckSchemeHandlerTests: XCTestCase {
     /// The page ships as bundle resources rather than string literals, so a packaging mistake would
     /// otherwise surface as a blank debug page at runtime instead of a failing test.
     func testPermissionsInspectorPageResourcesAreBundled() throws {
-        XCTAssertNotNil(Bundle.main.url(forResource: "permissions-inspector", withExtension: "html"))
-        XCTAssertNotNil(Bundle.main.url(forResource: "permissions-inspector", withExtension: "js"))
+        XCTAssertNotNil(Bundle.module.url(forResource: "permissions-inspector", withExtension: "html"))
+        XCTAssertNotNil(Bundle.module.url(forResource: "permissions-inspector", withExtension: "js"))
     }
 
     @MainActor

@@ -1,0 +1,40 @@
+{
+    // Open the repository root in VSCode/Cursor; the browser package is macOS/DuckDuckGo. Requires Xcode 27 (`xcode-select -p`) and the Swift extension.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build browser library",
+            "detail": "swift build --build-system swiftbuild --scratch-path ../.build/DuckDuckGo --product DuckDuckGoBrowserDynamic",
+            "type": "shell",
+            "command": "xcrun",
+            "args": ["swift", "build", "--build-system", "swiftbuild", "--scratch-path", "../.build/DuckDuckGo", "--product", "DuckDuckGoBrowserDynamic"],
+            "options": { "cwd": "${workspaceFolder}/macOS/DuckDuckGo" },
+            "group": "build",
+            "problemMatcher": "$swiftc"
+        },
+        {
+            "label": "Build host app",
+            "detail": "Xcode-built app with the launcher executable; rebuilt only when non-Swift inputs change",
+            "type": "shell",
+            "command": "${workspaceFolder}/.vscode/make-host-app.sh",
+            "options": { "cwd": "${workspaceFolder}/macOS/DuckDuckGo" },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Sign browser library",
+            "detail": "Signs the swift build output with the host app's identity (library validation)",
+            "type": "shell",
+            "command": "${workspaceFolder}/.vscode/sign-dylib.sh",
+            "options": { "cwd": "${workspaceFolder}/macOS/DuckDuckGo" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build DuckDuckGo",
+            "dependsOrder": "sequence",
+            "dependsOn": ["Build host app", "Build browser library", "Sign browser library"],
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": []
+        }
+    ]
+}

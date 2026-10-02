@@ -1,7 +1,7 @@
 //
-//  AppMain.swift
+//  main.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,20 +16,6 @@
 //  limitations under the License.
 //
 
-import AppKit
+import DuckDuckGo_Privacy_Browser
 
-/// Browser entry point. Called from the app targets' `main.swift`
-/// and, through `DuckDuckGoBrowserMain`, from the VSCode launcher that loads `DuckDuckGoBrowserDynamic`.
-public enum AppMain {
-
-    public static func main() {
-        _=Application.shared
-        Application.shared.run()
-    }
-
-}
-
-@_cdecl("DuckDuckGoBrowserMain")
-public func duckDuckGoBrowserMain() {
-    AppMain.main()
-}
+AppMain.main()

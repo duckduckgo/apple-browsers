@@ -41,7 +41,7 @@ let package = Package(
         .package(path: "../Freemium"),
         .package(path: "../NetworkProtectionMac"),
         .package(path: "../FeatureFlags-macOS"),
-        .package(path: "../VPN"),
+        .package(path: "../../../SharedPackages/VPN"),
         .package(path: "../LoginItems"),
     ],
     targets: [

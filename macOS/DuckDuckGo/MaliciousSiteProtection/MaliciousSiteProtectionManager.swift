@@ -68,7 +68,7 @@ extension MaliciousSiteProtectionManager {
 
         func url(for dataType: MaliciousSiteProtection.DataManager.StoredDataType) -> URL {
             let fileName = fileName(for: dataType)
-            guard let url = Bundle.main.url(forResource: fileName, withExtension: nil) else {
+            guard let url = Bundle.module.url(forResource: fileName, withExtension: nil) else {
                 fatalError("Could not find embedded data file \"\(fileName)\"")
             }
             return url

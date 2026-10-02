@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /// Throw C++ test exception with the provided message (used for debug purpose)
-void _throwTestCppException(NSString *message);
+void _throwTestCppException(NSString * _Nonnull message);
 
 /// Call `+[NSException currentCxxException]` from inside a C++ catch block that has an
 /// active `std::runtime_error`.  The only way to drive the `throw;` branch inside

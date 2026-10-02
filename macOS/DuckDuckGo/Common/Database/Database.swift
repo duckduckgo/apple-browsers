@@ -60,7 +60,7 @@ final class Database {
             return .sandboxApplicationSupportURL
         }()
 
-        let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
+        let mainModel = NSManagedObjectModel.mergedModel(from: [.module])!
 
         do {
             _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [

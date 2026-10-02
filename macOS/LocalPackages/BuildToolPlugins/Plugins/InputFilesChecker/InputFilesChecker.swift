@@ -265,7 +265,8 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         case "DBPE2ETests":
             return ["DBPE2ETests"]
         case let name where name.starts(with: "DuckDuckGo Privacy Browser"):
-            return ["DuckDuckGo"]
+            // DuckDuckGoAppBundle holds the entry point, Info.plist and entitlements; the browser code is the macOS/DuckDuckGo package.
+            return ["DuckDuckGo", "DuckDuckGoAppBundle"]
         case "tests-server":
             return ["tests-server"]
         // HelperTargetsShared holds sources compiled into more than one helper target, never into the app.

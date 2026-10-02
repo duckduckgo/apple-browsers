@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "DuckDuckGo",
+            "type": "swift",
+            "request": "launch",
+            "program": "${workspaceFolder}/macOS/.build/vscode-host/DuckDuckGo.app/Contents/MacOS/DuckDuckGo",
+            "env": {
+                "DDG_BROWSER_DYLIB": "${workspaceFolder}/macOS/.build/DuckDuckGo/out/Products/Debug/libDuckDuckGoBrowserDynamic.dylib"
+            },
+            "cwd": "${workspaceFolder}/macOS/DuckDuckGo",
+            "preLaunchTask": "Build DuckDuckGo"
+        }
+    ]
+}

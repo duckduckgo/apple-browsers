@@ -16,7 +16,7 @@ if ! [[ $common_sh ]]; then
 	source "${cwd}/helpers/common.sh"
 fi
 
-info_plist="${cwd}/../DuckDuckGo/Info.plist"
+info_plist="${cwd}/../DuckDuckGoAppBundle/Info.plist"
 build_number_xcconfig="${cwd}/../Configuration/BuildNumber.xcconfig"
 
 check_command gh

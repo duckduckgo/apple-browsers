@@ -1,0 +1,12 @@
+{
+    // Relative to the package folder: build output lives in macOS/.build, outside the package folder.
+    "swift.buildPath": "../.build/DuckDuckGo",
+    // Asset catalogs and Core Data models in this package are only processed by the swiftbuild backend.
+    "swift.buildArguments": ["--build-system", "swiftbuild"],
+    // The workspace is the repository root: only load the browser package, not the packages it depends on.
+    "swift.searchSubfoldersForPackages": true,
+    "swift.ignoreSearchingForPackagesInSubfolders": [".", "**/.build", "**/node_modules", "iOS", "SharedPackages", "macOS/LocalPackages"],
+    "files.exclude": {
+        "**/.build": true
+    }
+}

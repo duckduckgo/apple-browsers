@@ -364,15 +364,15 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         ])
         sut.setPageContextChipState(.attached(title: "Carlos Niño - Wikipedia", favicon: nil))
         sut.setPageContextChipVisible(true)
-        flushMainQueue()
         container.layoutIfNeeded()
+        sut.layoutIfNeeded()
 
         let chip = try XCTUnwrap(firstDescendant(of: AIChatContextChipView.self, in: sut))
         XCTAssertEqual(sut.bounds.width, 1024, accuracy: 0.5)
         XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
 
         sut.setSelectionContextChips([(id: "selection", title: "Selected words", favicon: nil)])
-        flushMainQueue()
+        sut.layoutIfNeeded()
         XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
 
         stripWidth.constant = 400
@@ -386,17 +386,28 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     func testWhenFourReadableChipsCannotFitThenStripScrollsInsteadOfHidingFirstCharacter() throws {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 360, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
         let sut = UnifiedToggleInputAttachmentsStripView()
-        sut.frame = CGRect(x: 0, y: 0, width: 360, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+        ])
         sut.setPageContextChipState(.attached(title: "Wikipedia page title", favicon: nil))
         sut.setPageContextChipVisible(true)
         sut.setSelectionContextChips([(id: "selection", title: "Another page title", favicon: nil)])
         sut.addAttachment(makeFileAttachment(fileName: "Wide document name.pdf"))
         sut.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")))
-        flushMainQueue()
+        container.layoutIfNeeded()
+        sut.layoutIfNeeded()
 
         let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
         let scrollView = try XCTUnwrap(firstDescendant(of: UIScrollView.self, in: sut))
+        XCTAssertEqual(sut.bounds.width, 360, accuracy: 0.5)
+        XCTAssertEqual(scrollView.bounds.width, 360, accuracy: 0.5)
+        XCTAssertEqual(stack.arrangedSubviews.count, 4)
         XCTAssertGreaterThan(scrollView.contentSize.width, scrollView.bounds.width)
         for chip in stack.arrangedSubviews.dropLast() {
             let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: chip))
@@ -427,30 +438,74 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         }
     }
 
-    func testWhenContentSizeCategoryChangesThenStripFontsScaleWithoutCap() throws {
+    // Loading reads localized AIChat resources, so exercise it in the app-hosted test target.
+    func testWhenNoPreferredWidthIsSetThenLoadingHugsDotsAndRestoresDefaultPill() {
+        let sut = AIChatContextChipView()
+        sut.configure(state: .loading)
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width, 59, accuracy: 0.5)
+
+        sut.configure(state: .attached(title: "Page", favicon: nil))
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width, 240, accuracy: 0.5)
+    }
+
+    func testWhenStripIsCreatedAtEachContentSizeCategoryThenFontsAndMinimumWidthsScaleWithoutCap() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 240, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
         let parent = UIViewController()
+        window.rootViewController = parent
+        // Trait propagation requires a window-backed hierarchy on iOS 17 and later.
+        window.isHidden = false
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+        window.layoutIfNeeded()
         let child = UIViewController()
         parent.addChild(child)
         parent.view.addSubview(child.view)
+        child.view.frame = parent.view.bounds
         child.didMove(toParent: parent)
-        let sut = UnifiedToggleInputAttachmentsStripView()
-        child.view.addSubview(sut)
-        sut.frame = CGRect(x: 0, y: 0, width: 240, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
-        sut.setPageContextChipState(.attached(title: "Wikipedia", favicon: nil))
-        sut.setPageContextChipVisible(true)
-        sut.addAttachment(makeFileAttachment(fileName: "Wide document.pdf"))
-        flushMainQueue()
 
-        let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
-        for category: UIContentSizeCategory in [.large, .accessibilityExtraExtraExtraLarge, .large] {
+        for category: UIContentSizeCategory in [.large, .accessibilityExtraExtraExtraLarge] {
             let traits = UITraitCollection(preferredContentSizeCategory: category)
             parent.setOverrideTraitCollection(traits, forChild: child)
-            parent.view.layoutIfNeeded()
+            child.view.setNeedsLayout()
+            child.view.layoutIfNeeded()
+            guard child.view.traitCollection.preferredContentSizeCategory == category else {
+                XCTFail("Test host did not inherit requested content size category: \(category)")
+                return
+            }
+
+            // Font factories read current traits; a controller override alone does not change those.
+            var createdStrip: UnifiedToggleInputAttachmentsStripView?
+            traits.performAsCurrent {
+                let strip = UnifiedToggleInputAttachmentsStripView()
+                strip.setPageContextChipState(.attached(title: "Wikipedia", favicon: nil))
+                strip.setPageContextChipVisible(true)
+                strip.addAttachment(makeFileAttachment(fileName: "Wide document.pdf"))
+                createdStrip = strip
+            }
+            let sut = try XCTUnwrap(createdStrip)
+            child.view.addSubview(sut)
+            defer { sut.removeFromSuperview() }
+            NSLayoutConstraint.activate([
+                sut.leadingAnchor.constraint(equalTo: child.view.leadingAnchor),
+                sut.trailingAnchor.constraint(equalTo: child.view.trailingAnchor),
+                sut.topAnchor.constraint(equalTo: child.view.topAnchor),
+                sut.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+            ])
+            flushMainQueue()
+            child.view.layoutIfNeeded()
             sut.layoutIfNeeded()
+
+            XCTAssertEqual(sut.bounds.width, 240, accuracy: 0.5)
+            let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
+            XCTAssertEqual(stack.arrangedSubviews.count, 2)
             let expectedSize = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traits).pointSize
             for chip in stack.arrangedSubviews {
                 let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: chip))
                 let font = try XCTUnwrap(label.font)
+                XCTAssertEqual(label.traitCollection.preferredContentSizeCategory, category)
+                XCTAssertTrue(label.adjustsFontForContentSizeCategory)
                 XCTAssertEqual(font.pointSize, expectedSize, accuracy: 0.01)
                 let compactTitleWidth = ceil(("W…" as NSString).size(withAttributes: [.font: font]).width)
                 XCTAssertGreaterThanOrEqual(label.bounds.width, compactTitleWidth)

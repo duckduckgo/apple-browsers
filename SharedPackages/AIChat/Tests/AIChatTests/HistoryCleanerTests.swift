@@ -31,6 +31,7 @@ final class HistoryCleanerTests: XCTestCase {
     private var mockHandler: CallCountingStorageHandler!
     private var mockPrivacyConfig: MockPrivacyConfigurationManager!
     private var mockJSCleaner: MockAIChatJSDataCleaner!
+    private var mockBlobCleaner: MockAIChatIndexedDBBlobCleaner!
 
     override func setUp() {
         super.setUp()
@@ -39,6 +40,7 @@ final class HistoryCleanerTests: XCTestCase {
         mockHandler = CallCountingStorageHandler()
         mockPrivacyConfig = MockPrivacyConfigurationManager()
         mockJSCleaner = MockAIChatJSDataCleaner()
+        mockBlobCleaner = MockAIChatIndexedDBBlobCleaner()
     }
 
     override func tearDown() {
@@ -47,6 +49,7 @@ final class HistoryCleanerTests: XCTestCase {
         mockHandler = nil
         mockPrivacyConfig = nil
         mockJSCleaner = nil
+        mockBlobCleaner = nil
         super.tearDown()
     }
 
@@ -60,8 +63,64 @@ final class HistoryCleanerTests: XCTestCase {
             websiteDataStore: .nonPersistent(),
             nativeStorageHandler: nativeStorageHandler,
             featureFlagProvider: featureFlagProvider,
-            jsDataCleaner: mockJSCleaner
+            jsDataCleaner: mockJSCleaner,
+            indexedDBBlobCleaner: mockBlobCleaner
         )
+    }
+
+    // MARK: - IndexedDB blob files are removed only after a successful full clear
+
+    func testWhenCleanAIChatHistorySucceedsThenIndexedDBBlobFilesAreRemoved() async {
+        // WebKit's IDBObjectStore.clear() leaves the image blob files on disk, so a full clear must remove them.
+        let sut = makeSUT()
+
+        let result = await sut.cleanAIChatHistory()
+
+        XCTAssertNotNil(try? result.get())
+        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 1)
+    }
+
+    func testWhenJSClearFailsThenIndexedDBBlobFilesAreNotRemoved() async {
+        // If the records may still be there, the blob files are still referenced and must stay.
+        mockJSCleaner.stubbedResult = .failure(NSError(domain: "js", code: 1))
+        let sut = makeSUT()
+
+        _ = await sut.cleanAIChatHistory()
+
+        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 0)
+    }
+
+    func testWhenBlobRemovalFailsThenCleanAIChatHistoryReturnsBlobFailure() async {
+        let blobError = NSError(domain: "blob", code: 5)
+        mockBlobCleaner.stubbedResult = .failure(blobError)
+        let sut = makeSUT()
+
+        let result = await sut.cleanAIChatHistory()
+
+        guard case .failure(let error) = result else {
+            return XCTFail("Expected blob removal failure to surface, got \(result)")
+        }
+        XCTAssertEqual(error as NSError, blobError)
+    }
+
+    func testWhenDeletingSingleOrSelectedChatsThenIndexedDBBlobFilesAreNotRemoved() async {
+        // Other chats' images are still live after a partial delete; wiping all blob files would corrupt them.
+        let sut = makeSUT()
+
+        _ = await sut.deleteAIChat(chatID: "target-chat")
+        _ = await sut.deleteAIChats(chatIDs: ["chat-a", "chat-b"])
+        _ = await sut.clearJSData(chatID: "target-chat")
+
+        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 0)
+    }
+
+    func testWhenClearJSDataForAllChatsSucceedsThenIndexedDBBlobFilesAreRemoved() async {
+        let sut = makeSUT()
+
+        let result = await sut.clearJSData(chatID: nil)
+
+        XCTAssertNotNil(try? result.get())
+        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 1)
     }
 
     // MARK: - cleanAIChatHistory (all chats)
@@ -391,6 +450,16 @@ private final class MockAIChatJSDataCleaner: AIChatJSDataCleaning {
     @MainActor
     func clearJSData(chatIDs: [String]) async -> Result<Void, Error> {
         clearJSDataBatchCalls.append(chatIDs)
+        return stubbedResult
+    }
+}
+
+private final class MockAIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning {
+    var stubbedResult: Result<Void, Error> = .success(())
+    private(set) var removeAllBlobFilesCallCount = 0
+
+    func removeAllBlobFiles() async -> Result<Void, Error> {
+        removeAllBlobFilesCallCount += 1
         return stubbedResult
     }
 }

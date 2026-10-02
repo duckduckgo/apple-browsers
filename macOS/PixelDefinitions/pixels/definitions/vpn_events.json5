@@ -401,6 +401,16 @@
                 "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
             },
             {
+                "key": "feature.data.ext.event_duration_exceeds_process_lifetime",
+                "type": "boolean",
+                "description": "Whether the unbucketed wall-clock event duration is strictly greater than elapsed wall-clock time since the current tunnel provider initialized, captured at completion or orphan recovery. Both durations include sleep. Recovered sessions may legitimately exceed the current process lifetime."
+            },
+            {
+                "key": "feature.data.ext.process_id_changed",
+                "type": "boolean",
+                "description": "Present only as true when the PID at session start differs from the completing or orphan-recovering process PID. Omitted when PIDs match or the starting PID is unavailable. Equal PIDs do not guarantee the same process instance because PIDs can be reused."
+            },
+            {
                 "key": "feature.data.ext.time_to_first_error_seconds_bucketed",
                 "type": "string",
                 "description": "Time from event start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",

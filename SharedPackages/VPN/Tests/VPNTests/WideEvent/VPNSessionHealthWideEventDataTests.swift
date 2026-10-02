@@ -40,7 +40,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     func testHealthyPayloadUsesExpectedKeysAndOmitsFailureOnlyParameters() {
         let data = makeMonitoredEvent()
-            .finalized(for: .stoppedByUser, at: timestamp(after: 60))
+            .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
         let parameters = data.event.jsonParameters()
 
         XCTAssertEqual(parameters["feature.data.ext.start_reason"] as? String, "physical_tunnel_manual_start")
@@ -64,7 +64,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testFailurePayloadIncludesReasonAndBucketedFirstErrorTime() {
         let data = makeMonitoredEvent()
             .applyingHandshakeCheckResult(.failureDetected, at: timestamp(after: 65))
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: 90))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: 90), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.failure_reason"] as? String, "stale_handshake")
         XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.time_to_first_error_seconds_bucketed"] as? String, "60")
@@ -76,7 +76,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(VPNSessionHealthWideEventData.self, from: encoded)
-        let ended = decoded.finalized(for: .stoppedAdministratively, at: timestamp(after: 150))
+        let ended = decoded.finalized(for: .stoppedAdministratively, at: timestamp(after: 150), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(decoded.globalData.id, original.globalData.id)
         XCTAssertEqual(ended.event.totalOutageDuration, 135)
@@ -86,10 +86,10 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     // MARK: - Session outcomes
 
     func testUnknownReasonsDistinguishMissingMonitorsFromMissingResults() {
-        let neverMonitored = makeEvent().finalized(for: .stoppedByUser, at: sessionStart)
+        let neverMonitored = makeEvent().finalized(for: .stoppedByUser, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
         let monitorsStarted = makeEvent().markingMonitoringStarted(at: sessionStart)
-        let stoppedBeforeFirstResult = monitorsStarted.finalized(for: .stoppedByUser, at: sessionStart)
-        let stoppedWithoutNetwork = monitorsStarted.finalized(for: .stoppedWithoutNetwork, at: sessionStart)
+        let stoppedBeforeFirstResult = monitorsStarted.finalized(for: .stoppedByUser, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
+        let stoppedWithoutNetwork = monitorsStarted.finalized(for: .stoppedWithoutNetwork, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(neverMonitored.outcome, .unknown(.monitorsNeverStarted))
         XCTAssertEqual(stoppedBeforeFirstResult.outcome, .unknown(.connectionTesterNeverReported))
@@ -101,22 +101,22 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
             .applyingConnectionTestResult(.connected, at: sessionStart)
             .markingMonitoringStarted(at: sessionStart)
 
-        XCTAssertEqual(data.finalized(for: .stoppedByUser, at: sessionStart).outcome, .success)
+        XCTAssertEqual(data.finalized(for: .stoppedByUser, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123).outcome, .success)
     }
 
     func testCancellationAndFailureStopsFailWithoutMonitorResults() {
         let cancelled = makeEvent()
-            .finalizedAfterCancellation(at: timestamp(after: 20))
+            .finalized(for: .cancelledWithError, at: timestamp(after: 20), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(cancelled.outcome, .failure(.cancelledWithError))
         XCTAssertEqual(cancelled.event.timeToFirstError, 20)
-        XCTAssertEqual(makeEvent().finalized(for: .stoppedByFailure, at: sessionStart).outcome, .failure(.stoppedWithFailure))
+        XCTAssertEqual(makeEvent().finalized(for: .stoppedByFailure, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123).outcome, .failure(.stoppedWithFailure))
     }
 
     func testUserStopDuringOutageTakesPrecedenceOverOtherHealthFailures() {
         let data = makeEventWithOutage(failedChecks: 8)
             .applyingHandshakeCheckResult(.failureDetected, at: timestamp(after: 125))
-            .finalized(for: .stoppedByUser, at: timestamp(after: 130))
+            .finalized(for: .stoppedByUser, at: timestamp(after: 130), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.outcome, .failure(.routingOutageAtUserStop))
         XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.failure_reason"] as? String, "routing_outage_at_user_stop")
@@ -127,10 +127,10 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     func testExtendedThresholdUsesChecksInCurrentOutageRatherThanCumulativeTesterCount() {
         let belowThreshold = makeEventWithOutage(failedChecks: 7)
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: 150))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: 150), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         let atThreshold = makeEventWithOutage(failedChecks: 8)
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: 150))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: 150), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(belowThreshold.outcome, .success)
         XCTAssertEqual(atThreshold.outcome, .failure(.routingOutage))
@@ -140,7 +140,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         var data = makeEventWithOutage()
         data = data.applyingConnectionTestResult(.reconnected(failureCount: 101), at: timestamp(after: 45))
         data = data.applyingConnectionTestResult(.disconnected(failureCount: 1), at: timestamp(after: 60))
-        let completed = data.finalized(for: .stoppedAdministratively, at: timestamp(after: 90))
+        let completed = data.finalized(for: .stoppedAdministratively, at: timestamp(after: 90), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(completed.event.connectionTestOutageCount, 2)
         XCTAssertEqual(completed.event.totalOutageDuration, 60)
@@ -151,7 +151,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testRecoveredExtendedOutageStillFailsSession() {
         let data = makeEventWithOutage(failedChecks: 8)
             .applyingConnectionTestResult(.reconnected(failureCount: 8), at: timestamp(after: 135))
-            .finalized(for: .stoppedByUser, at: timestamp(after: 150))
+            .finalized(for: .stoppedByUser, at: timestamp(after: 150), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.outcome, .failure(.routingOutage))
         XCTAssertFalse(data.event.connectionTestFailureActive)
@@ -164,7 +164,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         for reason in [VPNSessionHealthWideEventData.PauseReason.sleep, .snooze] {
             let data = makeEventWithOutage()
                 .markingPaused(reason, at: timestamp(after: 30))
-                .finalized(for: .stoppedByUser, at: timestamp(after: 300))
+                .finalized(for: .stoppedByUser, at: timestamp(after: 300), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
             XCTAssertEqual(data.event.totalOutageDuration, 15)
             XCTAssertFalse(data.event.connectionTestFailureActive)
@@ -189,7 +189,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testUnintentionalStopMarksPartialCoverageAndStopsAccrual() {
         let data = makeEventWithOutage()
             .markingMonitoringStopped(at: timestamp(after: 30), isIntentional: false)
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: 300))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: 300), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.event.totalOutageDuration, 15)
         XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.monitoring_coverage"] as? String, "partial")
@@ -220,7 +220,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
         let recovered = failed
             .applyingHandshakeCheckResult(.failureRecovered, at: timestamp(after: 90))
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: 120))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: 120), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(recovered.outcome, .failure(.staleHandshake))
         XCTAssertEqual(recovered.event.jsonParameters()["feature.data.ext.stale_handshake_recovered"] as? Bool, true)
@@ -235,7 +235,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testNetworkPathChangeDoesNotIntroduceHandshakeFailure() {
         let data = makeMonitoredEvent()
             .applyingHandshakeCheckResult(.networkPathChanged("test"), at: sessionStart)
-            .finalized(for: .stoppedAdministratively, at: sessionStart)
+            .finalized(for: .stoppedAdministratively, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.outcome, .success)
         XCTAssertNil(data.event.timeToFirstError)
@@ -250,7 +250,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         XCTAssertNil(data.jsonParameters()["feature.data.ext.failure_recovery_succeeded"])
         for health in [FailureRecoveryStep.ServerHealth.healthy, .unhealthy] {
             let completed = data.applyingFailureRecoveryStep(.completed(health), at: sessionStart)
-                .finalized(for: .stoppedAdministratively, at: sessionStart)
+                .finalized(for: .stoppedAdministratively, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
             XCTAssertEqual(completed.event.jsonParameters()["feature.data.ext.failure_recovery_succeeded"] as? Bool, true)
             XCTAssertEqual(completed.outcome, .success)
@@ -261,7 +261,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         let data = makeMonitoredEvent()
             .applyingFailureRecoveryStep(.failed(NSError(domain: "test", code: 1)), at: sessionStart)
             .applyingFailureRecoveryStep(.completed(.unhealthy), at: timestamp(after: 30))
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: 60))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: 60), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.outcome, .failure(.failureRecoveryFailed))
         XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.failure_recovery_succeeded"] as? Bool, true)
@@ -271,7 +271,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         let data = makeMonitoredEvent()
             .markingLeakDetected()
             .markingLeakDetected()
-            .finalized(for: .stoppedAdministratively, at: sessionStart)
+            .finalized(for: .stoppedAdministratively, at: sessionStart, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.ip_leak_detected"] as? Bool, true)
         XCTAssertEqual(data.outcome, .success)
@@ -282,7 +282,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testOrphanEndsAtLastObservationWithoutInventingUnobservedDuration() {
         var data = makeEventWithOutage()
         data.lastObservedAt = timestamp(after: 30)
-        let ended = data.finalizedAfterOrphanRecovery(at: timestamp(after: 900))
+        let ended = data.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(ended.event.endedAt, data.lastObservedAt)
         XCTAssertEqual(ended.event.totalOutageDuration, 15)
@@ -294,14 +294,14 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         orphan.lastObservedAt = timestamp(after: 30)
         let recoveryDate = timestamp(after: 20)
 
-        let ended = orphan.finalizedAfterOrphanRecovery(at: recoveryDate)
+        let ended = orphan.finalizedAfterOrphanRecovery(at: recoveryDate, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(ended.event.endedAt, recoveryDate)
     }
 
     func testOrphanWithKnownFailurePreservesFailureOutcome() {
         let orphan = makeEventWithOutage(failedChecks: 8)
-            .finalizedAfterOrphanRecovery(at: timestamp(after: 900))
+            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(orphan.outcome, .failure(.routingOutage))
     }
@@ -323,7 +323,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
         for (seconds, expected) in cases {
             let data = makeEvent()
-                .finalized(for: .stoppedAdministratively, at: timestamp(after: seconds))
+                .finalized(for: .stoppedAdministratively, at: timestamp(after: seconds), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
             XCTAssertEqual(data.event.jsonParameters()["feature.data.ext.event_duration_seconds_bucketed"] as? String,
                            expected, "Input: \(seconds) seconds")
@@ -365,7 +365,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     func testClockGoingBackwardsDoesNotProduceNegativeDurations() {
         let data = makeEventWithOutage()
-            .finalized(for: .stoppedAdministratively, at: timestamp(after: -60))
+            .finalized(for: .stoppedAdministratively, at: timestamp(after: -60), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123)
 
         XCTAssertEqual(data.event.totalOutageDuration, 0)
         XCTAssertEqual(data.event.eventDuration(asOf: sessionStart), 0)

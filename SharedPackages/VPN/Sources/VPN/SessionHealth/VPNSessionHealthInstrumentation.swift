@@ -86,6 +86,8 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     private let isTelemetryEnabled: @Sendable () -> Bool
     private let now: @Sendable () -> Date
+    private let processStartedAt: Date
+    private let processIdentifier: @Sendable () -> Int32
 
     private let lock = NSLock()
 
@@ -102,12 +104,16 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     public init(wideEvent: WideEventManaging,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
+                processStartedAt: Date,
                 isTelemetryEnabled: @escaping @Sendable () -> Bool,
-                now: @escaping @Sendable () -> Date = { Date() }) {
+                now: @escaping @Sendable () -> Date = { Date() },
+                processIdentifier: @escaping @Sendable () -> Int32 = { ProcessInfo.processInfo.processIdentifier }) {
         self.wideEvent = wideEvent
         self.extensionType = extensionType
         self.isTelemetryEnabled = isTelemetryEnabled
         self.now = now
+        self.processStartedAt = processStartedAt
+        self.processIdentifier = processIdentifier
         Logger.networkProtectionSessionHealth.debug("Initialized session health instrumentation")
     }
 
@@ -200,12 +206,12 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
 
     public func tunnelStopped(reason: NEProviderStopReason) {
         Logger.networkProtectionSessionHealth.debug("tunnelStopped: reason=\(reason.rawValue, privacy: .public)")
-        applyTransitionAndComplete { $0.finalized(for: reason.asEventEndReason, at: $1) }
+        finalizeAndCompleteCurrentEvent(reason: reason.asEventEndReason)
     }
 
     public func tunnelCancelledWithError() {
         Logger.networkProtectionSessionHealth.debug("tunnelCancelledWithError")
-        applyTransitionAndComplete { $0.finalizedAfterCancellation(at: $1) }
+        finalizeAndCompleteCurrentEvent(reason: .cancelledWithError)
     }
 }
 
@@ -228,7 +234,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         wideEvent.updateFlow(next)
     }
 
-    func applyTransitionAndComplete(_ transition: (VPNSessionHealthWideEventData, Date) -> (event: VPNSessionHealthWideEventData, outcome: VPNSessionHealthWideEventData.EventOutcome)) {
+    func finalizeAndCompleteCurrentEvent(reason endReason: VPNSessionHealthWideEventData.EventEndReason) {
         lock.lock()
         defer { lock.unlock() }
 
@@ -240,7 +246,10 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         let timestamp = now()
-        var (event, outcome) = transition(previous, timestamp)
+        var (event, outcome) = previous.finalized(for: endReason,
+                                                  at: timestamp,
+                                                  processStartDate: processStartedAt,
+                                                  processIdentifier: processIdentifier())
         event.lastObservedAt = timestamp
 
         completeEvent(event: event, outcome: outcome)
@@ -263,7 +272,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        let nextEvent = VPNSessionHealthWideEventData(startReason: reason, startedAt: now(), extensionType: extensionType, globalData: WideEventGlobalData())
+        let nextEvent = VPNSessionHealthWideEventData(startReason: reason,
+                                                    startedAt: now(),
+                                                    extensionType: extensionType,
+                                                    sessionStartPID: processIdentifier(),
+                                                    globalData: WideEventGlobalData())
         beginEventInLock(nextEvent)
     }
 }
@@ -283,7 +296,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        let completed = previous.finalized(for: .restartedWithoutStop, at: now())
+        let timestamp = now()
+        let completed = previous.finalized(for: .restartedWithoutStop,
+                                           at: timestamp,
+                                           processStartDate: processStartedAt,
+                                           processIdentifier: processIdentifier())
         completeEvent(event: completed.event, outcome: completed.outcome)
     }
 
@@ -294,7 +311,10 @@ private extension DefaultVPNSessionHealthInstrumentation {
         for orphan in orphans {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
 
-            let completed = orphan.finalizedAfterOrphanRecovery(at: now())
+            let timestamp = now()
+            let completed = orphan.finalizedAfterOrphanRecovery(at: timestamp,
+                                                                processStartDate: processStartedAt,
+                                                                processIdentifier: processIdentifier())
             completeEvent(event: completed.event, outcome: completed.outcome)
         }
     }

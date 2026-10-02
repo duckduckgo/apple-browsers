@@ -465,6 +465,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     @MainActor
     @objc init() {
+        let processStartedAt = Date()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
         Self.configurePixelStorage()
 
@@ -504,6 +505,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .app,
+            processStartedAt: processStartedAt,
             isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // Align Subscription environment to the VPN environment

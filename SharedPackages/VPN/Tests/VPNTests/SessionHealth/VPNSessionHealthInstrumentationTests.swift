@@ -321,7 +321,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
                                                   extensionType: .system)
             .markingMonitoringStarted(at: hourStart)
             .applyingConnectionTestResult(.connected, at: hourStart)
-            .finalized(for: .stoppedByUser, at: endedAt).event
+            .finalized(for: .stoppedByUser, at: endedAt, processStartDate: hourStart.addingTimeInterval(-100_000), processIdentifier: 123).event
         wideEvent.startFlow(ended)
 
         startTunnel(.manual)
@@ -515,6 +515,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         return DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .system,
+            processStartedAt: hourStart,
             isTelemetryEnabled: { inputs.enabled },
             now: { inputs.date })
     }

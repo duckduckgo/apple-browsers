@@ -153,30 +153,28 @@ extension VPNSessionHealthWideEventData {
     // MARK: - Termination
 
     /// Records a first error if needed for failure stops or user stops during an active outage, then returns the ended event and its outcome.
-    func finalized(for endReason: EventEndReason, at now: Date) -> (event: Self, outcome: EventOutcome) {
-        if endedAt != nil {
-            return (self, completedOutcome())
-        }
+    func finalized(for endReason: EventEndReason, at now: Date, processStartDate: Date, processIdentifier: Int32) -> (event: Self, outcome: EventOutcome) {
+        let needsEnding = endedAt == nil
+        let endDate = endReason == .processDied ? min(now, lastObservedAt) : now
 
         let event = applying { next in
-            if endReason.isFailure || (endReason == .stoppedByUser && connectionTestFailureActive) {
+            if needsEnding && (endReason.isFailure || (endReason == .stoppedByUser && connectionTestFailureActive)) {
                 next.markFirstErrorDetectedIfNeeded(at: now)
             }
 
-            next.markEnded(endReason, at: now)
+            if needsEnding {
+                next.markEnded(endReason, at: endDate)
+            }
+
+            next.recordCompletionDiagnostics(at: now, processStartDate: processStartDate, processIdentifier: processIdentifier)
         }
 
         return (event, event.completedOutcome())
     }
 
-    func finalizedAfterCancellation(at now: Date) -> (event: Self, outcome: EventOutcome) {
-        finalized(for: .cancelledWithError, at: now)
-    }
-
-    func finalizedAfterOrphanRecovery(at now: Date) -> (event: Self, outcome: EventOutcome) {
-        // This API is part of the Orphans Collection mechanism.
-        // We'll backdate the termination event with the last observation timestamp.
-        finalized(for: .processDied, at: min(now, lastObservedAt))
+    func finalizedAfterOrphanRecovery(at now: Date, processStartDate: Date, processIdentifier: Int32) -> (event: Self, outcome: EventOutcome) {
+        // Finalization backdates the end timestamp while diagnostics use the current recovery time.
+        finalized(for: .processDied, at: now, processStartDate: processStartDate, processIdentifier: processIdentifier)
     }
 }
 
@@ -237,5 +235,16 @@ private extension VPNSessionHealthWideEventData {
 
         endedAt = now
         endReason = reason
+    }
+
+    mutating func recordCompletionDiagnostics(at now: Date, processStartDate: Date, processIdentifier: Int32) {
+        if eventDurationExceedsProcessLifetime == nil {
+            let processLifetime = max(0, now.timeIntervalSince(processStartDate))
+            eventDurationExceedsProcessLifetime = eventDuration(asOf: now) > processLifetime
+        }
+
+        if processIDChanged == nil, let sessionStartPID, sessionStartPID != processIdentifier {
+            processIDChanged = true
+        }
     }
 }

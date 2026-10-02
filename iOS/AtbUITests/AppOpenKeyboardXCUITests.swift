@@ -112,12 +112,14 @@ final class AppOpenKeyboardXCUITests: XCTestCase {
         openWebsite()
         backgroundAndReturn(long: false)
         assertKeyboard(up: true)
-        XCTAssertFalse(app.staticTexts["Keyboard fixture"].exists)
+        XCTAssertTrue(element("NewTabPage.escapeHatch.card").waitForExistence(timeout: timeout), app.debugDescription)
+        XCTAssertFalse(app.webViews.staticTexts["Keyboard fixture"].exists, app.debugDescription)
         dismissKeyboard()
         openWebsite()
         backgroundAndReturn(long: true)
         assertKeyboard(up: true)
-        XCTAssertFalse(app.staticTexts["Keyboard fixture"].exists)
+        XCTAssertTrue(element("NewTabPage.escapeHatch.card").waitForExistence(timeout: timeout), app.debugDescription)
+        XCTAssertFalse(app.webViews.staticTexts["Keyboard fixture"].exists, app.debugDescription)
     }
 
     func testAppLaunchSettingAppliesToWebsiteButNotNewTab() {
@@ -306,7 +308,7 @@ final class AppOpenKeyboardXCUITests: XCTestCase {
     private func openWebsite() {
         tap(element("searchEntry"))
         app.typeText(baseURL + "/page\r")
-        XCTAssertTrue(app.staticTexts["Keyboard fixture"].waitForExistence(timeout: timeout), app.debugDescription)
+        XCTAssertTrue(app.webViews.staticTexts["Keyboard fixture"].waitForExistence(timeout: timeout), app.debugDescription)
         assertKeyboard(up: false)
     }
 

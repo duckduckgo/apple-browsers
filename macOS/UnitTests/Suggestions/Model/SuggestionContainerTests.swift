@@ -166,6 +166,27 @@ final class SuggestionContainerTests: XCTestCase {
     }
 
     @MainActor
+    func testAllTabViewModelsSurfacesUnloadedTabsForSuggestions() {
+        // Regression test for #4925: address-bar open-tab suggestions are built from
+        // WindowControllersManager.allTabViewModels(for:), which must include *unloaded* tabs. The
+        // bug filtered the view models with `as? TabViewModel`, dropping unloaded tabs so they never
+        // appeared as suggestions. Reverting that filter drops the unloaded tab asserted below.
+        let loadedTab = Tab(content: .url(URL(string: "https://loaded.example.com/")!, source: .link))
+        let unloaded = UnloadedTab(content: .url(URL(string: "https://unloaded.example.com/")!, source: .pendingStateRestoration))
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [.loaded(loadedTab), .unloaded(unloaded)]),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+        // Selection defaults to index 0 (the loaded tab), so the tab at index 1 stays unloaded.
+        let windowControllersManager = WindowControllersManagerMock(tabCollectionViewModels: [tabCollectionViewModel])
+
+        let openTabViewModels = windowControllersManager.allTabViewModels(for: .regular, includingPinnedTabs: false)
+
+        XCTAssertTrue(openTabViewModels.contains { $0.uuid == unloaded.uuid },
+                      "Unloaded tabs must be surfaced so they can appear in address-bar suggestions")
+    }
+
+    @MainActor
     private func runJsonTestScenario(_ testScenario: TestScenario, named name: String) async throws {
         let input = testScenario.input
 

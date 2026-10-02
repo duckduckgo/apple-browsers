@@ -77,6 +77,26 @@ class AutoClearTests: XCTestCase {
     // Note: applicationDidLaunch based clearing has moved to "configureTabManager" function of
     //  MainViewController to ensure that tabs are removed before the data is cleared.
 
+    func testIsTabClearingEnabledOnlyWhenTabsActionIsSelected() {
+        // Regression test for #4488: Auto Clear must only clear tabs when the Tabs toggle is on.
+        // isTabClearingEnabled must reflect action.contains(.tabs), NOT merely whether auto-clear is
+        // enabled at all. Reverting it to mirror isClearingEnabled makes the .data-only case fail.
+        let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
+
+        appSettings.autoClearAction = .data
+        XCTAssertTrue(logic.isClearingEnabled)
+        XCTAssertFalse(logic.isTabClearingEnabled, "Data-only auto-clear must not clear tabs")
+
+        appSettings.autoClearAction = [.tabs, .data]
+        XCTAssertTrue(logic.isTabClearingEnabled)
+
+        appSettings.autoClearAction = .tabs
+        XCTAssertTrue(logic.isTabClearingEnabled)
+
+        appSettings.autoClearAction = []
+        XCTAssertFalse(logic.isTabClearingEnabled)
+    }
+
     func testWhenTimingIsSetToTerminationThenOnlyRestartClearsData() async {
         let logic = AutoClear(worker: mockFireExecutor, appSettings: appSettings)
 

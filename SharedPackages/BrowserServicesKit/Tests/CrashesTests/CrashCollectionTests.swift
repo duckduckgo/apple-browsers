@@ -133,6 +133,30 @@ class CrashCollectionTests: XCTestCase {
         XCTAssertFalse(crashCollection.isFirstCrash)
     }
 
+    func testOnlyPayloadsWithCrashDiagnosticsAreProcessedForUpload() {
+        // Regression test for #3682: MetricKit delivers `MXDiagnosticPayload`s that may carry only
+        // hang / CPU / disk-write diagnostics and no `crashDiagnostics`. Those non-crash payloads
+        // must not be handed to `process` (and therefore not uploaded as crash reports). Reverting
+        // the `crashDiagnostics?.isEmpty == false` filter makes `process` receive all 3 payloads.
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var processedPayloadCount: Int?
+        crashCollection.start(process: { payloads in
+            processedPayloadCount = payloads.count
+            return payloads.map { _ in Data() }
+        }, didFindCrashReports: { _, _, _ in })
+
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()]),    // real crash → processed
+            MockPayload(mockCrashes: []),                       // empty crashDiagnostics → skipped
+            MockPayload(mockCrashes: nil)                       // no crashDiagnostics (e.g. hang only) → skipped
+        ])
+
+        XCTAssertEqual(processedPayloadCount, 1, "Only payloads with non-empty crashDiagnostics should be processed for upload")
+    }
+
     func testCRCIDIsStoredWhenReceived() {
         let responseCRCIDValue = "CRCID Value"
 

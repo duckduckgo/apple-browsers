@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import UserNotifications
 @_spi(Testing) import Persistence
 @testable import DuckDuckGo
 @testable import Core
@@ -33,6 +34,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     var userNotificationCenter: UNUserNotificationCenterRepresentable!
     var stateStore: InactivityNotificationStateStoring!
     var service: InactivityNotificationSchedulerService!
+    private var originalNotificationDelegate: UNUserNotificationCenterDelegate?
 
     override func setUp() {
         super.setUp()
@@ -40,6 +42,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.inactivityNotification])
         mockNotificationServiceManager = MockNotificationServiceManager()
         userNotificationCenter = UNUserNotificationCenter.current()
+        originalNotificationDelegate = userNotificationCenter.delegate
         stateStore = InactivityNotificationStateStore(keyValueStore: MockKeyValueFileStore())
 
         service = InactivityNotificationSchedulerService(
@@ -52,6 +55,11 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     }
 
     override func tearDown() {
+        userNotificationCenter.removePendingNotificationRequests(
+            withIdentifiers: [InactivityNotificationSchedulerService.Constants.notificationIdentifier]
+        )
+        userNotificationCenter.delegate = originalNotificationDelegate
+        originalNotificationDelegate = nil
         mockPrivacyConfigManager = nil
         mockFeatureFlagger = nil
         mockNotificationServiceManager = nil
@@ -63,6 +71,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     
     func test_featureIsEnabled_scheduledOne() async throws {
         // Given
+        try await requireNotificationScheduling()
         let targetId = InactivityNotificationSchedulerService.Constants.notificationIdentifier
         mockFeatureFlagger.enabledFeatureFlags = [.inactivityNotification]
 
@@ -70,19 +79,13 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         await service.resume().value
 
         // Then
-        let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional || status == .authorized else {
-            let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
-            XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 0)
-            return
-        }
-        
-        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
+        let pending = await userNotificationCenter.pendingNotificationRequests()
         XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 1)
     }
     
     func test_featureIsEnabled_resumeCalledManyTimes_scheduledOne() async throws {
         // Given
+        try await requireNotificationScheduling()
         let targetId = InactivityNotificationSchedulerService.Constants.notificationIdentifier
         mockFeatureFlagger.enabledFeatureFlags = [.inactivityNotification]
 
@@ -92,14 +95,39 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         }
 
         // Then
-        let status = await userNotificationCenter.authorizationStatus()
-        guard status == .provisional || status == .authorized else {
-            let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
-            XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 0)
-            return
-        }
-        
-        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
+        let pending = await userNotificationCenter.pendingNotificationRequests()
         XCTAssertEqual(pending.filter { $0.identifier == targetId }.count, 1)
+    }
+
+    private func requireNotificationScheduling() async throws {
+        if await userNotificationCenter.authorizationStatus() == .notDetermined {
+            _ = try await userNotificationCenter.requestAuthorization(options: [.provisional])
+        }
+
+        let status = await userNotificationCenter.authorizationStatus()
+        try XCTSkipUnless(status == .provisional || status == .authorized,
+                          "Notification scheduling is unavailable: authorization status is \(status.stringValue).")
+
+        // A simulator can report authorization while its notification repository rejects requests.
+        // Check the system independently before exercising the scheduler; never skip a scheduler assertion.
+        let identifier = "com.duckduckgo.tests.notification-capability.\(UUID().uuidString)"
+        let content = UNMutableNotificationContent()
+        content.title = "Notification integration test"
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 86_400, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        defer { userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier]) }
+
+        do {
+            try await userNotificationCenter.add(request)
+        } catch {
+            #if targetEnvironment(simulator)
+            let notificationError = error as NSError
+            if notificationError.domain == UNErrorDomain,
+               notificationError.code == UNError.Code.notificationsNotAllowed.rawValue {
+                throw XCTSkip("Simulator rejected an independent notification with authorization status \(status.stringValue): \(notificationError).")
+            }
+            #endif
+            throw error
+        }
     }
 }

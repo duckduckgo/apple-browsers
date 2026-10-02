@@ -75,12 +75,12 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
         XCTAssertFalse(WKPDFHUDViewWrapper.hudViewClasses.isEmpty)
         for hudViewClass in WKPDFHUDViewWrapper.hudViewClasses {
             XCTAssertTrue(hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.performActionForControlSelector), "\(hudViewClass)")
+            // WKPDFHUDViewWrapper takes the legacy path when `_setVisible:` is available and needs `show` otherwise
+            XCTAssertTrue(hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.setVisibleSelector) || hudViewClass.instancesRespond(to: WKPDFHUDViewWrapper.showSelector), "\(hudViewClass)")
         }
 
         if #available(macOS 27, *) {
-            let hudViewClass: AnyClass? = NSClassFromString("WKDefaultPDFHUDView")
-            XCTAssertNotNil(hudViewClass)
-            XCTAssertTrue(hudViewClass?.instancesRespond(to: WKPDFHUDViewWrapper.showSelector) == true)
+            XCTAssertTrue(WKPDFHUDViewWrapper.hudViewClasses.contains { $0.instancesRespond(to: WKPDFHUDViewWrapper.showSelector) }, "\(WKPDFHUDViewWrapper.hudViewClasses)")
         } else {
             let hudViewClass: AnyClass? = NSClassFromString("WKPDFHUDView")
             XCTAssertNotNil(hudViewClass)

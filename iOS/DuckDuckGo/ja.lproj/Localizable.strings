@@ -4702,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "アドレスバーの位置を設定";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "常に許可";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "毎回確認する";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "カメラ";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "位置情報";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "サイトを管理する";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "マイク";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "一切許可しない";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "すべてのサイトの権限を削除";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "権限を削除";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "すべてのサイトの権限が削除されました";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "%@の権限が削除されました";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "%@の権限";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "DuckDuckGoのシステム権限は、%@で確認、変更できます";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "システム設定。";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "アクティベート中";
 
@@ -4899,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "サイトが機能していませんか？DuckDuckGoにお知らせください。";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "サイトの権限";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "レポートを送信";
@@ -5853,3 +5898,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "すべてのチャット";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "ファイルは違法なコンテンツがないか自動的にスキャンされます。 フラグが付けられたチャットのデータ保持は制限されます。 %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "詳細情報";

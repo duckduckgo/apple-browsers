@@ -82,6 +82,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
     private let appSettings: AppSettings
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let featureFlagger: FeatureFlagger
+    private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     private let aiChatSettings: AIChatSettings
     private let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     private let mobileCustomization: MobileCustomization
@@ -92,6 +93,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
          appSettings: AppSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
+         isFloatingUIFeatureEnabledForCurrentLaunch: Bool,
          aiChatSettings: AIChatSettings,
          aiChatAddressBarExperience: AIChatAddressBarExperienceProviding,
          mobileCustomization: MobileCustomization,
@@ -100,6 +102,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
         self.aiChatSettings = aiChatSettings
         self.aiChatAddressBarExperience = aiChatAddressBarExperience
         self.mobileCustomization = mobileCustomization
@@ -176,6 +179,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
                                                                       aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                                       voiceSearchHelper: voiceSearchHelper,
                                                                       featureFlagger: featureFlagger,
+                                                                      isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                                                       appSettings: appSettings,
                                                                       mobileCustomization: mobileCustomization)
         let isMinimalChrome = !AppWidthObserver.shared.isPad

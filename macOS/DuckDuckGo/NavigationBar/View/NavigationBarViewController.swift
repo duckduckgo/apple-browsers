@@ -84,6 +84,8 @@ final class NavigationBarViewController: NSViewController {
     private var feedbackButtonSpacer: NSView?
     private var feedbackTipController: QuickFeedbackTipController?
     private var internalUserCancellable: AnyCancellable?
+    /// Owns the toolbar buttons of the loaded web extensions. `nil` when web extensions are unavailable.
+    private var webExtensionNavigationBarUpdater: AnyObject?
     private var fireWindowBackgroundView: NSImageView?
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -548,7 +550,19 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
+        setupWebExtensionButtons()
+
         memoryUsageDisplayer.setUpMemoryMonitorView()
+    }
+
+    private func setupWebExtensionButtons() {
+        if #available(macOS 15.4, *) {
+            let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
+                                                          themeManager: themeManager,
+                                                          container: menuButtons)
+            updater.startUpdating()
+            webExtensionNavigationBarUpdater = updater
+        }
     }
 
     override func viewWillAppear() {
@@ -1248,9 +1262,17 @@ final class NavigationBarViewController: NSViewController {
     private func subscribeToTabContent() {
         urlCancellable = tabCollectionViewModel.selectedTabViewModel?.tab.$content
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] _ in
+            .sink(receiveValue: { [weak self] content in
                 self?.updatePasswordManagementButton()
+                self?.updateWebExtensionButtonsVisibility(for: content)
             })
+    }
+
+    /// Web extension buttons apply to a web page only, so tabs that show native content hide them.
+    private func updateWebExtensionButtonsVisibility(for content: TabContent) {
+        guard #available(macOS 15.4, *),
+              let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
     }
 
     private func subscribeToDownloads() {

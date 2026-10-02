@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Combine
 import Common
 import FoundationExtensions
@@ -789,6 +791,17 @@ private final class ConnectionStatusBox: @unchecked Sendable {
             _value = newValue
         }
     }
+}
+
+private extension Bundle {
+
+    static let keychainType: KeychainType = {
+#if NETP_SYSTEM_EXTENSION
+        .system
+#else
+        .dataProtection(.named(Bundle.main.appGroup(bundle: .netP)))
+#endif
+    }()
 }
 
 final class DefaultWireGuardInterface: WireGuardGoInterface {

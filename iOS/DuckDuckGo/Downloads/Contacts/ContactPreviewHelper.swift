@@ -19,8 +19,6 @@
 
 import Contacts
 import ContactsUI
-import Core
-import PixelKit
 import UIKit
 import UIKitExtensions
 
@@ -30,8 +28,7 @@ enum ContactCardFactory {
     static func makeContactCard(for contact: CNContact,
                                 delegate: CNContactViewControllerDelegate,
                                 cancelTarget: Any,
-                                cancelAction: Selector,
-                                pixelFiring: (any PixelKitFiring)?) -> UINavigationController {
+                                cancelAction: Selector) -> UINavigationController {
         let contactViewController = CNContactViewController(forUnknownContact: contact)
         contactViewController.contactStore = CNContactStore()
         contactViewController.allowsActions = true
@@ -46,27 +43,20 @@ enum ContactCardFactory {
         // is app-owned and reliably exposed. Distinguishes the card from the browser omnibar's Cancel.
         cancelButton.accessibilityIdentifier = "contactPreviewCancelButton"
         contactViewController.navigationItem.leftBarButtonItem = cancelButton
-        pixelFiring?.fire(Pixel.Event.vcardContactEditorPresented)
         return UINavigationController(rootViewController: contactViewController)
     }
 }
 
 final class ContactCardCompletion {
 
-    private let pixelFiring: (any PixelKitFiring)?
     private var didComplete = false
 
-    init(pixelFiring: (any PixelKitFiring)?) {
-        self.pixelFiring = pixelFiring
-    }
-
-    /// On the first call, fires the saved/cancelled pixel and returns `true` so the caller can run
+    /// On the first call, returns `true` so the caller can run
     /// its dismissal + callbacks. Every later call returns `false`: the Cancel button, the delegate
     /// callback, and a swipe-dismiss can all arrive, but only the first one wins.
-    func recordCompletion(saved: Bool) -> Bool {
+    func recordCompletion() -> Bool {
         guard !didComplete else { return false }
         didComplete = true
-        pixelFiring?.fire(saved ? Pixel.Event.vcardContactEditorSaved : .vcardContactEditorCancelled)
         return true
     }
 }
@@ -81,19 +71,12 @@ final class ContactPreviewHelper: NSObject, FilePreview {
 
     private let filePath: URL
     private weak var viewController: UIViewController?
-    private let pixelFiring: (any PixelKitFiring)?
     private weak var presentedNavigationController: UINavigationController?
-    private let completion: ContactCardCompletion
+    private let completion = ContactCardCompletion()
 
-    required convenience init(_ filePath: URL, viewController: UIViewController) {
-        self.init(filePath, viewController: viewController, pixelFiring: PixelKit.shared)
-    }
-
-    init(_ filePath: URL, viewController: UIViewController, pixelFiring: (any PixelKitFiring)?) {
+    required init(_ filePath: URL, viewController: UIViewController) {
         self.filePath = filePath
         self.viewController = viewController
-        self.pixelFiring = pixelFiring
-        self.completion = ContactCardCompletion(pixelFiring: pixelFiring)
         super.init()
     }
 
@@ -107,17 +90,12 @@ final class ContactPreviewHelper: NSObject, FilePreview {
         }
     }
 
-    private func handleParseResult(_ result: VCardFileReader.Result?) {
-        guard let result else {
-            pixelFiring?.fire(Pixel.Event.vcardContactFallbackParseFailure)
+    private func handleParseResult(_ contact: CNContact?) {
+        guard let contact else {
             reportParseFailure()
             return
         }
-        if result.wasTruncated {
-            // Present the first contact and silently ignore the rest.
-            pixelFiring?.fire(Pixel.Event.vcardContactMultipleContactsTruncated)
-        }
-        presentContactCard(for: result.contact)
+        presentContactCard(for: contact)
     }
 
     private func presentContactCard(for contact: CNContact) {
@@ -130,8 +108,7 @@ final class ContactPreviewHelper: NSObject, FilePreview {
             for: contact,
             delegate: self,
             cancelTarget: self,
-            cancelAction: #selector(cancelButtonTapped),
-            pixelFiring: pixelFiring
+            cancelAction: #selector(cancelButtonTapped)
         )
         // Catch interactive (swipe-down) dismissal, which does NOT call CNContactViewControllerDelegate.
         navigationController.presentationController?.delegate = self
@@ -144,10 +121,10 @@ final class ContactPreviewHelper: NSObject, FilePreview {
     }
 
     /// Notifies the owner, dismissing the contact card first unless UIKit already dismissed it
-    /// interactively (`alreadyDismissed`). The shared completion fires the saved/cancelled pixel and
-    /// guards so the Cancel button, the delegate callback, and a swipe-dismiss can't run it twice.
+    /// interactively (`alreadyDismissed`). The shared completion guards so the Cancel button,
+    /// the delegate callback, and a swipe-dismiss can't run it twice.
     private func complete(saved: Bool, alreadyDismissed: Bool) {
-        guard completion.recordCompletion(saved: saved) else { return }
+        guard completion.recordCompletion() else { return }
         let reportSaved = onSaved
         let reportDismiss = onDismiss
         let finish = {

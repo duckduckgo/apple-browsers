@@ -242,6 +242,31 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
     // MARK: - Tab attachments
 
+    func testFirstUseCallbackRequiresSuccessfulAdditionalTabAttachment() {
+        enableTabAttachments(limit: 1)
+        let controller = makeController()
+        let first = candidate(id: "first")
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true))
+        XCTAssertEqual(callbackSpy.onTabAttachedCount, 1)
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true))
+        XCTAssertFalse(controller.setTabAttachment(candidate(id: "second"), isAttached: true))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false))
+        XCTAssertEqual(callbackSpy.onTabAttachedCount, 1)
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second")))
+        XCTAssertEqual(callbackSpy.onTabAttachedCount, 2)
+    }
+
+    func testCurrentPageAndOpeningMenuDoNotReportAdditionalTabUse() {
+        enableTabAttachments()
+        let config = self.config!
+        config.pageContextAttachHandler = { config.isCurrentPageAttached = true }
+        let controller = makeController()
+        controller.updateAttachButtonPresentation()
+        XCTAssertEqual(callbackSpy.onTabAttachedCount, 0)
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true))
+        XCTAssertEqual(callbackSpy.onTabAttachedCount, 0)
+    }
+
     func test_tabSelection_togglesByIdentityAndKeepsSameAddressTabsDistinct() {
         enableTabAttachments()
         let controller = makeController()
@@ -542,12 +567,14 @@ private final class CallbackSpy {
     var onDraftChangedCount = 0
     var onExpandIfNeededCount = 0
     var updateFloatingReturnKeyCount = 0
+    var onTabAttachedCount = 0
 
     var callbacks: UTIAttachmentController.Callbacks {
         .init(
             onDraftChanged: { self.onDraftChangedCount += 1 },
             onExpandIfNeeded: { self.onExpandIfNeededCount += 1 },
-            updateFloatingReturnKey: { self.updateFloatingReturnKeyCount += 1 }
+            updateFloatingReturnKey: { self.updateFloatingReturnKeyCount += 1 },
+            onTabAttached: { self.onTabAttachedCount += 1 }
         )
     }
 }

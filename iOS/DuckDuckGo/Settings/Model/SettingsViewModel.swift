@@ -400,7 +400,6 @@ final class SettingsViewModel: ObservableObject {
                 !self.appSettings.keepAddressBarVisibleOnIPad
             },
             set: { hideWhileScrolling in
-                PixelKit.fire(hideWhileScrolling ? Pixel.Event.settingsHideTabBarWhileScrollingOn : .settingsHideTabBarWhileScrollingOff)
                 let keepVisible = !hideWhileScrolling
                 self.appSettings.keepAddressBarVisibleOnIPad = keepVisible
             }

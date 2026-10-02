@@ -24,9 +24,9 @@ import UIKit
 final class UTIFooterCardView: UIView {
 
     static let overlap: CGFloat = 44
+    static let cornerRadius: CGFloat = 28
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 28
         static let contentTopGap: CGFloat = 12
         static let contentBottom: CGFloat = 12
         static let contentLeading: CGFloat = 20
@@ -46,21 +46,29 @@ final class UTIFooterCardView: UIView {
 
     let contentView = UIView()
 
+    /// A card under another one drops its top gap, so the two read as one block instead of doubling the margin.
+    var isBelowAnotherCard = false {
+        didSet { contentTopConstraint?.constant = Self.overlap + (isBelowAnotherCard ? 0 : Constants.contentTopGap) }
+    }
+
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
     private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
     private let modelSwitchIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.importExport)
     private let shieldIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.shieldCheck)
+    private let giftIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.gift)
     private let titleLabel = UILabel()
     private let linkTextView = UTIFooterLinkTextView()
     private let subtitleLabel = UILabel()
     private let actionButton = UTIFooterActionButton()
     private let dismissButton = UIButton(type: .system)
 
+    private var contentTopConstraint: NSLayoutConstraint?
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
+    private var formattedTitleMessage: UTIFooterMessage?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -88,16 +96,28 @@ final class UTIFooterCardView: UIView {
             visibleIcon = modelSwitchIcon
         case .shield:
             visibleIcon = shieldIcon
+        case .gift:
+            visibleIcon = giftIcon
         }
         allIcons.forEach { $0.isHidden = $0 !== visibleIcon }
         let hasIcon = message.icon != UTIFooterMessage.Icon.none
         iconSlotWidthConstraint?.constant = hasIcon ? Constants.iconSize : 0
         iconTextGapConstraint?.constant = hasIcon ? Constants.iconTextGap : 0
 
-        // A title above a reset line is a headline; a standalone one is body copy.
-        let isStandaloneCopy = message.subtitle == nil
-        titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
-        titleLabel.text = message.title
+        if message.titleFormatting != nil {
+            formattedTitleMessage = message
+            applyFormattedTitle()
+        } else {
+            if formattedTitleMessage != nil {
+                titleLabel.attributedText = nil
+                titleLabel.accessibilityLabel = nil
+                formattedTitleMessage = nil
+            }
+            // A title above a reset line is a headline; a standalone one is body copy.
+            let isStandaloneCopy = message.subtitle == nil
+            titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+            titleLabel.text = message.title
+        }
         // A label can't take a tap on part of its text, so copy carrying a link renders in the text view.
         titleLabel.isHidden = message.link != nil
         linkTextView.isHidden = message.link == nil
@@ -126,8 +146,13 @@ final class UTIFooterCardView: UIView {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+        let colorAppearanceChanged = traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection)
+        if colorAppearanceChanged {
             applyColors()
+        }
+        if formattedTitleMessage != nil,
+           colorAppearanceChanged || traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            applyFormattedTitle()
         }
     }
 
@@ -136,7 +161,31 @@ final class UTIFooterCardView: UIView {
     }
 
     private var allIcons: [UIView] {
-        [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon]
+        [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon]
+    }
+
+    private func applyFormattedTitle() {
+        guard let message = formattedTitleMessage, let formatting = message.titleFormatting else { return }
+        let font: UIFont = message.subtitle == nil ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+        titleLabel.font = font
+
+        let title = NSMutableAttributedString(string: message.title, attributes: [.font: font])
+        let emphasisRange = (title.string as NSString).range(of: formatting.emphasizedText)
+        if emphasisRange.location != NSNotFound {
+            title.addAttribute(.font, value: UIFont.daxFootnoteSemibold(), range: emphasisRange)
+        }
+        let iconRange = (title.string as NSString).range(of: formatting.attachmentPlaceholder)
+        if iconRange.location != NSNotFound {
+            let attachment = NSTextAttachment()
+            attachment.image = DesignSystemImages.Glyphs.Size16.attach.withTintColor(
+                UIColor(designSystemColor: .textPrimary).resolvedColor(with: traitCollection), renderingMode: .alwaysOriginal)
+            let size = UIFontMetrics(forTextStyle: .footnote).scaledValue(for: Constants.iconSize, compatibleWith: traitCollection)
+            attachment.bounds = CGRect(x: 0, y: (font.capHeight - size) / 2, width: size, height: size)
+            title.replaceCharacters(in: iconRange, with: NSAttributedString(attachment: attachment))
+        }
+        titleLabel.attributedText = title
+        titleLabel.accessibilityLabel = message.title.replacingOccurrences(of: formatting.attachmentPlaceholder,
+                                                                           with: formatting.attachmentAccessibilityLabel)
     }
 
 }
@@ -146,7 +195,7 @@ final class UTIFooterCardView: UIView {
 private extension UTIFooterCardView {
 
     func setupUI() {
-        layer.cornerRadius = Constants.cornerRadius
+        layer.cornerRadius = Self.cornerRadius
         layer.cornerCurve = .continuous
         layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         clipsToBounds = true
@@ -166,7 +215,8 @@ private extension UTIFooterCardView {
         infoIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Info"
         modelSwitchIcon.accessibilityIdentifier = "AIChat.Footer.Icon.ModelSwitch"
         shieldIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Shield"
-        [alertIcon, infoIcon, modelSwitchIcon, shieldIcon].forEach {
+        giftIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Gift"
+        [alertIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon].forEach {
             $0.contentMode = .scaleAspectFit
             $0.isHidden = true
         }
@@ -212,6 +262,7 @@ private extension UTIFooterCardView {
         contentView.addSubview(dismissButton)
 
         let contentTop = contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.overlap + Constants.contentTopGap)
+        contentTopConstraint = contentTop
 
         let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
         actionCollapsedWidthConstraint = actionCollapsedWidth
@@ -259,9 +310,17 @@ private extension UTIFooterCardView {
             shieldIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             shieldIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
+            giftIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            giftIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            giftIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            giftIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
             iconTextGap,
-            textStack.topAnchor.constraint(equalTo: contentView.topAnchor),
-            textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            // Centered rather than stretched: the controls keep the content at least their height even
+            // when hidden, and a text view stretched to that draws its one line at the top.
+            textStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            textStack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            textStack.topAnchor.constraint(equalTo: contentView.topAnchor).withPriority(.defaultLow),
 
             textStack.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -Constants.actionSpacing),
             actionButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -285,9 +344,10 @@ private extension UTIFooterCardView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
-        infoIcon.tintColor = UIColor(designSystemColor: .icons)
+        infoIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
         modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)
         shieldIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        giftIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
         linkTextView.applyColors()
         dismissButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
         actionButton.applyColors()

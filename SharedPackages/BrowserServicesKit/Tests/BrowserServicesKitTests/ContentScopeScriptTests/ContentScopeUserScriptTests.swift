@@ -184,6 +184,37 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains(experimentData.subfeature))
     }
 
+    // MARK: - User Unprotected Domains
+
+    private let unprotectedDomain = "user-unprotected.example"
+
+    private func source(for scriptContext: ContentScopeScriptContext) throws -> String {
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.userUnprotectedDomains = [unprotectedDomain]
+        let manager = MockPrivacyConfigurationManager(privacyConfig: privacyConfig,
+                                                      internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring()))
+        manager.currentConfigString = managerConfig
+        return try ContentScopeUserScript.generateSource(
+            manager,
+            properties: properties,
+            scriptContext: scriptContext,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+    }
+
+    func testWhenContentScopeContextThenUserUnprotectedDomainsAreInjected() throws {
+        XCTAssertTrue(try source(for: .contentScope()).contains(unprotectedDomain))
+    }
+
+    func testWhenAIChatDataClearingContextThenUserUnprotectedDomainsAreNotInjected() throws {
+        XCTAssertFalse(try source(for: .aiChatDataClearing).contains(unprotectedDomain))
+    }
+
+    func testWhenAIChatHistoryContextThenUserUnprotectedDomainsAreNotInjected() throws {
+        XCTAssertFalse(try source(for: .aiChatHistory).contains(unprotectedDomain))
+    }
+
     // MARK: - ContentScopeScriptContext Tests
 
     func testWhenAIChatDataClearingContextThenFileNameIsDuckAiDataClearing() {

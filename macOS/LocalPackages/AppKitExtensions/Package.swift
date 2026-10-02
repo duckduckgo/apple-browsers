@@ -2,6 +2,11 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
+
+// Xcode maps the app's CI configuration to release for Swift packages. The macOS CI workflows
+// set this flag so ApplicationBuildType sees the same DEBUG condition as the app target.
+let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 
 let package = Package(
     name: "AppKitExtensions",
@@ -26,7 +31,7 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
-            ]
+            ] + (forceDebug ? [.define("DEBUG")] : [])
         ),
         .testTarget(
             name: "AppKitExtensionsTests",

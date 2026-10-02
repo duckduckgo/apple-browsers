@@ -874,7 +874,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             "-clearAllDefaults", "isRunningUITests",
             "-isOnboardingCompleted", "true",
             "-ff.sitePermissions", String(flagEnabled),
-            "-ff.floatingUIAugust2026", "true",
+            "-ff.floatingUIiOS26", "true",
+            "-ff.floatingUIiOS27", "true",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {

@@ -328,7 +328,7 @@ extension Preferences {
         @ViewBuilder
         private var lastCheckedText: some View {
             let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-            Text("\(UserText.lastChecked): \(lastChecked)")
+            Text(verbatim: "\(UserText.lastChecked): \(lastChecked)")
                 .foregroundColor(.secondary)
         }
 

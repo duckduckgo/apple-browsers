@@ -36,6 +36,7 @@ let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 /// generated symbols and entity classes live in this module.
 let package = Package(
     name: "DuckDuckGo",
+    defaultLocalization: "en",
     platforms: [
         .macOS("12.3")
     ],
@@ -211,6 +212,7 @@ let package = Package(
                 .process("ContentBlocker/Resources/trackerData.json"),
                 .process("Feedback/New/Animations"),
                 .process("Fire/Resources"),
+                .process("Localizable.xcstrings"),
                 .process("MaliciousSiteProtection/Resources"),
                 .process("NavigationBar/View/Animations/Resources"),
                 .process("NetworkProtection/AppTargets/BothAppTargets/Assets"),

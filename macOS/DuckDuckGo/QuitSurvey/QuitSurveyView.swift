@@ -227,7 +227,7 @@ private struct DomainToggleRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
-            Toggle("", isOn: $isSelected)
+            Toggle("" as String, isOn: $isSelected)
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .accessibilityLabel(entry.title ?? entry.domain)

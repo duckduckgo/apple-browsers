@@ -38,7 +38,7 @@ public protocol AIChatIndexedDBBlobCleaning {
 }
 
 /// What one cleanup removed, so the app can report whether the cleanup is still needed.
-public struct AIChatBlobCleanupResult {
+public struct AIChatBlobCleanupResult: Sendable {
     public let filesFound: Int
     public let filesRemoved: Int
     /// The first removal error; files that could not be removed are left for the next cleanup.

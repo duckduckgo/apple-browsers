@@ -69,6 +69,10 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     struct InstallRequest: Decodable {
         let extensionId: String
         let crxUrl: URL
+
+        /// Replaces the placeholder `prodversion=9999.0.0.0` version provided by the user script
+        /// with the version defined by the app.
+        private(set) lazy var versionedCrxUrl: URL = crxUrl.addingOrReplacing(ChromeWebStoreURL.prodversionQueryItem)
     }
 
     struct StatusResponse: Encodable {
@@ -110,11 +114,11 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         case .getExtensionStatus:
             return StatusResponse(status: service?.status(for: request.extensionId) ?? .unknown)
         case .installExtension:
-            guard let request: InstallRequest = DecodableHelper.decode(from: params),
-                  ChromeWebStoreURL.isValidDownloadURL(request.crxUrl, for: request.extensionId) else {
+            guard var request: InstallRequest = DecodableHelper.decode(from: params),
+                  ChromeWebStoreURL.isValidDownloadURL(request.versionedCrxUrl, for: request.extensionId) else {
                 throw ChromeWebStoreError.invalidRequest
             }
-            let success = await service?.install(identifier: request.extensionId, downloadURL: request.crxUrl) ?? false
+            let success = await service?.install(identifier: request.extensionId, downloadURL: request.versionedCrxUrl) ?? false
             return OperationResponse(success: success)
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false

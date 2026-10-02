@@ -564,7 +564,7 @@ class FireExecutor: FireExecuting {
             result = await burnTabAIHistory(tabViewModel: viewModel)
         case .fireMode:
             if !request.options.contains(.data) { // Invalidating the fire mode datastore makes deleting chats redundant.
-                result = await burnFireModeAIHistory()
+                result = await burnFireModeAIHistory(applicationState: applicationState)
             } else {
                 result = .success(())
             }
@@ -582,7 +582,7 @@ class FireExecutor: FireExecuting {
                                   applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger, applicationState: applicationState)
         let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
-        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory() : .success(())
+        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory(applicationState: applicationState) : .success(())
         let (normalResult, fireResult) = await (normalBurnTask, fireBurnTask)
         if case .failure = normalResult { return normalResult }
         if case .failure = fireResult { return fireResult }
@@ -613,7 +613,7 @@ class FireExecutor: FireExecuting {
     }
 
     @MainActor
-    private func burnFireModeAIHistory() async -> Result<Void, Error> {
+    private func burnFireModeAIHistory(applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         guard fireModeCapability.isFireModeEnabled else {
             return .success(())
         }
@@ -621,6 +621,9 @@ class FireExecutor: FireExecuting {
             return .success(())
         }
 
+        // The fire-mode store survives relaunches, so it can be as cold as the normal one.
+        await dataStoreWarmupWorker.setApplicationState(applicationState)
+        await dataStoreWarmupWorker.ensureFireModeStoreIsReady()
         let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
         let cleaner = historyCleanerProvider(fireDataStore, true)
         let result = await cleaner.cleanAIChatHistory()

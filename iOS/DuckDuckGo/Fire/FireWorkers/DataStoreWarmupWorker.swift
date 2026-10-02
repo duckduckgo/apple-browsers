@@ -64,7 +64,7 @@ actor DataStoreWarmupWorker: FireExecutorWorker {
         await ensureIsReady(.normal)
     }
 
-    private func ensureFireModeStoreIsReady() async {
+    func ensureFireModeStoreIsReady() async {
         await ensureIsReady(.fireMode)
     }
 

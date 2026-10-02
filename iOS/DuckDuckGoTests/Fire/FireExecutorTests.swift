@@ -339,6 +339,21 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(normalStoreWarmUps, 1)
     }
 
+    func testWhenOnlyFireModeAIChatsAreBurnedThenTheFireModeStoreIsWarmedBeforeChatsAreCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(steps, ["warm up fireMode=true", "clear chats"])
+    }
+
     func testWhenTheWarmUpTimedOutThenTheNextBurnWarmsUpAgain() async {
         var normalStoreWarmUps = 0
         let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in

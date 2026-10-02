@@ -64,6 +64,49 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         XCTAssertNil(eventData?.clearAIChatHistoryScriptReadyMilliseconds)
     }
 
+    // MARK: - Persisting Progress
+
+    func testStartAction_persistsTheStartedAction() {
+        var persistedTabsStart: Date?
+        sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        wideEventMock.onUpdate = { persistedTabsStart = ($0 as? DataClearingWideEventData)?.clearTabsDuration?.start }
+
+        sut.start(.clearTabs)
+
+        XCTAssertNotNil(persistedTabsStart, "An orphaned event must show which action was running")
+    }
+
+    func testRecordAIChatClearing_persistsTheReport() {
+        var persistedRetried: Bool?
+        sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        wideEventMock.onUpdate = { persistedRetried = ($0 as? DataClearingWideEventData)?.clearAIChatHistoryRetried }
+
+        sut.recordAIChatClearing(AIChatClearingReport(attempts: 2, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings()))
+
+        XCTAssertEqual(persistedRetried, true)
+    }
+
+    func testRecordAIChatWarmupWait_persistsTheWait() {
+        var persistedWait: Int?
+        sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        wideEventMock.onUpdate = { persistedWait = ($0 as? DataClearingWideEventData)?.clearAIChatHistoryWarmupWaitMilliseconds }
+
+        sut.recordAIChatWarmupWait(milliseconds: 120)
+
+        XCTAssertEqual(persistedWait, 120)
+    }
+
+    func testUpdateAction_persistsTheActionResult() {
+        var persistedTabsStatus: DataClearingWideEventData.ActionStatus?
+        sut.start(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
+        sut.start(.clearTabs)
+        wideEventMock.onUpdate = { persistedTabsStatus = ($0 as? DataClearingWideEventData)?.clearTabsStatus }
+
+        sut.update(.clearTabs, result: .success(()))
+
+        XCTAssertEqual(persistedTabsStatus, .success)
+    }
+
     // MARK: - Event Lifecycle Tests
 
     func testStart_createsNewWideEvent() {

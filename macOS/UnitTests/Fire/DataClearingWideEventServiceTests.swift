@@ -58,6 +58,29 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         XCTAssertEqual(eventData?.clearAIChatHistoryScriptReplyMilliseconds, 5000)
     }
 
+    // MARK: - Persisting Progress
+
+    func testStartAction_persistsTheStartedAction() {
+        var persistedTabsStart: Date?
+        sut.start(options: FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false), path: .burnAll, isAutoClear: false)
+        wideEventMock.onUpdate = { persistedTabsStart = ($0 as? DataClearingWideEventData)?.clearTabsDuration?.start }
+
+        sut.start(.clearTabs)
+
+        XCTAssertNotNil(persistedTabsStart, "An orphaned event must show which action was running")
+    }
+
+    func testUpdateAction_persistsTheActionResult() {
+        var persistedTabsStatus: DataClearingWideEventData.ActionStatus?
+        sut.start(options: FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false), path: .burnAll, isAutoClear: false)
+        sut.start(.clearTabs)
+        wideEventMock.onUpdate = { persistedTabsStatus = ($0 as? DataClearingWideEventData)?.clearTabsStatus }
+
+        sut.update(.clearTabs, result: .success(()))
+
+        XCTAssertEqual(persistedTabsStatus, .success)
+    }
+
     // MARK: - Event Lifecycle Tests
 
     func testStart_createsNewWideEvent() {

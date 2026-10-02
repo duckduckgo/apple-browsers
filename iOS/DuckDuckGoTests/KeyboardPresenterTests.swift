@@ -70,11 +70,22 @@ final class KeyboardPresenterTests {
     private let pixelFiring = PixelKitMock()
     private var onAppLaunch = false
     private var scheduledActions: [() -> Void] = []
+    private var afterPromptActions: [() -> Void] = []
+    private var promptPending = false
+    private var promptRequestIsValid: (@MainActor () -> Bool)?
+    private var promptCloseHandler: (@MainActor () -> Void)?
     private lazy var presenter = KeyboardPresenter(
         mainViewController: target,
         featureFlagger: featureFlagger,
+        runOnceModalPromptCloses: { [unowned self] isValid, handler in
+            guard promptPending else { return false }
+            promptRequestIsValid = isValid
+            promptCloseHandler = handler
+            return true
+        },
         pixelFiring: pixelFiring,
         onAppLaunch: { [unowned self] in onAppLaunch },
+        scheduleAfterPrompt: { [unowned self] in afterPromptActions.append($0) },
         schedule: { [unowned self] in scheduledActions.append($0) })
 
     @available(iOS 16, macOS 13, *)
@@ -212,6 +223,60 @@ final class KeyboardPresenterTests {
 
         #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == 1)
+    }
+    @available(iOS 16, macOS 13, *)
+    @Test("A pending prompt defers the keyboard until its close delay completes", .timeLimit(.minutes(1)))
+    func promptDefersKeyboard() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        promptPending = true
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(promptRequestIsValid?() == true)
+
+        promptCloseHandler?()
+        #expect(afterPromptActions.count == 1)
+        #expect(target.allowedKeyboardCallCount == 0)
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Invalidating a request stops waiting and focus after a prompt", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func invalidatedPromptRequest(afterClose: Bool, disableFlag: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        promptPending = true
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        if afterClose {
+            promptCloseHandler?()
+            #expect(afterPromptActions.count == 1)
+        }
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        #expect(promptRequestIsValid?() == false)
+        if !afterClose {
+            promptCloseHandler?()
+            #expect(afterPromptActions.isEmpty)
+        }
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag-off launch never subscribes to prompt closure", .timeLimit(.minutes(1)))
+    func flagOffDoesNotWaitForPrompt() {
+        featureFlagger.enabledFeatureFlags = []
+        promptPending = true
+        onAppLaunch = true
+        presenter.showKeyboardOnLaunch()
+        scheduledActions.forEach { $0() }
+        #expect(promptCloseHandler == nil)
+        #expect(target.legacyKeyboardCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)

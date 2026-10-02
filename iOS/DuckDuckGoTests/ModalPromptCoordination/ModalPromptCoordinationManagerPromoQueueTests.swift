@@ -80,7 +80,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(!sut.hasActiveOrPendingModalAttempt)
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Coordinated Attempt Is Pending As Soon As A Prompt Is Committed", .timeLimit(.minutes(1)))
     func whenCoordinatedPromptIsCommittedThenAttemptIsPendingBeforePresentation() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
@@ -98,7 +98,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         #expect(sut.hasActiveOrPendingModalAttempt)
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Coordinated Close Handler Runs Once The Root Leaves The Screen", .timeLimit(.minutes(1)))
     func whenCoordinatedRootLeavesTheScreenThenCloseHandlerRunsOnce() throws {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown

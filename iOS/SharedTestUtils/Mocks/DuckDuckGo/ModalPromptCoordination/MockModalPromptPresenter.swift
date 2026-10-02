@@ -71,7 +71,7 @@ final class MockDismissibleViewController: UIViewController {
 final class MockModalPromptScheduler: ModalPromptScheduling {
     private(set) var didCallSchedule = false
     private(set) var capturedScheduledDelay: TimeInterval?
-    private var scheduledBlock: (@MainActor () -> Void)?
+    private(set) var scheduledBlock: (@MainActor () -> Void)?
 
     func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) {
         didCallSchedule = true

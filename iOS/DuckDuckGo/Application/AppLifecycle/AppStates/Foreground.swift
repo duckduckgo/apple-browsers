@@ -100,7 +100,7 @@ struct Foreground: ForegroundHandling {
         )
         let keyboardPresenter = KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
                                                   featureFlagger: appDependencies.featureFlagger,
-                                                  runOnceModalPromptCloses: { appDependencies.mainCoordinator.runOnceModalPromptCloses($0) })
+                                                  runOnceModalPromptCloses: { appDependencies.mainCoordinator.runOnceModalPromptCloses(while: $0, $1) })
         self.keyboardPresenter = keyboardPresenter
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,

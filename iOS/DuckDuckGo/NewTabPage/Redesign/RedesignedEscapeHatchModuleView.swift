@@ -33,10 +33,12 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
     let swipeActionLabel: String
     let onSwipeCommit: () -> Void
     let onTap: () -> Void
+    let onFireTap: (CGRect) -> Void
     let onShowAllTap: () -> Void
     @ViewBuilder let menuContent: () -> MenuContent
 
     @State private var rowHeight: CGFloat = Metrics.thumbnailSize
+    @State private var fireButtonFrameInWindow: CGRect = .zero
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.headerToBodySpacing) {
@@ -139,7 +141,10 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
             .accessibilityIdentifier("NewTabPage.escapeHatch.card")
             .accessibilityAction(named: Text(swipeActionLabel), onSwipeCommit)
 
-            menuView
+            HStack(spacing: 0) {
+                fireButton
+                menuView
+            }
         }
     }
 
@@ -217,13 +222,28 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
         return String(format: UserText.escapeHatchReturnToWithSubtitleAccessibilityLabelFormat, title, caption)
     }
 
+    private var fireButton: some View {
+        Button {
+            onFireTap(fireButtonFrameInWindow)
+        } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.fire)
+                .foregroundColor(Color(designSystemColor: .icons))
+                .frame(width: Metrics.actionButtonSize, height: Metrics.actionButtonSize)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(UserText.escapeHatchMenuDeleteTab))
+        .accessibilityIdentifier("NewTabPage.escapeHatch.fireButton")
+        .onFrameUpdate(in: .global, using: RedesignedEscapeHatchFireButtonFrameKey.self) { fireButtonFrameInWindow = $0 }
+    }
+
     private var menuView: some View {
         Menu {
             menuContent()
         } label: {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.menuDotsHorizontal)
                 .foregroundColor(Color(designSystemColor: .icons))
-                .frame(width: Metrics.menuButtonSize, height: Metrics.menuButtonSize)
+                .frame(width: Metrics.actionButtonSize, height: Metrics.actionButtonSize)
                 .contentShape(Circle())
         }
         .accessibilityLabel(Text(UserText.escapeHatchMoreButtonAccessibilityLabel))
@@ -233,6 +253,14 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
 }
 
 private struct RedesignedEscapeHatchRowFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+private struct RedesignedEscapeHatchFireButtonFrameKey: PreferenceKey {
     static var defaultValue: CGRect = .zero
 
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
@@ -271,7 +299,7 @@ private enum Metrics {
     static let captionFaviconSize: CGFloat = 16
     static let captionFaviconToTextSpacing: CGFloat = 6
     static let captionTextSpacing: CGFloat = 2
-    static let menuButtonSize: CGFloat = 44
+    static let actionButtonSize: CGFloat = 44
 }
 
 // MARK: - Previews
@@ -286,6 +314,7 @@ private enum Metrics {
                                     swipeActionLabel: UserText.escapeHatchSwipeActionCloseTab,
                                     onSwipeCommit: {},
                                     onTap: {},
+                                    onFireTap: { _ in },
                                     onShowAllTap: {}) {
         Button("Return to Tab") {}
         Button("Close Tab", role: .destructive) {}
@@ -301,6 +330,7 @@ private enum Metrics {
                                     swipeActionLabel: UserText.escapeHatchSwipeActionCloseTab,
                                     onSwipeCommit: {},
                                     onTap: {},
+                                    onFireTap: { _ in },
                                     onShowAllTap: {}) {
         Button("Return to Tab") {}
     }

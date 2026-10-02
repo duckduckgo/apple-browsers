@@ -110,7 +110,8 @@ public final class DataBrokerProtectionManager {
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
-                                                    localBrokerProvider: localBrokerService)
+                                                    localBrokerProvider: localBrokerService,
+                                                    privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager)
         return brokerUpdater
     }()
 

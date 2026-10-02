@@ -97,6 +97,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let source = "source"
         public static let sourceDBP = "dbp"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
+        public static let reasonParamKey = "reason"
         public static let removedAtParamKey = "removed_at"
         public static let isAuthenticated = "isAuthenticated"
         public static let isFreeScan = "free_scan"
@@ -224,11 +225,19 @@ public enum DataBrokerProtectionSharedPixels {
     // Broker update pixels
     case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?)
     case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, isFreeScan: Bool?, error: Error)
+    case bundleVerificationFailure(reason: BrokerBundleVerificationError)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
-    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
+        switch self {
+        case .bundleVerificationFailure:
+            return .standard
+        default:
+            return .legacyOmitted
+        }
+    }
 
     public var name: String {
         switch self {
@@ -351,6 +360,12 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
             // Broker update pixels
         case .updateDataBrokersSuccess: return "dbp_update_databrokers_success"
         case .updateDataBrokersFailure: return "dbp_update_databrokers_failure"
+        case .bundleVerificationFailure:
+#if os(macOS)
+            return "dbp_bundle_verification_failure_macos"
+#else
+            return "dbp_bundle_verification_failure"
+#endif
         }
     }
 
@@ -657,13 +672,16 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
             return addingFreeScanParamIfNeeded(to: params, isFreeScan: isFreeScan)
+        case .bundleVerificationFailure(let reason):
+            return [Consts.reasonParamKey: reason.rawValue]
         }
     }
 
     public var namePrefix: PixelKitNamePrefix {
         switch self {
         case .mainFrameChallengeDetected,
-                .challengeClearanceObserved:
+                .challengeClearanceObserved,
+                .bundleVerificationFailure:
             return .none
         default:
             return .platformDefault
@@ -750,7 +768,8 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .serviceEmailConfirmationMaxRetriesExceeded,
                 .serviceEmailConfirmationJobSuccess,
                 .updateDataBrokersSuccess,
-                .updateDataBrokersFailure:
+                .updateDataBrokersFailure,
+                .bundleVerificationFailure:
             return [.pixelSource]
 
 #if os(iOS)
@@ -876,7 +895,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .freemiumPIRMaintenanceScanSkipped:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .mainFrameChallengeDetected,
-                    .challengeClearanceObserved:
+                    .challengeClearanceObserved,
+                    .bundleVerificationFailure:
                 pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters)
             case .firstScan, .freemiumUpsell:
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .uniqueByName)

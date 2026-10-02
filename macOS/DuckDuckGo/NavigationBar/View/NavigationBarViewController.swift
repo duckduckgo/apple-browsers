@@ -499,10 +499,10 @@ final class NavigationBarViewController: NSViewController {
         button.title = ""
         button.imageScaling = .scaleProportionallyDown
         button.alignment = .center
-        button.contentTintColor = .button
+        button.contentTintColor = NSColor(resource: .button)
         button.normalTintColor = button.contentTintColor
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         button.cornerRadius = LayoutConstants.buttonCornerRadius
         button.target = self
         button.action = action
@@ -536,15 +536,15 @@ final class NavigationBarViewController: NSViewController {
         homeButtonSeparator.addSubview(homeSeparatorBox)
 
         goBackButton = LongPressButton(frame: .zero)
-        configureToolbarButton(goBackButton, image: .back, action: #selector(goBackAction(_:)))
+        configureToolbarButton(goBackButton, image: NSImage(resource: .back), action: #selector(goBackAction(_:)))
         goForwardButton = LongPressButton(frame: .zero)
-        configureToolbarButton(goForwardButton, image: .forward, action: #selector(goForwardAction(_:)))
+        configureToolbarButton(goForwardButton, image: NSImage(resource: .forward), action: #selector(goForwardAction(_:)))
         goForwardButton.tag = 1
         refreshOrStopButton = MouseOverButton(frame: .zero)
-        configureToolbarButton(refreshOrStopButton, image: .refresh, action: #selector(refreshOrStopAction(_:)))
+        configureToolbarButton(refreshOrStopButton, image: NSImage(resource: .refresh), action: #selector(refreshOrStopAction(_:)))
         refreshOrStopButton.tag = 2
         homeButton = MouseOverButton(frame: .zero)
-        configureToolbarButton(homeButton, image: .home16, action: #selector(homeButtonAction(_:)))
+        configureToolbarButton(homeButton, image: NSImage(resource: .home16), action: #selector(homeButtonAction(_:)))
         homeButton.tag = 3
 
         navigationButtons = NSStackView(views: [homeButtonSeparator, goBackButton, goForwardButton, refreshOrStopButton, homeButton])
@@ -558,7 +558,7 @@ final class NavigationBarViewController: NSViewController {
         // MARK: Address bar stack
         daxLogo = NSImageView()
         daxLogo.translatesAutoresizingMaskIntoConstraints = false
-        daxLogo.image = .homePageLogo
+        daxLogo.image = NSImage(resource: .homePageLogo)
         daxLogo.imageScaling = .scaleProportionallyDown
         daxLogo.imageAlignment = .alignLeft
         daxLogo.refusesFirstResponder = true
@@ -583,21 +583,21 @@ final class NavigationBarViewController: NSViewController {
         configureToolbarButton(shareButton, image: nil, action: #selector(shareButtonAction(_:)))
         shareButton.isHidden = true
         downloadsButton = MouseOverButton(frame: .zero)
-        configureToolbarButton(downloadsButton, image: .downloads, action: #selector(downloadsButtonAction(_:)))
+        configureToolbarButton(downloadsButton, image: NSImage(resource: .downloads), action: #selector(downloadsButtonAction(_:)))
         downloadsButton.isHidden = true
         passwordManagementButton = MouseOverButton(frame: .zero)
-        configureToolbarButton(passwordManagementButton, image: .passwordManagement,
+        configureToolbarButton(passwordManagementButton, image: NSImage(resource: .passwordManagement),
                                action: #selector(passwordManagementButtonAction(_:)))
         bookmarkListButton = MouseOverButton(frame: .zero)
-        configureToolbarButton(bookmarkListButton, image: .bookmarks, action: #selector(bookmarksButtonAction(_:)))
+        configureToolbarButton(bookmarkListButton, image: NSImage(resource: .bookmarks), action: #selector(bookmarksButtonAction(_:)))
         networkProtectionButton = NetworkProtectionButton(frame: .zero)
         configureToolbarButton(networkProtectionButton, image: nil,
                                action: #selector(networkProtectionButtonAction(_:)))
         networkProtectionButton.isHidden = true
         overflowButton = MouseOverButton(frame: .zero)
-        configureToolbarButton(overflowButton, image: .chevronDoubleRight16, action: #selector(overflowButtonAction(_:)))
+        configureToolbarButton(overflowButton, image: NSImage(resource: .chevronDoubleRight16), action: #selector(overflowButtonAction(_:)))
         optionsButton = MoreOptionsMenuButton(frame: .zero)
-        configureToolbarButton(optionsButton, image: .settings, action: #selector(optionsButtonAction(_:)))
+        configureToolbarButton(optionsButton, image: NSImage(resource: .settings), action: #selector(optionsButtonAction(_:)))
 
         menuButtons = NSStackView(views: [shareButton, downloadsButton, passwordManagementButton, bookmarkListButton,
                                           networkProtectionButton, overflowButton, optionsButton])

@@ -335,8 +335,8 @@ final class AddressBarButtonsViewController: NSViewController {
         button.title = ""
         button.imageScaling = .scaleProportionallyDown
         button.alignment = .center
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         if let cornerRadius {
             button.cornerRadius = cornerRadius
         }
@@ -347,7 +347,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func makeAIChatDivider(animates: Bool) -> NSImageView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = .aiChatDivider
+        imageView.image = NSImage(resource: .aiChatDivider)
         imageView.imageScaling = .scaleProportionallyDown
         imageView.imageAlignment = .alignLeft
         imageView.refusesFirstResponder = true
@@ -367,7 +367,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         // MARK: Trailing buttons
         bookmarkButton = AddressBarButton(frame: .zero)
-        configureAddressBarButton(bookmarkButton, image: .bookmark,
+        configureAddressBarButton(bookmarkButton, image: NSImage(resource: .bookmark),
                                   cornerRadius: LayoutConstants.buttonCornerRadius,
                                   action: #selector(bookmarkButtonAction(_:)))
         bookmarkButton.isHidden = true
@@ -375,29 +375,29 @@ final class AddressBarButtonsViewController: NSViewController {
         leadingAIChatDivider = makeAIChatDivider(animates: false)
 
         askAIChatButton = AddressBarMenuButton(frame: .zero)
-        configureAddressBarButton(askAIChatButton, image: .aiChat,
+        configureAddressBarButton(askAIChatButton, image: NSImage(resource: .aiChat),
                                   cornerRadius: LayoutConstants.buttonCornerRadius,
                                   action: #selector(aiChatButtonAction(_:)))
-        askAIChatButton.alternateImage = .aiChatSolid
-        askAIChatButton.normalTintColor = .button
+        askAIChatButton.alternateImage = NSImage(resource: .aiChatSolid)
+        askAIChatButton.normalTintColor = NSColor(resource: .button)
         askAIChatButton.isHidden = true
 
         aiChatButton = AddressBarMenuButton(frame: .zero)
-        configureAddressBarButton(aiChatButton, image: .aiChat,
+        configureAddressBarButton(aiChatButton, image: NSImage(resource: .aiChat),
                                   cornerRadius: LayoutConstants.buttonCornerRadius,
                                   action: #selector(aiChatButtonAction(_:)))
         // Shown when `updateAIChatButtonStateForSidebar` flips the button to `.toggle`/`.on`
         // to signal that the AI Chat sidebar is open.
-        aiChatButton.alternateImage = .aiChatSolid
+        aiChatButton.alternateImage = NSImage(resource: .aiChatSolid)
         aiChatButton.isHidden = true
 
         trailingAIChatDivider = makeAIChatDivider(animates: true)
 
         cancelButton = AddressBarButton(frame: .zero)
-        configureAddressBarButton(cancelButton, image: .clear,
+        configureAddressBarButton(cancelButton, image: NSImage(resource: .clear),
                                   cornerRadius: LayoutConstants.cancelButtonCornerRadius,
                                   action: #selector(cancelButtonAction(_:)))
-        cancelButton.normalTintColor = .clearButton
+        cancelButton.normalTintColor = NSColor(resource: .clearButton)
         cancelButton.isHidden = true
         cancelButton.horizontalPadding = LayoutConstants.cancelButtonPadding
         cancelButton.verticalPadding = LayoutConstants.cancelButtonPadding
@@ -412,7 +412,7 @@ final class AddressBarButtonsViewController: NSViewController {
         trailingButtonsContainer.detachesHiddenViews = true
 
         trailingButtonsBackground = ColorView(frame: .zero,
-                                              backgroundColor: .addressBarBackground,
+                                              backgroundColor: NSColor(resource: .addressBarBackground),
                                               cornerRadius: LayoutConstants.trailingBackgroundCornerRadius)
         trailingButtonsBackground.translatesAutoresizingMaskIntoConstraints = false
 
@@ -423,7 +423,7 @@ final class AddressBarButtonsViewController: NSViewController {
                                   action: #selector(privacyDashboardButtonAction(_:)))
         privacyDashboardButton.isHidden = true
 
-        let separatorLine = ColorView(frame: .zero, backgroundColor: .blackWhite10)
+        let separatorLine = ColorView(frame: .zero, backgroundColor: NSColor(resource: .blackWhite10))
         separatorLine.translatesAutoresizingMaskIntoConstraints = false
 
         separator = NSView()
@@ -435,7 +435,7 @@ final class AddressBarButtonsViewController: NSViewController {
         imageButton.setButtonType(.momentaryPushIn)
         imageButton.isBordered = false
         imageButton.bezelStyle = .shadowlessSquare
-        imageButton.image = .search
+        imageButton.image = NSImage(resource: .search)
         imageButton.imagePosition = .imageOnly
         imageButton.title = ""
         imageButton.imageScaling = .scaleProportionallyDown
@@ -448,7 +448,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButton = AddressBarButton(frame: .zero)
         configureAddressBarButton(permissionCenterButton, image: nil, cornerRadius: nil,
                                   action: #selector(permissionCenterButtonAction(_:)))
-        permissionCenterButton.normalTintColor = .button
+        permissionCenterButton.normalTintColor = NSColor(resource: .button)
         permissionCenterButton.isHidden = true
 
         youTubeAdBlockButton = AddressBarButton(frame: .zero)

@@ -1240,9 +1240,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func duckAISidebarIcon(for mode: AIChatPresentationMode) -> NSImage? {
         switch mode {
-        case .floating: return NSImage(named: Constants.duckAISidebarDetachedImageName)
-        case .sidebar:  return NSImage(named: Constants.duckAISidebarCloseImageName)
-        case .hidden:   return NSImage(named: Constants.duckAISidebarOpenImageName)
+        case .floating: return Bundle.module.image(forResource: Constants.duckAISidebarDetachedImageName)
+        case .sidebar:  return Bundle.module.image(forResource: Constants.duckAISidebarCloseImageName)
+        case .hidden:   return Bundle.module.image(forResource: Constants.duckAISidebarOpenImageName)
         }
     }
 
@@ -1415,7 +1415,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private static func menuIcon(named name: NSImage.Name) -> NSImage {
-        let named = NSImage(named: name)
+        let named = Bundle.module.image(forResource: name)
         guard let icon = named?.copy() as? NSImage else { return named ?? NSImage() }
         icon.size = NSSize(width: 12, height: 12)
         return icon

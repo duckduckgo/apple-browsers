@@ -37,7 +37,7 @@ final class AppIconChanger {
         case white = "AppIcon-White"
 
         var image: NSImage? {
-            NSImage(named: rawValue)
+            Bundle.module.image(forResource: rawValue)
         }
     }
 

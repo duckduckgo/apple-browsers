@@ -244,7 +244,7 @@ struct DataImportViewModel {
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
         let directoryAccessAvailability = directoryAccessAvailability
-            ?? DataDirectoryPermissionFixAvailability(featureFlagger: featureFlagger, debugSettings: UserDefaults.standard.keyedStoring())
+            ?? DataDirectoryPermissionFixAvailability(debugSettings: UserDefaults.standard.keyedStoring())
         let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessAvailability.isAvailable) }
 
         let filteredAvailableSources = availableImportSources.filter {

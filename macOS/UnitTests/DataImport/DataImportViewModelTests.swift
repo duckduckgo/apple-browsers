@@ -2896,7 +2896,6 @@ private extension DataDirectoryPermissionFixAvailability {
         debugSettings.isForcingMacOS27PermissionsFix = isForcingPermissionFix
 
         return DataDirectoryPermissionFixAvailability(
-            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.dataImportDataDirectoryAccess.rawValue: true]),
             debugSettings: debugSettings,
             isOSSupported: true
         )

@@ -584,7 +584,6 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         }
     }
 
-
     private func appendSignedMainConfigResponses(_ mainConfig: Data) {
         let signature = try! signingKey.signature(for: mainConfig).derRepresentation.base64EncodedData()
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, mainConfig) }

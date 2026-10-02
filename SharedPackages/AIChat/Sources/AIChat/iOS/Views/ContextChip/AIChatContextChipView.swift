@@ -121,7 +121,7 @@ public final class AIChatContextChipView: UIView {
     /// is asking for the page to be attached.
     public var onTap: (() -> Void)?
 
-    /// Hosts can override the default width, including the loading state.
+    /// Hosts can override the default width; attachment-strip loading keeps its content width.
     public var preferredWidth: CGFloat? {
         didSet {
             guard preferredWidth != oldValue else { return }
@@ -129,8 +129,18 @@ public final class AIChatContextChipView: UIView {
         }
     }
 
-    /// Minimum attachment-strip width that keeps the first character, ellipsis and title gaps readable.
+    public var maximumContentWidth: CGFloat {
+        if style == .attachmentStrip, case .loading? = currentState, let loadingView {
+            return loadingView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
+        }
+        return Constants.chipWidth
+    }
+
+    /// Minimum attachment-strip width that fits the loader or keeps the truncated title readable.
     public var minimumContentWidth: CGFloat {
+        if style == .attachmentStrip, case .loading? = currentState {
+            return maximumContentWidth
+        }
         let title = titleLabel.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let compactTitle = String(title.prefix(1)) + "…"
         let font = titleLabel.font ?? .daxSubheadSemibold()
@@ -405,7 +415,11 @@ private extension AIChatContextChipView {
     }
 
     func updateLayout() {
-        fixedWidthConstraint.constant = preferredWidth ?? Constants.chipWidth
+        if style == .attachmentStrip, case .loading? = currentState {
+            fixedWidthConstraint.constant = maximumContentWidth
+        } else {
+            fixedWidthConstraint.constant = preferredWidth ?? Constants.chipWidth
+        }
         updateRemoveButtonAppearance()
         updateContentSpacing()
 

@@ -128,7 +128,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         let chips = stackView.arrangedSubviews
         let limits = chips.map { view -> ChipWidthLimits in
             if let chip = view as? AIChatContextChipView {
-                return ChipWidthLimits(maximumWidth: 240, minimumContentWidth: chip.minimumContentWidth)
+                return ChipWidthLimits(maximumWidth: chip.maximumContentWidth, minimumContentWidth: chip.minimumContentWidth)
             }
             let thumbnail = view as? UnifiedToggleInputAttachmentThumbnailView
             return ChipWidthLimits(maximumWidth: thumbnail?.intrinsicContentSize.width ?? 0,

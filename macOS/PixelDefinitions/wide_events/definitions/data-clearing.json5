@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "macos-data-clearing",
-            "version": "1.1"
+            "version": "1.2"
         },
         "feature": {
             "name": "data-clearing",
@@ -76,6 +76,35 @@
                         "description": "Duration from start of the action to its end state (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
                     },
                     "clear_aiChat_history_error": "dataClearingActionError",
+                    "clear_aiChat_history_retried": {
+                        "type": "boolean",
+                        "description": "Whether the Duck.ai clear was retried once after a transient failure. The final status is the retry's."
+                    },
+                    "clear_aiChat_history_first_attempt_error": "dataClearingActionError",
+                    "clear_aiChat_history_page_load_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000,
+                        "description": "Slowest Duck.ai clearing page load of the first attempt (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_aiChat_history_script_ready_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000,
+                        "description": "Slowest wait for the clearing script to become ready in the first attempt (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_aiChat_history_script_reply_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000,
+                        "description": "Slowest wait for the clearing script's reply in the first attempt (in ms). Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
+                    "clear_aiChat_history_warmup_wait_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000,
+                        "description": "How long the Duck.ai clear waited for the storage warm-up before starting (in ms); 0 when storage was already warm. Rounded to 10ms precision, capped at 10000ms (10 seconds)."
+                    },
                     "clear_autoconsent_management_cache_status": {
                         "type": "string",
                         "description": "Final status of the clear_autoconsent_management_cache action.",

@@ -75,18 +75,6 @@ extension DataClearingPixels: PixelKit.Event {
         static let elapsed = "elapsed"
     }
 
-    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
-        switch self {
-        case .retriggerIn20s, .userActionBeforeCompletion:
-            /// These two signatures are non-standard and not aligned to the current PixelKit defaults.
-            /// This policy freezes them by not sending the platform marker suffix.
-            return .legacyOmitted
-        case .burnDropped:
-            /// New pixel, and the phone/tablet split matters here: drops are markedly more frequent on iPad.
-            return .standard
-        }
-    }
-
     var name: String {
         switch self {
         case .retriggerIn20s:
@@ -126,9 +114,8 @@ extension DataClearingPixels: PixelKit.Event {
 ///
 /// Kept separate from `DataClearingPixels` for two reasons, both of which would otherwise change
 /// pixels this type does not own:
-/// - these four have always sent the `_ios_phone` / `_ios_tablet` marker and `DataClearingPixels`
-///   never has, so the two need different `platformSuffixPolicy` values. Merging them would start
-///   marking `m_fire_retrigger_in_20s` and `m_fire_user_action_before_completion` too.
+/// - these four use `.legacyBeforeFrequencySuffix` (marker before the frequency suffix);
+///   `DataClearingPixels` uses PixelKit's default `.standard` (marker after it).
 /// - `DataClearingPixels` reports `pixelSource`, which these four do not declare in
 ///   `forget_all.json5`.
 enum DataClearingCompletionPixels {
@@ -204,8 +191,7 @@ extension DataClearingCompletionPixels: PixelKit.Event {
 // MARK: - Data Clearing Timeouts
 
 /// Timeouts that bound the hidden page loads a burn performs. Kept separate from
-/// `DataClearingPixels` because that type freezes a legacy signature (`.legacyOmitted`), which a
-/// new pixel must not adopt; these use the current PixelKit defaults instead.
+/// `DataClearingPixels`; these use the current PixelKit defaults.
 enum DataClearingTimeoutPixels {
 
     /// The WebKit warm-up page did not report back before its deadline, so the burn gave up

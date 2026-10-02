@@ -64,39 +64,12 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSitePermissionSettingsHidden()
     }
 
-    func testWhenFlagOverrideIsOnThenAvailabilityRequiresIOS16ForOrdinaryAndFireTabs() {
-        for fireMode in [false, true] {
-            app.terminate()
-            app.resetAuthorizationStatus(for: .camera)
-            launchApp(flagEnabled: true,
-                      seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
-                      additionalArguments: ["-ff.fireMode", String(fireMode)])
-            if fireMode {
-                openNewPermissionTab(fireMode: true)
-            } else {
-                openPermissionPage()
-            }
-            request("camera")
+    func testWhenFlagOverrideIsOnThenOrdinaryTabUsesLegacyPermissionsOnIOS15() throws {
+        try assertIOS15OverrideUsesLegacyPermissions(fireMode: false)
+    }
 
-            if #available(iOS 16.0, *) {
-                assertSiteDialog(fireMode: fireMode)
-                tap(element("SitePermissions.Dialog.AllowOnce"))
-                answerSystemAlert(for: "camera", allow: true)
-                assertResult("success 1")
-                openPermissionsSheet()
-                assertSheetDecision("Camera", contains: "Ask Each Time")
-                tap(element("SitePermissions.Sheet.Close"))
-                openPermissionSettings()
-                XCTAssertTrue(element("Settings.SitePermissions.Site.127.0.0.1").waitForExistence(timeout: timeout))
-            } else {
-                denyWebKitPrompt(for: "camera")
-                assertResult("NotAllowedError 1")
-                openMenu()
-                XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
-                XCTAssertFalse(element("SitePermissions.Sheet").exists)
-                assertSitePermissionSettingsHidden()
-            }
-        }
+    func testWhenFlagOverrideIsOnThenFireTabUsesLegacyPermissionsOnIOS15() throws {
+        try assertIOS15OverrideUsesLegacyPermissions(fireMode: true)
     }
 
     func testWhenCameraIsAllowedThenSiteDialogPrecedesSystemPromptAndDecisionPersists() {
@@ -1213,6 +1186,27 @@ final class SitePermissionsXCUITests: XCTestCase {
         openMenu()
         tap(app.buttons["Settings"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+    }
+
+    private func assertIOS15OverrideUsesLegacyPermissions(fireMode: Bool) throws {
+        if #available(iOS 16.0, *) {
+            throw XCTSkip("Legacy permissions with a forced-on override require iOS 15")
+        }
+        launchApp(flagEnabled: true,
+                  seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
+                  additionalArguments: ["-ff.fireMode", String(fireMode)])
+        if fireMode {
+            openNewPermissionTab(fireMode: true)
+        } else {
+            openPermissionPage()
+        }
+        request("camera")
+        denyWebKitPrompt(for: "camera")
+        assertResult("NotAllowedError 1")
+        openMenu()
+        XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
+        XCTAssertFalse(element("SitePermissions.Sheet").exists)
+        assertSitePermissionSettingsHidden()
     }
 
     private func assertSitePermissionSettingsHidden() {

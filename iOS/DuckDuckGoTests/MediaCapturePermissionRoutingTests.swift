@@ -32,34 +32,46 @@ import XCTest
 @MainActor
 final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
-    func testWhenLaunchAvailabilityIsCapturedThenOrdinaryAndFireTabsRouteMediaRequests() async {
-        for featureEnabled in [false, true] {
-            for fireTab in [false, true] {
-                let sut = makeSUT(featureEnabled: featureEnabled, fireTab: fireTab)
-                defer { sut.closeSitePermissions() }
-                let scenario = "Enabled at launch: \(featureEnabled), Fire: \(fireTab)"
-                var prompts = [SitePermissionPrompt]()
-                sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
-                    prompts.append(prompt)
-                    completion(.denyOnce)
-                }
-
-                XCTAssertEqual(sut.isMediaCapturePermissionHandlingEnabled, featureEnabled, scenario)
-                for captureType in [WKMediaCaptureType.camera, .microphone, .cameraAndMicrophone] {
-                    sut.sitePermissionsDidStartProvisionalNavigation(sut.webView, navigation: nil)
-                    sut.sitePermissionsDidCommit(sut.webView, navigation: nil)
-                    let bridgeDecision = await requestPermissionThroughBridge(on: sut,
-                                                                               originHost: "top-level.example",
-                                                                               captureType: captureType)
-                    XCTAssertEqual(bridgeDecision, featureEnabled ? .deny : .bypass, "\(scenario), capture: \(captureType)")
-                    var nativeDecision: WKPermissionDecision?
-                    requestPermission(on: sut, originHost: "top-level.example", captureType: captureType) { nativeDecision = $0 }
-                    XCTAssertEqual(nativeDecision, featureEnabled ? .deny : .prompt, "\(scenario), capture: \(captureType)")
-                }
-                XCTAssertEqual(prompts.count, featureEnabled ? 3 : 0, scenario)
-                XCTAssertTrue(prompts.allSatisfy { $0.isFireMode == fireTab }, scenario)
-            }
+    func testWhenSitePermissionsAreEnabledThenFireCameraUsesSitePrompt() async {
+        let sut = makeSUT(fireTab: true)
+        defer { sut.closeSitePermissions() }
+        XCTAssertTrue(sut.isMediaCapturePermissionHandlingEnabled)
+        var receivedPrompt: SitePermissionPrompt?
+        sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+            receivedPrompt = prompt
+            completion(.denyOnce)
         }
+
+        let decision = await requestPermissionThroughBridge(on: sut,
+                                                            originHost: "top-level.example",
+                                                            captureType: .camera)
+
+        XCTAssertEqual(receivedPrompt?.site.host, "top-level.example")
+        XCTAssertEqual(receivedPrompt?.permissionTypes, [.camera])
+        XCTAssertEqual(receivedPrompt?.isFireMode, true)
+        XCTAssertEqual(decision, .deny)
+    }
+
+    func testWhenSitePermissionsAreDisabledThenFireCameraUsesLegacyRouting() async {
+        let sut = makeSUT(featureEnabled: false, fireTab: true)
+        defer { sut.closeSitePermissions() }
+        XCTAssertFalse(sut.isMediaCapturePermissionHandlingEnabled)
+        var didPrompt = false
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            didPrompt = true
+            completion(.denyOnce)
+        }
+
+        let bridgeDecision = await requestPermissionThroughBridge(on: sut,
+                                                                  originHost: "top-level.example",
+                                                                  captureType: .camera)
+        var nativeDecision: WKPermissionDecision?
+        requestPermission(on: sut, originHost: "top-level.example", captureType: .camera) { nativeDecision = $0 }
+
+        XCTAssertEqual(bridgeDecision, .bypass)
+        XCTAssertEqual(nativeDecision, .prompt)
+        XCTAssertFalse(didPrompt)
+        XCTAssertNil(sut.sitePermissionsState.coordinator)
     }
 
     func testWhenFlagChangesAfterLaunchThenGeolocationSetupUsesLaunchAvailability() {

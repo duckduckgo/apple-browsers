@@ -21,40 +21,23 @@ import Foundation
 import FoundationExtensions
 
 public struct UserText {
-    public static let downloadComplete = NSLocalizedString("aichat.download.complete", bundle: .aiChatLocalizations, value: "Download complete for %@", comment: "Download complete for duck.ai")
-    public static let downloadToastShow = NSLocalizedString("aichat.download.show", bundle: .aiChatLocalizations, value: "Show", comment: "Show button for downloads")
-    public static let downloadFailed = NSLocalizedString("aichat.download.failed", bundle: .aiChatLocalizations, value: "Download failed", comment: "Download failed message")
+    public static let downloadComplete = NSLocalizedString("aichat.download.complete", bundle: Bundle.module, value: "Download complete for %@", comment: "Download complete for duck.ai")
+    public static let downloadToastShow = NSLocalizedString("aichat.download.show", bundle: Bundle.module, value: "Show", comment: "Show button for downloads")
+    public static let downloadFailed = NSLocalizedString("aichat.download.failed", bundle: Bundle.module, value: "Download failed", comment: "Download failed message")
     public static let modelPickerLabelEverydayUse = NSLocalizedString(
         "aichat.model-picker.label.everyday-use",
-        bundle: .aiChatLocalizations,
+        bundle: Bundle.module,
         value: "Best for everyday use",
         comment: "Editorial descriptor shown beneath a model in the model picker when it is recommended for everyday use"
     )
     public static let modelPickerLabelUsesLimitsFaster = NSLocalizedString(
         "aichat.model-picker.label.uses-limits-faster",
-        bundle: .aiChatLocalizations,
+        bundle: Bundle.module,
         value: "Solid but hits limits sooner",
         comment: "Editorial descriptor shown beneath a model in the model picker when it consumes usage limits faster"
     )
     public static let attachPageContent = NSLocalizedString("duckai.contextual.attach.content", value: "Attach Page Content", comment: "Title for the attach placeholder chip in Duck.ai contextual sheet")
-    public static let askAboutPage = NSLocalizedString("duckai.contextual.ask.about.page", bundle: .aiChatLocalizations, value: "Ask About Page", comment: "Title for the button that re-attaches the current page's content after the user removed it")
+    public static let askAboutPage = NSLocalizedString("duckai.contextual.ask.about.page", bundle: Bundle.module, value: "Ask About Page", comment: "Title for the button that re-attaches the current page's content after the user removed it")
 
-}
-
-private final class BundleMarker {}
-
-private extension Bundle {
-
-    /// `Bundle.module` traps when the package's resource bundle is not next to the binary, which is
-    /// how these tests run from the iOS app scheme. Falls back to the module's own bundle instead,
-    /// leaving `NSLocalizedString` to use its default value.
-    static let aiChatLocalizations: Bundle = {
-        let marker = Bundle(for: BundleMarker.self)
-        let candidates = [marker.resourceURL, Bundle.main.resourceURL, marker.bundleURL, Bundle.main.bundleURL]
-        for url in candidates.compactMap({ $0?.appendingPathComponent("AIChat_AIChat.bundle") }) {
-            if let bundle = Bundle(url: url) { return bundle }
-        }
-        return marker
-    }()
 }
 #endif

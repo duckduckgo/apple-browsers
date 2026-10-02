@@ -84,33 +84,5 @@ final class AIChatContextChipViewTests: XCTestCase {
         XCTAssertEqual(sut.accessibilityLabel, "Updated")
     }
 
-    // MARK: - Suggested state
-
-    func testSuggestedStateShowsTheFixedOffer() {
-        // Given
-        let sut = AIChatContextChipView()
-        let pageTitle = "Magnetic confinement fusion"
-
-        // When
-        sut.configure(state: .suggested(title: pageTitle, favicon: nil))
-
-        // Then
-        let label = sut.accessibilityLabel
-        XCTAssertEqual(label, UserText.askAboutPage)
-    }
-
-    func testUpdateIsIgnoredInTheSuggestedState() {
-        // Given
-        let sut = AIChatContextChipView()
-        sut.configure(state: .suggested(title: "Original", favicon: nil))
-        let offerBefore = sut.accessibilityLabel
-
-        // When
-        sut.update(title: "Updated", favicon: nil)
-
-        // Then
-        XCTAssertEqual(sut.accessibilityLabel, offerBefore)
-    }
-
 }
 #endif

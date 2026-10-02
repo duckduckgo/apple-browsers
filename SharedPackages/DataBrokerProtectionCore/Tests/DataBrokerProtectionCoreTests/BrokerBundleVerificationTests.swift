@@ -398,11 +398,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
     func testWhenRevokedKeyIsDroppedThenDisabledBrokersComeBackThroughNormalUpdates() async throws {
         let storedBroker = try fixtureBroker("anywho.com.json", id: 2)
-        resources.brokerResourcesList = []
-        vault.brokerResourcesToReturn = [storedBroker]
+        let bundledBroker = try fixtureBroker("verecor.com.json", id: 1)
+        resources.brokerResourcesList = [bundledBroker]
+        vault.brokerResourcesToReturn = [bundledBroker, storedBroker]
         privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
         await assertCheckForUpdatesFails(with: .keyRevoked)
-        let disabledBroker = try XCTUnwrap(vault.lastUpdatedBrokerResource?.broker)
+        let disabledBroker = try XCTUnwrap(vault.updatedBrokerResources.first { $0.broker.url == "anywho.com" }?.broker)
 
         /// An app update drops the revoked key, so privacy-config no longer affects this app's keys
         privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
@@ -421,6 +422,16 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertNotEqual(restoredBroker.broker.eTag, "")
         XCTAssertEqual(restoredBroker.rawJSON, try fixture("anywho.com.json"))
         XCTAssertEqual(settings.mainConfigETag, eTag)
+    }
+
+    func testWhenBundledBrokersAreUnavailableThenRevocationDoesNotDisableStoredBrokers() async throws {
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
+        resources.brokerResourcesList = []
+        vault.brokerResourcesToReturn = [try fixtureBroker("anywho.com.json", id: 2)]
+
+        await assertCheckForUpdatesFails(with: .keyRevoked)
+
+        XCTAssertFalse(vault.wasBrokerUpdateCalled)
     }
 
     func testWhenOnlyOtherKeysAreRevokedThenUpdateProceeds() async throws {

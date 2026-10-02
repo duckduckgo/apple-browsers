@@ -461,6 +461,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
     case promoQueueBrowserUpdatedPromo
 
+    /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
+    case promoQueueVPNUpsellPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -587,6 +591,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -906,6 +913,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueBrowserUpdatedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
+        case .promoQueueVPNUpsellPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -982,6 +991,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
+        case .pageSignals:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         }
     }
 

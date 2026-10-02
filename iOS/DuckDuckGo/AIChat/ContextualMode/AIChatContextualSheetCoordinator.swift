@@ -266,7 +266,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.floatingUIManager = floatingUIManager ?? FloatingUIManager(
-            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         self.floatingInputFeature = floatingInputFeature
         self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)

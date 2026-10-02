@@ -390,7 +390,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
-            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         let upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable

@@ -128,7 +128,10 @@ final class NavigationBarViewController: NSViewController {
     private let fireproofDomains: FireproofDomains
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
-    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    // swiftlint:disable weak_delegate
+    private let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
+    private let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
+    // swiftlint:enable weak_delegate
 
     private var subscriptionManager: SubscriptionManager {
         Application.appDelegate.subscriptionManager
@@ -249,7 +252,8 @@ final class NavigationBarViewController: NSViewController {
                        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatCoordinator: AIChatCoordinating,
-                       vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
+                       vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate = NSApp.delegateTyped.vpnUpsellToolbarButtonPromoDelegate,
+                       vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate = NSApp.delegateTyped.vpnUpsellDotBadgePromoDelegate,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
                        defaultBrowserPreferences: DefaultBrowserPreferences,
@@ -287,7 +291,8 @@ final class NavigationBarViewController: NSViewController {
                 themeManager: themeManager,
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatCoordinator: aiChatCoordinator,
-                vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
+                vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+                vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                 defaultBrowserPreferences: defaultBrowserPreferences,
@@ -323,7 +328,8 @@ final class NavigationBarViewController: NSViewController {
         themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatCoordinator: AIChatCoordinating,
-        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+        vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
+        vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
         defaultBrowserPreferences: DefaultBrowserPreferences,
@@ -363,7 +369,8 @@ final class NavigationBarViewController: NSViewController {
                                                                                vpnGatekeeper: vpnGatekeeper,
                                                                                statusReporter: networkProtectionStatusReporter,
                                                                                themeManager: themeManager,
-                                                                               vpnUpsellVisibilityManager: vpnUpsellVisibilityManager)
+                                                                               vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+                                                                               vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate)
         self.downloadListCoordinator = downloadListCoordinator
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
@@ -386,7 +393,8 @@ final class NavigationBarViewController: NSViewController {
         self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
         self.pixelFiring = pixelFiring
-        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.vpnUpsellToolbarButtonPromoDelegate = vpnUpsellToolbarButtonPromoDelegate
+        self.vpnUpsellDotBadgePromoDelegate = vpnUpsellDotBadgePromoDelegate
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         self.memoryUsageDisplayer = MemoryUsageDisplayer(memoryUsageMonitor: memoryUsageMonitor, featureFlagger: featureFlagger)
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(
@@ -1011,7 +1019,8 @@ final class NavigationBarViewController: NSViewController {
 
     private func updateNetworkProtectionButton() {
         let isPinned = pinningManager.isPinned(.networkProtection)
-        vpnUpsellVisibilityManager.handlePinningChange(isPinned: isPinned)
+        vpnUpsellToolbarButtonPromoDelegate.handlePinningChange(isPinned: isPinned)
+        vpnUpsellDotBadgePromoDelegate.handlePinningChange(isPinned: isPinned)
         networkProtectionButtonModel.updateVisibility()
     }
 
@@ -1767,7 +1776,7 @@ final class NavigationBarViewController: NSViewController {
         guard Application.appDelegate.subscriptionManager.isUserAuthenticated else {
             PixelKit.fire(SubscriptionPixel.subscriptionToolbarButtonClicked)
             popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
-            vpnUpsellVisibilityManager.dismissNotificationDot()
+            vpnUpsellDotBadgePromoDelegate.buttonClicked()
             return
         }
 

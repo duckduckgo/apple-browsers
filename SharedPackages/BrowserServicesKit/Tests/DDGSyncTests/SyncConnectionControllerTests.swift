@@ -1211,6 +1211,63 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_syncCodeEntered_whenPairingV2PollingFails_sendsErrorBye() async throws {
+        dependencies.canUseExchangeV2Point1 = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let errorByeSent = expectation(description: "error bye sent")
+        messageExchanger.sendHandler = { messages, _ in
+            let decryptedMessages = try messages.compactMap {
+                try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey)
+            }
+            guard let bye = decryptedMessages.first(where: { message in
+                if case .bye = message { return true }
+                return false
+            }) else { return }
+            XCTAssertEqual(bye, .bye(.init(reason: .error)))
+            errorByeSent.fulfill()
+        }
+        messageExchanger.fetchMessagesError = PairingV2RelayRequestError(kind: .httpError,
+                                                                         underlyingError: SyncError.unexpectedStatusCode(500))
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let payload = PairingV2QRCodePayload(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com")))
+
+        _ = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        await fulfillment(of: [errorByeSent], timeout: 5)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .pairingV2OperationFailure(.init(stage: .scannerPollOwnChannel, kind: .httpError)))
+    }
+
+    @MainActor
+    func test_syncCodeEntered_whenPairingV2PollingTimesOut_sendsErrorBye() async throws {
+        resetControllerUnderTest(pairingV2PollingTimeout: 0)
+        dependencies.canUseExchangeV2Point1 = { true }
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let errorByeSent = expectation(description: "error bye sent")
+        messageExchanger.sendHandler = { messages, _ in
+            let decryptedMessages = try messages.compactMap {
+                try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey)
+            }
+            guard let bye = decryptedMessages.first(where: { message in
+                if case .bye = message { return true }
+                return false
+            }) else { return }
+            XCTAssertEqual(bye, .bye(.init(reason: .error)))
+            errorByeSent.fulfill()
+        }
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let payload = PairingV2QRCodePayload(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com")))
+
+        _ = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        await fulfillment(of: [errorByeSent], timeout: 5)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .pairingV2SessionTimedOut(timeoutStage: .waitingForPeerStatus))
+    }
+
+    @MainActor
     func test_syncCodeEntered_withV2UrlWhenPresenterIsActive_cancelsPresenterCoordinator() async throws {
         dependencies.isPairingV2CodeEnabled = { true }
         let messageExchanger = PairingV2MessageExchangingMock()
@@ -2256,6 +2313,7 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     @MainActor
     private func resetControllerUnderTest(
+        pairingV2PollingTimeout: TimeInterval? = nil,
         makePairingV2KeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
         createPairingV2QRCodeURL: @escaping (PairingV2QRCodePayload) throws -> URL = {
             try $0.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
@@ -2270,7 +2328,7 @@ final class SyncConnectionControllerTests: XCTestCase {
                                               delegate: delegate,
                                               syncService: syncService,
                                               dependencies: dependencies,
-                                              pairingV2PollingTimeout: Self.pairingV2PollingTimeout,
+                                              pairingV2PollingTimeout: pairingV2PollingTimeout ?? Self.pairingV2PollingTimeout,
                                               pairingV2PollIntervalNanoseconds: Self.pairingV2PollIntervalNanoseconds,
                                               makePairingV2KeyPair: makePairingV2KeyPair,
                                               createPairingV2QRCodeURL: createPairingV2QRCodeURL)

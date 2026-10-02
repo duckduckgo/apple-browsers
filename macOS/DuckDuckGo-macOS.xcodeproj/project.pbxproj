@@ -1205,6 +1205,12 @@
 		3768D83C2C24C0A8004120AE /* RemoteMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3768D83A2C24C0A8004120AE /* RemoteMessageViewModel.swift */; };
 		3768D8402C29C1F1004120AE /* ActiveRemoteMessageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3768D83F2C29C1F1004120AE /* ActiveRemoteMessageModel.swift */; };
 		3768D8412C29C1F1004120AE /* ActiveRemoteMessageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3768D83F2C29C1F1004120AE /* ActiveRemoteMessageModel.swift */; };
+		E7C4F1239A00000000000001 /* NewTabPageRemoteMessageImpressionReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4F1239A00000000000101 /* NewTabPageRemoteMessageImpressionReporter.swift */; };
+		E7C4F1239A00000000000002 /* NewTabPageRemoteMessageImpressionReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4F1239A00000000000101 /* NewTabPageRemoteMessageImpressionReporter.swift */; };
+		E7C4F1239A00000000000003 /* ForegroundBrowserWindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4F1239A00000000000102 /* ForegroundBrowserWindowObserver.swift */; };
+		E7C4F1239A00000000000004 /* ForegroundBrowserWindowObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4F1239A00000000000102 /* ForegroundBrowserWindowObserver.swift */; };
+		E7C4F1239A00000000000005 /* TabBarRemoteMessageImpressionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4F1239A00000000000103 /* TabBarRemoteMessageImpressionTracker.swift */; };
+		E7C4F1239A00000000000006 /* TabBarRemoteMessageImpressionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4F1239A00000000000103 /* TabBarRemoteMessageImpressionTracker.swift */; };
 		3768D8442C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3768D8432C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift */; };
 		3768D8452C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3768D8432C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift */; };
 		37697D802D4A0D12004C0CBB /* NewTabPageShownPixelSenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37697D7F2D4A0D0F004C0CBB /* NewTabPageShownPixelSenderTests.swift */; };
@@ -5436,6 +5442,9 @@
 		376731A02C7F50D200EB097B /* Logger+NewTabPageCustomization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+NewTabPageCustomization.swift"; sourceTree = "<group>"; };
 		3768D83A2C24C0A8004120AE /* RemoteMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessageViewModel.swift; sourceTree = "<group>"; };
 		3768D83F2C29C1F1004120AE /* ActiveRemoteMessageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRemoteMessageModel.swift; sourceTree = "<group>"; };
+		E7C4F1239A00000000000101 /* NewTabPageRemoteMessageImpressionReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageRemoteMessageImpressionReporter.swift; sourceTree = "<group>"; };
+		E7C4F1239A00000000000102 /* ForegroundBrowserWindowObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForegroundBrowserWindowObserver.swift; sourceTree = "<group>"; };
+		E7C4F1239A00000000000103 /* TabBarRemoteMessageImpressionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessageImpressionTracker.swift; sourceTree = "<group>"; };
 		3768D8432C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingConfigMatcherProvider.swift; sourceTree = "<group>"; };
 		37697D7F2D4A0D0F004C0CBB /* NewTabPageShownPixelSenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageShownPixelSenderTests.swift; sourceTree = "<group>"; };
 		376C4DB828A1A48A00CC0F5B /* FireDialogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogViewModelTests.swift; sourceTree = "<group>"; };
@@ -8507,6 +8516,9 @@
 		3712091F2C232E2B003ADF3D /* RemoteMessaging */ = {
 			isa = PBXGroup;
 			children = (
+				E7C4F1239A00000000000101 /* NewTabPageRemoteMessageImpressionReporter.swift */,
+				E7C4F1239A00000000000102 /* ForegroundBrowserWindowObserver.swift */,
+				E7C4F1239A00000000000103 /* TabBarRemoteMessageImpressionTracker.swift */,
 				BB3229042D08643700DA92E9 /* TabBarRemoteMessageView.swift */,
 				BB9BA2282D10C0A3009229F3 /* TabBarActiveRemoteMessage.swift */,
 				371209202C232E3F003ADF3D /* RemoteMessagingClient.swift */,
@@ -15774,6 +15786,9 @@
 				31BFDB702ECA46DD00ADFABD /* AIChatOmnibarTextContainerViewController.swift in Sources */,
 				373D9B4929EEAC1B00381FDD /* SyncMetadataDatabase.swift in Sources */,
 				3768D8412C29C1F1004120AE /* ActiveRemoteMessageModel.swift in Sources */,
+				E7C4F1239A00000000000002 /* NewTabPageRemoteMessageImpressionReporter.swift in Sources */,
+				E7C4F1239A00000000000004 /* ForegroundBrowserWindowObserver.swift in Sources */,
+				E7C4F1239A00000000000006 /* TabBarRemoteMessageImpressionTracker.swift in Sources */,
 				37B0CA032E95C10100D7E8F1 /* RemoteMessagePromoDelegate.swift in Sources */,
 				3706FAB8293F65D500E42796 /* FaviconImageCache.swift in Sources */,
 				3706FAB9293F65D500E42796 /* TabBarViewController.swift in Sources */,
@@ -18040,6 +18055,9 @@
 				3158B15C2B0BF76D00AF130C /* DataBrokerProtectionAppEvents.swift in Sources */,
 				1ED910D52B63BFB300936947 /* IdentityTheftRestorationPagesUserScript.swift in Sources */,
 				3768D8402C29C1F1004120AE /* ActiveRemoteMessageModel.swift in Sources */,
+				E7C4F1239A00000000000001 /* NewTabPageRemoteMessageImpressionReporter.swift in Sources */,
+				E7C4F1239A00000000000003 /* ForegroundBrowserWindowObserver.swift in Sources */,
+				E7C4F1239A00000000000005 /* TabBarRemoteMessageImpressionTracker.swift in Sources */,
 				37B0CA022E95C10100D7E8F1 /* RemoteMessagePromoDelegate.swift in Sources */,
 				376731942C7F332300EB097B /* UserBackgroundImage.swift in Sources */,
 				37534CA028113101002621E7 /* LazyLoadable.swift in Sources */,

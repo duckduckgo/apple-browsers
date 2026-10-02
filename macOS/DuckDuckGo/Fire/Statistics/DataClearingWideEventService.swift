@@ -126,6 +126,7 @@ final class DataClearingWideEventService {
         eventData?.clearAIChatHistoryPageLoadMilliseconds = report.firstAttemptTimings.pageLoadMilliseconds
         eventData?.clearAIChatHistoryScriptReadyMilliseconds = report.firstAttemptTimings.scriptReadyMilliseconds
         eventData?.clearAIChatHistoryScriptReplyMilliseconds = report.firstAttemptTimings.scriptReplyMilliseconds
+        persist()
     }
 
     // MARK: - Completing Wide Event

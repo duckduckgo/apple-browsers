@@ -95,6 +95,26 @@ public extension BrokerStoring {
         try handleBrokerVersionUpdate(brokerId: savedBrokerId)
     }
 
+    /// Inserts a new broker or replaces an existing one with the same URL, even if the stored broker is newer
+    func overwriteBroker(_ brokerResource: BrokerResource) throws {
+        let broker = brokerResource.broker
+
+        guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
+            try addBroker(brokerResource)
+            return
+        }
+
+        guard savedBroker.version != broker.version || savedBroker.eTag != broker.eTag,
+              let savedBrokerId = savedBroker.id else {
+            return
+        }
+
+        Logger.dataBrokerProtection.log("🧩 Overwriting broker: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
+
+        try vault.update(brokerResource, with: savedBrokerId)
+        try handleBrokerVersionUpdate(brokerId: savedBrokerId)
+    }
+
     private func addBroker(_ brokerResource: BrokerResource) throws {
         Logger.dataBrokerProtection.log("🧩 New broker found: \(brokerResource.broker.url, privacy: .public)")
 

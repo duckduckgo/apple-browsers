@@ -33,6 +33,7 @@ public final class DataBrokerProtectionSettings {
         static let mainConfigETagKey = "dbp.mainConfigETag"
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
+        static let lastManifestVersionsKey = "dbp.lastManifestVersions"
         static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
     }
 
@@ -83,6 +84,16 @@ public final class DataBrokerProtectionSettings {
         lastBrokerJSONUpdateCheckTimestamp = timestamp ?? Date().timeIntervalSince1970
     }
 
+    /// The last `manifest_version` accepted for each signing key, keyed by key ID.
+    public var lastManifestVersions: [String: Int] {
+        get {
+            defaults.dictionary(forKey: Keys.lastManifestVersionsKey) as? [String: Int] ?? [:]
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.lastManifestVersionsKey)
+        }
+    }
+
     public func resetBrokerDeliveryData() {
         mainConfigETag = nil
         updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(Date.distantPast.timeIntervalSince1970)
@@ -110,6 +121,12 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
+    private static let productionEndpointURL = URL(string: "https://dbp.duckduckgo.com")!
+
+    public var isProductionEndpoint: Bool {
+        endpointURL == Self.productionEndpointURL
+    }
+
     public var endpointURL: URL {
 #if DEBUG
         if serviceRoot.hasPrefix("http://") || serviceRoot.hasPrefix("https://"),
@@ -120,7 +137,7 @@ public final class DataBrokerProtectionSettings {
 
         switch selectedEnvironment {
         case .production:
-            return URL(string: "https://dbp.duckduckgo.com")!
+            return Self.productionEndpointURL
         case .staging:
             return serviceRoot.isEmpty
                 ? URL(string: "https://dbp-staging.duckduckgo.com")!

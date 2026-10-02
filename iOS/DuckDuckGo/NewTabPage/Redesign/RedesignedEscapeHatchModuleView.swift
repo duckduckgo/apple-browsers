@@ -84,7 +84,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
     private var showAllButton: some View {
         Button(action: onShowAllTap) {
             HStack(spacing: Metrics.showAllLabelToArrowSpacing) {
-                Text(UserText.escapeHatchShowAllTabsLabel)
+                Text(UserText.escapeHatchShowAllTabs)
                     .daxSubheadRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .lineLimit(1)

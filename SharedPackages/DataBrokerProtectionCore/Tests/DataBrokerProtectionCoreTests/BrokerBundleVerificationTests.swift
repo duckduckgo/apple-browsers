@@ -376,6 +376,53 @@ final class BrokerBundleVerificationTests: XCTestCase {
         XCTAssertFalse(vault.wasBrokerUpdateCalled)
     }
 
+    func testWhenBuiltInKeyIsRevokedThenBrokersThatAreNotBundledAreDisabled() async throws {
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
+        let bundledBroker = try fixtureBroker("verecor.com.json", id: 1)
+        let remoteOnlyBroker = try fixtureBroker("anywho.com.json", id: 2)
+        var removedBroker = try fixtureBroker("anywho.com.json", id: 3, url: "removed.com")
+        removedBroker = BrokerResource(broker: removedBroker.broker.withRemovedAt(Date.daysAgo(3)), rawJSON: removedBroker.rawJSON)
+        resources.brokerResourcesList = [bundledBroker]
+        vault.brokerResourcesToReturn = [bundledBroker, remoteOnlyBroker, removedBroker]
+
+        await assertCheckForUpdatesFails(with: .keyRevoked)
+
+        let disabledBroker = try XCTUnwrap(vault.updatedBrokerResources.first { $0.broker.url == "anywho.com" })
+        XCTAssertEqual(disabledBroker.broker.id, 2)
+        XCTAssertNotNil(disabledBroker.broker.removedAt)
+        XCTAssertEqual(disabledBroker.broker.version, "0")
+        XCTAssertEqual(disabledBroker.broker.eTag, "")
+        XCTAssertEqual(disabledBroker.rawJSON, remoteOnlyBroker.rawJSON)
+        XCTAssertEqual(vault.updatedBrokerResources.map(\.broker.url), ["anywho.com"], "Bundled and already removed brokers are left alone")
+    }
+
+    func testWhenRevokedKeyIsDroppedThenDisabledBrokersComeBackThroughNormalUpdates() async throws {
+        let storedBroker = try fixtureBroker("anywho.com.json", id: 2)
+        resources.brokerResourcesList = []
+        vault.brokerResourcesToReturn = [storedBroker]
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.stagingKeyID]]
+        await assertCheckForUpdatesFails(with: .keyRevoked)
+        let disabledBroker = try XCTUnwrap(vault.lastUpdatedBrokerResource?.broker)
+
+        /// An app update drops the revoked key, so privacy-config no longer affects this app's keys
+        privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
+        vault.brokers = [disabledBroker]
+        vault.brokersByURL = [disabledBroker.url: disabledBroker]
+        vault.updatedBrokerResources.removeAll()
+        pixelHandler.clear()
+        try stageExtractedBrokers()
+        appendFixtureResponses()
+
+        try await makeService().checkForUpdates(skipsLimiter: true)
+
+        let restoredBroker = try XCTUnwrap(vault.updatedBrokerResources.first { $0.broker.url == "anywho.com" })
+        XCTAssertEqual(restoredBroker.broker.version, storedBroker.broker.version)
+        XCTAssertNil(restoredBroker.broker.removedAt)
+        XCTAssertNotEqual(restoredBroker.broker.eTag, "")
+        XCTAssertEqual(restoredBroker.rawJSON, try fixture("anywho.com.json"))
+        XCTAssertEqual(settings.mainConfigETag, eTag)
+    }
+
     func testWhenOnlyOtherKeysAreRevokedThenUpdateProceeds() async throws {
         privacyConfig.featureSettings[.dbp] = ["revokedBundleSigningKeys": [Self.productionKeyID]]
         try stageExtractedBrokers()
@@ -436,6 +483,23 @@ final class BrokerBundleVerificationTests: XCTestCase {
             .appendingPathComponent("BundleResources/BrokerBundleSigning")
             .appendingPathComponent(fileName))
         return try Data(contentsOf: url)
+    }
+
+    private func fixtureBroker(_ fileName: String, id: Int64, url: String? = nil) throws -> BrokerResource {
+        let resource = try DataBroker.initFromData(try fixture(fileName))
+        let broker = resource.broker
+        return BrokerResource(broker: DataBroker(id: id,
+                                                 name: broker.name,
+                                                 url: url ?? broker.url,
+                                                 steps: broker.steps,
+                                                 version: broker.version,
+                                                 schedulingConfig: broker.schedulingConfig,
+                                                 parent: broker.parent,
+                                                 mirrorSites: broker.mirrorSites,
+                                                 optOutUrl: broker.optOutUrl,
+                                                 eTag: "stored-etag",
+                                                 removedAt: broker.removedAt),
+                              rawJSON: resource.rawJSON)
     }
 
     private func makeService(signingKeys: BrokerBundleSigningKeys = .builtIn) -> RemoteBrokerJSONService {
@@ -524,4 +588,12 @@ final class BrokerBundleVerificationTests: XCTestCase {
 private extension HTTPURLResponse {
     static let notFound = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 404, httpVersion: nil, headerFields: [:])!
     static let internalServerError = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 500, httpVersion: nil, headerFields: [:])!
+}
+
+private extension DataBroker {
+    func withRemovedAt(_ removedAt: Date) -> DataBroker {
+        var broker = self
+        broker.removedAt = removedAt
+        return broker
+    }
 }

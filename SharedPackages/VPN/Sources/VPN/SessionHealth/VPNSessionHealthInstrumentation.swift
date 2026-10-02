@@ -254,7 +254,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
                                                   at: timestamp,
                                                   processStartDate: processStartedAt,
                                                   processIdentifier: processIdentifier(),
-                                           appVersion: appVersion())
+                                                  appVersion: appVersion())
         event.lastObservedAt = timestamp
 
         completeEvent(event: event, outcome: outcome)

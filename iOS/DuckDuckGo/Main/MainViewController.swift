@@ -233,6 +233,19 @@ class MainViewController: UIViewController {
         newTabPageViewController != nil
     }
 
+    private(set) var appOpenKeyboardRequestID = UUID()
+    private var isClearingNavigationForAppOpen = false
+
+    func cancelPendingAppOpenKeyboard() {
+        // Automatic dismissal can end editing or select the tab switcher's browsing mode.
+        guard !isClearingNavigationForAppOpen else { return }
+        appOpenKeyboardRequestID = UUID()
+    }
+
+    private var isAppOpenKeyboardWindowVisible: Bool {
+        UIApplication.shared.applicationState == .active && viewIfLoaded?.window?.isHidden == false
+    }
+
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
@@ -1543,6 +1556,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardWillHide() {
         if !didSendGestureDismissPixel, newTabPageViewController?.isDragging == true, keyboardShowing {
+            cancelPendingAppOpenKeyboard()
             PixelKit.fire(Pixel.Event.addressBarGestureDismiss)
             recordNewTabPageSessionAction { $0.dismissKeyboard() }
             didSendGestureDismissPixel = true
@@ -1775,6 +1789,7 @@ class MainViewController: UIViewController {
     }
 
     @objc private func onAppDidEnterBackground() {
+        cancelPendingAppOpenKeyboard()
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -2528,6 +2543,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        cancelPendingAppOpenKeyboard()
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
         restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
@@ -2811,6 +2827,7 @@ class MainViewController: UIViewController {
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed() {
+        guard isAppOpenKeyboardWindowVisible else { return }
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
         guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
         if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return }
@@ -2825,7 +2842,7 @@ class MainViewController: UIViewController {
     /// decides on it a moment later, so the visit is told the keyboard came up.
     func enterSearchOnAppOpen() {
         guard presentedViewController == nil else { return }
-        if isNewTabPageVisible {
+        if isNewTabPageVisible, isAppOpenKeyboardWindowVisible {
             newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
         }
         enterSearch()
@@ -2976,6 +2993,7 @@ class MainViewController: UIViewController {
     }
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
+        cancelPendingAppOpenKeyboard()
         guard let tab else { return }
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
@@ -3922,20 +3940,25 @@ class MainViewController: UIViewController {
 
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
 
-    /// Closes what was left open over the current New Tab Page on an idle return. It doesn't animate:
-    /// the launch prompt is chosen right after launch handling and the app-open keyboard 0.1s later,
-    /// and both need the screen gone.
-    func closeScreensOverNewTabPageForIdleReturn() {
-        guard presentedViewController != nil else { return }
+    /// Finish both input teardown and modal dismissal before starting the visit or raising the keyboard.
+    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
+        guard isAppOpenKeyboardWindowVisible else { return }
+        guard presentedViewController != nil else {
+            completion()
+            return
+        }
         // Dismissing a tab switcher on an empty Fire page switches to Fire mode with no tab to show.
         if let tabSwitcherController, !tabSwitcherController.canDismissOnEmpty, tabSwitcherController.tabsModel.isEmpty {
             return
         }
-        clearNavigationStack()
-        // The page comes on screen now, so it opens the visit the foreground skipped while the screen was up.
-        // A tab switcher left on the other browsing mode lands on that mode's tab, which may not be one.
-        if isNewTabPageVisible {
-            startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
+        let requestID = appOpenKeyboardRequestID
+        clearNavigationStack(forAppOpen: true) { [weak self] in
+            guard let self, appOpenKeyboardRequestID == requestID, isAppOpenKeyboardWindowVisible else { return }
+            // Foregrounding skipped this visit while another screen covered the page.
+            if isNewTabPageVisible, presentedViewController == nil {
+                startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
+            }
+            completion()
         }
     }
 
@@ -5819,6 +5842,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onEditingEnd() -> OmniBarEditingEndResult {
+        cancelPendingAppOpenKeyboard()
         if areSuggestionsVisible {
             return .suspended
         } else {
@@ -5969,6 +5993,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func performCancel(animated: Bool = true) {
+        cancelPendingAppOpenKeyboard()
         dismissOmniBar(animated: animated)
         omniBar.cancel()
         hideSuggestionTray()
@@ -6387,6 +6412,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onExperimentalAddressBarCancelPressed() {
+        cancelPendingAppOpenKeyboard()
         fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
@@ -7837,13 +7863,17 @@ extension MainViewController: GestureToolbarButtonDelegate {
 
 extension MainViewController {
 
-    func clearNavigationStack() {
-        dismissOmniBar()
+    func clearNavigationStack(forAppOpen: Bool = false, completion: (() -> Void)? = nil) {
+        isClearingNavigationForAppOpen = forAppOpen
+        defer { isClearingNavigationForAppOpen = false }
+        dismissOmniBar(animated: !forAppOpen)
 
         if let presented = presentedViewController {
             presented.dismiss(animated: false) { [weak self] in
-                self?.clearNavigationStack()
+                self?.clearNavigationStack(forAppOpen: forAppOpen, completion: completion)
             }
+        } else {
+            completion?()
         }
     }
 

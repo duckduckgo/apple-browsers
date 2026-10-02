@@ -26,8 +26,17 @@ import FeatureFlags_iOS
 @MainActor
 protocol KeyboardPresenting {
 
-    func showKeyboardOnLaunch(lastBackgroundDate: Date?)
+    func showKeyboardOnLaunch(lastBackgroundDate: Date?, isAfterIdleReturn: Bool)
 
+}
+
+@MainActor
+protocol AppOpenKeyboardHandling: AnyObject {
+    var isNewTabPageVisible: Bool { get }
+    var appOpenKeyboardRequestID: UUID { get }
+    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void)
+    func showKeyboardOnAppOpenIfAllowed()
+    func enterSearchOnAppOpen()
 }
 
 /// Keyboard rule for NTP landings behind `.alwaysShowKeyboardOnNewTabPage`: an NTP shows the keyboard
@@ -41,9 +50,9 @@ struct NewTabPageKeyboardPolicy {
     let onAppLaunch: Bool
 
     /// `nil` means a cold start.
-    static func isAppOpen(lastBackgroundDate: Date?, now: Date = Date()) -> Bool {
+    static func isAppOpen(lastBackgroundDate: Date?, now: Date = Date(), threshold: TimeInterval = appOpenBackgroundThreshold) -> Bool {
         guard let lastBackgroundDate else { return true }
-        return now.timeIntervalSince(lastBackgroundDate) > appOpenBackgroundThreshold
+        return now.timeIntervalSince(lastBackgroundDate) > threshold
     }
 
     /// New Tab alone decides on an NTP; App Launch keeps its meaning for other tabs.
@@ -63,39 +72,62 @@ extension NewTabPageKeyboardPolicy {
 
 final class KeyboardPresenter: KeyboardPresenting {
 
-    private let mainViewController: MainViewController
+    private let mainViewController: any AppOpenKeyboardHandling
     private let featureFlagger: FeatureFlagger
+    private let pixelFiring: (any PixelKitFiring)?
+    private let onAppLaunch: () -> Bool
+    private let backgroundThreshold: () -> TimeInterval
+    private let schedule: (@escaping () -> Void) -> Void
 
-    init(mainViewController: MainViewController, featureFlagger: FeatureFlagger) {
+    init(mainViewController: any AppOpenKeyboardHandling,
+         featureFlagger: FeatureFlagger,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
+         backgroundThreshold: @escaping () -> TimeInterval = { NewTabPageKeyboardPolicy.appOpenBackgroundThreshold },
+         schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
+        self.onAppLaunch = onAppLaunch
+        self.backgroundThreshold = backgroundThreshold
+        self.schedule = schedule
     }
 
-    func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil) {
-        if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
-            showKeyboardOnAppOpen(lastBackgroundDate: lastBackgroundDate)
-            return
+    func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil, isAfterIdleReturn: Bool = false) {
+        let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+        let onAppLaunch = onAppLaunch()
+        guard flagOn || onAppLaunch else { return }
+        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate,
+                                                         threshold: backgroundThreshold())
+        if isAppOpen && onAppLaunch {
+            pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
         }
 
-        guard KeyboardSettings().onAppLaunch && NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate) else { return }
+        let requestID = mainViewController.appOpenKeyboardRequestID
+        let scheduleKeyboard = { [self] in
+            guard isAppOpen else { return }
+            if flagOn, !isCurrentRequest(requestID) { return }
+            schedule { [self] in
+                if flagOn {
+                    guard isCurrentRequest(requestID) else { return }
+                    mainViewController.showKeyboardOnAppOpenIfAllowed()
+                } else {
+                    mainViewController.enterSearchOnAppOpen()
+                }
+            }
+        }
 
-        PixelKit.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.mainViewController.enterSearchOnAppOpen()
+        if flagOn && isAfterIdleReturn && mainViewController.isNewTabPageVisible {
+            mainViewController.closeScreensOverNewTabPageForIdleReturn(completion: scheduleKeyboard)
+        } else {
+            scheduleKeyboard()
         }
     }
 
-    private func showKeyboardOnAppOpen(lastBackgroundDate: Date?) {
-        guard NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate) else { return }
-
-        if KeyboardSettings().onAppLaunch {
-            PixelKit.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.mainViewController.showKeyboardOnAppOpenIfAllowed()
-        }
+    private func isCurrentRequest(_ requestID: UUID) -> Bool {
+        mainViewController.appOpenKeyboardRequestID == requestID && featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
     }
 
 }
+
+extension MainViewController: AppOpenKeyboardHandling { }

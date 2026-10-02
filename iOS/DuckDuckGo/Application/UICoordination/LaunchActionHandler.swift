@@ -123,7 +123,8 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
             let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
-            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+            let isAfterIdleReturn = idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate)
+            if isAfterIdleReturn {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
                     let keptCurrentNewTabPage = idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) ?? false
@@ -135,7 +136,8 @@ final class LaunchActionHandler: LaunchActionHandling {
             } else {
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
-            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
+            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                   isAfterIdleReturn: isAfterIdleReturn)
         }
     }
     

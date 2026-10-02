@@ -504,6 +504,11 @@ final class PermissionModel {
                 // User has "Always Allow" stored - but check system permission first
                 if isSystemPermissionDisabled(for: permission) {
                     shouldAsk = true
+                } else if featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+                          permission.requiresSystemPermission,
+                          systemPermissionManager.cachedAuthorizationState(for: permission) == .notDetermined {
+                    // A macOS permission reset must return to the website choices before requesting system access.
+                    shouldAsk = true
                 }
             case .ask:
                 // Check the remaining permissions for a denial before prompting.
@@ -543,11 +548,16 @@ final class PermissionModel {
             // Check if this is "app=allow but system=disabled" case
             let isSystemDisabled: Bool = {
                 guard let permission = permissions.first,
-                      permission.requiresSystemPermission else { return false }
+                      isSystemPermissionDisabled(for: permission) else { return false }
                 return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
             }()
 
-            if isSystemDisabled {
+            if isSystemDisabled, featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+                // The prompt opens on its System Settings step and grants the request once macOS does
+                self.queryAuthorization(for: permissions, domain: domain, url: url,
+                                        isSystemPermissionDisabled: true,
+                                        decisionHandler: wrappedDecisionHandler)
+            } else if isSystemDisabled {
                 // Deny - system permission is disabled, can't deliver anyway
                 wrappedDecisionHandler(false)
                 // Fire event for view layer to show informational popover

@@ -34,6 +34,10 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
     /// Completion to call when authorization is requested (simulates async response)
     var authorizationRequestCompletion: ((PermissionType) -> SystemPermissionAuthorizationState)?
 
+    /// When true, `requestAuthorization` keeps the completion in `pendingAuthorizationCompletions` instead of calling it
+    var defersAuthorizationResponse = false
+    private(set) var pendingAuthorizationCompletions: [(SystemPermissionAuthorizationState) -> Void] = []
+
     /// Subject for controlling notification authorization state in tests
     var notificationAuthorizationStateSubject = CurrentValueSubject<SystemPermissionAuthorizationState, Never>(.notDetermined)
 
@@ -73,6 +77,11 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
     @discardableResult
     func requestAuthorization(for permissionType: PermissionType, completion: @escaping (SystemPermissionAuthorizationState) -> Void) -> AnyCancellable? {
         authorizationRequestedFor.append(permissionType)
+
+        if defersAuthorizationResponse {
+            pendingAuthorizationCompletions.append(completion)
+            return AnyCancellable {}
+        }
 
         if let customCompletion = authorizationRequestCompletion {
             let state = customCompletion(permissionType)

@@ -17,6 +17,7 @@
 //
 
 @_spi(Testing) import PixelKit
+import Combine
 import FeatureFlags_macOS
 import PrivacyConfig
 import XCTest
@@ -26,19 +27,29 @@ import XCTest
 final class PermissionAuthorizationViewModelTests: XCTestCase {
 
     private var pixelFiring: PixelKitMock!
+    private var systemPermissionManager: SystemPermissionManagerMock!
+    private var appDidBecomeActive: PassthroughSubject<Void, Never>!
+    private var scheduledWork: [(delay: TimeInterval, work: @MainActor () -> Void)] = []
     private var result: PermissionAuthorizationQuery.CallbackResult?
     private var openedURLs: [URL] = []
+    private var openedSystemSettingsURLs: [URL] = []
     private var finishCount = 0
 
     override func setUp() {
         super.setUp()
         pixelFiring = PixelKitMock()
+        systemPermissionManager = SystemPermissionManagerMock()
+        appDidBecomeActive = PassthroughSubject()
     }
 
     override func tearDown() {
         pixelFiring = nil
+        systemPermissionManager = nil
+        appDidBecomeActive = nil
+        scheduledWork = []
         result = nil
         openedURLs = []
+        openedSystemSettingsURLs = []
         finishCount = 0
         super.tearDown()
     }
@@ -59,7 +70,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         viewModel.send(action: .onAppear)
 
         XCTAssertEqual(viewModel.viewState.title, String(format: UserText.websitePermissionsPromptLocationFormat, "maps.example.com"))
-        XCTAssertEqual(viewModel.viewState.learnMore, .init(title: UserText.permissionPopupLearnMoreLink, url: Self.locationHelpURL))
+        XCTAssertEqual(viewModel.viewState.decision?.learnMore, .init(title: UserText.permissionPopupLearnMoreLink, url: Self.locationHelpURL))
     }
 
     func testOnAppearHasNoLearnMoreForCamera() {
@@ -67,7 +78,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
 
         viewModel.send(action: .onAppear)
 
-        XCTAssertNil(viewModel.viewState.learnMore)
+        XCTAssertNil(viewModel.viewState.decision?.learnMore)
     }
 
     // MARK: - Decisions
@@ -128,6 +139,252 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         XCTAssertEqual(decisions, [false])
         XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: permission))
         retryQuery.cancel()
+    }
+
+    // MARK: - System permission step
+
+    func testWhenNotificationPermissionIsResetThenWebsiteChoicesPrecedeSystemRequest() async throws {
+        for hasStoredAllow in [false, true] {
+            for action in [PermissionAuthorizationViewModel.Action.allowThisVisit, .alwaysAllow] {
+                pixelFiring = PixelKitMock()
+                systemPermissionManager = SystemPermissionManagerMock()
+                systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
+                systemPermissionManager.defersAuthorizationResponse = true
+                let manager = PermissionManagerMock()
+                if hasStoredAllow {
+                    manager.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
+                }
+                let featureFlagger = MockFeatureFlagger()
+                featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+                let model = PermissionModel(permissionManager: manager,
+                                            geolocationService: GeolocationServiceMock(),
+                                            systemPermissionManager: systemPermissionManager,
+                                            featureFlagger: featureFlagger)
+                var decisions: [Bool] = []
+                model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
+                    decisions.append(granted)
+                }
+                let query = try XCTUnwrap(model.authorizationQuery)
+                let viewModel = makeViewModel(query: query)
+
+                viewModel.send(action: .onAppear)
+
+                XCTAssertFalse(query.isSystemPermissionDisabled)
+                XCTAssertNil(viewModel.viewState.systemPermissionStep)
+                XCTAssertEqual(viewModel.viewState.decision?.buttons.map(\.action), [.allowThisVisit, .alwaysAllow, .neverAllow])
+                XCTAssertTrue(decisions.isEmpty)
+                XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+                viewModel.send(action: action)
+
+                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .request)
+                XCTAssertTrue(decisions.isEmpty)
+                XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+                viewModel.send(action: .requestSystemPermission)
+
+                XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
+                XCTAssertNil(viewModel.viewState.systemPermissionStep?.buttonAction)
+                XCTAssertEqual(systemPermissionManager.authorizationRequestedFor, [.notification])
+                XCTAssertTrue(decisions.isEmpty)
+
+                respondToSystemPermissionRequest(with: .authorized)
+                await waitUntil { !decisions.isEmpty }
+
+                XCTAssertEqual(decisions, [true])
+                XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [
+                    PermissionPixel.authorizationDecision(permissionType: .notification, decision: .allow).name,
+                ])
+                XCTAssertNil(model.authorizationQuery)
+                XCTAssertEqual(manager.persistedDecision(forDomain: "example.com", permissionType: .notification),
+                               hasStoredAllow || action == .alwaysAllow ? .allow : nil)
+                withExtendedLifetime(viewModel) {}
+            }
+        }
+    }
+
+    func testWhenDecisionNeedsNoSystemRequestThenItSubmitsImmediately() throws {
+        let scenarios: [(permissions: [PermissionType], state: SystemPermissionAuthorizationState,
+                         action: PermissionAuthorizationViewModel.Action, granted: Bool, remember: Bool)] = [
+            ([.notification], .authorized, .alwaysAllow, true, true),
+            ([.notification], .denied, .neverAllow, false, true),
+            ([.camera, .microphone], .denied, .allowThisVisit, true, false),
+        ]
+        for scenario in scenarios {
+            result = nil
+            finishCount = 0
+            systemPermissionManager.defaultAuthorizationState = scenario.state
+            systemPermissionManager.notificationAuthorizationStateSubject.send(scenario.state)
+            let query = makeQuery(permissions: scenario.permissions)
+            let viewModel = makeViewModel(query: query)
+
+            viewModel.send(action: scenario.action)
+
+            let output = try XCTUnwrap(try result?.get())
+            XCTAssertEqual(output.granted, scenario.granted)
+            XCTAssertEqual(output.remember, scenario.remember)
+            XCTAssertNil(viewModel.viewState.systemPermissionStep)
+            XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+            XCTAssertEqual(finishCount, 1)
+            withExtendedLifetime((viewModel, query)) {}
+        }
+    }
+
+    func testWhenLocationServicesAreRestoredThenSettingsStepReturnsToRequestStep() async throws {
+        systemPermissionManager.authorizationStates[.geolocation] = .systemDisabled
+        let query = makeQuery(permissions: [.geolocation])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .allowThisVisit)
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.message, UserText.websitePermissionsPromptSystemLocationOff)
+        viewModel.send(action: .openSystemSettings)
+
+        XCTAssertEqual(openedSystemSettingsURLs, [try XCTUnwrap(PermissionAuthorizationType.geolocation.systemSettingsURL)])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [
+            PermissionPixel.systemPreferencesOpened(permissionType: .geolocation).name,
+        ])
+        XCTAssertNil(result)
+        XCTAssertEqual(finishCount, 0)
+
+        systemPermissionManager.authorizationStates[.geolocation] = .notDetermined
+        appDidBecomeActive.send()
+        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .request }
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.message, UserText.websitePermissionsPromptSystemLocationRequired)
+        XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+        XCTAssertNil(result)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
+    func testWhenSystemPermissionIsDeniedElsewhereThenReturningShowsSettingsAndPreservesPendingDecision() async throws {
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
+        let query = makeQuery(permissions: [.notification])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .allowThisVisit)
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .request)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
+        appDidBecomeActive.send()
+        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .openSettings }
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep, .init(
+            phase: .openSettings,
+            message: UserText.websitePermissionsPromptSystemNotificationsOff,
+            buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
+        ))
+        XCTAssertNil(result)
+        XCTAssertEqual(finishCount, 0)
+        XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.authorized)
+        appDidBecomeActive.send()
+        await waitUntil { self.result != nil }
+
+        let output = try XCTUnwrap(try result?.get())
+        XCTAssertTrue(output.granted)
+        XCTAssertEqual(output.remember, false)
+        XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
+    func testWhenSystemPermissionIsDeniedThenSettingsCanResumePendingDecision() async throws {
+        let (viewModel, query) = makeViewModelWaitingForSystemPermission(decision: .alwaysAllow)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
+        respondToSystemPermissionRequest(with: .denied)
+        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .openSettings }
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep, .init(
+            phase: .openSettings,
+            message: UserText.websitePermissionsPromptSystemNotificationsOff,
+            buttonTitle: UserText.websitePermissionsPromptOpenSystemSettings
+        ))
+        XCTAssertNil(result)
+        XCTAssertEqual(finishCount, 0)
+
+        appDidBecomeActive.send()
+        await settle()
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+        XCTAssertNil(result)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.authorized)
+        appDidBecomeActive.send()
+        await waitUntil { self.result != nil }
+
+        let output = try XCTUnwrap(try result?.get())
+        XCTAssertTrue(output.granted)
+        XCTAssertEqual(output.remember, true)
+        XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
+    func testWhenSystemPermissionIsGrantedAfterTimeoutThenPendingDecisionIsSubmitted() async throws {
+        let (viewModel, query) = makeViewModelWaitingForSystemPermission(decision: .alwaysAllow)
+        XCTAssertEqual(scheduledWork.map(\.delay), [PermissionAuthorizationViewModel.Constants.systemPermissionRequestTimeout])
+        runScheduledWork()
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+        XCTAssertNil(result)
+
+        respondToSystemPermissionRequest(with: .authorized)
+        await waitUntil { self.result != nil }
+
+        let output = try XCTUnwrap(try result?.get())
+        XCTAssertTrue(output.granted)
+        XCTAssertEqual(output.remember, true)
+        XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
+    func testTimeoutOfEarlierRequestDoesNotEndLaterRequest() async {
+        let (viewModel, query) = makeViewModelWaitingForSystemPermission(decision: .alwaysAllow)
+        respondToSystemPermissionRequest(with: .notDetermined)
+        await waitUntil { viewModel.viewState.systemPermissionStep?.phase == .request }
+        viewModel.send(action: .requestSystemPermission)
+
+        scheduledWork.removeFirst().work()
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .waiting)
+        withExtendedLifetime(query) {}
+    }
+
+    func testDismissDuringSystemPermissionStepCancelsWithoutSavingAndIgnoresLaterGrant() async throws {
+        let (viewModel, query) = makeViewModelWaitingForSystemPermission(decision: .alwaysAllow)
+
+        viewModel.send(action: .dismiss)
+        respondToSystemPermissionRequest(with: .authorized)
+        appDidBecomeActive.send()
+        await settle()
+
+        XCTAssertThrowsError(try XCTUnwrap(result).get())
+        XCTAssertTrue(query.wasDismissed)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
+    }
+
+    func testWhenSiteIsAlwaysAllowedAndSystemPermissionIsGrantedOnReturnThenRequestIsGrantedWithoutDecisionPixel() async throws {
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.denied)
+        let query = makeQuery(permissions: [.notification])
+        query.isSystemPermissionDisabled = true
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: .onAppear)
+
+        XCTAssertEqual(viewModel.viewState.systemPermissionStep?.phase, .openSettings)
+        XCTAssertNil(result)
+        XCTAssertTrue(systemPermissionManager.authorizationRequestedFor.isEmpty)
+
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.authorized)
+        appDidBecomeActive.send()
+        await waitUntil { self.result != nil }
+
+        let output = try XCTUnwrap(try result?.get())
+        XCTAssertTrue(output.granted)
+        XCTAssertEqual(output.remember, true)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(finishCount, 1)
+        withExtendedLifetime((viewModel, query)) {}
     }
 
     // MARK: - Learn more
@@ -195,9 +452,50 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
         PermissionAuthorizationViewModel(
             initialState: initialState,
             query: query,
+            systemPermissionManager: systemPermissionManager,
+            appDidBecomeActivePublisher: appDidBecomeActive.eraseToAnyPublisher(),
+            scheduleAfter: { [weak self] delay, work in self?.scheduledWork.append((delay, work)) },
             pixelFiring: pixelFiring,
             openURL: { [weak self] in self?.openedURLs.append($0) },
+            openSystemSettingsURL: { [weak self] in self?.openedSystemSettingsURLs.append($0) },
             finish: { [weak self] in self?.finishCount += 1 }
         )
+    }
+
+    /// Notifications not asked by macOS yet, the allow `decision` picked, and Request Permission pressed.
+    private func makeViewModelWaitingForSystemPermission(
+        decision: PermissionAuthorizationViewModel.Action
+    ) -> (PermissionAuthorizationViewModel, PermissionAuthorizationQuery) {
+        systemPermissionManager.notificationAuthorizationStateSubject.send(.notDetermined)
+        systemPermissionManager.defersAuthorizationResponse = true
+        let query = makeQuery(permissions: [.notification])
+        let viewModel = makeViewModel(query: query)
+        viewModel.send(action: decision)
+        viewModel.send(action: .requestSystemPermission)
+        return (viewModel, query)
+    }
+
+    private func respondToSystemPermissionRequest(with state: SystemPermissionAuthorizationState) {
+        systemPermissionManager.pendingAuthorizationCompletions.last?(state)
+    }
+
+    private func runScheduledWork() {
+        let work = scheduledWork
+        scheduledWork = []
+        work.forEach { $0.work() }
+    }
+
+    /// Lets the main-actor tasks the view model starts from callbacks run.
+    private func waitUntil(_ condition: () -> Bool, file: StaticString = #filePath, line: UInt = #line) async {
+        for _ in 0..<100 where !condition() {
+            await Task.yield()
+        }
+        XCTAssertTrue(condition(), file: file, line: line)
+    }
+
+    private func settle() async {
+        for _ in 0..<20 {
+            await Task.yield()
+        }
     }
 }

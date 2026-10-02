@@ -1683,6 +1683,49 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(receivedPermissionType, .geolocation)
     }
 
+    func testWhenNewPromptsEnabledAndSystemPermissionDeniedThenStoredAllowWaitsInPromptInsteadOfInfoPopover() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.denied)
+        permissionManagerMock.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
+        var blockedBySystem = false
+        let c = model.permissionBlockedBySystem.sink { _ in blockedBySystem = true }
+        var decisions: [Bool] = []
+
+        model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
+            decisions.append(granted)
+        }
+
+        let query = try XCTUnwrap(model.authorizationQuery)
+        XCTAssertTrue(query.isSystemPermissionDisabled)
+        XCTAssertFalse(blockedBySystem)
+        XCTAssertEqual(decisions, [])
+
+        // Granting after macOS allows notifications keeps Always allow and grants the request
+        query.handleDecision(grant: true, remember: true)
+
+        XCTAssertEqual(decisions, [true])
+        XCTAssertEqual(permissionManagerMock.permission(forDomain: "example.com", permissionType: .notification), .allow)
+        withExtendedLifetime(c) {}
+    }
+
+    func testWhenNewPromptsEnabledAndSystemPermissionPromptDismissedThenRequestIsDeniedAndAlwaysAllowIsKept() throws {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.denied)
+        permissionManagerMock.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
+        var decisions: [Bool] = []
+        model.permissions([.notification], requestedForDomain: "example.com") { (granted: Bool) in
+            decisions.append(granted)
+        }
+        let query = try XCTUnwrap(model.authorizationQuery)
+
+        query.wasDismissed = true
+        query.cancel()
+
+        XCTAssertEqual(decisions, [false])
+        XCTAssertNil(model.authorizationQuery)
+        XCTAssertEqual(permissionManagerMock.permission(forDomain: "example.com", permissionType: .notification), .allow)
+    }
+
     func testWhenSystemPermissionDeniedButUserSetNeverAllowThenDenyDirectly() {
         // Set system permission as denied
         systemPermissionManagerMock.authorizationStates[.geolocation] = .denied

@@ -56,16 +56,23 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
 
     private var headerView: some View {
         HStack(spacing: 0) {
-            HStack(spacing: Metrics.headerIconToTitleSpacing) {
-                Image(uiImage: DesignSystemImages.Glyphs.Size16.returnTo)
-                    .flipsForRightToLeftLayoutDirection(true)
-                    .foregroundColor(Color(designSystemColor: .icons))
-                    .frame(width: Metrics.headerIconContainerWidth)
-                Text(UserText.escapeHatchReturnToLabel)
-                    .daxButton()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .lineLimit(1)
+            Button(action: onTap) {
+                HStack(spacing: Metrics.headerIconToTitleSpacing) {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size16.returnTo)
+                        .flipsForRightToLeftLayoutDirection(true)
+                        .foregroundColor(Color(designSystemColor: .icons))
+                        .frame(width: Metrics.headerIconContainerWidth)
+                        .accessibilityHidden(true)
+                    Text(UserText.escapeHatchReturnToLabel)
+                        .daxButton()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(1)
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityHint(Text(UserText.escapeHatchAccessibilityHint))
 
             Spacer(minLength: Metrics.headerMinimumSpacing)
 
@@ -77,7 +84,7 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
     private var showAllButton: some View {
         Button(action: onShowAllTap) {
             HStack(spacing: Metrics.showAllLabelToArrowSpacing) {
-                Text(UserText.escapeHatchShowAllLabel)
+                Text(UserText.escapeHatchShowAllTabsLabel)
                     .daxSubheadRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .lineLimit(1)

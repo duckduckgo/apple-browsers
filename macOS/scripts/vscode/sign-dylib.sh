@@ -21,7 +21,7 @@ EOF
 }
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-package_dir="$(cd "${script_dir}/../macOS/DuckDuckGo" && pwd)"
+package_dir="$(cd "${script_dir}/../../DuckDuckGo" && pwd)"
 build_dir="$(cd "${package_dir}/.." && pwd)/.build"
 products="${build_dir}/DuckDuckGo/out/Products/Debug"
 identity_file="${build_dir}/vscode-host/identity"

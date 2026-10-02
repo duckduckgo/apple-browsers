@@ -4,7 +4,7 @@
 #
 # The host app is a minimal Xcode app target generated into macOS/.build/vscode-host: it uses the
 # DuckDuckGo Privacy Browser target's xcconfig, Info.plist, entitlements and app bundle resources, and
-# its executable is .vscode/launcher/launcher.c, which loads the DuckDuckGoBrowserDynamic library built
+# its executable is macOS/scripts/vscode/launcher/launcher.c, which loads the DuckDuckGoBrowserDynamic library built
 # by `swift build`. The project has no package dependencies, so building it doesn't resolve the package
 # graph. Swift code changes only need `swift build`; the host app is rebuilt when its inputs change.
 #
@@ -25,7 +25,7 @@ EOF
 }
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-macos_dir="$(cd "${script_dir}/../macOS" && pwd)"
+macos_dir="$(cd "${script_dir}/../.." && pwd)"
 # Build output lives outside the package folder: Xcode scans the package folder it has open.
 work_dir="${macos_dir}/.build/vscode-host"
 project="${work_dir}/DuckDuckGoHost.xcodeproj"
@@ -98,7 +98,7 @@ write_project() {
 "PROJECT_DEBUG":{"isa":"XCBuildConfiguration","baseConfigurationReference":"GLOBAL_XCCONFIG","buildSettings":{},"name":"Debug"},
 "MAIN_GROUP":{"isa":"PBXGroup","children":["LAUNCHER","GLOBAL_XCCONFIG","APP_XCCONFIG",${ref_list},"PRODUCTS"],"sourceTree":"<group>"},
 "PRODUCTS":{"isa":"PBXGroup","children":["HOST_APP"],"name":"Products","sourceTree":"<group>"},
-"LAUNCHER":{"isa":"PBXFileReference","lastKnownFileType":"sourcecode.c.c","path":"../.vscode/launcher/launcher.c","sourceTree":"SOURCE_ROOT"},
+"LAUNCHER":{"isa":"PBXFileReference","lastKnownFileType":"sourcecode.c.c","path":"scripts/vscode/launcher/launcher.c","sourceTree":"SOURCE_ROOT"},
 "GLOBAL_XCCONFIG":{"isa":"PBXFileReference","lastKnownFileType":"text.xcconfig","path":"Configuration/Global.xcconfig","sourceTree":"SOURCE_ROOT"},
 "APP_XCCONFIG":{"isa":"PBXFileReference","lastKnownFileType":"text.xcconfig","path":"Configuration/App/DuckDuckGo.xcconfig","sourceTree":"SOURCE_ROOT"},
 ${file_refs}

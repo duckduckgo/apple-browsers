@@ -352,21 +352,32 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     func testWhenOnlyPageContextIsVisibleThenChipDoesNotFillStrip() throws {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 1024, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
         let sut = UnifiedToggleInputAttachmentsStripView()
-        sut.frame = CGRect(x: 0, y: 0, width: 1024, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+        container.addSubview(sut)
+        let stripWidth = sut.widthAnchor.constraint(equalToConstant: 1024)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight),
+            stripWidth
+        ])
         sut.setPageContextChipState(.attached(title: "Carlos Niño - Wikipedia", favicon: nil))
         sut.setPageContextChipVisible(true)
         flushMainQueue()
+        container.layoutIfNeeded()
 
         let chip = try XCTUnwrap(firstDescendant(of: AIChatContextChipView.self, in: sut))
+        XCTAssertEqual(sut.bounds.width, 1024, accuracy: 0.5)
         XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
 
         sut.setSelectionContextChips([(id: "selection", title: "Selected words", favicon: nil)])
         flushMainQueue()
         XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
 
-        sut.frame.size.width = 400
-        sut.layoutIfNeeded()
+        stripWidth.constant = 400
+        container.layoutIfNeeded()
+        XCTAssertEqual(sut.bounds.width, 400, accuracy: 0.5)
         XCTAssertEqual(chip.bounds.width, 186, accuracy: 0.5)
 
         sut.setSelectionContextChips([])

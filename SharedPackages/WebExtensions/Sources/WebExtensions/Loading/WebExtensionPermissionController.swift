@@ -64,6 +64,7 @@ public enum WebExtensionPermissionPromptResult: Equatable {
 public final class WebExtensionPermissionController {
     public enum PermissionError: Error {
         case installationDenied
+        case replacementAlreadyExists
     }
 
     private let store: any WebExtensionPermissionStoring
@@ -168,6 +169,28 @@ public final class WebExtensionPermissionController {
         try save(settings, for: identifier)
         contexts[identifier]?.hasAccessToPrivateData = allowed
         NotificationCenter.default.post(name: .webExtensionPrivateAccessDidChange, object: self)
+    }
+
+    /// Copies consent to a new installation UUID before an update loads its replacement context.
+    /// The caller must first verify that the replacement is an update to the same extension.
+    /// The old record remains available for rollback: uninstall the old UUID only after the new
+    /// installation succeeds, or forget the new UUID if it fails. Missing consent is not copied,
+    /// so the replacement will request installation approval normally. This does not grant any
+    /// additional permissions requested by the new version.
+    func copyPermissionsForUpdate(from identifier: String, to replacementIdentifier: String) throws {
+        guard identifier != replacementIdentifier,
+              installationStore.installedExtension(withUniqueIdentifier: replacementIdentifier) == nil,
+              contexts[replacementIdentifier] == nil,
+              try store.settings(for: replacementIdentifier) == nil else {
+            throw PermissionError.replacementAlreadyExists
+        }
+
+        // Capture current state even if WebKit's change notification has not been delivered yet.
+        if let context = contexts[identifier] {
+            try save(context)
+        }
+        guard let settings = try store.settings(for: identifier) else { return }
+        try store.save(settings, for: replacementIdentifier)
     }
 
     func forget(_ identifier: String) throws {

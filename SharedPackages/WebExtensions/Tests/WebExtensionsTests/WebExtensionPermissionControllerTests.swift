@@ -455,6 +455,154 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertTrue(manager.webExtensionIdentifiers.isEmpty)
     }
 
+    func testUpdatePreservesConsentAfterOldVersionUninstallAndReplacementRelaunch() async throws {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = try makeExtensionURL()
+        let manager = makeManager(storage: storage)
+        prompter.installationResponse = .granted(privateDataAccess: true)
+        try await manager.installExtension(from: try XCTUnwrap(storage.resolvedExtensionURL), storeIdentity: identity)
+        let oldContext = try XCTUnwrap(manager.loadedExtensions.first)
+        let expiration = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded() + 3600)
+        let pattern = try WKWebExtension.MatchPattern(string: "https://optional.example/*")
+        oldContext.setPermissionStatus(.unknown, for: WKWebExtension.Permission.tabs)
+        oldContext.setPermissionStatus(.grantedExplicitly, for: WKWebExtension.Permission.tabs, expirationDate: expiration)
+        oldContext.setPermissionStatus(.grantedExplicitly, for: pattern, expirationDate: expiration)
+        oldContext.hasRequestedOptionalAccessToAllHosts = true
+
+        // A replacement can request more permissions, but copying consent must not grant them.
+        storage.resolvedExtensionURL = try makeExtensionURL(permissions: ["tabs", "clipboardWrite"])
+        try await manager.installExtension(from: try XCTUnwrap(storage.resolvedExtensionURL),
+                                           storeIdentity: identity, replacing: oldContext.uniqueIdentifier)
+        let installations = installationStore.installedExtensions(withStoreIdentity: identity)
+        XCTAssertEqual(installations.count, 2)
+        let replacement = try XCTUnwrap(installations.first { $0.uniqueIdentifier != oldContext.uniqueIdentifier })
+        let newIdentifier = replacement.uniqueIdentifier
+        let copiedSettings = try XCTUnwrap(store.settings(for: newIdentifier))
+        XCTAssertEqual(copiedSettings, try store.settings(for: oldContext.uniqueIdentifier))
+        XCTAssertEqual(copiedSettings.grantedPermissions["tabs"], expiration)
+        XCTAssertEqual(copiedSettings.grantedMatchPatterns[pattern.string], expiration)
+        XCTAssertTrue(copiedSettings.hasAccessToPrivateData)
+        XCTAssertTrue(copiedSettings.hasRequestedOptionalAccessToAllHosts)
+
+        try manager.uninstallExtension(identifier: oldContext.uniqueIdentifier)
+
+        XCTAssertNil(try store.settings(for: oldContext.uniqueIdentifier))
+        XCTAssertEqual(try store.settings(for: newIdentifier), copiedSettings)
+        manager.unloadAllExtensions()
+        await manager.reloadInstalledExtensions()
+        let restored = try XCTUnwrap(manager.context(for: newIdentifier))
+        XCTAssertTrue(restored.hasAccessToPrivateData)
+        XCTAssertTrue(restored.hasRequestedOptionalAccessToAllHosts)
+        XCTAssertEqual(restored.grantedPermissions[.tabs], expiration)
+        XCTAssertEqual(restored.grantedPermissionMatchPatterns[pattern], expiration)
+        XCTAssertFalse(restored.hasPermission(.clipboardWrite))
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+
+        try manager.uninstallExtension(identifier: newIdentifier)
+        XCTAssertNil(try store.settings(for: newIdentifier))
+    }
+
+    func testFailedReplacementCleanupPreservesOldInstallationAndConsent() async throws {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = try makeExtensionURL()
+        let manager = makeManager(storage: storage)
+        try await manager.installExtension(from: try XCTUnwrap(storage.resolvedExtensionURL), storeIdentity: identity)
+        let oldContext = try XCTUnwrap(manager.loadedExtensions.first)
+        let oldSettings = try XCTUnwrap(store.settings(for: oldContext.uniqueIdentifier))
+        storage.shouldReturnNilForResolve = true
+
+        do {
+            try await manager.installExtension(from: try XCTUnwrap(storage.resolvedExtensionURL),
+                                               storeIdentity: identity, replacing: oldContext.uniqueIdentifier)
+            XCTFail("Expected replacement loading to fail")
+        } catch WebExtensionError.failedToLoadWebExtension {
+            // The installer must clean up only the failed replacement.
+        }
+
+        let newIdentifier = try XCTUnwrap(storage.copyExtensionIdentifier)
+        XCTAssertNotEqual(newIdentifier, oldContext.uniqueIdentifier)
+        XCTAssertNil(try store.settings(for: newIdentifier))
+        XCTAssertEqual(storage.removeExtensionIdentifier, newIdentifier)
+        XCTAssertEqual(try store.settings(for: oldContext.uniqueIdentifier), oldSettings)
+        XCTAssertEqual(manager.webExtensionIdentifiers, [oldContext.uniqueIdentifier])
+        XCTAssertTrue(manager.context(for: oldContext.uniqueIdentifier) === oldContext)
+        try manager.uninstallExtension(identifier: oldContext.uniqueIdentifier)
+    }
+
+    func testReplacementRequiresMatchingStoredIdentity() async throws {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let otherIdentity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "other-extension")
+        let storage = WebExtensionStorageProvidingMock()
+        let source = try makeExtensionURL()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage)
+        try await manager.installExtension(from: source, storeIdentity: identity)
+        let oldIdentifier = try XCTUnwrap(manager.webExtensionIdentifiers.first)
+        let oldSettings = try store.settings(for: oldIdentifier)
+
+        let invalidReplacements: [(WebExtensionStoreIdentity?, String)] = [
+            (nil, oldIdentifier), (otherIdentity, oldIdentifier), (identity, "unknown")
+        ]
+        for (replacementIdentity, identifier) in invalidReplacements {
+            do {
+                try await manager.installExtension(from: source, storeIdentity: replacementIdentity, replacing: identifier)
+                XCTFail("Expected replacement identity validation to fail")
+            } catch WebExtensionError.updateIdentityMismatch {
+                XCTAssertEqual(manager.webExtensionIdentifiers, [oldIdentifier])
+                XCTAssertEqual(try store.settings(for: oldIdentifier), oldSettings)
+            }
+        }
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+        XCTAssertFalse(storage.removeExtensionCalled)
+        try manager.uninstallExtension(identifier: oldIdentifier)
+    }
+
+    func testUpdatePermissionCopyFailureLeavesOriginalConsentIntact() throws {
+        let permissions = makeController()
+        var settings = WebExtensionPermissionSettings()
+        settings.hasAccessToPrivateData = true
+        try store.save(settings, for: "old")
+        keyValueStore.shouldThrowOnSet = true
+
+        XCTAssertThrowsError(try permissions.copyPermissionsForUpdate(from: "old", to: "new"))
+
+        XCTAssertEqual(try store.settings(for: "old"), settings)
+        XCTAssertNil(try store.settings(for: "new"))
+    }
+
+    func testUpdatePermissionCopyDoesNotOverwriteExistingConsent() throws {
+        let permissions = makeController()
+        var oldSettings = WebExtensionPermissionSettings()
+        oldSettings.hasAccessToPrivateData = true
+        let newSettings = WebExtensionPermissionSettings()
+        try store.save(oldSettings, for: "old")
+        try store.save(newSettings, for: "new")
+
+        XCTAssertThrowsError(try permissions.copyPermissionsForUpdate(from: "old", to: "new"))
+        XCTAssertThrowsError(try permissions.copyPermissionsForUpdate(from: "old", to: "old"))
+
+        XCTAssertEqual(try store.settings(for: "old"), oldSettings)
+        XCTAssertEqual(try store.settings(for: "new"), newSettings)
+    }
+
+    func testUpdateWithoutPreviousConsentStillRequiresInstallationApproval() async throws {
+        let permissions = makeController()
+        let context = try await makeContext()
+        try permissions.copyPermissionsForUpdate(from: "old", to: context.uniqueIdentifier)
+        XCTAssertNil(try store.settings(for: context.uniqueIdentifier))
+        prompter.installationResponse = .denied
+
+        do {
+            try await permissions.prepare(context)
+            XCTFail("Expected installation denial")
+        } catch WebExtensionPermissionController.PermissionError.installationDenied {
+            XCTAssertEqual(prompter.installationRequests.count, 1)
+            XCTAssertNil(try store.settings(for: context.uniqueIdentifier))
+        }
+    }
+
     func testWhenLegacyConsentIsDeniedAtLaunchThenInstalledExtensionIsPreservedButNotLoaded() async throws {
         let source = try makeExtensionURL()
         let storage = WebExtensionStorageProvidingMock()
@@ -716,7 +864,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         return context
     }
 
-    private func makeExtensionURL(claimsDDGIdentity: Bool = false) throws -> URL {
+    private func makeExtensionURL(claimsDDGIdentity: Bool = false, permissions: [String] = ["tabs"]) throws -> URL {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         addTeardownBlock { try FileManager.default.removeItem(at: directory) }
@@ -724,7 +872,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
             "manifest_version": 3,
             "name": "Permission Test",
             "version": "1.0",
-            "permissions": ["tabs"],
+            "permissions": permissions,
             "optional_permissions": ["clipboardWrite"],
             "host_permissions": ["https://example.com/*"],
             "optional_host_permissions": ["https://optional.example/*"]

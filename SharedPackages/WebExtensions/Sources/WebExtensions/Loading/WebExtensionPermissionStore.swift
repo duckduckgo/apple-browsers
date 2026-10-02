@@ -20,6 +20,8 @@ import Foundation
 import Persistence
 
 /// Browser-owned consent, separate from the extension's own WebKit storage.
+/// Retained across restarts, reloads, and browsing-data clearing, until the installation is removed.
+/// Updates copy these settings to the replacement installation before removing the old one.
 public struct WebExtensionPermissionSettings: Codable, Equatable {
     public var hasAccessToPrivateData = false
     public var grantedPermissions: [String: Date] = [:]

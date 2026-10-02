@@ -81,7 +81,7 @@ final class AIChatViewAllChatsRowView: NSView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyDown
-        imageView.image = NSImage(named: "Arrow-Right-12")
+        imageView.image = NSImage(resource: .arrowRight12)
         imageView.contentTintColor = Constants.iconColor
         return imageView
     }()

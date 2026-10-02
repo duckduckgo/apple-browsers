@@ -17,11 +17,84 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import UIKit
 import WebKit
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
+
+final class FloatingUIFeatureFlagTests: XCTestCase {
+
+    func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+        let isIOS26Enabled = featureFlagger.isFloatingUIFeatureEnabled()
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        let isIOS27Enabled = featureFlagger.isFloatingUIFeatureEnabled()
+
+        if #available(iOS 27, *) {
+            XCTAssertFalse(isIOS26Enabled)
+            XCTAssertTrue(isIOS27Enabled)
+        } else if #available(iOS 26, *) {
+            XCTAssertTrue(isIOS26Enabled)
+            XCTAssertFalse(isIOS27Enabled)
+        } else {
+            XCTAssertFalse(isIOS26Enabled)
+            XCTAssertFalse(isIOS27Enabled)
+        }
+    }
+
+    func testWhenOnlyIOS26FlagIsEnabledThenFloatingUIIsEnabledOnlyOnIOS26() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenOnlyIOS27FlagIsEnabledThenFloatingUIIsEnabledOnIOS27AndLater() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS27])
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 28))
+    }
+
+    func testWhenBothFlagsAreEnabledThenFloatingUIIsEnabledOnBothSupportedVersions() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenBothFlagsAreDisabledThenFloatingUIIsDisabledOnBothSupportedVersions() {
+        let featureFlagger = MockFeatureFlagger()
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenOSIsOutsideTheRolloutThenFloatingUIIsDisabledEvenWithBothFlagsEnabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+
+        for version in [18, 25] {
+            XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: version))
+        }
+    }
+
+    func testWhenFlagsChangeThenOnlyTheirRespectiveOSIsAffected() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS26]
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 28))
+    }
+}
 
 final class FloatingUIManagerTests: XCTestCase {
 
@@ -80,7 +153,7 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertFalse(manager.isFloatingUIEnabled)
     }
 
-    func testWhenAugustFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
+    func testWhenFloatingUIFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
         let manager = FloatingUIManager(
             isFloatingUIFeatureEnabled: true,
             isPadProvider: { false },
@@ -93,7 +166,7 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertTrue(manager.isFloatingTabSwitcherEnabled)
     }
 
-    func testWhenAugustFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
+    func testWhenFloatingUIFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
             isFloatingUIFeatureEnabled: false,
             isPadProvider: { false },
@@ -103,7 +176,7 @@ final class FloatingUIManagerTests: XCTestCase {
         XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
     }
 
-    func testWhenAugustFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
+    func testWhenFloatingUIFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
         let manager = FloatingUIManager(
             isFloatingUIFeatureEnabled: true,
             isPadProvider: { true },

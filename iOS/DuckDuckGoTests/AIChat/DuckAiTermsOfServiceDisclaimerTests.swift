@@ -19,6 +19,7 @@
 
 import XCTest
 @testable import DuckDuckGo
+import AIChat
 
 final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
 

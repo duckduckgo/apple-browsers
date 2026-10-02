@@ -116,6 +116,11 @@ extension NewTabPageActionsManager {
             suggestionContainer: suggestionContainer,
             searchPreferences: NSApp.delegateTyped.searchPreferences
         )
+        // Acceptance is global, so fire windows read and write the regular store too.
+        let termsOfServiceStore = DuckAiTermsOfServiceStore(
+            keyValueStore: UserDefaults.standard,
+            nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler
+        )
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
@@ -125,7 +130,9 @@ extension NewTabPageActionsManager {
                 privacyConfig: contentBlocking.privacyConfigurationManager,
                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            ))
+            )),
+            termsOfServiceStore: termsOfServiceStore,
+            isNativeTermsOfServiceEnabled: { featureFlagger.isFeatureOn(.duckAINativeTermsOfService) }
         )
         let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
@@ -139,6 +146,7 @@ extension NewTabPageActionsManager {
                 NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
+            termsOfServiceStore: termsOfServiceStore,
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },

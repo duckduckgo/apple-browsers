@@ -33,6 +33,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let tabsPreferences: TabsPreferences
     private let historyCoordinator: HistoryCoordinating
     private let aiChatDeleter: AIChatDeleting
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let isNativeTermsOfServiceEnabled: () -> Bool
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
     private let firePixel: (PixelKit.Event) -> Void
@@ -52,6 +54,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
          tabsPreferences: TabsPreferences,
          historyCoordinator: HistoryCoordinating,
          aiChatDeleter: AIChatDeleting,
+         termsOfServiceStore: DuckAiTermsOfServiceStore,
+         isNativeTermsOfServiceEnabled: @escaping () -> Bool,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
          isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
@@ -62,6 +66,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         self.tabsPreferences = tabsPreferences
         self.historyCoordinator = historyCoordinator
         self.aiChatDeleter = aiChatDeleter
+        self.termsOfServiceStore = termsOfServiceStore
+        self.isNativeTermsOfServiceEnabled = isNativeTermsOfServiceEnabled
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
         self.firePixel = firePixel
@@ -72,7 +78,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
         // Check for the keyboard shortcut to open the chat
         if isShiftPressed() {
-            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
             return
         }
 
@@ -147,8 +153,14 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     toolChoice: [String]?,
                     reasoningEffort: String?,
                     pageContexts: [NewTabPage.NewTabPageDataModel.OmnibarPageContext]?,
-                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?) {
+                    files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool) {
         firePixel(NewTabPagePixel.promptSubmitted)
+
+        let termsAccepted = aiTermsAccepted && isNativeTermsOfServiceEnabled()
+        if termsAccepted {
+            termsOfServiceStore.recordAcceptedInNativeInput()
+        }
 
         if let images, !images.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -204,7 +216,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                                                           pageContext: pageContextPayload,
                                                           mode: mode,
                                                           reasoningEffort: nativeReasoningEffort)
-        promptHandler.setData(nativePrompt)
+        // Duck.ai shows its own terms card for a prompt without the key, so it's never sent as `false`.
+        promptHandler.setData(nativePrompt.withTermsAccepted(termsAccepted ? true : nil))
     }
 
     /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
@@ -281,6 +294,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
         customizeResponsesModal = modal
         modal.present(over: window)
+    }
+
+    @MainActor
+    func openPrivacyTerms() {
+        windowControllersManager.show(url: .duckAiPrivacyTerms, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor

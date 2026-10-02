@@ -1,5 +1,5 @@
 {
-  "originHash" : "91e2df5657486c4a92241138150ee8ec19ec42cb445cc017768037bce0d007dd",
+  "originHash" : "befb8657f118321858425a0583422db1519ebfffa81335c53922126c5daa41d6",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "b202c8865fccafc55f70017ca1c4e36ff0c55e1c",
-        "version" : "17.15.0"
+        "branch" : "pr-releases/alavrenchuk/ntp-tos",
+        "revision" : "a46d4a5c700e76bc73bd2d6c5bc41cfab57dc5ba"
       }
     },
     {

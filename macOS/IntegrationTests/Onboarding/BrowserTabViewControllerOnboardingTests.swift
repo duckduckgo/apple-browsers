@@ -96,7 +96,6 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var showSearchAndDuckAIToggle: Bool = true
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
-    var hasAcceptedTermsAndConditions: Bool = false
 
     let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
@@ -119,7 +118,6 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggle = true
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
-        hasAcceptedTermsAndConditions = false
     }
 }
 

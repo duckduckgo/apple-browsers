@@ -99,6 +99,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let notificationCenter: NotificationCenter
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
@@ -117,6 +119,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: UserDefaults.standard),
+         notificationCenter: NotificationCenter = .default,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -128,6 +132,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
+        self.termsOfServiceStore = termsOfServiceStore
+        self.notificationCenter = notificationCenter
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -531,6 +537,20 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }
             .prepend(isSearchSuggestionDeletionEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var requiresAiTermsAcceptance: Bool {
+        featureFlagger.isFeatureOn(.duckAINativeTermsOfService) && !termsOfServiceStore.hasAccepted
+    }
+
+    /// The store posts on every acceptance, so open NTPs drop the disclaimer wherever the user accepted.
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .merge(with: notificationCenter.publisher(for: .aiChatTermsOfServiceDidChange).map { _ in () })
+            .compactMap { [weak self] in self?.requiresAiTermsAcceptance }
+            .prepend(requiresAiTermsAcceptance)
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

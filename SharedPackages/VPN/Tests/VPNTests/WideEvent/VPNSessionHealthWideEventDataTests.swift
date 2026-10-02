@@ -315,7 +315,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         let newerProcess = makeEvent()
             .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: 30), processIdentifier: 123, appVersion: appVersion)
 
-        XCTAssertEqual(olderProcess.event.jsonParameters()["feature.data.ext.event_duration_exceeds_process_lifetime"] as? Bool, false)
+        XCTAssertNil(olderProcess.event.jsonParameters()["feature.data.ext.event_duration_exceeds_process_lifetime"])
         XCTAssertEqual(newerProcess.event.jsonParameters()["feature.data.ext.event_duration_exceeds_process_lifetime"] as? Bool, true)
     }
 
@@ -346,7 +346,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         // Duration ends at the last observation (30s); the lifetime runs until recovery (50s).
         let ended = orphan.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processIdentifier: 123, appVersion: appVersion)
 
-        XCTAssertEqual(ended.event.eventDurationExceedsProcessLifetime, false)
+        XCTAssertNil(ended.event.eventDurationExceedsProcessLifetime)
     }
 
     func testWhenEventAlreadyEndedThenFinalizingRecordsDiagnosticsWithoutChangingEnd() {

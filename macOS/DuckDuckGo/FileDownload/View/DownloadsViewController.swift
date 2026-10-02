@@ -593,7 +593,7 @@ struct DownloadsErrorBannerView: View {
 
     var body: some View {
         HStack {
-            Image("Clear-Recolorable-16")
+            Image(.clearRecolorable16)
             Text(errorType.errorMessage)
                 .font(.body)
             Button(errorType.title) {

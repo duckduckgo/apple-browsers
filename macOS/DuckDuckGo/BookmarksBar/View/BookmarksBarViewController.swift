@@ -378,7 +378,7 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     private func setUpImportBookmarksButton() {
-        importBookmarksIcon.image = NSImage(named: "Import-16D")
+        importBookmarksIcon.image = NSImage(resource: .import16D)
         importBookmarksIcon.contentTintColor = NSColor(resource: .textPrimary)
         importBookmarksButton.isHidden = true
         importBookmarksButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius

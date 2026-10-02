@@ -2525,8 +2525,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         backgroundView.roundedCorners = [.bottomLeft, .bottomRight]
 
-        if let borderColor = NSColor(named: "AddressBarBorderColor"), !hostDrawsChrome {
-            backgroundView.borderColor = borderColor
+        if !hostDrawsChrome {
+            backgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             backgroundView.borderColor = .clear
         }
@@ -2569,7 +2569,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         // The two borders read as one crisp edge over an opaque fill, but split into a visible
         // double outline over a translucent one.
-        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(named: "AddressBarInnerBorderColor")
+        innerBorderView.borderColor = hostDrawsChrome ? .clear : NSColor(resource: .addressBarInnerBorder)
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = Self.innerBorderCornerRadius(
             for: barStyleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
@@ -2586,7 +2586,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.applyPanelCornerRadius(panelRadius)
         usageWarningTopConstraint?.constant = -usageWarningOverlap
         panelBottomEdgeStrokeView.cornerRadius = panelRadius
-        panelBottomEdgeStrokeView.strokeColor = NSColor(named: "AddressBarBorderColor")
+        panelBottomEdgeStrokeView.strokeColor = NSColor(resource: .addressBarBorder)
         // Re-asserted because `applyTheme` re-runs on appearance changes. Over host-drawn chrome
         // the host owns the outer silhouette, so a shadow round the card falls inside the bar.
         usageWarningShadowView.isHidden = !isUsageWarningVisible || hostDrawsChrome

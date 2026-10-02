@@ -372,8 +372,9 @@ final class AIChatUsageWarningCardView: NSView {
         applyInfoIcon()
         titleLabel.isHidden = true
         disclosureTextView.isHidden = false
-        disclosureTextView.textStorage?.setAttributedString(Self.attributedDisclosure())
-        disclosureTextView.setAccessibilityLabel("\(UserText.aiChatAttachmentPrivacyDisclosure) \(UserText.aiChatAttachmentPrivacyLearnMore)")
+        let disclosure = Self.attributedDisclosure()
+        disclosureTextView.textStorage?.setAttributedString(disclosure)
+        disclosureTextView.setAccessibilityLabel(disclosure.string)
 
         actionButton.isHidden = true
         actionButton.collapse()
@@ -504,15 +505,23 @@ final class AIChatUsageWarningCardView: NSView {
     private static func attributedDisclosure() -> NSAttributedString {
         var bodyAttributes = textAttributes(weight: .regular)
         bodyAttributes[.cursor] = NSCursor.arrow
-        let result = NSMutableAttributedString(string: UserText.aiChatAttachmentPrivacyDisclosure + " ",
-                                               attributes: bodyAttributes)
 
         var linkAttributes = bodyAttributes
         linkAttributes[.link] = URL.aiChatPrivacy
         // Set here, not left to `linkTextAttributes`: the body's arrow is in the text storage and wins.
         linkAttributes[.cursor] = NSCursor.pointingHand
-        result.append(NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore,
-                                         attributes: linkAttributes))
+
+        let format = UserText.aiChatAttachmentPrivacyDisclosureFormat
+        let link = NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore, attributes: linkAttributes)
+        let result = NSMutableAttributedString(string: format, attributes: bodyAttributes)
+
+        // Substituted rather than appended: where the link sits in the sentence is the translator's.
+        guard let placeholder = format.range(of: "%@") else {
+            result.append(NSAttributedString(string: " ", attributes: bodyAttributes))
+            result.append(link)
+            return result
+        }
+        result.replaceCharacters(in: NSRange(placeholder, in: format), with: link)
         return result
     }
 

@@ -251,22 +251,37 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func installExtension(from sourceURL: URL) async throws {
+        try await installExtension(from: sourceURL, storeIdentity: nil, replacing: nil)
+    }
+
+    @MainActor
+    public func installExtension(from sourceURL: URL,
+                                 storeIdentity: WebExtensionStoreIdentity?,
+                                 replacing oldIdentifier: String? = nil) async throws {
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
+
+        if let oldIdentifier {
+            guard let storeIdentity,
+                  let installed = installationStore.installedExtension(withUniqueIdentifier: oldIdentifier),
+                  installed.storeIdentity == storeIdentity else {
+                throw WebExtensionError.updateIdentityMismatch
+            }
+        }
 
         let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
         var embeddedType = metadata.type
-        if permissionController != nil, embeddedType != nil {
+
+        if embeddedType != nil, let permissionController {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
             let isBundled = EmbeddedWebExtensionRegistry.all.contains {
                 bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
             }
-            if !isBundled {
+            if isBundled {
+                permissionController.trustedInstallations.insert(identifier)
+            } else {
                 embeddedType = nil
             }
-        }
-        if embeddedType != nil {
-            permissionController?.trustedInstallations.insert(identifier)
         }
         defer { permissionController?.trustedInstallations.remove(identifier) }
 
@@ -279,6 +294,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
         do {
+            if let oldIdentifier {
+                try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
+            }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
@@ -287,7 +305,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 filename: loadResult.filename,
                 name: loadResult.displayName,
                 version: loadResult.version,
-                embeddedType: embeddedType
+                embeddedType: embeddedType,
+                storeIdentity: storeIdentity
             )
 
             installationStore.add(installedExtension)

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import Foundation
 import NetworkExtension
 
@@ -52,6 +53,23 @@ public extension NETunnelProviderSession {
         try sendProviderMessage(message.rawValue) { response in
             responseHandler(response.flatMap(T.init(rawValue:)))
         }
+    }
+
+    /// Waits for a response with a timeout, allowing cancellation even if the tunnel never replies.
+    internal func sendProviderMessage<T: RawRepresentable>(_ message: ExtensionMessage,
+                                                          timeout: TimeInterval) async throws -> T? where T.RawValue == Data {
+        // A stream (rather than a continuation) ends on cancellation, so the timeout can't hang on a missing reply.
+        let (stream, continuation) = AsyncStream.makeStream(of: Data?.self, bufferingPolicy: .bufferingNewest(1))
+        try sendProviderMessage(message.rawValue) { response in
+            continuation.yield(response)
+            continuation.finish()
+        }
+        defer { continuation.finish() }
+
+        let response: Data? = try await withTimeout(timeout) {
+            await stream.first { _ in true } ?? nil
+        }
+        return response.flatMap(T.init(rawValue:))
     }
 
     func sendProviderRequest(_ request: ExtensionRequest) async throws {

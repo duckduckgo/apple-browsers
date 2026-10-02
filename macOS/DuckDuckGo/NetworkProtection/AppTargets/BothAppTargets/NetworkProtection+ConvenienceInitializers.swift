@@ -24,6 +24,13 @@ import FoundationExtensions
 import Subscription
 import BrowserServicesKit
 import Networking
+import PrivacyDashboard
+
+extension ConnectivityIssueObserverThroughDistributedNotifications: VPNConnectivityIssuesProviding {
+    public func isExperiencingVPNConnectivityIssues() async -> Bool {
+        recentValue
+    }
+}
 
 extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {

@@ -1288,5 +1288,21 @@
                 "type": "number"
             }
         ]
+    },
+    "dbp_bundle_verification_failure": {
+        "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, or when a built-in bundle signing key has been revoked. The update is skipped and retried on the next check.",
+        "owners": ["noisysocks"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reason",
+                "description": "Why verification failed",
+                "type": "string",
+                "enum": ["key_revoked", "signature_missing", "signature_invalid", "rollback", "digest_mismatch"]
+            }
+        ]
     }
 }

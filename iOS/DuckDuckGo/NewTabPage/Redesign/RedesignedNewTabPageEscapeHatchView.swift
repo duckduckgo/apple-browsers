@@ -53,7 +53,6 @@ struct RedesignedEscapeHatchView: View {
                     swipeActionLabel: model.primarySwipeAction.label,
                     onSwipeCommit: model.performPrimarySwipeAction,
                     onTap: model.onCardTap,
-                    onFireTap: model.burnFromButton,
                     onShowAllTap: model.onTabSwitcherTap) {
                         menuContent
                     }

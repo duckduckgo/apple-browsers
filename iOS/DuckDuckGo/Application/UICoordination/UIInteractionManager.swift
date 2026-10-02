@@ -28,16 +28,27 @@ final class UIInteractionManager {
     private let autoClearService: AutoClearServiceProtocol
     private let launchActionHandler: LaunchActionHandling
     private let onboardingPresenter: OnboardingPresenting
+    private let waitsForSuccessfulAuthentication: Bool
+    private var pendingInteractions: Task<Void, Never>?
 
     init(authenticationService: AuthenticationServiceProtocol,
          autoClearService: AutoClearServiceProtocol,
          launchActionHandler: LaunchActionHandling,
-         onboardingPresenter: OnboardingPresenting
+         onboardingPresenter: OnboardingPresenting,
+         waitsForSuccessfulAuthentication: Bool = false
     ) {
         self.authenticationService = authenticationService
         self.autoClearService = autoClearService
         self.launchActionHandler = launchActionHandler
         self.onboardingPresenter = onboardingPresenter
+        self.waitsForSuccessfulAuthentication = waitsForSuccessfulAuthentication
+    }
+
+    @MainActor
+    func cancelPendingInteractions() {
+        guard waitsForSuccessfulAuthentication else { return }
+        pendingInteractions?.cancel()
+        pendingInteractions = nil
     }
 
     /// This method orchestrates the following operations:
@@ -49,19 +60,25 @@ final class UIInteractionManager {
     /// 5. Handles non-immediate launch actions (if any)
     /// 6. Signals when the entire app is ready for user interactions
     ///
+    @MainActor
+    @discardableResult
     func start(launchAction: LaunchAction,
                onWebViewReadyForInteractions: @escaping () -> Void,
-               onAppReadyForInteractions: @escaping () -> Void) {
-        Task { @MainActor in
+               onAppReadyForInteractions: @escaping () -> Void) -> Task<Void, Never> {
+        cancelPendingInteractions()
+        let task = Task { @MainActor in
+            guard !Task.isCancelled else { return }
             await withTaskGroup(of: Void.self) { group in
                 group.addTask {
-                    await self.authenticationService.authenticate()
+                    await self.authenticationService.authenticate(waitForSuccessfulAuthentication: self.waitsForSuccessfulAuthentication)
                 }
                 group.addTask {
                     await self.autoClearService.waitForDataCleared()
+                    guard !Task.isCancelled else { return }
 
                     // Present Onboarding Flow if needed
                     await self.onboardingPresenter.startOnboardingFlowIfNotSeenBefore(url: launchAction.url)
+                    guard !Task.isCancelled else { return }
 
                     // Handle URL, shortcut item, and user activities after data clearing, so UI is ready when auth is dismissed.
                     switch launchAction {
@@ -73,6 +90,7 @@ final class UIInteractionManager {
                     onWebViewReadyForInteractions()
                 }
                 await group.waitForAll()
+                guard !Task.isCancelled else { return }
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
                 if case .standardLaunch = launchAction {
                     self.launchActionHandler.handleLaunchAction(launchAction)
@@ -80,6 +98,8 @@ final class UIInteractionManager {
                 onAppReadyForInteractions()
             }
         }
+        pendingInteractions = task
+        return task
     }
 
 }

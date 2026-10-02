@@ -322,6 +322,61 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(strip.alpha, 0, accuracy: 0.001)
     }
 
+    func testWhenCompactLayoutIsDisabledThenAttachmentStripPreservesFixedWidthsAndSpacing() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 320, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+        sut.setPageContextChipState(.attached(title: "Current page", favicon: nil))
+        sut.setPageContextChipVisible(true)
+        sut.setSelectionContextChips([(id: "selection", title: "Selected text", favicon: nil)])
+        sut.addAttachment(makeFileAttachment(fileName: "A long document name.pdf"))
+        sut.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")))
+        sut.layoutIfNeeded()
+
+        let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
+        let scrollView = try XCTUnwrap(firstDescendant(of: UIScrollView.self, in: sut))
+        XCTAssertEqual(stack.spacing, 10)
+        XCTAssertTrue(scrollView.alwaysBounceHorizontal)
+        XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
+        XCTAssertGreaterThan(scrollView.contentSize.width, scrollView.bounds.width)
+
+        for chip in stack.arrangedSubviews.prefix(2) {
+            let icon = try XCTUnwrap(firstDescendant(of: UIImageView.self, in: chip))
+            let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: chip))
+            XCTAssertEqual(icon.bounds.size, CGSize(width: 28, height: 28))
+            XCTAssertEqual(remove.bounds.size, CGSize(width: 32, height: 32))
+            XCTAssertEqual(remove.backgroundColor, .clear)
+        }
+
+        let fileChip = stack.arrangedSubviews[2]
+        let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: fileChip))
+        let icon = try XCTUnwrap(fileChip.subviews.first?.subviews.compactMap { $0 as? UIImageView }.first(where: { !$0.isHidden }))
+        let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: fileChip))
+        XCTAssertEqual(label.lineBreakMode, .byTruncatingMiddle)
+        XCTAssertEqual(icon.bounds.size, CGSize(width: 28, height: 28))
+        XCTAssertEqual(remove.bounds.size, CGSize(width: 32, height: 32))
+        XCTAssertEqual(remove.backgroundColor, .clear)
+
+        sut.frame.size.width = 1024
+        sut.layoutIfNeeded()
+        XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
+    }
+
+    func testWhenCompactLayoutIsDisabledThenImageRemainsThumbnailBesideRemoveButton() throws {
+        let sut = UnifiedToggleInputAttachmentThumbnailView(
+            attachment: .image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")),
+            usesCompactLayout: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 82, height: 44)
+        sut.layoutIfNeeded()
+
+        let imageView = try XCTUnwrap(firstDescendant(of: UIImageView.self, in: sut))
+        let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut))
+        XCTAssertEqual(imageView.frame, CGRect(x: 10, y: 8, width: 28, height: 28))
+        XCTAssertEqual(imageView.layer.cornerRadius, 6)
+        XCTAssertEqual(remove.frame, CGRect(x: 40, y: 6, width: 32, height: 32))
+        XCTAssertEqual(remove.backgroundColor, .clear)
+        XCTAssertFalse(remove.point(inside: CGPoint(x: -1, y: 16), with: nil))
+    }
+
     func testChipWidthsRespectPerKindLimitsAndShrinkBeforeScrolling() {
         typealias Limits = UnifiedToggleInputAttachmentsStripView.ChipWidthLimits
         let page = Limits(maximumWidth: 240, minimumContentWidth: 88)
@@ -353,7 +408,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
     func testWhenOnlyPageContextIsVisibleThenChipDoesNotFillStrip() throws {
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 1024, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
-        let sut = UnifiedToggleInputAttachmentsStripView()
+        let sut = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
         container.addSubview(sut)
         let stripWidth = sut.widthAnchor.constraint(equalToConstant: 1024)
         NSLayoutConstraint.activate([
@@ -387,7 +442,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
     func testWhenFourReadableChipsCannotFitThenStripScrollsInsteadOfHidingFirstCharacter() throws {
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 360, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
-        let sut = UnifiedToggleInputAttachmentsStripView()
+        let sut = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
         container.addSubview(sut)
         NSLayoutConstraint.activate([
             sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -421,7 +476,9 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     }
 
     func testWhenImageChipWidthChangesThenImageFillsChipBehindRemoveButton() throws {
-        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")))
+        let sut = UnifiedToggleInputAttachmentThumbnailView(
+            attachment: .image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")),
+            usesCompactLayout: true)
         let imageView = try XCTUnwrap(firstDescendant(of: UIImageView.self, in: sut))
         let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut))
 
@@ -478,7 +535,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
             // Font factories read current traits; a controller override alone does not change those.
             var createdStrip: UnifiedToggleInputAttachmentsStripView?
             traits.performAsCurrent {
-                let strip = UnifiedToggleInputAttachmentsStripView()
+                let strip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
                 strip.setPageContextChipState(.attached(title: "Wikipedia", favicon: nil))
                 strip.setPageContextChipVisible(true)
                 strip.addAttachment(makeFileAttachment(fileName: "Wide document.pdf"))

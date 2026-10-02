@@ -32,7 +32,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     private let isFloatingUIEnabled: Bool
-    private lazy var omniBarView = DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
+    private lazy var omniBarView: DefaultOmniBarView = {
+        let attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: dependencies.featureFlagger)
+        return DefaultOmniBarView.create(
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
+    }()
     private var isSuppressingKeyboardTransfer = false
 
     override var isExpandedPhone: Bool {

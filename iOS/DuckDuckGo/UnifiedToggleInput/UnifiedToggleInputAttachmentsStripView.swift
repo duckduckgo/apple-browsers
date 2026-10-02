@@ -24,6 +24,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
 
     enum Constants {
         static let spacing: CGFloat = 4
+        static let standardSpacing: CGFloat = 10
         static let horizontalPadding: CGFloat = 12
         static let topPadding: CGFloat = 8
         static let stripHeight: CGFloat = topPadding + UnifiedToggleInputAttachmentThumbnailView.Constants.chipHeight
@@ -40,31 +41,38 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     private(set) var hasVisiblePageContext = false
     private(set) var hasVisibleSelectionContext = false
 
-    private let scrollView: UIScrollView = {
+    private let usesCompactLayout: Bool
+
+    private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsHorizontalScrollIndicator = false
-        scrollView.alwaysBounceHorizontal = false
+        scrollView.alwaysBounceHorizontal = !usesCompactLayout
         scrollView.clipsToBounds = true
         return scrollView
     }()
 
-    private let stackView: UIStackView = {
+    private lazy var stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = Constants.spacing
+        stack.spacing = usesCompactLayout ? Constants.spacing : Constants.standardSpacing
         stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
 
-    private let pageContextChip = AIChatContextChipView(style: .attachmentStrip)
+    private var contextChipStyle: AIChatContextChipView.Style {
+        usesCompactLayout ? .attachmentStrip : .standalone
+    }
+
+    private lazy var pageContextChip = AIChatContextChipView(style: contextChipStyle)
 
     /// Page context keeps its own separate slot — selections augment the page rather than replace it.
     private var selectionContextChips: [(id: String, view: AIChatContextChipView)] = []
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(usesCompactLayout: Bool = false) {
+        self.usesCompactLayout = usesCompactLayout
+        super.init(frame: .zero)
         setupUI()
     }
 
@@ -113,6 +121,10 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     override func layoutSubviews() {
+        guard usesCompactLayout else {
+            super.layoutSubviews()
+            return
+        }
         let chips = stackView.arrangedSubviews
         let limits = chips.map { view -> ChipWidthLimits in
             if let chip = view as? AIChatContextChipView {
@@ -231,7 +243,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
                 existing.view.configure(state: .attached(title: item.title, favicon: item.favicon))
                 reconciled.append(existing)
             } else {
-                let view = AIChatContextChipView(style: .attachmentStrip)
+                let view = AIChatContextChipView(style: contextChipStyle)
                 view.configure(state: .attached(title: item.title, favicon: item.favicon))
                 view.onRemove = { [weak self] in
                     self?.onSelectionContextRemove?(item.id)
@@ -281,7 +293,7 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
     }
 
     private func makeThumbnail(for attachment: UnifiedToggleInputAttachment) -> UnifiedToggleInputAttachmentThumbnailView {
-        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment)
+        let thumbnail = UnifiedToggleInputAttachmentThumbnailView(attachment: attachment, usesCompactLayout: usesCompactLayout)
         thumbnail.onRemove = { [weak self] id in
             self?.removeAttachment(id: id, isUserInitiated: true)
         }

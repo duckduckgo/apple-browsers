@@ -18,7 +18,6 @@
 
 #if os(iOS)
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import UIKit
 
 // MARK: - View
@@ -37,8 +36,6 @@ public final class AIChatQuickActionChipView: UIView {
         static let iconLabelSpacing: CGFloat = 6
         static let borderWidth: CGFloat = 1
         static let highlightAlpha: CGFloat = 0.1
-        static let addAccessorySize: CGFloat = 16
-        static let addAccessorySpacing: CGFloat = 8
 
         // Glass appearance, per the contextual floating-input design.
         static let glassFontSize: CGFloat = 17
@@ -74,8 +71,6 @@ public final class AIChatQuickActionChipView: UIView {
     private var iconLeadingConstraint: NSLayoutConstraint?
     private var iconLabelSpacingConstraint: NSLayoutConstraint?
     private var labelTrailingConstraint: NSLayoutConstraint?
-    private var addAccessoryTrailingConstraint: NSLayoutConstraint?
-    private var showsAddAccessory = false
     private var glassBackgroundView: UIVisualEffectView?
     /// Tint the live glass effect was built for, so an unchanged appearance skips the rebuild.
     private var appliedGlassTintAlpha: CGFloat?
@@ -97,20 +92,6 @@ public final class AIChatQuickActionChipView: UIView {
         label.textColor = UIColor(designSystemColor: .textPrimary)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
-    }()
-
-    private lazy var addAccessoryView: UIImageView = {
-        let view = UIImageView(image: DesignSystemImages.Glyphs.Size16.addCircle.withRenderingMode(.alwaysTemplate))
-        view.tintColor = UIColor(designSystemColor: .iconsTertiary)
-        view.contentMode = .scaleAspectFit
-        view.isUserInteractionEnabled = false
-        view.isHidden = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            view.widthAnchor.constraint(equalToConstant: Constants.addAccessorySize),
-            view.heightAnchor.constraint(equalToConstant: Constants.addAccessorySize),
-        ])
-        return view
     }()
 
     private lazy var highlightOverlay: UIView = {
@@ -136,15 +117,10 @@ public final class AIChatQuickActionChipView: UIView {
 
     // MARK: - Configuration
 
-    public func configure<Action: AIChatQuickActionType>(with action: Action,
-                                                         preservesIconColors: Bool = false,
-                                                         showsAddAccessory: Bool = false) {
+    public func configure<Action: AIChatQuickActionType>(with action: Action) {
         label.text = action.title
-        iconView.image = preservesIconColors ? action.icon : action.icon?.withRenderingMode(.alwaysTemplate)
+        iconView.image = action.icon?.withRenderingMode(.alwaysTemplate)
         iconView.isHidden = action.icon == nil
-        self.showsAddAccessory = showsAddAccessory
-        addAccessoryView.isHidden = !showsAddAccessory
-        updateTrailingPadding(backgroundStyle == .glass ? Constants.glassTrailingPadding : Constants.trailingPadding)
         accessibilityLabel = action.title
         accessibilityIdentifier = action.id
     }
@@ -195,13 +171,7 @@ private extension AIChatQuickActionChipView {
     func applyHorizontalPadding(leading: CGFloat, iconToLabel: CGFloat, trailing: CGFloat) {
         iconLeadingConstraint?.constant = leading
         iconLabelSpacingConstraint?.constant = iconToLabel
-        updateTrailingPadding(trailing)
-    }
-
-    func updateTrailingPadding(_ trailing: CGFloat) {
-        addAccessoryTrailingConstraint?.constant = -trailing
-        let accessorySpace = showsAddAccessory ? Constants.addAccessorySize + Constants.addAccessorySpacing : 0
-        labelTrailingConstraint?.constant = -trailing - accessorySpace
+        labelTrailingConstraint?.constant = -trailing
     }
 
     func applyCornerRadius(_ radius: CGFloat) {
@@ -306,7 +276,6 @@ private extension AIChatQuickActionChipView {
         contentConstraints.forEach { $0.isActive = false }
         host.addSubview(iconView)
         host.addSubview(label)
-        host.addSubview(addAccessoryView)
         // The overlay tints the content, so it has to stay above whatever was just re-parented.
         bringSubviewToFront(highlightOverlay)
 
@@ -316,13 +285,9 @@ private extension AIChatQuickActionChipView {
                                                              constant: iconLabelSpacingConstraint?.constant ?? Constants.iconLabelSpacing)
         let labelTrailing = label.trailingAnchor.constraint(equalTo: host.trailingAnchor,
                                                            constant: labelTrailingConstraint?.constant ?? -Constants.trailingPadding)
-        let accessoryTrailingPadding = addAccessoryTrailingConstraint?.constant ?? -Constants.trailingPadding
-        let addAccessoryTrailing = addAccessoryView.trailingAnchor.constraint(equalTo: host.trailingAnchor,
-                                                                              constant: accessoryTrailingPadding)
         iconLeadingConstraint = iconLeading
         iconLabelSpacingConstraint = iconLabelSpacing
         labelTrailingConstraint = labelTrailing
-        addAccessoryTrailingConstraint = addAccessoryTrailing
 
         contentConstraints = [
             iconLeading,
@@ -330,8 +295,6 @@ private extension AIChatQuickActionChipView {
             iconLabelSpacing,
             label.centerYAnchor.constraint(equalTo: host.centerYAnchor),
             labelTrailing,
-            addAccessoryTrailing,
-            addAccessoryView.centerYAnchor.constraint(equalTo: host.centerYAnchor),
         ]
         NSLayoutConstraint.activate(contentConstraints)
     }

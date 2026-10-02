@@ -200,7 +200,9 @@ public final class AIChatContextChipView: UIView {
         self.style = style
         super.init(frame: frame)
         setupUI()
-        updateLayout()
+        if style == .attachmentStrip {
+            updateLayout()
+        }
     }
 
     public required init?(coder: NSCoder) {
@@ -331,6 +333,9 @@ private extension AIChatContextChipView {
             isHidden = false
             titleLabel.text = offer
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
+            if style == .standalone {
+                titleLabel.font = UIFont.daxSubheadSemibold()
+            }
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
@@ -366,6 +371,9 @@ private extension AIChatContextChipView {
             isHidden = false
             titleLabel.text = title
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.AttachedTitle"
+            if style == .standalone {
+                titleLabel.font = UIFont.daxSubheadSemibold()
+            }
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
@@ -528,18 +536,26 @@ private extension AIChatContextChipView {
         view.layer.borderWidth = 0
         view.translatesAutoresizingMaskIntoConstraints = false
         chipContentView.addSubview(view)
-        let leading = view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor)
-        let trailing = view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor)
-        leading.priority = .defaultHigh
-        trailing.priority = .defaultHigh
-        NSLayoutConstraint.activate([
-            leading,
-            trailing,
-            view.centerXAnchor.constraint(equalTo: chipContentView.centerXAnchor),
-            view.leadingAnchor.constraint(greaterThanOrEqualTo: chipContentView.leadingAnchor),
-            view.trailingAnchor.constraint(lessThanOrEqualTo: chipContentView.trailingAnchor),
-            view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
-        ])
+        if style == .attachmentStrip {
+            let leading = view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor)
+            let trailing = view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor)
+            leading.priority = .defaultHigh
+            trailing.priority = .defaultHigh
+            NSLayoutConstraint.activate([
+                leading,
+                trailing,
+                view.centerXAnchor.constraint(equalTo: chipContentView.centerXAnchor),
+                view.leadingAnchor.constraint(greaterThanOrEqualTo: chipContentView.leadingAnchor),
+                view.trailingAnchor.constraint(lessThanOrEqualTo: chipContentView.trailingAnchor),
+                view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor),
+                view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
+            ])
+        }
         loadingView = view
     }
 

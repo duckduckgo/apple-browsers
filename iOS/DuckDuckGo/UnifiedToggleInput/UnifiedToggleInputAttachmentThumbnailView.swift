@@ -29,6 +29,9 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         static let imageChipWidth: CGFloat = 82
         static let fileChipWidth: CGFloat = 196
         static let chipCornerRadius: CGFloat = chipHeight / 2
+        static let standardIconSize: CGFloat = 28
+        static let standardThumbnailCornerRadius: CGFloat = 6
+        static let standardRemoveButtonSize: CGFloat = 32
         static let faviconCornerRadius: CGFloat = 4
         static let faviconSize: CGFloat = 20
         static let iconFrameSize: CGFloat = 24
@@ -46,6 +49,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
     private let attachment: UnifiedToggleInputAttachment
+    private let usesCompactLayout: Bool
     private var widthConstraint: NSLayoutConstraint!
     private var iconLeadingConstraint: NSLayoutConstraint!
     private var titleLeadingConstraint: NSLayoutConstraint!
@@ -53,11 +57,19 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     private var removeTrailingConstraint: NSLayoutConstraint!
     private let iconLayoutGuide = UILayoutGuide()
 
+    private var iconFrameSize: CGFloat {
+        usesCompactLayout ? Constants.iconFrameSize : Constants.standardIconSize
+    }
+
+    private var removeButtonSize: CGFloat {
+        usesCompactLayout ? Constants.removeButtonSize : Constants.standardRemoveButtonSize
+    }
+
     private var iconSize: CGFloat {
-        if case .tab = attachment {
+        if usesCompactLayout, case .tab = attachment {
             return Constants.faviconSize
         }
-        return Constants.iconFrameSize
+        return iconFrameSize
     }
 
     var minimumContentWidth: CGFloat {
@@ -82,10 +94,11 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         return view
     }()
 
-    private let imageView: UIImageView = {
+    private lazy var imageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
+        iv.layer.cornerRadius = usesCompactLayout ? 0 : Constants.standardThumbnailCornerRadius
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
@@ -98,27 +111,28 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
         return imageView
     }()
 
-    private let fileNameLabel: UILabel = {
+    private lazy var fileNameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.daxSubheadSemibold()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.lineBreakMode = .byTruncatingTail
+        label.lineBreakMode = usesCompactLayout ? .byTruncatingTail : .byTruncatingMiddle
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
     private lazy var removeButton: UIButton = {
-        let button = AttachmentRemoveButton(type: .system)
+        let button = usesCompactLayout ? AttachmentRemoveButton(type: .system) : UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textSecondary)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
-        button.layer.cornerRadius = Constants.removeButtonSize / 2
+        button.layer.cornerRadius = usesCompactLayout ? removeButtonSize / 2 : 0
         return button
     }()
 
-    init(attachment: UnifiedToggleInputAttachment) {
+    init(attachment: UnifiedToggleInputAttachment, usesCompactLayout: Bool = false) {
+        self.usesCompactLayout = usesCompactLayout
         self.attachment = attachment
         self.attachmentId = attachment.id
         super.init(frame: .zero)
@@ -137,6 +151,7 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     }
 
     func setWidth(_ width: CGFloat) {
+        guard usesCompactLayout else { return }
         widthConstraint.constant = width
         let paddingExpansion = Constants.horizontalPadding - Constants.compactHorizontalPadding
         let leadingSpacingExpansion = Constants.iconTextSpacing - Constants.compactContentSpacing
@@ -195,12 +210,29 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         iconLeadingConstraint = iconLayoutGuide.leadingAnchor.constraint(equalTo: chipView.leadingAnchor, constant: Constants.horizontalPadding)
         titleLeadingConstraint = fileNameLabel.leadingAnchor.constraint(equalTo: iconLayoutGuide.trailingAnchor, constant: Constants.iconTextSpacing)
         titleTrailingConstraint = fileNameLabel.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -Constants.textRemoveSpacing)
-        removeTrailingConstraint = removeButton.trailingAnchor.constraint(equalTo: chipView.trailingAnchor, constant: -Constants.removeButtonTrailing)
+        let removeTrailing = usesCompactLayout ? Constants.removeButtonTrailing : Constants.horizontalPadding
+        removeTrailingConstraint = removeButton.trailingAnchor.constraint(equalTo: chipView.trailingAnchor, constant: -removeTrailing)
 
-        if !attachment.isImage {
+        if !usesCompactLayout || !attachment.isImage {
             NSLayoutConstraint.activate([titleLeadingConstraint, titleTrailingConstraint])
         } else {
             fileNameLabel.leadingAnchor.constraint(equalTo: chipView.leadingAnchor).isActive = true
+        }
+
+        if usesCompactLayout {
+            NSLayoutConstraint.activate([
+                imageView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor),
+                imageView.trailingAnchor.constraint(equalTo: chipView.trailingAnchor),
+                imageView.topAnchor.constraint(equalTo: chipView.topAnchor),
+                imageView.bottomAnchor.constraint(equalTo: chipView.bottomAnchor),
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                imageView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor, constant: Constants.horizontalPadding),
+                imageView.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
+                imageView.widthAnchor.constraint(equalToConstant: Constants.standardIconSize),
+                imageView.heightAnchor.constraint(equalToConstant: Constants.standardIconSize),
+            ])
         }
 
         NSLayoutConstraint.activate([
@@ -209,15 +241,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             chipView.trailingAnchor.constraint(equalTo: trailingAnchor),
             chipView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            imageView.leadingAnchor.constraint(equalTo: chipView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: chipView.trailingAnchor),
-            imageView.topAnchor.constraint(equalTo: chipView.topAnchor),
-            imageView.bottomAnchor.constraint(equalTo: chipView.bottomAnchor),
-
             iconLeadingConstraint,
             iconLayoutGuide.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
-            iconLayoutGuide.widthAnchor.constraint(equalToConstant: Constants.iconFrameSize),
-            iconLayoutGuide.heightAnchor.constraint(equalToConstant: Constants.iconFrameSize),
+            iconLayoutGuide.widthAnchor.constraint(equalToConstant: iconFrameSize),
+            iconLayoutGuide.heightAnchor.constraint(equalToConstant: iconFrameSize),
             fileIconView.centerXAnchor.constraint(equalTo: iconLayoutGuide.centerXAnchor),
             fileIconView.centerYAnchor.constraint(equalTo: iconLayoutGuide.centerYAnchor),
             fileIconView.widthAnchor.constraint(equalToConstant: iconSize),
@@ -225,8 +252,8 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
 
             fileNameLabel.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
 
-            removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
-            removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
+            removeButton.widthAnchor.constraint(equalToConstant: removeButtonSize),
+            removeButton.heightAnchor.constraint(equalToConstant: removeButtonSize),
             removeTrailingConstraint,
             removeButton.centerYAnchor.constraint(equalTo: chipView.centerYAnchor),
 
@@ -256,10 +283,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     func configureTab(title: String, favicon: UIImage?) {
         imageView.image = nil
         imageView.isHidden = true
-        fileIconView.image = favicon?.withRenderingMode(.alwaysOriginal)
-            ?? DesignSystemImages.Glyphs.Size16.globe.withRenderingMode(.alwaysTemplate)
+        let fallbackIcon = usesCompactLayout ? DesignSystemImages.Glyphs.Size16.globe : DesignSystemImages.Glyphs.Size24.globe
+        fileIconView.image = favicon?.withRenderingMode(.alwaysOriginal) ?? fallbackIcon.withRenderingMode(.alwaysTemplate)
         fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
-        fileIconView.layer.cornerRadius = Constants.faviconCornerRadius
+        fileIconView.layer.cornerRadius = usesCompactLayout ? Constants.faviconCornerRadius : Constants.standardThumbnailCornerRadius
         fileIconView.clipsToBounds = true
         fileNameLabel.text = title
         fileIconView.isHidden = false
@@ -285,7 +312,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.layer.borderColor = borderColor.cgColor
         fileNameLabel.textColor = UIColor(designSystemColor: .textPrimary)
         removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
-        removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+        removeButton.backgroundColor = usesCompactLayout ? UIColor(designSystemColor: .controlsRaisedFillPrimary) : .clear
     }
 
     @objc func removeTapped() {

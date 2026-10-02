@@ -46,10 +46,7 @@ final class NewTabPageSearchInputModel: ObservableObject {
         notificationCenter.publisher(for: .aiChatSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                self.settings = self.readSettings()
-                self.textEntryMode = self.settings.defaultTextEntryMode.displayed(
-                    isAIChatSearchInputEnabled: self.settings.isModeToggleShown)
+                self?.refreshSettings()
             }
             .store(in: &cancellables)
 
@@ -60,5 +57,10 @@ final class NewTabPageSearchInputModel: ObservableObject {
                 self.settings.isVoiceSearchEnabled = self.readSettings().isVoiceSearchEnabled
             }
             .store(in: &cancellables)
+    }
+
+    func refreshSettings() {
+        settings = readSettings()
+        textEntryMode = settings.defaultTextEntryMode.displayed(isAIChatSearchInputEnabled: settings.isModeToggleShown)
     }
 }

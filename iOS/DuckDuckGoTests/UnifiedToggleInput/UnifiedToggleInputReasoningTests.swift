@@ -82,7 +82,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         mockPreferences.selectedReasoningMode = .extendedReasoning
         sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(mockDelegate.submittedReasoningEffort, .medium)
     }
@@ -296,7 +296,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         mockPreferences.selectedModelId = "gpt-oss"
         sut.modelStore.models = [makeReasoningModel(id: "gpt-oss", supportedReasoningEffort: [.low])]
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(mockDelegate.submittedReasoningEffort)
     }
@@ -305,7 +305,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         sut.modelStore.models = [makeReasoningModel(id: "gpt-oss", supportedReasoningEffort: [.low, .medium])]
         sut.updateSelectedModel("gpt-oss")
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(sut.viewController.selectedReasoningMode, .reasoning)
         XCTAssertEqual(mockDelegate.submittedReasoningEffort, .low)
@@ -316,7 +316,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         mockPreferences.selectedReasoningMode = .reasoning
         sut.modelStore.models = [makeReasoningModel(id: "gpt-oss", supportedReasoningEffort: [.low])]
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(mockDelegate.submittedReasoningEffort, .low)
     }
@@ -326,10 +326,10 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         mockPreferences.selectedReasoningMode = .reasoning
         sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
         mockDelegate.submittedReasoningEffort = nil
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "second", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "second", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(mockDelegate.submittedReasoningEffort, .low)
         XCTAssertNil(mockDelegate.submittedModelId)
@@ -362,11 +362,11 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         mockPreferences.selectedReasoningMode = .reasoning
         sut.modelStore.models = [makeReasoningModel(id: "gpt-5.2", supportedReasoningEffort: [.none, .low, .medium])]
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
         sut.updateSelectedReasoningMode(.fast)
         mockDelegate.submittedReasoningEffort = nil
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "second", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "second", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(mockDelegate.submittedReasoningEffort, AIChatReasoningEffort.none)
     }
@@ -413,7 +413,7 @@ final class UnifiedToggleInputReasoningTests: XCTestCase {
         ]
         sut.updateSelectedModel("gpt-5.2")
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello AI", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(mockDelegate.submittedReasoningEffort)
         XCTAssertNil(sut.persistedReasoningEffort)
@@ -573,7 +573,7 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
     var submittedImages: [AIChatNativePrompt.NativePromptImage]?
     var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedReasoningEffort = reasoningEffort

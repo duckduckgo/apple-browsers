@@ -49,6 +49,7 @@ public extension DesignSystemImages {
             public static var car: DesignSystemImage { .init(resource: .car12) }
             public static var chat: DesignSystemImage { .init(resource: .chat12) }
             public static var check: DesignSystemImage { .init(resource: .check12) }
+            public static var chevronUp: DesignSystemImage { .init(resource: .chevronUp12) }
             public static var chip: DesignSystemImage { .init(resource: .chip12) }
             public static var close: DesignSystemImage { .init(resource: .close12) }
             public static var closeSmall: DesignSystemImage { .init(resource: .closeSmall12) }

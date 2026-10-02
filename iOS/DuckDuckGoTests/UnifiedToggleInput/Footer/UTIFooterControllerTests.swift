@@ -1273,6 +1273,17 @@ final class UTIFooterControllerTests: XCTestCase {
                        .upsellTapped(DuckAiUsageWarningExposure(kind: .limitReached, window: .weekly)))
     }
 
+    func test_performPrimaryAction_reportsTheWeeklyLimitCTAWhenTheDailyLimitOffersTheHandOff() {
+        limitsProvider.limits = dailyReachedWithWeeklyHandOff()
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(measurementFiring.events.last,
+                       .weeklyLimitTapped(DuckAiUsageWarningExposure(kind: .limitReached, window: .daily)))
+    }
+
     func test_recordPromptSubmitted_reportsAgainstTheWarningTheUserSaw() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()

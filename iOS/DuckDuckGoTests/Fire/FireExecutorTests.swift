@@ -84,8 +84,11 @@ final class FireExecutorTests: XCTestCase {
         var lastWebsiteDataStore: WKWebsiteDataStore?
         var lastIsFireMode: Bool?
 
+        var onCleanAIChatHistory: (() -> Void)?
+
         func cleanAIChatHistory() async -> Result<Void, Error> {
             cleanAIChatHistoryCallCount += 1
+            onCleanAIChatHistory?()
             return cleanAIChatHistoryResult
         }
         
@@ -190,6 +193,7 @@ final class FireExecutorTests: XCTestCase {
         syncService: DDGSyncing? = nil,
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil,
+        dataStoreWarmUp: @escaping DataStoreWarmupWorker.WarmUp = { _, _ in true },
         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
     ) -> FireExecutor {
         let executor = FireExecutor(
@@ -216,6 +220,7 @@ final class FireExecutorTests: XCTestCase {
             sitePermissionsStore: sitePermissionsStore,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
             wideEvent: wideEventMock,
+            dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
@@ -304,6 +309,75 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
 
         XCTAssertFalse(didClearSnapshots)
+    }
+
+    // MARK: - Data store warm-up
+
+    func testWhenOnlyAIChatsAreBurnedThenTheNormalStoreIsWarmedBeforeChatsAreCleared() async {
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(steps.first, "warm up fireMode=false")
+        XCTAssertEqual(steps.filter { $0 == "clear chats" }.count, 1)
+    }
+
+    func testWhenDataAndAIChatsAreBurnedThenTheNormalStoreIsWarmedOnce() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: [.data, .aiChats]), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    func testWhenOnlyFireModeAIChatsAreBurnedThenTheFireModeStoreIsWarmedBeforeChatsAreCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(steps, ["warm up fireMode=true", "clear chats"])
+    }
+
+    func testWhenTheWarmUpTimedOutThenTheNextBurnWarmsUpAgain() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return false
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 2)
+    }
+
+    func testWhenTheWarmUpCompletedThenTheNextBurnDoesNotWarmUpAgain() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 1)
     }
 
     func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {

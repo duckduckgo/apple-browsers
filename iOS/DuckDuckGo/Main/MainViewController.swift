@@ -7919,11 +7919,21 @@ extension MainViewController {
             } else if self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
                 if request.options.contains(.tabs) && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                     // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
-                    let showKeyboardAfterFireButton = DispatchWorkItem {
+                    // Tab changes, backgrounding and user dismissals invalidate the same keyboard request.
+                    let requestID = self.appOpenKeyboardRequestID
+                    let showKeyboardAfterFireButton = DispatchWorkItem { [weak self] in
+                        guard let self,
+                              self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                              self.appOpenKeyboardRequestID == requestID,
+                              self.isAppOpenKeyboardWindowVisible,
+                              self.isNewTabPageVisible,
+                              self.tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
                         let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
                             onDuckAITab: self.currentTab?.isAITab == true,
-                            stillOnboarding: isKeyboardHeldForOnboarding)
-                        guard showsKeyboard, !self.isNewTabPageKeyboardBlockedByDialog else { return }
+                            stillOnboarding: isKeyboardHeldForOnboarding || self.isNewTabPageKeyboardHeldForOnboarding)
+                        guard showsKeyboard,
+                              !self.isNewTabPageKeyboardBlockedByDialog,
+                              !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
                         self.enterSearch()
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)

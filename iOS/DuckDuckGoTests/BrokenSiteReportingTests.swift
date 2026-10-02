@@ -76,36 +76,37 @@ final class BrokenSiteReportingTests: XCTestCase {
     }
 
     func testBrokenSiteReportAppFeatureFlagsIncludesOnlyEnabledAllowlistedFlags() {
-        let scenarios: [(enabled: [FeatureFlag], expected: String)] = [
-            ([], ""),
-            ([.floatingUIiOS26], "floatingUIiOS26"),
-            ([.floatingUIiOS27], "floatingUIiOS27"),
-            ([.floatingUIiOS27, .floatingUIiOS26], "floatingUIiOS26,floatingUIiOS27"),
-            ([.newTabPageRedesign], ""),
-            ([.floatingUIiOS26, .newTabPageRedesign], "floatingUIiOS26")
+        let scenarios: [(enabled: [FeatureFlag], expected: [String: String])] = [
+            ([], [:]),
+            ([.floatingUIiOS26], ["appFeatureFlags_floatingUIiOS26": "true"]),
+            ([.floatingUIiOS27], ["appFeatureFlags_floatingUIiOS27": "true"]),
+            ([.floatingUIiOS27, .floatingUIiOS26], ["appFeatureFlags_floatingUIiOS26": "true", "appFeatureFlags_floatingUIiOS27": "true"]),
+            ([.newTabPageRedesign], [:]),
+            ([.floatingUIiOS26, .newTabPageRedesign], ["appFeatureFlags_floatingUIiOS26": "true"])
         ]
 
         for scenario in scenarios {
             let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: scenario.enabled)
             let parameters = BrokenSiteReportAppFeatureFlags.adding(to: ["siteUrl": "https://example.com"], featureFlagger: featureFlagger)
 
-            XCTAssertEqual(parameters["appFeatureFlags"], scenario.expected)
-            XCTAssertEqual(parameters["siteUrl"], "https://example.com")
+            var expectedParameters = scenario.expected
+            expectedParameters["siteUrl"] = "https://example.com"
+            XCTAssertEqual(parameters, expectedParameters)
         }
     }
 
     func testBrokenSiteReportAppFeatureFlagsReflectsChangesBetweenReports() {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
         let firstReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
-        XCTAssertEqual(firstReport["appFeatureFlags"], "floatingUIiOS26")
+        XCTAssertEqual(firstReport, ["appFeatureFlags_floatingUIiOS26": "true"])
 
         featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
         let secondReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
-        XCTAssertEqual(secondReport["appFeatureFlags"], "floatingUIiOS27")
+        XCTAssertEqual(secondReport, ["appFeatureFlags_floatingUIiOS27": "true"])
 
         featureFlagger.enabledFeatureFlags = []
         let thirdReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
-        XCTAssertEqual(thirdReport["appFeatureFlags"], "")
+        XCTAssertTrue(thirdReport.isEmpty)
     }
 
     func testBrokenSiteReportIncludesCPMDiagnostics() {

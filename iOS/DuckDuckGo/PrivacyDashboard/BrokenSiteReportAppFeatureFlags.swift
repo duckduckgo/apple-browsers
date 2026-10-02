@@ -22,6 +22,7 @@ import FeatureFlags_iOS
 
 enum BrokenSiteReportAppFeatureFlags {
 
+    // Parameter changes need matching updates in broken_site_reporting.json5.
     private static let reportedFlags: [FeatureFlag] = [
         .floatingUIiOS26,
         .floatingUIiOS27
@@ -29,10 +30,9 @@ enum BrokenSiteReportAppFeatureFlags {
 
     static func adding(to parameters: [String: String], featureFlagger: FeatureFlagger) -> [String: String] {
         var parameters = parameters
-        parameters["appFeatureFlags"] = reportedFlags
-            .filter { featureFlagger.isFeatureOn($0) }
-            .map { $0.rawValue }
-            .joined(separator: ",")
+        for flag in reportedFlags where featureFlagger.isFeatureOn(flag) {
+            parameters["appFeatureFlags_\(flag.rawValue)"] = "true"
+        }
         return parameters
     }
 }

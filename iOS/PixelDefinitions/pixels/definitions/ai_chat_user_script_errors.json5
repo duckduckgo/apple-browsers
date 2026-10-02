@@ -18,6 +18,21 @@
             }
         ]
     },
+    "aichat_report_metric_unknown": {
+        "description": "Fired instead of m_aichat_report_metric_decode_error when the Duck.ai frontend sends a reportMetric payload whose metricName native code does not recognize",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "metricName",
+                "description": "The unrecognized metric name the frontend sent",
+                "type": "string",
+                "enum": ["userDidViewSettingsResubscribeButton", "userDidClickSettingsResubscribeButton"]
+            }
+        ]
+    },
     "m_aichat_response_state_decode_error": {
         "description": "Fired when the Duck.ai frontend sends a response state payload that native code cannot decode",
         "owners": ["aataraxiaa", "Bunn", "samsymons"],

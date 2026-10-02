@@ -718,7 +718,7 @@ final class NavigationBarViewController: NSViewController {
         }
 
         if popovers.isPasswordManagementDirty {
-            passwordManagementButton.image = .passwordManagementDirty
+            passwordManagementButton.image = NSImage(resource: .passwordManagementDirty)
             return
         }
 
@@ -798,7 +798,7 @@ final class NavigationBarViewController: NSViewController {
 #if DEBUG
         if Self.forceShowButtonsInPopup && isInPopUpWindow {
             downloadsButton.isHidden = false
-            downloadsButton.image = .downloads
+            downloadsButton.image = NSImage(resource: .downloads)
             return
         }
 #endif
@@ -809,7 +809,7 @@ final class NavigationBarViewController: NSViewController {
 
         let fireWindowSession = FireWindowSessionRef(window: view.window)
         let hasActiveDownloads = downloadListCoordinator.hasActiveDownloads(for: fireWindowSession)
-        downloadsButton.image = hasActiveDownloads ? .downloadsActive : .downloads
+        downloadsButton.image = hasActiveDownloads ? NSImage(resource: .downloadsActive) : NSImage(resource: .downloads)
 
         let hasDownloads = downloadListCoordinator.hasDownloads(for: fireWindowSession)
         if !hasDownloads {
@@ -1355,7 +1355,7 @@ final class NavigationBarViewController: NSViewController {
         selectedTabViewModel.$isLoading
             .removeDuplicates()
             .sink { [weak refreshOrStopButton] isLoading in
-                refreshOrStopButton?.image = isLoading ? .stop : .refresh
+                refreshOrStopButton?.image = isLoading ? NSImage(resource: .stop) : NSImage(resource: .refresh)
                 refreshOrStopButton?.setAccessibilityTitle(isLoading ? UserText.mainMenuViewStop : UserText.reloadPage)
                 refreshOrStopButton?.toolTip = isLoading ? ShortcutTooltip.stopLoading.value : ShortcutTooltip.reload.value
             }
@@ -1586,7 +1586,7 @@ final class NavigationBarViewController: NSViewController {
         }
 
         DispatchQueue.main.async {
-            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: .passwordManagement, buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
+            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: NSImage(resource: .passwordManagement), buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
                 self?.showPasswordManagerPopover(selectedWebsiteAccount: account)
             } onDismiss: { [weak self] in
                 guard let self else { return }
@@ -1834,7 +1834,7 @@ final class NavigationBarViewController: NSViewController {
             if isAIChatButtonInOverflowMenu {
                 let aiChatItem = NSMenuItem(title: ShortcutTooltip.newAIChatTab.value, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
                     .targetting(self)
-                    .withImage(.aiChat, visibleOnMacOS27: true)
+                    .withImage(NSImage(resource: .aiChat), visibleOnMacOS27: true)
                 overflowButton.menu?.addItem(aiChatItem)
             }
             overflowButton.isHidden = false

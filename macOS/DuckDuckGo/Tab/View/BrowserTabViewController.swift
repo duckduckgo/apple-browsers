@@ -48,10 +48,10 @@ protocol BrowserTabViewControllerDelegate: AnyObject {
 
 final class BrowserTabViewController: NSViewController {
 
-    private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: .browserTabBackground)
-    private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
+    private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground))
+    private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
     private lazy var hoverLabel = NSTextField(string: URL.duckDuckGo.absoluteString)
-    private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
+    private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager

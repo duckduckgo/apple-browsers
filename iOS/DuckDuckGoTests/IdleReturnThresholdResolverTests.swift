@@ -121,3 +121,33 @@ struct IdleReturnThresholdResolverTests {
         #expect(resolver.thresholdSeconds() == AfterInactivityIdleInterval.tenMinutes.seconds)
     }
 }
+
+@Suite("App Open Keyboard Debug Settings")
+struct AppOpenKeyboardDebugSettingsTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Missing or invalid overrides keep the 20-second threshold", .timeLimit(.minutes(1)), arguments: [nil, 0, -1] as [Int?])
+    func missingOrInvalidOverrideKeepsDefault(overrideSeconds: Int?) {
+        let storage: any KeyedStoring<AppOpenKeyboardDebugKeys> = MockKeyValueStore().keyedStoring()
+        storage.thresholdSecondsOverride = overrideSeconds
+
+        #expect(AppOpenKeyboardDebugSettings(storage: storage).thresholdSeconds == 20)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Valid overrides apply only in Debug and clearing restores the default", .timeLimit(.minutes(1)), arguments: [5, 10])
+    func validOverrideAndReset(seconds: Int) {
+        let storage: any KeyedStoring<AppOpenKeyboardDebugKeys> = MockKeyValueStore().keyedStoring()
+        let settings = AppOpenKeyboardDebugSettings(storage: storage)
+        storage.thresholdSecondsOverride = seconds
+
+#if DEBUG
+        #expect(settings.thresholdSeconds == TimeInterval(seconds))
+#else
+        #expect(settings.thresholdSeconds == 20)
+#endif
+
+        storage.thresholdSecondsOverride = nil
+        #expect(settings.thresholdSeconds == 20)
+    }
+}

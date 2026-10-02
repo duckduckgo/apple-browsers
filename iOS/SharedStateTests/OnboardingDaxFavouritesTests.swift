@@ -670,7 +670,7 @@ private final class InactiveConditionalHostSwitchBarHandler: SwitchBarHandling {
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }

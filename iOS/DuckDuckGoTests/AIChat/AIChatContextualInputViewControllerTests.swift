@@ -101,7 +101,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let window = show(sut)
         defer { window.isHidden = true }
 
-        sut.acceptTermsIfDisclaimerShown()
+        XCTAssertTrue(sut.acceptTermsIfDisclaimerShown())
 
         XCTAssertTrue(termsStore.hasAccepted)
         XCTAssertEqual(termsOfServiceCard(in: sut)?.isHidden, true)
@@ -111,7 +111,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let sut = makeBasicInputSUT()
         sut.loadViewIfNeeded()
 
-        sut.acceptTermsIfDisclaimerShown()
+        XCTAssertFalse(sut.acceptTermsIfDisclaimerShown())
 
         XCTAssertFalse(termsStore.hasAccepted)
     }

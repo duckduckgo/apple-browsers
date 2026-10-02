@@ -2850,6 +2850,7 @@ class MainViewController: UIViewController {
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       images: [AIChatNativePrompt.NativePromptImage]? = nil,
                       files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      termsAccepted: Bool = false,
                       source: AIChatEntryPointSource) {
         guard let currentTab else {
             assertionFailure("load called with no current tab")
@@ -2874,7 +2875,8 @@ class MainViewController: UIViewController {
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
                 images: images,
-                files: files
+                files: files,
+                termsAccepted: termsAccepted
             )
         }
     }
@@ -4520,7 +4522,8 @@ class MainViewController: UIViewController {
                     files: [AIChatNativePrompt.NativePromptFile]? = nil,
                     reportsNewTab: Bool? = nil,
                     forcesNewTab: Bool = false,
-                    fromDeepLink: Bool = false) {
+                    fromDeepLink: Bool = false,
+                    termsAccepted: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
@@ -4539,7 +4542,8 @@ class MainViewController: UIViewController {
             files: files,
             reportsNewTab: reportsNewTab,
             forcesNewTab: forcesNewTab,
-            fromDeepLink: fromDeepLink
+            fromDeepLink: fromDeepLink,
+            termsAccepted: termsAccepted
         )
     }
 
@@ -4654,7 +4658,8 @@ class MainViewController: UIViewController {
                                  files: [AIChatNativePrompt.NativePromptFile]? = nil,
                                  reportsNewTab: Bool? = nil,
                                  forcesNewTab: Bool = false,
-                                 fromDeepLink: Bool = false) {
+                                 fromDeepLink: Bool = false,
+                                 termsAccepted: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             return
@@ -4703,7 +4708,7 @@ class MainViewController: UIViewController {
                     files: files,
                     modelId: modelId,
                     reasoningEffort: reasoningEffort
-                )
+                ).withTermsAccepted(termsAccepted)
                 AIChatPromptHandler.shared.setData(prompt)
             }
             loadUrlInNewTab(chatURL, inheritedAttribution: nil) { [weak self] tab in
@@ -4719,7 +4724,8 @@ class MainViewController: UIViewController {
         }
 
         stampDuckAIEntrySourceOnCurrentTab(source)
-        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files, source: source)
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
+             termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
         }

@@ -74,7 +74,7 @@ extension WebExtensionManager {
 
     @MainActor
     private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor) async {
-        guard let bundledURL = descriptor.bundledURL else {
+        guard let bundledURL = bundledExtensionURL(descriptor) else {
             Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceFilename)")
             return
         }

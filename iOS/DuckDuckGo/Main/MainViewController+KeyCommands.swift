@@ -229,9 +229,8 @@ extension MainViewController {
         guard isShortcutEnabled() else { return }
         
         guard let tab = currentTab else { return }
-        let closesLastTab = tabManager.currentTabsModel.count == 1
         closeTab(tab.tabModel)
-        showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: !closesLastTab)
+        showKeyboardOnNewTabPageLandingIfAllowed()
     }
     
     @objc func keyboardNextTab() {

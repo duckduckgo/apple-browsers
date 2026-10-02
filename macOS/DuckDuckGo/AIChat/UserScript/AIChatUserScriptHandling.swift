@@ -167,6 +167,9 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     /// Posted by the Customize Responses card placement when the user dismisses it.
     @MainActor func customizeResponsesModalClosed(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -209,6 +212,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var conversationSource: AIChatConversationSource?
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
 
     /// Whether page context with content is currently attached to this chat — set by the native
     /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
@@ -233,7 +237,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
         conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
-        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
+        homepageAiChatsProvider: HomepageAiChatsProvider? = nil
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
@@ -248,6 +253,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
         self.freeTrialConversionService = freeTrialConversionService
         self.conversationSourceHandler = conversationSourceHandler
+        self.homepageAiChatsProvider = homepageAiChatsProvider
         self.voiceChatFailureHandler = voiceChatFailureHandler ?? DuckAiVoiceChatFailureHandler(
             permissionCenterPresenter: NotificationCenterPermissionCenterPresenter(
                 notificationCenter: notificationCenter,
@@ -295,6 +301,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    // MARK: - Homepage chat suggestions
+
+    @MainActor public func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
     }
 
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a

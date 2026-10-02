@@ -157,6 +157,8 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when the native input shows the Terms of Service disclaimer itself, so the FE can trust
     /// a prompt's `termsAccepted` marker instead of showing its own card.
     public let supportsNativeTermsOfService: Bool
+    /// `true` when the duckduckgo.com homepage may request the user's chats via `getAIChats`.
+    public let supportsHomePageChatSuggestions: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -233,7 +235,8 @@ public struct AIChatNativeConfigValues: Codable {
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
                 supportsBrowserTools: Bool = false,
-                supportsNativeTermsOfService: Bool = false) {
+                supportsNativeTermsOfService: Bool = false,
+                supportsHomePageChatSuggestions: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -265,6 +268,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.attachmentLimits = attachmentLimits
         self.supportsBrowserTools = supportsBrowserTools
         self.supportsNativeTermsOfService = supportsNativeTermsOfService
+        self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the

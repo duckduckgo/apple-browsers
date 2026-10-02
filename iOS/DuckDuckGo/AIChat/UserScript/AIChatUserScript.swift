@@ -175,6 +175,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         if let debugHostname = debugSettings.messagePolicyHostname {
             rules.append(.exact(hostname: debugHostname))
         }
+        
         return rules
     }
 
@@ -218,6 +219,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
+        case .getAIChats:
+            return handler.getAIChats
         case .getAIChatNativePrompt:
             return handler.getAIChatNativePrompt
         case .getAIChatNativeHandoffData:

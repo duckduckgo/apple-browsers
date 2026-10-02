@@ -204,6 +204,9 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
+    // duckduckgo.com homepage chat suggestions
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -230,6 +233,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -259,7 +263,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
-         }) {
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.featureFlagger = featureFlagger
@@ -273,6 +278,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
         setUpSyncStatusObserver()
     }
 
@@ -447,9 +453,26 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
-            supportsNativeTermsOfService: supportsNativeTermsOfService
+            supportsNativeTermsOfService: supportsNativeTermsOfService,
+            supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message)
         )
         return config
+    }
+
+    // MARK: - Homepage chat suggestions
+
+    private func supportsHomePageChatSuggestions(for message: UserScriptMessage) -> Bool {
+        HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost) && homepageAiChatsProvider?.isSupported == true
+    }
+
+    @MainActor
+    func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard HomepageAiChatsProvider.isHomepageMessage(host: message.messageHost),
+              let homepageAiChatsProvider else {
+            return HomepageAiChatsResponse.empty
+        }
+        let request: HomepageAiChatsRequest = DecodableHelper.decode(from: params) ?? HomepageAiChatsRequest()
+        return await homepageAiChatsProvider.chats(for: request)
     }
 
     @MainActor

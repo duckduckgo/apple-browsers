@@ -406,6 +406,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
                 "GRDB",
             ],
+            exclude: ["README.md"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

@@ -24,6 +24,7 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 @testable import Core
 import PrivacyDashboard
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 @_spi(Testing) import Persistence
 
@@ -72,6 +73,39 @@ final class BrokenSiteReportingTests: XCTestCase {
 
         try runReferenceTests(onTestExecuted: testsExecuted)
         waitForExpectations(timeout: 10, handler: nil)
+    }
+
+    func testBrokenSiteReportAppFeatureFlagsIncludesOnlyEnabledAllowlistedFlags() {
+        let scenarios: [(enabled: [FeatureFlag], expected: String)] = [
+            ([], ""),
+            ([.floatingUIiOS26], "floatingUIiOS26"),
+            ([.floatingUIiOS27], "floatingUIiOS27"),
+            ([.floatingUIiOS27, .floatingUIiOS26], "floatingUIiOS26,floatingUIiOS27"),
+            ([.newTabPageRedesign], ""),
+            ([.floatingUIiOS26, .newTabPageRedesign], "floatingUIiOS26")
+        ]
+
+        for scenario in scenarios {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: scenario.enabled)
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: ["siteUrl": "https://example.com"], featureFlagger: featureFlagger)
+
+            XCTAssertEqual(parameters["appFeatureFlags"], scenario.expected)
+            XCTAssertEqual(parameters["siteUrl"], "https://example.com")
+        }
+    }
+
+    func testBrokenSiteReportAppFeatureFlagsReflectsChangesBetweenReports() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+        let firstReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(firstReport["appFeatureFlags"], "floatingUIiOS26")
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        let secondReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(secondReport["appFeatureFlags"], "floatingUIiOS27")
+
+        featureFlagger.enabledFeatureFlags = []
+        let thirdReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(thirdReport["appFeatureFlags"], "")
     }
 
     func testBrokenSiteReportIncludesCPMDiagnostics() {

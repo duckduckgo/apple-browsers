@@ -216,6 +216,11 @@
                 "description": "Privacy remote config version observed by cookie prompt management diagnostics"
             },
             {
+                "key": "appFeatureFlags",
+                "type": "string",
+                "description": "Comma-separated enabled flags from the app reporting allowlist: floatingUIiOS26 and floatingUIiOS27. Empty when neither is enabled"
+            },
+            {
                 "key": "debugFlags",
                 "type": "string",
                 "description": "Debug flags"

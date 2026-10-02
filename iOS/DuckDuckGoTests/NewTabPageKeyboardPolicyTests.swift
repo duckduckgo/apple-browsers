@@ -63,6 +63,7 @@ struct NewTabPageKeyboardPolicyTests {
 
     @Test(
         "After Fire New Tab decides, except on a Duck.ai tab or during onboarding",
+        .timeLimit(.minutes(1)),
         arguments: [
             AfterFireCase(onNewTab: true, onDuckAITab: false, stillOnboarding: false, showsKeyboard: true),
             AfterFireCase(onNewTab: true, onDuckAITab: false, stillOnboarding: true, showsKeyboard: false),
@@ -75,6 +76,7 @@ struct NewTabPageKeyboardPolicyTests {
         ],
         [false, true]
     )
+    @available(iOS 16, macOS 13, *)
     func whenFireLandsOnNewTabPageThenKeyboardFollowsTheAfterFireTable(_ testCase: AfterFireCase, onAppLaunch: Bool) {
         // App Launch plays no part after Fire, so every row must hold with it on and off.
         let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: onAppLaunch)

@@ -278,11 +278,11 @@ private extension DefaultVPNSessionHealthInstrumentation {
         }
 
         let nextEvent = VPNSessionHealthWideEventData(startReason: reason,
-                                                    startedAt: now(),
-                                                    extensionType: extensionType,
-                                                    sessionStartPID: processIdentifier(),
-                                                    appData: WideEventAppData(version: appVersion()),
-                                                    globalData: WideEventGlobalData())
+                                                      startedAt: now(),
+                                                      extensionType: extensionType,
+                                                      sessionStartPID: processIdentifier(),
+                                                      appData: WideEventAppData(version: appVersion()),
+                                                      globalData: WideEventGlobalData())
         beginEventInLock(nextEvent)
     }
 }
@@ -322,7 +322,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
             let completed = orphan.finalizedAfterOrphanRecovery(at: timestamp,
                                                                 processStartDate: processStartedAt,
                                                                 processIdentifier: processIdentifier(),
-                                           appVersion: appVersion())
+                                                                appVersion: appVersion())
             completeEvent(event: completed.event, outcome: completed.outcome)
         }
     }

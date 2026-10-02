@@ -53,7 +53,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onRemoveRequested: (() -> Void)?
     /// The user accepted the offer to attach the page they navigated to.
     var onSuggestionAccepted: (() -> Void)?
-    var onSuggestionDismissed: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
@@ -150,9 +149,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
         chipViewModel.onSuggestionAccepted = { [weak self] in
             self?.onSuggestionAccepted?()
-        }
-        chipViewModel.onSuggestionDismissed = { [weak self] in
-            self?.onSuggestionDismissed?()
         }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
@@ -606,7 +602,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            tools: [AIChatRAGTool]?,
                                            reasoningEffort: AIChatReasoningEffort?,
                                            images: [AIChatNativePrompt.NativePromptImage]?,
-                                           files: [AIChatNativePrompt.NativePromptFile]?) {
+                                           files: [AIChatNativePrompt.NativePromptFile]?,
+                                           termsAccepted: Bool) {
         guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
@@ -616,7 +613,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                                    tools: tools,
                                                    pageContext: chipViewModel.pendingAttachedContextData,
                                                    reasoningEffort: reasoningEffort,
-                                                   tabAttachmentRequest: takeTabAttachmentRequest())
+                                                   tabAttachmentRequest: takeTabAttachmentRequest(),
+                                                   termsAccepted: termsAccepted)
         commitDeferredBindIfNeeded()
         onPromptDelivered?()
     }

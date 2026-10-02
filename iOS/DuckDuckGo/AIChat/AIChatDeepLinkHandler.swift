@@ -37,7 +37,8 @@ protocol AIChatDeepLinkPresenting: UIViewController {
         files: [AIChatNativePrompt.NativePromptFile]?,
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
-        fromDeepLink: Bool
+        fromDeepLink: Bool,
+        termsAccepted: Bool
     )
 }
 
@@ -57,7 +58,8 @@ extension AIChatDeepLinkPresenting {
             files: nil,
             reportsNewTab: nil,
             forcesNewTab: false,
-            fromDeepLink: fromDeepLink
+            fromDeepLink: fromDeepLink,
+            termsAccepted: false
         )
     }
     

@@ -89,7 +89,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.bindToTab(script, hasExistingChat: true)
         sut.startNewChat()
         sut.activateFromOmnibar(inputMode: .aiChat)
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat, trigger: .sendButton)
         XCTAssertTrue(sut.hasSubmittedPrompt)
 
         sut.bindToTab(script, hasExistingChat: false)
@@ -103,7 +103,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let script = makeTestUserScript()
         sut.activateForTab("tab-A")
         sut.activateFromOmnibar(inputMode: .aiChat)
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat, trigger: .sendButton)
         XCTAssertTrue(sut.hasSubmittedPrompt)
 
         sut.bindToTab(script, hasExistingChat: false)
@@ -418,7 +418,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.activateForTab("tab-A")
         sut.hide()
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
     }
@@ -432,7 +432,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertTrue(store.states["tab-A"]?.isModelPickerForcedVisible == true)
 
         sut.hide()
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(store.states["tab-A"]?.isModelPickerForcedVisible, false)
     }
@@ -526,7 +526,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.setText("hello")
         XCTAssertEqual(store.states["tab-A"]?.text, "hello")
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .search, trigger: .sendButton)
         XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
     }
 
@@ -541,7 +541,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.text, "ask claude something")
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ask claude something", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ask claude something", mode: .aiChat, trigger: .sendButton)
         XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
     }
@@ -588,7 +588,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let text = String(repeating: "a", count: 4_501)
         sut.setText(text)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: text, mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: text, mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(store.states["tab-A"]?.text, text)
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
@@ -769,7 +769,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.selectTool(.webSearch)
         XCTAssertEqual(store.states["tab-A"]?.selectedTool, .webSearch)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(store.states["tab-A"]?.selectedTool,
                      "After AI submit the store must not retain the selected tool — otherwise reactivation restores it.")
@@ -784,7 +784,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
         sut.selectTool(.webSearch)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(store.states["tab-A"]?.selectedTool)
     }

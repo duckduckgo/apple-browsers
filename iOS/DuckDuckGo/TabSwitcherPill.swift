@@ -28,13 +28,15 @@ struct TabSwitcherPill: View {
 
     let count: Int
     let isExpanded: Bool
+    let showsBackground: Bool
     let onTap: () -> Void
 
     @StateObject private var tabCountModel: TabCountModel
 
-    init(count: Int, isExpanded: Bool = false, onTap: @escaping () -> Void) {
+    init(count: Int, isExpanded: Bool = false, showsBackground: Bool = true, onTap: @escaping () -> Void) {
         self.count = count
         self.isExpanded = isExpanded
+        self.showsBackground = showsBackground
         self.onTap = onTap
         // Seed the model with the correct count up front so the badge
         // renders with the number on the first frame instead of flashing empty.
@@ -47,18 +49,19 @@ struct TabSwitcherPill: View {
                 .padding(.horizontal, isExpanded ? Metrics.expandedHorizontalPadding : 0)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipShape(Capsule())
+                .contentShape(Capsule())
                 .background(
                     // Capsule degenerates to a circle when width == height,
                     // so it covers both the compact and expanded shapes.
                     Capsule()
-                        .fill(Color(designSystemColor: .controlsFillSecondary))
+                        .fill(showsBackground ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
                 )
         }
         .buttonStyle(.plain)
         .onChange(of: count) { newValue in tabCountModel.count = newValue }
         .accessibilityLabel(Text(UserText.tabSwitcherAccessibilityLabel))
         .accessibilityValue(Text(UserText.numberOfTabs(count)))
-        .accessibilityIdentifier("NTP.escapeHatch.tabSwitcher")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.tabSwitcher")
     }
 
     private var content: some View {

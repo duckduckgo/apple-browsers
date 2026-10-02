@@ -971,7 +971,7 @@ class TabViewController: UIViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
-            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement

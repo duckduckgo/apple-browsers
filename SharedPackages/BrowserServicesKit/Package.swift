@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.15.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.16.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -406,6 +406,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
                 "GRDB",
             ],
+            exclude: ["README.md"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

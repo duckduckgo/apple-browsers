@@ -31,7 +31,7 @@ import UIKit
 protocol UnifiedToggleInputViewDelegate: AnyObject {
     func unifiedToggleInputViewDidTapWhileCollapsed(_ view: UnifiedToggleInputView)
     func unifiedToggleInputViewDidRequestSubmitCurrentInput(_ view: UnifiedToggleInputView)
-    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode)
+    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger)
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String)
     func unifiedToggleInputViewDidChangeMode(_ view: UnifiedToggleInputView, mode: TextEntryMode)
     func unifiedToggleInputView(_ view: UnifiedToggleInputView, isDraggingToggle isDragging: Bool)
@@ -2020,7 +2020,7 @@ private extension UnifiedToggleInputView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
                 guard let self else { return }
-                delegate?.unifiedToggleInputViewDidSubmitText(self, text: submission.text, mode: submission.mode)
+                delegate?.unifiedToggleInputViewDidSubmitText(self, text: submission.text, mode: submission.mode, trigger: submission.trigger)
             }
             .store(in: &cancellables)
 

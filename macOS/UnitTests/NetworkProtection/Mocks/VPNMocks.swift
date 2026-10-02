@@ -20,13 +20,21 @@ import Foundation
 import Combine
 import VPN
 import NetworkProtectionUI
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockVPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
-    var vpnUpsellDismissed: Bool = false
-    var vpnUpsellPopoverViewed: Bool = false
-    var vpnUpsellFirstPinnedDate: Date?
+    var legacyUpsellDismissed: Bool = false
+    var legacyPopoverViewed: Bool = false
+    var legacyFirstPinnedDate: Date?
     var expectedUpsellTimeInterval: TimeInterval = 0
+}
+
+func makeVPNUpsellVisibilityManager() -> VPNUpsellVisibilityManager {
+    VPNUpsellVisibilityManager(isNewUser: true,
+                               subscriptionManager: SubscriptionManagerMock(),
+                               defaultBrowserProvider: MockDefaultBrowserProvider(),
+                               contextualOnboardingPublisher: Just(false).eraseToAnyPublisher())
 }
 
 final class MockStatusObserver: ConnectionStatusObserver {

@@ -177,7 +177,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             omniDelegate?.onDuckAIVoiceModeRequested()
             return
         }
-        submitIPadDuckAIText(from: omniBarView.aiChatTextView)
+        submitIPadDuckAIText(from: omniBarView.aiChatTextView, sentWithAsk: true)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -413,7 +413,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
-    fileprivate func submitIPadDuckAIText(from textView: UITextView) {
+    /// Only an Ask tap accepts the Terms of Service; Return can't send while the disclaimer shows.
+    fileprivate func submitIPadDuckAIText(from textView: UITextView, sentWithAsk: Bool) {
         let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasValidAttachment = attachmentController?.hasValidAttachment ?? false
         let hasInvalidAttachment = attachmentController?.hasInvalidAttachment ?? false
@@ -432,7 +433,9 @@ extension DefaultOmniBarViewController {
                 omniDelegate?.onOmniQuerySubmitted(query)
             } else {
                 // Before the collapse below takes the disclaimer off screen.
-                termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessage)
+                if sentWithAsk {
+                    termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessage)
+                }
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
                 PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
@@ -641,7 +644,7 @@ extension DefaultOmniBarViewController {
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
     }
 
-    /// Sending with the disclaimer on screen accepts the terms, so only the Ask button sends and Return adds a new line.
+    /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.
     private var isTermsOfServiceDisclaimerShown: Bool {
         guard let visibleMessage = omniBarView.visibleFooterMessage else { return false }
         return visibleMessage == termsOfServiceDisclaimer.message
@@ -767,7 +770,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
                 return false
             }
             guard !isTermsOfServiceDisclaimerShown else { return true }
-            submitIPadDuckAIText(from: textView)
+            submitIPadDuckAIText(from: textView, sentWithAsk: false)
             return false
         }
         return true

@@ -40,7 +40,7 @@ struct AIChatDebugView: View {
             AIChatAttachmentPrivacySection()
             AIChatMultiTabPromotionSection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-            AIChatTermsOfServiceSection()
+            AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 #endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -313,11 +313,14 @@ private struct AIChatDebugSessionTimerEntryView: View {
 #if DEBUG || ALPHA
 private struct AIChatTermsOfServiceSection: View {
 
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
     @State private var status: String?
 
     private var defaultFooter: String {
-        "Brings the native input's disclaimer back. The web app keeps its own acceptance until "
-        + "Duck.ai data is cleared. Needs the duckAINativeTermsOfService flag on."
+        "Resetting native acceptance brings the native input's disclaimer back. The web app keeps its own "
+        + "acceptance in \(DuckAiNativeStorageConsent.termsOfServiceEntryKey): clear it to see the web card again. "
+        + "Needs the duckAINativeTermsOfService flag on."
     }
 
     var body: some View {
@@ -331,6 +334,28 @@ private struct AIChatTermsOfServiceSection: View {
                 Text(verbatim: "Reset native acceptance")
             }
             .foregroundColor(.red)
+
+            Button {
+                clearWebAcceptance()
+            } label: {
+                Text(verbatim: "Clear web acceptance (\(DuckAiNativeStorageConsent.termsOfServiceEntryKey))")
+            }
+            .foregroundColor(.red)
+        }
+    }
+
+    private func clearWebAcceptance() {
+        let key = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        guard let duckAiNativeStorageHandler else {
+            status = "Native storage is unavailable, so the web app keeps \(key) in its own storage."
+            return
+        }
+        do {
+            try duckAiNativeStorageHandler.deleteEntry(key: key)
+            status = "Removed \(key) from Duck.ai native storage. Reload duck.ai: it reads the value once, at load."
+            Logger.aiChat.debug("[TermsOfService] Debug removed \(key, privacy: .public) from native storage")
+        } catch {
+            status = "Failed to remove \(key): \(error)"
         }
     }
 }

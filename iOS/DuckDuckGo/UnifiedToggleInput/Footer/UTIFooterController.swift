@@ -322,9 +322,18 @@ final class UTIFooterController {
     }
 
     static let springAnimator: Animator = { changes in
-        guard !UIAccessibility.isReduceMotionEnabled else { return changes() }
+        animateWithSpring(changes)
+    }
+
+    static func animateWithSpring(_ changes: @escaping () -> Void, completion: ((Bool) -> Void)? = nil) {
+        guard !UIAccessibility.isReduceMotionEnabled else {
+            changes()
+            completion?(true)
+            return
+        }
         UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85,
-                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: changes)
+                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction],
+                       animations: changes, completion: completion)
     }
 }
 

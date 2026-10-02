@@ -1521,7 +1521,13 @@ private extension AIChatContextualSheetViewController {
 
         let utiView = persistentUTIHost.mount(in: self)
         persistentUTIHost.onTabMentionVisibilityChanged = { [weak self] isVisible in
-            self?.contextualInputViewController.view.isHidden = isVisible
+            guard let self else { return }
+            if !isVisible {
+                let state = self.sessionState.viewState
+                self.contextualInputViewController.updateStartActions(suggestions: state.suggestions, quickActions: state.quickActions)
+                self.contextualInputViewController.updateSuggestionsLoading(state.suggestionsLoadState == .loading)
+            }
+            self.contextualInputViewController.view.isHidden = isVisible
         }
         // The previous constraint died with the old mount — its two views no longer share an ancestor.
         contentContainerBottomConstraint?.isActive = false

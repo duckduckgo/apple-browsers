@@ -110,6 +110,7 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
     weak var delegate: AIChatContextualFloatingInputViewControllerDelegate?
 
     private let utiHost: AIChatContextualFloatingInputHosting
+    private var areTabMentionSuggestionsVisible = false
     private var isTransitioningSize = false
     let chipsViewController: AIChatContextualInputViewController
 
@@ -278,9 +279,20 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
 
     /// Clears only once invisible: removing them collapses the stack into the input's own animation.
     func clearChipsFadingOut() {
+        if areTabMentionSuggestionsVisible {
+            chipsContainerView.layer.removeAllAnimations()
+            chipsContainerView.alpha = 0
+            chipsViewController.updateStartActions(suggestions: [], quickActions: [])
+            return
+        }
         fadeChipsContainer(to: 0) { [weak self] in
             self?.chipsViewController.updateStartActions(suggestions: [], quickActions: [])
         }
+    }
+
+    func setTabMentionSuggestionsVisible(_ isVisible: Bool) {
+        areTabMentionSuggestionsVisible = isVisible
+        chipsViewController.view.isHidden = isVisible
     }
 
     private func fadeChipsContainer(to alpha: CGFloat, completion: (() -> Void)? = nil) {

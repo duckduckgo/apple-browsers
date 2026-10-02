@@ -403,8 +403,16 @@ final class AIChatContextualSheetCoordinator {
         controller.delegate = self
         floatingInputViewController = controller
         controller.install(in: presentingViewController)
-        host.onTabMentionVisibilityChanged = { [weak chips] isVisible in
-            chips?.view.isHidden = isVisible
+        host.onTabMentionVisibilityChanged = { [weak self, weak controller] isVisible in
+            guard let self, let controller else { return }
+            if !isVisible {
+                // Attachment state changes synchronously; its scheduled rendering can still be pending.
+                let content = StartActionsContent(viewState: self.sessionState.viewState)
+                if !content.isLoaded || content.isEmpty {
+                    controller.clearChipsFadingOut()
+                }
+            }
+            controller.setTabMentionSuggestionsVisible(isVisible)
         }
         observeViewStateForFloatingChips()
         host.activateInput()

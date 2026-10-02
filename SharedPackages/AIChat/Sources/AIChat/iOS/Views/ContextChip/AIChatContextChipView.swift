@@ -43,6 +43,9 @@ public final class AIChatContextChipView: UIView {
         static let suggestedDashPattern: [NSNumber] = [5, 7]
 
         static let faviconSize: CGFloat = 28
+        static let stripFaviconSize: CGFloat = 20
+        static let stripFaviconFrameSize: CGFloat = 24
+        static let stripFaviconCornerRadius: CGFloat = 4
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its
         /// own padding. Real site favicons are square and full-bleed, so a circular mask crops them.
         static let faviconCornerRadius: CGFloat = 6
@@ -65,6 +68,15 @@ public final class AIChatContextChipView: UIView {
     }
 
     private let style: Style
+    private let faviconLayoutGuide = UILayoutGuide()
+
+    private var faviconSize: CGFloat {
+        style == .attachmentStrip ? Constants.stripFaviconSize : Constants.faviconSize
+    }
+
+    private var faviconFrameSize: CGFloat {
+        style == .attachmentStrip ? Constants.stripFaviconFrameSize : Constants.faviconSize
+    }
 
     // MARK: - State
 
@@ -124,7 +136,7 @@ public final class AIChatContextChipView: UIView {
         let compactTitle = String(title.prefix(1)) + "…"
         let font = titleLabel.font ?? .daxSubheadSemibold()
         let titleWidth = ceil((compactTitle as NSString).size(withAttributes: [.font: font]).width) + 1
-        return Constants.compactHorizontalPadding + Constants.stripRemoveButtonTrailing + Constants.faviconSize + titleWidth
+        return Constants.compactHorizontalPadding + Constants.stripRemoveButtonTrailing + faviconFrameSize + titleWidth
             + 2 * Constants.compactContentSpacing + Constants.stripRemoveButtonSize
     }
 
@@ -150,7 +162,7 @@ public final class AIChatContextChipView: UIView {
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = UIColor(designSystemColor: .textSecondary)
         imageView.backgroundColor = UIColor(designSystemColor: .surface)
-        imageView.layer.cornerRadius = Constants.faviconCornerRadius
+        imageView.layer.cornerRadius = style == .attachmentStrip ? Constants.stripFaviconCornerRadius : Constants.faviconCornerRadius
         imageView.layer.masksToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -274,6 +286,7 @@ private extension AIChatContextChipView {
         layer.addSublayer(dashedBorderLayer)
         addSubview(mainStackView)
 
+        chipContentView.addLayoutGuide(faviconLayoutGuide)
         chipContentView.addSubview(faviconView)
         chipContentView.addSubview(titleLabel)
         chipContentView.addSubview(removeButton)
@@ -456,8 +469,8 @@ private extension AIChatContextChipView {
         let width = widthAnchor.constraint(equalToConstant: Constants.chipWidth)
         fixedWidthConstraint = width
 
-        faviconLeadingConstraint = faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading)
-        titleLeadingConstraint = titleLabel.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: Constants.contentSpacing)
+        faviconLeadingConstraint = faviconLayoutGuide.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading)
+        titleLeadingConstraint = titleLabel.leadingAnchor.constraint(equalTo: faviconLayoutGuide.trailingAnchor, constant: Constants.contentSpacing)
         removeButtonTrailingConstraint = removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing)
         removeButtonWidthConstraint = removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize)
         removeButtonHeightConstraint = removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize)
@@ -476,9 +489,13 @@ private extension AIChatContextChipView {
             height,
 
             faviconLeadingConstraint,
-            faviconView.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
-            faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
-            faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
+            faviconLayoutGuide.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
+            faviconLayoutGuide.widthAnchor.constraint(equalToConstant: faviconFrameSize),
+            faviconLayoutGuide.heightAnchor.constraint(equalToConstant: faviconFrameSize),
+            faviconView.centerXAnchor.constraint(equalTo: faviconLayoutGuide.centerXAnchor),
+            faviconView.centerYAnchor.constraint(equalTo: faviconLayoutGuide.centerYAnchor),
+            faviconView.widthAnchor.constraint(equalToConstant: faviconSize),
+            faviconView.heightAnchor.constraint(equalToConstant: faviconSize),
 
             titleLeadingConstraint,
             titleLabel.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
@@ -498,6 +515,9 @@ private extension AIChatContextChipView {
     }
 
     func fallbackFavicon() -> UIImage? {
+        if style == .attachmentStrip {
+            return DesignSystemImages.Glyphs.Size16.globe.withRenderingMode(.alwaysTemplate)
+        }
         return DesignSystemImages.Glyphs.Size24.globe.withRenderingMode(.alwaysTemplate)
     }
 

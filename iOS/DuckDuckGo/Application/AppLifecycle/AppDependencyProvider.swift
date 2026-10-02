@@ -161,10 +161,17 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    static func sitePermissionsEnabledAtLaunch(
-        featureFlagger: FeatureFlagger,
-        isSupportedOSProvider: () -> Bool = { if #available(iOS 16.0, *) { true } else { false } }) -> Bool {
+    static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
+                                               isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
         isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
+    }
+
+    private static func isSitePermissionsSupportedOS() -> Bool {
+        if #available(iOS 16.0, *) {
+            true
+        } else {
+            false
+        }
     }
 
     private init() {

@@ -81,9 +81,12 @@ struct Foreground: ForegroundHandling {
         self.sceneDependencies = sceneDependencies
         self.isFirstForeground = isFirstForeground
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
+        // A cancelled unlock must not consume the cold app open when the user briefly backgrounds the lock screen.
+        let isFirstAppOpen = isFirstForeground || (appDependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && !sceneDependencies.authenticationService.hasCompletedAuthentication)
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
-                                    isFirstForeground: isFirstForeground)
+                                    isFirstForeground: isFirstAppOpen)
         let daxDialogsManager = appDependencies.mainCoordinator.controller.daxDialogsManager
         let idleReturnEligibilityManager = IdleReturnEligibilityManager(
             featureFlagger: appDependencies.featureFlagger,
@@ -111,7 +114,8 @@ struct Foreground: ForegroundHandling {
             authenticationService: sceneDependencies.authenticationService,
             autoClearService: sceneDependencies.autoClearService,
             launchActionHandler: launchActionHandler,
-            onboardingPresenter: appDependencies.mainCoordinator
+            onboardingPresenter: appDependencies.mainCoordinator,
+            waitsForSuccessfulAuthentication: appDependencies.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         )
     }
 
@@ -269,20 +273,22 @@ extension Foreground {
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
-        Background(stateContext: StateContext(appDependencies: appDependencies,
-                                              sceneDependencies: sceneDependencies),
-                   lastBackgroundDateStorage: lastBackgroundDateStorage)
+        interactionManager.cancelPendingInteractions()
+        return Background(stateContext: StateContext(appDependencies: appDependencies,
+                                                     sceneDependencies: sceneDependencies),
+                          lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
     /// If confirmed this scenario never occurs, this code should be removed.
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
-        Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
-                                                       appDependencies: appDependencies),
-                  actionToHandle: actionToHandle,
-                  window: window,
-                  lastBackgroundDateStorage: lastBackgroundDateStorage)
+        interactionManager.cancelPendingInteractions()
+        return Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
+                                                              appDependencies: appDependencies),
+                         actionToHandle: actionToHandle,
+                         window: window,
+                         lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
 }

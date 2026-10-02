@@ -50,9 +50,9 @@ struct NewTabPageKeyboardPolicy {
     let onAppLaunch: Bool
 
     /// `nil` means a cold start.
-    static func isAppOpen(lastBackgroundDate: Date?, now: Date = Date(), threshold: TimeInterval = appOpenBackgroundThreshold) -> Bool {
+    static func isAppOpen(lastBackgroundDate: Date?, now: Date = Date()) -> Bool {
         guard let lastBackgroundDate else { return true }
-        return now.timeIntervalSince(lastBackgroundDate) > threshold
+        return now.timeIntervalSince(lastBackgroundDate) > appOpenBackgroundThreshold
     }
 
     /// New Tab alone decides on an NTP; App Launch keeps its meaning for other tabs.
@@ -76,20 +76,17 @@ final class KeyboardPresenter: KeyboardPresenting {
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: (any PixelKitFiring)?
     private let onAppLaunch: () -> Bool
-    private let backgroundThreshold: () -> TimeInterval
     private let schedule: (@escaping () -> Void) -> Void
 
     init(mainViewController: any AppOpenKeyboardHandling,
          featureFlagger: FeatureFlagger,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
-         backgroundThreshold: @escaping () -> TimeInterval = { AppOpenKeyboardDebugSettings().thresholdSeconds },
          schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.onAppLaunch = onAppLaunch
-        self.backgroundThreshold = backgroundThreshold
         self.schedule = schedule
     }
 
@@ -97,8 +94,7 @@ final class KeyboardPresenter: KeyboardPresenting {
         let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         let onAppLaunch = onAppLaunch()
         guard flagOn || onAppLaunch else { return }
-        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate,
-                                                         threshold: backgroundThreshold())
+        let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate)
         if isAppOpen && onAppLaunch {
             pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
         }

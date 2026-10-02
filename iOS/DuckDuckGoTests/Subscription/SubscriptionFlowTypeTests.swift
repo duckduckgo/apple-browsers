@@ -20,6 +20,8 @@
 import XCTest
 import BrowserServicesKit
 import Common
+import PrivacyConfig
+import FeatureFlags_iOS
 import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
@@ -84,38 +86,94 @@ final class SubscriptionFlowTypeTests: XCTestCase {
 final class SubscribeFlowInitialURLBuilderTests: XCTestCase {
 
     private let purchaseURL = URL(string: "https://duckduckgo.com/subscriptions")!
-    private let performanceOptimizedPaywallURL = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false")!
+    private let performanceOptimizedPaywallURL = URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn?trial=false&experiment_perfpaywall=treatment")!
     private let performanceOptimizedPaywalls = MockPerformanceOptimizedPaywallsProvider()
 
-    func testWhenPerformanceOptimizedPaywallsAreEnabledAndUserIsNotSubscribedThenReturnsPerformanceOptimizedPaywallURL() {
+    func testWhenUserIsInTreatmentCohortAndIsNotSubscribedThenReturnsPerformanceOptimizedPaywallURL() {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultURL = purchaseURL
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.PerformanceOptimizedPaywallsCohort.treatment)
 
         let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
             redirectURLComponents: nil,
             landingURL: nil,
             subscriptionManager: subscriptionManager,
             tld: TLD(),
-            performanceOptimizedPaywalls: performanceOptimizedPaywalls
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls,
+            featureFlagger: featureFlagger
         )
 
         XCTAssertEqual(initialURL, performanceOptimizedPaywallURL)
     }
 
-    func testWhenPerformanceOptimizedPaywallsAreEnabledAndUserIsSubscribedThenReturnsLegacyPurchaseURL() {
+    func testWhenUserIsInControlCohortAndIsNotSubscribedThenReturnsLegacyPurchaseURLWithCohort() {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultURL = purchaseURL
-        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable))
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.PerformanceOptimizedPaywallsCohort.control)
 
         let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
             redirectURLComponents: nil,
             landingURL: nil,
             subscriptionManager: subscriptionManager,
             tld: TLD(),
-            performanceOptimizedPaywalls: performanceOptimizedPaywalls
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(initialURL, URL(string: "https://duckduckgo.com/subscriptions?experiment_perfpaywall=control")!)
+    }
+
+    func testWhenURLAlreadyHasACohortThenItIsReplaced() {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultURL = URL(string: "https://duckduckgo.com/subscriptions?experiment_perfpaywall=control")!
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.PerformanceOptimizedPaywallsCohort.treatment)
+
+        let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
+            redirectURLComponents: nil,
+            landingURL: nil,
+            subscriptionManager: subscriptionManager,
+            tld: TLD(),
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(initialURL, performanceOptimizedPaywallURL)
+    }
+
+    func testWhenUserIsNotEnrolledThenReturnsLegacyPurchaseURL() {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultURL = purchaseURL
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: nil)
+
+        let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
+            redirectURLComponents: nil,
+            landingURL: nil,
+            subscriptionManager: subscriptionManager,
+            tld: TLD(),
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls,
+            featureFlagger: featureFlagger
         )
 
         XCTAssertEqual(initialURL, purchaseURL)
+    }
+
+    func testWhenUserIsSubscribedThenReturnsLegacyPurchaseURLAndDoesNotEnroll() {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.resultURL = purchaseURL
+        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable))
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.PerformanceOptimizedPaywallsCohort.treatment)
+
+        let initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(
+            redirectURLComponents: nil,
+            landingURL: nil,
+            subscriptionManager: subscriptionManager,
+            tld: TLD(),
+            performanceOptimizedPaywalls: performanceOptimizedPaywalls,
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertEqual(initialURL, purchaseURL)
+        XCTAssertFalse(featureFlagger.didCallResolveCohort)
     }
 }
 

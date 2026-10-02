@@ -261,9 +261,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
     case addressBarIMEConfirmFix
 
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1217589459874947
-    case dataImportDataDirectoryAccess
-
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
 
@@ -801,8 +798,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
-        case .dataImportDataDirectoryAccess:
-            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:

@@ -32,6 +32,8 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     private var tabsPreferences: TabsPreferences!
     private var tab: Tab!
     private var window: NSWindow!
+    private var termsUserDefaults: UserDefaults!
+    private var isNativeTermsOfServiceEnabled = true
 
     private var firedPixels: [String] = []
 
@@ -39,6 +41,9 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     override func setUp() {
         autoreleasepool {
             firedPixels = []
+            isNativeTermsOfServiceEnabled = true
+            termsUserDefaults = UserDefaults(suiteName: String(describing: Self.self))
+            termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
             promptHandler = AIChatPromptHandler.shared
             windowControllersManager = Application.appDelegate.windowControllersManager
             tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
@@ -53,6 +58,8 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                     nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler,
                     featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: Application.appDelegate.featureFlagger)
                 )),
+                termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults, notificationCenter: NotificationCenter()),
+                isNativeTermsOfServiceEnabled: { [weak self] in self?.isNativeTermsOfServiceEnabled ?? false },
                 isShiftPressed: { false },
                 isCommandPressed: { false },
                 firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
@@ -68,6 +75,8 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             promptHandler = nil
             windowControllersManager = nil
             tabsPreferences = nil
+            termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
+            termsUserDefaults = nil
             handler = nil
             tab = nil
             window?.close()
@@ -108,7 +117,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 
-        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
@@ -118,7 +127,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
         let target: NewTabPageDataModel.OpenTarget = .newTab
 
-        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil)
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
 
         XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
         XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
@@ -134,7 +143,8 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                            toolChoice: nil,
                            reasoningEffort: "low",
                            pageContexts: nil,
-                           files: nil)
+                           files: nil,
+                           aiTermsAccepted: false)
 
         let prompt = promptHandler.consumeData()
         let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
@@ -157,7 +167,8 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
                            toolChoice: nil,
                            reasoningEffort: nil,
                            pageContexts: [context],
-                           files: [file])
+                           files: [file],
+                           aiTermsAccepted: false)
 
         let prompt = promptHandler.consumeData()
         guard case .multiple(let contexts) = prompt?.pageContext else {
@@ -173,6 +184,45 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
         }
         XCTAssertEqual(query.files?.first?.fileName, "doc.pdf")
         XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
+    }
+
+    // MARK: - Terms of Service
+
+    @MainActor
+    func testWhenSubmitAIChatAcceptingTerms_ThenPromptCarriesTermsAcceptedAndAcceptanceIsRecorded() {
+        submitChat(aiTermsAccepted: true)
+
+        XCTAssertEqual(promptHandler.consumeData()?.termsAccepted, true)
+        XCTAssertTrue(termsStore.hasAccepted)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithoutAcceptingTerms_ThenPromptOmitsTermsAccepted() {
+        submitChat(aiTermsAccepted: false)
+
+        let prompt = promptHandler.consumeData()
+        XCTAssertNotNil(prompt)
+        XCTAssertNil(prompt?.termsAccepted)
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatAcceptingTermsWithFeatureOff_ThenNothingIsAccepted() {
+        isNativeTermsOfServiceEnabled = false
+
+        submitChat(aiTermsAccepted: true)
+
+        XCTAssertNil(promptHandler.consumeData()?.termsAccepted)
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    @MainActor
+    private func submitChat(aiTermsAccepted: Bool) {
+        handler.submitChat("duckduckgo", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: aiTermsAccepted)
+    }
+
+    private var termsStore: DuckAiTermsOfServiceStore {
+        DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults)
     }
 
     // MARK: - openAiChat pixels

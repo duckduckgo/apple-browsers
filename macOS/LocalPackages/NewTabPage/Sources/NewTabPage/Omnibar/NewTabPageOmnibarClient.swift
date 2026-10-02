@@ -36,6 +36,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
         case openCustomizeResponses = "omnibar_openCustomizeResponses"
+        case openPrivacyTerms = "omnibar_openPrivacyTerms"
         case setCustomizeResponsesActive = "omnibar_setCustomizeResponsesActive"
         case getOpenTabs = "omnibar_getOpenTabs"
         case getTabContent = "omnibar_getTabContent"
@@ -89,7 +90,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.isAIChatDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.isSearchSuggestionDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.requiresAiTermsAcceptancePublisher.map { _ in () }.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -128,6 +130,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
             MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
             MessageName.openCustomizeResponses.rawValue: { [weak self] in try await self?.openCustomizeResponses(params: $0, original: $1) },
+            MessageName.openPrivacyTerms.rawValue: { [weak self] in try await self?.openPrivacyTerms(params: $0, original: $1) },
             MessageName.setCustomizeResponsesActive.rawValue: { [weak self] in try await self?.setCustomizeResponsesActive(params: $0, original: $1) },
             MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
             MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) },
@@ -176,7 +179,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
-            usageLimits: configProvider.usageLimits()
+            usageLimits: configProvider.usageLimits(),
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance
         )
     }
 
@@ -262,7 +266,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
-            usageLimits: configProvider.usageLimits()
+            usageLimits: configProvider.usageLimits(),
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -330,7 +335,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             toolChoice: toolChoice,
             reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
-            files: action.files
+            files: action.files,
+            aiTermsAccepted: action.aiTermsAccepted == true
         )
         return nil
     }
@@ -476,6 +482,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     @MainActor
     private func openCustomizeResponses(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         actionHandler.openCustomizeResponses()
+        return nil
+    }
+
+    @MainActor
+    private func openPrivacyTerms(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openPrivacyTerms()
         return nil
     }
 

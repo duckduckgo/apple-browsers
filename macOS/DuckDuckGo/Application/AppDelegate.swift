@@ -353,7 +353,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
-        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+        buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
 
@@ -401,10 +401,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            persistor: vpnUpsellUserDefaultsPersistor,
             timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
     }()
+
+    lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate( // swiftlint:disable:this weak_delegate
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
+
+    lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate( // swiftlint:disable:this weak_delegate
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -1545,7 +1556,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateController: updateController,
             updateNotificationBridge: updateNotificationPromoBridge,
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-            quitSurveyPromoObserver: quitSurveyPromoObserver
+            quitSurveyPromoObserver: quitSurveyPromoObserver,
+            vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

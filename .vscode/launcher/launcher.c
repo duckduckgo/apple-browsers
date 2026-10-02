@@ -17,26 +17,33 @@
 //
 
 // Main executable of the VSCode/Cursor host app (see make-host-app.sh).
-// The host app is a copy of the Xcode-built app (Info.plist, entitlements, resources, embedded
-// frameworks and login items); this launcher replaces its executable and runs the browser from
-// the `DuckDuckGoBrowserDynamic` library built by `swift build`.
+// Runs the browser from the `DuckDuckGoBrowserDynamic` library built by `swift build`:
+// DDG_BROWSER_DYLIB if set, otherwise the swift build output next to the host app in macOS/.build.
 
 #include <dlfcn.h>
+#include <limits.h>
+#include <mach-o/dyld.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#ifndef DDG_DEFAULT_BROWSER_DYLIB
-#define DDG_DEFAULT_BROWSER_DYLIB ""
-#endif
+// From macOS/.build/vscode-host/DuckDuckGo.app/Contents/MacOS.
+static const char *defaultBrowserDylib = "../../../../DuckDuckGo/out/Products/Debug/libDuckDuckGoBrowserDynamic.dylib";
 
 int main(void) {
+    char defaultPath[PATH_MAX];
     const char *path = getenv("DDG_BROWSER_DYLIB");
     if (path == NULL || path[0] == '\0') {
-        path = DDG_DEFAULT_BROWSER_DYLIB;
-    }
-    if (path[0] == '\0') {
-        fprintf(stderr, "DDG_BROWSER_DYLIB is not set\n");
-        return 1;
+        char executable[PATH_MAX];
+        uint32_t size = sizeof(executable);
+        if (_NSGetExecutablePath(executable, &size) != 0) {
+            fprintf(stderr, "Executable path is too long\n");
+            return 1;
+        }
+        char *lastSlash = strrchr(executable, '/');
+        *lastSlash = '\0';
+        snprintf(defaultPath, sizeof(defaultPath), "%s/%s", executable, defaultBrowserDylib);
+        path = defaultPath;
     }
 
     void *handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);

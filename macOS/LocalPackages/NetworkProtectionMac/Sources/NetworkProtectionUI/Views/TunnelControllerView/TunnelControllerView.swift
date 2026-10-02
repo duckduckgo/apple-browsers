@@ -182,7 +182,7 @@ public struct TunnelControllerView: View {
 
     @ViewBuilder
     private func headerAnimationView(_ animationName: String) -> some View {
-        let tintedAnimationView = LottieView(animation: .named(animationName))
+        let tintedAnimationView = LottieView(animation: .named(animationName, bundle: .module))
             .configure { [isAppRebranded, enforceRoutes = model.enforceRoutes, colorScheme] animationView in
                 Self.applyStrictRoutingTint(spec: isAppRebranded ? .rebranded : .legacy,
                                             enforceRoutes: enforceRoutes,

@@ -192,7 +192,6 @@ let package = Package(
                 // Shared with the helper targets; the Xcode targets bundle them.
                 "AppIcons",
                 "ContentBlocker/Resources/macos-config.json",
-                "NetworkProtection/AppTargets/BothAppTargets/Assets",
                 "NetworkProtection/NetworkExtensionTargets",
                 // Not built.
                 "Package.resolved",
@@ -214,6 +213,7 @@ let package = Package(
                 .process("Fire/Resources"),
                 .process("MaliciousSiteProtection/Resources"),
                 .process("NavigationBar/View/Animations/Resources"),
+                .process("NetworkProtection/AppTargets/BothAppTargets/Assets"),
                 .process("Onboarding/ContextualOnboarding/ViewHighlighter/view_highlight.json"),
                 .process("Permissions/Inspector/permissions-inspector.html"),
                 .process("Permissions/Inspector/permissions-inspector.js"),

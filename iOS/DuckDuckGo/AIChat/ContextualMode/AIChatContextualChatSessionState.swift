@@ -85,7 +85,7 @@ struct SheetViewState {
 }
 
 enum SheetEffect {
-    case submitPrompt(prompt: String, context: AIChatPageContextData?)
+    case submitPrompt(prompt: String, context: AIChatPageContextData?, termsAccepted: Bool)
     case reloadWebView
     case deliverPageContext(AIChatPageContextData?, targets: PageContextDeliveryTargets)
     case clearPrompt
@@ -268,7 +268,7 @@ final class AIChatContextualChatSessionState {
     // MARK: - Frontend Chat State Transitions
 
     /// Call when user submits a prompt from native input
-    func handlePromptSubmission(_ prompt: String, url: URL? = nil) {
+    func handlePromptSubmission(_ prompt: String, url: URL? = nil, termsAccepted: Bool = false) {
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] Chat start request ignored - preserving .restoredChat state")
             return
@@ -296,7 +296,7 @@ final class AIChatContextualChatSessionState {
         }
 
         rebuildViewState()
-        emit(.submitPrompt(prompt: prompt, context: contextData))
+        emit(.submitPrompt(prompt: prompt, context: contextData, termsAccepted: termsAccepted))
     }
 
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator

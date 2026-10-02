@@ -46,6 +46,11 @@ final class UTIFooterCardView: UIView {
 
     let contentView = UIView()
 
+    /// A card under another one drops its top gap, so the two read as one block instead of doubling the margin.
+    var isBelowAnotherCard = false {
+        didSet { contentTopConstraint?.constant = Self.overlap + (isBelowAnotherCard ? 0 : Constants.contentTopGap) }
+    }
+
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
     private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
@@ -58,6 +63,7 @@ final class UTIFooterCardView: UIView {
     private let actionButton = UTIFooterActionButton()
     private let dismissButton = UIButton(type: .system)
 
+    private var contentTopConstraint: NSLayoutConstraint?
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
     private var iconSlotWidthConstraint: NSLayoutConstraint?
@@ -256,6 +262,7 @@ private extension UTIFooterCardView {
         contentView.addSubview(dismissButton)
 
         let contentTop = contentView.topAnchor.constraint(equalTo: topAnchor, constant: Self.overlap + Constants.contentTopGap)
+        contentTopConstraint = contentTop
 
         let actionCollapsedWidth = actionButton.widthAnchor.constraint(equalToConstant: 0)
         actionCollapsedWidthConstraint = actionCollapsedWidth
@@ -337,7 +344,7 @@ private extension UTIFooterCardView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
-        infoIcon.tintColor = UIColor(designSystemColor: .icons)
+        infoIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
         modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)
         shieldIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
         giftIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)

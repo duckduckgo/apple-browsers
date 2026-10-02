@@ -119,7 +119,6 @@ final class AIChatContextualSheetCoordinator {
 
     /// Session state - single source of truth for frontend and chip state
     let sessionState: AIChatContextualChatSessionState
-    var tabProvider: () -> Tab? = { nil }
 
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
@@ -267,7 +266,7 @@ final class AIChatContextualSheetCoordinator {
         self.featureFlagger = featureFlagger
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.floatingUIManager = floatingUIManager ?? FloatingUIManager(
-            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         self.floatingInputFeature = floatingInputFeature
         self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
@@ -910,7 +909,6 @@ private extension AIChatContextualSheetCoordinator {
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
             floatingUIManager: floatingUIManager,
-            tabProvider: { [weak self] in self?.tabProvider() },
             tabAttachmentSource: tabAttachmentSource,
             isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
         )
@@ -1362,12 +1360,12 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sessionState.cancelManualAttach()
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool) {
         let hasPageContext: Bool
         if case .attached = sessionState.chipState { hasPageContext = true } else { hasPageContext = false }
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
-        sessionState.handlePromptSubmission(prompt)
+        sessionState.handlePromptSubmission(prompt, termsAccepted: termsAccepted)
         delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 

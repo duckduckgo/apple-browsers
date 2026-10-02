@@ -345,11 +345,26 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.isHidden = true
         button.layer.cornerRadius = Metrics.sendButtonSize / 2
         button.layer.masksToBounds = true
         return button
     }()
+
+    private lazy var aiChatSendButtonWidthConstraint = aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize)
+
+    /// While the Terms of Service disclaimer shows, the send button reads "Ask" and Return adds a new line.
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard oldValue != isTermsOfServiceDisclaimerShown else { return }
+            aiChatTextView.keyboardType = aiChatKeyboardType
+            if aiChatTextView.isFirstResponder { aiChatTextView.reloadInputViews() }
+        }
+    }
+
+    /// The web-search keyboard always draws Return as Go, so only the default one shows a new-line key.
+    private var aiChatKeyboardType: UIKeyboardType { isTermsOfServiceDisclaimerShown ? .default : .webSearch }
 
     var onAIChatSendPressed: (() -> Void)?
 
@@ -774,6 +789,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     private var desiredGlassInterfaceStyle: UIUserInterfaceStyle {
+        if #available(iOS 26.0, *), !fireMode {
+            return window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
+        }
         if let pageGlassInterfaceStyle {
             return pageGlassInterfaceStyle
         }
@@ -784,22 +802,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         var view = UIVisualEffectView()
         UITraitCollection(userInterfaceStyle: configuration.interfaceStyle).performAsCurrent {
             if #available(iOS 26.0, *) {
-                if configuration.kind == .embedded {
-                    // Flat fill: the chrome underneath is already glass.
-                    view = UIVisualEffectView(effect: nil)
-                    view.backgroundColor = UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
-                } else {
-                    let effect = UIGlassEffect(style: .regular)
-                    if configuration.fireMode {
-                        effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
-                    }
-                    view = UIVisualEffectView(effect: effect)
+                let effect = UIGlassEffect(style: .regular)
+                if configuration.fireMode {
+                    effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
                 }
+                view = UIVisualEffectView(effect: effect)
                 view.cornerConfiguration = .capsule()
             }
-        }
-        if configuration.kind == .embedded {
-            view.overrideUserInterfaceStyle = configuration.interfaceStyle
         }
         return view
     }
@@ -880,7 +889,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
 
         let configuration = desiredGlassConfiguration
-        guard glassEffect.superview !== searchAreaContainerView || glassEffectConfiguration != configuration else { return }
+        let hasCurrentHierarchy: Bool
+        if configuration.kind == .embedded {
+            hasCurrentHierarchy = glassEffect.superview == nil && floatingGlassContentHostView.superview === searchAreaContainerView
+        } else if configuration.fireMode {
+            hasCurrentHierarchy = glassEffect.superview === searchAreaContainerView
+                && floatingGlassContentHostView.superview === searchAreaContainerView
+        } else {
+            hasCurrentHierarchy = glassEffect.superview === searchAreaContainerView
+                && floatingGlassContentHostView.superview === glassEffect.contentView
+        }
+        guard !hasCurrentHierarchy || glassEffectConfiguration != configuration else { return }
         UIView.performWithoutAnimation {
             opaqueEffect.removeFromSuperview()
 
@@ -891,35 +910,40 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingGlassContentHostView.removeFromSuperview()
             glassEffect.removeFromSuperview()
 
-            glassEffect = makeGlassEffectView(configuration: configuration)
-            glassEffect.translatesAutoresizingMaskIntoConstraints = false
-            searchAreaContainerView.insertSubview(glassEffect, at: 0)
-            glassEffectConstraints = [
-                glassEffect.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
-                glassEffect.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-                glassEffect.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-                glassEffect.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
-            ]
-            NSLayoutConstraint.activate(glassEffectConstraints)
             glassEffectConfiguration = configuration
 
-            if fireMode {
-                // Keep fire content outside adaptive glass.
+            if configuration.kind == .embedded {
+                setFieldBackgroundColor(UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground))
                 searchAreaContainerView.addSubview(floatingGlassContentHostView)
                 NSLayoutConstraint.activate(floatingHostToContainerConstraints)
             } else {
-                // Content inherits glass contrast.
-                glassEffect.contentView.addSubview(floatingGlassContentHostView)
-                floatingHostToGlassContentConstraints = [
-                    floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
-                    floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
-                    floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
-                    floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+                glassEffect = makeGlassEffectView(configuration: configuration)
+                glassEffect.translatesAutoresizingMaskIntoConstraints = false
+                searchAreaContainerView.insertSubview(glassEffect, at: 0)
+                glassEffectConstraints = [
+                    glassEffect.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
+                    glassEffect.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+                    glassEffect.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+                    glassEffect.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
                 ]
-                NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
+                NSLayoutConstraint.activate(glassEffectConstraints)
+
+                if configuration.fireMode {
+                    searchAreaContainerView.addSubview(floatingGlassContentHostView)
+                    NSLayoutConstraint.activate(floatingHostToContainerConstraints)
+                } else {
+                    glassEffect.contentView.addSubview(floatingGlassContentHostView)
+                    floatingHostToGlassContentConstraints = [
+                        floatingGlassContentHostView.topAnchor.constraint(equalTo: glassEffect.contentView.topAnchor),
+                        floatingGlassContentHostView.leadingAnchor.constraint(equalTo: glassEffect.contentView.leadingAnchor),
+                        floatingGlassContentHostView.trailingAnchor.constraint(equalTo: glassEffect.contentView.trailingAnchor),
+                        floatingGlassContentHostView.bottomAnchor.constraint(equalTo: glassEffect.contentView.bottomAnchor)
+                    ]
+                    NSLayoutConstraint.activate(floatingHostToGlassContentConstraints)
+                }
+                setFieldBackgroundColor(.clear)
             }
 
-            setFieldBackgroundColor(.clear)
             searchAreaContainerView.layoutIfNeeded()
         }
     }
@@ -1135,13 +1159,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 floatingGlassContentHostView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
                 floatingGlassContentHostView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
             ]
-            // `floatingHostToGlassContentConstraints` are (re)built in `makeGlass()` against the
-            // freshly-created glass view's `contentView`, since the glass view is recreated on the fly.
-            floatingHostToGlassContentConstraints = []
             NSLayoutConstraint.activate(floatingHostToContainerConstraints)
         } else {
             floatingHostToContainerConstraints = []
-            floatingHostToGlassContentConstraints = []
         }
         let chromeContentContainerView = self.chromeContentContainerView
 
@@ -1355,10 +1375,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
         leadingButtonsContainer.overrideUserInterfaceStyle = style
         trailingButtonsContainer.overrideUserInterfaceStyle = style
-        // When floating, the chrome (and the address text) lives inside `floatingGlassContentHostView`,
-        // which in non-fire mode is reparented into `glassEffect.contentView` and so isn't reached by
-        // the loop above. Apply the style directly so it resets to `.unspecified` in non-fire mode and
-        // the text can adapt to the glass, rather than staying forced-dark from a prior fire session.
         if isFloatingUIEnabled {
             floatingGlassContentHostView.overrideUserInterfaceStyle = style
         }
@@ -1367,9 +1383,17 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         progressView?.updateFireModeAppearance(fireMode: fireMode)
     }
 
-    /// Matches the field and minimal chrome button glass to the page, so a light page gets light glass in dark mode.
     private func applyPageGlassInterfaceStyle() {
         guard !fireMode, let pageGlassInterfaceStyle else { return }
+        if #available(iOS 26.0, *) {
+            glassEffect.overrideUserInterfaceStyle = .unspecified
+            leadingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
+            trailingButtonsGlassView?.overrideUserInterfaceStyle = .unspecified
+            floatingGlassContentHostView.overrideUserInterfaceStyle = shouldUseFloatingTopGlass
+                ? .unspecified
+                : window?.traitCollection.userInterfaceStyle ?? traitCollection.userInterfaceStyle
+            return
+        }
         glassEffect.overrideUserInterfaceStyle = pageGlassInterfaceStyle
         leadingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
         trailingButtonsGlassView?.overrideUserInterfaceStyle = pageGlassInterfaceStyle
@@ -1454,7 +1478,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         aiChatTextView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).AIChatTextView"
         aiChatTextView.accessibilityLabel = UserText.duckAiFeatureName
 
-        aiChatSendButton.accessibilityLabel = "Send message"
+        aiChatSendButton.accessibilityLabel = Constant.aiChatSendAccessibilityLabel
         aiChatSendButton.accessibilityHint = "Sends your message to DuckDuckGo AI"
         aiChatSendButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChatSend"
         aiChatSendButton.accessibilityTraits = .button
@@ -1728,6 +1752,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         // Vertical gaps around the attachments strip when it grows the expanded search area.
         static let attachmentsStripToButtonRowSpacing: CGFloat = 8.0
         static let attachmentsStripToTextViewSpacing: CGFloat = 4.0
+        static let buttonRowToTextViewSpacing: CGFloat = 4.0
 
         static let expandedPadSizeSpacing: CGFloat = 24.0
         static let expandedPadSizeMargins = NSDirectionalEdgeInsets(
@@ -1750,6 +1775,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private struct Constant {
         static let accessibilityPrefix = "Browser.OmniBar"
+        static let aiChatSendAccessibilityLabel = "Send message"
     }
 
     private func applyOmnibarCornerStyle() {
@@ -1999,8 +2025,8 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedSearchAreaConstraints() {
-        // The text view fills down to the toolbar row by default; when attachments are present this
-        // is swapped for `textViewBottomToStripConstraint` so the text stops above the strip.
+        // Expanded, the text view stops above the button row (see `applyExpansionConstraints`); when
+        // attachments are present this is swapped for `textViewBottomToStripConstraint` so it stops above the strip.
         let textBottomToContainer = aiChatTextView.bottomAnchor.constraint(
             equalTo: searchAreaContainerView.bottomAnchor,
             constant: -Metrics.duckAITextViewBottomPadding
@@ -2025,7 +2051,7 @@ extension DefaultOmniBarView {
 
             aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
-            aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
+            aiChatSendButtonWidthConstraint,
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
 
             modelPickerButton.trailingAnchor.constraint(equalTo: aiChatSendButton.leadingAnchor, constant: -Metrics.modelPickerToSendButtonSpacing),
@@ -2105,7 +2131,7 @@ extension DefaultOmniBarView {
         aiChatTextView.autocapitalizationType = .none
         aiChatTextView.autocorrectionType = .no
         aiChatTextView.spellCheckingType = .no
-        aiChatTextView.keyboardType = .webSearch
+        aiChatTextView.keyboardType = aiChatKeyboardType
         aiChatTextView.isScrollEnabled = true
     }
 
@@ -2418,21 +2444,32 @@ extension DefaultOmniBarView {
         let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else if !hasText && attachments.isEmpty {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.voice, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.voice, allowsAskTitle: false)
             aiChatSendButton.backgroundColor = accentColor
             aiChatSendButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             aiChatSendButton.isEnabled = true
         } else {
-            aiChatSendButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRightSmall, for: .normal)
+            setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall, allowsAskTitle: true)
             aiChatSendButton.backgroundColor = .clear
             aiChatSendButton.tintColor = UIColor(designSystemColor: .icons)
             aiChatSendButton.isEnabled = false
         }
+    }
+
+    /// The "Ask" label stands in for the arrow only; the voice icon stays.
+    private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
+        let title = allowsAskTitle && isTermsOfServiceDisclaimerShown ? UserText.duckAIAskButtonTitle : nil
+        aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
+        aiChatSendButton.setTitle(title, for: .normal)
+        aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel
+        aiChatSendButtonWidthConstraint.constant = title.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Metrics.sendButtonSize)
+        } ?? Metrics.sendButtonSize
     }
 
     func updateLeftIconForMode(_ mode: TextEntryMode) {
@@ -2449,6 +2486,10 @@ extension DefaultOmniBarView {
     }
 
     private func applyExpansionConstraints() {
+        // The button row sits inside the expanded container, so the text and caret must stop above it.
+        textViewBottomToContainerConstraint?.constant = isSearchAreaExpanded
+            ? -(Metrics.duckAITextViewBottomPadding + Metrics.sendButtonSize + Metrics.buttonRowToTextViewSpacing)
+            : -Metrics.duckAITextViewBottomPadding
         if isSearchAreaExpanded {
             searchFieldBottomEqualConstraint?.isActive = false
             searchAreaCenterYConstraint?.isActive = false

@@ -4702,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Adres Çubuğu Konumunuzu Ayarlayın";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Her Zaman İzin Ver";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Her Seferinde Sor";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Konum";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Siteleri Yönet";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Hiçbir Zaman İzin Verme";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Tüm Site İzinlerini Kaldır";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "İzinleri Kaldır";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Tüm Siteler İçin İzinler Kaldırıldı";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "%@ için izinler kaldırıldı";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "%@ için İzinler";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "DuckDuckGo'nun sistem izinlerini %@ üzerinden görüntüleyebilir ve değiştirebilirsiniz.";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Sistem Ayarları.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Etkinleştiriliyor";
 
@@ -4899,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Site çalışmıyor mu? DuckDuckGo'ya bildirin.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Site İzinleri";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Rapor Gönder";

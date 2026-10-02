@@ -24,15 +24,15 @@ import DataBrokerProtectionCoreTestsUtils
 final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
 
     func test_saveProfileAndPrepareForInitialScans_recordsProfileSaved_afterDatabaseSaveSucceeds() async throws {
-        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+        let (manager, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
 
         try await manager.saveProfileAndPrepareForInitialScans(DBPIOSManagerTestUtils.makeProfile())
 
         XCTAssertEqual(dependencies.profileStateManager.profileState, .hasProfile)
     }
 
-    func test_saveProfileAndPrepareForInitialScans_doesNotRecordProfileSaved_whenDatabaseSaveFails() async {
-        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+    func test_saveProfileAndPrepareForInitialScans_doesNotRecordProfileSaved_whenDatabaseSaveFails() async throws {
+        let (manager, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.saveResult = .failure(MockDatabase.MockError.saveFailed)
 
         do {
@@ -43,8 +43,8 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
         }
     }
 
-    func test_deleteAllUserProfileData_recordsProfileDeleted_afterDatabaseDeleteSucceeds() throws {
-        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+    func test_deleteAllUserProfileData_recordsProfileDeleted_afterDatabaseDeleteSucceeds() async throws {
+        let (manager, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.profileStateManager.recordProfileSaved()
 
         try manager.deleteAllUserProfileData()
@@ -52,8 +52,8 @@ final class DataBrokerProtectionIOSManagerProfileStateTests: XCTestCase {
         XCTAssertEqual(dependencies.profileStateManager.profileState, .noProfile)
     }
 
-    func test_appDidEnterBackground_keepsCachedState_whenProfileReadFails() {
-        let (manager, dependencies) = DBPIOSManagerTestUtils.makeTestIOSManager()
+    func test_appDidEnterBackground_keepsCachedState_whenProfileReadFails() async throws {
+        let (manager, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.profileStateManager.recordProfileSaved()
         dependencies.database.fetchProfileError = MockDatabase.MockError.fetchFailed
 

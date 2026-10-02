@@ -880,12 +880,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, let termsAccepted) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNil(context)
+            XCTAssertFalse(termsAccepted)
         } else {
             XCTFail("Expected submitPrompt effect")
         }
+    }
+
+    func testWhenPromptIsSubmittedWithTermsAcceptedThenSubmitPromptEffectCarriesThem() {
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { receivedEffect = $0 }
+            .store(in: &cancellables)
+
+        sessionState.handlePromptSubmission("Hello world", termsAccepted: true)
+
+        guard case .submitPrompt(_, _, let termsAccepted) = receivedEffect else {
+            return XCTFail("Expected submitPrompt effect")
+        }
+        XCTAssertTrue(termsAccepted)
     }
 
     func testEffectsPublisherEmitsSubmitPromptWithContext() {
@@ -909,7 +924,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, _) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNotNil(context)
             XCTAssertEqual(context?.title, "Test Page")

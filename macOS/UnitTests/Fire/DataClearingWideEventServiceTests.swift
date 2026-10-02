@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import AIChat
 @_spi(Testing) import WideEvent
 import XCTest
 
@@ -37,6 +38,47 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         wideEventMock = nil
         sut = nil
         super.tearDown()
+    }
+
+    // MARK: - Duck.ai clearing report
+
+    func testRecordAIChatClearing_recordsRetryFirstErrorAndTimings() {
+        let options = FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: true)
+        sut.start(options: options, path: .burnAll, isAutoClear: false)
+
+        sut.recordAIChatClearing(AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2),
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 300, scriptReadyMilliseconds: 20, scriptReplyMilliseconds: 5000)
+        ))
+
+        let eventData = wideEventMock.started.first as? DataClearingWideEventData
+        XCTAssertEqual(eventData?.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData?.clearAIChatHistoryFirstAttemptError?.code, 2)
+        XCTAssertEqual(eventData?.clearAIChatHistoryScriptReplyMilliseconds, 5000)
+    }
+
+    // MARK: - Persisting Progress
+
+    func testStartAction_persistsTheStartedAction() {
+        var persistedTabsStart: Date?
+        sut.start(options: FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false), path: .burnAll, isAutoClear: false)
+        wideEventMock.onUpdate = { persistedTabsStart = ($0 as? DataClearingWideEventData)?.clearTabsDuration?.start }
+
+        sut.start(.clearTabs)
+
+        XCTAssertNotNil(persistedTabsStart, "An orphaned event must show which action was running")
+    }
+
+    func testUpdateAction_persistsTheActionResult() {
+        var persistedTabsStatus: DataClearingWideEventData.ActionStatus?
+        sut.start(options: FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false), path: .burnAll, isAutoClear: false)
+        sut.start(.clearTabs)
+        wideEventMock.onUpdate = { persistedTabsStatus = ($0 as? DataClearingWideEventData)?.clearTabsStatus }
+
+        sut.update(.clearTabs, result: .success(()))
+
+        XCTAssertEqual(persistedTabsStatus, .success)
     }
 
     // MARK: - Event Lifecycle Tests

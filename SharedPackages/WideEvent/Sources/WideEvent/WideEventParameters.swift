@@ -29,6 +29,12 @@ public extension WideEventParameterProviding {
             if let string = value as? String {
                 return string
             }
+            // Pixel parameters declared as arrays are validated as JSON.
+            if let array = value as? [String],
+               let data = try? JSONSerialization.data(withJSONObject: array),
+               let json = String(data: data, encoding: .utf8) {
+                return json
+            }
             return String(describing: value)
         }
     }

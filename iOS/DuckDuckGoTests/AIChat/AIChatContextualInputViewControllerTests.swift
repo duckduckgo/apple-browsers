@@ -101,7 +101,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let window = show(sut)
         defer { window.isHidden = true }
 
-        sut.acceptTermsIfDisclaimerShown()
+        XCTAssertTrue(sut.acceptTermsIfDisclaimerShown())
 
         XCTAssertTrue(termsStore.hasAccepted)
         XCTAssertEqual(termsOfServiceCard(in: sut)?.isHidden, true)
@@ -111,7 +111,7 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         let sut = makeBasicInputSUT()
         sut.loadViewIfNeeded()
 
-        sut.acceptTermsIfDisclaimerShown()
+        XCTAssertFalse(sut.acceptTermsIfDisclaimerShown())
 
         XCTAssertFalse(termsStore.hasAccepted)
     }
@@ -129,7 +129,44 @@ final class AIChatContextualInputViewControllerTests: XCTestCase {
         XCTAssertEqual(termsOfServiceCard(in: sut)?.isHidden, true)
     }
 
+    func testWhenTheDisclaimerShowsThenSubmitReadsAsk() throws {
+        let sut = makeBasicInputSUT()
+        let window = show(sut)
+        defer { window.isHidden = true }
+
+        let submitButton = try XCTUnwrap(nativeInputSubmitButton(in: sut))
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+        XCTAssertNil(submitButton.image(for: .normal))
+    }
+
+    func testWhenTermsAreAcceptedOnSendThenSubmitGoesBackToTheArrow() throws {
+        let sut = makeBasicInputSUT()
+        let window = show(sut)
+        defer { window.isHidden = true }
+
+        sut.acceptTermsIfDisclaimerShown()
+
+        let submitButton = try XCTUnwrap(nativeInputSubmitButton(in: sut))
+        XCTAssertNil(submitButton.title(for: .normal))
+        XCTAssertNotNil(submitButton.image(for: .normal))
+    }
+
+    func testWhenTermsAreAlreadyAcceptedThenSubmitShowsTheArrow() throws {
+        termsStore.recordWebReport()
+        let sut = makeBasicInputSUT()
+        let window = show(sut)
+        defer { window.isHidden = true }
+
+        let submitButton = try XCTUnwrap(nativeInputSubmitButton(in: sut))
+        XCTAssertNil(submitButton.title(for: .normal))
+        XCTAssertNotNil(submitButton.image(for: .normal))
+    }
+
     // MARK: - Helpers
+
+    private func nativeInputSubmitButton(in viewController: UIViewController) -> UIButton? {
+        findSubview(in: viewController.view) { $0.accessibilityIdentifier == "AIChatNativeInputView.submitButton" } as? UIButton
+    }
 
     private var termsStore: DuckAiTermsOfServiceStore {
         DuckAiTermsOfServiceStore(keyValueStore: UserDefaults(suiteName: termsSuiteName)!)

@@ -78,8 +78,8 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
 
-    /// Called when the user submits a prompt from native input
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String)
+    /// Called when the user submits a prompt from native input. `termsAccepted` is `true` only for a prompt sent with Ask.
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool)
 
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
@@ -710,7 +710,7 @@ private extension AIChatContextualSheetViewController {
         isWebViewVisible = true
     }
 
-    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
         Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt called")
 
         guard let webVC = webViewController else {
@@ -721,7 +721,7 @@ private extension AIChatContextualSheetViewController {
 
         // Don't transition immediately - wait for delegate callback after prompt is submitted
         // This prevents showing the initial duck.ai page before the prompt navigates it
-        webVC.submitPrompt(prompt, pageContext: pageContext)
+        webVC.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
         if !isWaitingForInitialPromptResponseState {
             expandToLargeDetent()
         }
@@ -939,7 +939,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
         cancelSuggestionSubmission()
-        submitPromptFromNativeInput(prompt)
+        submitPromptFromNativeInput(prompt, sentWithAsk: true)
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
@@ -966,7 +966,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             if let persistentUTIHost {
                 persistentUTIHost.submitQuickActionPrompt(action.prompt)
             } else {
-                submitPromptFromNativeInput(action.prompt)
+                submitPromptFromNativeInput(action.prompt, sentWithAsk: false)
             }
         }
     }
@@ -1288,8 +1288,8 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ effect: SheetEffect) {
         switch effect {
-        case .submitPrompt(let prompt, let context):
-            showWebViewWithPrompt(prompt, pageContext: context)
+        case .submitPrompt(let prompt, let context, let termsAccepted):
+            showWebViewWithPrompt(prompt, pageContext: context, termsAccepted: termsAccepted)
         case .reloadWebView:
             webViewController?.reload()
         case .deliverPageContext:
@@ -1356,18 +1356,24 @@ private extension AIChatContextualSheetViewController {
         suggestionSubmissionID = nil
     }
 
-    func submitPromptFromNativeInput(_ prompt: String) {
-        // Ahead of delivery, which stamps the prompt with the acceptance.
-        contextualInputViewController.acceptTermsIfDisclaimerShown()
+    /// Only an Ask tap accepts the Terms of Service; chips and Summarize send without it.
+    func submitPromptFromNativeInput(_ prompt: String, sentWithAsk: Bool) {
+        let termsAccepted: Bool
+        if sentWithAsk {
+            termsAccepted = contextualInputViewController.acceptTermsIfDisclaimerShown()
+        } else {
+            Logger.aiChat.debug("[TermsOfService] Contextual prompt sent without Ask: acceptance not recorded, termsAccepted=false")
+            termsAccepted = false
+        }
         beginWaitingForInitialPromptResponseStateIfNeeded()
-        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
+        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
     }
 
     func submitSuggestionPrompt(_ prompt: String) {
         if let persistentUTIHost {
             persistentUTIHost.submitQuickActionPrompt(prompt)
         } else {
-            submitPromptFromNativeInput(prompt)
+            submitPromptFromNativeInput(prompt, sentWithAsk: false)
         }
     }
 

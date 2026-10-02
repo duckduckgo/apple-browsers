@@ -279,8 +279,9 @@ jobs:
       env:
         # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
         # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
-        # This forces DEBUG on for the package build. Read in SyncUI-macOS/Package.swift.
-        SPM_FORCE_DEBUG_FOR_SNAPSHOTS: "1"
+        # This forces DEBUG on for the affected packages. Read in SyncUI-macOS/Package.swift
+        # and AppKitExtensions/Package.swift.
+        SPM_FORCE_DEBUG: "1"
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
 
@@ -307,10 +308,12 @@ jobs:
       id: run-unit-tests
       run: |
         export OS_ACTIVITY_MODE=debug
+        mkdir -p DerivedData/Logs/Test
 
         set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
           -test-timeouts-enabled YES \
@@ -321,15 +324,17 @@ jobs:
           -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
-          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
-          || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
+          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml
 
     - name: Run integration tests
       id: run-integration-tests
       run: |
+        mkdir -p DerivedData/Logs/Test
+
         set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
           -test-timeouts-enabled YES \
@@ -340,8 +345,7 @@ jobs:
           -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
-          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \
-          || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
+          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml
 
     - name: Compute Compilation Cache hash
       if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
@@ -394,7 +398,7 @@ jobs:
         working-directory: macOS
         junit-path: ${{ matrix.flavor }}-unittests.xml
         log-path: ${{ matrix.flavor }}-unittests-xcodebuild.log
-        xcresult-glob: ${{ matrix.flavor }}-unittests.xcresult
+        xcresult-glob: DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
         title: macOS ${{ matrix.flavor }} Unit Tests
         test-outcome: ${{ steps.run-unit-tests.outcome }}
 
@@ -405,7 +409,7 @@ jobs:
         working-directory: macOS
         junit-path: ${{ matrix.flavor }}-integrationtests.xml
         log-path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
-        xcresult-glob: ${{ matrix.flavor }}-integrationtests.xcresult
+        xcresult-glob: DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
         title: macOS ${{ matrix.flavor }} Integration Tests
         test-outcome: ${{ steps.run-integration-tests.outcome }}
 
@@ -491,7 +495,7 @@ jobs:
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests.xcresult
-        path: macOS/${{ matrix.flavor }}-unittests.xcresult
+        path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
         retention-days: 7
 
     - name: Upload failed integration tests log
@@ -507,7 +511,7 @@ jobs:
       if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
-        path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
+        path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
 
     - name: Upload crash reports

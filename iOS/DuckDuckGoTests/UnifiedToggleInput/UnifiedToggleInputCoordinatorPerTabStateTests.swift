@@ -40,163 +40,6 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         )
     }
 
-    func testCountedDraftSurvivesTabSwitchAndAttachmentRemoval() {
-        let store = FakeInputStateStore()
-        store.states["tab-A"] = TabInputState(text: "draft", hasCountedAttachmentPrivacyForDraft: true)
-        let sut = makeSUT(stateStore: store)
-        sut.activateForTab("tab-A")
-        sut.clearAttachments()
-        sut.activateForTab("tab-B")
-        XCTAssertFalse(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
-        sut.activateForTab("tab-A")
-        XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
-        XCTAssertTrue(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft == true)
-    }
-
-    func testDraftBoundariesResetCountedFlag() {
-        let store = FakeInputStateStore()
-        let sut = makeSUT(stateStore: store)
-        let countedDraft = TabInputState(text: "draft", toggleMode: .aiChat, hasCountedAttachmentPrivacyForDraft: true)
-        sut.activateForTab("tab-A")
-        for boundary in 0..<5 {
-            sut.applyState(countedDraft)
-            XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
-            switch boundary {
-            case 0: sut.unifiedToggleInputVC(sut.viewController, didChangeText: "")
-            case 1: sut.startNewChat()
-            case 2: sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
-            case 3: sut.handleExternalSubmission(.prompt)
-            default: sut.submitProgrammatic(text: "draft")
-            }
-            XCTAssertFalse(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
-            XCTAssertFalse(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft ?? true)
-        }
-    }
-
-    func testEmptyTextWithStagedAttachmentDoesNotResetCountedDraft() {
-        let store = FakeInputStateStore()
-        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "draft.jpg"))
-        store.states["tab-A"] = TabInputState(text: "draft", attachments: [attachment], hasCountedAttachmentPrivacyForDraft: true)
-        let sut = makeSUT(stateStore: store)
-        sut.activateForTab("tab-A")
-        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "")
-        XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
-        sut.clearAttachments()
-        XCTAssertTrue(sut.snapshotCurrentState().hasCountedAttachmentPrivacyForDraft)
-    }
-
-    func testSubmissionAfterHideClearsStoredCountedDraft() {
-        let store = FakeInputStateStore()
-        store.states["tab-A"] = TabInputState(text: "draft", hasCountedAttachmentPrivacyForDraft: true)
-        let sut = makeSUT(stateStore: store)
-        sut.activateForTab("tab-A")
-        let otherDraft = TabInputState(text: "other draft", hasCountedAttachmentPrivacyForDraft: true, selectedTool: .webSearch)
-        store.states["tab-B"] = otherDraft
-        sut.hide()
-        XCTAssertTrue(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft == true)
-        sut.handleExternalSubmission(.prompt)
-        XCTAssertFalse(store.states["tab-A"]?.hasCountedAttachmentPrivacyForDraft ?? true)
-        XCTAssertEqual(store.states["tab-A"]?.text, "")
-        XCTAssertEqual(store.states["tab-B"], otherDraft)
-    }
-
-    func testEndingEditDoesNotCountReloadedAttachmentsAsANewDisclosure() {
-        for submits in [false, true] {
-            let tab = Tab(fireTab: true)
-            let store = FakeInputStateStore()
-            let sut = UnifiedToggleInputCoordinator(
-                host: .omnibar,
-                isToggleEnabled: true,
-                isFireTab: true,
-                preferences: MockAIChatPreferencesForPerTab(),
-                toggleModeStorage: MockToggleModeStorageForPerTab(),
-                stateStore: store,
-                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputAttachmentPrivacy]),
-                tabProvider: { tab }
-            )
-            sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
-            sut.modelStore.attachmentLimits = makeLimits()
-            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-            window.rootViewController = sut.viewController
-            window.makeKeyAndVisible()
-            sut.viewController.viewDidAppear(false)
-            let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "edited.jpg"))
-            sut.beginEditMode(prompt: "Edited prompt", attachments: [attachment])
-            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 0)
-
-            if submits {
-                sut.submitProgrammatic(text: "Edited prompt")
-            } else {
-                sut.cancelEdit()
-            }
-            XCTAssertFalse(sut.isEditing)
-            XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 0)
-
-            store.states["fresh-draft"] = TabInputState(attachments: [attachment])
-            sut.activateForTab("fresh-draft")
-            sut.showExpanded(inputMode: .aiChat, activatesInput: false)
-            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1, "A newly composed attachment must still count")
-            sut.viewController.viewWillDisappear(false)
-            window.isHidden = true
-            window.rootViewController = nil
-        }
-    }
-
-    func testEditExitStartsNewDraftWithoutCountingReloadedAttachments() {
-        for submits in [false, true] {
-            let tab = Tab(fireTab: true)
-            let store = FakeInputStateStore()
-            let sut = UnifiedToggleInputCoordinator(
-                host: .omnibar,
-                isToggleEnabled: true,
-                isFireTab: true,
-                preferences: MockAIChatPreferencesForPerTab(),
-                toggleModeStorage: MockToggleModeStorageForPerTab(),
-                stateStore: store,
-                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputAttachmentPrivacy]),
-                tabProvider: { tab }
-            )
-            sut.modelStore.models = [makeModelWithTools(id: "image-model", supportsImageUpload: true)]
-            sut.modelStore.attachmentLimits = makeLimits()
-            sut.activateForTab(tab.uid)
-            sut.showExpanded(inputMode: .aiChat, activatesInput: false)
-            sut.addImageAttachment(image: UIImage(), fileName: "first-draft.jpg")
-            XCTAssertFalse(store.states[tab.uid]?.hasCountedAttachmentPrivacyForDraft ?? true)
-            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-            window.rootViewController = sut.viewController
-            window.makeKeyAndVisible()
-            sut.viewController.viewDidAppear(false)
-            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
-            XCTAssertTrue(store.states[tab.uid]?.hasCountedAttachmentPrivacyForDraft == true)
-            let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "edited.jpg"))
-            sut.beginEditMode(prompt: "Edited prompt", attachments: [attachment])
-            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
-
-            if submits {
-                sut.submitProgrammatic(text: "Edited prompt")
-            } else {
-                sut.cancelEdit()
-            }
-            XCTAssertFalse(sut.isEditing)
-            XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
-
-            XCTAssertFalse(store.states[tab.uid]?.hasCountedAttachmentPrivacyForDraft ?? true)
-            sut.showExpanded(inputMode: .aiChat, activatesInput: false)
-            sut.addImageAttachment(image: UIImage(), fileName: "next-draft.jpg")
-            sut.viewController.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
-            XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 2, "A new draft on the same tab must count")
-            sut.viewController.viewWillDisappear(false)
-            window.isHidden = true
-            window.rootViewController = nil
-        }
-    }
-
     func test_activateForTab_appliesStoredText() {
         let store = FakeInputStateStore()
         store.states["tab-A"] = TabInputState(text: "remembered")
@@ -246,7 +89,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.bindToTab(script, hasExistingChat: true)
         sut.startNewChat()
         sut.activateFromOmnibar(inputMode: .aiChat)
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat, trigger: .sendButton)
         XCTAssertTrue(sut.hasSubmittedPrompt)
 
         sut.bindToTab(script, hasExistingChat: false)
@@ -260,7 +103,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let script = makeTestUserScript()
         sut.activateForTab("tab-A")
         sut.activateFromOmnibar(inputMode: .aiChat)
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat, trigger: .sendButton)
         XCTAssertTrue(sut.hasSubmittedPrompt)
 
         sut.bindToTab(script, hasExistingChat: false)
@@ -575,7 +418,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.activateForTab("tab-A")
         sut.hide()
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
     }
@@ -589,7 +432,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertTrue(store.states["tab-A"]?.isModelPickerForcedVisible == true)
 
         sut.hide()
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(store.states["tab-A"]?.isModelPickerForcedVisible, false)
     }
@@ -683,7 +526,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.setText("hello")
         XCTAssertEqual(store.states["tab-A"]?.text, "hello")
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .search, trigger: .sendButton)
         XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
     }
 
@@ -698,7 +541,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         XCTAssertEqual(store.states["tab-A"]?.text, "ask claude something")
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ask claude something", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ask claude something", mode: .aiChat, trigger: .sendButton)
         XCTAssertEqual(store.states["tab-A"]?.text ?? "", "")
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 0)
     }
@@ -745,7 +588,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         let text = String(repeating: "a", count: 4_501)
         sut.setText(text)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: text, mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: text, mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(store.states["tab-A"]?.text, text)
         XCTAssertEqual(store.states["tab-A"]?.attachments.count, 1)
@@ -926,7 +769,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.selectTool(.webSearch)
         XCTAssertEqual(store.states["tab-A"]?.selectedTool, .webSearch)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(store.states["tab-A"]?.selectedTool,
                      "After AI submit the store must not retain the selected tool — otherwise reactivation restores it.")
@@ -941,7 +784,7 @@ final class UnifiedToggleInputCoordinatorPerTabStateTests: XCTestCase {
         sut.addImageAttachment(image: UIImage(), fileName: "x.jpg")
         sut.selectTool(.webSearch)
 
-        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "query", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(store.states["tab-A"]?.selectedTool)
     }

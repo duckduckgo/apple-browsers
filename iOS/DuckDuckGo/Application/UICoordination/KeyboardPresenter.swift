@@ -68,13 +68,9 @@ struct NewTabPageKeyboardPolicy {
     }
 
     /// New Tab governs a landing on an NTP inside the app that doesn't come through `newTab()`:
-    /// Close All Tabs, closing the last tab, the Home button and switching onto an NTP (`treatsTabSwitchAsLanding`).
+    /// Close All Tabs, closing the last tab, the Home button and explicitly switching onto an NTP. Swiping between tabs is excluded.
     var showsKeyboardOnInAppLanding: Bool { onNewTab }
 
-    /// Whether picking a different NTP in the tab switcher, or closing the current tab onto one,
-    /// is an in-app landing. Closing the last tab lands on a new tab, which always is.
-    /// Swiping between tabs onto an NTP never is.
-    static let treatsTabSwitchAsLanding = true
 
 }
 

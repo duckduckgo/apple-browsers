@@ -463,7 +463,7 @@ class MainViewController: UIViewController {
     var keyModifierFlags: UIKeyModifierFlags?
     var showKeyboardAfterFireButton: DispatchWorkItem?
     /// A New Tab Page landing that waits for the tab switcher to go, because `enterSearch()` does nothing while it's up.
-    private var focusesNewTabPageAfterTabSwitcherDismissal = false
+    private var pendingTabSwitcherKeyboard: (tab: Tab, requestID: UUID)?
     /// Set while Fire dismisses the tab switcher: the post-Fire keyboard rule decides for the page it lands on.
     private var isDismissingTabSwitcherForFire = false
 
@@ -2857,12 +2857,12 @@ class MainViewController: UIViewController {
 
     /// A landing on a New Tab Page inside the app that didn't come through `newTab()`.
     /// Does nothing unless `.alwaysShowKeyboardOnNewTabPage` is on.
-    /// - Parameter afterSwitchingTabs: `true` when the user picked a different tab or closed the current one.
-    func showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: Bool = false) {
+    func showKeyboardOnNewTabPageLandingIfAllowed() {
         // A landing applied once the tab switcher closes comes after the page's own dialog appeared, and the
         // last onboarding dialog counts itself as seen as soon as it does, so the dialog is checked directly.
         guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-              !afterSwitchingTabs || NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
+              isAppOpenKeyboardWindowVisible,
+              isNewTabPageVisible,
               tabManager.currentTabsModel.currentTab?.isHomeTab == true,
               NewTabPageKeyboardPolicy().showsKeyboardOnInAppLanding,
               !isNewTabPageKeyboardBlockedByDialog,
@@ -5942,9 +5942,8 @@ extension MainViewController: OmniBarDelegate {
             },
             onCloseTab: { [weak self] in
                 guard let tab = self?.currentTab else { return }
-                let closesLastTab = self?.tabManager.currentTabsModel.count == 1
                 self?.tabDidRequestClose(tab.tabModel, behavior: .onlyClose, clearTabHistory: true)
-                self?.showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: !closesLastTab)
+                self?.showKeyboardOnNewTabPageLandingIfAllowed()
             }
         ))
     }
@@ -7571,8 +7570,11 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController) {
         remoteMessageImpressionReporter.scheduleCheck()
-        if focusesNewTabPageAfterTabSwitcherDismissal {
-            focusesNewTabPageAfterTabSwitcherDismissal = false
+        let pendingKeyboard = pendingTabSwitcherKeyboard
+        pendingTabSwitcherKeyboard = nil
+        if let pendingKeyboard,
+           pendingKeyboard.requestID == appOpenKeyboardRequestID,
+           pendingKeyboard.tab === tabManager.currentTabsModel.currentTab {
             showKeyboardOnNewTabPageLandingIfAllowed()
         }
     }
@@ -7609,11 +7611,15 @@ extension MainViewController: TabSwitcherDelegate {
             assertionFailure("Couldn't create new tab")
             return
         }
-        if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage), NewTabPageKeyboardPolicy.treatsTabSwitchAsLanding,
-           newTab.tabModel.isHomeTab, newTab.tabModel !== previousTabModel, !isDismissingTabSwitcherForFire {
-            focusesNewTabPageAfterTabSwitcherDismissal = true
-        }
+        let shouldFocusKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && newTab.tabModel.isHomeTab
+            && (newTab.tabModel !== previousTabModel
+                || (pendingTabSwitcherKeyboard?.tab === newTab.tabModel
+                    && pendingTabSwitcherKeyboard?.requestID == appOpenKeyboardRequestID))
+            && !isDismissingTabSwitcherForFire && !isClearingNavigationForAppOpen
         transitionTo(tab: newTab, from: previousTab)
+        // Transitioning invalidates the previous request; only this landing can focus after dismissal.
+        pendingTabSwitcherKeyboard = shouldFocusKeyboard ? (newTab.tabModel, appOpenKeyboardRequestID) : nil
     }
 
     private func animateLogoAppearance() {
@@ -7658,12 +7664,16 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
         // Closing every tab leaves the switcher's own unseen new tab, which it then dismisses onto.
         // `updateCurrentTab()` makes that tab current first, so the dismissal reports no new selection.
-        if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
-           let tab = tabManager.currentTabsModel.currentTab, tab.isHomeTab, !tab.viewed {
-            focusesNewTabPageAfterTabSwitcherDismissal = true
-        }
+        let tab = tabManager.currentTabsModel.currentTab
+        let shouldFocusKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && tab?.isHomeTab == true && tab?.viewed == false
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
         updateCurrentTab()
+        if shouldFocusKeyboard, let tab {
+            pendingTabSwitcherKeyboard = (tab, appOpenKeyboardRequestID)
+        } else {
+            pendingTabSwitcherKeyboard = nil
+        }
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, willCloseTabs tabs: [Tab]) {
@@ -7746,6 +7756,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController, fireRequest: FireRequest) {
         self.forgetAllWithAnimation(request: fireRequest) { [weak self] in
+            self?.pendingTabSwitcherKeyboard = nil
             self?.isDismissingTabSwitcherForFire = true
             tabSwitcher.dismissIfPossible(animated: false)
             self?.isDismissingTabSwitcherForFire = false
@@ -7770,8 +7781,10 @@ extension MainViewController: TabSwitcherDelegate {
             }
             await fireExecutor.burn(request: request, applicationState: .unknown)
             // In normal mode the switcher dismisses onto the new tab the burn leaves.
-            if case .normalMode = request.scope, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
-                focusesNewTabPageAfterTabSwitcherDismissal = true
+            if case .normalMode = request.scope, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+               isAppOpenKeyboardWindowVisible, presentedViewController === tabSwitcher,
+               let tab = tabManager.currentTabsModel.currentTab, tab.isHomeTab {
+                pendingTabSwitcherKeyboard = (tab, appOpenKeyboardRequestID)
             }
             tabSwitcher.dismissIfPossible()
         }
@@ -7791,7 +7804,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     private func tabSwitcherNewTabWithAnimation() {
         // The new tab shows its own keyboard, so a pick the switcher reported just before doesn't add a second one.
-        focusesNewTabPageAfterTabSwitcherDismissal = false
+        pendingTabSwitcherKeyboard = nil
         newTab()
         if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
@@ -7853,7 +7866,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         // Snap the UTI away so its collapse doesn't overlap the tab switcher segue (non-animated dismiss restores resting layout synchronously).
         performCancel(animated: false)
         // A landing left pending by an earlier switcher that never reported its dismissal is stale now.
-        focusesNewTabPageAfterTabSwitcherDismissal = false
+        pendingTabSwitcherKeyboard = nil
         showTabSwitcher()
     }
 

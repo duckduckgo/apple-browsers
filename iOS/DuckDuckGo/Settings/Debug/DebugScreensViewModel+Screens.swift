@@ -127,6 +127,7 @@ extension DebugScreensViewModel {
             .view(title: "Idle Return NTP", { _ in
                 IdleReturnNTPDebugView()
             }),
+            appOpenKeyboardDebugScreen,
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
             }),
@@ -326,6 +327,16 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
+    private var appOpenKeyboardDebugScreen: DebugScreen? {
+#if DEBUG
+        return .view(title: "App Open Keyboard") { _ in
+            AppOpenKeyboardDebugView()
+        }
+#else
+        return nil
+#endif
+    }
+
     private var resetModalPromptsCooldownPeriodScreen: DebugScreen? {
         guard let cooldownResetter = dependencies.promoCoordinationCooldownResetter else { return nil }
 

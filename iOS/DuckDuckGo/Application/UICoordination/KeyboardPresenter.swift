@@ -83,7 +83,7 @@ final class KeyboardPresenter: KeyboardPresenting {
          featureFlagger: FeatureFlagger,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
-         backgroundThreshold: @escaping () -> TimeInterval = { NewTabPageKeyboardPolicy.appOpenBackgroundThreshold },
+         backgroundThreshold: @escaping () -> TimeInterval = { AppOpenKeyboardDebugSettings().thresholdSeconds },
          schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
         self.featureFlagger = featureFlagger

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import ConcurrencyExtensions
 import os.log
 import WebExtensions
@@ -145,6 +146,8 @@ final class WebExtensionPopupPresenter {
     private weak var popupWebView: WKWebView?
     private var loadingObservation: NSKeyValueObservation?
     private var clickMonitor: Any?
+    private var selectedTabCancellable: AnyCancellable?
+    private var windowObservers: [NSObjectProtocol] = []
     private var resizeMessageUserContentController: WKUserContentController?
 
     /// Whether the popup of the given extension is on screen.
@@ -156,7 +159,8 @@ final class WebExtensionPopupPresenter {
 
     func present(_ action: WKWebExtension.Action,
                  for context: WKWebExtensionContext,
-                 from button: NSView) {
+                 from button: NSView,
+                 selectedTabPublisher: AnyPublisher<Tab?, Never>) {
         guard let popupWebView = action.popupWebView else {
             Logger.webExtensions.error("❌ Popup of \(context.uniqueIdentifier) has no web view")
             return
@@ -208,6 +212,7 @@ final class WebExtensionPopupPresenter {
         // whose worker never starts then shows no popup. Only observe the page.
         observePopupSize(of: popupWebView)
         startWatchingForClicksOutside()
+        startWatchingForFocusLoss(parentWindow: parentWindow, selectedTabPublisher: selectedTabPublisher)
     }
 
     private var popupBackgroundColor: NSColor {
@@ -352,6 +357,46 @@ final class WebExtensionPopupPresenter {
         }
     }
 
+    /// Closes the popup when its window moves off the tab it opened on, as Chrome and Safari do, or when that window closes.
+    ///
+    /// An extension can open a tab and bring it forward, such as Bitwarden's single sign-on, and
+    /// the popup would otherwise stay over it. A new window does not close the popup.
+    private func startWatchingForFocusLoss(parentWindow: NSWindow,
+                                           selectedTabPublisher: AnyPublisher<Tab?, Never>) {
+        // The publisher replays the selected tab on subscribing, which is the one the popup opened on.
+        var presentedTab: Tab?
+        var hasPresentedTab = false
+        selectedTabCancellable = selectedTabPublisher.sink { [weak self] selectedTab in
+            guard hasPresentedTab else {
+                presentedTab = selectedTab
+                hasPresentedTab = true
+                return
+            }
+            guard !Self.isSameTab(selectedTab, as: presentedTab) else { return }
+            // The publisher emits before the selection changes, so closing here would run mid-mutation.
+            // The close is tied to this popup's panel, so it can't take down a popup presented meanwhile.
+            let panel = self?.panel
+            DispatchQueue.main.async {
+                guard let self, let panel, self.panel === panel else { return }
+                self.close()
+            }
+        }
+
+        let notificationCenter = NotificationCenter.default
+        windowObservers = [
+            notificationCenter.addObserver(forName: NSWindow.willCloseNotification, object: parentWindow, queue: .main) { [weak self] _ in
+                MainActor.assumeMainThread {
+                    self?.close()
+                }
+            }
+        ]
+    }
+
+    /// Whether the popup shows the same tab it was opened on. Compared by identity, as tabs are reference types.
+    static func isSameTab(_ tab: Tab?, as presentedTab: Tab?) -> Bool {
+        tab === presentedTab
+    }
+
     private func closeIfClickLandsOutside(in clickedWindow: NSWindow?, at location: NSPoint) {
         guard let panel, panel.isVisible else { return }
 
@@ -387,6 +432,10 @@ final class WebExtensionPopupPresenter {
 
         loadingObservation?.invalidate()
         loadingObservation = nil
+
+        selectedTabCancellable = nil
+        windowObservers.forEach(NotificationCenter.default.removeObserver)
+        windowObservers = []
 
         resizeMessageUserContentController?.removeScriptMessageHandler(forName: Constants.resizeMessageHandlerName)
         resizeMessageUserContentController = nil

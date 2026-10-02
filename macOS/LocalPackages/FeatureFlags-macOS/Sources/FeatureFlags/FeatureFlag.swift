@@ -587,6 +587,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -982,6 +985,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
+        case .pageSignals:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         }
     }
 

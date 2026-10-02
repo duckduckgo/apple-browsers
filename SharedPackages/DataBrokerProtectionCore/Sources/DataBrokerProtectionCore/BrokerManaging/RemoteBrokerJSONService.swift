@@ -22,6 +22,7 @@ import ZIPFoundation
 import Common
 import os.log
 import BrowserServicesKit
+import PrivacyConfig
 
 public protocol ZipArchiveHandling: FileManager, Sendable {
     func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws
@@ -65,6 +66,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     enum Endpoint {
         case mainConfig
+        case mainConfigSignature
         case allBrokers
 
         static func request(for endpoint: Endpoint,
@@ -90,6 +92,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             switch endpoint {
             case .mainConfig:
                 components?.path += "/dbp/remote/v0/main_config.json"
+            case .mainConfigSignature:
+                components?.path += "/dbp/remote/v0/main_config.json.sig"
             case .allBrokers:
                 components?.path += "/dbp/remote/v0"
                 components?.queryItems = [
@@ -118,6 +122,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     private static let updateCheckInterval = TimeInterval.hours(1)
+    private static let revokedSigningKeysSettingsKey = "revokedBundleSigningKeys"
+    private static let configVersionHeader = "X-Config-Version"
 
     private let featureFlagger: FeatureFlagging
     private let settings: DataBrokerProtectionSettings
@@ -128,6 +134,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let signingKeys: BrokerBundleSigningKeys
 
     public init(featureFlagger: FeatureFlagging,
                 settings: DataBrokerProtectionSettings,
@@ -136,7 +144,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 urlSession: URLSession = .shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
-                localBrokerProvider: BrokerJSONFallbackProvider?) {
+                localBrokerProvider: BrokerJSONFallbackProvider?,
+                privacyConfigurationManager: PrivacyConfigurationManaging,
+                signingKeys: BrokerBundleSigningKeys = .builtIn) {
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.vault = vault
@@ -145,6 +155,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.signingKeys = signingKeys
     }
 
     // MARK: - Local fallback
@@ -174,36 +186,134 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 return
             }
 
-            /// 2. Use bundled JSONs to populate/update the database
+            /// 2. Fall back to bundled JSONs if any of our signing keys has been revoked
+            let verifier = BrokerBundleVerifier(keys: signingKeys.keys(isProductionEndpoint: settings.isProductionEndpoint))
+            if verifier.hasRevokedKey(revokedKeyIDs: revokedSigningKeyIDs) {
+                Logger.dataBrokerProtection.log("🧩 Broker bundle signing key revoked, reverting to bundled broker JSONs")
+                do {
+                    try revertToBundledBrokers()
+                } catch {
+                    pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService revertToBundledBrokers"))
+                }
+                settings.mainConfigETag = nil
+                settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
+                throw BrokerBundleVerificationError.keyRevoked
+            }
+
+            /// 3. Use bundled JSONs to populate/update the database
             try? await localBrokerProvider?.checkForUpdates()
 
-            /// 3. Hit main_config.json endpoint for ETag and active broker changes
-            let request = try Endpoint.request(for: .mainConfig,
-                                               endpointURL: settings.endpointURL,
-                                               contentType: "application/json",
-                                               eTag: settings.mainConfigETag)
-            let (data, response) = try await urlSession.data(for: request)
-            guard let response = response as? HTTPURLResponse else { return }
+            /// 4. Hit main_config.json endpoint for ETag and active broker changes, along with its signature.
+            ///    They're separate requests that can be served by different deploys, so retry once if they disagree.
+            var signedMainConfig = try await fetchSignedMainConfig()
+            if signedMainConfig?.isFromDifferentConfigVersions == true {
+                Logger.dataBrokerProtection.log("🧩 Main config and signature are from different config versions, fetching both again")
+                signedMainConfig = try await fetchSignedMainConfig()
+            }
 
-            if response.statusCode == 304 {
+            guard let signedMainConfig else {
                 Logger.dataBrokerProtection.log("🧩 Broker JSONs are up to date: main config eTag matches")
                 settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
                 return
             }
+            let newETag = signedMainConfig.eTag
 
-            guard response.statusCode == 200, let newETag = response.etag else {
-                throw Error.serverError(httpCode: response.statusCode)
+            /// 5. Verify the signature over the exact bytes received, then reject rollbacks
+            let signingKey = try verifier.verifyingKey(manifest: signedMainConfig.data, signature: signedMainConfig.signature)
+            let mainConfig = try JSONDecoder().decode(MainConfig.self, from: signedMainConfig.data)
+            if let lastManifestVersion = settings.lastManifestVersions[signingKey.id],
+               mainConfig.manifestVersion < lastManifestVersion {
+                throw BrokerBundleVerificationError.rollback
             }
 
-            /// 4. Download, extract, and process changed broker JSONs
-            try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data), eTag: newETag)
+            /// 6. Download, extract, and process changed broker JSONs
+            try await checkForBrokerJSONUpdatesFromMainConfig(mainConfig, eTag: newETag)
 
-            /// 5. Update last successful update timestamp
+            /// 7. Update last successful update timestamp
+            settings.lastManifestVersions[signingKey.id] = mainConfig.manifestVersion
             settings.mainConfigETag = newETag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
+        } catch let error as BrokerBundleVerificationError {
+            Logger.dataBrokerProtection.error("🧩 Broker bundle verification failed: \(error.rawValue, privacy: .public)")
+            pixelHandler?.fire(.bundleVerificationFailure(reason: error))
+            throw error
         } catch {
             pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService checkForUpdates"))
             throw error
+        }
+    }
+
+    private var revokedSigningKeyIDs: [String] {
+        privacyConfigurationManager.privacyConfig.settings(for: .dbp)[Self.revokedSigningKeysSettingsKey] as? [String] ?? []
+    }
+
+    private struct SignedMainConfig {
+        let data: Data
+        let eTag: String
+        let signature: Data?
+        let isFromDifferentConfigVersions: Bool
+    }
+
+    /// Returns nil when the stored main config eTag is still current.
+    private func fetchSignedMainConfig() async throws -> SignedMainConfig? {
+        /// Neither response may come from the local cache, or they could be from different points in time
+        var mainConfigRequest = try Endpoint.request(for: .mainConfig,
+                                                     endpointURL: settings.endpointURL,
+                                                     contentType: "application/json",
+                                                     eTag: settings.mainConfigETag)
+        mainConfigRequest.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, mainConfigResponse) = try await httpData(for: mainConfigRequest)
+
+        if mainConfigResponse.statusCode == 304 {
+            return nil
+        }
+
+        guard mainConfigResponse.statusCode == 200, let eTag = mainConfigResponse.etag else {
+            throw Error.serverError(httpCode: mainConfigResponse.statusCode)
+        }
+
+        var signatureRequest = try Endpoint.request(for: .mainConfigSignature, endpointURL: settings.endpointURL)
+        signatureRequest.cachePolicy = .reloadIgnoringLocalCacheData
+        let (signatureData, signatureResponse) = try await httpData(for: signatureRequest)
+
+        let signature: Data?
+        switch signatureResponse.statusCode {
+        case 200:
+            signature = signatureData
+        case 404:
+            signature = nil
+        default:
+            throw Error.serverError(httpCode: signatureResponse.statusCode)
+        }
+
+        let mainConfigVersion = mainConfigResponse.value(forHTTPHeaderField: Self.configVersionHeader)
+        let signatureVersion = signatureResponse.value(forHTTPHeaderField: Self.configVersionHeader)
+        let isFromDifferentConfigVersions = mainConfigVersion != nil && signatureVersion != nil && mainConfigVersion != signatureVersion
+
+        return SignedMainConfig(data: data, eTag: eTag, signature: signature, isFromDifferentConfigVersions: isFromDifferentConfigVersions)
+    }
+
+    private func httpData(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await urlSession.data(for: request)
+        guard let response = response as? HTTPURLResponse else {
+            throw Error.clientError
+        }
+        return (data, response)
+    }
+
+    /// Bundled brokers were verified by CI, so they replace stored brokers even when older,
+    /// and stored brokers that aren't bundled are disabled.
+    private func revertToBundledBrokers() throws {
+        /// An empty bundle means the bundled brokers are unavailable (e.g. in tests), not that none should run
+        guard let bundledBrokers = try bundledBrokers(), !bundledBrokers.isEmpty else { return }
+
+        for brokerResource in bundledBrokers {
+            try overwriteBroker(brokerResource)
+        }
+
+        let bundledBrokerURLs = Set(bundledBrokers.map(\.broker.url))
+        for brokerResource in try vault.fetchAllBrokerResources() where !bundledBrokerURLs.contains(brokerResource.broker.url) {
+            try disableBrokerUntilUpdated(brokerResource)
         }
     }
 
@@ -223,12 +333,19 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         let isFreeScan = !(await authenticationManager.isUserAuthenticated)
 
         try await downloadAndExtractBrokerJSONsIfNeeded(eTag: eTag)
-        try processBrokerJSONs(eTag: eTag,
-                               fileNames: diff.map(\.fileName),
-                               eTagMapping: eTagMapping,
-                               activeBrokers: mainConfig.activeDataBrokers,
-                               testBrokers: mainConfig.testDataBrokers,
-                               isFreeScan: isFreeScan)
+        do {
+            try processBrokerJSONs(eTag: eTag,
+                                   fileNames: diff.map(\.fileName),
+                                   eTagMapping: eTagMapping,
+                                   sha256Mapping: mainConfig.jsonSHA256,
+                                   activeBrokers: mainConfig.activeDataBrokers,
+                                   testBrokers: mainConfig.testDataBrokers,
+                                   isFreeScan: isFreeScan)
+        } catch let error as BrokerBundleVerificationError {
+            /// Discard the download so the next check fetches all.zip again
+            try? cleanUp(eTag: eTag)
+            throw error
+        }
         try cleanUp(eTag: eTag)
     }
 
@@ -296,9 +413,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     /// brokerFileNames might contain both active and test brokers
+    ///
+    /// Brokers whose contents don't match `sha256Mapping` are skipped, and once every other broker is processed
+    /// `BrokerBundleVerificationError.digestMismatch` is thrown.
     func processBrokerJSONs(eTag: String,
                             fileNames changedBrokerFileNames: [String],
                             eTagMapping: [String: String],
+                            sha256Mapping: [String: String],
                             activeBrokers: [String],
                             testBrokers: [String],
                             isFreeScan: Bool) throws {
@@ -306,12 +427,20 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         let fileURLs = try fileManager.contentsOfDirectory(at: directoryURL,
                                                            includingPropertiesForKeys: nil,
                                                            options: [.skipsHiddenFiles])
+        var hasDigestMismatch = false
         for fileURL in fileURLs {
             let fileName = fileURL.lastPathComponent
             guard changedBrokerFileNames.contains(fileName) else { continue }
 
             do {
-                let brokerResource = try DataBroker.initFromResource(fileURL).with(eTag: eTagMapping[fileName] ?? "")
+                let data = try Data(contentsOf: fileURL)
+                guard BrokerBundleVerifier.hasExpectedDigest(data, expectedSHA256: sha256Mapping[fileName]) else {
+                    Logger.dataBrokerProtection.error("🧩 JSON file \(fileName, privacy: .public) doesn't match its SHA-256, skipping update")
+                    hasDigestMismatch = true
+                    continue
+                }
+
+                let brokerResource = try DataBroker.initFromData(data).with(eTag: eTagMapping[fileName] ?? "")
                 if activeBrokers.contains(fileName) {
                     try upsertBroker(brokerResource)
                     pixelHandler?.fire(.updateDataBrokersSuccess(dataBrokerFileName: fileName, removedAt: brokerResource.broker.removedAtTimestamp, isFreeScan: isFreeScan))
@@ -327,6 +456,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 pixelHandler?.fire(.updateDataBrokersFailure(dataBrokerFileName: fileName, removedAt: nil, isFreeScan: isFreeScan, error: error))
                 throw error
             }
+        }
+
+        if hasDigestMismatch {
+            throw BrokerBundleVerificationError.digestMismatch
         }
     }
 
@@ -344,7 +477,9 @@ struct MainConfig: Codable {
     let mainConfigETag: String
     let activeDataBrokers: [String]
     let jsonETags: JSONETagPayload
+    let jsonSHA256: [String: String]
     let testDataBrokers: [String]
+    let manifestVersion: Int
 
     struct JSONETagPayload: Codable {
         let current: [String: String]
@@ -354,6 +489,8 @@ struct MainConfig: Codable {
         case mainConfigETag = "main_config_etag"
         case activeDataBrokers = "active_data_brokers"
         case jsonETags = "json_etags"
+        case jsonSHA256 = "json_sha256"
         case testDataBrokers = "test_data_brokers"
+        case manifestVersion = "manifest_version"
     }
 }

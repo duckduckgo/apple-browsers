@@ -2,11 +2,81 @@
 #
 # Updates the DBP broker JSONs embedded in DataBrokerProtectionCore, installing
 # only the brokers listed in main_config.json's active_data_brokers.
+#
+# The apps trust embedded brokers without checking them, so nothing is written
+# unless main_config.json is signed by one of the app's production keys and every
+# installed broker matches its json_sha256 entry.
 
-DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
+DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=spec"
 DBP_MAIN_CONFIG_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json"
+DBP_MAIN_CONFIG_SIGNATURE_URL="https://dbp.duckduckgo.com/dbp/remote/v0/main_config.json.sig"
 
 BROKER_JSON_DIR_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON"
+SIGNING_KEYS_RELATIVE_PATH="../../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BrokerManaging/BrokerBundleVerifier.swift"
+
+# Prints the base64 SPKI keys in BrokerBundleSigningKeys.builtIn for the given environment, one per line.
+signingKeys() {
+	local swift_file=$1
+	local environment=$2
+
+	sed -n "/static let builtIn/,/^    )/p" "$swift_file" \
+		| sed -n "/${environment}: \[/,/\]/p" \
+		| grep -oE '"[A-Za-z0-9+/]+=*"' \
+		| tr -d '"'
+}
+
+verifyMainConfigSignature() {
+	local main_config=$1
+	local signature=$2
+	local keys=$3
+
+	local work_dir
+	work_dir=$(mktemp -d)
+
+	local result=1
+	if [[ -n "$keys" ]] && tr -d ' \t\r\n' < "$signature" | base64 -d > "${work_dir}/signature.der" 2>/dev/null && [[ -s "${work_dir}/signature.der" ]]; then
+		local key
+		while IFS= read -r key; do
+			printf -- "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----\n" "$(printf '%s' "$key" | fold -w 64)" > "${work_dir}/key.pem"
+			if openssl dgst -sha256 -verify "${work_dir}/key.pem" -signature "${work_dir}/signature.der" "$main_config" >/dev/null 2>&1; then
+				result=0
+				break
+			fi
+		done <<< "$keys"
+	fi
+
+	rm -rf "$work_dir"
+	return $result
+}
+
+# Checks every active broker in source_dir against main_config.json's json_sha256.
+verifyBrokerDigests() {
+	local source_dir=$1
+	local main_config=$2
+
+	local active_brokers
+	if ! active_brokers=$(activeBrokerFileNames "$main_config"); then
+		printf "Error: could not read active_data_brokers from %s. Aborting.\n" "$main_config"
+		return 1
+	fi
+
+	local error_found=0
+	local file_path file_name expected actual
+
+	while IFS= read -r file_path; do
+		file_name=$(basename "$file_path")
+		printf '%s\n' "$active_brokers" | grep -Fxq "$file_name" || continue
+
+		expected=$(jq -r --arg file_name "$file_name" '.json_sha256[$file_name] // empty' "$main_config")
+		actual=$(shasum -a 256 "$file_path" | cut -d ' ' -f 1)
+		if [[ -z "$expected" || "$actual" != "$expected" ]]; then
+			printf "Error: %s does not match its json_sha256 entry\n" "$file_name"
+			error_found=1
+		fi
+	done < <(find "$source_dir" -name '*.json' | sort)
+
+	return $error_found
+}
 
 activeBrokerFileNames() {
 	local main_config=$1
@@ -88,12 +158,14 @@ fetchMainConfig() {
 
 	printf "Downloading DBP main config...\n"
 	curl -fsS -L "$DBP_MAIN_CONFIG_URL" -o "$destination"
+	curl -fsS -L "$DBP_MAIN_CONFIG_SIGNATURE_URL" -o "${destination}.sig"
 }
 
 main() {
-	local script_dir target_dir
+	local script_dir target_dir signing_keys
 	script_dir=$(dirname "$(readlink -f "$0")")
 	target_dir="${script_dir}/${BROKER_JSON_DIR_RELATIVE_PATH}"
+	signing_keys=$(signingKeys "${script_dir}/${SIGNING_KEYS_RELATIVE_PATH}" production)
 
 	printf "Processing DBP broker data: %s\n" "$DBP_BROKER_URL"
 
@@ -106,6 +178,16 @@ main() {
 
 	local main_config="${work_dir}/main_config.json"
 	fetchMainConfig "$main_config"
+
+	if ! verifyMainConfigSignature "$main_config" "${main_config}.sig" "$signing_keys"; then
+		printf "Error: main_config.json is not signed by any of the app's production keys. Aborting.\n"
+		exit 1
+	fi
+
+	if ! verifyBrokerDigests "$extract_dir" "$main_config"; then
+		printf "Error: broker JSONs do not match main_config.json. Aborting.\n"
+		exit 1
+	fi
 
 	installBrokerJSONs "$extract_dir" "$main_config" "$target_dir"
 

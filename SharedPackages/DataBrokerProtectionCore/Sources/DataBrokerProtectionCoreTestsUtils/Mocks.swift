@@ -212,6 +212,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     public var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
     public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
+    public var featureSettings: [PrivacyFeature: PrivacyConfigurationData.PrivacyFeature.FeatureSettings] = [:]
 
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return isSubfeatureEnabledCheck?(subfeature) ?? false
@@ -254,7 +255,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     public func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
-        [String: Any]()
+        featureSettings[feature] ?? [:]
     }
 
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
@@ -696,6 +697,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var lastPreferredRunDateOnOptOut: Date?
     public var lastSavedBrokerResource: BrokerResource?
     public var lastUpdatedBrokerResource: BrokerResource?
+    public var updatedBrokerResources = [BrokerResource]()
+    public var brokerResourcesToReturn: [BrokerResource]?
+    public var brokersByURL = [String: DataBroker]()
     public var brokerFixturesBundle: Bundle?
     public var wasUpdatedPreferredRunDateCalled = false
 
@@ -724,6 +728,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         profile = nil
         profileQueries.removeAll()
         brokers.removeAll()
+        updatedBrokerResources.removeAll()
+        brokerResourcesToReturn = nil
+        brokersByURL.removeAll()
         scanJobData.removeAll()
         optOutJobData.removeAll()
         lastPreferredRunDateOnScan = nil
@@ -755,6 +762,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func update(_ brokerResource: BrokerResource, with id: Int64) throws {
         wasBrokerUpdateCalled = true
         lastUpdatedBrokerResource = brokerResource
+        updatedBrokerResources.append(brokerResource)
         if shouldThrowOnUpdate {
             throw DataBrokerProtectionError.unknown("Mock update error")
         }
@@ -786,7 +794,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
                          removedAt: nil)
         }
 
-        return nil
+        return brokersByURL[name]
     }
 
     public func fetchAllBrokers() throws -> [DataBroker] {
@@ -794,6 +802,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 
     public func fetchAllBrokerResources() throws -> [BrokerResource] {
+        if let brokerResourcesToReturn {
+            return brokerResourcesToReturn
+        }
+
         let fileManager = MockFileManager(
             fixtureBundle: brokerFixturesBundle,
             fixtureFileNames: [

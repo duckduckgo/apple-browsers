@@ -955,13 +955,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
-        //
-        // Behind `.alwaysShowKeyboardOnNewTabPage` the page then gets the app-open keyboard, so a
-        // screen left open over it closes first, as it does when the app opens a new NTP below.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            if featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
-                controller.closeScreensOverNewTabPageForIdleReturn()
-            }
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return true
         }

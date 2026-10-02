@@ -38,6 +38,15 @@ protocol AddressBarTextFieldFocusDelegate: AnyObject {
 
 final class AddressBarTextField: NSTextField {
 
+    override class var cellClass: AnyClass? {
+        get {
+            AddressBarTextFieldCell.self
+        }
+        set {
+            // NO-OP
+        }
+    }
+
     weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
             subscribeToSelectedTabViewModel()

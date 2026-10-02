@@ -390,7 +390,6 @@ final class AddressBarViewController: NSViewController {
 
         passiveTextField = PassiveAddressBarTextField(frame: .zero)
         passiveTextField.translatesAutoresizingMaskIntoConstraints = false
-        passiveTextField.cell = PassiveAddressBarTextFieldCell()
         passiveTextField.isEditable = false
         passiveTextField.isBordered = false
         passiveTextField.drawsBackground = false
@@ -406,7 +405,6 @@ final class AddressBarViewController: NSViewController {
 
         addressBarTextField = AddressBarTextField(frame: .zero)
         addressBarTextField.translatesAutoresizingMaskIntoConstraints = false
-        addressBarTextField.cell = AddressBarTextFieldCell()
         addressBarTextField.isEditable = true
         addressBarTextField.isSelectable = true
         addressBarTextField.isBordered = false
@@ -450,8 +448,10 @@ final class AddressBarViewController: NSViewController {
         switchToTabBox.setContentCompressionResistancePriority(.required, for: .horizontal)
         switchToTabBox.addSubview(switchToTabRoundedView)
 
+        // Frame-driven, as it was in the storyboard: `layoutShadowView` positions it with
+        // `shadowView.frame` after moving it into the window's content view, so it must keep
+        // translatesAutoresizingMaskIntoConstraints on.
         shadowView = ShadowView()
-        shadowView.translatesAutoresizingMaskIntoConstraints = false
         shadowView.shadowColor = NSColor(resource: .addressBarShadow)
         shadowView.shadowOffset = LayoutConstants.shadowOffset
         shadowView.shadowRadius = LayoutConstants.shadowRadius

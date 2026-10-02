@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Core
 
 protocol AuthenticationServiceProtocol {
 
@@ -35,12 +36,24 @@ final class AuthenticationService {
     private var waitsForSuccessfulAuthentication = false
     private(set) var hasCompletedAuthentication = false
 
-    init(authenticator: Authenticating = Authenticator(),
+    init(authenticator: Authenticating? = nil,
          overlayWindowManager: OverlayWindowManaging,
          privacyStore: PrivacyStore = PrivacyUserDefaults()) {
-        self.authenticator = authenticator
+        self.authenticator = authenticator ?? Self.makeAuthenticator()
         self.overlayWindowManager = overlayWindowManager
         self.privacyStore = privacyStore
+    }
+
+    private static func makeAuthenticator() -> Authenticating {
+#if DEBUG && targetEnvironment(simulator)
+        // UI tests exercise the real lock screen and lifecycle without driving a system biometric sheet.
+        if LaunchOptionsHandler().isUITesting,
+           let script = ProcessInfo.processInfo.environment["UITEST_APP_LOCK_RESULTS"],
+           let authenticator = UITestAppLockAuthenticator(script: script) {
+            return authenticator
+        }
+#endif
+        return Authenticator()
     }
 
     // MARK: - Suspend
@@ -122,3 +135,22 @@ extension AuthenticationService: AuthenticationViewControllerDelegate {
     }
 
 }
+
+#if DEBUG && targetEnvironment(simulator)
+private final class UITestAppLockAuthenticator: Authenticating {
+    private var results: [Bool]
+
+    init?(script: String) {
+        let values = script.split(separator: ",")
+        guard !values.isEmpty, values.allSatisfy({ $0 == "success" || $0 == "failure" }) else { return nil }
+        results = values.map { $0 == "success" }
+    }
+
+    func canAuthenticate() -> Bool { true }
+
+    func authenticate(reason: String) async -> Bool {
+        // An exhausted script stays locked, so a missing retry cannot accidentally pass a test.
+        results.isEmpty ? false : results.removeFirst()
+    }
+}
+#endif

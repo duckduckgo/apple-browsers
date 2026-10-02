@@ -58,6 +58,7 @@ class AuthenticationViewController: UIViewController {
 
     override func loadView() {
         view = UIView()
+        view.accessibilityIdentifier = "AppLock.Screen"
         setupView()
     }
 
@@ -101,6 +102,7 @@ extension AuthenticationViewController {
 
         let unlockInstructionsLabel = UILabel()
         unlockInstructionsLabel.translatesAutoresizingMaskIntoConstraints = false
+        unlockInstructionsLabel.accessibilityIdentifier = "AppLock.Retry"
         unlockInstructionsLabel.text = UserText.appUnlockInstructions
         unlockInstructionsLabel.textAlignment = .center
         unlockInstructionsLabel.numberOfLines = Constants.unlockInstructionsNumberOfLines

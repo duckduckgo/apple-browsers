@@ -1000,10 +1000,9 @@ extension MainViewController: TabsBarDelegate {
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
         if let tab = tabManager.currentTabsModel.get(tabAt: index) {
             let closesCurrentTab = tab === tabManager.currentTabsModel.currentTab
-            let closesLastTab = tabManager.currentTabsModel.count == 1
             closeTab(tab, refreshInPlace: true)
             if closesCurrentTab {
-                showKeyboardOnNewTabPageLandingIfAllowed(afterSwitchingTabs: !closesLastTab)
+                showKeyboardOnNewTabPageLandingIfAllowed()
             }
         }
     }

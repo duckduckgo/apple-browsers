@@ -16,80 +16,84 @@
 //  limitations under the License.
 //
 
-import Foundation
 import AVFoundation
+import Foundation
 
+/// WebKit checks `AVCaptureDevice.authorizationStatus(for:)` before calling our media capture delegate and
+/// rejects getUserMedia without asking us when it's `.denied`/`.restricted`. Its preceding delegate callback
+/// sets a per-media-type token here, so the next status check made by WebKit reports `.authorized`.
 extension AVCaptureDevice {
-    private typealias AuthorizationStatusImplementation = @convention(c) (AnyClass, Selector, NSString) -> AVAuthorizationStatus
 
-    private static var authorizationStatusForMediaType: ((AVMediaType, inout AVAuthorizationStatus) -> Void)?
-    private static var authorizationStatusSwizzleID: UUID?
-    private static var isSwizzled: Bool { authorizationStatusForMediaType != nil }
-
-    private static let originalAuthorizationStatusForMediaType = {
-        class_getClassMethod(AVCaptureDevice.self, #selector(authorizationStatus(for:)))
-    }()
-    private static let swizzledAuthorizationStatusForMediaType = {
-        class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))
-    }()
-    private static let systemAuthorizationStatusImplementation: AuthorizationStatusImplementation? = {
-        guard let originalAuthorizationStatusForMediaType else { return nil }
-        return unsafeBitCast(method_getImplementation(originalAuthorizationStatusForMediaType), to: AuthorizationStatusImplementation.self)
-    }()
-
-    @discardableResult
-    static func swizzleAuthorizationStatusForMediaType(with replacement: @escaping ((AVMediaType, inout AVAuthorizationStatus) -> Void)) -> UUID? {
-        dispatchPrecondition(condition: .onQueue(.main))
-        guard !self.isSwizzled else { return nil }
-        guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
-              let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType,
-              systemAuthorizationStatusImplementation != nil
-        else {
-            assertionFailure("Methods not available")
-            return nil
-        }
-
-        method_exchangeImplementations(originalAuthorizationStatusForMediaType, swizzledAuthorizationStatusForMediaType)
-        self.authorizationStatusForMediaType = replacement
-        let identifier = UUID()
-        authorizationStatusSwizzleID = identifier
-        return identifier
+    private struct AuthorizationStatusOverride {
+        let timestamp: Date
+        let owner: ObjectIdentifier
+        /// macOS 12: receives the real status instead of reporting `.authorized`.
+        @available(macOS, deprecated: 13.0, message: "Only used by observeNextStatusCheck. Remove with macOS 12 support.")
+        var callback: ((AVMediaType, AVAuthorizationStatus) -> Void)?
     }
 
-    static func restoreAuthorizationStatusForMediaType(ifMatching identifier: UUID? = nil) {
-        dispatchPrecondition(condition: .onQueue(.main))
-        guard self.isSwizzled else { return }
-        guard identifier == nil || identifier == authorizationStatusSwizzleID else { return }
-        guard let originalAuthorizationStatusForMediaType = originalAuthorizationStatusForMediaType,
-              let swizzledAuthorizationStatusForMediaType = swizzledAuthorizationStatusForMediaType
+    private static let authorizationStatusOverrideTimeout: TimeInterval = 3
+    @MainActor
+    private static var authorizationStatusOverrides = [AVMediaType: AuthorizationStatusOverride](minimumCapacity: 2)
+
+    /// Installs the `authorizationStatus(for:)` hook; it stays installed and passes through when no token is set.
+    static let authorizationStatusSwizzle: Void = {
+        guard let original = class_getClassMethod(AVCaptureDevice.self, #selector(authorizationStatus(for:))),
+              let swizzled = class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))
         else {
             assertionFailure("Methods not available")
             return
         }
+        method_exchangeImplementations(original, swizzled)
+    }()
 
-        method_exchangeImplementations(originalAuthorizationStatusForMediaType, swizzledAuthorizationStatusForMediaType)
-        self.authorizationStatusForMediaType = nil
-        authorizationStatusSwizzleID = nil
+    /// Makes the next `authorizationStatus(for:)` check of each of `mediaTypes` report `.authorized` if made in time.
+    /// Replaces previous tokens for these media types, whoever set them.
+    @MainActor
+    static func authorizeNextStatusCheck(for mediaTypes: Set<AVMediaType>, owner: ObjectIdentifier, timestamp: Date = Date()) {
+        setAuthorizationStatusOverride(AuthorizationStatusOverride(timestamp: timestamp, owner: owner), for: mediaTypes)
     }
 
-    /// App permission checks must read macOS's actual status while WebKit's preflight is intercepted.
-    @objc dynamic
-    static func systemAuthorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        guard let systemAuthorizationStatusImplementation else {
-            assertionFailure("Authorization status implementation not available")
-            return .denied
-        }
-        // Selector dispatch can race with restoring the hook; this implementation is captured before the first exchange.
-        return systemAuthorizationStatusImplementation(self, #selector(authorizationStatus(for:)), mediaType.rawValue as NSString)
+    /// Passes the real status of the next `authorizationStatus(for:)` check of each of `mediaTypes` to `callback` if made in time.
+    /// Replaces previous tokens for these media types, whoever set them.
+    @available(macOS, deprecated: 13.0, message: "Used by the macOS 12 checkUserMediaPermission path. Remove with macOS 12 support.")
+    @MainActor
+    static func observeNextStatusCheck(for mediaTypes: Set<AVMediaType>,
+                                       owner: ObjectIdentifier,
+                                       callback: @escaping (AVMediaType, AVAuthorizationStatus) -> Void) {
+        setAuthorizationStatusOverride(AuthorizationStatusOverride(timestamp: Date(), owner: owner, callback: callback), for: mediaTypes)
     }
 
-    @objc dynamic private static func swizzled_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        var result = systemAuthorizationStatus(for: mediaType)
-        if Thread.isMainThread,
-           let authorizationStatusForMediaType = Self.authorizationStatusForMediaType {
-            authorizationStatusForMediaType(mediaType, &result)
+    @MainActor
+    private static func setAuthorizationStatusOverride(_ token: AuthorizationStatusOverride, for mediaTypes: Set<AVMediaType>) {
+        _=authorizationStatusSwizzle
+        for mediaType in mediaTypes {
+            authorizationStatusOverrides[mediaType] = token
         }
-        return result
+    }
+
+    /// Drops the tokens set by `owner`, or all of them when `owner` is nil.
+    @MainActor
+    static func resetAuthorizationStatusOverrides(owner: ObjectIdentifier? = nil) {
+        for (mediaType, token) in authorizationStatusOverrides where owner == nil || token.owner == owner {
+            authorizationStatusOverrides.removeValue(forKey: mediaType)
+        }
+    }
+
+    @MainActor
+    @objc dynamic static func swizzled_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
+        let original = self.swizzled_authorizationStatus(for: mediaType) // call the original
+        // Each token is consumed by the first check; an outdated one is dropped without applying it.
+        guard Thread.isMainThread,
+              let token = authorizationStatusOverrides.removeValue(forKey: mediaType),
+              Date().timeIntervalSince(token.timestamp) < authorizationStatusOverrideTimeout else { return original }
+        // Return .authorized here, when the override token is set,
+        // so WebKit proceeds to media permission request without [always] requesting system permission.
+        // ---
+        // macOS 12 flow: replace to `return .authorized` when macOS 12 is dropped
+        guard let callback = token.callback else { return .authorized }
+        callback(mediaType, original)
+        return original
     }
 
 }

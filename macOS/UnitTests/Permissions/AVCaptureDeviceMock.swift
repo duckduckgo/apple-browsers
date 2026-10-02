@@ -23,34 +23,18 @@ final class AVCaptureDeviceMock: AVCaptureDevice {
 
     static var authorizationStatuses: [AVMediaType: AVAuthorizationStatus]? {
         didSet {
-            switch (oldValue, authorizationStatuses) {
-            case (.none, .some), (.some, .none):
-                // Capture the real system implementation before installing either mock.
-                if oldValue == nil {
-                    _ = AVCaptureDevice.systemAuthorizationStatus(for: .audio)
-                }
-                method_exchangeImplementations(originalAuthorizationStatusForMediaType,
-                                               swizzledAuthorizationStatusForMediaType)
-                method_exchangeImplementations(originalSystemAuthorizationStatusForMediaType,
-                                               swizzledSystemAuthorizationStatusForMediaType)
-            default:
-                break
-            }
+            guard (oldValue == nil) != (authorizationStatuses == nil) else { return }
+            // The app hook forwards to the system implementation, which now lives under the swizzled selector.
+            _=AVCaptureDevice.authorizationStatusSwizzle
+            method_exchangeImplementations(systemAuthorizationStatusForMediaType, mockedAuthorizationStatusForMediaType)
         }
     }
 
-    private static let originalAuthorizationStatusForMediaType = {
-        class_getClassMethod(AVCaptureDevice.self, #selector(authorizationStatus(for:)))!
+    private static let systemAuthorizationStatusForMediaType = {
+        class_getClassMethod(AVCaptureDevice.self, #selector(swizzled_authorizationStatus(for:)))!
     }()
-    private static let swizzledAuthorizationStatusForMediaType = {
+    private static let mockedAuthorizationStatusForMediaType = {
         class_getClassMethod(AVCaptureDevice.self, #selector(mocked_authorizationStatus(for:)))!
-    }()
-
-    private static let originalSystemAuthorizationStatusForMediaType = {
-        class_getClassMethod(AVCaptureDevice.self, #selector(systemAuthorizationStatus(for:)))!
-    }()
-    private static let swizzledSystemAuthorizationStatusForMediaType = {
-        class_getClassMethod(AVCaptureDevice.self, #selector(mocked_systemAuthorizationStatus(for:)))!
     }()
 
 }
@@ -59,11 +43,6 @@ extension AVCaptureDevice {
 
     @objc
     static func mocked_authorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
-        AVCaptureDeviceMock.authorizationStatuses?[mediaType] ?? .notDetermined
-    }
-
-    @objc
-    static func mocked_systemAuthorizationStatus(for mediaType: AVMediaType) -> AVAuthorizationStatus {
         AVCaptureDeviceMock.authorizationStatuses?[mediaType] ?? .notDetermined
     }
 

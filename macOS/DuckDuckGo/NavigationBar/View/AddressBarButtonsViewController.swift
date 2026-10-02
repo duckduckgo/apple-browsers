@@ -946,7 +946,7 @@ final class AddressBarButtonsViewController: NSViewController {
               domain == URL.duckAi.host else {
             return false
         }
-        switch AVCaptureDevice.systemAuthorizationStatus(for: .audio) {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .denied, .restricted: return true
         case .authorized, .notDetermined: return false
         @unknown default: return false

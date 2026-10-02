@@ -30,7 +30,7 @@ import UIKit
 protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidRequestSubmitCurrentInput(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool)
@@ -551,8 +551,8 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
         delegate?.unifiedToggleInputVCDidRequestSubmitCurrentInput(self)
     }
 
-    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode) {
-        delegate?.unifiedToggleInputVC(self, didSubmitText: text, mode: mode)
+    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger) {
+        delegate?.unifiedToggleInputVC(self, didSubmitText: text, mode: mode, trigger: trigger)
     }
 
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String) {

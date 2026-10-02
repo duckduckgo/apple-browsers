@@ -60,6 +60,7 @@ protocol DependencyProvider {
     var pageRefreshMonitor: PageRefreshMonitor { get }
     var vpnFeatureVisibility: DefaultNetworkProtectionVisibility { get }
     var networkProtectionTunnelController: NetworkProtectionTunnelController { get }
+    var networkSignalsProvider: NetworkSignalsProviding { get }
     var connectionObserver: ConnectionStatusObserver { get }
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var connectionErrorObserver: ConnectionErrorObserver { get }

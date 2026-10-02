@@ -526,12 +526,12 @@ extension DataClearingWideEventData {
 private extension DataClearingWideEventData {
 
     /// Actions that started but never finished, so an orphaned journey shows where it got stuck.
-    var interruptedActions: String? {
+    var interruptedActions: [String]? {
         let interrupted = Action.allCases.filter { action in
             let duration = self[keyPath: action.durationPath]
             return duration?.start != nil && duration?.end == nil
         }
-        return interrupted.isEmpty ? nil : interrupted.map(\.rawValue).joined(separator: ",")
+        return interrupted.isEmpty ? nil : interrupted.map(\.rawValue)
     }
 
     /// Processes duration for pixel reporting: rounds to 10ms precision and caps at 10 seconds.

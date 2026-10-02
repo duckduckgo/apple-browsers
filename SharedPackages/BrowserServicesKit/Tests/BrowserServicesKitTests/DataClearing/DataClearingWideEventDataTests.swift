@@ -256,7 +256,8 @@ final class DataClearingWideEventDataTests: XCTestCase {
         let params = eventData.jsonParameters()
 
         // Then
-        XCTAssertEqual(params["feature.data.ext.interrupted_actions"] as? String, "clear_all_history,clear_aiChat_history")
+        XCTAssertEqual(params["feature.data.ext.interrupted_actions"] as? [String], ["clear_all_history", "clear_aiChat_history"])
+        XCTAssertEqual(eventData.pixelParameters()["feature.data.ext.interrupted_actions"], #"["clear_all_history","clear_aiChat_history"]"#)
     }
 
     func testJSONParameters_omitsInterruptedActionsWhenEveryStartedActionFinished() {

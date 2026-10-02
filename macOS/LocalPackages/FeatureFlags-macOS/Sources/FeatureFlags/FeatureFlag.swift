@@ -547,7 +547,7 @@ public enum FeatureFlag: String, CaseIterable {
     case simplifiedSyncSetupV2
 
     /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
-    /// a Duck.ai input. Internal-only while the UI is in development.
+    /// a Duck.ai input.
     case aiChatAttachmentPrivacyDisclosure
 
     /// Gates the bookmarks "Sort by name permanently" action, which permanently reorders the target
@@ -970,7 +970,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
         case .aiChatBrowserToolListOpenTabs:

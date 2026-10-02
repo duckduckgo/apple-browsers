@@ -964,3 +964,10 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
 
     case featureEnabled
 }
+
+public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionManagement }
+
+    case isLaunchedExtensions
+    case curatedExtensions
+}

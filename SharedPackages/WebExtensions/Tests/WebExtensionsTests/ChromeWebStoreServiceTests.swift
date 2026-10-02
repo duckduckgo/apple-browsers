@@ -82,7 +82,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
     func testDeniedInstallationLeavesNoFilesOrSettings() async throws {
         let fixture = try ChromeWebStoreFixture()
         let manager = try makeManager()
-        prompter.response = nil
+        prompter.response = .denied
         let service = service(manager, fixture: fixture)
         let success = await service.install(identifier: fixture.identifier, downloadURL: try ChromeWebStoreURL.downloadURL(for: fixture.identifier))
         XCTAssertFalse(success)
@@ -247,13 +247,15 @@ private final class StorePresenterMock: ChromeWebStorePresenting {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class StorePermissionPrompter: WebExtensionPermissionPrompting {
-    var response: Bool? = true
+    var response: WebExtensionPermissionInstallationPromptResult = .granted(privateDataAccess: true)
     var installationRequests = 0
     var onPrompt: (() async -> Void)?
-    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> Bool? {
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
         installationRequests += 1
         await onPrompt?()
         return response
     }
-    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool { true }
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        return .granted
+    }
 }

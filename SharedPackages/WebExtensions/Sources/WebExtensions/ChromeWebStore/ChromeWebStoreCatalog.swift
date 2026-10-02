@@ -76,10 +76,6 @@ public protocol ChromeWebStoreCatalogProviding {
 /// This class uses configuration from Privacy Config to decide about supported extensions.
 @MainActor
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
-    private enum Subfeature: String, PrivacySubfeature {
-        case curatedExtensions
-        var parent: PrivacyFeature { .extensionManagement }
-    }
 
     private let configurationManager: PrivacyConfigurationManaging
 
@@ -95,9 +91,9 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         guard ChromeWebStoreURL.isValidExtensionID(identifier),
               config.isEnabled(featureKey: .chromeWebstorePatching),
               !config.isInExceptionList(domain: ChromeWebStoreURL.host, forFeature: .chromeWebstorePatching),
-              config.isEnabled(featureKey: .extensionManagement),
-              config.isSubfeatureEnabled(Subfeature.curatedExtensions),
-              let settingsJSON = config.settings(for: Subfeature.curatedExtensions),
+              config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions),
+              config.isSubfeatureEnabled(ExtensionManagementSubfeature.curatedExtensions),
+              let settingsJSON = config.settings(for: ExtensionManagementSubfeature.curatedExtensions),
               let data = settingsJSON.data(using: .utf8),
               let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
 

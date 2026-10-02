@@ -555,14 +555,12 @@ final class KeyboardPresenterTests {
     private let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     private let pixelFiring = PixelKitMock()
     private var onAppLaunch = false
-    private var backgroundThreshold: TimeInterval = 20
     private var scheduledActions: [() -> Void] = []
     private lazy var presenter = KeyboardPresenter(
         mainViewController: target,
         featureFlagger: featureFlagger,
         pixelFiring: pixelFiring,
         onAppLaunch: { [unowned self] in onAppLaunch },
-        backgroundThreshold: { [unowned self] in backgroundThreshold },
         schedule: { [unowned self] in scheduledActions.append($0) })
 
     @available(iOS 16, macOS 13, *)
@@ -590,27 +588,15 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Both flag paths use the configured background threshold", .timeLimit(.minutes(1)), arguments: [false, true], [5.0, 20.0])
-    func configuredBackgroundThreshold(flagOn: Bool, threshold: TimeInterval) {
+    @Test("Both flag paths keep the 20-second background threshold", .timeLimit(.minutes(1)), arguments: [false, true], [5.0, 25.0])
+    func backgroundThreshold(flagOn: Bool, secondsInBackground: TimeInterval) {
         featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
         onAppLaunch = true
-        backgroundThreshold = threshold
 
-        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-10), isAfterIdleReturn: false)
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: false)
 
-        #expect(scheduledActions.count == (threshold == 5 ? 1 : 0))
-        #expect(pixelFiring.actualFireCalls.count == (threshold == 5 ? 1 : 0))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The configured threshold remains strictly greater than, including its exact boundary", .timeLimit(.minutes(1)), arguments: [5.0, 20.0])
-    func exactBackgroundThreshold(threshold: TimeInterval) {
-        let now = Date()
-        let atThreshold = now.addingTimeInterval(-threshold)
-        let pastThreshold = now.addingTimeInterval(-threshold - 1)
-
-        #expect(!NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: atThreshold, now: now, threshold: threshold))
-        #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: pastThreshold, now: now, threshold: threshold))
+        #expect(scheduledActions.count == (secondsInBackground == 25 ? 1 : 0))
+        #expect(pixelFiring.actualFireCalls.count == (secondsInBackground == 25 ? 1 : 0))
     }
 
     @available(iOS 16, macOS 13, *)

@@ -19,16 +19,27 @@
 import AVFoundation
 import Foundation
 
-/// WebKit checks `AVCaptureDevice.authorizationStatus(for:)` before calling our media capture delegate and
-/// rejects getUserMedia without asking us when it's `.denied`/`.restricted`. Its preceding delegate callback
-/// sets a per-media-type token here, so the next status check made by WebKit reports `.authorized`.
+/// Intercepts WebKit's `AVCaptureDevice.authorizationStatus(for:)` check during a camera/microphone request.
+///
+/// Why: before WebKit asks its UI delegate (`webView(_:requestMediaCapturePermissionFor:...)`) about a getUserMedia
+/// call, it checks macOS access itself. When macOS has denied access, WebKit rejects the call right there and the
+/// delegate never runs, so the app can't show its own prompt (or learn which device was requested). When macOS
+/// hasn't decided yet, WebKit shows the macOS prompt itself, before the website prompt.
+/// `queryPermission` can't replace the hook: WebKit only uses a granted answer and checks macOS access whatever it returns.
+///
+/// How: WebKit's preflight callback (`queryPermission` since Safari 26's WebKit, `checkUserMediaPermissionForURL`
+/// before that) sets a one-shot token per media type here, and WebKit's following status check of that type uses it up:
+/// - `authorizeNextStatusCheck`: the check reports `.authorized`, so WebKit reaches the delegate and the website prompt.
+/// - `observeNextStatusCheck` (WebKit before Safari 26, without website prompts): the real status is passed to a callback.
+/// Tokens expire after 1s and are dropped by `resetAuthorizationStatusOverrides(owner:)` once the request reaches the
+/// delegate, so app reads outside that window get the real macOS status.
 extension AVCaptureDevice {
 
     private struct AuthorizationStatusOverride {
         let timestamp: Date
         let owner: ObjectIdentifier
-        /// macOS 12: receives the real status instead of reporting `.authorized`.
-        @available(macOS, deprecated: 13.0, message: "Only used by observeNextStatusCheck. Remove with macOS 12 support.")
+        /// WebKit before Safari 26, without website prompts: receives the real status instead of reporting `.authorized`.
+        @available(macOS, deprecated: 26.0, message: "Only used by observeNextStatusCheck. Remove when macOS 26 is the minimum.")
         var callback: ((AVMediaType, AVAuthorizationStatus) -> Void)?
     }
 
@@ -56,7 +67,7 @@ extension AVCaptureDevice {
 
     /// Passes the real status of the next `authorizationStatus(for:)` check of each of `mediaTypes` to `callback` if made in time.
     /// Replaces previous tokens for these media types, whoever set them.
-    @available(macOS, deprecated: 13.0, message: "Used by the macOS 12 checkUserMediaPermission path. Remove with macOS 12 support.")
+    @available(macOS, deprecated: 26.0, message: "Used by checkUserMediaPermission for WebKit before Safari 26. Remove when macOS 26 is the minimum.")
     @MainActor
     static func observeNextStatusCheck(for mediaTypes: Set<AVMediaType>,
                                        owner: ObjectIdentifier,
@@ -90,7 +101,7 @@ extension AVCaptureDevice {
         // Return .authorized here, when the override token is set,
         // so WebKit proceeds to media permission request without [always] requesting system permission.
         // ---
-        // macOS 12 flow: replace to `return .authorized` when macOS 12 is dropped
+        // WebKit before Safari 26 without website prompts: replace with `return .authorized` when macOS 26 is the minimum
         guard let callback = token.callback else { return .authorized }
         callback(mediaType, original)
         return original

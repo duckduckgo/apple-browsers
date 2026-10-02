@@ -92,7 +92,7 @@ extension Tab: WKUIDelegate {
 
     /// Called by WebKit to get the website's camera / microphone decision, see how getUserMedia works below.
     ///
-    /// How WebKit (macOS 13+) handles getUserMedia before it reaches requestMediaCapturePermissionFor:
+    /// How WebKit (since Safari 26, WebKit commit 75d48825d9) handles getUserMedia before it reaches requestMediaCapturePermissionFor:
     /// 1. `queryPermission` is called for both "camera" and "microphone" to get the website's stored state.
     /// 2. `requestSystemValidation` reads `AVCaptureDevice.authorizationStatus(for:)` for each requested media type:
     ///    `.denied`/`.restricted` rejects the request without calling any other delegate method,
@@ -103,6 +103,8 @@ extension Tab: WKUIDelegate {
     /// step 3 drops this tab's tokens that weren't used.
     /// `queryPermission` is also called for navigator.permissions.query and enumerateDevices, which skip steps 2-3:
     /// those tokens are dropped on the next request or when they expire.
+    /// Earlier WebKit calls `checkUserMediaPermissionForURL` below for step 1 and `queryPermission` only for
+    /// navigator.permissions.query.
     /// https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/UserMediaPermissionRequestManagerProxy.cpp#L620
     /// https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/Cocoa/UserMediaPermissionRequestManagerProxy.mm#L158
     @MainActor
@@ -121,9 +123,10 @@ extension Tab: WKUIDelegate {
         completionHandler(.prompt)
     }
 
-    /// macOS 12: called instead of `queryPermission` step 1 above, without telling the requested media type.
-    /// It only observes step 2 to reflect a macOS denial in the address bar: website permission prompts need macOS 13+.
-    @available(macOS, deprecated: 13.0, message: "Not called since macOS 13, WebKit calls _webView:queryPermission:forOrigin:completionHandler: instead. Remove with macOS 12 support.")
+    /// WebKit before Safari 26 (macOS 12–13, and 14–15 without Safari 26): step 1 of the flow above, called instead of
+    /// `queryPermission` without telling the requested media type, so both media types get a token.
+    /// Without website prompts it only observes step 2 to reflect a macOS denial in the address bar.
+    @available(macOS, deprecated: 26.0, message: "Safari 26's WebKit calls _webView:queryPermission:forOrigin:completionHandler: instead. Remove when macOS 26 is the minimum.")
     @MainActor
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
     func webView(_ webView: WKWebView,

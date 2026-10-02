@@ -436,23 +436,29 @@ final class PermissionModel {
 
     // MARK: - WebView delegated methods
 
-    /// macOS 12: called before WebKit validates system media permissions, without telling which media type is requested.
-    /// The website permission prompts flow relies on `queryMediaPermission(_:)`, so this only reflects the macOS status.
-    @available(macOS, deprecated: 13.0, message: "Not called since macOS 13, WebKit calls queryMediaPermission(_:) instead. Remove with macOS 12 support.")
+    /// WebKit before Safari 26 (macOS 12–13, and 14–15 without Safari 26): called before WebKit validates system
+    /// media permissions, without telling which media type is requested.
+    @available(macOS, deprecated: 26.0, message: "Safari 26's WebKit calls queryMediaPermission(_:) instead. Remove when macOS 26 is the minimum.")
     @MainActor
     func checkUserMediaPermission(for url: URL?, mainFrameURL: URL?, decisionHandler: @escaping (String, Bool) -> Void) {
-        // If media capture is denied in the System Preferences, reflect it in the current permissions
-        // The requested media type is only known from WebKit's following status checks, so observe them
-        // otherwise WebView won't call any other delegate methods if System Permission is denied
-        AVCaptureDevice.observeNextStatusCheck(for: [.audio, .video], owner: ObjectIdentifier(self)) { [weak self] mediaType, authorizationStatus in
-            guard authorizationStatus == .denied || authorizationStatus == .restricted else { return }
-            let permission: PermissionType = mediaType == .audio ? .microphone : .camera
-            self?.permissions[permission].systemAuthorizationDenied(systemWide: false)
+        // The requested media type is only known from WebKit's following status checks, so cover both:
+        // the request drops the token WebKit didn't use (see `permissions(_:requestedForDomain:)`).
+        if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            // Same as `queryMediaPermission(_:)`: reach our website prompt before macOS rejects or asks
+            AVCaptureDevice.authorizeNextStatusCheck(for: [.audio, .video], owner: ObjectIdentifier(self))
+        } else {
+            // If media capture is denied in the System Preferences, reflect it in the current permissions:
+            // otherwise WebView won't call any other delegate methods if System Permission is denied
+            AVCaptureDevice.observeNextStatusCheck(for: [.audio, .video], owner: ObjectIdentifier(self)) { [weak self] mediaType, authorizationStatus in
+                guard authorizationStatus == .denied || authorizationStatus == .restricted else { return }
+                let permission: PermissionType = mediaType == .audio ? .microphone : .camera
+                self?.permissions[permission].systemAuthorizationDenied(systemWide: false)
+            }
         }
         decisionHandler(/*salt - seems not used anywhere:*/ "", /*includeSensitiveMediaDeviceDetails:*/ false)
     }
 
-    /// macOS 13+: called with "camera" and "microphone" before WebKit validates system media permissions.
+    /// Safari 26+ WebKit: called with "camera" and "microphone" before WebKit validates system media permissions.
     /// Authorizes WebKit's next system status check so it reaches our website prompt before requesting or rejecting
     /// system access, otherwise WebView won't call any other delegate methods if System Permission is denied.
     /// The prompt checks the real macOS status and holds its decision until access is granted.

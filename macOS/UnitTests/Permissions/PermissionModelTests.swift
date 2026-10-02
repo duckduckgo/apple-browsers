@@ -707,6 +707,21 @@ final class PermissionModelTests: XCTestCase {
         }
     }
 
+    func testWhenUserMediaPermissionIsCheckedThenBothMediaTypesAreOverriddenUntilRequested() {
+        featureFlagger.featuresStub[FeatureFlag.websitePermissionsPrompts.rawValue] = true
+        AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied, .video: .denied]
+        model.checkUserMediaPermission(for: nil, mainFrameURL: nil) { _, _ in }
+
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .video), .authorized)
+        XCTAssertEqual(model.permissions, [:])
+        // The request drops the microphone token WebKit didn't use for a camera-only request.
+        model.permissions([.camera], requestedForDomain: "example.com") { (_: Bool) in }
+        XCTAssertEqual(AVCaptureDevice.authorizationStatus(for: .audio), .denied)
+
+        model.authorizationQuery?.wasDismissed = true
+        model.authorizationQuery?.cancel()
+    }
+
     func testWhenAuthorizationStatusOverrideIsOutdatedThenItIsReset() {
         AVCaptureDeviceMock.authorizationStatuses = [.audio: .denied]
         AVCaptureDevice.authorizeNextStatusCheck(for: [.audio], owner: ObjectIdentifier(self), timestamp: .distantPast)

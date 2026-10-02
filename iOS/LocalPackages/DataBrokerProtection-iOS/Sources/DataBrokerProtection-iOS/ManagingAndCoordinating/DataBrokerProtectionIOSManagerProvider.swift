@@ -203,7 +203,9 @@ public class DataBrokerProtectionIOSManagerProvider {
                                         settings: dbpSettings,
                                         vault: vault,
                                         authenticationManager: authenticationManager,
-                                        localBrokerProvider: localBrokerService)
+                                        pixelHandler: sharedPixelsHandler,
+                                        localBrokerProvider: localBrokerService,
+                                        privacyConfigurationManager: privacyConfigurationManager)
             },
             engagementPixelsRepository: DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
         )

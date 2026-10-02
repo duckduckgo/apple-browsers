@@ -1,13 +1,13 @@
 # Scripts
 
-* [archive.sh](#archivesh-create-notarized-application-build)
-* [find-private-symbols.sh](#find-private-symbolssh-check-a-binary-for-private-api-usage)
-* [update-embedded.sh](#update-embeddedsh-update-embedded-tracker-data-set-and-privacy-config)
-* [update_embedded_brokers.sh](#update_embedded_brokerssh-update-embedded-dbp-broker-json)
+- [archive.sh](#archivesh-create-notarized-application-build)
+- [find-private-symbols.sh](#find-private-symbolssh-check-a-binary-for-private-api-usage)
+- [update-embedded.sh](#update-embeddedsh-update-embedded-tracker-data-set-and-privacy-config)
+- [update_embedded_brokers.sh](#update_embedded_brokerssh-update-embedded-dbp-broker-json)
 
 ## `archive.sh`: Create notarized application build
 
-This script allows to create notarized application builds. It's primarily 
+This script allows to create notarized application builds. It's primarily
 used by GitHub Actions release workflow, but it can also be run locally
 as needed.
 
@@ -17,19 +17,20 @@ as needed.
 1. Outputs the app and compressed dSYMs.
 1. Can optionally output a DMG image ready for distribution.
 1. If making a public release, it can update the Asana release task passed as
-  a parameter; it will then upload the DMG and dSYMs to the task, and mark
-  relevant subtasks as complete.
+   a parameter; it will then upload the DMG and dSYMs to the task, and mark
+   relevant subtasks as complete.
 
 ### Software Requirements
 
-To run locally you'll need a valid installation of Xcode. Make sure that 
+To run locally you'll need a valid installation of Xcode. Make sure that
 `xcode-select -p` prints out the path to Developer directory inside Xcode.app
 bundle, e.g. `/Applications/Xcode-13.3.0.app/Contents/Developer`.
 
 Optionally you'll need:
-* `create-dmg`, to create DMG images,
-* `jq`, to handle Asana tasks,
-* `xcpretty`, to beautify `xcodebuild` output.
+
+- `create-dmg`, to create DMG images,
+- `jq`, to handle Asana tasks,
+- `xcpretty`, to beautify `xcodebuild` output.
 
 ### Setting up accounts and accesses
 
@@ -45,7 +46,7 @@ developer account:
 1. Select App-specific passwords
 1. Add new password using `+` button
 1. Copy the password and pass it to the script when asked. The password will
-  be securely stored in your login keychain for later use.
+   be securely stored in your login keychain for later use.
 
 #### Asana
 
@@ -54,9 +55,9 @@ To use Asana integration, you'll need to create Asana Personal Access Token:
 1. Go to https://app.asana.com/0/my-apps.
 1. Select _Create new token_ and follow on-screen instructions.
 1. Copy the generated token and pass it to the script when asked. The token
-  will be securely stored in your login keychain for later use. Any updates
-  to Asana tasks made by your instance of the script will be performed as
-  your user (because it's your _personal_ token).
+   will be securely stored in your login keychain for later use. Any updates
+   to Asana tasks made by your instance of the script will be performed as
+   your user (because it's your _personal_ token).
 
 ### Usage
 
@@ -71,7 +72,6 @@ To make a release build and a DMG:
 Display all available parameters:
 
     $ ./scripts/archive.sh -h
-
 
 ## `find-private-symbols.sh`: Check a binary for private API usage
 
@@ -97,7 +97,6 @@ To check for private API symbols in the app:
 
     $ ./scripts/find_private_symbols.sh DuckDuckGo.app/Contents/MacOS/DuckDuckGo
 
-
 ## `update-embedded.sh`: Update embedded Tracker Data Set and Privacy Config
 
 This script checks app's source code for ETag values of Tracker Data Set
@@ -106,10 +105,11 @@ files if they appear outdated and updates relevant entries in the source code
 to reflect the metadata (ETag and SHA256 sum) of downloaded files.
 
 It may update the following files:
-* DuckDuckGo/Content Blocker/AppPrivacyConfigurationDataProvider.swift
-* DuckDuckGo/Content Blocker/AppTrackerDataSetProvider.swift
-* DuckDuckGo/Content Blocker/Resources/macos-config.json
-* DuckDuckGo/Content Blocker/Resources/trackerData.json
+
+- DuckDuckGo/Content Blocker/AppPrivacyConfigurationDataProvider.swift
+- DuckDuckGo/Content Blocker/AppTrackerDataSetProvider.swift
+- DuckDuckGo/Content Blocker/Resources/macos-config.json
+- DuckDuckGo/Content Blocker/Resources/trackerData.json
 
 ### Requirements
 
@@ -124,8 +124,9 @@ To update embedded files if needed:
 
 Make sure that unit tests pass after updating files. These test cases verify
 embedded data correctness:
-* `EmbeddedTrackerDataTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
-* `AppPrivacyConfigurationTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
+
+- `EmbeddedTrackerDataTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
+- `AppPrivacyConfigurationTests.testWhenEmbeddedDataIsUpdatedThenUpdateSHAAndEtag`
 
 ## `update_embedded_brokers.sh`: Update embedded DBP broker JSON
 
@@ -136,9 +137,14 @@ run on its own.
 Only brokers listed in `main_config.json`'s `active_data_brokers` are installed.
 Stale files are never pruned.
 
+The apps trust embedded brokers without verifying them, so the script aborts
+without writing anything unless `main_config.json.sig` verifies against one of
+the production keys in `BrokerBundleSigningKeys.builtIn` and every active broker
+matches its `json_sha256` entry.
+
 ### Requirements
 
-`jq`, plus built-in command line utilities and curl.
+`jq`, `openssl`, plus built-in command line utilities and curl.
 
 ### Usage
 

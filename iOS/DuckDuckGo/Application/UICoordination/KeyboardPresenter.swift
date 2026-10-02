@@ -78,23 +78,26 @@ final class KeyboardPresenter: KeyboardPresenting {
 
     private let mainViewController: any AppOpenKeyboardHandling
     private let featureFlagger: FeatureFlagger
-    private let runOnceModalPromptCloses: (@escaping @MainActor () -> Void) -> Bool
+    private let runOnceModalPromptCloses: (@escaping @MainActor () -> Bool, @escaping @MainActor () -> Void) -> Bool
     private let pixelFiring: (any PixelKitFiring)?
     private let onAppLaunch: () -> Bool
+    private let scheduleAfterPrompt: (@escaping () -> Void) -> Void
     private let schedule: (@escaping () -> Void) -> Void
     private var hasForegroundEnded = false
 
     init(mainViewController: any AppOpenKeyboardHandling,
          featureFlagger: FeatureFlagger,
-         runOnceModalPromptCloses: @escaping (@escaping @MainActor () -> Void) -> Bool = { _ in false },
+         runOnceModalPromptCloses: @escaping (@escaping @MainActor () -> Bool, @escaping @MainActor () -> Void) -> Bool = { _, _ in false },
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
+         scheduleAfterPrompt: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: $0) },
          schedule: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: $0) }) {
         self.mainViewController = mainViewController
         self.featureFlagger = featureFlagger
         self.runOnceModalPromptCloses = runOnceModalPromptCloses
         self.pixelFiring = pixelFiring
         self.onAppLaunch = onAppLaunch
+        self.scheduleAfterPrompt = scheduleAfterPrompt
         self.schedule = schedule
     }
 
@@ -117,9 +120,11 @@ final class KeyboardPresenter: KeyboardPresenting {
             schedule { [self] in
                 if flagOn {
                     guard isCurrentRequest(requestID) else { return }
-                    let waitsForLaunchPrompt = runOnceModalPromptCloses { [weak self] in
+                    let waitsForLaunchPrompt = runOnceModalPromptCloses({ [weak self] in
+                        self?.isCurrentRequest(requestID) == true
+                    }, { [weak self] in
                         self?.showKeyboardAfterLaunchPrompt(requestID: requestID, onAppLaunch: onAppLaunch)
-                    }
+                    })
                     guard !waitsForLaunchPrompt else { return }
                     showKeyboardOnAppOpen(onAppLaunch: onAppLaunch)
                 } else {
@@ -162,7 +167,7 @@ final class KeyboardPresenter: KeyboardPresenting {
     private func showKeyboardAfterLaunchPrompt(requestID: UUID, onAppLaunch: Bool) {
         guard isCurrentRequest(requestID) else { return }
         // Let a prompt's destination finish opening before deciding whether to focus.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
+        scheduleAfterPrompt { [self] in
             guard isCurrentRequest(requestID) else { return }
             showKeyboardOnAppOpen(onAppLaunch: onAppLaunch)
         }

@@ -174,6 +174,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
 
     @MainActor
+    private(set) lazy var autofillImportPromoObserver = AutofillImportPromoObserver(
+        loginImportStateProvider: AutofillLoginImportState(featureFlagger: featureFlagger)
+    )
+
+    @MainActor
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
@@ -1559,7 +1564,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
             quitSurveyPromoObserver: quitSurveyPromoObserver,
             vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
-            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
+            autofillImportPromoObserver: autofillImportPromoObserver
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)

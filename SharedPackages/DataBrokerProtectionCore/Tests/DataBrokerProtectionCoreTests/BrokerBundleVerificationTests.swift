@@ -46,6 +46,8 @@ final class BrokerBundleVerificationTests: XCTestCase {
     var privacyConfig: PrivacyConfigurationMock { privacyConfigurationManager.privacyConfig as! PrivacyConfigurationMock }
     var settings: DataBrokerProtectionSettings!
     var eTag: String!
+    var mainConfigRequests = [URLRequest]()
+    var signatureRequests = [URLRequest]()
 
     var urlSession: URLSession {
         let config = URLSessionConfiguration.default
@@ -215,6 +217,76 @@ final class BrokerBundleVerificationTests: XCTestCase {
 
         await assertCheckForUpdatesFails(with: .signatureMissing)
         assertNothingMarkedUpToDate()
+    }
+
+    func testWhenUnsignedFallbackConfigIsServedThenLastGoodBrokersAreKept() async throws {
+        try stageExtractedBrokers()
+        settings.mainConfigETag = "last-good"
+        settings.lastManifestVersions = [Self.stagingKeyID: Self.fixtureManifestVersion - 1]
+        appendFixtureResponses(signatureResponse: (HTTPURLResponse.notFound, nil))
+
+        await assertCheckForUpdatesFails(with: .signatureMissing)
+
+        XCTAssertFalse(vault.wasBrokerSavedCalled)
+        XCTAssertFalse(vault.wasBrokerUpdateCalled)
+        XCTAssertEqual(settings.mainConfigETag, "last-good", "Next check should request the update again")
+        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion - 1])
+    }
+
+    func testMainConfigAndSignatureAreNotServedFromLocalCache() async throws {
+        try stageExtractedBrokers()
+        appendFixtureResponses()
+
+        try await makeService().checkForUpdates()
+
+        XCTAssertEqual(mainConfigRequests.map(\.cachePolicy), [.reloadIgnoringLocalCacheData])
+        XCTAssertEqual(signatureRequests.map(\.cachePolicy), [.reloadIgnoringLocalCacheData])
+    }
+
+    func testWhenConfigVersionsDifferThenBothAreFetchedAgainOnce() async throws {
+        try stageExtractedBrokers()
+        var staleManifest = try fixture("main_config.json")
+        staleManifest[staleManifest.count / 2] ^= 0x01
+        appendFixtureResponses(manifest: staleManifest, mainConfigVersion: "41", signatureVersion: "42")
+        appendFixtureResponses(mainConfigVersion: "42", signatureVersion: "42")
+
+        try await makeService().checkForUpdates()
+
+        XCTAssertEqual(mainConfigRequests.count, 2)
+        XCTAssertEqual(signatureRequests.count, 2)
+        XCTAssertEqual(settings.lastManifestVersions, [Self.stagingKeyID: Self.fixtureManifestVersion])
+        XCTAssertTrue(firedVerificationFailures.isEmpty)
+    }
+
+    func testWhenConfigVersionsStillDifferAfterRefetchThenSignatureIsInvalid() async throws {
+        try stageExtractedBrokers()
+        var staleManifest = try fixture("main_config.json")
+        staleManifest[staleManifest.count / 2] ^= 0x01
+        appendFixtureResponses(manifest: staleManifest, mainConfigVersion: "41", signatureVersion: "42")
+        appendFixtureResponses(manifest: staleManifest, mainConfigVersion: "41", signatureVersion: "43")
+
+        await assertCheckForUpdatesFails(with: .signatureInvalid)
+
+        XCTAssertEqual(mainConfigRequests.count, 2)
+        XCTAssertEqual(signatureRequests.count, 2)
+        assertNothingMarkedUpToDate()
+    }
+
+    func testWhenConfigVersionsMatchOrAreMissingThenNothingIsFetchedAgain() async throws {
+        var tamperedManifest = try fixture("main_config.json")
+        tamperedManifest[tamperedManifest.count / 2] ^= 0x01
+
+        for (mainConfigVersion, signatureVersion) in [("42", "42"), (nil, "42"), ("42", nil), (nil, nil)] {
+            mainConfigRequests.removeAll()
+            signatureRequests.removeAll()
+            pixelHandler.clear()
+            appendFixtureResponses(manifest: tamperedManifest, mainConfigVersion: mainConfigVersion, signatureVersion: signatureVersion)
+
+            await assertCheckForUpdatesFails(with: .signatureInvalid)
+
+            XCTAssertEqual(mainConfigRequests.count, 1)
+            XCTAssertEqual(signatureRequests.count, 1)
+        }
     }
 
     func testWhenSignatureRequestFailsThenItIsNotReportedAsVerificationFailure() async throws {
@@ -400,15 +472,32 @@ final class BrokerBundleVerificationTests: XCTestCase {
         }
     }
 
-    private func appendFixtureResponses(manifest: Data? = nil, signatureResponse: (HTTPURLResponse, Data?)? = nil) {
+    private func appendFixtureResponses(manifest: Data? = nil,
+                                        signatureResponse: (HTTPURLResponse, Data?)? = nil,
+                                        mainConfigVersion: String? = nil,
+                                        signatureVersion: String? = nil) {
         let manifest = manifest ?? (try? fixture("main_config.json"))
-        let signatureResponse = signatureResponse ?? (HTTPURLResponse.ok, try? fixture("main_config.json.sig"))
         let mainConfigResponse = HTTPURLResponse(url: URL(string: "http://www.example.com")!,
                                                  statusCode: 200,
                                                  httpVersion: nil,
-                                                 headerFields: ["ETag": eTag])!
-        MockURLProtocol.requestHandlerQueue.append { _ in (mainConfigResponse, manifest) }
-        MockURLProtocol.requestHandlerQueue.append { _ in signatureResponse }
+                                                 headerFields: ["ETag": eTag].merging(configVersionHeader(mainConfigVersion)) { $1 })!
+        let signatureResponse = signatureResponse ?? (HTTPURLResponse(url: URL(string: "http://www.example.com")!,
+                                                                      statusCode: 200,
+                                                                      httpVersion: nil,
+                                                                      headerFields: configVersionHeader(signatureVersion))!,
+                                                      try? fixture("main_config.json.sig"))
+        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
+            self?.mainConfigRequests.append(request)
+            return (mainConfigResponse, manifest)
+        }
+        MockURLProtocol.requestHandlerQueue.append { [weak self] request in
+            self?.signatureRequests.append(request)
+            return signatureResponse
+        }
+    }
+
+    private func configVersionHeader(_ version: String?) -> [String: String] {
+        version.map { ["X-Config-Version": $0] } ?? [:]
     }
 
     private func assertCheckForUpdatesFails(with expectedError: BrokerBundleVerificationError,

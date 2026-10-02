@@ -18,6 +18,7 @@
 //
 
 import XCTest
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 @testable import Core
 import AIChat
@@ -28,6 +29,7 @@ import Bookmarks
 @_spi(Testing) import Persistence
 import SitePermissions
 import DDGSync
+@_spi(Testing) import PixelKit
 import WKAbstractions
 import BrowserServicesKitTestsUtils
 @_spi(Testing) import WideEvent
@@ -84,8 +86,12 @@ final class FireExecutorTests: XCTestCase {
         var lastWebsiteDataStore: WKWebsiteDataStore?
         var lastIsFireMode: Bool?
 
+        var onCleanAIChatHistory: (() -> Void)?
+        var lastClearingReport: AIChatClearingReport?
+
         func cleanAIChatHistory() async -> Result<Void, Error> {
             cleanAIChatHistoryCallCount += 1
+            onCleanAIChatHistory?()
             return cleanAIChatHistoryResult
         }
         
@@ -127,6 +133,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
     private var mockHistoryCleaner: MockHistoryCleaner!
+    private let pixelKitMock = PixelKitMock()
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
     private var mockDelegate: MockFireExecutorDelegate!
     private var mockAppSettings: AppSettingsMock!
@@ -190,6 +197,8 @@ final class FireExecutorTests: XCTestCase {
         syncService: DDGSyncing? = nil,
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil,
+        dataStoreWarmUp: @escaping DataStoreWarmupWorker.WarmUp = { _, _ in true },
+        backgroundTask: FireBackgroundTasking = MockFireBackgroundTask(),
         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
     ) -> FireExecutor {
         let executor = FireExecutor(
@@ -215,7 +224,10 @@ final class FireExecutorTests: XCTestCase {
             appSettings: mockAppSettings,
             sitePermissionsStore: sitePermissionsStore,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
+            pixelFiring: pixelKitMock,
             wideEvent: wideEventMock,
+            dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
+            backgroundTask: backgroundTask,
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
@@ -304,6 +316,123 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
 
         XCTAssertFalse(didClearSnapshots)
+    }
+
+    // MARK: - Data store warm-up
+
+    func testWhenOnlyAIChatsAreBurnedThenTheNormalStoreIsWarmedBeforeChatsAreCleared() async {
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(steps.first, "warm up fireMode=false")
+        XCTAssertEqual(steps.filter { $0 == "clear chats" }.count, 1)
+    }
+
+    func testWhenDataAndAIChatsAreBurnedThenTheNormalStoreIsWarmedOnce() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: [.data, .aiChats]), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    func testWhenOnlyFireModeAIChatsAreBurnedThenTheFireModeStoreIsWarmedBeforeChatsAreCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(steps, ["warm up fireMode=true", "clear chats"])
+    }
+
+    func testWhenTheWarmUpTimedOutThenTheNextBurnWarmsUpAgain() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return false
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 2)
+    }
+
+    func testWhenTheWarmUpCompletedThenTheNextBurnDoesNotWarmUpAgain() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    // MARK: - Background time
+
+    func testWhenBurningThenBackgroundTimeIsHeldForTheWholeBurn() async {
+        let backgroundTask = MockFireBackgroundTask()
+        var cleanedChatsWhileHeld: Bool?
+        mockHistoryCleaner.onCleanAIChatHistory = { cleanedChatsWhileHeld = backgroundTask.isHeld }
+        let executor = makeFireExecutor(backgroundTask: backgroundTask)
+
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+
+        XCTAssertEqual(cleanedChatsWhileHeld, true)
+        XCTAssertEqual(backgroundTask.calls, ["begin", "end"])
+    }
+
+    func testWhenAppIsBackgroundedDuringBurnThenBackgroundedPixelFiresOnce() {
+        let pixelFiring = PixelKitMock()
+        let notificationCenter = NotificationCenter()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: notificationCenter, isInBackground: { false })
+
+        backgroundTask.begin()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        backgroundTask.end()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStartsInTheBackgroundThenBackgroundedPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { true })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStaysInTheForegroundThenNoBackgroundPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { false })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
@@ -811,6 +940,75 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(eventData.clearPermissionsError?.code, expectedError.code)
     }
 
+    func testWhenAIChatClearWasRetriedThenWideEventRecordsTheRetryAndFirstAttempt() async throws {
+        let firstError = NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2)
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: firstError,
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 400, scriptReadyMilliseconds: 30, scriptReplyMilliseconds: 5000)
+        )
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.domain, firstError.domain)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.code, firstError.code)
+        XCTAssertEqual(eventData.clearAIChatHistoryPageLoadMilliseconds, 400)
+        XCTAssertEqual(eventData.clearAIChatHistoryScriptReadyMilliseconds, 30)
+        XCTAssertEqual(eventData.clearAIChatHistoryScriptReplyMilliseconds, 5000)
+    }
+
+    func testWhenAIChatClearWasRetriedThenDeletePixelCarriesSourceAndFirstAttemptCode() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2),
+            firstAttemptTimings: AIChatClearingTimings()
+        )
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteSuccessful.name })
+        XCTAssertEqual(call.additionalParameters?["source"], "fire_button")
+        XCTAssertEqual(call.additionalParameters?["retried"], "true")
+        XCTAssertEqual(call.additionalParameters?["first_attempt_error_code"], "2")
+    }
+
+    func testWhenAIChatClearFailedThenDeleteFailedPixelCarriesTheSource() async throws {
+        mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 5))
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, trigger: .autoClearOnLaunch), applicationState: .unknown)
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteFailed.name })
+        XCTAssertEqual(call.additionalParameters?["source"], "auto_clear")
+        XCTAssertEqual(call.additionalParameters?["retried"], "false")
+        XCTAssertNil(call.additionalParameters?["first_attempt_error_code"])
+    }
+
+    func testWhenAIChatsAreBurnedThenWideEventRecordsTheWarmupWait() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAIChatHistoryWarmupWaitMilliseconds)
+    }
+
+    func testWhenAIChatClearSucceededFirstTimeThenWideEventRecordsNoRetry() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, false)
+        XCTAssertNil(eventData.clearAIChatHistoryFirstAttemptError)
+    }
+
     func testWhenTabHistoryIsEmptyThenWideEventReportsPermissionClearingSuccess() async throws {
         let executor = makeFireExecutor()
         let tabViewModel = makeTabViewModel()
@@ -956,6 +1154,23 @@ final class FireExecutorTests: XCTestCase {
     
     // MARK: - Legacy AI Chats Setting Tests
     
+    func testWhenTabAIChatClearWasRetriedThenWideEventRecordsTheRetry() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 6),
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 500)
+        )
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "test-chat-id-123")
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.code, 6)
+        XCTAssertEqual(eventData.clearAIChatHistoryPageLoadMilliseconds, 500)
+    }
+
     func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
         // Given
         mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
@@ -1142,4 +1357,15 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
     }
+}
+
+@MainActor
+final class MockFireBackgroundTask: FireBackgroundTasking {
+    private(set) var calls: [String] = []
+    var isHeld: Bool { calls.last == "begin" }
+
+    nonisolated init() {}
+
+    func begin() { calls.append("begin") }
+    func end() { calls.append("end") }
 }

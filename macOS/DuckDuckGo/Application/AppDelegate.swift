@@ -247,6 +247,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
+    let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring = AttachmentPrivacyDisclosureStore()
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -358,7 +359,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
-        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+        buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
 
@@ -406,10 +407,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            persistor: vpnUpsellUserDefaultsPersistor,
             timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
     }()
+
+    lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate( // swiftlint:disable:this weak_delegate
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
+
+    lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate( // swiftlint:disable:this weak_delegate
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -1551,6 +1563,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateNotificationBridge: updateNotificationPromoBridge,
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
             quitSurveyPromoObserver: quitSurveyPromoObserver,
+            vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
             autofillImportPromoObserver: autofillImportPromoObserver
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)

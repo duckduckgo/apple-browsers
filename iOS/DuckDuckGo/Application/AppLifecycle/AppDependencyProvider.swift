@@ -161,6 +161,19 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
+    static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
+                                               isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
+        isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
+    }
+
+    private static func isSitePermissionsSupportedOS() -> Bool {
+        if #available(iOS 16.0, *) {
+            true
+        } else {
+            false
+        }
+    }
+
     private init() {
 
         // Configuring PixelKit
@@ -238,7 +251,7 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
-        isSitePermissionsEnabled = featureFlagger.isFeatureOn(.sitePermissions)
+        isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
 
         // Configure PixelKit Experiments
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,

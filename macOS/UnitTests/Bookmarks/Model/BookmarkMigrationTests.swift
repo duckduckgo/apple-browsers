@@ -57,7 +57,7 @@ class BookmarksMigrationTests: XCTestCase {
 
     override func setUp() async throws {
         destinationStack = MockBookmarksDatabase.make(prepareFolderStructure: false)
-        sourceStack = CoreData.legacyBookmarkContainer()
+        sourceStack = CoreData.legacyBookmarkContainer(bundle: .module)
     }
 
     override func tearDown() async throws {

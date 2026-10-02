@@ -29,7 +29,7 @@ final class PermissionStoreTests: XCTestCase {
     private static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
     private static let updatedDate = Date(timeIntervalSince1970: 1_700_000_500)
 
-    var container: NSPersistentContainer! = CoreData.permissionContainer()
+    var container: NSPersistentContainer! = CoreData.permissionContainer(bundle: .module)
     lazy var store: LocalPermissionStore! = LocalPermissionStore(context: container.viewContext)
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",

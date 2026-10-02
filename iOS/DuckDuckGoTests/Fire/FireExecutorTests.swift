@@ -28,6 +28,7 @@ import Bookmarks
 @_spi(Testing) import Persistence
 import SitePermissions
 import DDGSync
+@_spi(Testing) import PixelKit
 import WKAbstractions
 import BrowserServicesKitTestsUtils
 @_spi(Testing) import WideEvent
@@ -131,6 +132,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
     private var mockHistoryCleaner: MockHistoryCleaner!
+    private let pixelKitMock = PixelKitMock()
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
     private var mockDelegate: MockFireExecutorDelegate!
     private var mockAppSettings: AppSettingsMock!
@@ -220,6 +222,7 @@ final class FireExecutorTests: XCTestCase {
             appSettings: mockAppSettings,
             sitePermissionsStore: sitePermissionsStore,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
+            pixelFiring: pixelKitMock,
             wideEvent: wideEventMock,
             dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
@@ -904,6 +907,35 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(eventData.clearAIChatHistoryPageLoadMilliseconds, 400)
         XCTAssertEqual(eventData.clearAIChatHistoryScriptReadyMilliseconds, 30)
         XCTAssertEqual(eventData.clearAIChatHistoryScriptReplyMilliseconds, 5000)
+    }
+
+    func testWhenAIChatClearWasRetriedThenDeletePixelCarriesSourceAndFirstAttemptCode() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2),
+            firstAttemptTimings: AIChatClearingTimings()
+        )
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteSuccessful.name })
+        XCTAssertEqual(call.additionalParameters?["source"], "fire_button")
+        XCTAssertEqual(call.additionalParameters?["retried"], "true")
+        XCTAssertEqual(call.additionalParameters?["first_attempt_error_code"], "2")
+    }
+
+    func testWhenAIChatClearFailedThenDeleteFailedPixelCarriesTheSource() async throws {
+        mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 5))
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, trigger: .autoClearOnLaunch), applicationState: .unknown)
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteFailed.name })
+        XCTAssertEqual(call.additionalParameters?["source"], "auto_clear")
+        XCTAssertEqual(call.additionalParameters?["retried"], "false")
+        XCTAssertNil(call.additionalParameters?["first_attempt_error_code"])
     }
 
     func testWhenAIChatsAreBurnedThenWideEventRecordsTheWarmupWait() async throws {

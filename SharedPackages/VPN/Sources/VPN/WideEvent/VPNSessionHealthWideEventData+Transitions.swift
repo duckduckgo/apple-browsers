@@ -238,9 +238,9 @@ private extension VPNSessionHealthWideEventData {
     }
 
     mutating func recordCompletionDiagnostics(at now: Date, processStartDate: Date, processIdentifier: Int32, appVersion: String) {
-        if eventDurationExceedsProcessLifetime == nil {
-            let processLifetime = max(0, now.timeIntervalSince(processStartDate))
-            eventDurationExceedsProcessLifetime = eventDuration(asOf: now) > processLifetime
+        let processLifetime = max(0, now.timeIntervalSince(processStartDate))
+        if eventDurationExceedsProcessLifetime == nil, eventDuration(asOf: now) > processLifetime {
+            eventDurationExceedsProcessLifetime = true
         }
 
         if processIDChanged == nil, let sessionStartPID, sessionStartPID != processIdentifier {

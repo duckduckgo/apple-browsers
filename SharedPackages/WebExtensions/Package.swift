@@ -40,6 +40,7 @@ let package = Package(
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../URLPredictor"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
     ],
     targets: [
@@ -53,10 +54,12 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
+                .product(name: "URLPredictor", package: "URLPredictor"),
                 "ZIPFoundation",
             ],
             resources: [
-                .copy("BundledWebExtensions")
+                .copy("BundledWebExtensions"),
+                .copy("Autoconsent/cpm-top-sites-bloom.json"),
             ]
         ),
         .target(

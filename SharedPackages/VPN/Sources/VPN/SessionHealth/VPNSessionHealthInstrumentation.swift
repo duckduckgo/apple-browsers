@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import NetworkExtension
 import os.log
@@ -88,6 +89,7 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
     private let now: @Sendable () -> Date
     private let processStartedAt: Date
     private let processIdentifier: @Sendable () -> Int32
+    private let appVersion: @Sendable () -> String
 
     private let lock = NSLock()
 
@@ -107,13 +109,15 @@ public final class DefaultVPNSessionHealthInstrumentation: VPNSessionHealthInstr
                 processStartedAt: Date,
                 isTelemetryEnabled: @escaping @Sendable () -> Bool,
                 now: @escaping @Sendable () -> Date = { Date() },
-                processIdentifier: @escaping @Sendable () -> Int32 = { ProcessInfo.processInfo.processIdentifier }) {
+                processIdentifier: @escaping @Sendable () -> Int32 = { ProcessInfo.processInfo.processIdentifier },
+                appVersion: @escaping @Sendable () -> String = { AppVersion.shared.versionNumber }) {
         self.wideEvent = wideEvent
         self.extensionType = extensionType
         self.isTelemetryEnabled = isTelemetryEnabled
         self.now = now
         self.processStartedAt = processStartedAt
         self.processIdentifier = processIdentifier
+        self.appVersion = appVersion
         Logger.networkProtectionSessionHealth.debug("Initialized session health instrumentation")
     }
 
@@ -249,7 +253,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
         var (event, outcome) = previous.finalized(for: endReason,
                                                   at: timestamp,
                                                   processStartDate: processStartedAt,
-                                                  processIdentifier: processIdentifier())
+                                                  processIdentifier: processIdentifier(),
+                                           appVersion: appVersion())
         event.lastObservedAt = timestamp
 
         completeEvent(event: event, outcome: outcome)
@@ -276,6 +281,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
                                                     startedAt: now(),
                                                     extensionType: extensionType,
                                                     sessionStartPID: processIdentifier(),
+                                                    appData: WideEventAppData(version: appVersion()),
                                                     globalData: WideEventGlobalData())
         beginEventInLock(nextEvent)
     }
@@ -300,7 +306,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
         let completed = previous.finalized(for: .restartedWithoutStop,
                                            at: timestamp,
                                            processStartDate: processStartedAt,
-                                           processIdentifier: processIdentifier())
+                                           processIdentifier: processIdentifier(),
+                                           appVersion: appVersion())
         completeEvent(event: completed.event, outcome: completed.outcome)
     }
 
@@ -314,7 +321,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
             let timestamp = now()
             let completed = orphan.finalizedAfterOrphanRecovery(at: timestamp,
                                                                 processStartDate: processStartedAt,
-                                                                processIdentifier: processIdentifier())
+                                                                processIdentifier: processIdentifier(),
+                                           appVersion: appVersion())
             completeEvent(event: completed.event, outcome: completed.outcome)
         }
     }

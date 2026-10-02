@@ -86,6 +86,9 @@ public struct VPNSessionHealthWideEventData: WideEventData {
     /// Set only when the starting PID differs from the completing or recovering process; otherwise omitted.
     public var processIDChanged: Bool?
 
+    /// Set only when the completing or recovering process runs a different app version than `appData.version`; otherwise omitted.
+    public var appVersionChanged: Bool?
+
     /// From `NetworkProtectionTunnelFailureMonitor`; routing outages come from the tester.
     public var staleHandshakeDetected = false
     public var staleHandshakeRecovered = false
@@ -133,6 +136,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
             (Key.failureRecoverySucceeded, failureRecoverySucceeded),
             (Key.eventDurationExceedsProcessLifetime, eventDurationExceedsProcessLifetime),
             (Key.processIDChanged, processIDChanged),
+            (Key.appVersionChanged, appVersionChanged),
         ])
 
         params[Key.startReason] = startReason.rawValue
@@ -373,6 +377,7 @@ extension WideEventParameter {
         static let eventDuration = "feature.data.ext.event_duration_seconds_bucketed"
         static let eventDurationExceedsProcessLifetime = "feature.data.ext.event_duration_exceeds_process_lifetime"
         static let processIDChanged = "feature.data.ext.process_id_changed"
+        static let appVersionChanged = "feature.data.ext.app_version_changed"
         static let connectionTestFailureSeen = "feature.data.ext.connection_tester_failure_seen"
         static let extendedRoutingOutageDetected = "feature.data.ext.connection_tester_extended_failure_seen"
         static let connectionTestFailureActiveAtEnd = "feature.data.ext.connection_tester_failure_active_at_end"

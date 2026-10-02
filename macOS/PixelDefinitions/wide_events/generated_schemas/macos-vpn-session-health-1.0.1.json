@@ -134,6 +134,10 @@
                                     "type": "boolean",
                                     "description": "Present only as true when the PID at session start differs from the completing or orphan-recovering process PID. Omitted when PIDs match or the starting PID is unavailable. Equal PIDs do not guarantee the same process instance because PIDs can be reused."
                                 },
+                                "app_version_changed": {
+                                    "type": "boolean",
+                                    "description": "Present only as true when the app version at session start differs from the completing or orphan-recovering process app version. Omitted when versions match."
+                                },
                                 "time_to_first_error_seconds_bucketed": {
                                     "type": "string",
                                     "description": "Time from event start to the first error of any kind, bucketed (lower end of bucket, in seconds). Absent when there were none.",

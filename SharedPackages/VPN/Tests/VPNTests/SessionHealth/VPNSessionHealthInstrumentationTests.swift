@@ -321,7 +321,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
                                                   extensionType: .system)
             .markingMonitoringStarted(at: hourStart)
             .applyingConnectionTestResult(.connected, at: hourStart)
-            .finalized(for: .stoppedByUser, at: endedAt, processStartDate: hourStart.addingTimeInterval(-100_000), processIdentifier: 123).event
+            .finalized(for: .stoppedByUser, at: endedAt, processStartDate: hourStart.addingTimeInterval(-100_000), processIdentifier: 123, appVersion: "1.0.0").event
         wideEvent.startFlow(ended)
 
         startTunnel(.manual)
@@ -411,6 +411,30 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         instrumentation.tunnelStopped(reason: .userInitiated)
 
         XCTAssertEqual(try completedEvent().processIDChanged, true)
+    }
+
+    func testWhenAppVersionMatchesAtStopThenAppVersionChangedIsOmitted() throws {
+        startMonitoredSession()
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        XCTAssertNil(try completedEvent().appVersionChanged)
+    }
+
+    func testWhenOrphanIsRecoveredByNewerAppVersionThenAppVersionChangedIsReported() throws {
+        startMonitoredSession()
+        let orphanID = try latestEvent().globalData.id
+
+        inputs.appVersion = "1.1.0"
+        instrumentation = makeInstrumentation()
+        startTunnel(.onDemand)
+
+        let recovered = try completedEvent()
+        XCTAssertEqual(recovered.globalData.id, orphanID)
+        XCTAssertEqual(recovered.endReason, .processDied)
+        XCTAssertEqual(recovered.appVersionChanged, true)
+        let fresh = try XCTUnwrap(wideEvent.started.last as? VPNSessionHealthWideEventData)
+        XCTAssertEqual(fresh.appData.version, "1.1.0")
+        XCTAssertNil(fresh.appVersionChanged)
     }
 
     func testOrphanOlderThanCurrentProcessReportsDurationExceedingLifetime() throws {
@@ -540,7 +564,8 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
             processStartedAt: hourStart,
             isTelemetryEnabled: { inputs.enabled },
             now: { inputs.date },
-            processIdentifier: { inputs.pid })
+            processIdentifier: { inputs.pid },
+            appVersion: { inputs.appVersion })
     }
 
     private func latestEvent(file: StaticString = #filePath, line: UInt = #line) throws -> VPNSessionHealthWideEventData {
@@ -577,6 +602,7 @@ private final class InstrumentationSettings: @unchecked Sendable {
     var date: Date
     var enabled = true
     var pid: Int32 = 1
+    var appVersion = "1.0.0"
 
     init(date: Date) {
         self.date = date

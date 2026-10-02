@@ -367,7 +367,7 @@ private struct ExpirationField: View {
                 if model.isInEditMode {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
-                            Picker("", selection: $model.expirationMonth) {
+                            Picker("" as String, selection: $model.expirationMonth) {
                                 if model.expirationMonth == nil {
                                     Text(UserText.pmMonth)
                                         .tag(nil as Int?)
@@ -379,7 +379,7 @@ private struct ExpirationField: View {
                             }
                             .labelsHidden()
 
-                            Picker("", selection: $model.expirationYear) {
+                            Picker("" as String, selection: $model.expirationYear) {
                                 if model.expirationYear == nil {
                                     Text(UserText.pmYear)
                                         .tag(nil as Int?)

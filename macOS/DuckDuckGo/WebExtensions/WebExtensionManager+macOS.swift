@@ -36,6 +36,10 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -94,6 +98,9 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
+            isCPMMessagingHangRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,

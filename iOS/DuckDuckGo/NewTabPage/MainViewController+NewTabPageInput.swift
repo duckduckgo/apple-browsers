@@ -22,23 +22,37 @@ import UIKit
 
 extension MainViewController {
 
-    func updateAddressBarSuppressionForNewTabPage() {
+    var newTabPageInputPresentation: NewTabPageInputPresentation {
         let hasInlineInput = newTabPageViewController?.hasInlineSearchInput == true
-        let presentation = NewTabPageInputPresentation.resolve(
+        return NewTabPageInputPresentation.resolve(
             hasInlineInput: hasInlineInput,
             usesUnifiedInput: unifiedToggleInputCoordinator != nil,
             isLegacyInputEditing: hasInlineInput && viewCoordinator.omniBar.isTextFieldEditing,
             isUnifiedInputEditing: unifiedToggleInputCoordinator?.isOmnibarSession == true,
             isHandingOff: isAddressBarHandOffInProgress,
             isDismissing: viewCoordinator.isInlineInputDismissInProgress)
+    }
+
+    func updateAddressBarSuppressionForNewTabPage() {
+        let presentation = newTabPageInputPresentation
+        // Update even when chrome is unchanged: the shared controller may now belong to another tab.
+        updateUnifiedInputContentPresentation(presentation: presentation, isOnAITab: currentTab?.isAITab == true)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
         if presentation.hidesNavigationContainer || presentation.transition != .inlineInput {
             restingNewTabPageSnapshot = nil
         }
+        let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
+        if !presentation.hidesNavigationContainer {
+            // Capture the scrolled resting layout before chrome changes the page's viewport.
+            transitionSource?.setSearchInputEditing(true)
+        }
         viewCoordinator.setNewTabPageInputPresentation(presentation)
-        (newTabPageViewController as? NewTabPageInputTransitionSource)?.setSearchInputEditing(
-            !presentation.hidesNavigationContainer)
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
+        if presentation.hidesNavigationContainer {
+            // Restore scrolling only after the resting chrome and safe area have settled.
+            view.layoutIfNeeded()
+            transitionSource?.setSearchInputEditing(false)
+        }
     }
 
     func revealAddressBarForEditing() {

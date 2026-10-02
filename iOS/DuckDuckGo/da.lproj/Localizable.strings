@@ -223,6 +223,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Prøv gratis";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Vi blokerer invasive trackere, før de indlæses, hvilket effektivt eliminerer annoncer, der er afhængige af sporing.";
 
@@ -4699,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Angiv placeringen af adresselinjen";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Tillad altid";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Spørg hver gang";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Placering";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Administrer websteder";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Tillad aldrig";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Fjern alle webstedstilladelser";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Fjern tilladelser";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Tilladelser fjernet for alle websteder";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Tilladelser fjernet for %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Tilladelser for %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Du kan se og ændre DuckDuckGos systemtilladelser i %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Systemindstillinger.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktiverer";
 
@@ -4896,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Virker webstedet ikke? Fortæl DuckDuckGo det.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Tilladelser til webstedet";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Indsend rapport";
@@ -5850,3 +5898,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "Alle chats";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Filer scannes automatisk for ulovligt indhold. Markerede chats har begrænset dataopbevaring. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Mere info";

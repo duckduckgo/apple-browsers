@@ -17,7 +17,7 @@
 //
 
 import WebKit
-@testable import Navigation
+@testable import DDGNavigation
 
 class WKNavigationActionMock: NSObject {
 

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import Common
 import Foundation
@@ -146,6 +148,7 @@ extension AIChatMessageHandler {
             supportsSuggestions: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
             supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
             supportsNativeDictationPermissionHandler: true,
+            supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
             attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)

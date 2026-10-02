@@ -223,6 +223,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Gratis testen";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blockiert invasive Tracker, bevor sie geladen werden, und eliminiert so effektiv Werbung, die auf Tracking basiert.";
 
@@ -4699,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Position deiner Adressleiste festlegen";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Immer erlauben";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Jedes Mal fragen";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Standort";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Websites verwalten";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Nie zulassen";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Alle Website-Berechtigungen entfernen";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Berechtigungen entfernen";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Berechtigungen für alle Websites entfernt";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Berechtigungen für %@ entfernt";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Berechtigungen für %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Du kannst die Systemberechtigungen von DuckDuckGo in %@ anzeigen und ändern";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Systemeinstellungen.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Wird aktiviert";
 
@@ -4896,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Webseite funktioniert nicht? Sag DuckDuckGo Bescheid.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Website-Berechtigungen";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Bericht senden";
@@ -5850,3 +5898,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "Alle Chats";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Dateien werden automatisch auf illegale Inhalte überprüft. Für markierte Chats gilt eine begrenzte Datenspeicherung. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Mehr erfahren";

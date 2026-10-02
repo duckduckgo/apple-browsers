@@ -190,6 +190,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Try for Free";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.";
 
@@ -270,6 +273,12 @@
 
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Take Photo";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Learn more";
 
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "That message is too long to send with attachments.";
@@ -4465,6 +4474,48 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Set Your Address Bar Position";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Always Allow";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Ask Each Time";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Camera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Location";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Manage Sites";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Microphone";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Never Allow";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Remove All Site Permissions";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Remove Permissions";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Permissions removed for all sites";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Permissions removed for %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Permissions for %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "You can view and modify DuckDuckGo’s system permissions in %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "System Settings.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Activating";
 
@@ -4659,6 +4710,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Site not working? Let DuckDuckGo know.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Site Permissions";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Submit Report";

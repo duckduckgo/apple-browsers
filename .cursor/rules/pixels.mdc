@@ -53,7 +53,7 @@ pixelKit.fire(uniqueEvent, frequency: .uniqueByName)
 
 `Pixel.Event` in `iOS/Core/PixelEvent.swift` is the catalogue of iOS pixel names that predate PixelKit. The iOS-only firing classes it was written for no longer exist, so it now serves purely to name pixels: each case maps to an HTTP pixel name string via a computed `name` property, and every case fires through PixelKit (`PixelKit.fire(Pixel.Event.someCase, ...)`).
 
-**`iOS/Core/PixelEvent.swift` does not take new pixels.** The file carries a top-of-file notice to that effect, and a Danger check hard-fails a PR that adds a new case (to the enum or to the `name` switch) - see `iOS Pixel Injection Pattern (PixelKit)` in `.cursor/BUGBOT.md`. Modifying or removing an existing case is fine. Define a new iOS pixel as its own `PixelKit.Event`-conforming type in a new file instead, the same way macOS already does (see `macOS Pixels (PixelKit)` below).
+**`iOS/Core/PixelEvent.swift` does not take new pixels.** The file carries a top-of-file notice to that effect, and a Danger check hard-fails a PR that adds a new case (to the enum or to the `name` switch) - see `PixelKit injection` in `REVIEW-pixels.md`. Modifying or removing an existing case is fine. Define a new iOS pixel as its own `PixelKit.Event`-conforming type in a new file instead, the same way macOS already does (see `macOS Pixels (PixelKit)` below).
 
 #### Existing Structure
 

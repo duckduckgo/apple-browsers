@@ -23,7 +23,7 @@ import FoundationExtensions
 import ContentBlocking
 import Foundation
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
@@ -37,6 +37,11 @@ final class PrivacyDashboardTabExtension {
     private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private let tabIdentifier: String
     private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+    private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
+    private let webExtensionNavigationGate: WebExtensionNavigationGate
+
+    var shouldDisableLongDecisionMakingChecks: Bool { true }
+
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?
@@ -49,6 +54,7 @@ final class PrivacyDashboardTabExtension {
 
     init(tabIdentifier: String,
          webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?,
          contentBlocking: some ContentBlockingProtocol,
          certificateTrustEvaluator: CertificateTrustEvaluating,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -62,6 +68,8 @@ final class PrivacyDashboardTabExtension {
 
         self.tabIdentifier = tabIdentifier
         self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
+        self.webExtensionNavigationGate = WebExtensionNavigationGate()
         self.contentBlocking = contentBlocking
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
@@ -233,6 +241,13 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        if #available(macOS 15.4, *) {
+            // Hold restored web content until the embedded extension's background listeners are
+            // ready, matching the existing startup gates for user scripts and Content Blocking.
+            await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
+                                                          url: navigationAction.url,
+                                                          initialLoadWaiter: webExtensionInitialLoadWaiterProvider())
+        }
         resetConnectionUpgradedTo(navigationAction: navigationAction)
         updateMaliciousSiteInfo(for: navigationAction.url)
         return .next

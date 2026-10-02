@@ -153,17 +153,19 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         let coordinator = makeCoordinator()
         coordinator.setNewTabPageInputPresentation(.resting(usesUnifiedInput: false))
         XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
-        XCTAssertTrue(coordinator.constraints.contentContainerTopToSafeArea.isActive)
+        XCTAssertTrue(coordinator.constraints.contentContainerTopToSuperview.isActive)
+        XCTAssertFalse(coordinator.constraints.contentContainerTopToSafeArea.isActive)
         coordinator.setNewTabPageInputPresentation(.editing(usesUnifiedInput: false))
         XCTAssertFalse(coordinator.navigationBarContainer.isHidden)
         XCTAssertFalse(coordinator.navigationBarCollectionView.isHidden)
         XCTAssertTrue(coordinator.constraints.contentContainerTop.isActive)
         coordinator.setNewTabPageInputPresentation(.resting(usesUnifiedInput: false))
         XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
-        XCTAssertTrue(coordinator.constraints.contentContainerTopToSafeArea.isActive)
+        XCTAssertTrue(coordinator.constraints.contentContainerTopToSuperview.isActive)
+        XCTAssertFalse(coordinator.constraints.contentContainerTopToSafeArea.isActive)
     }
 
-    func testWhenInlinePresentationChangesThenContentAndStatusBackgroundUseSafeAreaAnchors() {
+    func testWhenInlinePresentationChangesThenContentFillsViewportAndStatusBackgroundIsClear() {
         for position in [AddressBarPosition.top, .bottom] {
             for floating in [false, true] {
                 let coordinator = makeCoordinator(position: position)
@@ -176,7 +178,10 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
                 for state in states {
                     coordinator.setNewTabPageInputPresentation(state.presentation)
                     XCTAssertTrue(coordinator.navigationBarCollectionView.isHidden)
-                    XCTAssertTrue(coordinator.constraints.contentContainerTopToSafeArea.isActive)
+                    XCTAssertTrue(coordinator.constraints.contentContainerTopToSuperview.isActive)
+                    XCTAssertFalse(coordinator.constraints.contentContainerTopToSafeArea.isActive)
+                    XCTAssertEqual(coordinator.statusBackground.backgroundColor, UIColor.clear)
+                    XCTAssertTrue(coordinator.toolbar.usesRedesignedNewTabPageLayout)
                     XCTAssertFalse(coordinator.constraints.contentContainerTop.isActive)
                     XCTAssertTrue(coordinator.constraints.statusBackgroundBottomToSafeAreaTop.isActive)
                     XCTAssertFalse(coordinator.constraints.statusBackgroundToNavigationBarContainerBottom.isActive)
@@ -195,6 +200,9 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.navigationBarContainer.isUserInteractionEnabled)
         XCTAssertTrue(coordinator.constraints.contentContainerTop.isActive)
         XCTAssertFalse(coordinator.constraints.contentContainerTopToSafeArea.isActive)
+        XCTAssertFalse(coordinator.constraints.contentContainerTopToSuperview.isActive)
+        XCTAssertFalse(coordinator.toolbar.usesRedesignedNewTabPageLayout)
+        XCTAssertNotEqual(coordinator.statusBackground.backgroundColor, UIColor.clear)
         XCTAssertTrue(coordinator.constraints.statusBackgroundToNavigationBarContainerBottom.isActive)
         XCTAssertFalse(coordinator.constraints.statusBackgroundBottomToSafeAreaTop.isActive)
     }
@@ -209,6 +217,7 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
 
     func testLeavingInlinePageInterruptsDismissWithoutRunningItsCompletion() {
         let coordinator = makeCoordinator()
+        XCTAssertFalse(coordinator.isOmnibarDismissInProgress)
         coordinator.unifiedToggleInputContainer = UIView()
         coordinator.setNewTabPageInputPresentation(.editing(usesUnifiedInput: true))
         var interrupted = false
@@ -218,12 +227,47 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
             interruptCleanup: { interrupted = true },
             completion: { completed = true })
         XCTAssertTrue(coordinator.isInlineInputDismissInProgress)
+        XCTAssertTrue(coordinator.isOmnibarDismissInProgress)
         coordinator.setNewTabPageInputPresentation(.browser)
         XCTAssertFalse(coordinator.isInlineInputDismissInProgress)
+        XCTAssertFalse(coordinator.isOmnibarDismissInProgress)
         XCTAssertTrue(interrupted)
         XCTAssertFalse(completed)
         XCTAssertFalse(coordinator.navigationBarCollectionView.isHidden)
         XCTAssertTrue(coordinator.constraints.contentContainerTop.isActive)
+    }
+
+    func testWhenFloatingInlineInputDismissStartsThenFocusedBackgroundRemainsVisible() {
+        for position in [AddressBarPosition.top, .bottom] {
+            let coordinator = makeCoordinator(position: position)
+            coordinator.setFloatingUIEnabled(true)
+            coordinator.unifiedToggleInputContainer = UIView()
+            coordinator.focusedStateBackground = UIView()
+            coordinator.focusedStateBackground.isHidden = false
+
+            coordinator.hideUnifiedToggleInputOmnibar(transition: .inlineInput)
+
+            XCTAssertFalse(coordinator.focusedStateBackground.isHidden,
+                           "The full-screen backdrop must cover the pond until the inline handoff")
+            coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+        }
+    }
+
+    func testWhenDismissIsReplacedThenOnlyTheCurrentTransitionRemainsInProgress() {
+        let coordinator = makeCoordinator()
+        coordinator.unifiedToggleInputContainer = UIView()
+        var oldCompletionCalled = false
+        coordinator.hideUnifiedToggleInputOmnibar(
+            transition: .inlineInput,
+            completion: { oldCompletionCalled = true })
+        coordinator.hideUnifiedToggleInputOmnibar(transition: .inlineInput)
+
+        XCTAssertTrue(coordinator.isOmnibarDismissInProgress)
+        XCTAssertFalse(oldCompletionCalled)
+
+        coordinator.stopInFlightOmnibarDismiss(runningInterruptCleanup: true)
+        XCTAssertFalse(coordinator.isOmnibarDismissInProgress)
+        XCTAssertFalse(oldCompletionCalled)
     }
 
     private func makeCoordinator(position: AddressBarPosition = .top) -> MainViewCoordinator {
@@ -238,6 +282,8 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         root.addSubview(status)
         root.addSubview(navigation)
         navigation.addSubview(collection)
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        coordinator.statusBackground = status
         coordinator.contentContainer = content
         coordinator.navigationBarContainer = navigation
         coordinator.navigationBarCollectionView = collection

@@ -223,6 +223,9 @@
 /* VPN menu item */
 "action.title.vpn" = "VPN";
 
+/* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
+"action.title.vpn.free-trial-badge" = "Išbandykite nemokamai";
+
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blokuoja įkyrius sekiklius dar jiems neįsikėlus ir veiksmingai pašalina sekimu paremtus skelbimus.";
 
@@ -4699,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Nustatykite adreso juostos padėtį";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Visada leisti";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Visada klausti";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Vieta";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Tvarkyti svetaines";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofonas";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Niekada neleisti";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Šalinti visų svetainių leidimus";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Šalinti leidimus";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Pašalinti visų svetainių leidimai";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Pašalinti %@ leidimai";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "%@ leidimai";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Galite peržiūrėti ir keisti „DuckDuckGo“ sistemos leidimus skiltyje %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Sistemos nustatymai.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktyvavimas";
 
@@ -4896,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Svetainė neveikia? Praneškite „DuckDuckGo“.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Svetainių leidimai";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Pateikti ataskaitą";
@@ -5850,3 +5898,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "Visi pokalbiai";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Failai automatiškai tikrinami, ar juose nėra neteisėto turinio. Pažymėtų pokalbių duomenys saugomi ribotą laiką. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Sužinoti daugiau";

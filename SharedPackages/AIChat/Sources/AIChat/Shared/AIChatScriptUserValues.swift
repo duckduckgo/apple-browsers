@@ -139,6 +139,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
     /// prompt with dictation-specific copy.
     public let supportsNativeDictationPermissionHandler: Bool
+    /// `true` when clearing Duck.ai data also removes the images' blob files from IndexedDB, so the FE
+    /// can run its one-time sweep of blob files orphaned by older clears.
+    public let supportsBlobSafeDataClearing: Bool
     /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
     /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
     public let installType: AIChatInstallType
@@ -222,6 +225,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativeUsageWarnings: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 supportsNativeDictationPermissionHandler: Bool = false,
+                supportsBlobSafeDataClearing: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
@@ -251,6 +255,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativeUsageWarnings = supportsNativeUsageWarnings
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
+        self.supportsBlobSafeDataClearing = supportsBlobSafeDataClearing
         self.installType = installType
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
@@ -323,6 +328,10 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
     /// Text selections attached to this prompt, sent alongside `pageContext` rather than folded into it.
     public let selections: [AIChatSelectionContextData]?
+
+    /// `true` only for a prompt the user sent by tapping Ask in a native input, with the Terms of Service
+    /// accepted. `nil` omits the key, which is how a build without native Terms of Service reads to the FE.
+    public let termsAccepted: Bool?
 
     public enum Tool: Equatable {
         case query(Query)
@@ -462,16 +471,28 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case translation
         case pageContext
         case selections
+        case termsAccepted
     }
 
     public init(platform: String,
                 tool: Tool?,
                 pageContext: AIChatPageContextPayload? = nil,
-                selections: [AIChatSelectionContextData]? = nil) {
+                selections: [AIChatSelectionContextData]? = nil,
+                termsAccepted: Bool? = nil) {
         self.platform = platform
         self.tool = tool
         self.pageContext = pageContext
         self.selections = selections
+        self.termsAccepted = termsAccepted
+    }
+
+    /// The same prompt carrying `termsAccepted`.
+    public func withTermsAccepted(_ termsAccepted: Bool?) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: platform,
+                           tool: tool,
+                           pageContext: pageContext,
+                           selections: selections,
+                           termsAccepted: termsAccepted)
     }
 
     public init(from decoder: Decoder) throws {
@@ -497,6 +518,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
         pageContext = try container.decodeIfPresent(AIChatPageContextPayload.self, forKey: .pageContext)
         selections = try container.decodeIfPresent([AIChatSelectionContextData].self, forKey: .selections)
+        termsAccepted = try container.decodeIfPresent(Bool.self, forKey: .termsAccepted)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -520,6 +542,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
         try container.encodeIfPresent(selections, forKey: .selections)
+        try container.encodeIfPresent(termsAccepted, forKey: .termsAccepted)
     }
 
     public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {

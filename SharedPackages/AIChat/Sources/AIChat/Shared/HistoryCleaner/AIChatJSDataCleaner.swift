@@ -27,7 +27,7 @@ import WebKit
 /// `duck-ai-data-clearing` feature.
 public protocol AIChatJSDataCleaning {
     @MainActor func clearJSData(chatID: String?) async -> Result<Void, Error>
-    /// Clears a specific set of chats, reusing one web view session (one navigation per domain).
+    /// Clears a specific set of chats, reusing one web view session.
     @MainActor func clearJSData(chatIDs: [String]) async -> Result<Void, Error>
 }
 
@@ -35,7 +35,6 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
 
     enum CleanerError: Error {
         case webViewNotInitialized
-        case scriptNotInitialized
         case operationInProgress
     }
 
@@ -44,7 +43,9 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     private let websiteDataStore: WKWebsiteDataStore
 
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
-    private var navigationContinuation: CheckedContinuation<Result<Void, Error>, Never>?
+    private let navigationWaiter = CallbackWaiter()
+    /// Loading the local page normally takes under a second; this only catches loads that never end.
+    private static let navigationTimeout: TimeInterval = 10
     private var webView: WKWebView?
     private var coordinator: Coordinator?
     private var contentScopeUserScript: ContentScopeUserScript?
@@ -77,7 +78,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     }
 
     /// - Parameter chatIDs: `nil` clears all chats; otherwise the specific ids, cleared within a
-    ///   single web view session (each domain is navigated once, then the clear message is sent per id).
+    ///   single web view session.
     @MainActor
     private func clear(chatIDs: [String]?) async -> Result<Void, Error> {
         guard webView == nil else {
@@ -94,32 +95,29 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
 
     @MainActor
     private func processAllDomains(chatIDs: [String]?) async {
+        let script: AIChatDataClearingUserScript
         do {
-            try setupWebView()
-            for domain in URL.aiChatDomains {
-                let navigationResult = await launchClearingWebView(requestURL: domain)
-
-                guard case .success = navigationResult else {
-                    finish(result: navigationResult)
-                    return
-                }
-
-                let clearingResult = await executeClearingScript(chatIDs: chatIDs)
-
-                guard case .success = clearingResult else {
-                    finish(result: clearingResult)
-                    return
-                }
-            }
-
-            finish(result: .success(()))
+            script = try setupWebView()
         } catch {
             finish(result: .failure(error))
+            return
         }
+
+        let sequence = AIChatClearingSequence(
+            origins: URL.aiChatDomains,
+            loadOrigin: { [weak self] origin in
+                await self?.loadOriginWithListeningScript(origin, script: script) ?? .failure(CleanerError.webViewNotInitialized)
+            },
+            clear: { chatID in
+                await script.clearAIChatDataAsync(chatID: chatID)
+            },
+            requiresReload: { ($0 as? AIChatDataClearingUserScript.ClearError)?.requiresPageReload ?? false }
+        )
+        finish(result: await sequence.run(chatIDs: chatIDs))
     }
 
     @MainActor
-    private func setupWebView() throws {
+    private func setupWebView() throws -> AIChatDataClearingUserScript {
         let aiChatDataClearing = AIChatDataClearingUserScript()
 
         let features = ContentScopeFeatureToggles(
@@ -173,6 +171,16 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         self.coordinator = coordinator
         self.contentScopeUserScript = contentScope
         self.aiChatDataClearingUserScript = aiChatDataClearing
+        return aiChatDataClearing
+    }
+
+    /// Loads the origin and waits for the clearing script to listen, so the clear message isn't lost.
+    @MainActor
+    private func loadOriginWithListeningScript(_ origin: URL, script: AIChatDataClearingUserScript) async -> Result<Void, Error> {
+        script.prepareForPageLoad()
+        let loaded = await launchClearingWebView(requestURL: origin)
+        guard case .success = loaded else { return loaded }
+        return await script.waitUntilReady()
     }
 
     @MainActor
@@ -181,35 +189,27 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
             return .failure(CleanerError.webViewNotInitialized)
         }
 
-        return await withCheckedContinuation { continuation in
-            self.navigationContinuation = continuation
-
+        let result = await navigationWaiter.wait(timeout: Self.navigationTimeout,
+                                                 timeoutError: AIChatDataClearingUserScript.ClearError.navigationTimeout) {
             webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
         }
+        if case .failure = result {
+            webView.stopLoading()
+        }
+        return result
     }
 
     @MainActor
-    private func completeNavigation(with result: Result<Void, Error>) {
-        navigationContinuation?.resume(returning: result)
-        navigationContinuation = nil
+    private func completeNavigation(_ navigation: WKNavigation?, with result: Result<Void, Error>) {
+        navigationWaiter.complete(navigation, with: result)
     }
 
-    /// Sends the clear message for the already-navigated domain: once for all (`nil`), or once per id.
+    /// WebKit reports no navigation failure when the page's process dies, so fail whatever is waiting on it.
     @MainActor
-    private func executeClearingScript(chatIDs: [String]?) async -> Result<Void, Error> {
-        guard let script = aiChatDataClearingUserScript else {
-            return .failure(CleanerError.scriptNotInitialized)
-        }
-
-        guard let chatIDs else {
-            return await script.clearAIChatDataAsync(chatID: nil, timeout: 5)
-        }
-
-        for chatID in chatIDs {
-            let result = await script.clearAIChatDataAsync(chatID: chatID, timeout: 5)
-            guard case .success = result else { return result }
-        }
-        return .success(())
+    private func handleWebContentProcessTermination() {
+        let error = AIChatDataClearingUserScript.ClearError.webContentProcessTerminated
+        navigationWaiter.failPending(with: error)
+        aiChatDataClearingUserScript?.failPendingWaits(with: error)
     }
 
     @MainActor
@@ -240,15 +240,19 @@ extension WebViewAIChatJSDataCleaner {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            cleaner?.completeNavigation(with: .success(()))
+            cleaner?.completeNavigation(navigation, with: .success(()))
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            cleaner?.completeNavigation(with: .failure(error))
+            cleaner?.completeNavigation(navigation, with: .failure(error))
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            cleaner?.completeNavigation(with: .failure(error))
+            cleaner?.completeNavigation(navigation, with: .failure(error))
+        }
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            cleaner?.handleWebContentProcessTermination()
         }
     }
 }

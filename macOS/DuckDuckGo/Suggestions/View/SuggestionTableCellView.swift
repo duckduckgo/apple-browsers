@@ -42,18 +42,19 @@ final class SuggestionTableCellView: NSTableCellView {
         static let iconImageViewLeadingSpace: CGFloat = 13
     }
 
-    @IBOutlet var iconImageView: NSImageView!
-    @IBOutlet var removeButton: NSButton!
-    @IBOutlet var suffixTextField: NSTextField!
-    @IBOutlet var suffixTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var switchToTabBox: ColorView!
-    @IBOutlet var switchToTabLabel: NSTextField!
-    @IBOutlet var switchToTabArrowView: NSImageView!
-    @IBOutlet var switchToTabBoxLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet var switchToTabLabelLeadingConstraint: NSLayoutConstraint!
+    var iconImageView: NSImageView!
+    var removeButton: NSButton!
+    var suffixTextField: NSTextField!
+    var suffixTrailingConstraint: NSLayoutConstraint!
+    var switchToTabBox: ColorView!
+    var switchToTabLabel: NSTextField!
+    var switchToTabArrowView: NSImageView!
+    var switchToTabBoxLeadingConstraint: NSLayoutConstraint!
+    var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
+    var iconImageViewLeadingConstraint: NSLayoutConstraint!
+    var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
+    var switchToTabLabelLeadingConstraint: NSLayoutConstraint!
+    private var confirmButton: NSButton!
 
     private lazy var keyboardShortcutView: KeyboardShortcutView = {
         let view = KeyboardShortcutView()
@@ -137,13 +138,166 @@ final class SuggestionTableCellView: NSTableCellView {
         labelLeadingToShortcutsConstraint?.isActive = showShortcuts
     }
 
-    override func awakeFromNib() {
+    /// Builds the row: favicon, title, suffix, the "Switch to Tab" pill and a full-width
+    /// invisible button that makes the whole row clickable.
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        identifier = Self.identifier
+
+        iconImageView = NSImageView()
+        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        iconImageView.imageScaling = .scaleProportionallyDown
+        iconImageView.imageAlignment = .alignLeft
+        iconImageView.refusesFirstResponder = true
+        iconImageView.setContentHuggingPriority(.init(251), for: .horizontal)
+        iconImageView.setContentHuggingPriority(.init(251), for: .vertical)
+
+        let titleTextField = NSTextField(labelWithString: "")
+        titleTextField.translatesAutoresizingMaskIntoConstraints = false
+        titleTextField.lineBreakMode = .byTruncatingTail
+        titleTextField.textColor = .textColor
+        titleTextField.setContentHuggingPriority(.init(252), for: .horizontal)
+        titleTextField.setContentHuggingPriority(.init(750), for: .vertical)
+        titleTextField.setContentCompressionResistancePriority(.init(252), for: .horizontal)
+
+        suffixTextField = NSTextField(labelWithString: "")
+        suffixTextField.translatesAutoresizingMaskIntoConstraints = false
+        suffixTextField.lineBreakMode = .byTruncatingTail
+        suffixTextField.font = .controlContentFont(ofSize: 0)
+        suffixTextField.textColor = .controlAccentColor
+        suffixTextField.setContentHuggingPriority(.init(251), for: .horizontal)
+        suffixTextField.setContentHuggingPriority(.init(750), for: .vertical)
+        suffixTextField.setContentCompressionResistancePriority(.init(252), for: .horizontal)
+
+        switchToTabLabel = NSTextField(labelWithString: "")
+        switchToTabLabel.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabLabel.lineBreakMode = .byClipping
+        switchToTabLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        switchToTabLabel.setContentHuggingPriority(.init(750), for: .vertical)
+        switchToTabLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        switchToTabArrowView = NSImageView()
+        switchToTabArrowView.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabArrowView.image = .arrowRight12
+        switchToTabArrowView.imageScaling = .scaleProportionallyDown
+        switchToTabArrowView.imageAlignment = .alignLeft
+        switchToTabArrowView.refusesFirstResponder = true
+        switchToTabArrowView.animates = true
+        switchToTabArrowView.contentTintColor = .labelColor
+        switchToTabArrowView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        switchToTabBox = ColorView(frame: .zero, backgroundColor: .buttonMouseOver, cornerRadius: 6)
+        switchToTabBox.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabBox.setContentHuggingPriority(.init(251), for: .horizontal)
+        switchToTabBox.setContentHuggingPriority(.init(251), for: .vertical)
+        switchToTabBox.setContentCompressionResistancePriority(.required, for: .horizontal)
+        switchToTabBox.addSubview(switchToTabLabel)
+        switchToTabBox.addSubview(switchToTabArrowView)
+
+        // Full-size invisible button that makes the whole row clickable.
+        confirmButton = NSButton(frame: .zero)
+        confirmButton.translatesAutoresizingMaskIntoConstraints = false
+        confirmButton.setButtonType(.momentaryPushIn)
+        confirmButton.isBordered = false
+        confirmButton.bezelStyle = .shadowlessSquare
+        confirmButton.imagePosition = .imageOnly
+        confirmButton.imageScaling = .scaleProportionallyUpOrDown
+        confirmButton.alignment = .center
+        confirmButton.title = ""
+
+        removeButton = NSButton(frame: .zero)
+        removeButton.translatesAutoresizingMaskIntoConstraints = false
+        removeButton.setButtonType(.momentaryPushIn)
+        removeButton.isBordered = false
+        removeButton.bezelStyle = .shadowlessSquare
+        removeButton.image = .trash
+        removeButton.imagePosition = .imageOnly
+        removeButton.title = ""
+        removeButton.alignment = .center
+
+        addSubview(iconImageView)
+        addSubview(titleTextField)
+        addSubview(suffixTextField)
+        addSubview(switchToTabBox)
+        addSubview(confirmButton)
+        addSubview(removeButton)
+        textField = titleTextField
+
+        iconImageViewLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8)
+        searchSuggestionTextFieldLeadingConstraint = titleTextField.leadingAnchor
+            .constraint(equalTo: iconImageView.trailingAnchor, constant: 8)
+        switchToTabLabelLeadingConstraint = switchToTabLabel.leadingAnchor
+            .constraint(equalTo: switchToTabBox.leadingAnchor, constant: 12)
+        switchToTabBoxLeadingConstraint = switchToTabBox.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 450)
+        switchToTabBoxLeadingConstraint.priority = .init(950)
+        switchToTabBoxTrailingConstraint = trailingAnchor.constraint(equalTo: switchToTabBox.trailingAnchor, constant: 8)
+        suffixTrailingConstraint = trailingAnchor.constraint(equalTo: suffixTextField.trailingAnchor, constant: 8)
+        suffixTrailingConstraint.priority = .init(250)
+
+        let removeButtonLeading = removeButton.leadingAnchor
+            .constraint(equalTo: suffixTextField.trailingAnchor, constant: 8)
+        removeButtonLeading.priority = .init(750)
+        let suffixWidth = suffixTextField.widthAnchor.constraint(equalTo: titleTextField.widthAnchor, multiplier: 0.55)
+        suffixWidth.priority = .init(250)
+
+        NSLayoutConstraint.activate([
+            iconImageView.widthAnchor.constraint(equalToConstant: 16),
+            iconImageView.heightAnchor.constraint(equalToConstant: 16),
+            iconImageViewLeadingConstraint,
+            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            searchSuggestionTextFieldLeadingConstraint,
+            titleTextField.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -1),
+
+            suffixTextField.leadingAnchor.constraint(equalTo: titleTextField.trailingAnchor),
+            suffixTextField.firstBaselineAnchor.constraint(equalTo: titleTextField.firstBaselineAnchor),
+            suffixTrailingConstraint,
+            suffixWidth,
+
+            switchToTabBox.heightAnchor.constraint(equalToConstant: 22),
+            switchToTabBox.centerYAnchor.constraint(equalTo: centerYAnchor),
+            switchToTabBoxLeadingConstraint,
+            switchToTabBoxTrailingConstraint,
+
+            switchToTabLabelLeadingConstraint,
+            switchToTabLabel.centerYAnchor.constraint(equalTo: switchToTabBox.centerYAnchor),
+            switchToTabArrowView.widthAnchor.constraint(equalToConstant: 9),
+            switchToTabArrowView.heightAnchor.constraint(equalToConstant: 9),
+            switchToTabArrowView.leadingAnchor.constraint(equalTo: switchToTabLabel.trailingAnchor, constant: 6),
+            switchToTabArrowView.firstBaselineAnchor.constraint(equalTo: switchToTabLabel.firstBaselineAnchor),
+            switchToTabBox.trailingAnchor.constraint(equalTo: switchToTabArrowView.trailingAnchor, constant: 12),
+
+            confirmButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            trailingAnchor.constraint(equalTo: confirmButton.trailingAnchor),
+            confirmButton.topAnchor.constraint(equalTo: topAnchor),
+            bottomAnchor.constraint(equalTo: confirmButton.bottomAnchor),
+
+            removeButton.widthAnchor.constraint(equalToConstant: 20),
+            removeButton.heightAnchor.constraint(equalToConstant: 20),
+            removeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            removeButtonLeading,
+            trailingAnchor.constraint(equalTo: removeButton.trailingAnchor, constant: 11),
+        ])
+
         let colorsProvider = theme?.colorsProvider
 
         /// `isBurner` isn't known until `display(_:isBurner:)` runs; this is the initial value it then corrects.
         suffixTextField.textColor = colorsProvider?.suggestionsSuffixColor(isBurner: isBurner)
         removeButton.toolTip = UserText.removeSuggestionTooltip
         switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(SuggestionTableCellView.self): Bad initializer")
+    }
+
+    /// Wires the row-click and delete actions to the owning controller.
+    func setActionTarget(_ target: AnyObject?, confirmAction: Selector, removeAction: Selector) {
+        confirmButton.target = target
+        confirmButton.action = confirmAction
+        removeButton.target = target
+        removeButton.action = removeAction
     }
 
     override func viewDidMoveToWindow() {

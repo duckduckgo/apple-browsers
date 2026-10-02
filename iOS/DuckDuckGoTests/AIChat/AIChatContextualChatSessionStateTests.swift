@@ -629,6 +629,50 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertNil(sessionState.latestContext)
     }
 
+    func testAutomaticCurrentPageAttachmentReservesSlotUntilContextArrives() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.beginAutomaticAttach()
+        XCTAssertTrue(sessionState.isPageContextAttachInProgress)
+
+        sessionState.updateContext(makeTestContext())
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+    }
+
+    func testFailedAutomaticCurrentPageAttachmentReleasesReservedSlot() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.beginAutomaticAttach()
+        sessionState.updateContext(nil)
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+
+        sessionState.beginAutomaticAttach()
+        sessionState.cancelAutomaticAttach()
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+    }
+
+    func testRemovingPendingCurrentPagePreventsLateAutomaticAttachment() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
+        sessionState.beginAutomaticAttach()
+        sessionState.removePendingPageAttachment()
+        sessionState.updateContext(makeTestContext())
+
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+        XCTAssertTrue(sessionState.userDowngradedToPlaceholder)
+    }
+
+    func testRemovingPendingManualCurrentPagePreventsLateAttachmentWithAutoAttachEnabled() {
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true, isImmediateContextual: true)
+        sessionState.beginManualAttach()
+        sessionState.removePendingPageAttachment()
+        sessionState.updateContext(makeTestContext())
+
+        XCTAssertFalse(sessionState.isPageContextAttachInProgress)
+        XCTAssertNil(sessionState.intendedAttachedContext)
+        XCTAssertTrue(mockPixelHandler.manualAttachEnded)
+    }
+
     func testCancelManualAttach() {
         // Given
         sessionState.beginManualAttach()
@@ -836,12 +880,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, let termsAccepted) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNil(context)
+            XCTAssertFalse(termsAccepted)
         } else {
             XCTFail("Expected submitPrompt effect")
         }
+    }
+
+    func testWhenPromptIsSubmittedWithTermsAcceptedThenSubmitPromptEffectCarriesThem() {
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { receivedEffect = $0 }
+            .store(in: &cancellables)
+
+        sessionState.handlePromptSubmission("Hello world", termsAccepted: true)
+
+        guard case .submitPrompt(_, _, let termsAccepted) = receivedEffect else {
+            return XCTFail("Expected submitPrompt effect")
+        }
+        XCTAssertTrue(termsAccepted)
     }
 
     func testEffectsPublisherEmitsSubmitPromptWithContext() {
@@ -865,7 +924,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, _) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNotNil(context)
             XCTAssertEqual(context?.title, "Test Page")

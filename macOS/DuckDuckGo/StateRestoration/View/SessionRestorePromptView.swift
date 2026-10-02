@@ -34,36 +34,24 @@ struct SessionRestorePromptView: View {
         let buttonHeight: CGFloat
         let popoverSize: CGSize
 
-        static func current(isAppRebranded: Bool) -> Metrics {
+        static var current: Metrics {
             let popoverSize = NSSize(width: 294, height: 256)
-            guard isAppRebranded else {
-                let containerBottomPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
-                let containerHorizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 16
-
-                return Metrics(width: 320, containerTopPadding: 8, containerBottomPadding: containerBottomPadding, containerHorizontalPadding: containerHorizontalPadding, iconBottomPadding: 8, titleBottomPadding: 12, messageBottomPadding: 8, buttonHeight: 28, popoverSize: popoverSize)
-            }
 
             return Metrics(width: 320, containerTopPadding: 16, containerBottomPadding: 16, containerHorizontalPadding: 16, iconBottomPadding: 16, titleBottomPadding: 13, messageBottomPadding: 36, buttonHeight: 22, popoverSize: popoverSize)
         }
     }
 
     @ObservedObject var model: SessionRestorePromptViewModel
-    let isAppRebranded: Bool
     var dismiss: () -> Void
 
     var body: some View {
-        let metrics = Metrics.current(isAppRebranded: isAppRebranded)
+        let metrics = Metrics.current
 
         VStack(spacing: 0) {
-            if isAppRebranded {
-                Image(nsImage: DesignSystemImages.Color.Size96.browserWarn)
-                    .resizable()
-                    .frame(width: 72, height: 72)
-                    .padding(.bottom, metrics.iconBottomPadding)
-            } else {
-                Image(nsImage: .browserError128)
-                    .padding(.bottom, metrics.iconBottomPadding)
-            }
+            Image(nsImage: DesignSystemImages.Color.Size96.browserWarn)
+                .resizable()
+                .frame(width: 72, height: 72)
+                .padding(.bottom, metrics.iconBottomPadding)
 
             Text(UserText.sessionRestorePromptTitle)
                 .font(.title3)
@@ -75,13 +63,6 @@ struct SessionRestorePromptView: View {
                 .multilineText()
                 .font(.body)
                 .padding(.bottom, metrics.messageBottomPadding)
-
-            if !isAppRebranded {
-                Text(.init(UserText.sessionRestorePromptExplanation))
-                    .multilineText()
-                    .font(.body)
-                    .padding(.bottom, 20)
-            }
 
             HStack {
                 Button {

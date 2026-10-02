@@ -22,6 +22,9 @@ import UIKit
 enum NewTabPageBlockID: String {
     case welcome
     case searchInput
+    case escapeHatch
+    case messages
+    case favorites
 }
 
 /// One unit of New Tab Page content. Blocks are stacked vertically in the order given.

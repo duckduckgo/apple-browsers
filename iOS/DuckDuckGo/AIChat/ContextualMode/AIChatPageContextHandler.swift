@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import Common
 import DesignResourcesKitIcons
 import os.log
 import UIKit
@@ -71,6 +72,15 @@ protocol PageContextCollecting: AnyObject {
 }
 
 extension PageContextUserScript: PageContextCollecting {}
+
+enum MultiTabAttachmentCollectionResult: Equatable {
+    case collected(AIChatPageContextData)
+    case empty
+    case failed
+    case timedOut
+    case cancelled
+    case unavailable
+}
 
 // MARK: - Protocols
 
@@ -136,10 +146,18 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     /// Safety-net for a fire-and-forget collect that never resolves → reported as `.timeout`.
     private static let collectionTimeout: TimeInterval = 30
+    private let scheduleTimeout: (TimeInterval, @escaping @MainActor () -> Void) -> Void
+    private let now: () -> TimeInterval
+    private var pendingCollectionTimeoutID: UUID?
 
     private let contextSubject = CurrentValueSubject<AIChatPageContext?, Never>(nil)
     private let documentReadInProgressSubject = CurrentValueSubject<Bool, Never>(false)
     private var updatesCancellable: AnyCancellable?
+    private var updatesSubscriptionID: UUID?
+    private var shouldObserveUpdates = false
+    private var isCollectingTabAttachment = false
+    private let collectionStateChanges = PassthroughSubject<Void, Never>()
+    private var deferredContextCollections: [(trigger: PageContextExtractionTrigger, url: URL?)] = []
 
     // MARK: - AIChatPageContextHandling
 
@@ -162,7 +180,9 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
          mimeTypeProvider: @escaping PageContextMIMETypeProvider = { _ in nil },
          extractionPixelHandler: PageContextExtractionPixelFiring = PageContextExtractionPixelHandler(),
          isDocumentContextEnabled: @escaping () -> Bool = { false },
-         makeDocumentContext: DocumentContextMaking? = nil) {
+         makeDocumentContext: DocumentContextMaking? = nil,
+         scheduleTimeout: ((TimeInterval, @escaping @MainActor () -> Void) -> Void)? = nil,
+         now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
         self.webViewProvider = webViewProvider
         self.userScriptProvider = userScriptProvider
         self.faviconProvider = faviconProvider
@@ -172,8 +192,12 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
         self.mimeTypeProvider = mimeTypeProvider
         self.extractionPixelHandler = extractionPixelHandler
         self.isDocumentContextEnabled = isDocumentContextEnabled
+        self.now = now
         self.makeDocumentContext = makeDocumentContext ?? { webView, url, title in
             await DocumentPageContextProvider.makeDocumentContext(webView: webView, url: url, title: title)
+        }
+        self.scheduleTimeout = scheduleTimeout ?? { delay, action in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: action)
         }
     }
 
@@ -214,12 +238,19 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
            return false
        }
 
+        if isCollectingTabAttachment {
+            deferredContextCollections.append((trigger, url))
+            return true
+        }
+
         script.webView = webView
         startObservingUpdates()
         extractionResolver.requested(trigger: trigger)
+        let timeoutID = UUID()
+        pendingCollectionTimeoutID = timeoutID
         Logger.aiChat.debug("[PageContext] ✅ gate: attachable, collecting (trigger: \(trigger.rawValue))")
         script.collect()
-        scheduleCollectionTimeout()
+        scheduleCollectionTimeout(id: timeoutID)
         return true
     }
 
@@ -239,8 +270,8 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
 
     func clear() {
         Logger.aiChat.debug("[PageContext] Clearing stored context and cancelling subscriptions")
-        updatesCancellable?.cancel()
-        updatesCancellable = nil
+        shouldObserveUpdates = false
+        stopObservingUpdates()
         resetExtractionState()
         contextSubject.send(nil)
 
@@ -258,16 +289,135 @@ final class AIChatPageContextHandler: AIChatPageContextHandling {
     /// Call when content blocking assets are reinstalled and a new script instance is created.
     func resubscribe() {
         Logger.aiChat.debug("[PageContext] Resubscribe called - cancelling existing subscription")
-        updatesCancellable?.cancel()
-        updatesCancellable = nil
+        stopObservingUpdates()
         resetExtractionState()
         startObservingUpdates()
+    }
+
+    func collectContext(for expectedURL: URL,
+                        timeout: TimeInterval = 5,
+                        isValid: @escaping @MainActor () -> Bool) async -> MultiTabAttachmentCollectionResult {
+        guard !Task.isCancelled else { return .cancelled }
+        guard isValid(), currentURLProvider()?.equals(expectedURL, by: .sameDocument) == true,
+              let webView = webViewProvider() else { return .unavailable }
+        guard !firePreventedIfNonAttachable(for: expectedURL, trigger: .userRequest) else { return .unavailable }
+
+        let result: MultiTabAttachmentCollectionResult
+        if isDocumentTab(expectedURL) {
+            result = await collectDocumentContext(for: expectedURL, webView: webView, timeout: timeout)
+        } else {
+            result = await collectHTMLContext(for: expectedURL, webView: webView, timeout: timeout, isValid: isValid)
+        }
+
+        guard !Task.isCancelled else { return .cancelled }
+        guard isValid(), webViewProvider() === webView,
+              currentURLProvider()?.equals(expectedURL, by: .sameDocument) == true,
+              isCurrentPageAttachable() else { return .unavailable }
+        guard case .collected(let context) = result else { return result }
+        guard context.attachable != false else { return .unavailable }
+        guard context.hasAttachedPage else { return .empty }
+        return .collected(enrichWithFavicon(context))
     }
 }
 
 // MARK: - Private Methods
 
 private extension AIChatPageContextHandler {
+
+    func collectDocumentContext(for expectedURL: URL,
+                                webView: WKWebView,
+                                timeout: TimeInterval) async -> MultiTabAttachmentCollectionResult {
+        let results = PassthroughSubject<DocumentPageContextProvider.Result, Never>()
+        let title = documentTitle(for: expectedURL, webView: webView)
+        var documentCollectionTask: Task<Void, Never>?
+        defer { documentCollectionTask?.cancel() }
+        let outcome = await MultiTabAttachmentWaiter.firstValue(
+            from: results.eraseToAnyPublisher(),
+            timeout: timeout,
+            afterSubscription: {
+                documentCollectionTask = Task { @MainActor [makeDocumentContext] in
+                    let document = await makeDocumentContext(webView, expectedURL, title)
+                    guard !Task.isCancelled else { return }
+                    results.send(document)
+                }
+            }
+        )
+        switch outcome {
+        case .value(.document(let context)): return .collected(context)
+        case .value(.tooLarge), .value(.unavailable), .finished: return .unavailable
+        case .timedOut: return .timedOut
+        case .cancelled: return .cancelled
+        }
+    }
+
+    func collectHTMLContext(for expectedURL: URL,
+                            webView: WKWebView,
+                            timeout: TimeInterval,
+                            isValid: @escaping @MainActor () -> Bool) async -> MultiTabAttachmentCollectionResult {
+        let deadline = now() + timeout
+        while isCollectingTabAttachment || extractionResolver.hasPendingCollections {
+            let remaining = deadline - now()
+            guard remaining > 0 else { return .timedOut }
+            let availability = await MultiTabAttachmentWaiter.firstValue(
+                from: collectionStateChanges.eraseToAnyPublisher(), timeout: remaining)
+            switch availability {
+            case .value: break
+            case .timedOut: return .timedOut
+            case .cancelled: return .cancelled
+            case .finished: return .unavailable
+            }
+        }
+        guard !Task.isCancelled else { return .cancelled }
+        guard isValid(), webViewProvider() === webView,
+              currentURLProvider()?.equals(expectedURL, by: .sameDocument) == true,
+              isCurrentPageAttachable(), let script = userScriptProvider() else { return .unavailable }
+        let remaining = deadline - now()
+        guard remaining > 0 else { return .timedOut }
+
+        // Only the one-shot subscriber should consume results collected for another tab.
+        isCollectingTabAttachment = true
+        stopObservingUpdates()
+        defer { finishTabAttachmentCollection() }
+
+        let results = script.collectionResultPublisher
+            .receive(on: DispatchQueue.main)
+            .filter { result in
+                guard let context = result.pageContext else { return true }
+                guard let url = URL(string: context.url) else { return false }
+                return url.equals(expectedURL, by: .sameDocument)
+            }
+            .eraseToAnyPublisher()
+        let outcome = await MultiTabAttachmentWaiter.firstValue(
+            from: results,
+            timeout: remaining,
+            afterSubscription: {
+                script.webView = webView
+                script.collect()
+            }
+        )
+        switch outcome {
+        case .value(.collected(let context)): return .collected(context)
+        case .value(.scriptError), .value(.decodeFailed): return .failed
+        case .timedOut: return .timedOut
+        case .cancelled: return .cancelled
+        case .finished: return .unavailable
+        }
+    }
+
+    func finishTabAttachmentCollection() {
+        isCollectingTabAttachment = false
+        if shouldObserveUpdates {
+            startObservingUpdates()
+        }
+        let deferred = deferredContextCollections
+        deferredContextCollections.removeAll()
+        for collection in deferred where collection.url == currentURLProvider() {
+            if !triggerContextCollection(trigger: collection.trigger) {
+                contextSubject.send(nil)
+            }
+        }
+        collectionStateChanges.send()
+    }
 
     // MARK: - Extraction measurement
 
@@ -320,7 +470,7 @@ private extension AIChatPageContextHandler {
     func collectDocumentContext(for url: URL, trigger: PageContextExtractionTrigger) {
         guard let webView = webViewProvider() else {
             Logger.aiChat.debug("[PageContext] Document collect skipped - no web view available")
-            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil)
+            fireExtractionPixel(.failure(.noWebView), trigger: trigger, latency: nil, contextType: .pdf)
             contextSubject.send(nil)
             return
         }
@@ -345,7 +495,7 @@ private extension AIChatPageContextHandler {
             case .document(let context):
                 Logger.aiChat.debug("[PageContext] Document attached")
                 self.publishContextUpdate(context)
-                self.fireExtractionPixel(.success, trigger: trigger, latency: latency)
+                self.fireExtractionPixel(.success, trigger: trigger, latency: latency, contextType: .pdf)
             case .tooLarge:
                 Logger.aiChat.debug("[PageContext] Document over size ceiling - not attaching")
                 self.contextSubject.send(nil)
@@ -353,7 +503,7 @@ private extension AIChatPageContextHandler {
             case .unavailable:
                 Logger.aiChat.debug("[PageContext] Document bytes unavailable")
                 self.contextSubject.send(nil)
-                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency)
+                self.fireExtractionPixel(.failure(.documentUnavailable), trigger: trigger, latency: latency, contextType: .pdf)
             }
         }
     }
@@ -374,9 +524,12 @@ private extension AIChatPageContextHandler {
     /// entry can't pair with a later collect or emit a spurious timeout pixel.
     func resetExtractionState() {
         extractionResolver.reset()
+        deferredContextCollections.removeAll()
+        pendingCollectionTimeoutID = nil
         didReportExtractionForCurrentNavigation = false
         lastCollectedURL = nil
         documentReadInProgressSubject.send(false)
+        collectionStateChanges.send()
     }
 
     /// No pending request => a duplicate or a collect we didn't initiate; skip.
@@ -385,9 +538,12 @@ private extension AIChatPageContextHandler {
         fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
     }
 
+    /// `contextType` defaults to markdown: every page that isn't a document tab goes over as markdown.
+    /// Prevented outcomes ignore it - their `category` already names the page kind.
     func fireExtractionPixel(_ outcome: PageContextExtractionOutcome,
                              trigger: PageContextExtractionTrigger,
-                             latency: PageContextExtractionLatencyBucket?) {
+                             latency: PageContextExtractionLatencyBucket?,
+                             contextType: PageContextType = .markdown) {
         guard isExtractionMeasurementEnabled else { return }
         // Report only the first of a navigation's overlapping collects; .userRequest / .auto always report.
         if trigger == .navigation || trigger == .tabContent {
@@ -395,20 +551,26 @@ private extension AIChatPageContextHandler {
             didReportExtractionForCurrentNavigation = true
         }
         Logger.aiChat.debug("[PageContext] 📊 extraction outcome: \(String(describing: outcome)) trigger: \(trigger.rawValue)")
-        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency)
+        extractionPixelHandler.fire(outcome, trigger: trigger, latency: latency, contextType: contextType)
     }
 
-    /// Fires `.timeout` (and clears the pending entry) for a collect that never resolved within the window.
-    func scheduleCollectionTimeout() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.collectionTimeout) { [weak self] in
+    /// Older timers still report extraction outcomes, but must not clear a newer or completed attachment.
+    func scheduleCollectionTimeout(id: UUID) {
+        scheduleTimeout(Self.collectionTimeout) { [weak self] in
             guard let self else { return }
+            defer { self.collectionStateChanges.send() }
             for resolution in self.extractionResolver.expireCollections(olderThan: Self.collectionTimeout) {
                 self.fireExtractionPixel(resolution.outcome, trigger: resolution.trigger, latency: resolution.latency)
             }
+            guard self.pendingCollectionTimeoutID == id else { return }
+            self.pendingCollectionTimeoutID = nil
+            self.contextSubject.send(nil)
         }
     }
 
     func startObservingUpdates() {
+        shouldObserveUpdates = true
+        guard !isCollectingTabAttachment else { return }
         guard updatesCancellable == nil else {
             Logger.aiChat.debug("[PageContext] startObservingUpdates skipped - already subscribed")
             return
@@ -419,11 +581,15 @@ private extension AIChatPageContextHandler {
         }
 
         Logger.aiChat.debug("[PageContext] startObservingUpdates - subscribing to new script instance")
+        let subscriptionID = UUID()
+        updatesSubscriptionID = subscriptionID
         updatesCancellable = script.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] result in
-                guard let self else { return }
+                guard let self, self.updatesSubscriptionID == subscriptionID else { return }
+                defer { self.collectionStateChanges.send() }
 
+                self.pendingCollectionTimeoutID = nil
                 self.fireExtractionOutcome(for: result)
 
                 guard let pageContext = result.pageContext else {
@@ -441,6 +607,13 @@ private extension AIChatPageContextHandler {
 
                 self.publishContextUpdate(pageContext)
             }
+    }
+
+    func stopObservingUpdates() {
+        // A callback already scheduled on main must not outlive its subscription.
+        updatesSubscriptionID = nil
+        updatesCancellable?.cancel()
+        updatesCancellable = nil
     }
 
     func publishContextUpdate(_ context: AIChatPageContextData) {

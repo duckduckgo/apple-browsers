@@ -30,6 +30,7 @@ struct PreferencesWebsitePermissionDetailView: View {
         static let searchCornerRadius: CGFloat = 7
         static let searchFocusRingWidth: CGFloat = 3.5
         static let backButtonSize: CGFloat = 32
+        static let backButtonCornerRadius: CGFloat = 6
         static let messageTopPadding: CGFloat = 4
         static let messageBottomPadding: CGFloat = 8
         static let defaultSectionSpacing: CGFloat = 8
@@ -68,7 +69,7 @@ struct PreferencesWebsitePermissionDetailView: View {
                     .frame(width: Constants.backButtonSize, height: Constants.backButtonSize)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(HoverHighlightButtonStyle(cornerRadius: Constants.backButtonCornerRadius))
             .accessibilityLabel(UserText.websitePermissionsBack)
             .accessibilityIdentifier("WebsitePermissions.Detail.Back")
 

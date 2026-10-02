@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import protocol Navigation.WebKitDownload
+import protocol DDGNavigation.WebKitDownload
 import UniformTypeIdentifiers
 import WebKit
 

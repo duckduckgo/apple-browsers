@@ -190,6 +190,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
     private var storage: AIChatPreferencesStorage
+    private let termsOfServiceStore: DuckAiTermsOfServiceStore
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
@@ -221,6 +222,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     init(
         storage: AIChatPreferencesStorage,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: UserDefaults.standard),
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
@@ -236,6 +238,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
     ) {
         self.storage = storage
+        self.termsOfServiceStore = termsOfServiceStore
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.browserTools = browserTools
@@ -1184,19 +1187,15 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
     }
 
     private func handleTermsAccepted() {
-        let alreadyAccepted = storage.hasAcceptedTermsAndConditions
+        guard termsOfServiceStore.recordWebReport() == .alreadyAccepted else { return }
 
-        if alreadyAccepted {
-            let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
-            let pixel: AIChatPixel = syncIsOn
-                ? .aiChatTermsAcceptedDuplicateSyncOn
-                : .aiChatTermsAcceptedDuplicateSyncOff
-            Task { @MainActor [weak self] in
-                self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
-            }
+        let syncIsOn = makeSyncHandler()?.isSyncTurnedOn() ?? false
+        let pixel: AIChatPixel = syncIsOn
+            ? .aiChatTermsAcceptedDuplicateSyncOn
+            : .aiChatTermsAcceptedDuplicateSyncOff
+        Task { @MainActor [weak self] in
+            self?.pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         }
-
-        storage.hasAcceptedTermsAndConditions = true
     }
 
     private func refreshAtbs(completion: (() -> Void)? = nil) {

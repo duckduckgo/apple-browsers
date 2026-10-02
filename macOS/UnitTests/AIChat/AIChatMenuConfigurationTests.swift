@@ -302,7 +302,6 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     var userDidSeeToggleOnboarding: Bool = false
     var lastUsedSidebarWidth: Double?
-    var hasAcceptedTermsAndConditions: Bool = false
 
     private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
@@ -357,7 +356,6 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showSearchAndDuckAIToggle = true
         userDidSeeToggleOnboarding = false
         lastUsedSidebarWidth = nil
-        hasAcceptedTermsAndConditions = false
     }
 
     func updateNewTabPageShortcutDisplay(to value: Bool) {

@@ -208,6 +208,12 @@ final class PairingV2Coordinator {
         await closeLocalChannel(byeReason: .cancelled)
     }
 
+    func closeAfterLocalError() async {
+        // Claim teardown before notifying the UI, while preserving state for timeout classification.
+        closeLocalChannelBestEffort(byeReason: .error)
+        await dismissPendingConfirmation()
+    }
+
     func completeAccountSwitch(didSucceed: Bool) async throws {
         if didSucceed {
             await reportJoinStatus(.success)

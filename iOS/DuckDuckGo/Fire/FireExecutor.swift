@@ -145,6 +145,7 @@ class FireExecutor: FireExecuting {
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
     private let dataStoreWarmupWorker: DataStoreWarmupWorker
+    private let backgroundTask: FireBackgroundTasking
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
@@ -177,9 +178,11 @@ class FireExecutor: FireExecuting {
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
          dataStoreWarmupWorker: DataStoreWarmupWorker = DataStoreWarmupWorker(),
+         backgroundTask: FireBackgroundTasking = FireBackgroundTask(),
          clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
              await AppSwitcherSnapshotCleaner().clearSnapshots()
          }) {
+        self.backgroundTask = backgroundTask
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.favicons = favicons
@@ -264,7 +267,10 @@ class FireExecutor: FireExecuting {
 
         burnInProgress = true
         pixelsReporter.burnDidStart()
+        // Leaving the app mid-Fire would otherwise suspend it with the burn half done.
+        backgroundTask.begin()
         defer {
+            backgroundTask.end()
             burnInProgress = false
         }
 
@@ -679,4 +685,87 @@ class FireExecutor: FireExecuting {
 private enum SingleTabClosingBehavior {
     case openNewChat
     case navigateToHomepage
+}
+
+/// Asks iOS for background time while a burn runs.
+@MainActor
+protocol FireBackgroundTasking {
+    func begin()
+    func end()
+}
+
+@MainActor
+final class FireBackgroundTask: FireBackgroundTasking {
+
+    private let pixelFiring: (any PixelKitFiring)?
+    private let notificationCenter: NotificationCenter
+    private let isInBackground: @MainActor () -> Bool
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+    private var backgroundObserver: NSObjectProtocol?
+
+    nonisolated init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+                     notificationCenter: NotificationCenter = .default,
+                     isInBackground: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .background }) {
+        self.pixelFiring = pixelFiring
+        self.notificationCenter = notificationCenter
+        self.isInBackground = isInBackground
+    }
+
+    func begin() {
+        end()
+        identifier = UIApplication.shared.beginBackgroundTask(withName: "Fire") { [weak self] in
+            self?.pixelFiring?.fire(FireBackgroundPixel.backgroundTimeExpired, frequency: .dailyAndCount)
+            self?.end()
+        }
+        observeBackgrounding()
+    }
+
+    func end() {
+        if let backgroundObserver {
+            notificationCenter.removeObserver(backgroundObserver)
+            self.backgroundObserver = nil
+        }
+        guard identifier != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(identifier)
+        identifier = .invalid
+    }
+
+    /// Reports a burn that ran while the app was in the background, i.e. one that needed the background time.
+    private func observeBackgrounding() {
+        guard !isInBackground() else {
+            reportBackgroundedBurn()
+            return
+        }
+        backgroundObserver = notificationCenter.addObserver(forName: UIApplication.didEnterBackgroundNotification,
+                                                            object: nil,
+                                                            queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reportBackgroundedBurn() }
+        }
+    }
+
+    private func reportBackgroundedBurn() {
+        pixelFiring?.fire(FireBackgroundPixel.burnBackgrounded, frequency: .dailyAndCount)
+        if let backgroundObserver {
+            notificationCenter.removeObserver(backgroundObserver)
+            self.backgroundObserver = nil
+        }
+    }
+}
+
+/// Shows whether Fire's background time matters: burns that ran in the background, and ones iOS cut short.
+enum FireBackgroundPixel: PixelKit.Event {
+
+    case burnBackgrounded
+    case backgroundTimeExpired
+
+    var name: String {
+        switch self {
+        case .burnBackgrounded: return "fire_burn_backgrounded"
+        case .backgroundTimeExpired: return "fire_background-time_expired"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

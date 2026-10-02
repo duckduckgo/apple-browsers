@@ -18,6 +18,7 @@
 //
 
 import XCTest
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 @testable import Core
 import AIChat
@@ -197,6 +198,7 @@ final class FireExecutorTests: XCTestCase {
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil,
         dataStoreWarmUp: @escaping DataStoreWarmupWorker.WarmUp = { _, _ in true },
+        backgroundTask: FireBackgroundTasking = MockFireBackgroundTask(),
         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
     ) -> FireExecutor {
         let executor = FireExecutor(
@@ -225,6 +227,7 @@ final class FireExecutorTests: XCTestCase {
             pixelFiring: pixelKitMock,
             wideEvent: wideEventMock,
             dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
+            backgroundTask: backgroundTask,
             clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
         )
         executor.delegate = mockDelegate
@@ -382,6 +385,54 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
 
         XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    // MARK: - Background time
+
+    func testWhenBurningThenBackgroundTimeIsHeldForTheWholeBurn() async {
+        let backgroundTask = MockFireBackgroundTask()
+        var cleanedChatsWhileHeld: Bool?
+        mockHistoryCleaner.onCleanAIChatHistory = { cleanedChatsWhileHeld = backgroundTask.isHeld }
+        let executor = makeFireExecutor(backgroundTask: backgroundTask)
+
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+
+        XCTAssertEqual(cleanedChatsWhileHeld, true)
+        XCTAssertEqual(backgroundTask.calls, ["begin", "end"])
+    }
+
+    func testWhenAppIsBackgroundedDuringBurnThenBackgroundedPixelFiresOnce() {
+        let pixelFiring = PixelKitMock()
+        let notificationCenter = NotificationCenter()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: notificationCenter, isInBackground: { false })
+
+        backgroundTask.begin()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        backgroundTask.end()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStartsInTheBackgroundThenBackgroundedPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { true })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStaysInTheForegroundThenNoBackgroundPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { false })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
     func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
@@ -1306,4 +1357,15 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
     }
+}
+
+@MainActor
+final class MockFireBackgroundTask: FireBackgroundTasking {
+    private(set) var calls: [String] = []
+    var isHeld: Bool { calls.last == "begin" }
+
+    nonisolated init() {}
+
+    func begin() { calls.append("begin") }
+    func end() { calls.append("end") }
 }

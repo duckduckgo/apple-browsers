@@ -310,6 +310,70 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertFalse(context.hasAccessToPrivateData)
     }
 
+    func testWhenManagerInstallsExtensionWithoutDDGIdentityThenBundleIsNotResolved() async throws {
+        let source = try makeExtensionURL()
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage)
+
+        try await manager.installExtension(from: source)
+
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+        let installed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertNil(installed.embeddedType)
+    }
+
+    func testWhenManagerInstallsExtensionClaimingDDGIdentityFromAnotherURLThenConsentIsRequired() async throws {
+        let source = try makeExtensionURL(claimsDDGIdentity: true)
+        let bundledURL = try makeExtensionURL(claimsDDGIdentity: true)
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage, bundledExtensionURL: { _ in bundledURL })
+
+        try await manager.installExtension(from: source)
+
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+        let installed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertNil(installed.embeddedType)
+        let context = try XCTUnwrap(manager.loadedExtensions.first)
+        XCTAssertFalse(context.hasAccessToPrivateData)
+        XCTAssertNotNil(try store.settings(for: installed.uniqueIdentifier))
+    }
+
+    func testWhenManagerInstallsExtensionClaimingDDGIdentityWithoutBundledResourceThenConsentIsRequired() async throws {
+        let source = try makeExtensionURL(claimsDDGIdentity: true)
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage, bundledExtensionURL: { _ in nil })
+
+        try await manager.installExtension(from: source)
+
+        XCTAssertEqual(prompter.installationRequests.count, 1)
+        let installed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertNil(installed.embeddedType)
+        let context = try XCTUnwrap(manager.loadedExtensions.first)
+        XCTAssertFalse(context.hasAccessToPrivateData)
+    }
+
+    func testWhenManagerInstallsBundledDDGExtensionThenConsentIsNotRequired() async throws {
+        let source = try makeExtensionURL(claimsDDGIdentity: true)
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let manager = makeManager(storage: storage, bundledExtensionURL: { descriptor in
+            descriptor.type == .embedded ? source : nil
+        })
+
+        try await manager.installExtension(from: source)
+
+        XCTAssertTrue(prompter.installationRequests.isEmpty)
+        let installed = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertEqual(installed.embeddedType, .embedded)
+        let context = try XCTUnwrap(manager.loadedExtensions.first)
+        XCTAssertTrue(context.hasAccessToPrivateData)
+        XCTAssertNil(try store.settings(for: installed.uniqueIdentifier))
+        XCTAssertTrue(try XCTUnwrap(manager.permissionController).trustedInstallations.isEmpty)
+    }
+
     func testWhenOneExtensionIsRemovedThenOtherExtensionSettingsArePreserved() throws {
         var settings = WebExtensionPermissionSettings()
         settings.hasAccessToPrivateData = true
@@ -631,12 +695,17 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(storage.cleanupOrphanedExtensionsKnownIdentifiers, ["denied"])
     }
 
-    private func makeManager(storage: WebExtensionStorageProvidingMock) -> WebExtensionManager {
+    private func makeManager(storage: WebExtensionStorageProvidingMock,
+                             bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
+                                 XCTFail("Unexpected bundled extension lookup")
+                                 return nil
+                             }) -> WebExtensionManager {
         WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
                             windowTabProvider: WebExtensionWindowTabProvidingMock(),
                             storageProvider: storage,
                             installationStore: installationStore,
-                            permissionController: makeController())
+                            permissionController: makeController(),
+                            bundledExtensionURL: bundledExtensionURL)
     }
 
     private func makeContext(claimsDDGIdentity: Bool = false) async throws -> WKWebExtensionContext {

@@ -84,6 +84,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening
 
+    /// Resolves shipped extension resources; tests can supply temporary fixtures.
+    let bundledExtensionURL: (EmbeddedWebExtensionDescriptor) -> URL?
+
     /// Platform-specific window/tab operations.
     public let windowTabProvider: WebExtensionWindowTabProviding
 
@@ -162,7 +165,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
-                scriptletConfiguration: ScriptletConfiguration? = nil) {
+                scriptletConfiguration: ScriptletConfiguration? = nil,
+                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
@@ -171,6 +175,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.storageProvider = storageProvider
         self.installationStore = installationStore
         self.permissionController = permissionController
+        self.bundledExtensionURL = bundledExtensionURL
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
                                                    permissionController: permissionController)
@@ -250,9 +255,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
-        // A manifest's DDG identifier is not enough of a proof that it came from the app bundle. We're additionally verifying sourceURL.
-        let isBundled = EmbeddedWebExtensionRegistry.all.contains { $0.bundledURL?.standardizedFileURL == sourceURL.standardizedFileURL }
-        let embeddedType = permissionController == nil || isBundled ? metadata.type : nil
+        var embeddedType = metadata.type
+        if permissionController != nil, embeddedType != nil {
+            // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
+            let isBundled = EmbeddedWebExtensionRegistry.all.contains {
+                bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
+            }
+            if !isBundled {
+                embeddedType = nil
+            }
+        }
         if embeddedType != nil {
             permissionController?.trustedInstallations.insert(identifier)
         }

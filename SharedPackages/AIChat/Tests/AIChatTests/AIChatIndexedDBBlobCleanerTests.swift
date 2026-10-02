@@ -81,7 +81,8 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
 
     func testWhenOriginHasMultipleDatabasesThenBlobFilesInEachAreRemoved() async throws {
         let first = try makeOrigin(host: "duck.ai", blobFiles: ["1.blob"])
-        let second = try makeDatabase(in: first.deletingLastPathComponent(), blobFiles: ["1.blob", "2.blob"])
+        let originDirectory = first.deletingLastPathComponent().deletingLastPathComponent()
+        let second = try makeDatabase(in: originDirectory, blobFiles: ["1.blob", "2.blob"])
 
         _ = await removeLeftoverBlobFiles(with: makeSUT())
 

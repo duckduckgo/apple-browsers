@@ -74,10 +74,11 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), buildType.isSparkleBuild {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore
             })

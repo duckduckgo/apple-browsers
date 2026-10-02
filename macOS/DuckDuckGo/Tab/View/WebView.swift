@@ -54,6 +54,9 @@ final class WebView: WKWebView {
     let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfiguration
+    /// Whether the web view shows a web extension's page. Such a web view uses the web extension
+    /// controller's user content controller, which every extension page shares, so it must not clear it.
+    private let isWebExtensionPage: Bool
 
     private var isLoadingObserver: Any?
     /// used in tests
@@ -70,9 +73,11 @@ final class WebView: WKWebView {
     init(frame: CGRect = .zero,
          configuration: WKWebViewConfiguration = .init(),
          featureFlagger: FeatureFlagger,
-         privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) {
+         privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig,
+         isWebExtensionPage: Bool = false) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
+        self.isWebExtensionPage = isWebExtensionPage
 
         _=Self.swizzleImmediateActionAnimationControllerOnce
 
@@ -82,6 +87,7 @@ final class WebView: WKWebView {
     required init?(coder: NSCoder) {
         self.featureFlagger = Application.appDelegate.featureFlagger
         self.privacyConfig = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
+        self.isWebExtensionPage = false
 
         _=Self.swizzleImmediateActionAnimationControllerOnce
 
@@ -133,6 +139,7 @@ final class WebView: WKWebView {
     }
 
     deinit {
+        guard !isWebExtensionPage else { return }
         self.configuration.userContentController.removeAllUserScripts()
     }
 

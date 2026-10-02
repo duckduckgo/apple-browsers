@@ -213,7 +213,11 @@ final class UnifiedToggleInputAttachmentsStripView: UIView {
         hasVisiblePageContext = isVisible
 
         if isVisible {
-            stackView.addArrangedSubview(pageContextChip)
+            if usesCompactLayout {
+                stackView.insertArrangedSubview(pageContextChip, at: 0)
+            } else {
+                stackView.addArrangedSubview(pageContextChip)
+            }
             if shouldAutoScroll {
                 scheduleScrollToTrailingEdge()
             }

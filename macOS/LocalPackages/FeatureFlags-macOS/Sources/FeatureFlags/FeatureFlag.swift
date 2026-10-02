@@ -550,6 +550,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
     case simplifiedSyncSetupV2
 
+    /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
+    /// a Duck.ai input.
+    case aiChatAttachmentPrivacyDisclosure
+
     /// Gates the bookmarks "Sort by name permanently" action, which permanently reorders the target
     /// folder's direct children alphabetically and persists the new order.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
@@ -974,6 +978,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatAttachmentPrivacyDisclosure:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
         case .aiChatBrowserToolListOpenTabs:

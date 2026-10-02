@@ -143,7 +143,7 @@ class FireExecutor: FireExecuting {
 
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
-    private var dataStoreWarmupWorker: DataStoreWarmupWorker = .init()
+    private let dataStoreWarmupWorker: DataStoreWarmupWorker
     private let historyCleanerProvider: HistoryCleanerProvider
     private var preparedOptions: FireRequest.Options = []
     
@@ -174,6 +174,7 @@ class FireExecutor: FireExecuting {
          pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
+         dataStoreWarmupWorker: DataStoreWarmupWorker = DataStoreWarmupWorker(),
          clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
              await AppSwitcherSnapshotCleaner().clearSnapshots()
          }) {
@@ -183,6 +184,7 @@ class FireExecutor: FireExecuting {
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.idManager = idManager
+        self.dataStoreWarmupWorker = dataStoreWarmupWorker
         self.fireModeCapability = FireModeCapability.create()
         self.dataClearingCapability = DataClearingCapability.create(using: featureFlagger)
         self.historyCleanerProvider = historyCleanerProvider ??
@@ -304,7 +306,7 @@ class FireExecutor: FireExecuting {
             applicationState: applicationState,
             domainResult: domainResult) : ()
         
-        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request) : ()
+        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory(request: request, applicationState: applicationState) : ()
 
         // Execute sync tasks
         cancelOngoingDownloadsIfNeeded(request)
@@ -554,7 +556,7 @@ class FireExecutor: FireExecuting {
     }
     
     @MainActor
-    private func burnAIHistory(request: FireRequest) async {
+    private func burnAIHistory(request: FireRequest, applicationState: DataStoreWarmup.ApplicationState) async {
         dataClearingWideEventService?.start(.clearAIChatHistory)
         let result: Result<Void, Error>
         switch request.scope {
@@ -562,23 +564,25 @@ class FireExecutor: FireExecuting {
             result = await burnTabAIHistory(tabViewModel: viewModel)
         case .fireMode:
             if !request.options.contains(.data) { // Invalidating the fire mode datastore makes deleting chats redundant.
-                result = await burnFireModeAIHistory()
+                result = await burnFireModeAIHistory(applicationState: applicationState)
             } else {
                 result = .success(())
             }
         case .normalMode:
-            result = await burnNormalModeAIHistory(trigger: request.trigger)
+            result = await burnNormalModeAIHistory(trigger: request.trigger, applicationState: applicationState)
         case .all:
-            result = await burnAllAIHistory(trigger: request.trigger, options: request.options)
+            result = await burnAllAIHistory(trigger: request.trigger, options: request.options, applicationState: applicationState)
         }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
 
     @MainActor
-    private func burnAllAIHistory(trigger: FireRequest.Trigger, options: FireRequest.Options) async -> Result<Void, Error> {
-        async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger)
+    private func burnAllAIHistory(trigger: FireRequest.Trigger,
+                                  options: FireRequest.Options,
+                                  applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
+        async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger, applicationState: applicationState)
         let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
-        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory() : .success(())
+        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory(applicationState: applicationState) : .success(())
         let (normalResult, fireResult) = await (normalBurnTask, fireBurnTask)
         if case .failure = normalResult { return normalResult }
         if case .failure = fireResult { return fireResult }
@@ -586,7 +590,11 @@ class FireExecutor: FireExecuting {
     }
 
     @MainActor
-    private func burnNormalModeAIHistory(trigger: FireRequest.Trigger) async -> Result<Void, Error> {
+    private func burnNormalModeAIHistory(trigger: FireRequest.Trigger,
+                                         applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
+        // Right after launch the store can fail to respond until it's warmed up, even when no website data is burned.
+        await dataStoreWarmupWorker.setApplicationState(applicationState)
+        await dataStoreWarmupWorker.ensureNormalStoreIsReady()
         let cleaner = historyCleanerProvider(nil, false)
         let result = await cleaner.cleanAIChatHistory()
         switch result {
@@ -605,7 +613,7 @@ class FireExecutor: FireExecuting {
     }
 
     @MainActor
-    private func burnFireModeAIHistory() async -> Result<Void, Error> {
+    private func burnFireModeAIHistory(applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         guard fireModeCapability.isFireModeEnabled else {
             return .success(())
         }
@@ -613,6 +621,9 @@ class FireExecutor: FireExecuting {
             return .success(())
         }
 
+        // The fire-mode store survives relaunches, so it can be as cold as the normal one.
+        await dataStoreWarmupWorker.setApplicationState(applicationState)
+        await dataStoreWarmupWorker.ensureFireModeStoreIsReady()
         let fireDataStore = WKWebsiteDataStore(forIdentifier: idManager.currentFireModeID)
         let cleaner = historyCleanerProvider(fireDataStore, true)
         let result = await cleaner.cleanAIChatHistory()

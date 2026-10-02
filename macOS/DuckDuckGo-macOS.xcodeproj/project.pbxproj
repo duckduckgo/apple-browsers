@@ -1503,7 +1503,11 @@
 		BBC2779E2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */; };
 		BBC2779F2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */; };
 		BBC277A12FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */; };
+		A1C2E3013B72000100000002 /* AttachmentPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */; };
+		A1C2E3013B74000100000002 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */; };
 		BBC277A22FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */; };
+		A1C2E3013B72000100000003 /* AttachmentPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */; };
+		A1C2E3013B74000100000003 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
 		BBD31EAA2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */; };
 		BBD31EAB2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */; };
@@ -2876,6 +2880,8 @@
 		BBC277902FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatFailureHandlerTests.swift; sourceTree = "<group>"; };
 		BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatPermissionOverrideTests.swift; sourceTree = "<group>"; };
 		BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiVoiceChatLegacyConsentCleanupTests.swift; sourceTree = "<group>"; };
+		A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosureTests.swift; sourceTree = "<group>"; };
+		A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPrivacyDisclosurePixelTests.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellVisibilityManagerTests.swift; sourceTree = "<group>"; };
 		BBD9C3952E9D72050060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
@@ -3746,6 +3752,8 @@
 				BBC277902FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift */,
 				BBC2779D2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift */,
 				BBC277A02FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift */,
+				A1C2E3013B72000100000001 /* AttachmentPrivacyDisclosureTests.swift */,
+				A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */,
 				BBF17D1F2F7B4D33004AFCF4 /* AIChatMenuTests.swift */,
 				37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */,
 				AB1E70020000000000000010 /* BrowserTools */,
@@ -8157,6 +8165,8 @@
 				37D95B8C2FEC134D00051A72 /* FaviconsTabExtensionTests.swift in Sources */,
 				BBC2779E2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */,
 				BBC277A12FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */,
+				A1C2E3013B72000100000002 /* AttachmentPrivacyDisclosureTests.swift in Sources */,
+				A1C2E3013B74000100000002 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */,
 				1D2EE7092E267D6B00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift in Sources */,
 				2D049148878D2C851AEBE85D /* NewTabPageOmnibarActionsHandlerTests.swift in Sources */,
 				8434D9572F23713000B4796F /* WarnBeforeQuitManagerTests.swift in Sources */,
@@ -9088,6 +9098,8 @@
 				BBC277952FB2367300756A85 /* DuckAiVoiceChatFailureHandlerTests.swift in Sources */,
 				BBC2779F2FBF000200756A85 /* DuckAiVoiceChatPermissionOverrideTests.swift in Sources */,
 				BBC277A22FBF000300756A85 /* DuckAiVoiceChatLegacyConsentCleanupTests.swift in Sources */,
+				A1C2E3013B72000100000003 /* AttachmentPrivacyDisclosureTests.swift in Sources */,
+				A1C2E3013B74000100000003 /* AttachmentPrivacyDisclosurePixelTests.swift in Sources */,
 				56A054162C1C37B0007D8FAB /* CapturingOnboardingNavigation.swift in Sources */,
 				84C1007B2ECC6F3C0083AB11 /* PopupHandlingTabExtensionTests.swift in Sources */,
 				9BF66A3171D59EB4B55171ED /* AutoplayPolicyTabExtensionTests.swift in Sources */,

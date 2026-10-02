@@ -123,6 +123,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private static let updateCheckInterval = TimeInterval.hours(1)
     private static let revokedSigningKeysSettingsKey = "revokedBundleSigningKeys"
+    private static let configVersionHeader = "X-Config-Version"
 
     private let featureFlagger: FeatureFlagging
     private let settings: DataBrokerProtectionSettings
@@ -202,27 +203,24 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             /// 3. Use bundled JSONs to populate/update the database
             try? await localBrokerProvider?.checkForUpdates()
 
-            /// 4. Hit main_config.json endpoint for ETag and active broker changes
-            let request = try Endpoint.request(for: .mainConfig,
-                                               endpointURL: settings.endpointURL,
-                                               contentType: "application/json",
-                                               eTag: settings.mainConfigETag)
-            let (data, response) = try await urlSession.data(for: request)
-            guard let response = response as? HTTPURLResponse else { return }
+            /// 4. Hit main_config.json endpoint for ETag and active broker changes, along with its signature.
+            ///    They're separate requests that can be served by different deploys, so retry once if they disagree.
+            var signedMainConfig = try await fetchSignedMainConfig()
+            if signedMainConfig?.isFromDifferentConfigVersions == true {
+                Logger.dataBrokerProtection.log("🧩 Main config and signature are from different config versions, fetching both again")
+                signedMainConfig = try await fetchSignedMainConfig()
+            }
 
-            if response.statusCode == 304 {
+            guard let signedMainConfig else {
                 Logger.dataBrokerProtection.log("🧩 Broker JSONs are up to date: main config eTag matches")
                 settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
                 return
             }
-
-            guard response.statusCode == 200, let newETag = response.etag else {
-                throw Error.serverError(httpCode: response.statusCode)
-            }
+            let newETag = signedMainConfig.eTag
 
             /// 5. Verify the signature over the exact bytes received, then reject rollbacks
-            let signingKey = try verifier.verifyingKey(manifest: data, signature: try await fetchMainConfigSignature())
-            let mainConfig = try JSONDecoder().decode(MainConfig.self, from: data)
+            let signingKey = try verifier.verifyingKey(manifest: signedMainConfig.data, signature: signedMainConfig.signature)
+            let mainConfig = try JSONDecoder().decode(MainConfig.self, from: signedMainConfig.data)
             if let lastManifestVersion = settings.lastManifestVersions[signingKey.id],
                mainConfig.manifestVersion < lastManifestVersion {
                 throw BrokerBundleVerificationError.rollback
@@ -249,24 +247,58 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         privacyConfigurationManager.privacyConfig.settings(for: .dbp)[Self.revokedSigningKeysSettingsKey] as? [String] ?? []
     }
 
-    /// Returns nil when the server has no signature for the manifest.
-    private func fetchMainConfigSignature() async throws -> Data? {
-        var request = try Endpoint.request(for: .mainConfigSignature, endpointURL: settings.endpointURL)
-        request.cachePolicy = .reloadIgnoringLocalCacheData
+    private struct SignedMainConfig {
+        let data: Data
+        let eTag: String
+        let signature: Data?
+        let isFromDifferentConfigVersions: Bool
+    }
 
+    /// Returns nil when the stored main config eTag is still current.
+    private func fetchSignedMainConfig() async throws -> SignedMainConfig? {
+        /// Neither response may come from the local cache, or they could be from different points in time
+        var mainConfigRequest = try Endpoint.request(for: .mainConfig,
+                                                     endpointURL: settings.endpointURL,
+                                                     contentType: "application/json",
+                                                     eTag: settings.mainConfigETag)
+        mainConfigRequest.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, mainConfigResponse) = try await httpData(for: mainConfigRequest)
+
+        if mainConfigResponse.statusCode == 304 {
+            return nil
+        }
+
+        guard mainConfigResponse.statusCode == 200, let eTag = mainConfigResponse.etag else {
+            throw Error.serverError(httpCode: mainConfigResponse.statusCode)
+        }
+
+        var signatureRequest = try Endpoint.request(for: .mainConfigSignature, endpointURL: settings.endpointURL)
+        signatureRequest.cachePolicy = .reloadIgnoringLocalCacheData
+        let (signatureData, signatureResponse) = try await httpData(for: signatureRequest)
+
+        let signature: Data?
+        switch signatureResponse.statusCode {
+        case 200:
+            signature = signatureData
+        case 404:
+            signature = nil
+        default:
+            throw Error.serverError(httpCode: signatureResponse.statusCode)
+        }
+
+        let mainConfigVersion = mainConfigResponse.value(forHTTPHeaderField: Self.configVersionHeader)
+        let signatureVersion = signatureResponse.value(forHTTPHeaderField: Self.configVersionHeader)
+        let isFromDifferentConfigVersions = mainConfigVersion != nil && signatureVersion != nil && mainConfigVersion != signatureVersion
+
+        return SignedMainConfig(data: data, eTag: eTag, signature: signature, isFromDifferentConfigVersions: isFromDifferentConfigVersions)
+    }
+
+    private func httpData(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let (data, response) = try await urlSession.data(for: request)
         guard let response = response as? HTTPURLResponse else {
             throw Error.clientError
         }
-
-        switch response.statusCode {
-        case 200:
-            return data
-        case 404:
-            return nil
-        default:
-            throw Error.serverError(httpCode: response.statusCode)
-        }
+        return (data, response)
     }
 
     /// Bundled brokers were verified by CI, so they replace stored brokers even when older.

@@ -61,14 +61,15 @@ final class SitePermissionsXCUITests: XCTestCase {
 
         openMenu()
         XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
-        tap(app.buttons["Settings"])
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
-        // Settings uses lazy list cells; inspect each viewport instead of only the initial screen.
-        for _ in 0..<6 {
-            XCTAssertFalse(element("Settings.SitePermissions").exists)
-            app.swipeUp()
-        }
-        XCTAssertFalse(element("Settings.SitePermissions").exists)
+        assertSitePermissionSettingsHidden()
+    }
+
+    func testWhenFlagOverrideIsOnThenOrdinaryTabUsesLegacyPermissionsOnIOS15() throws {
+        try assertIOS15OverrideUsesLegacyPermissions(fireMode: false)
+    }
+
+    func testWhenFlagOverrideIsOnThenFireTabUsesLegacyPermissionsOnIOS15() throws {
+        try assertIOS15OverrideUsesLegacyPermissions(fireMode: true)
     }
 
     func testWhenCameraIsAllowedThenSiteDialogPrecedesSystemPromptAndDecisionPersists() {
@@ -1186,6 +1187,38 @@ final class SitePermissionsXCUITests: XCTestCase {
         openMenu()
         tap(app.buttons["Settings"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+    }
+
+    private func assertIOS15OverrideUsesLegacyPermissions(fireMode: Bool) throws {
+        if #available(iOS 16.0, *) {
+            throw XCTSkip("Legacy permissions with a forced-on override require iOS 15")
+        }
+        launchApp(flagEnabled: true,
+                  seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
+                  additionalArguments: ["-ff.fireMode", String(fireMode)])
+        if fireMode {
+            openNewPermissionTab(fireMode: true)
+        } else {
+            openPermissionPage()
+        }
+        request("camera")
+        denyWebKitPrompt(for: "camera")
+        assertResult("NotAllowedError 1")
+        openMenu()
+        XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
+        XCTAssertFalse(element("SitePermissions.Sheet").exists)
+        assertSitePermissionSettingsHidden()
+    }
+
+    private func assertSitePermissionSettingsHidden() {
+        tap(app.buttons["Settings"])
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+        // Settings uses lazy list cells; inspect each viewport instead of only the initial screen.
+        for _ in 0..<6 {
+            XCTAssertFalse(element("Settings.SitePermissions").exists)
+            app.swipeUp()
+        }
+        XCTAssertFalse(element("Settings.SitePermissions").exists)
     }
 
     private func openPermissionSettings() {

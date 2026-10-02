@@ -91,6 +91,14 @@ extension DuckAIPromptSurface {
         }
     }
 
+    /// Which surface the attachment privacy disclosure pixels report.
+    var attachmentPrivacyPixelSurface: AttachmentPrivacyDisclosurePixelSurface {
+        switch self {
+        case .addressBar: .addressBar
+        case .promptBar: .promptBar
+        }
+    }
+
     /// Funnel origin for the usage-limit card's upsell.
     var usageLimitFunnelOrigin: SubscriptionFunnelOrigin {
         switch self {

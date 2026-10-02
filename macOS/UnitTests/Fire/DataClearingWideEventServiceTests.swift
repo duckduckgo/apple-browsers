@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import AIChat
 @_spi(Testing) import WideEvent
 import XCTest
 
@@ -37,6 +38,24 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         wideEventMock = nil
         sut = nil
         super.tearDown()
+    }
+
+    // MARK: - Duck.ai clearing report
+
+    func testRecordAIChatClearing_recordsRetryFirstErrorAndTimings() {
+        let options = FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: true)
+        sut.start(options: options, path: .burnAll, isAutoClear: false)
+
+        sut.recordAIChatClearing(AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2),
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 300, scriptReadyMilliseconds: 20, scriptReplyMilliseconds: 5000)
+        ))
+
+        let eventData = wideEventMock.started.first as? DataClearingWideEventData
+        XCTAssertEqual(eventData?.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData?.clearAIChatHistoryFirstAttemptError?.code, 2)
+        XCTAssertEqual(eventData?.clearAIChatHistoryScriptReplyMilliseconds, 5000)
     }
 
     // MARK: - Event Lifecycle Tests

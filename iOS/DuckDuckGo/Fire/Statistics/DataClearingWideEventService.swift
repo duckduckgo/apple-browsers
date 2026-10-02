@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import AIChat
 import BrowserServicesKit
 import WideEvent
 
@@ -116,6 +117,20 @@ final class DataClearingWideEventService {
             eventData?[keyPath: action.statusPath] = .failure
             eventData?[keyPath: action.errorPath] = WideEventErrorData(error: error)
         }
+    }
+
+    /// Records how the Duck.ai clear went beyond its status: whether it was retried, and where the first attempt spent its time.
+    func recordAIChatClearing(_ report: AIChatClearingReport) {
+        eventData?.clearAIChatHistoryRetried = report.wasRetried
+        eventData?.clearAIChatHistoryFirstAttemptError = report.firstAttemptError.map { WideEventErrorData(error: $0) }
+        eventData?.clearAIChatHistoryPageLoadMilliseconds = report.firstAttemptTimings.pageLoadMilliseconds
+        eventData?.clearAIChatHistoryScriptReadyMilliseconds = report.firstAttemptTimings.scriptReadyMilliseconds
+        eventData?.clearAIChatHistoryScriptReplyMilliseconds = report.firstAttemptTimings.scriptReplyMilliseconds
+    }
+
+    /// Records how long the Duck.ai clear waited for the storage warm-up, to measure the warm-up's effect on failures.
+    func recordAIChatWarmupWait(milliseconds: Int) {
+        eventData?.clearAIChatHistoryWarmupWaitMilliseconds = milliseconds
     }
 
     // MARK: - Completing Wide Event

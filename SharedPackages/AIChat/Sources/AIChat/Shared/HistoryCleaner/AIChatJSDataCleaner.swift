@@ -29,6 +29,12 @@ public protocol AIChatJSDataCleaning {
     @MainActor func clearJSData(chatID: String?) async -> Result<Void, Error>
     /// Clears a specific set of chats, reusing one web view session.
     @MainActor func clearJSData(chatIDs: [String]) async -> Result<Void, Error>
+    /// What happened during the most recent clear, or `nil` before the first one.
+    @MainActor var lastReport: AIChatClearingReport? { get }
+}
+
+public extension AIChatJSDataCleaning {
+    @MainActor var lastReport: AIChatClearingReport? { nil }
 }
 
 public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
@@ -42,7 +48,9 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     private let privacyConfig: PrivacyConfigurationManaging
     private let websiteDataStore: WKWebsiteDataStore
 
-    private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
+    public private(set) var lastReport: AIChatClearingReport?
+    private var isClearing = false
+    private static let retryDelay: TimeInterval = 1
     private let navigationWaiter = CallbackWaiter()
     /// Loading the local page normally takes under a second; this only catches loads that never end.
     private static let navigationTimeout: TimeInterval = 10
@@ -81,39 +89,57 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     ///   single web view session.
     @MainActor
     private func clear(chatIDs: [String]?) async -> Result<Void, Error> {
-        guard webView == nil else {
+        guard !isClearing else {
             return .failure(CleanerError.operationInProgress)
         }
+        isClearing = true
+        defer { isClearing = false }
 
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            Task { @MainActor in
-                await self.processAllDomains(chatIDs: chatIDs)
-            }
+        var firstAttemptTimings: AIChatClearingTimings?
+        let attempts = AIChatClearingAttempts(retryDelay: Self.retryDelay, isTransient: Self.isTransient)
+        let outcome = await attempts.run {
+            let (result, timings) = await clearAllOrigins(chatIDs: chatIDs)
+            firstAttemptTimings = firstAttemptTimings ?? timings
+            return result
         }
+        lastReport = AIChatClearingReport(attempts: outcome.attempts,
+                                          firstAttemptError: outcome.firstAttemptError,
+                                          firstAttemptTimings: firstAttemptTimings ?? AIChatClearingTimings())
+        return outcome.result
     }
 
+    /// Failures a fresh web view session can fix; internal misuse such as a missing script is not retried.
+    static func isTransient(_ error: Error) -> Bool {
+        if let clearError = error as? AIChatDataClearingUserScript.ClearError {
+            return clearError.isTransient
+        }
+        return [WKErrorDomain, "WebKitErrorDomain", NSURLErrorDomain].contains((error as NSError).domain)
+    }
+
+    /// One attempt on a fresh web view, torn down afterwards.
     @MainActor
-    private func processAllDomains(chatIDs: [String]?) async {
+    private func clearAllOrigins(chatIDs: [String]?) async -> (Result<Void, Error>, AIChatClearingTimings) {
+        let recorder = AIChatClearingTimingsRecorder()
         let script: AIChatDataClearingUserScript
         do {
             script = try setupWebView()
         } catch {
-            finish(result: .failure(error))
-            return
+            return (.failure(error), recorder.timings)
         }
+        defer { tearDown() }
 
         let sequence = AIChatClearingSequence(
             origins: URL.aiChatDomains,
             loadOrigin: { [weak self] origin in
-                await self?.loadOriginWithListeningScript(origin, script: script) ?? .failure(CleanerError.webViewNotInitialized)
+                await self?.loadOriginWithListeningScript(origin, script: script, recorder: recorder) ?? .failure(CleanerError.webViewNotInitialized)
             },
             clear: { chatID in
-                await script.clearAIChatDataAsync(chatID: chatID)
+                await recorder.measure(\.scriptReplyMilliseconds) { await script.clearAIChatDataAsync(chatID: chatID) }
             },
             requiresReload: { ($0 as? AIChatDataClearingUserScript.ClearError)?.requiresPageReload ?? false }
         )
-        finish(result: await sequence.run(chatIDs: chatIDs))
+        let result = await sequence.run(chatIDs: chatIDs)
+        return (result, recorder.timings)
     }
 
     @MainActor
@@ -176,11 +202,13 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
 
     /// Loads the origin and waits for the clearing script to listen, so the clear message isn't lost.
     @MainActor
-    private func loadOriginWithListeningScript(_ origin: URL, script: AIChatDataClearingUserScript) async -> Result<Void, Error> {
+    private func loadOriginWithListeningScript(_ origin: URL,
+                                               script: AIChatDataClearingUserScript,
+                                               recorder: AIChatClearingTimingsRecorder) async -> Result<Void, Error> {
         script.prepareForPageLoad()
-        let loaded = await launchClearingWebView(requestURL: origin)
+        let loaded = await recorder.measure(\.pageLoadMilliseconds) { await launchClearingWebView(requestURL: origin) }
         guard case .success = loaded else { return loaded }
-        return await script.waitUntilReady()
+        return await recorder.measure(\.scriptReadyMilliseconds) { await script.waitUntilReady() }
     }
 
     @MainActor
@@ -210,13 +238,6 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         let error = AIChatDataClearingUserScript.ClearError.webContentProcessTerminated
         navigationWaiter.failPending(with: error)
         aiChatDataClearingUserScript?.failPendingWaits(with: error)
-    }
-
-    @MainActor
-    private func finish(result: Result<Void, Error>) {
-        tearDown()
-        continuation?.resume(returning: result)
-        continuation = nil
     }
 
     @MainActor

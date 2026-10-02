@@ -53,7 +53,7 @@ public struct BrokerBundleSigningKeys {
         self.staging = staging
     }
 
-    // TODO: Replace with the real production and staging keys before shipping. These are test keys.
+    // These are dbp-api TEST keys and must be replaced with the real production and staging keys before shipping.
     // `macOS/scripts/update_embedded_brokers.sh` reads the production list, so keep one key per line.
     public static let builtIn = BrokerBundleSigningKeys(
         production: [
@@ -89,7 +89,9 @@ struct BrokerBundleVerifier {
             throw BrokerBundleVerificationError.signatureMissing
         }
 
-        let base64Signature = String(decoding: signature, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let base64Signature = String(bytes: signature, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            throw BrokerBundleVerificationError.signatureInvalid
+        }
         guard !base64Signature.isEmpty else {
             throw BrokerBundleVerificationError.signatureMissing
         }

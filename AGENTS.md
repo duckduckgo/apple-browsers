@@ -4,9 +4,10 @@ Loaded into every agent session. Add a line only when agents demonstrably get
 something wrong and nothing catches it during the task. Procedures live in
 `.claude/skills/`; personal preferences live in your user-level config.
 
-- Before finishing, run `mint run swiftlint lint --strict` on the files you
-  changed. CI uses `--strict`, so any warning, including the file-header
-  check, fails the PR.
+- Before finishing, run `mint run swiftlint lint --strict --force-exclude` on
+  the files you changed. CI uses `--strict`, so any warning, including the
+  file-header check, fails the PR; `--force-exclude` skips files CI doesn't
+  lint, such as `Package.swift`.
 - Every new Swift Testing `@Test` needs `.timeLimit(.minutes(1))`, which
   requires `@available(iOS 16, macOS 13, *)`.
 - Adding, moving or deleting files in the Xcode projects: use the

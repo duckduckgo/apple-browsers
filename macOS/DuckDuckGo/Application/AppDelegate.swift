@@ -174,7 +174,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var quitSurveyPromoObserver = QuitSurveyPromoObserver()
 
     @MainActor
-    private(set) lazy var autofillImportPromoObserver = AutofillImportPromoObserver()
+    private(set) lazy var autofillImportPromoObserver = AutofillImportPromoObserver(
+        loginImportStateProvider: AutofillLoginImportState(featureFlagger: featureFlagger)
+    )
 
     @MainActor
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {

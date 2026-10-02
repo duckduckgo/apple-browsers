@@ -22,13 +22,15 @@ import Foundation
 protocol AutofillImportPromoReporting: AnyObject {
     @MainActor func overlayDidShowImportPrompt(_ overlay: AnyObject)
     @MainActor func overlayDidStartImport(_ overlay: AnyObject)
+    @MainActor func overlayDidEndImportFlow(_ overlay: AnyObject)
     @MainActor func overlayDidPermanentlyDismissImportPrompt(_ overlay: AnyObject)
     @MainActor func overlayWillDisappear(_ overlay: AnyObject)
 }
 
 private enum AutofillImportPromoState {
     case initial
-    case importStarted
+    case importInProgress(hadImportedLogins: Bool)
+    case importedLogins
     case permanentlyDismissed
 }
 
@@ -44,6 +46,7 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     private var closedPromoState: AutofillImportPromoState = .initial
 
     private let visibilitySubject = CurrentValueSubject<Bool, Never>(false)
+    private let loginImportStateProvider: AutofillLoginImportStateProvider
 
     var isVisible: Bool { visibilitySubject.value }
     var isVisiblePublisher: AnyPublisher<Bool, Never> { visibilitySubject.removeDuplicates().eraseToAnyPublisher() }
@@ -52,13 +55,15 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
         closedPromoStateLock.lock()
         defer { closedPromoStateLock.unlock() }
         switch closedPromoState {
-        case .initial: return .ignored(cooldown: 0)
-        case .importStarted: return .actioned
+        case .initial, .importInProgress: return .ignored(cooldown: 0)
+        case .importedLogins: return .actioned
         case .permanentlyDismissed: return .ignored()
         }
     }
 
-    init() { }
+    init(loginImportStateProvider: AutofillLoginImportStateProvider) {
+        self.loginImportStateProvider = loginImportStateProvider
+    }
 
     @MainActor
     func overlayDidShowImportPrompt(_ overlay: AnyObject) {
@@ -76,7 +81,18 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     @MainActor
     func overlayDidStartImport(_ overlay: AnyObject) {
         guard currentOverlay == ObjectIdentifier(overlay) else { return }
-        promoState = .importStarted
+        // A tab loaded before an earlier import can still offer the item; only an import that adds logins counts.
+        promoState = .importInProgress(hadImportedLogins: loginImportStateProvider.hasImportedLogins)
+    }
+
+    @MainActor
+    func overlayDidEndImportFlow(_ overlay: AnyObject) {
+        guard currentOverlay == ObjectIdentifier(overlay),
+              case .importInProgress(let hadImportedLogins) = promoState else { return }
+        if !hadImportedLogins, loginImportStateProvider.hasImportedLogins {
+            promoState = .importedLogins
+        }
+        close()
     }
 
     @MainActor
@@ -88,6 +104,8 @@ final class AutofillImportPromoObserver: ExternalPromoDelegate, AutofillImportPr
     @MainActor
     func overlayWillDisappear(_ overlay: AnyObject) {
         guard currentOverlay == ObjectIdentifier(overlay) else { return }
+        // Launching the import flow hides the overlay; the import flow's end closes the promo instead.
+        if case .importInProgress = promoState { return }
         close()
     }
 

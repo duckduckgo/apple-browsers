@@ -22,14 +22,19 @@ import XCTest
 
 private enum Action {
     case startImport
+    /// An import step writes logins; `hasImportedLogins` flips before the flow ends.
+    case importLogins
+    case endImportFlow
     case permanentlyDismiss
 }
 
 private extension AutofillImportPromoObserver {
     @MainActor
-    func perform(_ action: Action, from overlay: AnyObject) {
+    func perform(_ action: Action, from overlay: AnyObject, importState: MockAutofillLoginImportState) {
         switch action {
         case .startImport: overlayDidStartImport(overlay)
+        case .importLogins: importState.hasImportedLogins = true
+        case .endImportFlow: overlayDidEndImportFlow(overlay)
         case .permanentlyDismiss: overlayDidPermanentlyDismissImportPrompt(overlay)
         }
     }
@@ -39,6 +44,7 @@ private extension AutofillImportPromoObserver {
 final class AutofillImportPromoObserverTests: XCTestCase {
 
     private var sut: AutofillImportPromoObserver!
+    private var importState: MockAutofillLoginImportState!
     private var cancellables: Set<AnyCancellable>!
     private var received: [Bool]!
 
@@ -48,7 +54,8 @@ final class AutofillImportPromoObserverTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = AutofillImportPromoObserver()
+        importState = MockAutofillLoginImportState()
+        sut = AutofillImportPromoObserver(loginImportStateProvider: importState)
         cancellables = []
         received = []
         overlayA = NSObject()
@@ -59,6 +66,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         cancellables = nil
         received = nil
         sut = nil
+        importState = nil
         overlayA = nil
         overlayB = nil
         super.tearDown()
@@ -144,30 +152,75 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         XCTAssertEqual(received, [false, true, false])
     }
 
+    // MARK: - Import flow
+
+    func testWhenOverlayDisappearsDuringImportThenPromoStaysVisibleUntilFlowEnds() {
+        recordEmissions()
+        sut.overlayDidShowImportPrompt(overlayA)
+        sut.overlayDidStartImport(overlayA)
+
+        sut.overlayWillDisappear(overlayA)
+        XCTAssertTrue(sut.isVisible, "Launching the import flow hides the overlay; the promo must wait for the import result")
+
+        sut.overlayDidEndImportFlow(overlayA)
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertEqual(received, [false, true, false])
+    }
+
+    func testWhenLoginsAreImportedThenPromoClosesAsActionedWhenFlowEnds() {
+        sut.overlayDidShowImportPrompt(overlayA)
+        sut.overlayDidStartImport(overlayA)
+        sut.overlayWillDisappear(overlayA)
+
+        importState.hasImportedLogins = true
+        XCTAssertTrue(sut.isVisible, "The result is only resolved when the import flow ends")
+
+        sut.overlayDidEndImportFlow(overlayA)
+
+        XCTAssertFalse(sut.isVisible)
+        XCTAssertEqual(sut.resultWhenHidden, .actioned)
+    }
+
+    func testWhenImportFlowEndsWithoutStartedImportThenNothingChanges() {
+        sut.overlayDidShowImportPrompt(overlayA)
+        sut.overlayDidEndImportFlow(overlayA)
+
+        XCTAssertTrue(sut.isVisible)
+    }
+
     // MARK: - Result when hidden
 
     func testResultWhenHiddenForEachResolutionPath() {
-        let cases: [(actions: [Action], expected: PromoResult)] = [
-            ([], .ignored(cooldown: 0)),
-            ([.startImport], .actioned),
-            ([.permanentlyDismiss], .ignored())
+        let cases: [(actions: [Action], hadImportedLogins: Bool, expected: PromoResult)] = [
+            ([], false, .ignored(cooldown: 0)),
+            ([.startImport, .importLogins, .endImportFlow], false, .actioned),
+            ([.startImport, .endImportFlow], false, .ignored(cooldown: 0)),
+            ([.startImport, .importLogins, .endImportFlow], true, .ignored(cooldown: 0)),
+            ([.permanentlyDismiss], false, .ignored())
         ]
 
-        for (actions, expected) in cases {
-            let observer = AutofillImportPromoObserver()
+        for (actions, hadImportedLogins, expected) in cases {
+            let importState = MockAutofillLoginImportState()
+            importState.hasImportedLogins = hadImportedLogins
+            let observer = AutofillImportPromoObserver(loginImportStateProvider: importState)
             observer.overlayDidShowImportPrompt(overlayA)
-            actions.forEach { observer.perform($0, from: overlayA) }
+            actions.forEach { observer.perform($0, from: overlayA, importState: importState) }
             observer.overlayWillDisappear(overlayA)
 
-            XCTAssertEqual(observer.resultWhenHidden, expected, "\(actions)")
+            XCTAssertFalse(observer.isVisible, "\(actions), hadImportedLogins: \(hadImportedLogins)")
+            XCTAssertEqual(observer.resultWhenHidden, expected, "\(actions), hadImportedLogins: \(hadImportedLogins)")
         }
     }
 
     func testWhenActionComesFromUntrackedOverlayThenItIsIgnored() {
-        sut.perform(.startImport, from: overlayA)
+        sut.overlayDidStartImport(overlayA)
         sut.overlayDidShowImportPrompt(overlayA)
-        sut.perform(.startImport, from: overlayB)
-        sut.perform(.permanentlyDismiss, from: overlayB)
+        sut.overlayDidStartImport(overlayB)
+        sut.overlayDidPermanentlyDismissImportPrompt(overlayB)
+        importState.hasImportedLogins = true
+        sut.overlayDidEndImportFlow(overlayB)
+        XCTAssertTrue(sut.isVisible)
+
         sut.overlayWillDisappear(overlayA)
 
         XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
@@ -175,17 +228,29 @@ final class AutofillImportPromoObserverTests: XCTestCase {
 
     func testWhenReplacedOverlayWasPermanentlyDismissedThenItsOutcomeIsResolved() {
         sut.overlayDidShowImportPrompt(overlayA)
-        sut.perform(.permanentlyDismiss, from: overlayA)
+        sut.overlayDidPermanentlyDismissImportPrompt(overlayA)
         sut.overlayDidShowImportPrompt(overlayB)
 
         XCTAssertEqual(sut.resultWhenHidden, .ignored())
     }
 
+    func testWhenOverlayIsReplacedDuringImportThenImportIsNotCounted() {
+        sut.overlayDidShowImportPrompt(overlayA)
+        sut.overlayDidStartImport(overlayA)
+        sut.overlayDidShowImportPrompt(overlayB)
+        XCTAssertEqual(sut.resultWhenHidden, .ignored(cooldown: 0))
+
+        importState.hasImportedLogins = true
+        sut.overlayDidEndImportFlow(overlayA)
+
+        XCTAssertTrue(sut.isVisible, "A late flow end from the replaced overlay must not close the current one")
+    }
+
     func testWhenNewStretchHasNoActionThenResultResets() {
         sut.overlayDidShowImportPrompt(overlayA)
-        sut.perform(.startImport, from: overlayA)
+        sut.overlayDidPermanentlyDismissImportPrompt(overlayA)
         sut.overlayWillDisappear(overlayA)
-        XCTAssertEqual(sut.resultWhenHidden, .actioned)
+        XCTAssertEqual(sut.resultWhenHidden, .ignored())
 
         sut.overlayDidShowImportPrompt(overlayA)
         sut.overlayWillDisappear(overlayA)
@@ -196,15 +261,16 @@ final class AutofillImportPromoObserverTests: XCTestCase {
     func testWhenVisibilityBecomesFalseThenResultIsAlreadyResolved() {
         var resultWhenHiddenOnEmission: PromoResult?
         sut.overlayDidShowImportPrompt(overlayA)
+        sut.overlayDidStartImport(overlayA)
         sut.isVisiblePublisher
             .filter { !$0 }
             .sink { [weak self] _ in resultWhenHiddenOnEmission = self?.sut.resultWhenHidden }
             .store(in: &cancellables)
 
-        sut.perform(.permanentlyDismiss, from: overlayA)
-        sut.overlayWillDisappear(overlayA)
+        importState.hasImportedLogins = true
+        sut.overlayDidEndImportFlow(overlayA)
 
-        XCTAssertEqual(resultWhenHiddenOnEmission, .ignored())
+        XCTAssertEqual(resultWhenHiddenOnEmission, .actioned)
     }
 
     // MARK: - Promo definition
@@ -224,7 +290,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
     // MARK: - Integration with PromoService
 
     func testWhenImportPromptClosedWithoutActionThenPromoServiceRecordsDismissalAndPromoStaysEligible() async {
-        let record = await recordAfterPromoServiceRoundTrip(action: nil)
+        let record = await recordAfterPromoServiceRoundTrip(actions: [])
 
         XCTAssertEqual(record.timesDismissed, 1)
         XCTAssertFalse(record.actioned)
@@ -232,23 +298,32 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         XCTAssertTrue(record.isEligible)
     }
 
-    func testWhenImportStartedThenPromoServiceRecordsActionedAndPermanentlyDismissed() async {
-        let record = await recordAfterPromoServiceRoundTrip(action: .startImport)
+    func testWhenLoginsImportedFromPromoThenPromoServiceRecordsActionedAndPermanentlyDismissed() async {
+        let record = await recordAfterPromoServiceRoundTrip(actions: [.startImport, .importLogins, .endImportFlow])
 
         XCTAssertEqual(record.timesDismissed, 1)
         XCTAssertTrue(record.actioned)
         XCTAssertTrue(record.isPermanentlyDismissed)
     }
 
+    func testWhenImportFromPromoAddsNoLoginsThenPromoServiceRecordsDismissalAndPromoStaysEligible() async {
+        let record = await recordAfterPromoServiceRoundTrip(actions: [.startImport, .endImportFlow])
+
+        XCTAssertEqual(record.timesDismissed, 1)
+        XCTAssertFalse(record.actioned)
+        XCTAssertFalse(record.isPermanentlyDismissed)
+        XCTAssertTrue(record.isEligible)
+    }
+
     func testWhenPermanentlyDismissedThenPromoServiceRecordsPermanentDismissalWithoutAction() async {
-        let record = await recordAfterPromoServiceRoundTrip(action: .permanentlyDismiss)
+        let record = await recordAfterPromoServiceRoundTrip(actions: [.permanentlyDismiss])
 
         XCTAssertEqual(record.timesDismissed, 1)
         XCTAssertFalse(record.actioned)
         XCTAssertTrue(record.isPermanentlyDismissed)
     }
 
-    private func recordAfterPromoServiceRoundTrip(action: Action?) async -> PromoHistoryRecord {
+    private func recordAfterPromoServiceRoundTrip(actions: [Action]) async -> PromoHistoryRecord {
         let historyStore = MockPromoHistoryStore()
         let promoService = makePromoService(historyStore: historyStore)
         let visibleExpectation = XCTestExpectation(description: "autofill import promo visible")
@@ -278,9 +353,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         startAndWaitForRegistration(promoService)
         sut.overlayDidShowImportPrompt(overlayA)
         await fulfillment(of: [visibleExpectation], timeout: 5.0)
-        if let action {
-            sut.perform(action, from: overlayA)
-        }
+        actions.forEach { sut.perform($0, from: overlayA, importState: importState) }
         sut.overlayWillDisappear(overlayA)
         await fulfillment(of: [hiddenExpectation, resultExpectation], timeout: 5.0)
 

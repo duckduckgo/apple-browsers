@@ -213,7 +213,7 @@ extension PromoServiceFactoryTests {
             updateNotificationBridge: nil,
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
             quitSurveyPromoObserver: QuitSurveyPromoObserver(),
-            autofillImportPromoObserver: AutofillImportPromoObserver()
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState())
         )
     }
 }

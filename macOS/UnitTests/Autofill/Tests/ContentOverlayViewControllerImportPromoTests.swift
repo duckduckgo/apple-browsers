@@ -103,6 +103,7 @@ private final class MockAutofillImportPromoReporter: AutofillImportPromoReportin
     enum Call: Equatable {
         case shown(ObjectIdentifier)
         case importStarted(ObjectIdentifier)
+        case importFlowEnded(ObjectIdentifier)
         case permanentlyDismissed(ObjectIdentifier)
         case willDisappear(ObjectIdentifier)
     }
@@ -115,6 +116,10 @@ private final class MockAutofillImportPromoReporter: AutofillImportPromoReportin
 
     func overlayDidStartImport(_ overlay: AnyObject) {
         calls.append(.importStarted(ObjectIdentifier(overlay)))
+    }
+
+    func overlayDidEndImportFlow(_ overlay: AnyObject) {
+        calls.append(.importFlowEnded(ObjectIdentifier(overlay)))
     }
 
     func overlayDidPermanentlyDismissImportPrompt(_ overlay: AnyObject) {

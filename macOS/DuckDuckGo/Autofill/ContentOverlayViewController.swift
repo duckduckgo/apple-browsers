@@ -447,9 +447,11 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        // Report before launching so the action is recorded before the import flow can hide this overlay.
         autofillImportPromoReporter.overlayDidStartImport(self)
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled) { [weak self] in
+            guard let self else { return }
+            autofillImportPromoReporter.overlayDidEndImportFlow(self)
+        }
     }
 
     public func autofillDidPermanentlyDismissCredentialsImportPrompt() {

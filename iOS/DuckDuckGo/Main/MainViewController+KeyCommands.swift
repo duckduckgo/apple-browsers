@@ -237,16 +237,24 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.nextTab else { return }
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageLandingIfAllowed()
+        }
     }
     
     @objc func keyboardPreviousTab() {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.previousTab else { return }
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageLandingIfAllowed()
+        }
     }
     
     @objc func keyboardShowAllTabs() {

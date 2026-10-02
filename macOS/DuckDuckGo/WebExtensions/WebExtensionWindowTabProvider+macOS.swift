@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Combine
 import os.log
 import WebExtensions
 import WebKit
@@ -118,11 +119,19 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
+        // The popup is tied to the tab selected in the window that owns the button.
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
+            return
+        }
+
         // `action.popupPopover` is never shown. Its rounded chrome cannot be clipped from
         // outside on macOS 26, and many extension popups paint a square page
         // over it, which leaves the frame corners showing. `WebExtensionPopupPresenter` hosts
         // the same web view in a square panel instead.
-        popupPresenter.present(action, for: context, from: button)
+        let selectedTabPublisher = tabCollectionViewModel.$selectedTabViewModel
+            .map { $0?.tab }
+            .eraseToAnyPublisher()
+        popupPresenter.present(action, for: context, from: button, selectedTabPublisher: selectedTabPublisher)
     }
 
     func dismissPopup(for popupWebView: WKWebView) {

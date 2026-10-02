@@ -160,17 +160,14 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
     }
 
-    func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtFoxNews() throws {
-        let trackerTestURL = URL(string: "https://www.foxnews.com")!
-        // If Fox News stops showing trackers, verify a replacement site before switching:
-        // let trackerTestURL = URL(string: "https://www.cbsnews.com")!
-        // let trackerTestURL = URL(string: "https://arstechnica.com")!
+    func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtPrivacyTestPages() throws {
+        let trackerTestURL = URL(string: "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
         addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)
 
-        let trackerPageContent = webView.staticTexts.containing(\.value, containing: "Fox News").firstMatch
-        XCTAssertTrue(trackerPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Fox News page should load")
+        let trackerPageContent = webView.staticTexts.containing(\.value, containing: "1 major tracker loaded via script src").firstMatch
+        XCTAssertTrue(trackerPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Tracker test page should load")
 
-        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for Fox News")
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for tracker test page")
         privacyButton.click()
 
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")

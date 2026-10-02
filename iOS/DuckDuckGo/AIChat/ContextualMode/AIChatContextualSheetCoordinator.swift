@@ -347,19 +347,23 @@ final class AIChatContextualSheetCoordinator {
         }
 
         startObservingContextUpdates()
+        let isCollectingPageContext: Bool
         if attachingPage {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
             }
             requestManualPageContextAttach()
+            isCollectingPageContext = true
         } else {
-            collectContextForNewSession(skippingAutoAttach: skippingAutoAttach, isColdRestore: restoreURL != nil)
+            isCollectingPageContext = collectContextForNewSession(skippingAutoAttach: skippingAutoAttach,
+                                                                  isColdRestore: restoreURL != nil)
         }
 
         stopSessionTimer()
 
         if let sheetViewController {
-            presentExistingSheet(sheetViewController, from: presentingViewController)
+            presentExistingSheet(sheetViewController, from: presentingViewController,
+                                 focusingInput: isCollectingPageContext)
         } else {
             presentNewSheet(from: presentingViewController, opensOntoSubmittedChat: opensOntoSubmittedChat)
         }
@@ -595,7 +599,9 @@ final class AIChatContextualSheetCoordinator {
         persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
     }
 
-    private func collectContextForNewSession(skippingAutoAttach: Bool = false, isColdRestore: Bool = false) {
+    /// Returns whether an extraction that can put a chip on the input is now under way.
+    @discardableResult
+    private func collectContextForNewSession(skippingAutoAttach: Bool = false, isColdRestore: Bool = false) -> Bool {
         if !skippingAutoAttach {
             sessionState.allowAutoAttachAgain()
         }
@@ -606,10 +612,10 @@ final class AIChatContextualSheetCoordinator {
             // payload over it would clear the attached context on the frontend.
             if currentPageURL != nil, sessionState.intendedAttachedContext == nil {
                 sessionState.markPendingSignalsOnlyCollection()
-                pageContextHandler.triggerContextCollection(trigger: .tabContent)
-            } else {
-                pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+                return pageContextHandler.triggerContextCollection(trigger: .tabContent)
             }
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            return false
         } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
             if sessionState.showsSuggestionsStartSurface {
                 sessionState.beginLoadingSuggestions()
@@ -620,12 +626,15 @@ final class AIChatContextualSheetCoordinator {
                 sessionState.cancelAutomaticAttach()
             }
             persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
+            return didTrigger
         } else if currentPageURL != nil, shouldCollectSignalsOnly(forColdRestore: isColdRestore) {
             sessionState.markPendingSignalsOnlyCollection()
-            pageContextHandler.triggerContextCollection(trigger: .tabContent)
+            return pageContextHandler.triggerContextCollection(trigger: .tabContent)
         } else if !offerPageContextIfNeeded(trigger: .auto) {
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            return false
         }
+        return true
     }
 
     @discardableResult
@@ -822,12 +831,19 @@ final class AIChatContextualSheetCoordinator {
 
 private extension AIChatContextualSheetCoordinator {
     
-    func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController, from presentingVC: UIViewController) {
+    func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController,
+                              from presentingVC: UIViewController,
+                              focusingInput: Bool = false) {
         guard sheetVC.presentingViewController == nil else { return }
         // UIKit silently drops present() if the presenter already has a presentedViewController;
         // bail so isSheetPresented doesn't get stuck true.
         guard presentingVC.presentedViewController == nil else { return }
         persistentUTIHost?.beginPresentation()
+        // A chip on reopen, or an extraction about to produce one, means the page hasn't been asked
+        // about yet — submitting is what clears it — so the input opens ready rather than as the plain pill.
+        if focusingInput || persistentUTIHost?.chipViewModel.state != nil {
+            persistentUTIHost?.activateInput()
+        }
         sheetVC.prepareForPresentation()
         presentingVC.present(sheetVC, animated: true)
         isSheetPresented = true

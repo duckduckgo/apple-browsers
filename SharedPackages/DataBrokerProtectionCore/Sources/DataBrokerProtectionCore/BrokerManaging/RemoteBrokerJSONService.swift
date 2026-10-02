@@ -301,12 +301,18 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         return (data, response)
     }
 
-    /// Bundled brokers were verified by CI, so they replace stored brokers even when older.
+    /// Bundled brokers were verified by CI, so they replace stored brokers even when older,
+    /// and stored brokers that aren't bundled are disabled.
     private func revertToBundledBrokers() throws {
         guard let bundledBrokers = try bundledBrokers() else { return }
 
         for brokerResource in bundledBrokers {
             try overwriteBroker(brokerResource)
+        }
+
+        let bundledBrokerURLs = Set(bundledBrokers.map(\.broker.url))
+        for brokerResource in try vault.fetchAllBrokerResources() where !bundledBrokerURLs.contains(brokerResource.broker.url) {
+            try disableBrokerUntilUpdated(brokerResource)
         }
     }
 

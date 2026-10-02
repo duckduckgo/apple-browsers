@@ -1,5 +1,5 @@
 {
-  "originHash" : "4ceb87fc8938a53c49eaa7c680957498a0a2531e2951755cd8210d17bf5c26fb",
+  "originHash" : "2cd0efe7731dd9b32c85424073068fe1943c661db4e31bab5285786a915fa791",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -34,7 +34,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
         "branch" : "pr-releases/dominik/chrome-web-store-macos",
-        "revision" : "638733765a4423642fd569b8166fc1b476b3c458"
+        "revision" : "50c0b87c1b2d8a788534504aedc7ef5f69915c7b"
       }
     },
     {

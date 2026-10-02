@@ -37,35 +37,35 @@
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_playabilityError_day": {
         "description": "Daily bucketed count of YouTube playability-error detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_videoAd_day": {
         "description": "Daily bucketed count of YouTube video-ad detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_staticAd_day": {
         "description": "Daily bucketed count of YouTube static-ad detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     "webTelemetry_youtube_buffering_day": {
         "description": "Daily bucketed count of YouTube playback-buffering detections, with the user's login state. Fired by the eventHub feature at the end of each 1-day measurement period.",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubLoginState", "eventHubAttributionPeriod"]
+        "parameters": ["appVersion", "eventHubBucketedCount", "eventHubYouTubeLoginState", "eventHubAttributionPeriod"]
     },
     // Captcha pixels use an immediate trigger, so they carry neither a bucketed `count` nor an
     // `attributionPeriod` — EventHub fires one pixel per detection with no aggregation or deduplication.

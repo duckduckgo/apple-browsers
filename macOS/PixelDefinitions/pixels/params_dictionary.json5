@@ -693,7 +693,7 @@
         "description": "Bucketed count for the period. Bucket boundaries are set by the eventHub remote config",
         "pattern": "^\\d+(-\\d+|\\+)?$"
     },
-    "eventHubLoginState": {
+    "eventHubYouTubeLoginState": {
         "key": "loginState",
         "type": "string",
         "description": "The user's YouTube login state, as percent-encoded JSON, recorded as the last value seen during the period",

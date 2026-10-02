@@ -21,8 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-/// "Return to…" New Tab Page module: a header with a "Show All" action above a row showing the last used tab's
-/// thumbnail, title, favicon, domain and last visit time, plus a trailing menu.
+/// Redesigned variant of `ReturnToTabCard`.
 struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
     let title: String
     let domain: String?
@@ -102,7 +101,6 @@ struct RedesignedEscapeHatchModuleView<MenuContent: View>: View {
             bodyView
                 // Include the gaps between the thumbnail, text and menu in the cell's drag target.
                 .contentShape(Rectangle())
-                // Measure the intrinsic row height so the swipe container also fits larger text sizes.
                 .fixedSize(horizontal: false, vertical: true)
                 .onFrameUpdate(in: .local, using: RedesignedEscapeHatchRowFrameKey.self) { frame in
                     // Hosting views can report an empty frame during measurement. Never let that

@@ -122,8 +122,11 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         } catch {
             #if targetEnvironment(simulator)
             let notificationError = error as NSError
+            // The iOS 27 CI simulator reports repository authorization denial as code 2003 with this marker.
+            let repositoryAuthorizationStatus = notificationError.userInfo["UNAuthorizationStatus"] as? String
+            let isRepositoryAuthorizationDenied = notificationError.code == 2003 && repositoryAuthorizationStatus == "Denied"
             if notificationError.domain == UNErrorDomain,
-               notificationError.code == UNError.Code.notificationsNotAllowed.rawValue {
+               notificationError.code == UNError.Code.notificationsNotAllowed.rawValue || isRepositoryAuthorizationDenied {
                 throw XCTSkip("Simulator rejected an independent notification with authorization status \(status.stringValue): \(notificationError).")
             }
             #endif

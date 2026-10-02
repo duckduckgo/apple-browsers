@@ -29,6 +29,7 @@ public enum ChromeWebStoreError: Error {
 
 public enum ChromeWebStoreURL {
     public static let host = "chromewebstore.google.com"
+    public static let prodversionQueryItem = URLQueryItem(name: "prodversion", value: "154.0.0.0")
 
     public static func isValidExtensionID(_ identifier: String) -> Bool {
         identifier.utf8.count == 32 && identifier.utf8.allSatisfy { (97...112).contains($0) }
@@ -42,7 +43,7 @@ public enum ChromeWebStoreURL {
         components.path = "/service/update2/crx"
         components.queryItems = [
             URLQueryItem(name: "response", value: "redirect"),
-            URLQueryItem(name: "prodversion", value: "154.0.0.0"),
+            Self.prodversionQueryItem,
             URLQueryItem(name: "acceptformat", value: "crx3"),
             URLQueryItem(name: "x", value: "id=\(identifier)&installsource=ondemand&uc")
         ]

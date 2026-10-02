@@ -3681,6 +3681,7 @@ class MainViewController: UIViewController {
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
         updateWindowedAddressBarCorners()
+        newTabPageViewController?.refreshContextualOnboardingDialogLayout()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.

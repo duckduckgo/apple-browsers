@@ -403,6 +403,28 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(try completedEvent().endReason, .cancelledWithError)
     }
 
+    // MARK: - Process diagnostics
+
+    func testWhenProcessIdentifierChangesBeforeStopThenProcessIDChangedIsReported() throws {
+        startMonitoredSession()
+        inputs.pid = 2
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        XCTAssertEqual(try completedEvent().processIDChanged, true)
+    }
+
+    func testOrphanOlderThanCurrentProcessReportsDurationExceedingLifetime() throws {
+        var orphan = VPNSessionHealthWideEventData(startReason: .physicalTunnelStartManual,
+                                                   startedAt: hourStart.addingTimeInterval(-3_600),
+                                                   extensionType: .system)
+        orphan.lastObservedAt = hourStart.addingTimeInterval(-60)
+        wideEvent.startFlow(orphan)
+
+        startTunnel(.manual)
+
+        XCTAssertEqual(try completedEvent().eventDurationExceedsProcessLifetime, true)
+    }
+
     // MARK: - Start attempts
 
     func testWhenStoppedWhileStartingThenLateStartDoesNotOpenEvent() {
@@ -517,7 +539,8 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
             extensionType: .system,
             processStartedAt: hourStart,
             isTelemetryEnabled: { inputs.enabled },
-            now: { inputs.date })
+            now: { inputs.date },
+            processIdentifier: { inputs.pid })
     }
 
     private func latestEvent(file: StaticString = #filePath, line: UInt = #line) throws -> VPNSessionHealthWideEventData {
@@ -553,6 +576,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
 private final class InstrumentationSettings: @unchecked Sendable {
     var date: Date
     var enabled = true
+    var pid: Int32 = 1
 
     init(date: Date) {
         self.date = date

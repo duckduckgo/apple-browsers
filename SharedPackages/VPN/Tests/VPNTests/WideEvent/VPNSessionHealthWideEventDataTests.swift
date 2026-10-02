@@ -306,6 +306,51 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         XCTAssertEqual(orphan.outcome, .failure(.routingOutage))
     }
 
+    // MARK: - Process diagnostics
+
+    func testDurationExceedsProcessLifetimeOnlyWhenProcessStartedAfterEvent() {
+        let olderProcess = makeEvent()
+            .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: -10), processIdentifier: 123)
+        let newerProcess = makeEvent()
+            .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: 30), processIdentifier: 123)
+
+        XCTAssertEqual(olderProcess.event.jsonParameters()["feature.data.ext.event_duration_exceeds_process_lifetime"] as? Bool, false)
+        XCTAssertEqual(newerProcess.event.jsonParameters()["feature.data.ext.event_duration_exceeds_process_lifetime"] as? Bool, true)
+    }
+
+    func testProcessIDChangedIsReportedOnlyWhenPIDDiffers() {
+        let samePID = makeEvent(sessionStartPID: 123)
+            .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: -10), processIdentifier: 123)
+        let differentPID = makeEvent(sessionStartPID: 123)
+            .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: -10), processIdentifier: 456)
+
+        XCTAssertNil(samePID.event.jsonParameters()["feature.data.ext.process_id_changed"])
+        XCTAssertEqual(differentPID.event.jsonParameters()["feature.data.ext.process_id_changed"] as? Bool, true)
+    }
+
+    func testOrphanDiagnosticsUseBackdatedDuration() {
+        var orphan = makeEvent()
+        orphan.lastObservedAt = timestamp(after: 30)
+
+        // Duration ends at the last observation (30s); the lifetime runs until recovery (50s).
+        let ended = orphan.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processIdentifier: 123)
+
+        XCTAssertEqual(ended.event.eventDurationExceedsProcessLifetime, false)
+    }
+
+    func testWhenEventAlreadyEndedThenFinalizingRecordsDiagnosticsWithoutChangingEnd() {
+        var ended = makeMonitoredEvent(sessionStartPID: 123)
+        ended.endedAt = timestamp(after: 60)
+        ended.endReason = .stoppedByUser
+
+        let recovered = ended.finalized(for: .processDied, at: timestamp(after: 900), processStartDate: timestamp(after: 850), processIdentifier: 456)
+
+        XCTAssertEqual(recovered.event.endedAt, timestamp(after: 60))
+        XCTAssertEqual(recovered.event.endReason, .stoppedByUser)
+        XCTAssertEqual(recovered.event.eventDurationExceedsProcessLifetime, true)
+        XCTAssertEqual(recovered.event.processIDChanged, true)
+    }
+
     // MARK: - Duration and count buckets
 
     func testDurationBucketsAtBoundaries() {
@@ -373,12 +418,12 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
 
     // MARK: - Event builders
 
-    private func makeEvent() -> VPNSessionHealthWideEventData {
-        VPNSessionHealthWideEventData(startReason: .physicalTunnelStartManual, startedAt: sessionStart, extensionType: .app)
+    private func makeEvent(sessionStartPID: Int32? = nil) -> VPNSessionHealthWideEventData {
+        VPNSessionHealthWideEventData(startReason: .physicalTunnelStartManual, startedAt: sessionStart, extensionType: .app, sessionStartPID: sessionStartPID)
     }
 
-    private func makeMonitoredEvent() -> VPNSessionHealthWideEventData {
-        makeEvent()
+    private func makeMonitoredEvent(sessionStartPID: Int32? = nil) -> VPNSessionHealthWideEventData {
+        makeEvent(sessionStartPID: sessionStartPID)
             .markingMonitoringStarted(at: sessionStart)
             .applyingConnectionTestResult(.connected, at: sessionStart)
     }

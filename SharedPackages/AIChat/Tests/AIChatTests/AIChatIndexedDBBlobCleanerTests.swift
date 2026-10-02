@@ -48,9 +48,11 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
     func testWhenOriginIsDuckAiThenAllBlobFilesAreRemovedAndDatabaseIsKept() async throws {
         let database = try makeOrigin(host: "duck.ai", blobFiles: ["1.blob", "2.blob", "17.blob"])
 
-        let result = await makeSUT().removeAllBlobFiles()
+        let result = await removeLeftoverBlobFiles(with: makeSUT())
 
-        XCTAssertNotNil(try? result.get())
+        XCTAssertNil(result.error)
+        XCTAssertEqual(result.filesFound, 3)
+        XCTAssertEqual(result.filesRemoved, 3)
         XCTAssertEqual(try blobFiles(in: database), [])
         XCTAssertTrue(fileManager.fileExists(atPath: database.appendingPathComponent("IndexedDB.sqlite3").path))
         XCTAssertTrue(fileManager.fileExists(atPath: database.appendingPathComponent("IndexedDB.sqlite3-wal").path))
@@ -59,7 +61,7 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
     func testWhenOriginIsDuckDuckGoThenBlobFilesAreRemoved() async throws {
         let database = try makeOrigin(host: "duckduckgo.com", blobFiles: ["1.blob"])
 
-        _ = await makeSUT().removeAllBlobFiles()
+        _ = await removeLeftoverBlobFiles(with: makeSUT())
 
         XCTAssertEqual(try blobFiles(in: database), [])
     }
@@ -69,9 +71,9 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
         let subdomain = try makeOrigin(host: "internal.duck.ai", blobFiles: ["1.blob"])
         let http = try makeOrigin(scheme: "http", host: "duck.ai", blobFiles: ["1.blob"])
 
-        let result = await makeSUT().removeAllBlobFiles()
+        let result = await removeLeftoverBlobFiles(with: makeSUT())
 
-        XCTAssertNotNil(try? result.get())
+        XCTAssertNil(result.error)
         XCTAssertEqual(try blobFiles(in: other), ["1.blob"])
         XCTAssertEqual(try blobFiles(in: subdomain), ["1.blob"], "A length-prefixed match must not treat a subdomain as duck.ai")
         XCTAssertEqual(try blobFiles(in: http), ["1.blob"])
@@ -81,7 +83,7 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
         let first = try makeOrigin(host: "duck.ai", blobFiles: ["1.blob"])
         let second = try makeDatabase(in: first.deletingLastPathComponent(), blobFiles: ["1.blob", "2.blob"])
 
-        _ = await makeSUT().removeAllBlobFiles()
+        _ = await removeLeftoverBlobFiles(with: makeSUT())
 
         XCTAssertEqual(try blobFiles(in: first), [])
         XCTAssertEqual(try blobFiles(in: second), [])
@@ -92,18 +94,38 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
         try fileManager.createDirectory(at: originDirectory, withIntermediateDirectories: true)
         try originData(scheme: "https", host: "duck.ai").write(to: originDirectory.appendingPathComponent("origin"))
 
-        let result = await makeSUT().removeAllBlobFiles()
+        let result = await removeLeftoverBlobFiles(with: makeSUT())
 
-        XCTAssertNotNil(try? result.get())
+        XCTAssertNil(result.error)
+        XCTAssertEqual(result.filesFound, 0)
     }
 
     func testWhenStorageDirectoryDoesNotExistThenRemovalSucceeds() async {
         let sut = AIChatIndexedDBBlobCleaner(originStorageDirectories: [storageDirectory.appendingPathComponent("missing")],
                                              fileManager: fileManager)
 
-        let result = await sut.removeAllBlobFiles()
+        let result = await removeLeftoverBlobFiles(with: sut)
 
-        XCTAssertNotNil(try? result.get())
+        XCTAssertNil(result.error)
+    }
+
+    func testWhenAThirdPartyFrameInsideDuckAiHasStorageThenItsBlobFilesAreKept() async throws {
+        let frame = try makeOrigin(topHost: "duck.ai", frameHost: "example.com", blobFiles: ["1.blob"])
+
+        _ = await removeLeftoverBlobFiles(with: makeSUT())
+
+        XCTAssertEqual(try blobFiles(in: frame), ["1.blob"])
+    }
+
+    func testWhenABlobFileIsAddedAfterTheListingThenItIsKept() async throws {
+        let database = try makeOrigin(host: "duck.ai", blobFiles: ["1.blob"])
+        let sut = makeSUT()
+        let listed = await sut.blobFiles()
+        try Data("new image".utf8).write(to: database.appendingPathComponent("2.blob"))
+
+        _ = await sut.removeBlobFiles(listed)
+
+        XCTAssertEqual(try blobFiles(in: database), ["2.blob"])
     }
 
     // MARK: - Directory resolution
@@ -157,14 +179,33 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
         XCTAssertFalse(AIChatIndexedDBBlobCleaner.isMatchingOrigin(data, hosts: ["duckduckgo.com"]))
     }
 
+    func testWhenOnlyTheTopOriginIsDuckAiThenTheOriginFileDoesNotMatch() {
+        let data = originData(scheme: "https", topHost: "duck.ai", frameHost: "example.com")
+
+        XCTAssertFalse(AIChatIndexedDBBlobCleaner.isMatchingOrigin(data, hosts: ["duck.ai"]))
+    }
+
+    func testWhenTheOriginFileIsTruncatedThenItDoesNotMatch() {
+        let data = originData(scheme: "https", topHost: "duck.ai", frameHost: "duck.ai").dropLast(3)
+
+        XCTAssertFalse(AIChatIndexedDBBlobCleaner.isMatchingOrigin(Data(data), hosts: ["duck.ai"]))
+    }
+
     // MARK: - Helpers
+
+    private func removeLeftoverBlobFiles(with sut: AIChatIndexedDBBlobCleaner) async -> AIChatBlobCleanupResult {
+        await sut.removeBlobFiles(await sut.blobFiles())
+    }
 
     /// Creates `<storage>/<hash>/<hash>/origin` plus one IndexedDB database directory; returns the database directory.
     private func makeOrigin(scheme: String = "https", host: String, blobFiles: [String]) throws -> URL {
-        let hash = UUID().uuidString
-        let originDirectory = storageDirectory.appendingPathComponent(hash).appendingPathComponent(hash)
+        try makeOrigin(scheme: scheme, topHost: host, frameHost: host, blobFiles: blobFiles)
+    }
+
+    private func makeOrigin(scheme: String = "https", topHost: String, frameHost: String, blobFiles: [String]) throws -> URL {
+        let originDirectory = storageDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent(UUID().uuidString)
         try fileManager.createDirectory(at: originDirectory, withIntermediateDirectories: true)
-        try originData(scheme: scheme, host: host).write(to: originDirectory.appendingPathComponent("origin"))
+        try originData(scheme: scheme, topHost: topHost, frameHost: frameHost).write(to: originDirectory.appendingPathComponent("origin"))
         return try makeDatabase(in: originDirectory, blobFiles: blobFiles)
     }
 
@@ -180,12 +221,26 @@ final class AIChatIndexedDBBlobCleanerTests: XCTestCase {
     }
 
     private func originData(scheme: String, host: String) -> Data {
+        originData(scheme: scheme, topHost: host, frameHost: host)
+    }
+
+    private func originData(scheme: String, topHost: String, frameHost: String) -> Data {
         var data = Data()
-        for _ in 0..<2 {
-            data.append(AIChatIndexedDBBlobCleaner.encodedOriginString(scheme))
-            data.append(AIChatIndexedDBBlobCleaner.encodedOriginString(host))
+        for host in [topHost, frameHost] {
+            data.append(encodedOriginString(scheme))
+            data.append(encodedOriginString(host))
             data.append(0x00)
         }
+        return data
+    }
+
+    /// Encodes a string the way WebKit writes it to the `origin` file.
+    private func encodedOriginString(_ string: String) -> Data {
+        let bytes = Data(string.utf8)
+        var length = UInt32(bytes.count).littleEndian
+        var data = Data(bytes: &length, count: MemoryLayout<UInt32>.size)
+        data.append(0x01)
+        data.append(bytes)
         return data
     }
 

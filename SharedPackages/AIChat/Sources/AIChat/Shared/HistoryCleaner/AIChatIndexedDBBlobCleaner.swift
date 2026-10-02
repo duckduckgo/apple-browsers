@@ -30,8 +30,19 @@ import WebKit
 /// This cleaner must only run after a *full* clear. After a single-chat delete, the remaining chats'
 /// images are still live and their blob files must stay.
 public protocol AIChatIndexedDBBlobCleaning {
-    /// Deletes every IndexedDB blob file stored for the Duck.ai origins.
-    func removeAllBlobFiles() async -> Result<Void, Error>
+    /// Lists the IndexedDB blob files currently stored for the Duck.ai origins.
+    func blobFiles() async -> [URL]
+
+    /// Deletes `files`. Pass a list taken before the JS clear, so images added while it ran are kept.
+    func removeBlobFiles(_ files: [URL]) async -> AIChatBlobCleanupResult
+}
+
+/// What one cleanup removed, so the app can report whether the cleanup is still needed.
+public struct AIChatBlobCleanupResult {
+    public let filesFound: Int
+    public let filesRemoved: Int
+    /// The first removal error; files that could not be removed are left for the next cleanup.
+    public let error: Error?
 }
 
 public final class AIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning, @unchecked Sendable {
@@ -70,9 +81,15 @@ public final class AIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning, @unc
         self.fileManager = fileManager
     }
 
-    public func removeAllBlobFiles() async -> Result<Void, Error> {
+    public func blobFiles() async -> [URL] {
         await Task.detached(priority: .utility) { [self] in
-            removeAllBlobFilesSync()
+            blobFilesForMatchingOrigins()
+        }.value
+    }
+
+    public func removeBlobFiles(_ files: [URL]) async -> AIChatBlobCleanupResult {
+        await Task.detached(priority: .utility) { [self] in
+            removeBlobFilesSync(files)
         }.value
     }
 
@@ -118,11 +135,11 @@ public final class AIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning, @unc
 
     // MARK: - Removal
 
-    private func removeAllBlobFilesSync() -> Result<Void, Error> {
+    private func removeBlobFilesSync(_ blobFiles: [URL]) -> AIChatBlobCleanupResult {
         var firstError: Error?
         var removedCount = 0
 
-        for blobFile in blobFilesForMatchingOrigins() {
+        for blobFile in blobFiles {
             do {
                 try fileManager.removeItem(at: blobFile)
                 removedCount += 1
@@ -132,11 +149,8 @@ public final class AIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning, @unc
             }
         }
 
-        Logger.aiChat.debug("AIChatIndexedDBBlobCleaner: removed \(removedCount) IndexedDB blob files")
-        if let firstError {
-            return .failure(firstError)
-        }
-        return .success(())
+        Logger.aiChat.debug("AIChatIndexedDBBlobCleaner: removed \(removedCount) of \(blobFiles.count) IndexedDB blob files")
+        return AIChatBlobCleanupResult(filesFound: blobFiles.count, filesRemoved: removedCount, error: firstError)
     }
 
     /// Origin storage is laid out as `<storage>/<top origin hash>/<opening origin hash>/{origin, IndexedDB/<database hash>/*.blob}`.
@@ -171,21 +185,49 @@ public final class AIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning, @unc
         return Self.isMatchingOrigin(data, hosts: hosts)
     }
 
-    /// Checks the serialized `origin` file for an exact `https` + host pair.
+    /// Checks that the *frame* origin in the serialized `origin` file is `https` on one of `hosts`.
     ///
-    /// WebKit serializes each origin string as a little-endian `UInt32` length, a `0x01` "8-bit" marker and the
-    /// Latin-1 bytes. Matching the length-prefixed encoding keeps `duck.ai` from matching `foo.duck.ai`.
+    /// The file holds the top origin, then the frame origin, each as scheme, host and port. Only the frame origin
+    /// owns the storage, so a third-party iframe inside duck.ai does not match. A file that can't be read
+    /// as expected never matches.
     static func isMatchingOrigin(_ data: Data, hosts: Set<String>) -> Bool {
-        guard data.range(of: encodedOriginString(Constants.scheme)) != nil else { return false }
-        return hosts.contains { data.range(of: encodedOriginString($0)) != nil }
+        var reader = OriginFileReader(data: data)
+        guard reader.skipOrigin(),
+              reader.readString() == Constants.scheme,
+              let host = reader.readString() else {
+            return false
+        }
+        return hosts.contains(host)
+    }
+}
+
+/// Reads WebKit's `origin` file: each string is a little-endian `UInt32` length, a `0x01` "8-bit" marker and
+/// Latin-1 bytes; each origin ends with its port, a single `0x00` when absent.
+private struct OriginFileReader {
+
+    private let bytes: [UInt8]
+    private var offset = 0
+
+    init(data: Data) {
+        bytes = [UInt8](data)
     }
 
-    static func encodedOriginString(_ string: String) -> Data {
-        let bytes = Data(string.utf8)
-        var length = UInt32(bytes.count).littleEndian
-        var data = Data(bytes: &length, count: MemoryLayout<UInt32>.size)
-        data.append(0x01)
-        data.append(bytes)
-        return data
+    /// Skips the top origin. Returns `false` for a port it can't size, so the file is treated as unreadable.
+    mutating func skipOrigin() -> Bool {
+        guard readString() != nil, readString() != nil, offset < bytes.count, bytes[offset] == 0x00 else {
+            return false
+        }
+        offset += 1
+        return true
+    }
+
+    mutating func readString() -> String? {
+        let headerLength = MemoryLayout<UInt32>.size + 1
+        guard offset + headerLength <= bytes.count, bytes[offset + 4] == 0x01 else { return nil }
+        let length = (0..<4).reduce(0) { $0 | Int(bytes[offset + $1]) << (8 * $1) }
+        let start = offset + headerLength
+        guard start + length <= bytes.count else { return nil }
+        offset = start + length
+        return String(bytes: bytes[start..<offset], encoding: .isoLatin1)
     }
 }

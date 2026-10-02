@@ -32,6 +32,8 @@ final class HistoryCleanerTests: XCTestCase {
     private var mockPrivacyConfig: MockPrivacyConfigurationManager!
     private var mockJSCleaner: MockAIChatJSDataCleaner!
     private var mockBlobCleaner: MockAIChatIndexedDBBlobCleaner!
+    private var blobCleanupStore: InMemoryBlobCleanupStore!
+    private var reportedBlobCleanups: [AIChatBlobCleanupResult] = []
 
     override func setUp() {
         super.setUp()
@@ -41,6 +43,8 @@ final class HistoryCleanerTests: XCTestCase {
         mockPrivacyConfig = MockPrivacyConfigurationManager()
         mockJSCleaner = MockAIChatJSDataCleaner()
         mockBlobCleaner = MockAIChatIndexedDBBlobCleaner()
+        blobCleanupStore = InMemoryBlobCleanupStore()
+        reportedBlobCleanups = []
     }
 
     override func tearDown() {
@@ -50,6 +54,7 @@ final class HistoryCleanerTests: XCTestCase {
         mockPrivacyConfig = nil
         mockJSCleaner = nil
         mockBlobCleaner = nil
+        blobCleanupStore = nil
         super.tearDown()
     }
 
@@ -64,20 +69,36 @@ final class HistoryCleanerTests: XCTestCase {
             nativeStorageHandler: nativeStorageHandler,
             featureFlagProvider: featureFlagProvider,
             jsDataCleaner: mockJSCleaner,
-            indexedDBBlobCleaner: mockBlobCleaner
+            indexedDBBlobCleaner: mockBlobCleaner,
+            blobCleanupStore: blobCleanupStore,
+            onBlobCleanup: { [unowned self] in reportedBlobCleanups.append($0) }
         )
     }
 
-    // MARK: - IndexedDB blob files are removed only after a successful full clear
+    // MARK: - Leftover IndexedDB blob files are removed once, after a successful full clear
 
-    func testWhenCleanAIChatHistorySucceedsThenIndexedDBBlobFilesAreRemoved() async {
-        // WebKit's IDBObjectStore.clear() leaves the image blob files on disk, so a full clear must remove them.
+    func testWhenCleanAIChatHistorySucceedsThenTheBlobFilesListedBeforeTheJSClearAreRemoved() async {
+        mockBlobCleaner.listedFiles = [URL(fileURLWithPath: "/1.blob")]
+        mockJSCleaner.onClear = { [unowned self] in mockBlobCleaner.listedFiles.append(URL(fileURLWithPath: "/2.blob")) }
         let sut = makeSUT()
 
         let result = await sut.cleanAIChatHistory()
 
         XCTAssertNotNil(try? result.get())
-        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 1)
+        XCTAssertEqual(mockBlobCleaner.removedFiles, [[URL(fileURLWithPath: "/1.blob")]], "Files added during the JS clear must be kept")
+        XCTAssertTrue(blobCleanupStore.hasCompletedCleanup)
+        XCTAssertEqual(reportedBlobCleanups.map(\.filesRemoved), [1])
+    }
+
+    func testWhenTheCleanupHasCompletedThenTheNextFullClearSkipsIt() async {
+        blobCleanupStore.hasCompletedCleanup = true
+        let sut = makeSUT()
+
+        _ = await sut.cleanAIChatHistory()
+
+        XCTAssertEqual(mockBlobCleaner.listCallCount, 0)
+        XCTAssertTrue(mockBlobCleaner.removedFiles.isEmpty)
+        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, [nil])
     }
 
     func testWhenJSClearFailsThenIndexedDBBlobFilesAreNotRemoved() async {
@@ -87,20 +108,21 @@ final class HistoryCleanerTests: XCTestCase {
 
         _ = await sut.cleanAIChatHistory()
 
-        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 0)
+        XCTAssertTrue(mockBlobCleaner.removedFiles.isEmpty)
+        XCTAssertFalse(blobCleanupStore.hasCompletedCleanup)
+        XCTAssertTrue(reportedBlobCleanups.isEmpty)
     }
 
-    func testWhenBlobRemovalFailsThenCleanAIChatHistoryReturnsBlobFailure() async {
-        let blobError = NSError(domain: "blob", code: 5)
-        mockBlobCleaner.stubbedResult = .failure(blobError)
+    func testWhenBlobRemovalFailsThenTheClearSucceedsAndTheCleanupIsRetriedNextTime() async {
+        mockBlobCleaner.listedFiles = [URL(fileURLWithPath: "/1.blob")]
+        mockBlobCleaner.removalError = NSError(domain: "blob", code: 5)
         let sut = makeSUT()
 
         let result = await sut.cleanAIChatHistory()
 
-        guard case .failure(let error) = result else {
-            return XCTFail("Expected blob removal failure to surface, got \(result)")
-        }
-        XCTAssertEqual(error as NSError, blobError)
+        XCTAssertNotNil(try? result.get())
+        XCTAssertFalse(blobCleanupStore.hasCompletedCleanup)
+        XCTAssertEqual((reportedBlobCleanups.first?.error as? NSError)?.code, 5)
     }
 
     func testWhenDeletingSingleOrSelectedChatsThenIndexedDBBlobFilesAreNotRemoved() async {
@@ -111,16 +133,8 @@ final class HistoryCleanerTests: XCTestCase {
         _ = await sut.deleteAIChats(chatIDs: ["chat-a", "chat-b"])
         _ = await sut.clearJSData(chatID: "target-chat")
 
-        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 0)
-    }
-
-    func testWhenClearJSDataForAllChatsSucceedsThenIndexedDBBlobFilesAreRemoved() async {
-        let sut = makeSUT()
-
-        let result = await sut.clearJSData(chatID: nil)
-
-        XCTAssertNotNil(try? result.get())
-        XCTAssertEqual(mockBlobCleaner.removeAllBlobFilesCallCount, 1)
+        XCTAssertEqual(mockBlobCleaner.listCallCount, 0)
+        XCTAssertTrue(mockBlobCleaner.removedFiles.isEmpty)
     }
 
     // MARK: - cleanAIChatHistory (all chats)
@@ -438,12 +452,14 @@ private final class CallCountingStorageHandler: DuckAiNativeStorageHandling {
 
 private final class MockAIChatJSDataCleaner: AIChatJSDataCleaning {
     var stubbedResult: Result<Void, Error> = .success(())
+    var onClear: (() -> Void)?
     private(set) var clearJSDataCalls: [String?] = []
     private(set) var clearJSDataBatchCalls: [[String]] = []
 
     @MainActor
     func clearJSData(chatID: String?) async -> Result<Void, Error> {
         clearJSDataCalls.append(chatID)
+        onClear?()
         return stubbedResult
     }
 
@@ -455,11 +471,24 @@ private final class MockAIChatJSDataCleaner: AIChatJSDataCleaning {
 }
 
 private final class MockAIChatIndexedDBBlobCleaner: AIChatIndexedDBBlobCleaning {
-    var stubbedResult: Result<Void, Error> = .success(())
-    private(set) var removeAllBlobFilesCallCount = 0
+    var listedFiles: [URL] = []
+    var removalError: Error?
+    private(set) var listCallCount = 0
+    private(set) var removedFiles: [[URL]] = []
 
-    func removeAllBlobFiles() async -> Result<Void, Error> {
-        removeAllBlobFilesCallCount += 1
-        return stubbedResult
+    func blobFiles() async -> [URL] {
+        listCallCount += 1
+        return listedFiles
     }
+
+    func removeBlobFiles(_ files: [URL]) async -> AIChatBlobCleanupResult {
+        removedFiles.append(files)
+        return AIChatBlobCleanupResult(filesFound: files.count,
+                                       filesRemoved: removalError == nil ? files.count : 0,
+                                       error: removalError)
+    }
+}
+
+private final class InMemoryBlobCleanupStore: AIChatBlobCleanupStoring {
+    var hasCompletedCleanup = false
 }

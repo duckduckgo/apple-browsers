@@ -22,6 +22,10 @@ import DuckUI
 import SwiftUI
 import UIComponents
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 public struct SimplifiedSyncSettingsView: View {
 
     @ObservedObject public var model: SyncSettingsViewModel
@@ -607,77 +611,56 @@ extension SimplifiedSyncSettingsView {
 // MARK: - Previews
 
 #if DEBUG
+struct SimplifiedSyncSettingsView_Previews: PreviewProvider {
 
-private extension SyncSettingsViewModel {
-
-    /// Builds a `SyncSettingsViewModel` configured for previews. No delegate is set, so
-    /// delegate-driven side effects (device refresh, pixels, sheets) are inert.
-    static func preview(isSyncEnabled: Bool = false,
-                        devices: [Device] = [],
-                        isAIChatSyncEnabled: Bool = true,
-                        autoRestoreProvider: SyncAutoRestorePreviewProvider = .disabled) -> SyncSettingsViewModel {
-        let model = SyncSettingsViewModel(
-            isOnDevEnvironment: { false },
-            switchToProdEnvironment: {},
-            autoRestoreProvider: autoRestoreProvider
-        )
-        model.isAIChatSyncEnabled = isAIChatSyncEnabled
-        // Set `isSyncEnabled` before `devices`: its didSet clears devices when false.
-        model.isSyncEnabled = isSyncEnabled
-        model.devices = devices
-        return model
+    enum State {
+        case syncOff
+        case thisDeviceOnly
+        case multipleDevices
+        case loadingDevices
     }
-}
 
-private extension SyncSettingsViewModel.Device {
-    static let thisDevice = SyncSettingsViewModel.Device(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-    static let desktop = SyncSettingsViewModel.Device(id: "2", name: "MacBook Pro", type: "desktop", isThisDevice: false)
-    static let otherMobile = SyncSettingsViewModel.Device(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
-}
+    static var previews: some View {
+        snapshots.previews
+    }
 
-#Preview("Sync Off") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: false))
-                .navigationBarTitleDisplayMode(.inline)
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Sync Off", state: .syncOff),
+            .init(name: "Sync On – This Device Only", state: .thisDeviceOnly, scope: .previews),
+            .init(name: "Sync On – Multiple Devices", state: .multipleDevices),
+            .init(name: "Sync On – Loading Devices", state: .loadingDevices, scope: .previews)
+        ],
+        configure: { state in
+            navigationContainer {
+                SimplifiedSyncSettingsView(model: model(for: state))
+                    .navigationTitle(UserText.syncTitle)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+    )
+
+    @ViewBuilder
+    private static func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16, *) {
+            NavigationStack(root: content)
+        } else {
+            NavigationView(content: content)
+                .navigationViewStyle(.stack)
+        }
+    }
+
+    private static func model(for state: State) -> SyncSettingsViewModel {
+        switch state {
+        case .syncOff:
+            return .preview(isSyncEnabled: false)
+        case .thisDeviceOnly:
+            return .preview(isSyncEnabled: true, devices: [.thisDevice], autoRestoreProvider: .enabled)
+        case .multipleDevices:
+            return .preview(isSyncEnabled: true, devices: [.thisDevice, .desktop, .otherMobile], autoRestoreProvider: .enabled)
+        case .loadingDevices:
+            return .preview(isSyncEnabled: true, devices: [])
         }
     }
 }
-
-#Preview("Sync On – This Device Only") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: true, devices: [.thisDevice], autoRestoreProvider: .enabled))
-                .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
-#Preview("Sync On – Multiple Devices") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: true, devices: [.thisDevice, .desktop, .otherMobile], autoRestoreProvider: .enabled))
-                .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
-#Preview("Sync On – Loading Devices") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: true, devices: []))
-                .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
-#Preview("Sync Off (Legacy brand)") {
-    RebrandedPreview(isRebranded: false) {
-        NavigationView {
-            SimplifiedSyncSettingsView(model: .preview(isSyncEnabled: false))
-                .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
 #endif

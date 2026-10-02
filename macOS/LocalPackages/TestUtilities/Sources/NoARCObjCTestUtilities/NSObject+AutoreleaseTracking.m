@@ -48,10 +48,21 @@ static const void *AutoreleaseTrackersKey = &AutoreleaseTrackersKey;
 @implementation NSObject (AutoreleaseTracking)
 
 static IMP originalAutoreleaseIMP = NULL;
+static Class trackedWebViewClass = Nil;
+static Class trackedWindowClass = Nil;
+static Class trackedWindowControllerClass = Nil;
+static Class trackedViewControllerClass = Nil;
+static Class trackedTabBarItemCellViewClass = Nil;
 
 + (void)enableAutoreleaseTracking {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        trackedWebViewClass = objc_getClass("WKWebView");
+        trackedWindowClass = objc_getClass("NSWindow");
+        trackedWindowControllerClass = objc_getClass("NSWindowController");
+        trackedViewControllerClass = objc_getClass("NSViewController");
+        trackedTabBarItemCellViewClass = NSClassFromString(@"TabBarItemCellView");
+
         Method originalMethod = class_getInstanceMethod([NSObject class], @selector(autorelease));
         Method swizzledMethod = class_getInstanceMethod([NSObject class], @selector(swizzled_autorelease));
         
@@ -65,11 +76,11 @@ static IMP originalAutoreleaseIMP = NULL;
     id result = ((id (*)(id, SEL))originalAutoreleaseIMP)(self, @selector(autorelease));
     
     // Only track NSWindow and NSView objects to avoid excessive tracking
-    if (!([self isKindOfClass:[WKWebView class]]
-          || [self isKindOfClass:[NSWindow class]]
-          || [self isKindOfClass:[NSWindowController class]]
-          || [self isKindOfClass:[NSViewController class]]
-          || [self isKindOfClass:NSClassFromString(@"TabBarItemCellView")])) {
+    if (!([self isKindOfClass:trackedWebViewClass]
+          || [self isKindOfClass:trackedWindowClass]
+          || [self isKindOfClass:trackedWindowControllerClass]
+          || [self isKindOfClass:trackedViewControllerClass]
+          || [self isKindOfClass:trackedTabBarItemCellViewClass])) {
         return result;
     }
     

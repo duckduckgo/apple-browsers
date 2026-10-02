@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "dfbdb5e9dea9bf076a08173f817aea0f4cfb72d8",
-        "version" : "17.4.0"
+        "branch" : "pr-releases/dominik/chrome-web-store-macos",
+        "revision" : "f21b3c354c8bf2944e6724067965e4ddcf2be77c"
       }
     },
     {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "91e2df5657486c4a92241138150ee8ec19ec42cb445cc017768037bce0d007dd",
+  "originHash" : "2cd0efe7731dd9b32c85424073068fe1943c661db4e31bab5285786a915fa791",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "b202c8865fccafc55f70017ca1c4e36ff0c55e1c",
-        "version" : "17.15.0"
+        "branch" : "pr-releases/dominik/chrome-web-store-macos",
+        "revision" : "527faa5ad8389f70188265bc4989ed59638788e6"
       }
     },
     {

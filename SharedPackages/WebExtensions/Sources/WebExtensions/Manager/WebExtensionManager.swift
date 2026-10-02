@@ -81,6 +81,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let storageProvider: WebExtensionStorageProviding
     public let loader: WebExtensionLoading
     public let permissionController: WebExtensionPermissionController?
+    public var chromeWebStore: ChromeWebStoreManaging?
     public let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening
 
@@ -246,13 +247,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public func installExtension(from sourceURL: URL) async throws {
+        try await installExtension(from: sourceURL, chromeWebStoreID: nil)
+    }
+
+    @MainActor
+    func installExtension(from sourceURL: URL, chromeWebStoreID: String?) async throws {
         Logger.webExtensions.debug("🔄 Installing extension from: \(sourceURL.path)")
 
         let metadata = try await WKWebExtension.metadata(from: sourceURL)
         let identifier = UUID().uuidString
         // A manifest's DDG identifier is not enough of a proof that it came from the app bundle. We're additionally verifying sourceURL.
         let isBundled = EmbeddedWebExtensionRegistry.all.contains { $0.bundledURL?.standardizedFileURL == sourceURL.standardizedFileURL }
-        let embeddedType = permissionController == nil || isBundled ? metadata.type : nil
+        let embeddedType = chromeWebStoreID == nil && (permissionController == nil || isBundled) ? metadata.type : nil
         if embeddedType != nil {
             permissionController?.trustedInstallations.insert(identifier)
         }
@@ -275,7 +281,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 filename: loadResult.filename,
                 name: loadResult.displayName,
                 version: loadResult.version,
-                embeddedType: embeddedType
+                embeddedType: embeddedType,
+                chromeWebStoreID: chromeWebStoreID
             )
 
             installationStore.add(installedExtension)
@@ -307,7 +314,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public func uninstallExtension(identifier: String) throws {
         Logger.webExtensions.debug("🔄 Uninstalling extension '\(identifier)'")
 
-        let embeddedType = installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType
+        let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
+        let embeddedType = installedExtension?.embeddedType
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -347,6 +355,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
         pixelFiring.fire(.uninstalled)
         notifyUpdate()
+        if let extensionId = installedExtension?.chromeWebStoreID {
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionRemoved, object: self,
+                                            userInfo: ["extensionId": extensionId])
+        }
     }
 
     @MainActor
@@ -756,6 +768,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 }
 
 public extension Notification.Name {
+
+    /// Posted after successful removal and installation-state update, for every removal entry point.
+    /// `userInfo["extensionId"]` contains the Chrome Web Store ID, not the local installation UUID.
+    static let chromeWebStoreExtensionRemoved = Notification.Name("chromeWebStoreExtensionRemoved")
 
     /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
     ///

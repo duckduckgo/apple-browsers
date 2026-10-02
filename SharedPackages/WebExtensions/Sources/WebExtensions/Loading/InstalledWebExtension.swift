@@ -37,6 +37,9 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil for user-installed extensions.
     public let embeddedType: DuckDuckGoWebExtensionType?
 
+    /// Verified Chrome Web Store identity; independent of the local installation UUID.
+    public let chromeWebStoreID: String?
+
     public var id: String { uniqueIdentifier }
 
     /// Whether this extension was installed from the app bundle (embedded).
@@ -49,12 +52,14 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         filename: String,
         name: String?,
         version: String?,
-        embeddedType: DuckDuckGoWebExtensionType? = nil
+        embeddedType: DuckDuckGoWebExtensionType? = nil,
+        chromeWebStoreID: String? = nil
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
         self.name = name
         self.version = version
         self.embeddedType = embeddedType
+        self.chromeWebStoreID = chromeWebStoreID
     }
 }

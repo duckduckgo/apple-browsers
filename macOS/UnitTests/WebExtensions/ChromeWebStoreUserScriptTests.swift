@@ -38,12 +38,65 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     }
 
     func testContractAndUnknownMethods() {
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service }, buildType: makeBuildType())
         XCTAssertEqual(subfeature.featureName, "chromeWebstorePatching")
-        for method in ["getExtensionStatus", "installExtension", "removeExtension"] {
+        for method in ["initialSetup", "getExtensionStatus", "installExtension", "removeExtension"] {
             XCTAssertNotNil(subfeature.handler(forMethodNamed: method))
         }
         XCTAssertNil(subfeature.handler(forMethodNamed: "unknown"))
+    }
+
+    func testInitialSetupReportsBuildAvailabilityWithoutAnExtensionIDOrService() async throws {
+        for isAppStore in [false, true] {
+            let subfeature = ChromeWebStoreUserScript(serviceProvider: {
+                XCTFail("Setup must not resolve the extension service")
+                return nil
+            }, buildType: makeBuildType(isAppStore: isAppStore))
+            let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "initialSetup"))
+            let response = try dictionary(await handler([String: String](), message()))
+            XCTAssertEqual(response["enabled"] as? Bool, !isAppStore)
+        }
+    }
+
+    func testAppStoreOperationsCannotReachService() async throws {
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: {
+            XCTFail("App Store operations must not resolve the extension service")
+            return self.service
+        }, buildType: makeBuildType(isAppStore: true))
+        for method in ["getExtensionStatus", "installExtension", "removeExtension"] {
+            let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: method))
+            do {
+                _ = try await handler([
+                    "extensionId": identifier,
+                    "crxUrl": ChromeWebStoreURL.downloadURL(for: identifier).absoluteString
+                ], message())
+                XCTFail("App Store operation accepted")
+            } catch ChromeWebStoreError.unavailable {}
+        }
+    }
+
+    func testInitialSetupRejectsUntrustedOriginsSubframesAndStalePages() async throws {
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil }, buildType: makeBuildType())
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "initialSetup"))
+        for message in [
+            message(origin: "http://chromewebstore.google.com/"),
+            message(origin: "https://chromewebstore.google.com.evil.example/"),
+            message(origin: "https://chromewebstore.google.com:8443/"),
+            message(isMain: false),
+            message(page: "https://evil.example/")
+        ] {
+            do {
+                _ = try await handler([String: String](), message)
+                XCTFail("Untrusted setup request accepted")
+            } catch ChromeWebStoreError.invalidRequest {}
+        }
+    }
+
+    private func makeBuildType(isAppStore: Bool = false) -> ApplicationBuildTypeMock {
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = isAppStore
+        buildType.isSparkleBuild = !isAppStore
+        return buildType
     }
 
     func testStatusResponseAndUnavailableService() async throws {
@@ -52,7 +105,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
             let response = try await request("getExtensionStatus")
             XCTAssertEqual(response["status"] as? String, status.rawValue)
         }
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil })
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil }, buildType: makeBuildType())
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getExtensionStatus"))
         let result = try await handler(["extensionId": identifier], message())
         let response = try dictionary(result)
@@ -99,7 +152,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     }
 
     private func request(_ method: String, extra: [String: String] = [:], message: WKScriptMessage? = nil) async throws -> [String: Any] {
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service }, buildType: makeBuildType())
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: method))
         var params = ["extensionId": identifier]
         params.merge(extra) { _, new in new }

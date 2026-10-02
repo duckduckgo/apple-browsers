@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Combine
 import Common
 import UserScript
@@ -29,6 +30,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     let featureName = featureNameValue
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: ChromeWebStoreURL.host)])
     weak var broker: UserScriptMessageBroker?
+    private let isEnabled: Bool
     private let serviceProvider: @MainActor () -> ChromeWebStoreManaging?
 
     private let notificationCenter: NotificationCenter
@@ -36,13 +38,16 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     @MainActor private weak var webView: WKWebView?
 
     init(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?,
-         notificationCenter: NotificationCenter = .default) {
+         notificationCenter: NotificationCenter = .default,
+         buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+        self.isEnabled = buildType.isSparkleBuild
         self.serviceProvider = serviceProvider
         self.notificationCenter = notificationCenter
     }
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
+        guard isEnabled else { return }
         removalCancellable = notificationCenter.publisher(for: .chromeWebStoreExtensionRemoved)
             .sink { [weak self] notification in
                 guard let extensionId = notification.userInfo?["extensionId"] as? String else { return }
@@ -55,7 +60,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     @MainActor
     private func extensionRemoved(_ extensionId: String) {
         // A tab may have navigated away since its last validated store request.
-        guard ChromeWebStoreURL.isValidExtensionID(extensionId),
+        guard isEnabled, ChromeWebStoreURL.isValidExtensionID(extensionId),
               let webView, let url = webView.url,
               url.scheme == "https", url.host == ChromeWebStoreURL.host,
               url.port == nil || url.port == 443 else { return }
@@ -75,6 +80,10 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         private(set) lazy var versionedCrxUrl: URL = crxUrl.addingOrReplacing(ChromeWebStoreURL.prodversionQueryItem)
     }
 
+    struct InitialSetupResponse: Encodable {
+        let enabled: Bool
+    }
+
     struct StatusResponse: Encodable {
         let status: ChromeWebStoreStatus
     }
@@ -84,7 +93,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     }
 
     enum Method: String {
-        case getExtensionStatus, installExtension, removeExtension, extensionRemoved
+        case initialSetup, getExtensionStatus, installExtension, removeExtension, extensionRemoved
     }
 
     func handler(forMethodNamed methodName: String) -> Handler? {
@@ -103,8 +112,16 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
               origin.port == 0 || origin.port == 443,
               let pageURL = message.webView?.url,
               pageURL.scheme == "https", pageURL.host == ChromeWebStoreURL.host,
-              pageURL.port == nil || pageURL.port == 443,
-              let request: ExtensionRequest = DecodableHelper.decode(from: params),
+              pageURL.port == nil || pageURL.port == 443 else { throw ChromeWebStoreError.invalidRequest }
+
+        // Setup is build-level and does not require an extension ID or a service.
+        if method == .initialSetup {
+            return InitialSetupResponse(enabled: isEnabled)
+        }
+
+        guard isEnabled else { throw ChromeWebStoreError.unavailable }
+
+        guard let request: ExtensionRequest = DecodableHelper.decode(from: params),
               ChromeWebStoreURL.isValidExtensionID(request.extensionId) else { throw ChromeWebStoreError.invalidRequest }
 
         // Retain only a weak reference, and only after validating the main frame.
@@ -123,7 +140,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false
             return OperationResponse(success: success)
-        case .extensionRemoved:
+        case .initialSetup, .extensionRemoved:
             return nil
         }
     }

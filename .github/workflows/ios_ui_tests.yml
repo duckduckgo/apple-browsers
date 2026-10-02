@@ -86,6 +86,7 @@ jobs:
           -scheme "iOS UI Tests" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/iOS-UI-Tests.xcresult" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           -test-iterations 2 \
@@ -97,7 +98,7 @@ jobs:
 
     - name: Upload UI test diagnostics
       if: failure() || cancelled()
-      uses: actions/upload-artifact@v6
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ios-ui-test-diagnostics
         path: |

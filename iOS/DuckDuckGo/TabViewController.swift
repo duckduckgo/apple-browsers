@@ -207,6 +207,7 @@ class TabViewController: UIViewController {
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
+    var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     private var webViewLayoutConstraints: [NSLayoutConstraint] = []
     private var fullscreenStateObserver: NSKeyValueObservation?
@@ -333,6 +334,7 @@ class TabViewController: UIViewController {
         isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
+    @objc dynamic private(set) var floatingPageBackgroundColor: UIColor?
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
@@ -899,7 +901,6 @@ class TabViewController: UIViewController {
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
         )
-        coordinator.tabProvider = { [weak self] in self?.tabModel }
         coordinator.delegate = self
         return coordinator
     }()
@@ -970,7 +971,7 @@ class TabViewController: UIViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
-            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.textZoomCoordinator = textZoomCoordinator
         self.autoconsentManagement = autoconsentManagement
@@ -1271,6 +1272,11 @@ class TabViewController: UIViewController {
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
+        let webViewLayout = FloatingUILayoutPolicy.webViewLayout(obscuredContentInsets: obscuredInsets)
+        webViewTopAnchorConstraint?.constant = webViewLayout.topAnchorConstant
+        webViewBottomAnchorConstraint?.constant = webViewLayout.bottomAnchorConstant
+        obscuredInsets = webViewLayout.obscuredContentInsets
+
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
             ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
             : 0
@@ -1278,7 +1284,6 @@ class TabViewController: UIViewController {
         if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
             scrollViewAdjustmentBehaviorBeforeFloatingUI = WebViewScrollViewInsetUpdater.beginManaging(webView.scrollView)
         }
-        webViewBottomAnchorConstraint?.constant = 0
         if additionalSafeAreaInsets != .zero {
             additionalSafeAreaInsets = .zero
         }
@@ -1294,6 +1299,7 @@ class TabViewController: UIViewController {
 
     private func updateWebViewLayoutForClassicUI(for barsVisibilityPercent: CGFloat) {
         applyContextualOnboardingTopInset(0)
+        webViewTopAnchorConstraint?.constant = 0
         borderView.isHidden = false
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
@@ -2328,13 +2334,15 @@ class TabViewController: UIViewController {
     private func pinWebViewToContainer() {
         webView.translatesAutoresizingMaskIntoConstraints = false
 
-        // Retained so the fullscreen round-trip re-activates the same objects, preserving the bottom
-        // constant. Rebuilt when a different web view is attached.
+        // Retained so the fullscreen round-trip re-activates the same objects, preserving constants.
+        // Rebuilt when a different web view is attached.
         if webViewLayoutConstraints.first?.firstItem !== webView {
+            let topConstraint = webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor)
             let bottomConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+            webViewTopAnchorConstraint = topConstraint
             webViewBottomAnchorConstraint = bottomConstraint
             webViewLayoutConstraints = [
-                webView.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+                topConstraint,
                 webView.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
                 bottomConstraint,
                 webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
@@ -2390,7 +2398,9 @@ class TabViewController: UIViewController {
     /// painted content valid, so WebKit animates to fullscreen instead of re-rendering from blank.
     private func onScreenWebViewRect(in host: UIView) -> CGRect {
         var rect = webViewContainer.bounds
-        rect.size.height += webViewBottomAnchorConstraint?.constant ?? 0
+        let topOffset = webViewTopAnchorConstraint?.constant ?? 0
+        rect.origin.y += topOffset
+        rect.size.height += (webViewBottomAnchorConstraint?.constant ?? 0) - topOffset
         return webViewContainer.convert(rect, to: host)
     }
 
@@ -2781,6 +2791,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if floatingUIManager.isFloatingUIEnabled {
+            floatingPageBackgroundColor = nil
+        }
         pageContextProcessTerminated = false
         pageContextInitialRequestPending = false
         pageContextRestoredPageNeedsLoad = false
@@ -2830,6 +2843,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
@@ -2876,6 +2890,50 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+    }
+
+    private func updateFloatingPageBackgroundColor(in webView: WKWebView) {
+        guard floatingUIManager.isFloatingUIEnabled else { return }
+
+        let javaScript = """
+        (() => {
+            const candidates = [];
+            const addAncestors = (element) => {
+                while (element) {
+                    candidates.push(element);
+                    element = element.parentElement;
+                }
+            };
+            addAncestors(document.elementFromPoint(innerWidth / 2, Math.max(0, innerHeight - 32)));
+            addAncestors(document.elementFromPoint(innerWidth / 2, Math.min(40, innerHeight - 1)));
+            addAncestors(document.elementFromPoint(innerWidth / 2, innerHeight / 2));
+            candidates.push(document.body, document.documentElement);
+
+            for (const element of candidates) {
+                if (!element) continue;
+                const backgroundColor = getComputedStyle(element).backgroundColor;
+                if (!backgroundColor.startsWith('rgb(') && !backgroundColor.startsWith('rgba(')) continue;
+                const values = backgroundColor.match(/[\\d.]+/g)?.map(Number);
+                if (!values || values.length < 3) continue;
+                const alpha = values.length > 3 ? values[3] : 1;
+                if (alpha > 0.05) {
+                    return [values[0] / 255, values[1] / 255, values[2] / 255, alpha];
+                }
+            }
+            return null;
+        })()
+        """
+        webView.evaluateJavaScript(javaScript) { [weak self, weak webView] result, _ in
+            guard let self, webView === self.webView else { return }
+            guard let components = result as? [NSNumber], components.count == 4 else {
+                floatingPageBackgroundColor = nil
+                return
+            }
+            floatingPageBackgroundColor = UIColor(red: CGFloat(truncating: components[0]),
+                                                  green: CGFloat(truncating: components[1]),
+                                                  blue: CGFloat(truncating: components[2]),
+                                                  alpha: CGFloat(truncating: components[3]))
+        }
     }
 
     /// Fires product telemetry related to the current URL

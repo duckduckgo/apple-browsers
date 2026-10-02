@@ -839,3 +839,20 @@ private extension AIChatCoordinator {
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
     }
 }
+
+#if DEBUG || REVIEW
+extension AIChatCoordinator {
+
+    /// Opens the sidebar on the current tab if needed, then swaps its chat for the browser tools panel.
+    func showBrowserToolsDebugPanel() {
+        guard !isAnimatingSidebarTransition,
+              let currentTabID = sidebarHost.currentTabID,
+              !isChatFloating(for: currentTabID) else { return }
+
+        if !isSidebarOpen(for: currentTabID) {
+            showSidebar(for: currentTabID, animated: true)
+        }
+        sessionStore.sessions[currentTabID]?.chatViewController?.showBrowserToolsDebugPanel()
+    }
+}
+#endif

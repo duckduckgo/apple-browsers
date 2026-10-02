@@ -581,6 +581,10 @@ class AIChatTests: UITestCase {
         let closeTabButton = app.buttons.matching(NSPredicate(format: "label == 'Close Tab' AND identifier != %@", Identifiers.tabCloseButton)).firstMatch
         XCTAssertTrue(closeTabButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Close Tab button should appear in the warning popover")
+        // The warning window ignores mouse events until hovered, even when its button exists in the accessibility tree.
+        closeTabButton.hover()
+        XCTAssertTrue(closeTabButton.wait(for: \.isHittable, equals: true, timeout: UITests.Timeouts.elementExistence),
+                      "Close Tab button should be hittable after hovering")
         closeTabButton.click()
 
         // Both tab and floating sidebar should be gone

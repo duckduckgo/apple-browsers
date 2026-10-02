@@ -293,7 +293,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
-            ?? featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
         let tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)

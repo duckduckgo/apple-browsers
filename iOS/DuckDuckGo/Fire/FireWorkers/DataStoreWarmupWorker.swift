@@ -20,11 +20,24 @@
 import Core
 
 actor DataStoreWarmupWorker: FireExecutorWorker {
-    
+
+    /// Returns `true` when the warm-up completed, `false` when it timed out.
+    typealias WarmUp = @MainActor (_ applicationState: DataStoreWarmup.ApplicationState, _ fireMode: Bool) async -> Bool
+
+    private enum Store {
+        case normal
+        case fireMode
+    }
+
     private(set) var applicationState: DataStoreWarmup.ApplicationState = .unknown
-    private var normalDataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
-    private var fireModeDataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
-    
+    private let warmUp: WarmUp
+    // Concurrent callers await the same warm-up, so the Duck.ai clear and the data burn share one.
+    private var warmUps: [Store: Task<Bool, Never>] = [:]
+
+    init(warmUp: @escaping WarmUp = { await DataStoreWarmup().ensureReady(applicationState: $0, fireMode: $1) }) {
+        self.warmUp = warmUp
+    }
+
     func setApplicationState(_ applicationState: DataStoreWarmup.ApplicationState) {
         self.applicationState = applicationState
     }
@@ -47,19 +60,28 @@ actor DataStoreWarmupWorker: FireExecutorWorker {
         }
     }
     
-    private func ensureNormalStoreIsReady() async {
-        // This needs to happen only once per app launch
-        if let normalDataStoreWarmup {
-            await normalDataStoreWarmup.ensureReady(applicationState: applicationState, fireMode: false)
-            self.normalDataStoreWarmup = nil
+    func ensureNormalStoreIsReady() async {
+        await ensureIsReady(.normal)
+    }
+
+    func ensureFireModeStoreIsReady() async {
+        await ensureIsReady(.fireMode)
+    }
+
+    /// Succeeds once per app launch. A warm-up that timed out left the data store in an unknown state,
+    /// so it is retried by the next burn rather than kept.
+    private func ensureIsReady(_ store: Store) async {
+        let warmUpTask = warmUps[store] ?? makeWarmUpTask(for: store)
+        warmUps[store] = warmUpTask
+        let completed = await warmUpTask.value
+        if !completed, warmUps[store] == warmUpTask {
+            warmUps[store] = nil
         }
     }
-    
-    private func ensureFireModeStoreIsReady() async {
-        // This needs to happen only once per app launch
-        if let fireModeDataStoreWarmup {
-            await fireModeDataStoreWarmup.ensureReady(applicationState: applicationState, fireMode: true)
-            self.fireModeDataStoreWarmup = nil
-        }
+
+    private func makeWarmUpTask(for store: Store) -> Task<Bool, Never> {
+        let warmUp = warmUp
+        let applicationState = applicationState
+        return Task { await warmUp(applicationState, store == .fireMode) }
     }
 }

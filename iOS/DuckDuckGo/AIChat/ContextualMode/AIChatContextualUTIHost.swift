@@ -483,6 +483,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     private func makeTabMentionSuggestionsView(in parent: UIViewController) -> MultiTabMentionSuggestionsView {
         let suggestionsView = MultiTabMentionSuggestionsView(showsGlassShadow: parent is AIChatContextualSheetViewController)
+        suggestionsView.overrideUserInterfaceStyle = coordinator.viewController.handler.isFireTab ? .dark : .unspecified
         suggestionsView.onSelect = { [weak self] in self?.coordinator.selectTabMention($0) }
         suggestionsView.onDismiss = { [weak self] in self?.coordinator.dismissTabMentions() }
         parent.view.insertSubview(suggestionsView, belowSubview: coordinator.viewController.view)

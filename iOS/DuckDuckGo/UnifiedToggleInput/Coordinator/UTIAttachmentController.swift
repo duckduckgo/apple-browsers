@@ -66,6 +66,7 @@ final class UTIAttachmentController {
         var tabAttachmentSource: () -> MultiTabAttachmentSource? = { nil }
         var tabAttachmentFeatureState: () -> AIChatContextualAttachMoreTabsState = { .unavailable }
         var pageContextRemoveHandler: () -> (() -> Void)? = { nil }
+        var isFireTab: () -> Bool = { false }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -103,6 +104,9 @@ final class UTIAttachmentController {
     }
 
     private func wirePresenter() {
+        presenter.isFireTabProvider = { [weak self] in
+            self?.environment.isFireTab() ?? false
+        }
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar
         }

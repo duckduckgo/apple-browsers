@@ -43,6 +43,7 @@ final class MultiTabMentionSuggestionsView: UIView {
     }
 
     private enum Metrics {
+        static let maximumChipWidthRatio: CGFloat = 0.8
         static let maximumVisibleRows = 3
         static let chipHeight: CGFloat = 36
         static let chipSpacing: CGFloat = 8
@@ -74,6 +75,7 @@ final class MultiTabMentionSuggestionsView: UIView {
         actionsView.configure(with: suggestions.map(Action.init),
                               preservesIconColors: true,
                               showsAddAccessory: true,
+                              maximumChipWidthRatio: Metrics.maximumChipWidthRatio,
                               isEnabled: { $0.suggestion.isEnabled })
         let rows = CGFloat(max(1, min(suggestions.count, Metrics.maximumVisibleRows)))
         scrollHeightConstraint.constant = rows * Metrics.chipHeight + (rows - 1) * Metrics.chipSpacing + 2 * Metrics.scrollPadding

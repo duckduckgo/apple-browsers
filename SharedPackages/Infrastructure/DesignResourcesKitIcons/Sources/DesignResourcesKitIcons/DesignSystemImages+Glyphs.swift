@@ -152,6 +152,7 @@ public extension DesignSystemImages {
             public static var priceTag: DesignSystemImage { .init(resource: .priceTag16) }
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility16) }
             public static var add: DesignSystemImage { .init(resource: .add16) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop16) }

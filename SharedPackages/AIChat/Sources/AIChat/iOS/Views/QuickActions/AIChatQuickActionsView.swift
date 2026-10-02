@@ -72,6 +72,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
     public func configure(with actions: [Action],
                           preservesIconColors: Bool = false,
                           showsAddAccessory: Bool = false,
+                          maximumChipWidthRatio: CGFloat = 1,
                           isEnabled: (Action) -> Bool = { _ in true }) {
         stackView.arrangedSubviews
             .filter { $0 !== loadingView }
@@ -94,6 +95,9 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
                 self?.onActionSelected?(action)
             }
             stackView.addArrangedSubview(chipView)
+            if maximumChipWidthRatio < 1 {
+                chipView.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: maximumChipWidthRatio).isActive = true
+            }
         }
     }
 

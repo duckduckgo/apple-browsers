@@ -37,8 +37,7 @@ public final class AIChatQuickActionChipView: UIView {
         static let iconLabelSpacing: CGFloat = 6
         static let borderWidth: CGFloat = 1
         static let highlightAlpha: CGFloat = 0.1
-        static let addAccessorySize: CGFloat = 20
-        static let addIconSize: CGFloat = 12
+        static let addAccessorySize: CGFloat = 16
         static let addAccessorySpacing: CGFloat = 8
 
         // Glass appearance, per the contextual floating-input design.
@@ -100,27 +99,16 @@ public final class AIChatQuickActionChipView: UIView {
         return label
     }()
 
-    private lazy var addAccessoryView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
-        view.layer.cornerRadius = Constants.addAccessorySize / 2
+    private lazy var addAccessoryView: UIImageView = {
+        let view = UIImageView(image: DesignSystemImages.Glyphs.Size16.addCircle.withRenderingMode(.alwaysTemplate))
+        view.tintColor = UIColor(designSystemColor: .iconsTertiary)
+        view.contentMode = .scaleAspectFit
         view.isUserInteractionEnabled = false
         view.isHidden = true
         view.translatesAutoresizingMaskIntoConstraints = false
-
-        let icon = UIImageView(image: DesignSystemImages.Glyphs.Size12.add.withRenderingMode(.alwaysTemplate))
-        icon.tintColor = UIColor(designSystemColor: .textPrimary)
-        icon.contentMode = .scaleAspectFit
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(icon)
         NSLayoutConstraint.activate([
             view.widthAnchor.constraint(equalToConstant: Constants.addAccessorySize),
             view.heightAnchor.constraint(equalToConstant: Constants.addAccessorySize),
-            icon.widthAnchor.constraint(equalToConstant: Constants.addIconSize),
-            icon.heightAnchor.constraint(equalToConstant: Constants.addIconSize),
-            // Add-12's drawing is offset from its canvas center by (+0.5, -0.5).
-            icon.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: -0.5),
-            icon.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 0.5),
         ])
         return view
     }()

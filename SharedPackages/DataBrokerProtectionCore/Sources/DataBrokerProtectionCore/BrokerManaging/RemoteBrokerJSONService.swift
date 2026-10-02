@@ -304,7 +304,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     /// Bundled brokers were verified by CI, so they replace stored brokers even when older,
     /// and stored brokers that aren't bundled are disabled.
     private func revertToBundledBrokers() throws {
-        guard let bundledBrokers = try bundledBrokers() else { return }
+        /// An empty bundle means the bundled brokers are unavailable (e.g. in tests), not that none should run
+        guard let bundledBrokers = try bundledBrokers(), !bundledBrokers.isEmpty else { return }
 
         for brokerResource in bundledBrokers {
             try overwriteBroker(brokerResource)

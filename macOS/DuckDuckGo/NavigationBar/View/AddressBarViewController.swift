@@ -354,7 +354,7 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
 
         inactiveBackgroundView = ColorView(frame: .zero,
-                                           backgroundColor: .inactiveSearchBarBackground,
+                                           backgroundColor: NSColor(resource: .inactiveSearchBarBackground),
                                            cornerRadius: LayoutConstants.inactiveCornerRadius)
         inactiveBackgroundView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -363,26 +363,26 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderView.borderWidth = 0
 
         activeBackgroundView = ColorView(frame: .zero,
-                                         backgroundColor: .addressBarBackground,
+                                         backgroundColor: NSColor(resource: .addressBarBackground),
                                          cornerRadius: LayoutConstants.cornerRadius,
-                                         borderColor: .addressBarBorder,
+                                         borderColor: NSColor(resource: .addressBarBorder),
                                          borderWidth: LayoutConstants.activeBorderWidth)
         activeBackgroundView.translatesAutoresizingMaskIntoConstraints = false
 
         activeBackgroundViewWithSuggestions = ColorView(frame: .zero,
-                                                        backgroundColor: .addressBarBackground,
+                                                        backgroundColor: NSColor(resource: .addressBarBackground),
                                                         cornerRadius: LayoutConstants.cornerRadius,
-                                                        borderColor: .addressBarBorder,
+                                                        borderColor: NSColor(resource: .addressBarBorder),
                                                         borderWidth: LayoutConstants.borderWidth)
         activeBackgroundViewWithSuggestions.translatesAutoresizingMaskIntoConstraints = false
 
         innerBorderView = ColorView(frame: .zero,
                                     cornerRadius: LayoutConstants.cornerRadius,
-                                    borderColor: .addressBarInnerBorder,
+                                    borderColor: NSColor(resource: .addressBarInnerBorder),
                                     borderWidth: LayoutConstants.borderWidth)
         innerBorderView.translatesAutoresizingMaskIntoConstraints = false
 
-        bottomSeparatorView = ColorView(frame: .zero, backgroundColor: .addressBarSeparator)
+        bottomSeparatorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .addressBarSeparator))
         bottomSeparatorView.translatesAutoresizingMaskIntoConstraints = false
 
         activeBackgroundViewWithSuggestions.addSubview(innerBorderView)
@@ -433,7 +433,7 @@ final class AddressBarViewController: NSViewController {
 
         let switchToTabArrow = NSImageView()
         switchToTabArrow.translatesAutoresizingMaskIntoConstraints = false
-        switchToTabArrow.image = .arrowRight12
+        switchToTabArrow.image = NSImage(resource: .arrowRight12)
         switchToTabArrow.imageScaling = .scaleProportionallyDown
         switchToTabArrow.imageAlignment = .alignLeft
         switchToTabArrow.refusesFirstResponder = true
@@ -452,7 +452,7 @@ final class AddressBarViewController: NSViewController {
 
         shadowView = ShadowView()
         shadowView.translatesAutoresizingMaskIntoConstraints = false
-        shadowView.shadowColor = .addressBarShadow
+        shadowView.shadowColor = NSColor(resource: .addressBarShadow)
         shadowView.shadowOffset = LayoutConstants.shadowOffset
         shadowView.shadowRadius = LayoutConstants.shadowRadius
         shadowView.cornerRadius = LayoutConstants.cornerRadius

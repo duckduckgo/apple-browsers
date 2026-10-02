@@ -139,7 +139,7 @@ final class BrokerBundleVerificationTests: XCTestCase {
     func testWhenSignatureIsMalformedThenSignatureIsInvalid() throws {
         let rawSignature = try P256.Signing.PrivateKey().signature(for: Data()).rawRepresentation.base64EncodedData()
 
-        for signature in [Data("not base64!".utf8), Data("AAAA".utf8), rawSignature] {
+        for signature in [Data("not base64!".utf8), Data("AAAA".utf8), rawSignature, Data([0xFF, 0xFE])] {
             XCTAssertThrowsError(try stagingVerifier.verifyingKey(manifest: try fixture("main_config.json"), signature: signature)) {
                 XCTAssertEqual($0 as? BrokerBundleVerificationError, .signatureInvalid)
             }

@@ -924,9 +924,6 @@ private extension AIChatContextualSheetCoordinator {
         host.onSuggestionAccepted = { [weak self] in
             self?.sessionState.acceptSuggestedContext()
         }
-        host.onSuggestionDismissed = { [weak self] in
-            self?.sessionState.dismissSuggestedContext()
-        }
         // A host built mid-session (collapse, expand) inherits the offer already on screen.
         if let suggestion = sessionState.suggestedContext {
             host.setSuggestedContext(suggestion)

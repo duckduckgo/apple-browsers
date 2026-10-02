@@ -2395,17 +2395,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
     }
 
-    func testWhenAnOfferIsDismissedThenNothingIsAttachedOrDetached() {
-        arrangeOfferConditions()
-        sessionState.updateContext(makeTestContext(title: "Tokamak"))
-
-        sessionState.dismissSuggestedContext()
-
-        XCTAssertNil(sessionState.suggestedContext)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
-        XCTAssertNil(sessionState.intendedAttachedContext)
-    }
-
     func testWhenNavigatingThenAPreviousOfferIsDropped() {
         arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
@@ -2450,19 +2439,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
         XCTAssertNil(sessionState.suggestedContext)
-    }
-
-    func testWhenAPreviouslyDeclinedPageIsAttachedAndDetachedThenItIsOfferedAgain() {
-        arrangeOfferConditions()
-        let context = makeTestContext(title: "Tokamak")
-        sessionState.updateContext(context)
-        sessionState.dismissSuggestedContext()
-
-        sessionState.beginManualAttach()
-        sessionState.updateContext(context)
-        XCTAssertTrue(sessionState.handleChipRemoval())
-
-        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak", "Attaching it again withdraws the earlier decline")
     }
 
     func testWhenThePlaceholderFlagIsOffThenDetachingOffersNothing() {

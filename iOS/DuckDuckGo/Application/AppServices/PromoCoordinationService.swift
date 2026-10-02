@@ -158,8 +158,8 @@ final class PromoCoordinationService {
     }
 
     /// Runs `handler` once the modal prompt now pending has closed. Returns `false` when none is pending.
-    func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool {
-        modalPromptCoordinationManager.runOnceModalPromptCloses(handler)
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        modalPromptCoordinationManager.runOnceModalPromptCloses(while: shouldWait, handler)
     }
 }
 

@@ -25,7 +25,7 @@ protocol ModalPromptCoordinationManaging {
 
     /// Runs `handler` once, after the modal prompt now pending has left the screen or failed to
     /// appear. Returns `false`, keeping nothing, when no prompt is pending.
-    func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool
 
     /// Drops a handler that `runOnceModalPromptCloses(_:)` is still holding.
     func cancelModalPromptCloseHandler()
@@ -120,6 +120,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// a close handler waits, so they change nothing else.
     private weak var handedOffPromptRoot: UIViewController?
     private var isPromptAwaitingHandOff = false
+    private var promptCloseCheckID = UUID()
+    private var shouldKeepWaitingForPrompt: (@MainActor () -> Bool)?
     private var promptCloseHandler: (@MainActor () -> Void)?
 
     private(set) var didActuallyPresentModalPromptThisSession = false
@@ -276,13 +278,14 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Released the unredeemed slot held by \(type(of: provider)).")
     }
 
-    func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool {
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
         // Nothing to wait for when no prompt is on its way or on screen. That includes a held deferred
         // slot, and an attempt UIKit refused, whose legacy ID never clears.
-        guard !hasModalPromptLeftScreen else { return false }
+        guard shouldWait(), !hasModalPromptLeftScreen else { return false }
 
         let isAlreadyChecking = promptCloseHandler != nil
         promptCloseHandler = handler
+        shouldKeepWaitingForPrompt = shouldWait
         if !isAlreadyChecking {
             scheduleModalPromptCloseCheck()
         }
@@ -290,7 +293,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     }
 
     func cancelModalPromptCloseHandler() {
+        promptCloseCheckID = UUID()
         promptCloseHandler = nil
+        shouldKeepWaitingForPrompt = nil
     }
 }
 
@@ -392,13 +397,18 @@ private extension ModalPromptCoordinationManager {
     /// UIKit reports nothing when a presented root goes away, so its attachment is sampled while a
     /// handler waits. Nothing is scheduled while none does.
     func scheduleModalPromptCloseCheck() {
+        let checkID = promptCloseCheckID
         closeCheckScheduler.schedule(after: 0.25) { [weak self] in
-            guard let self, let handler = self.promptCloseHandler else { return }
+            guard let self, self.promptCloseCheckID == checkID, let handler = self.promptCloseHandler else { return }
+            guard self.shouldKeepWaitingForPrompt?() == true else {
+                self.cancelModalPromptCloseHandler()
+                return
+            }
             guard self.hasModalPromptLeftScreen else {
                 self.scheduleModalPromptCloseCheck()
                 return
             }
-            self.promptCloseHandler = nil
+            self.cancelModalPromptCloseHandler()
             handler()
         }
     }

@@ -25,16 +25,13 @@ struct RedesignedNewTabPageEscapeHatchView: View {
 
     var body: some View {
         if let escapeHatch = pageModel.escapeHatch {
-            EscapeHatchView(model: escapeHatch)
+            EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, Metrics.horizontalPadding)
-                .padding(.top, Metrics.topPadding)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
 
 private enum Metrics {
     static let horizontalPadding: CGFloat = 16
-    static let topPadding: CGFloat = 20
 }

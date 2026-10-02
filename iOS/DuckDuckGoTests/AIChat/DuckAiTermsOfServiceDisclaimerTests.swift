@@ -95,6 +95,13 @@ final class DuckAiTermsOfServiceDisclaimerTests: XCTestCase {
         XCTAssertFalse(store.hasAccepted)
     }
 
+    func testWhenTheFeatureIsOffThenAnEarlierAcceptanceDoesNotCount() {
+        store.recordWebReport()
+        feature.isAvailable = false
+
+        XCTAssertFalse(makeSUT().hasAccepted)
+    }
+
     // MARK: - Helpers
 
     private var store: DuckAiTermsOfServiceStore {

@@ -334,6 +334,7 @@ class TabViewController: UIViewController {
         isFloatingUIFeatureEnabled: isFloatingUIFeatureEnabledForCurrentLaunch,
         unifiedToggleInputFeature: unifiedToggleInputFeature
     )
+    @objc dynamic private(set) var floatingPageBackgroundColor: UIColor?
     lazy var aiChatTextSelectionFeature: AIChatTextSelectionFeatureProviding =
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
@@ -900,7 +901,6 @@ class TabViewController: UIViewController {
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
         )
-        coordinator.tabProvider = { [weak self] in self?.tabModel }
         coordinator.delegate = self
         return coordinator
     }()
@@ -1272,16 +1272,13 @@ class TabViewController: UIViewController {
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
-        let webViewLayout = FloatingUILayoutPolicy.webViewLayout(
-            obscuredContentInsets: obscuredInsets,
-            addressBarPosition: appSettings.currentAddressBarPosition
-        )
+        let webViewLayout = FloatingUILayoutPolicy.webViewLayout(obscuredContentInsets: obscuredInsets)
         webViewTopAnchorConstraint?.constant = webViewLayout.topAnchorConstant
         webViewBottomAnchorConstraint?.constant = webViewLayout.bottomAnchorConstant
         obscuredInsets = webViewLayout.obscuredContentInsets
 
         let refreshControlTopOffset = appSettings.currentAddressBarPosition == .top
-            ? max(0, webViewLayout.topAnchorConstant - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
+            ? max(0, obscuredInsets.top - webViewContainer.safeAreaInsets.top) + Constants.floatingRefreshControlClearance
             : 0
         pullToRefreshViewAdapter?.setTopOffset(refreshControlTopOffset)
         if scrollViewAdjustmentBehaviorBeforeFloatingUI == nil {
@@ -2794,6 +2791,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if floatingUIManager.isFloatingUIEnabled {
+            floatingPageBackgroundColor = nil
+        }
         pageContextProcessTerminated = false
         pageContextInitialRequestPending = false
         pageContextRestoredPageNeedsLoad = false
@@ -2843,6 +2843,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
@@ -2889,6 +2890,50 @@ extension TabViewController: WKNavigationDelegate {
 
         // Notify Special Error Page Navigation handler that webview successfully finished loading
         specialErrorPageNavigationHandler.handleWebView(webView, didFinish: navigation)
+    }
+
+    private func updateFloatingPageBackgroundColor(in webView: WKWebView) {
+        guard floatingUIManager.isFloatingUIEnabled else { return }
+
+        let javaScript = """
+        (() => {
+            const candidates = [];
+            const addAncestors = (element) => {
+                while (element) {
+                    candidates.push(element);
+                    element = element.parentElement;
+                }
+            };
+            addAncestors(document.elementFromPoint(innerWidth / 2, Math.max(0, innerHeight - 32)));
+            addAncestors(document.elementFromPoint(innerWidth / 2, Math.min(40, innerHeight - 1)));
+            addAncestors(document.elementFromPoint(innerWidth / 2, innerHeight / 2));
+            candidates.push(document.body, document.documentElement);
+
+            for (const element of candidates) {
+                if (!element) continue;
+                const backgroundColor = getComputedStyle(element).backgroundColor;
+                if (!backgroundColor.startsWith('rgb(') && !backgroundColor.startsWith('rgba(')) continue;
+                const values = backgroundColor.match(/[\\d.]+/g)?.map(Number);
+                if (!values || values.length < 3) continue;
+                const alpha = values.length > 3 ? values[3] : 1;
+                if (alpha > 0.05) {
+                    return [values[0] / 255, values[1] / 255, values[2] / 255, alpha];
+                }
+            }
+            return null;
+        })()
+        """
+        webView.evaluateJavaScript(javaScript) { [weak self, weak webView] result, _ in
+            guard let self, webView === self.webView else { return }
+            guard let components = result as? [NSNumber], components.count == 4 else {
+                floatingPageBackgroundColor = nil
+                return
+            }
+            floatingPageBackgroundColor = UIColor(red: CGFloat(truncating: components[0]),
+                                                  green: CGFloat(truncating: components[1]),
+                                                  blue: CGFloat(truncating: components[2]),
+                                                  alpha: CGFloat(truncating: components[3]))
+        }
     }
 
     /// Fires product telemetry related to the current URL

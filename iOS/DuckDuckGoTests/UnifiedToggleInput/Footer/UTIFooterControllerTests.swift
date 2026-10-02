@@ -170,7 +170,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
 
         XCTAssertEqual(sut.currentMessages.map(\.id), [.modelSwitch])
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
     }
 
     func testEndingVisibleMessageImmediatelyFillsItsSlot() {
@@ -182,8 +182,8 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentMessages.map(\.id), [.usageWarning])
     }
 
-    func testAttachmentChangeAtDisplayCapDoesNotReleaseVacancy() {
-        privacyDisplayStore.displayCount = 3
+    func testAttachmentChangeAfterPrivacyShownDoesNotReleaseVacancy() {
+        privacyDisplayStore.hasShown = true
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
         sut.showModelSwitchNotice(modelSwitchNotice())
@@ -192,7 +192,7 @@ final class UTIFooterControllerTests: XCTestCase {
         privacyKind = .file
         sut.refresh()
         XCTAssertTrue(sut.currentMessages.isEmpty)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
     }
 
     func testCountdownChangesDoNotReleaseDismissalVacancy() {
@@ -329,7 +329,7 @@ final class UTIFooterControllerTests: XCTestCase {
         controller.footerVisibilityChanged(isVisible: true)
         controller.dismissCurrent()
         XCTAssertEqual(controller.currentMessages.map(\.id), [.attachmentPrivacy])
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
     }
 
     func testPrivacyOutranksUsageWarningAndRemovalRestoresWarning() {
@@ -341,7 +341,7 @@ final class UTIFooterControllerTests: XCTestCase {
         privacyKind = nil
         sut.refresh()
         XCTAssertTrue(sut.currentMessage?.title.contains("75%") == true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
     }
 
     func testAttachedTabDoesNotTriggerFileUploadPrivacy() {
@@ -372,7 +372,7 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(presenter.appliedStacks.count, appliedCount)
         XCTAssertEqual(presenter.pendingClearCount, 0)
         XCTAssertEqual(limitsProvider.readCount, snapshotReadCount)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
     }
 
     func testHidingPromotionPreservesVisibleUsageWarningWithoutReadingNewLimitsOrUpdatingPresenter() {
@@ -409,7 +409,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
         XCTAssertNil(dismissalStore.dismissal(for: .weekly))
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
         XCTAssertEqual(privacyEvents, [.shown])
         XCTAssertTrue(measurementFiring.events.isEmpty)
         privacyKind = nil
@@ -432,15 +432,15 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.footerVisibilityChanged(isVisible: false)
         sut.footerVisibilityChanged(isVisible: true)
         XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
         sut.resetForPoseChange()
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped, .shown])
-        XCTAssertEqual(privacyEventKinds, [.image, .file, .file])
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(privacyEvents, [.shown, .learnMoreTapped])
     }
 
-    func testRemovingAndReattachingFiresTwoShownPixelsAndCountsOneDraft() {
+    func testRemovingAndReattachingShowsOnce() {
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
@@ -449,9 +449,10 @@ final class UTIFooterControllerTests: XCTestCase {
         privacyKind = .file
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
-        XCTAssertEqual(privacyEvents, [.shown, .shown])
-        XCTAssertEqual(privacyEventKinds, [.image, .file])
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
+        XCTAssertEqual(privacyEvents, [.shown])
+        XCTAssertEqual(privacyEventKinds, [.image])
     }
 
     func testTermsLinkDoesNotFireAttachmentPrivacyPixel() {
@@ -497,7 +498,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         XCTAssertEqual(sut.currentMessages.map(\.id), [.modelSwitch])
         XCTAssertEqual(privacyEvents, [.shown])
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
     }
 
     func testSwitchingToSuggestedModelRetiresHiddenWarningWithoutDismissal() {
@@ -552,7 +553,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
         sut.setEditing(false)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
     }
 
     func testBlockedSubmissionPreventsDisclosureWithoutCountingIt() {
@@ -564,21 +565,21 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.dismiss(.outOfUsage)
         sut.refresh()
         XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
         XCTAssertTrue(privacyEvents.isEmpty)
         XCTAssertTrue(viewModel.warning?.blocksInput == true)
         limitsProvider.limits = .noData
         sut.refresh()
         XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
     }
 
     func testUnseenResolvedMessageCannotBeDismissed() {
         privacyKind = .image
         sut.refresh()
         sut.dismiss(.attachmentPrivacy)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
     }
 
@@ -592,14 +593,14 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.resetForPoseChange()
         sut.refresh()
         XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
     }
 
     func testPrivacySubmissionAndAttachmentRemovalClearDisplayWithoutIncrementing() {
         privacyKind = .image
         sut.refresh()
         sut.recordPromptSubmitted()
-        XCTAssertEqual(privacyDisplayStore.displayCount, 0)
+        XCTAssertFalse(privacyDisplayStore.hasShown)
         privacyKind = nil
         sut.refresh()
         XCTAssertNil(sut.currentMessage)
@@ -608,33 +609,27 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentMessage, UTIFooterMessageMapper().attachmentPrivacyMessage())
     }
 
-    func testTemporaryOcclusionPreservesDisplayButPoseAndModeChangesEndIt() {
+    func testTemporaryOcclusionPreservesDisplayButPoseChangeEndsIt() {
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
         sut.footerVisibilityChanged(isVisible: false)
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        XCTAssertEqual(privacyEvents, [.shown])
         sut.resetForPoseChange()
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
-        sut.setSuppressed(true)
-        sut.setSuppressed(false)
-        sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
-        sut.setEditing(true)
-        sut.setEditing(false)
-        XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(privacyEvents, [.shown])
     }
 
-    func testThirdAppearanceSurvivesRefreshAndLinkThenStopsAfterRemoval() {
-        privacyDisplayStore.displayCount = 2
+    func testDisplaySurvivesRefreshAndLinkThenStopsAfterRemoval() {
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
         sut.footerVisibilityChanged(isVisible: false)
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
@@ -646,11 +641,10 @@ final class UTIFooterControllerTests: XCTestCase {
         privacyKind = .file
         sut.refresh()
         XCTAssertTrue(sut.currentMessages.isEmpty)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 3)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
     }
 
-    func testThirdAppearanceDoesNotReturnAfterPoseReset() {
-        privacyDisplayStore.displayCount = 2
+    func testDisplayDoesNotReturnAfterPoseReset() {
         privacyKind = .image
         sut.refresh()
         sut.footerVisibilityChanged(isVisible: true)
@@ -670,7 +664,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.dismiss(.termsConsent)
         sut.dismiss(.attachmentPrivacy)
         XCTAssertEqual(sut.currentMessages.count, 2)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
         sut.acceptTermsIfDisclaimerShown()
         privacyKind = nil
         sut.recordPromptSubmitted()
@@ -678,8 +672,8 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertTrue(termsStore.hasAccepted)
     }
 
-    func testTermsAloneAtPrivacyCapAndHiddenWhileEditing() {
-        privacyDisplayStore.displayCount = 3
+    func testTermsAloneAfterPrivacyShownAndHiddenWhileEditing() {
+        privacyDisplayStore.hasShown = true
         privacyKind = .image
         sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
         sut.refresh()
@@ -1279,6 +1273,17 @@ final class UTIFooterControllerTests: XCTestCase {
                        .upsellTapped(DuckAiUsageWarningExposure(kind: .limitReached, window: .weekly)))
     }
 
+    func test_performPrimaryAction_reportsTheWeeklyLimitCTAWhenTheDailyLimitOffersTheHandOff() {
+        limitsProvider.limits = dailyReachedWithWeeklyHandOff()
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.performPrimaryAction()
+
+        XCTAssertEqual(measurementFiring.events.last,
+                       .weeklyLimitTapped(DuckAiUsageWarningExposure(kind: .limitReached, window: .daily)))
+    }
+
     func test_recordPromptSubmitted_reportsAgainstTheWarningTheUserSaw() {
         limitsProvider.limits = weeklyUsage(75)
         sut.refresh()
@@ -1550,7 +1555,7 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.acceptTermsIfDisclaimerShown()
         XCTAssertFalse(termsStore.hasAccepted)
         sut.footerVisibilityChanged(isVisible: true)
-        XCTAssertEqual(privacyDisplayStore.displayCount, 1)
+        XCTAssertTrue(privacyDisplayStore.hasShown)
         sut.acceptTermsIfDisclaimerShown()
         XCTAssertTrue(termsStore.hasAccepted)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.attachmentPrivacy])
@@ -1928,10 +1933,10 @@ private final class SpyUTIFooterPresenter: UTIFooterPresenting {
     }
 }
 
-private final class PrivacyDisplayStore: UTIFooterDisplayStoring {
-    var displayCount = 0
-    func recordDisplay() { displayCount += 1 }
-    func reset() { displayCount = 0 }
+private final class PrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring {
+    var hasShown = false
+    func markShown() { hasShown = true }
+    func reset() { hasShown = false }
 }
 
 @MainActor

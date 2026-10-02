@@ -61,14 +61,7 @@ final class SitePermissionsXCUITests: XCTestCase {
 
         openMenu()
         XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
-        tap(app.buttons["Settings"])
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
-        // Settings uses lazy list cells; inspect each viewport instead of only the initial screen.
-        for _ in 0..<6 {
-            XCTAssertFalse(element("Settings.SitePermissions").exists)
-            app.swipeUp()
-        }
-        XCTAssertFalse(element("Settings.SitePermissions").exists)
+        assertSitePermissionSettingsHidden()
     }
 
     func testWhenFlagOverrideIsOnThenAvailabilityRequiresIOS16ForOrdinaryAndFireTabs() {
@@ -101,13 +94,7 @@ final class SitePermissionsXCUITests: XCTestCase {
                 openMenu()
                 XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
                 XCTAssertFalse(element("SitePermissions.Sheet").exists)
-                tap(app.buttons["Settings"])
-                XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
-                for _ in 0..<6 {
-                    XCTAssertFalse(element("Settings.SitePermissions").exists)
-                    app.swipeUp()
-                }
-                XCTAssertFalse(element("Settings.SitePermissions").exists)
+                assertSitePermissionSettingsHidden()
             }
         }
     }
@@ -1226,6 +1213,17 @@ final class SitePermissionsXCUITests: XCTestCase {
         openMenu()
         tap(app.buttons["Settings"])
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+    }
+
+    private func assertSitePermissionSettingsHidden() {
+        tap(app.buttons["Settings"])
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
+        // Settings uses lazy list cells; inspect each viewport instead of only the initial screen.
+        for _ in 0..<6 {
+            XCTAssertFalse(element("Settings.SitePermissions").exists)
+            app.swipeUp()
+        }
+        XCTAssertFalse(element("Settings.SitePermissions").exists)
     }
 
     private func openPermissionSettings() {

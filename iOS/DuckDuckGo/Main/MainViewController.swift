@@ -2876,8 +2876,8 @@ class MainViewController: UIViewController {
         return didShowKeyboard
     }
 
-    /// The app-open keyboard. The New Tab Page visit started with the keyboard down, because the app
-    /// decides on it a moment later, so the visit is told the keyboard came up.
+    /// An automatic keyboard arrival. The New Tab Page visit started with the keyboard down, because
+    /// focus is decided a moment later, so the visit is told the keyboard came up.
     func enterSearchOnAppOpen() {
         guard presentedViewController == nil else { return }
         if isNewTabPageVisible, isAppOpenKeyboardWindowVisible {
@@ -2899,7 +2899,7 @@ class MainViewController: UIViewController {
               !isNewTabPageKeyboardBlockedByDialog,
               !isNewTabPageKeyboardHeldForOnboarding,
               !daxDialogsManager.isShowingContextualOnboardingDialog else { return }
-        enterSearch()
+        enterSearchOnAppOpen()
     }
 
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {

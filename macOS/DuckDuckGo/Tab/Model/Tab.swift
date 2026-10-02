@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import AutoconsentStats
 import BrowserServicesKit
 import Combine

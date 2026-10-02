@@ -286,7 +286,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
@@ -853,6 +852,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Failsafe kill switch for the CPM background-view graveyard treatment.
+    case cpmBackgroundGraveyardTreatment
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

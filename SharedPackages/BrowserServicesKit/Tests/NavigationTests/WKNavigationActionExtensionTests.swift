@@ -268,18 +268,22 @@ class WKNavigationActionExtensionTests: XCTestCase {
     // MARK: - about: URLs
 
 #if _ORIGINAL_DATA_AS_STRING_ENABLED
-    // Foundation's URL parser will wrongly percent-encode '#' to '%23' in opaque about: URLs
-    // (e.g. when constructed via URL(trimmedAddressBarString:)). URL.hasFragment and
-    // URL.equals(_:by:) recover the literal '#' via URLComponents(webKitUrl:), which reads
-    // the WebKit-internal _web_originalDataAsString to parse the URL as WebKit intended.
-    func testWhenAboutURLWithPercentEncodedHashAndSameDocumentThenIsSameDocument() {
+    // Older NSURL parsers percent-encode '#' in opaque about: URLs. Navigation must recognize
+    // the original fragment both on those systems and on systems that preserve the literal '#'.
+    func testWhenAboutURLCreatedByNSURLHasFragmentThenIsSameDocument() {
         let action = makeAction(
             currentURL: NSURL(string: "about:blank")! as URL,
             newURL: NSURL(string: "about:blank#section")! as URL,
             navigationType: .other
         )
-        XCTAssertEqual(action.request.url?.absoluteString, "about:blank%23section")
         XCTAssertTrue(action.isSameDocumentNavigation)
+
+        let differentDocumentAction = makeAction(
+            currentURL: NSURL(string: "about:srcdoc")! as URL,
+            newURL: NSURL(string: "about:blank#section")! as URL,
+            navigationType: .other
+        )
+        XCTAssertFalse(differentDocumentAction.isSameDocumentNavigation)
     }
 #endif
 

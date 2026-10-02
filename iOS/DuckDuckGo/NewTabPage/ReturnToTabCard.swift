@@ -26,6 +26,7 @@ struct ReturnToTabCard: View {
     @Environment(\.layoutDirection) private var layoutDirection
 
     @ObservedObject var model: EscapeHatchModel
+    var showsBackground = true
 
     /// Frames of the Fire button and the three-dots menu button in the key window's coordinate space.
     /// Used as the popover anchor when burning a tab on iPad — the FireConfirmationPresenter expects
@@ -56,6 +57,11 @@ struct ReturnToTabCard: View {
         } preview: {
             contentView
                 .frame(width: width, height: Metrics.height)
+                .background {
+                    if !showsBackground {
+                        RedesignedNewTabPageModuleBackground()
+                    }
+                }
         }
         // We're Clipping with the shape `( ]` as the `swipeableActionsView` subview is not expected to be a perfect pill, on its right hand side during Swipe
         .clipShape(LeftCapsuleShape())
@@ -71,7 +77,7 @@ struct ReturnToTabCard: View {
         .frame(height: Metrics.height)
         .background(
             Capsule()
-                .fill(Color(designSystemColor: .controlsFillSecondary))
+                .fill(showsBackground ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
         )
     }
 

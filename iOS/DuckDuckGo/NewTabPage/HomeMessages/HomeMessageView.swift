@@ -29,6 +29,7 @@ import PixelKit
 struct HomeMessageView: View {
 
     let viewModel: HomeMessageViewModel
+    var usesMaterialBackground = false
 
     @State var activityItem: TitleValueShareItem?
     @State private var loadedImage: UIImage?
@@ -72,17 +73,26 @@ struct HomeMessageView: View {
             closeButton
                 .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
-        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-            .fill(Color.background)
-            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
-            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
-        )
+        .background {
+            if usesMaterialBackground {
+                RedesignedNewTabPageModuleBackground()
+            } else {
+                legacyBackground
+            }
+        }
         .onAppear {
             viewModel.onDidAppear()
         }
         .onDisappear {
             viewModel.onDidDisappear()
         }
+    }
+
+    private var legacyBackground: some View {
+        RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
+            .fill(Color.background)
+            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
+            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
     }
 
     private var closeButton: some View {

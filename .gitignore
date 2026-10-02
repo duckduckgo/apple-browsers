@@ -107,5 +107,3 @@ privacy-configuration/
 
 # Codex will sometimes create artifacts, e.g. screenshots and videos in this location.
 .codex-artifacts/
-
-

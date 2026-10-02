@@ -302,9 +302,8 @@ private extension DefaultVPNSessionHealthInstrumentation {
             return
         }
 
-        let timestamp = now()
         let completed = previous.finalized(for: .restartedWithoutStop,
-                                           at: timestamp,
+                                           at: now(),
                                            processStartDate: processStartedAt,
                                            processIdentifier: processIdentifier(),
                                            appVersion: appVersion())
@@ -318,8 +317,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         for orphan in orphans {
             Logger.networkProtectionSessionHealth.log("Recovering orphan: \(orphan.globalData.id, privacy: .public)")
 
-            let timestamp = now()
-            let completed = orphan.finalizedAfterOrphanRecovery(at: timestamp,
+            let completed = orphan.finalizedAfterOrphanRecovery(at: now(),
                                                                 processStartDate: processStartedAt,
                                                                 processIdentifier: processIdentifier(),
                                                                 appVersion: appVersion())

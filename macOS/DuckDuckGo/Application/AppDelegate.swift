@@ -60,6 +60,7 @@ import PixelKit
 import WideEvent
 import SERPSettings
 import PrivacyConfig
+import PrivacyDashboard
 import PrivacyStats
 import RemoteMessaging
 import ScreenTimeDataCleaner
@@ -384,6 +385,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - VPN
 
     public let vpnSettings = VPNSettings(defaults: .netP)
+    private(set) lazy var networkSignalsProvider: NetworkSignalsProviding = NetworkSignalsProvider(
+        pathProvider: NetworkPathMonitor(),
+        vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
+        isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
         featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),

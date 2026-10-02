@@ -34,6 +34,7 @@ import PixelKit
 import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
+import PrivacyDashboard
 import Networking
 import Configuration
 import Network
@@ -147,6 +148,7 @@ final class AppDependencyProvider: DependencyProvider {
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionTunnelController: NetworkProtectionTunnelController
+    let networkSignalsProvider: NetworkSignalsProviding
 
     let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
 
@@ -386,6 +388,11 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               wideEvent: wideEvent,
                                                                               freeTrialConversionService: freeTrialConversionService
         )
+
+        networkSignalsProvider = NetworkSignalsProvider(
+            pathProvider: NetworkPathMonitor(),
+            vpnConnectivityIssuesProvider: TunnelConnectivityIssuesProvider(sessionProvider: networkProtectionTunnelController),
+            isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
     }
 

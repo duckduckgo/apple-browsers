@@ -38,6 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingManager: ContentBlockerRulesManager
+    private let networkSignalsProvider: NetworkSignalsProviding
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
 
@@ -76,7 +77,8 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          networkSignalsProvider: NetworkSignalsProviding = AppDependencyProvider.shared.networkSignalsProvider) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -87,6 +89,7 @@ final class PrivacyDashboardViewController: UIViewController {
                                                                 eventMapping: privacyDashboardEvents)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
+        self.networkSignalsProvider = networkSignalsProvider
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
 
@@ -337,7 +340,12 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
+        let networkSignalsProvider = networkSignalsProvider
+        async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
+
         let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+
+        let networkSignals = await asyncNetworkSignals
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance
@@ -395,7 +403,8 @@ extension PrivacyDashboardViewController {
                                 isAfterTabTermination: breakageAdditionalInfo.isAfterTabTermination,
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
-                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion)
+                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
+                                networkSignals: networkSignals)
     }
 
 }

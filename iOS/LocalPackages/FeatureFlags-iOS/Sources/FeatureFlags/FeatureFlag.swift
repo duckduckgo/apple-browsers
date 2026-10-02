@@ -529,7 +529,10 @@ public enum FeatureFlag: String {
     case duckAINativeTermsOfService
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
-    case floatingUIAugust2026
+    case floatingUIiOS26
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
+    case floatingUIiOS27
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
@@ -957,8 +960,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .aiChatChromeMenuButtonIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
-        case .floatingUIAugust2026:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIAugust2026))
+        case .floatingUIiOS26:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
+        case .floatingUIiOS27:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:
@@ -992,6 +997,27 @@ extension FeatureFlag: FeatureFlagDescribing {
 }
 
 extension FeatureFlagger {
+    public func isFloatingUIFeatureEnabled() -> Bool {
+        if #available(iOS 27, *) {
+            return isFloatingUIFeatureEnabled(osMajorVersion: 27)
+        } else if #available(iOS 26, *) {
+            return isFloatingUIFeatureEnabled(osMajorVersion: 26)
+        } else {
+            return false
+        }
+    }
+
+    public func isFloatingUIFeatureEnabled(osMajorVersion: Int) -> Bool {
+        switch osMajorVersion {
+        case 26:
+            return isFeatureOn(.floatingUIiOS26)
+        case 27...:
+            return isFeatureOn(.floatingUIiOS27)
+        default:
+            return false
+        }
+    }
+
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
         isFeatureOn(for: featureFlag)
     }

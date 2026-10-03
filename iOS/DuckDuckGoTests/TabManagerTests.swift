@@ -98,9 +98,13 @@ final class TabManagerTests: XCTestCase {
         tabsModel.insert(tab: Tab(), placement: .atEnd, selectNewTab: false)
         fireModel.insert(tab: Tab(fireTab: true), placement: .atEnd, selectNewTab: false)
         let manager = try makeManager(tabsModel, fireModel: fireModel, previewsSource: mock)
+        let previewsCleanedUp = expectation(description: "Excess tab previews cleaned up")
+        mock.onRemovePreviewsWithIdNotIn = { previewsCleanedUp.fulfill() }
+
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-        try await Task.sleep(interval: 0.5)
+        await fulfillment(of: [previewsCleanedUp], timeout: 5.0)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
+        mock.onRemovePreviewsWithIdNotIn = nil
 
         // This is just to keep a reference to the manager to supress the unused warning and keep it from being deinit
         manager.removeAll()

@@ -24,7 +24,7 @@ import XCTest
 
 final class DownloadListStoreTests: XCTestCase {
 
-    var container: NSPersistentContainer! = CoreData.downloadsContainer()
+    var container: NSPersistentContainer! = CoreData.downloadsContainer(bundle: .module)
     lazy var store: DownloadListStore! = DownloadListStore(context: container.viewContext)
 
     override func tearDown() {

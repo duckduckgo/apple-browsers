@@ -56,9 +56,37 @@ def get_base_branch() -> str:
     _base_branch_cache = get_merge_base(base) or base
     return _base_branch_cache
 
+_renamed_paths_cache: Optional[Dict[str, str]] = None
+
+
+def get_renamed_paths() -> Dict[str, str]:
+    """Return {path in this PR: path at the base branch} for files the PR moved,
+    so their base content can be found under the old path."""
+    global _renamed_paths_cache
+    if _renamed_paths_cache is not None:
+        return _renamed_paths_cache
+
+    base = get_base_branch()
+    cmd = ['git', 'diff', '--name-status', '-M', '--diff-filter=R', base]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except Exception:
+        result = None
+
+    renamed: Dict[str, str] = {}
+    lines = result.stdout.splitlines() if result and result.returncode == 0 else []
+    for line in lines:
+        fields = line.split('\t')
+        if len(fields) == 3:
+            renamed[fields[2]] = fields[1]
+
+    _renamed_paths_cache = renamed
+    return renamed
+
+
 def get_files_content_at_base(file_paths: List[str]) -> Dict[str, str]:
     """
-    Get content of multiple files at the base branch.
+    Get content of multiple files at the base branch, following renames.
 
     Returns a dict mapping file_path -> content (empty string if file doesn't exist).
     """
@@ -66,12 +94,14 @@ def get_files_content_at_base(file_paths: List[str]) -> Dict[str, str]:
         return {}
 
     base = get_base_branch()
+    renamed = get_renamed_paths()
     contents: Dict[str, str] = {}
 
     for file_path in file_paths:
+        base_path = renamed.get(file_path, file_path)
         try:
             result = subprocess.run(
-                ['git', 'show', f'{base}:{file_path}'],
+                ['git', 'show', f'{base}:{base_path}'],
                 capture_output=True, text=True, check=False
             )
             contents[file_path] = result.stdout if result.returncode == 0 else ""

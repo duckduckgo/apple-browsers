@@ -72,7 +72,7 @@ tmp
 
 #VSCode
 buildServer.json
-.vscode/launch.json
+.vscode/
 default.profraw
 
 # Claude

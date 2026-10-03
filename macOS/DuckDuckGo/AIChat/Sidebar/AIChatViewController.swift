@@ -202,12 +202,12 @@ final class AIChatViewController: NSViewController {
         topBar.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(topBar)
 
-        openInNewTabButton = makeBarButton(image: .expand, action: #selector(openInNewTabButtonClicked),
+        openInNewTabButton = makeBarButton(image: NSImage(resource: .expand), action: #selector(openInNewTabButtonClicked),
                                            toolTip: UserText.aiChatSidebarExpandButtonTooltip)
         openInNewTabButton.setAccessibilityIdentifier("AIChatViewController.openInNewTabButton")
         topBar.addSubview(openInNewTabButton)
 
-        attachButton = makeBarButton(image: .aiChatAttach, action: #selector(attachButtonClicked),
+        attachButton = makeBarButton(image: NSImage(resource: .aiChatAttach), action: #selector(attachButtonClicked),
                                      toolTip: UserText.aiChatSidebarAttachButtonTooltip)
         attachButton.setAccessibilityIdentifier("AIChatViewController.attachButton")
         attachButton.isHidden = true
@@ -218,12 +218,12 @@ final class AIChatViewController: NSViewController {
         titleButton.isHidden = true
         topBar.addSubview(titleButton)
 
-        detachButton = makeBarButton(image: .aiChatDetach, action: #selector(detachButtonClicked),
+        detachButton = makeBarButton(image: NSImage(resource: .aiChatDetach), action: #selector(detachButtonClicked),
                                      toolTip: UserText.aiChatSidebarDetachButtonTooltip)
         detachButton.setAccessibilityIdentifier("AIChatViewController.detachButton")
         topBar.addSubview(detachButton)
 
-        closeButton = makeBarButton(image: .closeLarge, action: #selector(closeButtonClicked),
+        closeButton = makeBarButton(image: NSImage(resource: .closeLarge), action: #selector(closeButtonClicked),
                                     toolTip: UserText.aiChatSidebarCloseButtonTooltip)
         closeButton.setAccessibilityIdentifier("AIChatViewController.closeButton")
         topBar.addSubview(closeButton)
@@ -268,8 +268,8 @@ final class AIChatViewController: NSViewController {
         button.title = ""
         button.imagePosition = .noImage
         button.cornerRadius = 9
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         button.clipsToBounds = false
         button.target = self
         button.action = #selector(titleButtonClicked)
@@ -290,7 +290,7 @@ final class AIChatViewController: NSViewController {
         titleTextLabel.lineBreakMode = .byTruncatingTail
         titleTextLabel.setContentCompressionResistancePriority(.init(rawValue: 500), for: .horizontal)
 
-        titleArrowView = NSImageView(image: .arrowUpRight12)
+        titleArrowView = NSImageView(image: NSImage(resource: .arrowUpRight12))
         titleArrowView.translatesAutoresizingMaskIntoConstraints = false
         titleArrowView.contentTintColor = themeManager.theme.colorsProvider.iconsColor
         titleArrowView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -321,7 +321,7 @@ final class AIChatViewController: NSViewController {
     }
 
     func updateFloatingTitle(_ title: String, favicon: NSImage?) {
-        titleFaviconView.image = favicon ?? .homeFavicon
+        titleFaviconView.image = favicon ?? NSImage(resource: .homeFavicon)
         titleTextLabel.stringValue = title
     }
 
@@ -332,8 +332,8 @@ final class AIChatViewController: NSViewController {
         button.bezelStyle = .shadowlessSquare
         button.cornerRadius = 9
         button.normalTintColor = themeManager.theme.colorsProvider.iconsColor
-        button.mouseDownColor = .buttonMouseDown
-        button.mouseOverColor = .buttonMouseOver
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
         button.isBordered = false
         button.refusesFirstResponder = true
         return button
@@ -366,7 +366,7 @@ final class AIChatViewController: NSViewController {
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false
         webViewContainer.wantsLayer = true
         webViewContainer.layer?.masksToBounds = true
-        webViewContainer.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
+        webViewContainer.layer?.backgroundColor = NSColor(resource: .navigationBarBackground).cgColor
         container.addSubview(webViewContainer)
 
         // Pinch zoom does not make sense in the AI Chat sidebar.
@@ -658,7 +658,6 @@ private final class FloatingWindowTitleDragButton: MouseOverButton {
     }
 }
 
-#if DEBUG || REVIEW
 // MARK: - Browser tools debug panel in the sidebar
 
 extension AIChatViewController {
@@ -688,4 +687,3 @@ extension AIChatViewController {
         ])
     }
 }
-#endif

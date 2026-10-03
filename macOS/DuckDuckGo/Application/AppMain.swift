@@ -18,12 +18,18 @@
 
 import AppKit
 
-@main
-struct AppMain {
+/// Browser entry point. Called from the app targets' `main.swift`
+/// and, through `DuckDuckGoBrowserMain`, from the VSCode launcher that loads `DuckDuckGoBrowserDynamic`.
+public enum AppMain {
 
-    static func main() {
+    public static func main() {
         _=Application.shared
         Application.shared.run()
     }
 
+}
+
+@_cdecl("DuckDuckGoBrowserMain")
+public func duckDuckGoBrowserMain() {
+    AppMain.main()
 }

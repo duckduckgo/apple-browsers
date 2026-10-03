@@ -495,7 +495,7 @@ final class AddressBarTextEditor: NSTextView {
             favicon = tabFavicon
         } else {
             // fallback to the "globe" favicon
-            favicon = .web
+            favicon = NSImage(resource: .web)
         }
         session.setPreviewProvider(URLDragPreviewProvider(url: draggedUrl, favicon: favicon))
 

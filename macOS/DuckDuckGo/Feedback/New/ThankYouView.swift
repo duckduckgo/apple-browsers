@@ -46,7 +46,7 @@ struct ThankYouView: View {
             // Link section
             VStack(alignment: .leading, spacing: 16) {
                 Text(UserText.thankYouMessage)
-                    .systemLabel(color: .textSecondary)
+                    .systemLabel(color: Color(.textSecondary))
                     .multilineText()
                     .multilineTextAlignment(.leading)
                     .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
@@ -68,7 +68,7 @@ struct ThankYouView: View {
                 Spacer()
 
                 Divider()
-                    .background(Color.divider)
+                    .background(Color(.divider))
                     .frame(maxWidth: .infinity)
                     .frame(height: 1)
 
@@ -93,7 +93,7 @@ private struct DaxHeartAnimation: NSViewRepresentable {
     private let animationView = LottieAnimationView()
 
     init() {
-        self.animation = LottieAnimation.named("pictogramDaxHeart")
+        self.animation = LottieAnimation.named("pictogramDaxHeart", bundle: .module)
     }
 
     func makeNSView(context: Context) -> some NSView {

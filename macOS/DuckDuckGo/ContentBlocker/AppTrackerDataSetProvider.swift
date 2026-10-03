@@ -35,7 +35,7 @@ struct AppTrackerDataSetProvider: EmbeddedDataProvider {
     }
 
     static var embeddedUrl: URL {
-        return Bundle.main.url(forResource: "trackerData", withExtension: "json")!
+        return Bundle.module.url(forResource: "trackerData", withExtension: "json")!
     }
 
     static func loadEmbeddedAsData() -> Data {

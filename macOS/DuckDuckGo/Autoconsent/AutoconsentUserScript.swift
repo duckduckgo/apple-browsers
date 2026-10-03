@@ -78,7 +78,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
-            source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
+            source = try Self.loadJS("autoconsent-bundle", from: .module, withReplacements: [:])
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()

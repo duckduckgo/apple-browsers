@@ -73,7 +73,7 @@ final class AIChatSuggestionRowView: NSView {
         static let iconTitleSpacing: CGFloat = 8
 
         // Colors matching SuggestionTableCellView
-        static let iconColor: NSColor = .suggestionIcon
+        static let iconColor: NSColor = NSColor(resource: .suggestionIcon)
         static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
 

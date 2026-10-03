@@ -130,31 +130,31 @@ final class AddressBarButtonsViewController: NSViewController {
         }()
     }
 
-    @IBOutlet weak var zoomButton: AddressBarButton!
-    @IBOutlet weak var privacyDashboardButton: MouseOverAnimationButton!
-    @IBOutlet weak var separator: NSView!
-    @IBOutlet weak var bookmarkButton: AddressBarButton!
-    @IBOutlet weak var imageButtonWrapper: NSView!
-    @IBOutlet weak var imageButton: NSButton!
-    @IBOutlet weak var cancelButton: AddressBarButton!
-    @IBOutlet private weak var buttonsContainer: NSStackView!
-    @IBOutlet weak var permissionCenterButton: AddressBarButton!
-    @IBOutlet weak var youTubeAdBlockButton: AddressBarButton!
-    @IBOutlet private weak var trailingButtonsContainer: NSStackView!
-    @IBOutlet weak var aiChatButton: AddressBarMenuButton!
-    @IBOutlet weak var askAIChatButton: AddressBarMenuButton!
-    @IBOutlet weak var trailingButtonsBackground: ColorView!
+    private(set) var zoomButton: AddressBarButton!
+    private(set) var privacyDashboardButton: MouseOverAnimationButton!
+    private(set) var separator: NSView!
+    private(set) var bookmarkButton: AddressBarButton!
+    private(set) var imageButtonWrapper: NSView!
+    private(set) var imageButton: NSButton!
+    private(set) var cancelButton: AddressBarButton!
+    private(set) var buttonsContainer: NSStackView!
+    private(set) var permissionCenterButton: AddressBarButton!
+    private(set) var youTubeAdBlockButton: AddressBarButton!
+    private(set) var trailingButtonsContainer: NSStackView!
+    private(set) var aiChatButton: AddressBarMenuButton!
+    private(set) var askAIChatButton: AddressBarMenuButton!
+    private(set) var trailingButtonsBackground: ColorView!
 
-    @IBOutlet weak var animationWrapperView: NSView!
+    private(set) var animationWrapperView: NSView!
     var shieldAnimationView: LottieAnimationView!
     var shieldDotAnimationView: LottieAnimationView!
     private var hasShieldAnimationCompleted = false
-    @IBOutlet weak var privacyShieldLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var animationWrapperViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var privacyShieldLeadingConstraint: NSLayoutConstraint!
+    private(set) var animationWrapperViewLeadingConstraint: NSLayoutConstraint!
 
-    @IBOutlet weak var leadingAIChatDivider: NSImageView!
-    @IBOutlet weak var trailingAIChatDivider: NSImageView!
-    @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
+    private(set) var leadingAIChatDivider: NSImageView!
+    private(set) var trailingAIChatDivider: NSImageView!
+    private(set) var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
 
     private(set) var searchModeToggleControl: CustomToggleControl?
     private var searchModeToggleWidthConstraint: NSLayoutConstraint?
@@ -163,24 +163,24 @@ final class AddressBarButtonsViewController: NSViewController {
     /// Callback to focus the AI Chat text view when Tab is pressed on the toggle in AI Chat mode.
     /// Set by MainViewController to wire up the connection between toggle and AI Chat text container.
     var onToggleTabPressedInAIChatMode: (() -> Void)?
-    @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
-    @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var cancelButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var cancelButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var aiChatButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var aiChatButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var askAIChatButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var permissionCenterButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var permissionCenterButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var youTubeAdBlockButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var youTubeAdBlockButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var askAIChatButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var zoomButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var notificationAnimationView: NavigationBarBadgeAnimationView!
+    private(set) var bookmarkButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var bookmarkButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var cancelButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var cancelButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var aiChatButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var aiChatButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var askAIChatButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var permissionCenterButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var permissionCenterButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var youTubeAdBlockButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var youTubeAdBlockButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var askAIChatButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var imageButtonLeadingConstraint: NSLayoutConstraint!
+    private(set) var zoomButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var zoomButtonHeightConstraint: NSLayoutConstraint!
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
     /// Used to adjust the Passive Address Bar leading constraint
@@ -302,6 +302,266 @@ final class AddressBarButtonsViewController: NSViewController {
         fatalError("AddressBarButtonsViewController: Bad initializer")
     }
 
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 651, height: 26)
+        static let buttonSide: CGFloat = 32
+        static let narrowButtonWidth: CGFloat = 24
+        static let buttonCornerRadius: CGFloat = 7
+        static let cancelButtonCornerRadius: CGFloat = 4
+        static let cancelButtonPadding: CGFloat = 6
+        static let trailingStackSpacing: CGFloat = 2
+        static let trailingBackgroundCornerRadius: CGFloat = 6
+        static let trailingBackgroundLeadingOverhang: CGFloat = -6
+        static let animationWrapperSize = CGSize(width: 100, height: 30)
+        static let notificationAnimationHeight: CGFloat = 29
+        static let notificationAnimationMinWidth: CGFloat = 50
+        static let separatorSize = CGSize(width: 5, height: 32)
+        static let separatorLineSize = CGSize(width: 1, height: 16)
+        static let imageButtonSide: CGFloat = 16
+        static let imageButtonCenterXOffset: CGFloat = 7
+    }
+
+    /// Image-only address bar button with no bezel: `MouseOverButton` draws the hover and pressed fills.
+    private func configureAddressBarButton(_ button: MouseOverButton,
+                                           image: NSImage?,
+                                           cornerRadius: CGFloat?,
+                                           action: Selector?) {
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setButtonType(.momentaryPushIn)
+        button.isBordered = false
+        button.bezelStyle = .shadowlessSquare
+        button.image = image
+        button.imagePosition = .imageOnly
+        button.title = ""
+        button.imageScaling = .scaleProportionallyDown
+        button.alignment = .center
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        if let cornerRadius {
+            button.cornerRadius = cornerRadius
+        }
+        button.target = self
+        button.action = action
+    }
+
+    private func makeAIChatDivider(animates: Bool) -> NSImageView {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = NSImage(resource: .aiChatDivider)
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.imageAlignment = .alignLeft
+        imageView.refusesFirstResponder = true
+        imageView.animates = animates
+        return imageView
+    }
+
+    // swiftlint:disable:next function_body_length
+    override func loadView() {
+        let view = AddressBarButtonsView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+
+        animationWrapperView = NSView()
+        animationWrapperView.translatesAutoresizingMaskIntoConstraints = false
+
+        notificationAnimationView = NavigationBarBadgeAnimationView()
+        notificationAnimationView.translatesAutoresizingMaskIntoConstraints = false
+
+        // MARK: Trailing buttons
+        bookmarkButton = AddressBarButton(frame: .zero)
+        configureAddressBarButton(bookmarkButton, image: NSImage(resource: .bookmark),
+                                  cornerRadius: LayoutConstants.buttonCornerRadius,
+                                  action: #selector(bookmarkButtonAction(_:)))
+        bookmarkButton.isHidden = true
+
+        leadingAIChatDivider = makeAIChatDivider(animates: false)
+
+        askAIChatButton = AddressBarMenuButton(frame: .zero)
+        configureAddressBarButton(askAIChatButton, image: NSImage(resource: .aiChat),
+                                  cornerRadius: LayoutConstants.buttonCornerRadius,
+                                  action: #selector(aiChatButtonAction(_:)))
+        askAIChatButton.alternateImage = NSImage(resource: .aiChatSolid)
+        askAIChatButton.normalTintColor = NSColor(resource: .button)
+        askAIChatButton.isHidden = true
+
+        aiChatButton = AddressBarMenuButton(frame: .zero)
+        configureAddressBarButton(aiChatButton, image: NSImage(resource: .aiChat),
+                                  cornerRadius: LayoutConstants.buttonCornerRadius,
+                                  action: #selector(aiChatButtonAction(_:)))
+        // Shown when `updateAIChatButtonStateForSidebar` flips the button to `.toggle`/`.on`
+        // to signal that the AI Chat sidebar is open.
+        aiChatButton.alternateImage = NSImage(resource: .aiChatSolid)
+        aiChatButton.isHidden = true
+
+        trailingAIChatDivider = makeAIChatDivider(animates: true)
+
+        cancelButton = AddressBarButton(frame: .zero)
+        configureAddressBarButton(cancelButton, image: NSImage(resource: .clear),
+                                  cornerRadius: LayoutConstants.cancelButtonCornerRadius,
+                                  action: #selector(cancelButtonAction(_:)))
+        cancelButton.normalTintColor = NSColor(resource: .clearButton)
+        cancelButton.isHidden = true
+        cancelButton.horizontalPadding = LayoutConstants.cancelButtonPadding
+        cancelButton.verticalPadding = LayoutConstants.cancelButtonPadding
+
+        trailingButtonsContainer = NSStackView(views: [bookmarkButton, leadingAIChatDivider, askAIChatButton,
+                                                       aiChatButton, trailingAIChatDivider, cancelButton])
+        trailingButtonsContainer.translatesAutoresizingMaskIntoConstraints = false
+        trailingButtonsContainer.orientation = .horizontal
+        trailingButtonsContainer.distribution = .fill
+        trailingButtonsContainer.alignment = .centerY
+        trailingButtonsContainer.spacing = LayoutConstants.trailingStackSpacing
+        trailingButtonsContainer.detachesHiddenViews = true
+
+        trailingButtonsBackground = ColorView(frame: .zero,
+                                              backgroundColor: NSColor(resource: .addressBarBackground),
+                                              cornerRadius: LayoutConstants.trailingBackgroundCornerRadius)
+        trailingButtonsBackground.translatesAutoresizingMaskIntoConstraints = false
+
+        // MARK: Leading buttons
+        privacyDashboardButton = MouseOverAnimationButton(frame: .zero)
+        configureAddressBarButton(privacyDashboardButton, image: nil,
+                                  cornerRadius: LayoutConstants.buttonCornerRadius,
+                                  action: #selector(privacyDashboardButtonAction(_:)))
+        privacyDashboardButton.isHidden = true
+
+        let separatorLine = ColorView(frame: .zero, backgroundColor: NSColor(resource: .blackWhite10))
+        separatorLine.translatesAutoresizingMaskIntoConstraints = false
+
+        separator = NSView()
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.addSubview(separatorLine)
+
+        imageButton = NSButton(frame: .zero)
+        imageButton.translatesAutoresizingMaskIntoConstraints = false
+        imageButton.setButtonType(.momentaryPushIn)
+        imageButton.isBordered = false
+        imageButton.bezelStyle = .shadowlessSquare
+        imageButton.image = NSImage(resource: .search)
+        imageButton.imagePosition = .imageOnly
+        imageButton.title = ""
+        imageButton.imageScaling = .scaleProportionallyDown
+        imageButton.alignment = .center
+
+        imageButtonWrapper = NSView()
+        imageButtonWrapper.translatesAutoresizingMaskIntoConstraints = false
+        imageButtonWrapper.addSubview(imageButton)
+
+        permissionCenterButton = AddressBarButton(frame: .zero)
+        configureAddressBarButton(permissionCenterButton, image: nil, cornerRadius: nil,
+                                  action: #selector(permissionCenterButtonAction(_:)))
+        permissionCenterButton.normalTintColor = NSColor(resource: .button)
+        permissionCenterButton.isHidden = true
+
+        youTubeAdBlockButton = AddressBarButton(frame: .zero)
+        configureAddressBarButton(youTubeAdBlockButton, image: nil, cornerRadius: nil,
+                                  action: #selector(youTubeAdBlockButtonAction(_:)))
+        youTubeAdBlockButton.isHidden = true
+
+        zoomButton = AddressBarButton(frame: .zero)
+        configureAddressBarButton(zoomButton, image: nil, cornerRadius: nil,
+                                  action: #selector(zoomButtonAction(_:)))
+
+        buttonsContainer = NSStackView(views: [privacyDashboardButton, separator, imageButtonWrapper,
+                                               permissionCenterButton, youTubeAdBlockButton, zoomButton])
+        buttonsContainer.translatesAutoresizingMaskIntoConstraints = false
+        buttonsContainer.orientation = .horizontal
+        buttonsContainer.distribution = .equalSpacing
+        buttonsContainer.alignment = .centerY
+        buttonsContainer.spacing = 0
+        buttonsContainer.detachesHiddenViews = true
+
+        view.addSubview(animationWrapperView)
+        view.addSubview(notificationAnimationView)
+        view.addSubview(trailingButtonsBackground)
+        view.addSubview(trailingButtonsContainer)
+        view.addSubview(buttonsContainer)
+
+        animationWrapperViewLeadingConstraint = animationWrapperView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: 1)
+        trailingStackViewTrailingViewConstraint = view.trailingAnchor
+            .constraint(equalTo: trailingButtonsContainer.trailingAnchor)
+        privacyShieldLeadingConstraint = privacyDashboardButton.leadingAnchor
+            .constraint(equalTo: buttonsContainer.leadingAnchor)
+        imageButtonLeadingConstraint = imageButton.centerXAnchor
+            .constraint(equalTo: imageButtonWrapper.centerXAnchor, constant: LayoutConstants.imageButtonCenterXOffset)
+
+        bookmarkButtonWidthConstraint = bookmarkButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        bookmarkButtonHeightConstraint = bookmarkButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        askAIChatButtonWidthConstraint = askAIChatButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        askAIChatButtonHeightConstraint = askAIChatButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        aiChatButtonWidthConstraint = aiChatButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        aiChatButtonHeightConstraint = aiChatButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        cancelButtonWidthConstraint = cancelButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        cancelButtonHeightConstraint = cancelButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        privacyShieldButtonWidthConstraint = privacyDashboardButton.widthAnchor
+            .constraint(equalToConstant: LayoutConstants.buttonSide)
+        privacyShieldButtonHeightConstraint = privacyDashboardButton.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.buttonSide)
+        permissionCenterButtonWidthConstraint = permissionCenterButton.widthAnchor
+            .constraint(equalToConstant: LayoutConstants.narrowButtonWidth)
+        permissionCenterButtonHeightConstraint = permissionCenterButton.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.buttonSide)
+        youTubeAdBlockButtonWidthConstraint = youTubeAdBlockButton.widthAnchor
+            .constraint(equalToConstant: LayoutConstants.narrowButtonWidth)
+        youTubeAdBlockButtonHeightConstraint = youTubeAdBlockButton.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.buttonSide)
+        zoomButtonWidthConstraint = zoomButton.widthAnchor.constraint(equalToConstant: LayoutConstants.narrowButtonWidth)
+        zoomButtonHeightConstraint = zoomButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+
+        NSLayoutConstraint.activate([
+            animationWrapperView.widthAnchor.constraint(equalToConstant: LayoutConstants.animationWrapperSize.width),
+            animationWrapperView.heightAnchor.constraint(equalToConstant: LayoutConstants.animationWrapperSize.height),
+            animationWrapperView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            animationWrapperViewLeadingConstraint,
+
+            notificationAnimationView.heightAnchor.constraint(equalToConstant: LayoutConstants.notificationAnimationHeight),
+            notificationAnimationView.widthAnchor
+                .constraint(greaterThanOrEqualToConstant: LayoutConstants.notificationAnimationMinWidth),
+            notificationAnimationView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            notificationAnimationView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 2),
+
+            trailingButtonsBackground.leadingAnchor.constraint(equalTo: trailingButtonsContainer.leadingAnchor,
+                                                               constant: LayoutConstants.trailingBackgroundLeadingOverhang),
+            trailingButtonsBackground.trailingAnchor.constraint(equalTo: trailingButtonsContainer.trailingAnchor),
+            trailingButtonsBackground.topAnchor.constraint(equalTo: trailingButtonsContainer.topAnchor),
+            trailingButtonsBackground.bottomAnchor.constraint(equalTo: trailingButtonsContainer.bottomAnchor),
+
+            trailingButtonsContainer.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            trailingStackViewTrailingViewConstraint,
+
+            bookmarkButtonWidthConstraint, bookmarkButtonHeightConstraint,
+            askAIChatButtonWidthConstraint, askAIChatButtonHeightConstraint,
+            aiChatButtonWidthConstraint, aiChatButtonHeightConstraint,
+            cancelButtonWidthConstraint, cancelButtonHeightConstraint,
+
+            buttonsContainer.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            buttonsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            privacyShieldLeadingConstraint,
+
+            privacyShieldButtonWidthConstraint, privacyShieldButtonHeightConstraint,
+
+            separator.widthAnchor.constraint(equalToConstant: LayoutConstants.separatorSize.width),
+            separator.heightAnchor.constraint(equalToConstant: LayoutConstants.separatorSize.height),
+            separatorLine.widthAnchor.constraint(equalToConstant: LayoutConstants.separatorLineSize.width),
+            separatorLine.heightAnchor.constraint(equalToConstant: LayoutConstants.separatorLineSize.height),
+            separatorLine.leadingAnchor.constraint(equalTo: separator.leadingAnchor, constant: 2),
+            separator.trailingAnchor.constraint(equalTo: separatorLine.trailingAnchor, constant: 2),
+            separatorLine.centerYAnchor.constraint(equalTo: separator.centerYAnchor),
+
+            imageButtonWrapper.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide),
+            imageButtonWrapper.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide),
+            imageButton.heightAnchor.constraint(equalToConstant: LayoutConstants.imageButtonSide),
+            imageButton.widthAnchor.constraint(equalTo: imageButton.heightAnchor),
+            imageButton.centerYAnchor.constraint(equalTo: imageButtonWrapper.centerYAnchor),
+            imageButtonLeadingConstraint,
+
+            permissionCenterButtonWidthConstraint, permissionCenterButtonHeightConstraint,
+            youTubeAdBlockButtonWidthConstraint, youTubeAdBlockButtonHeightConstraint,
+            zoomButtonWidthConstraint, zoomButtonHeightConstraint,
+        ])
+
+        self.view = view
+    }
+
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
@@ -314,23 +574,22 @@ final class AddressBarButtonsViewController: NSViewController {
         featureFlagger.isFeatureOn(.aiChatChromeSidebar)
     }
 
-    init?(coder: NSCoder,
-          tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager,
-          privacyConfigurationManager: PrivacyConfigurationManaging,
-          permissionManager: PermissionManagerProtocol,
-          accessibilityPreferences: AccessibilityPreferences,
-          tabsPreferences: TabsPreferences,
-          popovers: NavigationBarPopovers?,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
-          aiChatTabOpener: AIChatTabOpening,
-          aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor = AIChatAddressBarPromptExtractor(),
-          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          aiChatCoordinator: AIChatCoordinating,
-          aiChatSettings: AIChatPreferencesStorage,
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          featureFlagger: FeatureFlagger,
-          adBlockingAvailability: AdBlockingAvailabilityProviding) {
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         bookmarkManager: BookmarkManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         permissionManager: PermissionManagerProtocol,
+         accessibilityPreferences: AccessibilityPreferences,
+         tabsPreferences: TabsPreferences,
+         popovers: NavigationBarPopovers?,
+         onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+         aiChatTabOpener: AIChatTabOpening,
+         aiChatAddressBarPromptExtractor: AIChatAddressBarPromptExtractor = AIChatAddressBarPromptExtractor(),
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatCoordinator: AIChatCoordinating,
+         aiChatSettings: AIChatPreferencesStorage,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         featureFlagger: FeatureFlagger,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
@@ -347,7 +606,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.adBlockingAvailability = adBlockingAvailability
         self.privacyConfigurationManager = privacyConfigurationManager
         self.permissionManager = permissionManager
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
     deinit {
@@ -1016,7 +1275,7 @@ final class AddressBarButtonsViewController: NSViewController {
         imageButton.image = nil
         switch controllerMode {
         case .browsing where tabViewModel.isShowingErrorPage:
-            imageButton.image = .web
+            imageButton.image = NSImage(resource: .web)
         case .browsing:
             // When editing (address bar focused), show favicon if available
             // When browsing (not editing), show globe for local HTTP sites
@@ -1024,7 +1283,7 @@ final class AddressBarButtonsViewController: NSViewController {
             if isTextFieldEditorFirstResponder, let favicon = tabViewModel.favicon {
                 imageButton.image = favicon
             } else {
-                imageButton.image = .web
+                imageButton.image = NSImage(resource: .web)
             }
         case .editing(.text), .editing(.url), .editing(.openTabSuggestion), .editing(.aiChat):
             /// Per the redesign, the address bar no longer shows a leading icon in any editing state — the user-
@@ -1050,9 +1309,9 @@ final class AddressBarButtonsViewController: NSViewController {
         // Privacy entry point button
         let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
         privacyDashboardButton.isAnimationEnabled = !isFlaggedAsMalicious
-        privacyDashboardButton.normalTintColor = isFlaggedAsMalicious ? .fireButtonRedPressed : .privacyEnabled
-        privacyDashboardButton.mouseOverTintColor = isFlaggedAsMalicious ? .alertRedHover : privacyDashboardButton.mouseOverTintColor
-        privacyDashboardButton.mouseDownTintColor = isFlaggedAsMalicious ? .alertRedPressed : privacyDashboardButton.mouseDownTintColor
+        privacyDashboardButton.normalTintColor = isFlaggedAsMalicious ? NSColor(resource: .fireButtonRedPressed) : NSColor(resource: .privacyEnabled)
+        privacyDashboardButton.mouseOverTintColor = isFlaggedAsMalicious ? NSColor(resource: .alertRedHover) : privacyDashboardButton.mouseOverTintColor
+        privacyDashboardButton.mouseDownTintColor = isFlaggedAsMalicious ? NSColor(resource: .alertRedPressed) : privacyDashboardButton.mouseDownTintColor
 
         /// `hasPendingBarInput` covers `.text(userTyped: true)`, `.url(userTyped: true)`, and `.suggestion` —
         /// any state where the bar is showing the user's pending edit (typed draft or autocomplete suggestion
@@ -1152,10 +1411,10 @@ final class AddressBarButtonsViewController: NSViewController {
                 shieldAnimationView.isHidden = true
                 shieldDotAnimationView.isHidden = true
                 privacyDashboardButton.isAnimationEnabled = false
-                privacyDashboardButton.image = .redAlertCircle16
-                privacyDashboardButton.normalTintColor = .alertRed
-                privacyDashboardButton.mouseOverTintColor = .alertRedHover
-                privacyDashboardButton.mouseDownTintColor = .alertRedPressed
+                privacyDashboardButton.image = NSImage(resource: .redAlertCircle16)
+                privacyDashboardButton.normalTintColor = NSColor(resource: .alertRed)
+                privacyDashboardButton.mouseOverTintColor = NSColor(resource: .alertRedHover)
+                privacyDashboardButton.mouseDownTintColor = NSColor(resource: .alertRedPressed)
             } else if isShieldDotVisible {
                 shieldAnimationView.isHidden = true
                 shieldDotAnimationView.isHidden = true
@@ -1198,7 +1457,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     // MARK: - AI Chat Action Helpers
 
-    @IBAction func aiChatButtonAction(_ sender: Any) {
+    @objc func aiChatButtonAction(_ sender: Any) {
         guard let tab = tabViewModel?.tab else { return }
 
         if aiChatCoordinator.isChatFloating(for: tab.uuid) {
@@ -1405,8 +1664,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let moreOptionsMenuIconsProvider = theme.iconsProvider.moreOptionsMenuIconsProvider
         zoomButton.image = (zoomState == .zoomedOut) ? moreOptionsMenuIconsProvider.zoomOutIcon : moreOptionsMenuIconsProvider.zoomInIcon
-        zoomButton.backgroundColor = isPopoverShown ? .buttonMouseDown : nil
-        zoomButton.mouseOverColor = isPopoverShown ? nil : .buttonMouseOver
+        zoomButton.backgroundColor = isPopoverShown ? NSColor(resource: .buttonMouseDown) : nil
+        zoomButton.mouseOverColor = isPopoverShown ? nil : NSColor(resource: .buttonMouseOver)
         zoomButton.isHidden = !shouldShowZoom
         zoomButton.normalTintColor = theme.colorsProvider.iconsColor
     }
@@ -1797,15 +2056,15 @@ final class AddressBarButtonsViewController: NSViewController {
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 
-    @IBAction func bookmarkButtonAction(_ sender: Any) {
+    @objc func bookmarkButtonAction(_ sender: Any) {
         openBookmarkPopover(setFavorite: false, accessPoint: .button)
     }
 
-    @IBAction func cancelButtonAction(_ sender: Any) {
+    @objc func cancelButtonAction(_ sender: Any) {
         delegate?.addressBarButtonsViewControllerCancelButtonClicked(self)
     }
 
-    @IBAction func privacyDashboardButtonAction(_ sender: Any) {
+    @objc func privacyDashboardButtonAction(_ sender: Any) {
         openPrivacyDashboardPopover()
     }
 
@@ -1848,8 +2107,8 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         guard button.isVisible else { return }
 
-        button.backgroundColor = .buttonMouseDown
-        button.mouseOverColor = .buttonMouseDown
+        button.backgroundColor = NSColor(resource: .buttonMouseDown)
+        button.mouseOverColor = NSColor(resource: .buttonMouseDown)
         (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
         (popover.contentViewController as? PopupBlockedViewController)?.query = query
         query.wasShownOnce = true
@@ -1861,7 +2120,7 @@ final class AddressBarButtonsViewController: NSViewController {
                   button.isVisible else {
                 // Tab is no longer selected or button became hidden - reset button state
                 button.backgroundColor = .clear
-                button.mouseOverColor = .buttonMouseOver
+                button.mouseOverColor = NSColor(resource: .buttonMouseOver)
                 return
             }
             popover.show(positionedBelow: button.bounds.insetFromLineOfDeath(flipped: button.isFlipped), in: button)
@@ -2020,7 +2279,7 @@ final class AddressBarButtonsViewController: NSViewController {
         wasToggleVisible = shouldShowToggle
     }
 
-    @IBAction func zoomButtonAction(_ sender: Any) {
+    @objc func zoomButtonAction(_ sender: Any) {
         guard let popovers else { return }
         if popovers.isZoomPopoverShown {
             popovers.closeZoomPopover()
@@ -2029,7 +2288,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
-    @IBAction func permissionCenterButtonAction(_ sender: Any) {
+    @objc func permissionCenterButtonAction(_ sender: Any) {
         presentPermissionCenterPopoverIfPossible()
     }
 
@@ -2131,8 +2390,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterPopover = popover
 
         // Set button to active/pressed state
-        permissionCenterButton.backgroundColor = .buttonMouseDown
-        permissionCenterButton.mouseOverColor = .buttonMouseDown
+        permissionCenterButton.backgroundColor = NSColor(resource: .buttonMouseDown)
+        permissionCenterButton.mouseOverColor = NSColor(resource: .buttonMouseDown)
 
         // Register for close notification to reset button state
         NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
@@ -2165,7 +2424,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
-    @IBAction func youTubeAdBlockButtonAction(_ sender: Any) {
+    @objc func youTubeAdBlockButtonAction(_ sender: Any) {
         if let existingPopover = youTubeAdBlockPopover, existingPopover.isShown {
             existingPopover.close()
             youTubeAdBlockPopover = nil
@@ -2212,8 +2471,8 @@ final class AddressBarButtonsViewController: NSViewController {
             popover?.close()
         }
 
-        youTubeAdBlockButton.backgroundColor = .buttonMouseDown
-        youTubeAdBlockButton.mouseOverColor = .buttonMouseDown
+        youTubeAdBlockButton.backgroundColor = NSColor(resource: .buttonMouseDown)
+        youTubeAdBlockButton.mouseOverColor = NSColor(resource: .buttonMouseDown)
 
         popover.show(positionedBelow: youTubeAdBlockButton.bounds.insetFromLineOfDeath(flipped: youTubeAdBlockButton.isFlipped), in: youTubeAdBlockButton)
         return true
@@ -2400,8 +2659,8 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.selectionInnerBorderColor = selectionBorder
 
         if isBurner {
-            toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
-            toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
+            toggleControl.focusBorderColor = NSColor(resource: .burnerAccent).withAlphaComponent(0.8)
+            toggleControl.outerBorderColor = NSColor(resource: .burnerAccent).withAlphaComponent(0.2)
         } else {
             toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
             toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
@@ -2867,7 +3126,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case let authPopover as PermissionAuthorizationPopover:
             if let button = popover.positioningView as? AddressBarButton {
                 button.backgroundColor = .clear
-                button.mouseOverColor = .buttonMouseOver
+                button.mouseOverColor = NSColor(resource: .buttonMouseOver)
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
@@ -2886,7 +3145,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         case is PopupBlockedPopover:
             if let button = popover.positioningView as? AddressBarButton {
                 button.backgroundColor = .clear
-                button.mouseOverColor = .buttonMouseOver
+                button.mouseOverColor = NSColor(resource: .buttonMouseOver)
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected AddressBarButton")
             }
@@ -2897,10 +3156,10 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             }
         case is PermissionCenterPopover:
             permissionCenterButton.backgroundColor = .clear
-            permissionCenterButton.mouseOverColor = .buttonMouseOver
+            permissionCenterButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
         case is YouTubeAdBlockPopover:
             youTubeAdBlockButton.backgroundColor = .clear
-            youTubeAdBlockButton.mouseOverColor = .buttonMouseOver
+            youTubeAdBlockButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
             youTubeAdBlockPopover = nil
             youTubeAdBlockViewModel = nil
         default:

@@ -11,7 +11,7 @@ UI.abort_with_message!('Please run fastlane via `bundle exec`') unless FastlaneC
 # Environment Variables
 ########################################################################
 PROJECT_ROOT_FOLDER = File.dirname(File.expand_path(__dir__))
-INFO_PLIST = File.join(PROJECT_ROOT_FOLDER, 'DuckDuckGo/Info.plist')
+INFO_PLIST = File.join(PROJECT_ROOT_FOLDER, 'DuckDuckGoAppBundle/Info.plist')
 VERSION_CONFIG_PATH = File.join(PROJECT_ROOT_FOLDER, 'Configuration/Version.xcconfig')
 BUILD_NUMBER_CONFIG_PATH = File.join(PROJECT_ROOT_FOLDER, 'Configuration/BuildNumber.xcconfig')
 VERSION_CONFIG_DEFINITION = 'MARKETING_VERSION'

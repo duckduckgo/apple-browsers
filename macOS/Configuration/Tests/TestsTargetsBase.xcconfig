@@ -22,7 +22,7 @@ CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] =
 
 DEAD_CODE_STRIPPING = YES
 
-INFOPLIST_FILE = DuckDuckGo/Info.plist
+INFOPLIST_FILE = DuckDuckGoAppBundle/Info.plist
 
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
 

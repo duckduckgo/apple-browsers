@@ -192,7 +192,7 @@ private enum Page {
     static let js = load("permissions-inspector", withExtension: "js")
 
     private static func load(_ name: String, withExtension fileExtension: String) -> Data {
-        guard let url = Bundle.main.url(forResource: name, withExtension: fileExtension),
+        guard let url = Bundle.module.url(forResource: name, withExtension: fileExtension),
               let data = try? Data(contentsOf: url) else {
             assertionFailure("\(name).\(fileExtension) is missing from the app bundle")
             return Data()

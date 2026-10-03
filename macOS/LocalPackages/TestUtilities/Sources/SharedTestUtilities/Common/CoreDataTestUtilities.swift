@@ -23,28 +23,28 @@ import os.log
 
 public final class CoreData {
 
-    public static func historyStoreContainer() -> NSPersistentContainer {
-        createInMemoryPersistentContainer(modelName: "History", bundle: Bundle.main)
+    public static func historyStoreContainer(bundle: Bundle) -> NSPersistentContainer {
+        createInMemoryPersistentContainer(modelName: "History", bundle: bundle)
     }
 
-    public static func legacyBookmarkContainer() -> NSPersistentContainer {
-        return createInMemoryPersistentContainer(modelName: "Bookmark", bundle: Bundle.main)
+    public static func legacyBookmarkContainer(bundle: Bundle) -> NSPersistentContainer {
+        return createInMemoryPersistentContainer(modelName: "Bookmark", bundle: bundle)
     }
 
-    public static func permissionContainer() -> NSPersistentContainer {
-        return createInMemoryPersistentContainer(modelName: "Permissions", bundle: Bundle.main)
+    public static func permissionContainer(bundle: Bundle) -> NSPersistentContainer {
+        return createInMemoryPersistentContainer(modelName: "Permissions", bundle: bundle)
     }
 
-    public static func fireproofingContainer() -> NSPersistentContainer {
-        return createInMemoryPersistentContainer(modelName: "FireproofDomains", bundle: Bundle.main)
+    public static func fireproofingContainer(bundle: Bundle) -> NSPersistentContainer {
+        return createInMemoryPersistentContainer(modelName: "FireproofDomains", bundle: bundle)
     }
 
     public static func coreDataStoreTestsContainer(bundle: Bundle) -> NSPersistentContainer {
         return createInMemoryPersistentContainer(modelName: "TestDataModel", bundle: bundle)
     }
 
-    public static func downloadsContainer() -> NSPersistentContainer {
-        return createInMemoryPersistentContainer(modelName: "Downloads", bundle: Bundle.main)
+    public static func downloadsContainer(bundle: Bundle) -> NSPersistentContainer {
+        return createInMemoryPersistentContainer(modelName: "Downloads", bundle: bundle)
     }
 
     public static func createPersistentContainer(at url: URL, modelName: String, bundle: Bundle, keyStore: EncryptionKeyStoring) -> NSPersistentContainer {

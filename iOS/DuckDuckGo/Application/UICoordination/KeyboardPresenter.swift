@@ -67,6 +67,11 @@ struct NewTabPageKeyboardPolicy {
         onNewTab && !onDuckAITab && !stillOnboarding
     }
 
+    /// New Tab governs a landing on an NTP inside the app that doesn't come through `newTab()`:
+    /// Close All Tabs, closing the last tab, the Home button and explicitly switching onto an NTP. Swiping between tabs is excluded.
+    var showsKeyboardOnInAppLanding: Bool { onNewTab }
+
+
 }
 
 extension NewTabPageKeyboardPolicy {

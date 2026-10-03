@@ -990,16 +990,24 @@ extension MainViewController: TabsBarDelegate {
         dismissOmniBar()
 
         // Tabs bar is iPad only and this is to work around on a problem iOS 26 which will be fixed later with Xcode 26.
-        if tab !== self.tabManager.currentTabsModel.currentTab {
+        let switchesTab = tab !== tabManager.currentTabsModel.currentTab
+        if switchesTab {
             chromeManager.preventNextScrollToTop()
         }
         
         selectTab(tab)
+        if switchesTab {
+            showKeyboardOnNewTabPageLandingIfAllowed()
+        }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
         if let tab = tabManager.currentTabsModel.get(tabAt: index) {
+            let closesCurrentTab = tab === tabManager.currentTabsModel.currentTab
             closeTab(tab, refreshInPlace: true)
+            if closesCurrentTab {
+                showKeyboardOnNewTabPageLandingIfAllowed()
+            }
         }
     }
 

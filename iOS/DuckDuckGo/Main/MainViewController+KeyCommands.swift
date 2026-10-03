@@ -205,7 +205,8 @@ extension MainViewController {
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
         
-        if currentTab != nil {
+        // A New Tab Page often has no tab controller yet, and find-in-page then does nothing.
+        if currentTab != nil || featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
             newTab()
         } else {
             keyboardFind()
@@ -229,22 +230,31 @@ extension MainViewController {
         
         guard let tab = currentTab else { return }
         closeTab(tab.tabModel)
+        showKeyboardOnNewTabPageLandingIfAllowed()
     }
     
     @objc func keyboardNextTab() {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.nextTab else { return }
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageLandingIfAllowed()
+        }
     }
     
     @objc func keyboardPreviousTab() {
         guard tabSwitcherController == nil else { return }
         
         guard let targetTab = tabManager.currentTabsModel.previousTab else { return }
+        let switchesTab = targetTab !== tabManager.currentTabsModel.currentTab
         performCancel()
         selectTab(targetTab)
+        if switchesTab {
+            showKeyboardOnNewTabPageLandingIfAllowed()
+        }
     }
     
     @objc func keyboardShowAllTabs() {

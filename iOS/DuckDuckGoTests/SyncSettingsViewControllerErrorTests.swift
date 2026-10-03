@@ -447,7 +447,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         await spyVC.controllerDidError(.syncCancelledFromOtherDevice, underlyingError: nil, setupRole: .sharer)
 
-        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 1)
+        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 0)
         XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
         XCTAssertEqual(spyVC.presentCallCount, 1)
     }
@@ -557,6 +557,83 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         XCTAssertTrue(navigationController.topViewController === vc)
         await withCheckedContinuation { continuation in
             navigationController.dismiss(animated: false) { continuation.resume() }
+        }
+    }
+
+    @MainActor
+    func testWhenThirdPartyAccountIsAlreadyUpgradedThenDismissesPairingSetupBeforeShowingError() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+
+        await vc.controllerDidError(.thirdPartyAccountAlreadyUpgraded, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        let alert = navigationController.presentedViewController as? UIAlertController
+        XCTAssertNotNil(alert)
+        XCTAssertEqual(alert?.title, SyncErrorMessage.thirdPartyAccountAlreadyUpgraded.title)
+        XCTAssertEqual(alert?.message, SyncErrorMessage.thirdPartyAccountAlreadyUpgraded.description)
+        XCTAssertTrue(navigationController.topViewController === vc)
+        if let alert {
+            await withCheckedContinuation { continuation in
+                alert.dismiss(animated: false) { continuation.resume() }
+            }
+        }
+    }
+
+    @MainActor
+    func testWhenPairingV21StartsWaitingForJoinStatusThenPreservesRecoveryPhase() {
+        vc.viewModel.connectingSheetPhase = .connecting(isRecovery: true)
+
+        vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: true))
+    }
+
+    @MainActor
+    func testWhenPairingV21CompletesAfterDeviceListUpdateThenShowsSuccess() {
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        let devices = [
+            SyncSettingsViewModel.Device(id: "host", name: "Host", type: "phone", isThisDevice: true),
+            SyncSettingsViewModel.Device(id: "joiner", name: "Joiner", type: "phone", isThisDevice: false)
+        ]
+        vc.viewModel.devices = devices
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.devices, devices)
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, isFinishing: true))
+
+        vc.viewModel.connectingAnimationDidFinish()
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .success(isRecovery: false))
+    }
+
+    @MainActor
+    func testWhenJoinerWaitsThenReceivesCodeThenReturnsToConnecting() {
+        for isRecovery in [false, true] {
+            vc.codeCollectionIntent = isRecovery ? .recoverData : .syncAnotherDevice
+            vc.viewModel.connectingSheetPhase = .connecting(isRecovery: isRecovery)
+            vc.controllerDidUpdatePairingV2JoinStatus(.unknown)
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .waitingForOtherDevice)
+
+            vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: isRecovery))
         }
     }
 

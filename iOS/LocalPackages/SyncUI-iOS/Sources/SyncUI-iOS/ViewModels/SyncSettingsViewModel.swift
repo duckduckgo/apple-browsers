@@ -83,12 +83,19 @@ public class SyncSettingsViewModel: ObservableObject {
         public let credentialId: String?
         public let isThisDevice: Bool
 
-        // Keep these values aligned with DDGSync.SyncCredentialID without coupling SyncUI_iOS to DDGSync.
+        // Keep these values aligned with DDGSync.SyncCredentialID and the RegisteredDeviceMapper
+        // placeholder type without coupling SyncUI_iOS to DDGSync.
         public static let defaultCredentialId = "ddg"
         public static let thirdPartyCredentialId = "3party"
+        public static let unknownDeviceType = "unknown"
 
         public var isThirdParty: Bool {
             credentialId == Self.thirdPartyCredentialId
+        }
+
+        /// The device's metadata could not be decrypted, so its real type is not known.
+        public var isUnknownType: Bool {
+            type == Self.unknownDeviceType
         }
 
         public init(id: String, name: String, type: String, credentialId: String? = nil, isThisDevice: Bool) {
@@ -186,6 +193,7 @@ public class SyncSettingsViewModel: ObservableObject {
     public enum ConnectingSheetPhase: Equatable, Identifiable {
         case connecting(isRecovery: Bool, isFinishing: Bool = false)
         case syncAnotherDevice(isConnecting: Bool)
+        case waitingForOtherDevice
         case success(isRecovery: Bool)
 
         // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
@@ -441,9 +449,10 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func showSuccess(recoveryCode: String, isRecovery: Bool) {
         self.recoveryCode = recoveryCode
-        if case .connecting = connectingSheetPhase {
+        switch connectingSheetPhase {
+        case .connecting, .waitingForOtherDevice:
             connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
-        } else {
+        default:
             connectingSheetPhase = .success(isRecovery: isRecovery)
         }
     }

@@ -57,6 +57,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didCompleteLoginDevices: [RegisteredDevice]?
     var didCompletePairingWithAlreadyConnectedAccountCalled = { }
     var didCompletePairingWithAlreadyConnectedAccountSetupRole: SyncSetupRole?
+    var pairingV2JoinStatuses: [PairingV2JoinStatus] = []
     var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
     var didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts: Bool?
     var didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow: Bool?
@@ -125,6 +126,10 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     func controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: SyncSetupRole) {
         didCompletePairingWithAlreadyConnectedAccountSetupRole = setupRole
         didCompletePairingWithAlreadyConnectedAccountCalled()
+    }
+
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+        pairingV2JoinStatuses.append(status)
     }
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
@@ -696,6 +701,72 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
         await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
+    }
+
+    @MainActor
+    func test_startExchangeMode_whenV21PresenterWaitsForJoinStatus_notifiesJoinStatuses() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canUseExchangeV2Point1 = { true }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        var payload: PairingV2QRCodePayload?
+        let recoveryCodeResponseLock = NSLock()
+        var hasSentRecoveryCodeResponse = false
+        messageExchanger.sendHandler = { messages, _ in
+            let crypto = PairingV2MessageCrypto()
+            for message in messages {
+                guard let decrypted = try crypto.decrypt(message, privateKey: peerKeyPair.privateKey) else { continue }
+                if case .recoveryCodeResponse = decrypted {
+                    recoveryCodeResponseLock.withLock { hasSentRecoveryCodeResponse = true }
+                }
+            }
+        }
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard let payload else {
+                return []
+            }
+            switch sequence {
+            case 0:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .hello(.init(channelId: peerKeyPair.channelID,
+                                 publicKey: peerKeyPair.publicKey,
+                                 version: PairingV2ProtocolVersion.v2Point1.rawValue))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair)
+            case 1:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeRequest(
+                        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                              name: "Peer",
+                              kind: .ddg)
+                    )
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            case 2:
+                guard recoveryCodeResponseLock.withLock({ hasSentRecoveryCodeResponse }) else { return [] }
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .bye(.init(reason: .done))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            case 3:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeDone(.init(reason: .success))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            default:
+                return []
+            }
+        }
+
+        let didFinishTransmitting = expectation(description: "did finish transmitting")
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            didFinishTransmitting.fulfill()
+        }
+
+        let pairingInfo = try await controller.startExchangeMode()
+        payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
+
+        await fulfillment(of: [didFinishTransmitting], timeout: 5)
+        XCTAssertEqual(delegate.pairingV2JoinStatuses, [.waiting, .unknown])
+        XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
     }
 
     @MainActor
@@ -1286,7 +1357,13 @@ final class SyncConnectionControllerTests: XCTestCase {
             didClosePresenterChannel.fulfill()
         }
 
-        messageExchanger.fetchMessagesError = PairingV2Error.cancelled
+        messageExchanger.fetchMessagesHandler = { channelID, _ in
+            // Keep the presenter polling until the scanner flow cancels it.
+            guard channelID == presenterPayload.channelId else {
+                throw PairingV2Error.cancelled
+            }
+            return []
+        }
         let result = await controller.syncCodeEntered(code: scannerURL.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
@@ -1853,6 +1930,72 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow, true)
         XCTAssertTrue(didFinishReportingAccountSwitch)
         XCTAssertTrue(didSendRecoveryCodeDone)
+        XCTAssertEqual(delegate.pairingV2JoinStatuses, [.waiting])
+        XCTAssertNil(delegate.didErrorErrors)
+    }
+
+    @MainActor
+    func test_syncCodeEntered_whenV21ScannerHostWaitsForJoinStatus_notifiesJoinStatuses() async throws {
+        dependencies.canUseExchangeV2Point1 = { true }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        let recoveryCodeResponseLock = NSLock()
+        var hasSentRecoveryCodeResponse = false
+        messageExchanger.sendHandler = { messages, _ in
+            let crypto = PairingV2MessageCrypto()
+            for message in messages {
+                guard let decrypted = try crypto.decrypt(message, privateKey: peerKeyPair.privateKey) else { continue }
+                if case .recoveryCodeResponse = decrypted {
+                    recoveryCodeResponseLock.withLock { hasSentRecoveryCodeResponse = true }
+                }
+            }
+        }
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            switch sequence {
+            case 0:
+                return try self.encryptedPeerMessages(
+                    [
+                        .recoveryCodeRequest(
+                            .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                  name: "Peer",
+                                  kind: .ddg)
+                        )
+                    ],
+                    messageExchanger: messageExchanger,
+                    peerKeyPair: peerKeyPair,
+                    initialSequence: sequence
+                )
+            case 1:
+                guard recoveryCodeResponseLock.withLock({ hasSentRecoveryCodeResponse }) else { return [] }
+                return try self.encryptedPeerMessages(
+                    [.bye(.init(reason: .done))],
+                    messageExchanger: messageExchanger,
+                    peerKeyPair: peerKeyPair,
+                    initialSequence: sequence
+                )
+            case 2:
+                return try self.encryptedPeerMessages(
+                    [.recoveryCodeDone(.init(reason: .success))],
+                    messageExchanger: messageExchanger,
+                    peerKeyPair: peerKeyPair,
+                    initialSequence: sequence
+                )
+            default:
+                return []
+            }
+        }
+        let payload = PairingV2QRCodePayload(version: PairingV2ProtocolVersion.v2Point1.rawValue,
+                                             channelId: peerKeyPair.channelID,
+                                             publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(delegate.pairingV2JoinStatuses, [.waiting, .unknown])
+        XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
         XCTAssertNil(delegate.didErrorErrors)
     }
 
@@ -2267,6 +2410,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     private func encryptedPeerMessages(_ messages: [PairingV2ApplicationMessage],
                                        messageExchanger: PairingV2MessageExchangingMock,
                                        peerKeyPair: PairingV2KeyPair,
+                                       initialSequence: Int = 0,
                                        file: StaticString = #filePath,
                                        line: UInt = #line) throws -> [PairingV2SequencedMessage] {
         let crypto = PairingV2MessageCrypto()
@@ -2279,7 +2423,7 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         return try messages.enumerated().map { index, message in
             let encryptedMessage = try crypto.encrypt(message, recipientPublicKey: hello.publicKey, senderChannelID: peerKeyPair.channelID)
-            return PairingV2SequencedMessage(seq: index + 1, version: encryptedMessage.version, payload: encryptedMessage.payload)
+            return PairingV2SequencedMessage(seq: initialSequence + index + 1, version: encryptedMessage.version, payload: encryptedMessage.payload)
         }
     }
 

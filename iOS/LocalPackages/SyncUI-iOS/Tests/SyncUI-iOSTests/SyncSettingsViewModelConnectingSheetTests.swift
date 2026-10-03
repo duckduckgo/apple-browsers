@@ -56,6 +56,22 @@ final class SyncSettingsViewModelConnectingSheetTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Show success while waiting for the other device finishes the connecting animation first", .timeLimit(.minutes(1)))
+    func showSuccessWhileWaitingForOtherDevice() {
+        let sut = makeSUT()
+        sut.connectingSheetPhase = .waitingForOtherDevice
+
+        sut.showSuccess(recoveryCode: "device-code", isRecovery: false)
+
+        #expect(sut.connectingSheetPhase == .connecting(isRecovery: false, isFinishing: true))
+
+        sut.connectingAnimationDidFinish()
+
+        #expect(sut.connectingSheetPhase == .success(isRecovery: false))
+        #expect(sut.recoveryCode == "device-code")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Done from the connecting sheet dismisses it", .timeLimit(.minutes(1)))
     func doneFromConnectingSheetDismisses() {
         let sut = makeSUT()

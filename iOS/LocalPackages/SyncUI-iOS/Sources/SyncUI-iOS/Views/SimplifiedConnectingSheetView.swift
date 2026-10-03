@@ -39,6 +39,13 @@ public struct SimplifiedConnectingSheetView: View {
                     isFinishing: isFinishing,
                     onAnimationFinished: { model.connectingAnimationDidFinish() }
                 )
+            case .waitingForOtherDevice:
+                SimplifiedConnectingContentView(
+                    isRecovery: false,
+                    isFinishing: false,
+                    isWaitingForOtherDevice: true,
+                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                )
             case .success(let isRecovery):
                 SyncSuccessView(model: model, isRecovery: isRecovery)
             case .none:
@@ -72,6 +79,12 @@ public struct SimplifiedConnectingSheetView: View {
 #Preview("Device Connected") {
     RebrandedPreview(isRebranded: true) {
         SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .success(isRecovery: false)))
+    }
+}
+
+#Preview("Check Other Device") {
+    RebrandedPreview(isRebranded: true) {
+        SimplifiedConnectingSheetView(model: .connectingSheetPreview(phase: .waitingForOtherDevice))
     }
 }
 

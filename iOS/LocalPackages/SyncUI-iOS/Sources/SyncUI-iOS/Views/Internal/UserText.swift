@@ -179,8 +179,9 @@ public struct UserText {
     static let simplifiedViewCodeShareButton = NSLocalizedString("sync.simplified.scan-or-view-code.share", bundle: Bundle.module, value: "Share Code", comment: "Title of button to share a sync code")
     static let simplifiedViewCodeCopyConfirmationTitle = NSLocalizedString("sync.simplified.scan-or-view-code.copy-confirmation.title", bundle: Bundle.module, value: "Paste the code on your other device", comment: "Title of the reminder shown after the user copies the sync code.")
     static let simplifiedViewCodeCopyConfirmationMessage = NSLocalizedString("sync.simplified.scan-or-view-code.copy-confirmation.message", bundle: Bundle.module, value: "Come back to this device after pasting the code.", comment: "Message of the reminder shown after the user copies the sync code.")
-    static let simplifiedConnectingStatus = NSLocalizedString("sync.simplified.scan-or-view-code.connecting.status", bundle: Bundle.module, value: "Connecting...", comment: "Status text when connecting devices to sync")
+    static let simplifiedConnectingStatus = NSLocalizedString("sync.simplified.scan-or-view-code.connecting.status", bundle: Bundle.module, value: "Connecting…", comment: "Status text when connecting devices to sync")
     static let simplifiedConnectingTitle = NSLocalizedString("sync.simplified.connecting.v2.title", bundle: Bundle.module, value: "Sync & Backup is end-to-end encrypted on all your devices.", comment: "Title shown on the connecting screen while Sync & Backup is being set up on this device")
+    static let simplifiedCheckOtherDeviceTitle = NSLocalizedString("sync.simplified.connecting.v2.check-other-device.title", bundle: Bundle.module, value: "Check your other device.", comment: "Title shown when Sync setup is still waiting for the other device to finish")
     static let simplifiedPasteCodeVerifying = NSLocalizedString("sync.simplified.scan-or-view-code.paste.code.verifying", bundle: Bundle.module, value: "Verifying code", comment: "Status text while verifying a pasted sync code")
 
     // Sync Get Other Devices

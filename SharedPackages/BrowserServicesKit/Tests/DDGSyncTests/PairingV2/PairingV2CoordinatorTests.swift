@@ -876,6 +876,73 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertEqual(setup.coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
     }
 
+    func testJoinerWaitHintStartsAfterConfirmationAndStillAcceptsLateCodeFromV20Peer() async throws {
+        let clock = PairingV2CoordinatorTestClock()
+        let setup = try await makeNativeJoinerReadyForLogin(peerVersion: .v2, joinStatusDeadline: 10, now: { clock.now })
+        let messages = setup.messageExchanger.fetchMessagesStub
+        let confirmationGate = PairingV2CoordinatorTestGate()
+        setup.confirmationDelegate.joinPeerHandler = {
+            await confirmationGate.wait()
+            return true
+        }
+        setup.messageExchanger.fetchMessagesStub = [try XCTUnwrap(messages.first)]
+        try await setup.coordinator.pollOnce()
+        clock.advance(by: 100)
+        try await setup.coordinator.pollOnce()
+        XCTAssertNil(setup.coordinator.joinStatus)
+
+        await confirmationGate.open()
+        try await settlePendingConfirmation(in: setup.coordinator)
+        XCTAssertEqual(setup.coordinator.joinStatus, .waiting)
+        setup.messageExchanger.fetchMessagesStub = []
+        clock.advance(by: 9.999)
+        try await setup.coordinator.pollOnce()
+        XCTAssertEqual(setup.coordinator.joinStatus, .waiting)
+
+        clock.advance(by: 0.001)
+        try await setup.coordinator.pollOnce()
+        XCTAssertEqual(setup.coordinator.joinStatus, .unknown)
+        guard case .joinerWaitingForRecoveryCode = setup.coordinator.state else {
+            return XCTFail("The display deadline must not end the joiner's wait")
+        }
+        XCTAssertTrue(setup.messageExchanger.closeChannelCalls.isEmpty)
+
+        setup.messageExchanger.fetchMessagesStub = [try XCTUnwrap(messages.last)]
+        var statusWhenLoginStarts: PairingV2JoinStatus?
+        try await setup.coordinator.pollOnce { state in
+            if case .joinerLoggingIn = state {
+                statusWhenLoginStarts = setup.coordinator.joinStatus
+            }
+        }
+        XCTAssertEqual(statusWhenLoginStarts, .waiting)
+        XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
+        XCTAssertNil(setup.coordinator.joinStatus)
+    }
+
+    func testJoinerReceivingCodeAtWaitDeadlineDoesNotFlashUnknownHint() async throws {
+        let clock = PairingV2CoordinatorTestClock()
+        let setup = try await makeNativeJoinerReadyForLogin(joinStatusDeadline: 10, now: { clock.now })
+        let messages = setup.messageExchanger.fetchMessagesStub
+        setup.messageExchanger.fetchMessagesStub = [try XCTUnwrap(messages.first)]
+        try await setup.coordinator.pollOnce()
+        try await settlePendingConfirmation(in: setup.coordinator)
+        clock.advance(by: 10)
+        setup.messageExchanger.fetchMessagesStub = [try XCTUnwrap(messages.last)]
+
+        var statuses: [PairingV2JoinStatus] = []
+        try await setup.coordinator.pollOnce { _ in
+            if let status = setup.coordinator.joinStatus {
+                statuses.append(status)
+            }
+        }
+        XCTAssertEqual(statuses, [.waiting, .waiting])
+        XCTAssertEqual(setup.coordinator.state, .completed(.loggedIn))
+        XCTAssertNil(setup.coordinator.joinStatus)
+        try await setup.coordinator.startScanning(qrPayload: .init(channelId: setup.peerKeyPair.channelID,
+                                                                 publicKey: setup.peerKeyPair.publicKey))
+        XCTAssertNil(setup.coordinator.joinStatus)
+    }
+
     func testRecoveryCodeDoneAfterJoinStatusDeadlineCompletesHost() async throws {
         let clock = PairingV2CoordinatorTestClock()
         let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: { clock.now })
@@ -2194,7 +2261,10 @@ final class PairingV2CoordinatorTests: XCTestCase {
         return .init(seq: 3, version: encrypted.version, payload: encrypted.payload)
     }
 
-    private func makeNativeJoinerReadyForLogin(loginError: Error? = nil) async throws -> (
+    private func makeNativeJoinerReadyForLogin(loginError: Error? = nil,
+                                             peerVersion: PairingV2ProtocolVersion = .v2Point1,
+                                             joinStatusDeadline: TimeInterval = PairingV2PollingDefaults.joinStatusDeadline,
+                                             now: @escaping () -> Date = Date.init) async throws -> (
         coordinator: PairingV2Coordinator,
         messageExchanger: PairingV2MessageExchangingMock,
         messageCrypto: PairingV2MessageCrypto,
@@ -2216,7 +2286,9 @@ final class PairingV2CoordinatorTests: XCTestCase {
                                           messageExchanger: messageExchanger,
                                           messageCrypto: messageCrypto,
                                           confirmationDelegate: confirmationDelegate,
-                                          advertisedVersion: .v2Point1)
+                                          advertisedVersion: .v2Point1,
+                                          joinStatusDeadline: joinStatusDeadline,
+                                          now: now)
         let userId = "v2-ddg-user"
         let recoveryCode = try Self.makeRecoveryCodeV2(
             userId: userId,
@@ -2225,7 +2297,7 @@ final class PairingV2CoordinatorTests: XCTestCase {
         )
 
         try await coordinator.startScanning(
-            qrPayload: .init(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+            qrPayload: .init(version: peerVersion.rawValue, channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
         )
         let hello = try localHello(from: messageExchanger, peerPrivateKey: peerKeyPair.privateKey, messageCrypto: messageCrypto)
         messageExchanger.fetchMessagesStub = try encryptedPeerMessages(

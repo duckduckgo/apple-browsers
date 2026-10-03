@@ -839,6 +839,30 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         presentDialog(for: .prepareToSync(.twoDevicePairing))
     }
 
+    func controllerDidUpdatePairingV2JoinStatus(_ status: PairingV2JoinStatus) {
+        guard managementDialogModel.isSimplifiedSyncSetupV2Enabled,
+              let currentDialog = managementDialogModel.currentDialog else {
+            return
+        }
+
+        switch currentDialog {
+        case .prepareToSync, .waitForOtherDevice:
+            break
+        default:
+            return
+        }
+        switch status {
+        case .waiting:
+            if case .waitForOtherDevice = currentDialog {
+                presentDialog(for: .prepareToSync(.twoDevicePairing))
+            }
+        case .unknown:
+            if case .prepareToSync = currentDialog {
+                presentDialog(for: .waitForOtherDevice)
+            }
+        }
+    }
+
     func controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: Bool) {
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(.exchange,
                                                                       flowVersion: syncSetupFlowVersion,
@@ -908,7 +932,8 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         } else if isConfirmed {
             pairingV2PeerKind = peerKind
             if let dialog = Self.postPairingConfirmationDialog(
-                isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled
+                isSimplifiedSyncSetupV2Enabled: managementDialogModel.isSimplifiedSyncSetupV2Enabled,
+                setupRole: setupRole
             ) {
                 presentDialog(for: dialog)
             }
@@ -916,11 +941,11 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
         return isConfirmed
     }
 
-    static func postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: Bool) -> ManagementDialogKind? {
-        guard isSimplifiedSyncSetupV2Enabled else {
+    static func postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: Bool, setupRole: SyncSetupRole) -> ManagementDialogKind? {
+        guard isSimplifiedSyncSetupV2Enabled, case .receiver = setupRole else {
             return nil
         }
-        return .waitForOtherDevice
+        return .prepareToSync(.twoDevicePairing)
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {

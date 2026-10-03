@@ -198,6 +198,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) async {
+        await dismissPairingV2Scanner()
         await withCheckedContinuation { continuation in
             if type.shouldSendPixel, let event = event {
                 firePixelIfNeededFor(event: event, error: error)
@@ -759,6 +760,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func dismissPairingV2Setup() async {
+        await dismissPairingV2Scanner()
+        viewModel.dismissConnectingSheet()
+    }
+
+    private func dismissPairingV2Scanner() async {
         // Dismiss from the presenter so both the scanner and its nested QR sheet are removed.
         if let scanner = scanCodeNavigationController,
            let presenter = scanner.presentingViewController,
@@ -769,7 +775,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 }
             }
         }
-        viewModel.dismissConnectingSheet()
     }
 
     func simplifiedConfirmAndDisableSync() async -> Bool {

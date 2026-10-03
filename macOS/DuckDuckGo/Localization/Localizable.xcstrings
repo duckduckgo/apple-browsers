@@ -3487,7 +3487,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Załączone pliki przekraczają całkowity limit rozmiaru MB."
+            "value" : "Załączone pliki przekraczają całkowity limit rozmiaru %d MB."
           }
         },
         "pt" : {
@@ -17468,7 +17468,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Contraseña guardada para % @"
+            "value" : "Contraseña guardada para %@"
           }
         },
         "fr" : {
@@ -49282,7 +49282,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń 1$#@items@."
+            "value" : "Usuń %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -60904,7 +60904,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible d'importer automatiquement les cartes de crédit depuis %"
+            "value" : "Impossible d'importer automatiquement les cartes de crédit depuis %@"
           }
         },
         "it" : {
@@ -61990,7 +61990,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$d Accedi al sito web **%2$s** → seleziona **Opzioni avanzate → Esporta → Continua**. Riceverai un'e-mail di verifica.\n%3$d Nell'e-mail, clicca su **Continua l'esportazione**, poi torna su **%4$s** e seleziona **Opzioni avanzate → Esporta → Invia** e salva il file **CSV**\n% 5$d Carica il file CSV esportato su DuckDuckGo"
+            "value" : "%1$d Accedi al sito web **%2$s** → seleziona **Opzioni avanzate → Esporta → Continua**. Riceverai un'e-mail di verifica.\n%3$d Nell'e-mail, clicca su **Continua l'esportazione**, poi torna su **%4$s** e seleziona **Opzioni avanzate → Esporta → Invia** e salva il file **CSV**\n%5$d Carica il file CSV esportato su DuckDuckGo"
           }
         },
         "nl" : {
@@ -77883,13 +77883,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir dans % @"
+            "value" : "Ouvrir dans %@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri in % @"
+            "value" : "Apri in %@"
           }
         },
         "nl" : {
@@ -84732,7 +84732,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bloccato %1$# @popups@"
+            "value" : "Bloccato %#@popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -88472,7 +88472,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wygasa: % @"
+            "value" : "Wygasa: %@"
           }
         },
         "pt" : {
@@ -96325,7 +96325,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Meer op % @"
+            "value" : "Meer op %@"
           }
         },
         "pl" : {
@@ -119704,7 +119704,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancella la cronologia di navigazione per % @"
+            "value" : "Cancella la cronologia di navigazione per %@"
           }
         },
         "nl" : {
@@ -119764,7 +119764,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancella la cronologia di navigazione e i dati per % @"
+            "value" : "Cancella la cronologia di navigazione e i dati per %@"
           }
         },
         "nl" : {

@@ -895,6 +895,8 @@ public class SyncConnectionController: SyncConnectionControlling {
             deviceType: deviceType,
             flags: PairingV2RolloutFlags(isV2ScanningEnabled: isPairingV2ScanningEnabled,
                                          isV2CodeEnabled: isPairingV2PresentationEnabled),
+            shouldAuthenticateExchangeEndpoints: dependencies.syncFeatureFlags.canSendExchangeChannelSecret()
+                || dependencies.syncFeatureFlags.canUseExchangeV2Point1(),
             confirmationDelegate: self,
             makeKeyPair: makePairingV2KeyPair
         )

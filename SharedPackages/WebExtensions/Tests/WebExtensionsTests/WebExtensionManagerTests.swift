@@ -74,7 +74,11 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
+                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                             bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
+                                 XCTFail("Unexpected bundled extension lookup")
+                                 return nil
+                             }) -> WebExtensionManager {
         let manager = WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
@@ -84,7 +88,8 @@ final class WebExtensionManagerTests: XCTestCase {
             eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock,
             pixelFiring: pixelFiring,
-            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            bundledExtensionURL: bundledExtensionURL
         )
         manager.unloadGuard = WebExtensionUnloadGuard(
             now: { [unowned self] in currentDate },
@@ -125,20 +130,20 @@ final class WebExtensionManagerTests: XCTestCase {
         return context
     }
 
-    private func makeTestExtensionDirectory(permissions: [String] = []) throws -> URL {
+    private func makeTestExtensionDirectory(permissions: [String] = [], embeddedType: DuckDuckGoWebExtensionType? = nil) throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReloadTestExtension-\(UUID().uuidString)")
-        let permissionsJSON = permissions.map { "\"\($0)\"" }.joined(separator: ", ")
-        let manifest = """
-        {
+        var manifest: [String: Any] = [
             "manifest_version": 3,
             "name": "Reload Test Extension",
             "version": "1.0.0",
             "description": "Minimal backgroundless test extension for reload unit tests",
-            "permissions": [\(permissionsJSON)]
+            "permissions": permissions
+        ]
+        if let embeddedType {
+            manifest["browser_specific_settings"] = ["duckduckgo": ["id": embeddedType.rawValue]]
         }
-        """
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try manifest.write(to: dir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        try JSONSerialization.data(withJSONObject: manifest).write(to: dir.appendingPathComponent("manifest.json"))
         createdTestExtensionDirs.append(dir)
         return dir
     }
@@ -166,6 +171,16 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(installedExtensionStoringMock.addCalled)
         XCTAssertNotNil(installedExtensionStoringMock.addedExtension?.uniqueIdentifier)
         XCTAssertEqual(storageProvidingMock.copyExtensionIdentifier, installedExtensionStoringMock.addedExtension?.uniqueIdentifier)
+    }
+
+    @MainActor
+    func testWhenPermissionsAreDisabled_ThenDDGIdentityIsPreservedWithoutBundleLookup() async throws {
+        let manager = makeManager()
+        let sourceURL = try makeTestExtensionDirectory(embeddedType: .embedded)
+
+        try await manager.installExtension(from: sourceURL)
+
+        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.embeddedType, .embedded)
     }
 
     @MainActor
@@ -540,14 +555,18 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     private func makeManagerWithLoadedExtension(identifier: String,
                                                 filename: String = "extension.zip",
-                                                embeddedType: DuckDuckGoWebExtensionType? = nil) async throws -> WebExtensionManager {
+                                                embeddedType: DuckDuckGoWebExtensionType? = nil,
+                                                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
+                                                    XCTFail("Unexpected bundled extension lookup")
+                                                    return nil
+                                                }) async throws -> WebExtensionManager {
         installedExtensionStoringMock.installedExtensions = [
             makeInstalledWebExtension(uniqueIdentifier: identifier, filename: filename, version: "0.0.1", embeddedType: embeddedType)
         ]
         webExtensionLoadingMock.mockLoadResults = [
             .success(WebExtensionLoadResult(identifier: identifier, filename: filename, displayName: nil, version: "0.0.1"))
         ]
-        let manager = makeManager()
+        let manager = makeManager(bundledExtensionURL: bundledExtensionURL)
         try await loadRealContext(identifier: identifier, into: manager.controller, permissions: ["declarativeNetRequest"])
         await manager.loadInstalledExtensions()
         return manager
@@ -593,12 +612,16 @@ final class WebExtensionManagerTests: XCTestCase {
                        "disabling should have uninstalled the extension after the settle window")
     }
 
-    // The upgrade branch resolves the bundled extension through `Bundle.module`, which traps on iOS.
-    // Gated for the same reason as DarkReaderBundlePatchTests.
-#if os(macOS)
     @MainActor
     func testWhenEmbeddedDNRExtensionIsUpgradedWithinSettleWindow_ThenSyncSleepsBeforeUninstall() async throws {
-        let manager = try await makeManagerWithLoadedAdBlocker()
+        let bundledURL = try makeTestExtensionDirectory(permissions: ["declarativeNetRequest"], embeddedType: .adBlockingExtension)
+        let manager = try await makeManagerWithLoadedExtension(identifier: "old-adblock",
+                                                              filename: "content-blocker-extension-apple.zip",
+                                                              embeddedType: .adBlockingExtension,
+                                                              bundledExtensionURL: { descriptor in
+                                                                  XCTAssertEqual(descriptor.type, .adBlockingExtension)
+                                                                  return bundledURL
+                                                              })
 
         currentDate = currentDate.addingTimeInterval(1)
         await manager.syncEmbeddedExtensions(enabledTypes: [.adBlockingExtension])
@@ -607,7 +630,6 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
                        "upgrade should have uninstalled the old extension after the settle window")
     }
-#endif
 
     // MARK: - Computed Properties Tests
 

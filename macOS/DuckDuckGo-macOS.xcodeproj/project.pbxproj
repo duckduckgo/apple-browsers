@@ -153,6 +153,8 @@
 		1D645EB02F4CA839009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D645EAF2F4CA836009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift */; };
 		1D645EB12F4CA839009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D645EAF2F4CA836009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift */; };
 		1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */; };
+		DC2900012FD0000000000001 /* WebExtensionPermissionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */; };
+		DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */; };
 		1D69B7192E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
 		1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
 		1D6A492029CF7A490011DF74 /* NSPopoverExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */; };
@@ -5154,6 +5156,7 @@
 		1D5C233F2F16CE000055046E /* PassthroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassthroughView.swift; sourceTree = "<group>"; };
 		1D645EAF2F4CA836009CD7FB /* NewTabPageOmnibarAiChatsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarAiChatsProvider.swift; sourceTree = "<group>"; };
 		1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionsDebugMenu.swift; sourceTree = "<group>"; };
+		DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPermissionPrompt.swift; sourceTree = "<group>"; };
 		1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSuggestionsProviderTests.swift; sourceTree = "<group>"; };
 		1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPopoverExtension.swift; sourceTree = "<group>"; };
 		1D6D041B2D9437ED005BC23F /* FullscreenController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenController.swift; sourceTree = "<group>"; };
@@ -8090,6 +8093,7 @@
 			isa = PBXGroup;
 			children = (
 				1D68604E2D36BD1A006FC53E /* WebExtensionsDebugMenu.swift */,
+				DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -16616,6 +16620,7 @@
 				1DB5E6212E2920A2009C692F /* Suggestion+GeneralPixel.swift in Sources */,
 				3706FC02293F65D500E42796 /* Downloads.xcdatamodeld in Sources */,
 				7BD5049B2E5FA3EA008A0646 /* WebExtensionsDebugMenu.swift in Sources */,
+				DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */,
 				37FC2A192CF903080048E226 /* MockPrivacyStats.swift in Sources */,
 				C167D9032DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */,
 				B60C6F7829B0E286007BFAA8 /* SearchNonexistentDomainNavigationResponder.swift in Sources */,
@@ -19256,6 +19261,7 @@
 				EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */,
 				AABEE69C24A902BB0043105B /* SuggestionContainer.swift in Sources */,
 				1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */,
+				DC2900012FD0000000000001 /* WebExtensionPermissionPrompt.swift in Sources */,
 				F1A2E1202DCB9FB00086F538 /* LogExporter.swift in Sources */,
 				B6C00ECD292F89D9009C73A6 /* FindInPageTabExtension.swift in Sources */,
 				85589E8327BBB8630038AD11 /* BurnerHomePageViewController.swift in Sources */,

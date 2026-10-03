@@ -559,7 +559,8 @@ final class NavigationBarViewController: NSViewController {
         if #available(macOS 15.4, *) {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
                                                           themeManager: themeManager,
-                                                          container: menuButtons)
+                                                          container: menuButtons,
+                                                          isPrivateWindow: tabCollectionViewModel.isBurner)
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
         }

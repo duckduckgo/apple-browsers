@@ -239,6 +239,52 @@ final class PromoCoordinationServiceTests {
         }
     }
 
+    // MARK: - Launch Prompt Close Handler
+
+    @Test(
+        "Check The Launch Prompt Close Handler Goes To The Coordination Manager",
+        arguments: [true, false],
+        [PromoCoordinationMode.legacy, .coordinated]
+    )
+    func whenWaitingForLaunchPromptThenCoordinationManagerHoldsTheHandler(isPending: Bool, mode: PromoCoordinationMode) {
+        // GIVEN
+        managerMock.runOnceModalPromptClosesResult = isPending
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            mode: mode,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+        )
+
+        // WHEN
+        let waits = sut.runOnceModalPromptCloses {}
+
+        // THEN
+        #expect(waits == isPending)
+        #expect((managerMock.capturedModalPromptCloseHandler != nil) == isPending)
+    }
+
+    @Test("Check Backgrounding Stops Waiting For The Launch Prompt To Close")
+    func whenAppIsBackgroundedThenLaunchPromptCloseHandlerIsDropped() {
+        // GIVEN
+        sut = PromoCoordinationService(
+            launchSourceManager: launchSourceManagerMock,
+            modalPromptCoordinationManager: managerMock,
+            mode: .legacy,
+            promoQueueLeaseArbiter: promoQueueLeaseArbiter,
+            promoQueueCooldownPolicy: promoQueueCooldownPolicy,
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+        )
+
+        // WHEN
+        sut.handleAppBackgrounded()
+
+        // THEN
+        #expect(managerMock.cancelModalPromptCloseHandlerCallCount == 1)
+    }
+
 
 }
 

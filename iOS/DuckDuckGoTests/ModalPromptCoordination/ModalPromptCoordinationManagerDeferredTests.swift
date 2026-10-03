@@ -54,6 +54,17 @@ final class ModalPromptCoordinationManagerDeferredTests {
         #expect(arbiter.snapshot.hasModalLease)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Holding the slot doesn't hold back the app-open keyboard", .timeLimit(.minutes(1)))
+    func holdingSlotKeepsNoCloseHandler() throws {
+        let sut = makeManager(providers: [makeDeferredProvider(isEligible: true)])
+        let lease = try acquiredModalLease()
+
+        sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
+
+        #expect(!sut.runOnceModalPromptCloses {})
+    }
+
     @available(iOS 16, *)
     @Test("Holding the slot is not reported as a prompt the user saw", .timeLimit(.minutes(1)))
     func holdingSlotIsNotReportedAsPresented() throws {

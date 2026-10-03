@@ -26,6 +26,9 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
     private(set) var capturedPresenter: ModalPromptPresenter?
     private(set) var callCount = 0
     var didPresentModalPromptThisSession = false
+    var runOnceModalPromptClosesResult = false
+    private(set) var capturedModalPromptCloseHandler: (@MainActor () -> Void)?
+    private(set) var cancelModalPromptCloseHandlerCallCount = 0
     private(set) var capturedModalLease: PromoQueueModalLease?
     private(set) var reconcilePresentedModalCallCount = 0
     var onPresentCoordinated: (@MainActor () -> Void)?
@@ -63,5 +66,15 @@ final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging 
 
     func releaseDeferredModal() {
         releaseDeferredModalCallCount += 1
+    }
+
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        guard runOnceModalPromptClosesResult else { return false }
+        capturedModalPromptCloseHandler = handler
+        return true
+    }
+
+    func cancelModalPromptCloseHandler() {
+        cancelModalPromptCloseHandlerCallCount += 1
     }
 }

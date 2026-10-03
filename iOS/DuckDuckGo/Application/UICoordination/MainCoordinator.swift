@@ -701,6 +701,10 @@ final class MainCoordinator {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        promoCoordinationService.runOnceModalPromptCloses(while: shouldWait, handler)
+    }
+
     func prepareHomePageMessagesForForegroundIfNeeded() {
         controller.prepareHomePageMessagesForForegroundIfNeeded()
     }

@@ -130,6 +130,8 @@ final class PairingV2MessageCrypto {
             return try JSONEncoder.snakeCaseKeys.encode(message)
         case .recoveryCodeDone(let message):
             return try JSONEncoder.snakeCaseKeys.encode(message)
+        case .bye(let message):
+            return try JSONEncoder.snakeCaseKeys.encode(message)
         }
     }
 
@@ -154,6 +156,8 @@ final class PairingV2MessageCrypto {
             return .recoveryCodeResponse(try JSONDecoder.snakeCaseKeys.decode(PairingV2RecoveryCodeResponseMessage.self, from: payload))
         case PairingV2RecoveryCodeDoneMessage.messageType:
             return .recoveryCodeDone(try JSONDecoder.snakeCaseKeys.decode(PairingV2RecoveryCodeDoneMessage.self, from: payload))
+        case PairingV2ByeMessage.messageType:
+            return .bye(try JSONDecoder.snakeCaseKeys.decode(PairingV2ByeMessage.self, from: payload))
         default:
             return nil
         }

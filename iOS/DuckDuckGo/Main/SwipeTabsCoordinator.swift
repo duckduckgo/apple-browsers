@@ -671,7 +671,11 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         guard state.aiChatInputBoxVisibility != .hidden else { return }
 
-        let inputController = UnifiedToggleInputViewController(isToggleEnabled: true, isFireTab: tab.fireTab)
+        let attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: omnibarDependencies.featureFlagger)
+        let inputController = UnifiedToggleInputViewController(
+            isToggleEnabled: true,
+            isFireTab: tab.fireTab,
+            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
         inputController.loadViewIfNeeded()
         inputController.view.isUserInteractionEnabled = false
 

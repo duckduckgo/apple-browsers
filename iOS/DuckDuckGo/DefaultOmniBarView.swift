@@ -652,12 +652,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     /// The strip of pending attachments shown above the toolbar row when attachments are present.
-    let attachmentsStripView: UnifiedToggleInputAttachmentsStripView = {
-        let strip = UnifiedToggleInputAttachmentsStripView()
-        strip.translatesAutoresizingMaskIntoConstraints = false
-        strip.isHidden = true
-        return strip
-    }()
+    let attachmentsStripView: UnifiedToggleInputAttachmentsStripView
 
     /// One slot below the expanded Duck.ai input, shared by the Terms of Service disclaimer and the
     /// Create Image model switch notice.
@@ -840,16 +835,20 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }()
 
-    static func create(isFloatingUIEnabled: Bool) -> Self {
-        Self.init(isFloatingUIEnabled: isFloatingUIEnabled)
+    static func create(isFloatingUIEnabled: Bool, usesCompactAttachmentLayout: Bool = false) -> Self {
+        Self.init(isFloatingUIEnabled: isFloatingUIEnabled, usesCompactAttachmentLayout: usesCompactAttachmentLayout)
     }
 
     static func create() -> Self {
         Self.init(isFloatingUIEnabled: false)
     }
 
-    init(isFloatingUIEnabled: Bool) {
+    init(isFloatingUIEnabled: Bool, usesCompactAttachmentLayout: Bool = false) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        let attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
+        attachmentsStrip.translatesAutoresizingMaskIntoConstraints = false
+        attachmentsStrip.isHidden = true
+        self.attachmentsStripView = attachmentsStrip
         self.searchAreaView = DefaultOmniBarSearchView(centersContentVertically: isFloatingUIEnabled)
         if isFloatingUIEnabled {
             self.searchAreaContainerView = SearchAreaContainerView()

@@ -426,9 +426,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
+        let attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger)
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
-                                                         placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+                                                         placesAttachmentsAboveInput: placesAttachmentsAboveInput,
+                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.
@@ -561,7 +563,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 presenterViewController: { [weak self] in self?.attachmentPresenterViewController },
                 tabAttachmentSource: { [weak self] in self?.tabAttachmentSource },
                 tabAttachmentFeatureState: { [weak self] in self?.tabAttachmentFeature?.state ?? .unavailable },
-                pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested }
+                pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested },
+                isFireTab: { [weak self] in self?.viewController.handler.isFireTab ?? false }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -1828,7 +1831,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabs: { [weak self] in self?.attachmentController.tabAttachmentCandidates ?? [] },
                 attachedTabIds: { [weak self] in self?.attachmentPolicy.selectedTabIDs ?? [] },
                 canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
-                toggleAttachment: { [weak self] in self?.attachmentController.toggleTabAttachment($0) ?? false }
+                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true) ?? false }
             ))
             mentionController.onSuggestionsChanged = { [weak self] in self?.onTabMentionSuggestionsChanged?($0) }
             tabMentionController = mentionController

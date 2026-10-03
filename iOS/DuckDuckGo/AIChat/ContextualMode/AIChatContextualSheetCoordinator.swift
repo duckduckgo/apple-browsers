@@ -416,8 +416,16 @@ final class AIChatContextualSheetCoordinator {
         controller.delegate = self
         floatingInputViewController = controller
         controller.install(in: presentingViewController)
-        host.onTabMentionVisibilityChanged = { [weak chips] isVisible in
-            chips?.view.isHidden = isVisible
+        host.onTabMentionVisibilityChanged = { [weak self, weak controller] isVisible in
+            guard let self, let controller else { return }
+            if !isVisible {
+                // Attachment state changes synchronously; its scheduled rendering can still be pending.
+                let content = StartActionsContent(viewState: self.sessionState.viewState)
+                if !content.isLoaded || content.isEmpty {
+                    controller.clearChipsFadingOut()
+                }
+            }
+            controller.setTabMentionSuggestionsVisible(isVisible)
         }
         observeViewStateForFloatingChips()
         host.activateInput()
@@ -1072,12 +1080,15 @@ private extension AIChatContextualSheetCoordinator {
             return
         }
 
-        let pageContext = sessionState.latestContext?.contextData == context
-            ? sessionState.latestContext
-            : AIChatPageContext(contextData: context, favicon: nil)
-        if let pageContext {
-            host.setAttachedContext(pageContext, deliveryState: sessionState.utiChipDeliveryState(forDelivering: context))
+        let pageContext: AIChatPageContext
+        if let attachedContext = sessionState.intendedAttachedContext, attachedContext.contextData == context {
+            pageContext = attachedContext
+        } else if let latestContext = sessionState.latestContext, latestContext.contextData == context {
+            pageContext = latestContext
+        } else {
+            pageContext = AIChatPageContext(contextData: context, favicon: nil)
         }
+        host.setAttachedContext(pageContext, deliveryState: sessionState.utiChipDeliveryState(forDelivering: context))
     }
 
     /// Factory method for creating web view controllers, avoids prop drilling through the Sheet VC.

@@ -47,6 +47,7 @@ final class PairingV2Coordinator {
     private let localKind: PairingV2DeviceKind
     private let flags: PairingV2RolloutFlags
     private let shouldAuthenticateExchangeEndpoints: Bool
+    private let advertisedVersion: PairingV2ProtocolVersion
     private let makeKeyPair: () throws -> PairingV2KeyPair
     private let makeChannelSecret: () throws -> String
     private weak var confirmationDelegate: PairingV2ConfirmationDelegate?
@@ -62,6 +63,7 @@ final class PairingV2Coordinator {
     private var hasClosedLocalChannel = false
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
+    private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
 
     init(syncService: DDGSyncing,
          messageExchanger: PairingV2MessageExchanging,
@@ -70,7 +72,8 @@ final class PairingV2Coordinator {
          deviceType: String,
          localKind: PairingV2DeviceKind = .ddg,
          flags: PairingV2RolloutFlags,
-         shouldAuthenticateExchangeEndpoints: Bool,
+         canSendExchangeChannelSecret: Bool,
+         advertisedVersion: PairingV2ProtocolVersion,
          confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
          makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
          makeChannelSecret: @escaping () throws -> String = { try PairingV2ChannelSecretFactory.makeSecret() }) {
@@ -81,7 +84,8 @@ final class PairingV2Coordinator {
         self.deviceType = deviceType
         self.localKind = localKind
         self.flags = flags
-        self.shouldAuthenticateExchangeEndpoints = shouldAuthenticateExchangeEndpoints
+        self.shouldAuthenticateExchangeEndpoints = advertisedVersion >= .v2Point1 || canSendExchangeChannelSecret
+        self.advertisedVersion = advertisedVersion
         self.confirmationDelegate = confirmationDelegate
         self.makeKeyPair = makeKeyPair
         self.makeChannelSecret = makeChannelSecret
@@ -101,7 +105,7 @@ final class PairingV2Coordinator {
         )
         try await execute(commands)
 
-        return PairingV2QRCodePayload(channelId: keyPair.channelID, publicKey: keyPair.publicKey)
+        return PairingV2QRCodePayload(version: advertisedVersion.rawValue, channelId: keyPair.channelID, publicKey: keyPair.publicKey)
     }
 
     func startScanning(qrPayload: PairingV2QRCodePayload) async throws {
@@ -110,6 +114,7 @@ final class PairingV2Coordinator {
         localKeyPair = keyPair
         peerChannelID = qrPayload.channelId
         peerPublicKey = qrPayload.publicKey
+        negotiateProtocolVersion(with: qrPayload.version)
 
         let commands = stateMachine.handle(
             .scannedCode(.v2Linking(peerChannelID: qrPayload.channelId, localChannelID: keyPair.channelID), localClient: localClient(isPresenter: false), flags: flags)
@@ -209,8 +214,10 @@ final class PairingV2Coordinator {
         guard let privateKey = localKeyPair?.privateKey else {
             throw PairingV2Error.pairingSessionNotReady(.localPrivateKey)
         }
-
         guard let message = try messageCrypto.decrypt(encryptedMessage, privateKey: privateKey, expectedSenderChannelID: peerChannelID) else {
+            return
+        }
+        guard message.minimumProtocolVersion <= negotiatedVersion else {
             return
         }
 
@@ -226,6 +233,7 @@ final class PairingV2Coordinator {
             if case .waitingForPeerHello = stateBeforeMessage, !hasFinishedPairing {
                 peerChannelID = message.channelId
                 peerPublicKey = message.publicKey
+                negotiateProtocolVersion(with: message.version)
             }
 
         case .recoveryCodeAvailable(let message):
@@ -305,7 +313,8 @@ final class PairingV2Coordinator {
 
         case .sendHello:
             let keyPair = try requiredLocalKeyPair()
-            try await send(.hello(.init(channelId: keyPair.channelID, publicKey: keyPair.publicKey)), failureStage: relayFailureStage)
+            try await send(.hello(.init(channelId: keyPair.channelID, publicKey: keyPair.publicKey, version: advertisedVersion.rawValue)),
+                           failureStage: relayFailureStage)
 
         case .sendRecoveryCodeStatus(let status):
             try await send(recoveryCodeStatusMessage(for: status), failureStage: relayFailureStage)
@@ -410,6 +419,9 @@ final class PairingV2Coordinator {
     }
 
     private func send(_ message: PairingV2ApplicationMessage, failureStage: PairingV2FailureStage?) async throws {
+        guard message.minimumProtocolVersion <= negotiatedVersion else {
+            return
+        }
         guard let peerChannelID else {
             throw PairingV2Error.pairingSessionNotReady(.peerChannelID)
         }
@@ -544,6 +556,7 @@ final class PairingV2Coordinator {
 
     private func prepareForNewSession(entryRole: PairingV2EntryRole) {
         self.entryRole = entryRole
+        negotiatedVersion = .v2
         localKeyPair = nil
         localChannelSecret = nil
         peerChannelID = nil
@@ -551,6 +564,11 @@ final class PairingV2Coordinator {
         lastProcessedSequence = 0
         hasOpenedLocalChannel = false
         hasClosedLocalChannel = false
+    }
+
+    private func negotiateProtocolVersion(with peerVersion: String) {
+        negotiatedVersion = advertisedVersion.negotiated(with: peerVersion)
+        Logger.sync.debug("\("Pairing V2 negotiated version: \(self.negotiatedVersion.rawValue), local: \(self.advertisedVersion.rawValue), peer: \(peerVersion)", privacy: .private)")
     }
 
     private func generateKeyPair(failureStage: PairingV2FailureStage) throws -> PairingV2KeyPair {

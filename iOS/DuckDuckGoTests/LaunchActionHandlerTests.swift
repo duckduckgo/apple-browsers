@@ -524,6 +524,40 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
     }
 
+    struct AfterFireCase: Sendable {
+        let onNewTab: Bool
+        let onDuckAITab: Bool
+        let stillOnboarding: Bool
+        let showsKeyboard: Bool
+    }
+
+    @Test(
+        "After Fire New Tab decides, except on a Duck.ai tab or during onboarding",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            AfterFireCase(onNewTab: true, onDuckAITab: false, stillOnboarding: false, showsKeyboard: true),
+            AfterFireCase(onNewTab: true, onDuckAITab: false, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: true, onDuckAITab: true, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: true, onDuckAITab: true, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: false, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: false, stillOnboarding: true, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: true, stillOnboarding: false, showsKeyboard: false),
+            AfterFireCase(onNewTab: false, onDuckAITab: true, stillOnboarding: true, showsKeyboard: false)
+        ],
+        [false, true]
+    )
+    @available(iOS 16, macOS 13, *)
+    func whenFireLandsOnNewTabPageThenKeyboardFollowsTheAfterFireTable(_ testCase: AfterFireCase, onAppLaunch: Bool) {
+        // App Launch plays no part after Fire, so every row must hold with it on and off.
+        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: onAppLaunch)
+
+        let showsKeyboard = policy.showsKeyboardAfterFire(
+            onDuckAITab: testCase.onDuckAITab,
+            stillOnboarding: testCase.stillOnboarding)
+
+        #expect(showsKeyboard == testCase.showsKeyboard)
+    }
+
 }
 
 @MainActor

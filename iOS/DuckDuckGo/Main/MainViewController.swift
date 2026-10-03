@@ -2634,7 +2634,8 @@ class MainViewController: UIViewController {
         let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .quickFire)
         forgetAllWithAnimation(request: request) {}
         dismiss(animated: true)
-        if KeyboardSettings().onAppLaunch {
+        // On iPhone this focus outlives the burn, so behind the flag the post-Fire rule decides instead.
+        if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && KeyboardSettings().onAppLaunch {
             enterSearch()
         }
     }
@@ -7883,6 +7884,11 @@ extension MainViewController {
                                 suppressPostFireKeyboard: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+        // Read before the burn: the page it lands on marks onboarding's last dialog as seen as soon as it
+        // appears, before the keyboard below is decided. Flag-gated, because the check can update
+        // onboarding state.
+        let isKeyboardHeldForOnboarding = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+            && isNewTabPageKeyboardHeldForOnboarding
 
         firePixels(for: request)
         productSurfaceTelemetry.dataClearingUsed()
@@ -7910,6 +7916,29 @@ extension MainViewController {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
+            } else if self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
+                if request.options.contains(.tabs) && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
+                    // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
+                    // Tab changes, backgrounding and user dismissals invalidate the same keyboard request.
+                    let requestID = self.appOpenKeyboardRequestID
+                    let showKeyboardAfterFireButton = DispatchWorkItem { [weak self] in
+                        guard let self,
+                              self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                              self.appOpenKeyboardRequestID == requestID,
+                              self.isAppOpenKeyboardWindowVisible,
+                              self.isNewTabPageVisible,
+                              self.tabManager.currentTabsModel.currentTab?.isHomeTab == true else { return }
+                        let showsKeyboard = NewTabPageKeyboardPolicy().showsKeyboardAfterFire(
+                            onDuckAITab: self.currentTab?.isAITab == true,
+                            stillOnboarding: isKeyboardHeldForOnboarding || self.isNewTabPageKeyboardHeldForOnboarding)
+                        guard showsKeyboard,
+                              !self.isNewTabPageKeyboardBlockedByDialog,
+                              !self.daxDialogsManager.isShowingContextualOnboardingDialog else { return }
+                        self.enterSearch()
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
+                    self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
+                }
             } else if request.options.contains(.tabs) && KeyboardSettings().onNewTab && !self.isEscapeHatchBurn(request) && !suppressPostFireKeyboard {
                 // Escape-hatch burns restore focus in `restoreFocusModeAfterBurnIfNeeded`.
                 let showKeyboardAfterFireButton = DispatchWorkItem {

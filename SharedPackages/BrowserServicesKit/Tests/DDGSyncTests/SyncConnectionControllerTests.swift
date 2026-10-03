@@ -59,6 +59,9 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     var didCompletePairingWithAlreadyConnectedAccountSetupRole: SyncSetupRole?
     var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
     var didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts: Bool?
+    var didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow: Bool?
+    var didSwitchAccountsDuringRecovery = false
+    var didFinishReportingAccountSwitchCalled = { }
     var didErrorCalled = { }
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
     var shouldContinueServerSyncOperation = true
@@ -117,9 +120,16 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
                                                     setupRole: SyncSetupRole,
-                                                    shouldPromptBeforeSwitchingAccounts: Bool) async {
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow: Bool) async -> Bool {
         didFindTwoAccountsDuringRecoveryCalled = recoveryKey
         didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts = shouldPromptBeforeSwitchingAccounts
+        didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow = shouldDeferEndingFlow
+        return didSwitchAccountsDuringRecovery
+    }
+
+    func controllerDidFinishReportingAccountSwitch(didSucceed _: Bool) {
+        didFinishReportingAccountSwitchCalled()
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
@@ -499,6 +509,55 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, true)
         await fulfillment(of: [didCloseChannel], timeout: 5)
         XCTAssertFalse(messageExchanger.closeChannelCalls.isEmpty)
+    }
+
+    @MainActor
+    func test_startExchangeMode_whenV21PresenterCompletes_doesNotWaitForDeviceListChange() async throws {
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canUseExchangeV2Point1 = { true }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        var payload: PairingV2QRCodePayload?
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard let payload else {
+                return []
+            }
+            switch sequence {
+            case 0:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .hello(.init(channelId: peerKeyPair.channelID,
+                                 publicKey: peerKeyPair.publicKey,
+                                 version: PairingV2ProtocolVersion.v2Point1.rawValue))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair)
+            case 1:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeRequest(
+                        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                              name: "Peer",
+                              kind: .ddg)
+                    )
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            case 2:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeDone(.init(reason: .success))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            default:
+                return []
+            }
+        }
+
+        let didFinishTransmitting = expectation(description: "did finish transmitting")
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            didFinishTransmitting.fulfill()
+        }
+
+        let pairingInfo = try await controller.startExchangeMode()
+        payload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
+
+        await fulfillment(of: [didFinishTransmitting], timeout: 5)
+        XCTAssertEqual(delegate.didFinishTransmittingRecoveryKeyShouldWaitForDevicesToChange, false)
     }
 
     @MainActor
@@ -1586,6 +1645,57 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertFalse(result)
         XCTAssertNotNil(delegate.didFindTwoAccountsDuringRecoveryCalled)
         XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts, false)
+        XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow, false)
+        XCTAssertNil(delegate.didErrorErrors)
+    }
+
+    @MainActor
+    func test_syncCodeEntered_withV21DifferentNativeAccount_reportsSuccessfulSwitchBeforeCompleting() async throws {
+        dependencies.canUseExchangeV2Point1 = { true }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        delegate.didSwitchAccountsDuringRecovery = true
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        messageExchanger.fetchMessagesHandler = { _, _ in
+            try self.encryptedPeerMessages(
+                [
+                    .recoveryCodeAvailable(
+                        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable,
+                              name: "Peer",
+                              kind: .ddg,
+                              userId: "other-user")
+                    ),
+                    .recoveryCodeResponse(.init(recoveryCode: Self.validRecoveryCode))
+                ],
+                messageExchanger: messageExchanger,
+                peerKeyPair: peerKeyPair
+            )
+        }
+        let payload = PairingV2QRCodePayload(version: "2.1", channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+        var didSendRecoveryCodeDone = false
+        messageExchanger.sendHandler = { messages, _ in
+            if try messages.contains(where: {
+                try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey) ==
+                    .recoveryCodeDone(.init(reason: .success))
+            }) {
+                didSendRecoveryCodeDone = true
+            }
+        }
+        var didFinishReportingAccountSwitch = false
+        delegate.didFinishReportingAccountSwitchCalled = {
+            didFinishReportingAccountSwitch = true
+            XCTAssertTrue(didSendRecoveryCodeDone)
+        }
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts, false)
+        XCTAssertEqual(delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow, true)
+        XCTAssertTrue(didFinishReportingAccountSwitch)
+        XCTAssertTrue(didSendRecoveryCodeDone)
         XCTAssertNil(delegate.didErrorErrors)
     }
 
@@ -1902,8 +2012,10 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         let twoAccountsKey = await delegate.didFindTwoAccountsDuringRecoveryCalled
         let shouldPromptBeforeSwitchingAccounts = await delegate.didFindTwoAccountsDuringRecoveryShouldPromptBeforeSwitchingAccounts
+        let shouldDeferEndingFlow = await delegate.didFindTwoAccountsDuringRecoveryShouldDeferEndingFlow
         XCTAssertNotNil(twoAccountsKey)
         XCTAssertEqual(shouldPromptBeforeSwitchingAccounts, true)
+        XCTAssertEqual(shouldDeferEndingFlow, false)
     }
 
     @MainActor

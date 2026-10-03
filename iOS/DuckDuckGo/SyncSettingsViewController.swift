@@ -634,12 +634,17 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await performDeferredPreservedAccountCleanupIfNeeded()
     }
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole, shouldPromptBeforeSwitchingAccounts: Bool) async {
+    @discardableResult
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey,
+                                                    setupRole: SyncSetupRole,
+                                                    shouldPromptBeforeSwitchingAccounts: Bool,
+                                                    shouldDeferEndingFlow _: Bool = false) async -> Bool {
         // The connecting sheet owns the completion prompt.
         if shouldPromptBeforeSwitchingAccounts && viewModel.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
+            return false
         } else {
-            await switchAccounts(recoveryKey: recoveryKey)
+            return await switchAccounts(recoveryKey: recoveryKey)
         }
     }
     

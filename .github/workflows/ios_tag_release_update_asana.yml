@@ -186,6 +186,8 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
+        with:
+          xcode-version: "26.6"
 
       - name: Extract Asana Task ID
         id: task-id

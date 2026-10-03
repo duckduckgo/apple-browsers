@@ -41,7 +41,7 @@ jobs:
     name: iOS shared web tests
     if: ${{ github.event_name == 'schedule' || inputs.platform != 'macos' }}
 
-    runs-on: [image:osx-tahoe-26, general-purpose]
+    runs-on: [image:osx-tahoe-27, general-purpose]
     timeout-minutes: 30
     steps:
 
@@ -60,12 +60,14 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: "27.0"
 
     - name: Select iOS Simulator
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5,26.6"
+        preferred-versions: "27.0"
 
     - name: Checkout shared web tests
       uses: actions/checkout@v6
@@ -134,7 +136,7 @@ jobs:
     name: macOS shared web tests
     if: ${{ github.event_name == 'schedule' || inputs.platform != 'ios' }}
 
-    runs-on: [image:osx-tahoe-26, general-purpose]
+    runs-on: [image:osx-tahoe-27, general-purpose]
     timeout-minutes: 30
     steps:
 

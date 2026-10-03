@@ -162,4 +162,20 @@ final class FeatureFlagsTests: XCTestCase {
         }
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
+
+    func testAlwaysShowKeyboardOnNewTabPageIsDefaultDisabledRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.alwaysShowKeyboardOnNewTabPage
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .alwaysShowKeyboardOnNewTabPage)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "alwaysShowKeyboardOnNewTabPage")
+        guard case .disabled = flag.defaultValue else {
+            XCTFail("Expected disabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
 }

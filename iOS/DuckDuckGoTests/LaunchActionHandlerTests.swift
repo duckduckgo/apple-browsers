@@ -20,6 +20,7 @@
 import UIKit
 import Testing
 import Core
+import FeatureFlags_iOS
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
 
@@ -71,10 +72,12 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
     var showKeyboardOnLaunchCalled = false
     var lastBackgroundDate: Date?
+    var isAfterIdleReturn = false
 
-    func showKeyboardOnLaunch(lastBackgroundDate: Date?) {
+    func showKeyboardOnLaunch(lastBackgroundDate: Date?, isAfterIdleReturn: Bool) {
         showKeyboardOnLaunchCalled = true
         self.lastBackgroundDate = lastBackgroundDate
+        self.isAfterIdleReturn = isAfterIdleReturn
     }
 
 }
@@ -97,6 +100,7 @@ final class MockIdleReturnEvaluator: IdleReturnEvaluating {
 @MainActor
 final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
     var showNewTabPageAfterIdleReturnCalled = false
+    var showNewTabPageAfterIdleReturnResult = false
     var markLastUsedTabAsResumedAfterIdleCalled = false
     var recordOrdinaryReturnCalled = false
 
@@ -104,8 +108,9 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
         recordOrdinaryReturnCalled = true
     }
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
         showNewTabPageAfterIdleReturnCalled = true
+        return showNewTabPageAfterIdleReturnResult
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
@@ -123,6 +128,7 @@ final class LaunchActionHandlerTests {
     let launchSourceManager = MockLaunchSourceManager()
     let idleReturnEvaluator = MockIdleReturnEvaluator()
     let idleReturnDelegate = MockIdleReturnLaunchDelegate()
+    let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     let pixelKitMock = PixelKitMock()
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
@@ -131,6 +137,7 @@ final class LaunchActionHandlerTests {
         keyboardPresenter: keyboardPresenter,
         launchSourceService: launchSourceManager,
         idleReturnEvaluator: idleReturnEvaluator,
+        featureFlagger: featureFlagger,
         idleReturnDelegate: idleReturnDelegate,
         pixelFiring: pixelKitMock
     )
@@ -360,11 +367,21 @@ final class LaunchActionHandlerTests {
     // MARK: - Idle return
 
     @available(iOS 16, *)
-    @Test("When idle return with NTP treatment then showNewTabPageAfterIdleReturn is called and keyboard is not", .timeLimit(.minutes(1)))
-    func whenIdleReturnNTPTreatmentThenIdleReturnHandlerIsCalled() {
+    @Test(
+        "When idle return with NTP treatment then showNewTabPageAfterIdleReturn is called and keyboard is not",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            (false, true),
+            (false, false),
+            (true, false)
+        ] as [(Bool, Bool)]
+    )
+    func whenIdleReturnNTPTreatmentThenIdleReturnHandlerIsCalled(flagOn: Bool, keptCurrentNewTabPage: Bool) {
         let date = Date()
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
+        idleReturnDelegate.showNewTabPageAfterIdleReturnResult = keptCurrentNewTabPage
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         keyboardPresenter.showKeyboardOnLaunchCalled = false
 
@@ -376,9 +393,36 @@ final class LaunchActionHandlerTests {
     }
 
     @available(iOS 16, *)
-    @Test("When idle return with LUT treatment then markLastUsedTabAsResumedAfterIdle is called and keyboard shows", .timeLimit(.minutes(1)))
-    func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled() {
+    @Test(
+        "When idle return keeps the current NTP and the flag is on then keyboard presenter is called",
+        .timeLimit(.minutes(1)),
+        arguments: [false, true]
+    )
+    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled(isFirstForeground: Bool) {
         let date = Date()
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        idleReturnEvaluator.didReturnAfterIdleResult = true
+        idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
+        idleReturnDelegate.showNewTabPageAfterIdleReturnResult = true
+
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: isFirstForeground))
+
+        #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
+        #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
+        #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
+        #expect(keyboardPresenter.lastBackgroundDate == (isFirstForeground ? nil : date))
+        #expect(keyboardPresenter.isAfterIdleReturn)
+    }
+
+    @available(iOS 16, *)
+    @Test(
+        "When idle return with LUT treatment then markLastUsedTabAsResumedAfterIdle is called and keyboard shows",
+        .timeLimit(.minutes(1)),
+        arguments: [false, true]
+    )
+    func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled(flagOn: Bool) {
+        let date = Date()
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .lut
         idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
@@ -391,12 +435,18 @@ final class LaunchActionHandlerTests {
         #expect(!idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+        #expect(keyboardPresenter.isAfterIdleReturn)
     }
 
     @available(iOS 16, *)
-    @Test("When no idle return then showKeyboardOnLaunch is called and neither delegate is called", .timeLimit(.minutes(1)))
-    func whenNoIdleReturnThenKeyboardIsCalled() {
+    @Test(
+        "When no idle return then showKeyboardOnLaunch is called and neither delegate is called",
+        .timeLimit(.minutes(1)),
+        arguments: [false, true]
+    )
+    func whenNoIdleReturnThenKeyboardIsCalled(flagOn: Bool) {
         let date = Date()
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
         idleReturnEvaluator.didReturnAfterIdleResult = false
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
@@ -408,6 +458,7 @@ final class LaunchActionHandlerTests {
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+        #expect(!keyboardPresenter.isAfterIdleReturn)
     }
 
     @available(iOS 16, *)
@@ -423,4 +474,201 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.lastBackgroundDate == nil)
     }
 
+}
+
+struct NewTabPageKeyboardPolicyTests {
+
+    struct AppOpenCase: Sendable {
+        let onNewTab: Bool
+        let onAppLaunch: Bool
+        let onNewTabPage: Bool
+        let showsKeyboard: Bool
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "App open follows New Tab on a New Tab Page, and App Launch elsewhere",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: true, showsKeyboard: true),
+            AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: true, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: true, showsKeyboard: false),
+            AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: true, showsKeyboard: false),
+            AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false),
+            AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),
+            AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false)
+        ]
+    )
+    func whenAppOpensThenKeyboardFollowsTheSettingsTable(_ testCase: AppOpenCase) {
+        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: testCase.onAppLaunch)
+
+        #expect(policy.showsKeyboardOnAppOpen(onNewTabPage: testCase.onNewTabPage) == testCase.showsKeyboard)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "App open is a cold start or a return after more than 20 seconds in the background",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            (nil, true),
+            (21, true),
+            (20, false),
+            (5, false)
+        ] as [(TimeInterval?, Bool)]
+    )
+    func whenReturningAfterTimeInBackgroundThenItIsAnAppOpenOnlyPastTheThreshold(secondsInBackground: TimeInterval?, isAppOpen: Bool) {
+        let now = Date()
+        let lastBackgroundDate = secondsInBackground.map { now.addingTimeInterval(-$0) }
+
+        #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
+    }
+
+}
+
+@MainActor
+private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
+    var isNewTabPageVisible = true
+    var appOpenKeyboardRequestID = UUID()
+    var dismissalCompletion: (() -> Void)?
+    var closeScreensCallCount = 0
+    var allowedKeyboardCallCount = 0
+    var legacyKeyboardCallCount = 0
+
+    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
+        closeScreensCallCount += 1
+        dismissalCompletion = completion
+    }
+
+    func showKeyboardOnAppOpenIfAllowed() {
+        allowedKeyboardCallCount += 1
+    }
+
+    func enterSearchOnAppOpen() {
+        legacyKeyboardCallCount += 1
+    }
+}
+
+@MainActor
+final class KeyboardPresenterTests {
+    private let target = MockAppOpenKeyboardHandler()
+    private let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+    private let pixelFiring = PixelKitMock()
+    private var onAppLaunch = false
+    private var scheduledActions: [() -> Void] = []
+    private lazy var presenter = KeyboardPresenter(
+        mainViewController: target,
+        featureFlagger: featureFlagger,
+        pixelFiring: pixelFiring,
+        onAppLaunch: { [unowned self] in onAppLaunch },
+        schedule: { [unowned self] in scheduledActions.append($0) })
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Cold launch preserves each flag path and the App Launch pixel condition", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func coldLaunch(flagOn: Bool, launchSetting: Bool) {
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        onAppLaunch = launchSetting
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
+
+        #expect(target.closeScreensCallCount == 0)
+        #expect(scheduledActions.count == (flagOn || launchSetting ? 1 : 0))
+        #expect(pixelFiring.actualFireCalls.count == (launchSetting ? 1 : 0))
+        if launchSetting {
+            #expect(pixelFiring.actualFireCalls.first?.pixel.name == Pixel.Event.keyboardOnAppLaunchUsedDaily.name)
+            #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
+        }
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(target.legacyKeyboardCallCount == 0)
+
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == (flagOn ? 1 : 0))
+        #expect(target.legacyKeyboardCallCount == (!flagOn && launchSetting ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Both flag paths keep the 20-second background threshold", .timeLimit(.minutes(1)), arguments: [false, true], [5.0, 25.0])
+    func backgroundThreshold(flagOn: Bool, secondsInBackground: TimeInterval) {
+        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        onAppLaunch = true
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: false)
+
+        #expect(scheduledActions.count == (secondsInBackground == 25 ? 1 : 0))
+        #expect(pixelFiring.actualFireCalls.count == (secondsInBackground == 25 ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An idle return waits for dismissal but never bypasses the keyboard threshold", .timeLimit(.minutes(1)), arguments: [false, true])
+    func idleReturnWaitsForDismissal(isAppOpen: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        let lastBackgroundDate = isAppOpen ? nil : Date().addingTimeInterval(-1)
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate, isAfterIdleReturn: true)
+
+        #expect(target.closeScreensCallCount == 1)
+        #expect(scheduledActions.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+
+        target.dismissalCompletion?()
+
+        #expect(scheduledActions.count == (isAppOpen ? 1 : 0))
+        scheduledActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == (isAppOpen ? 1 : 0))
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A cancelled request or disabled flag cannot focus after dismissal or delay", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func invalidatedRequest(beforeDismissal: Bool, disableFlag: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+        if !beforeDismissal {
+            target.dismissalCompletion?()
+            #expect(scheduledActions.count == 1)
+        }
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        if beforeDismissal {
+            target.dismissalCompletion?()
+            #expect(scheduledActions.isEmpty)
+        }
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(target.legacyKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Flag-off requests retain legacy scheduling and ignore the cancellation token", .timeLimit(.minutes(1)))
+    func flagOffPreservesLegacyCallback() {
+        featureFlagger.enabledFeatureFlags = []
+        onAppLaunch = true
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+        target.appOpenKeyboardRequestID = UUID()
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+
+        scheduledActions.forEach { $0() }
+
+        #expect(target.closeScreensCallCount == 0)
+        #expect(target.legacyKeyboardCallCount == 1)
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Idle-return cleanup only runs for a New Tab Page", .timeLimit(.minutes(1)))
+    func otherTabsDoNotDismissScreens() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.isNewTabPageVisible = false
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+
+        #expect(target.closeScreensCallCount == 0)
+        #expect(scheduledActions.count == 1)
+    }
 }

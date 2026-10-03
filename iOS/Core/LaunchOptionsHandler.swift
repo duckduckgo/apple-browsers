@@ -236,6 +236,24 @@ extension LaunchOptionsHandler {
         }
 #endif
 
+#if DEBUG && targetEnvironment(simulator)
+        // Use a separate argument so typed settings remain writable during the UI test.
+        if isUITesting, let seed = userDefaults.dictionary(forKey: "appOpenKeyboardTestSeed") as? [String: String] {
+            let keys = [
+                "newTab": "com.duckduckgo.ios.keyboard.newtab",
+                "appLaunch": "com.duckduckgo.ios.keyboard.applaunch",
+                "appLock": "com.duckduckgo.privacy.authentication",
+                "fireEducation": "com.duckduckgo.ios.fireMessageShown",
+                "siteVisited": "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown"
+            ]
+            for (name, key) in keys {
+                if let value = seed[name], let bool = Bool(value) {
+                    userDefaults.set(bool, forKey: key)
+                }
+            }
+        }
+#endif
+
         // Writing ATB keys in -backdateInstallDate makes hasInstallStatistics=true, which causes
         // assignVariantIfNeeded to return early without calling onVariantAssigned → primeForUse()
         // is never called → isDismissed stays true (its default) → contextual dax dialogs are

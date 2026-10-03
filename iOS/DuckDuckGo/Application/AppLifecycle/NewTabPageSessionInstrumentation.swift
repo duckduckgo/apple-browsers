@@ -38,6 +38,11 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
                       toggleEnabled: Bool)
 
+    /// The app raised the keyboard just after the visit started with it down, as it does when the
+    /// app opens onto the page, so the visit reports the mode the app decided on. Not an action,
+    /// and ignored once the user has acted.
+    func keyboardRaisedOnArrival()
+
     // MARK: - Actions
     //
     // Repeat calls are cheap, and each one holds off the inactivity timeout. Each also adds a
@@ -215,6 +220,12 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         // The framework consults the sample rate only here. A visit the sampler drops still
         // runs locally, and its later calls no-op.
         wideEvent.startFlow(visit)
+    }
+
+    func keyboardRaisedOnArrival() {
+        lockTerminalIfTimedOut()
+        guard let visit = activeVisit, lockedTerminal == nil, visit.actionCount == 0 else { return }
+        visit.launchKeyboardMode = .up
     }
 
     // MARK: - Actions

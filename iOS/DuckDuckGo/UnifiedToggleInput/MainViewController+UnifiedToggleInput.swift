@@ -1034,6 +1034,7 @@ extension MainViewController {
         }
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
+            self.cancelPendingAppOpenKeyboard()
             self.recordNewTabPageSessionAction { $0.dismissKeyboard() }
             coordinator.dismissOmnibarKeyboard()
         }

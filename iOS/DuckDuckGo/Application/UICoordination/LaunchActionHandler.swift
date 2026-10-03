@@ -20,6 +20,8 @@
 import UIKit
 import Core
 import PixelKit
+import PrivacyConfig
+import FeatureFlags_iOS
 
 enum LaunchAction {
 
@@ -59,7 +61,9 @@ protocol OnboardingPresenting: AnyObject {
 
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?)
+    /// Returns `true` only when the current tab is already a New Tab Page, is kept as it is, and no voice chat is active.
+    @discardableResult
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
@@ -82,6 +86,7 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let pixelFiring: (any PixelKitFiring)?
     private let launchSourceManager: LaunchSourceManaging
     private let idleReturnEvaluator: IdleReturnEvaluating
+    private let featureFlagger: FeatureFlagger
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
     init(urlHandler: URLHandling,
@@ -90,6 +95,7 @@ final class LaunchActionHandler: LaunchActionHandling {
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
          idleReturnEvaluator: IdleReturnEvaluating,
+         featureFlagger: FeatureFlagger,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.urlHandler = urlHandler
@@ -98,6 +104,7 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
         self.idleReturnEvaluator = idleReturnEvaluator
+        self.featureFlagger = featureFlagger
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
@@ -116,18 +123,21 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
             let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
-            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
+            let isAfterIdleReturn = idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate)
+            if isAfterIdleReturn {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
-                    return
+                    let keptCurrentNewTabPage = idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) ?? false
+                    // A kept New Tab Page is an app open like any other, so it falls through to the keyboard presenter.
+                    guard keptCurrentNewTabPage, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
                 case .lut:
                     idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
                 }
             } else {
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
-            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)
+            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                   isAfterIdleReturn: isAfterIdleReturn)
         }
     }
     

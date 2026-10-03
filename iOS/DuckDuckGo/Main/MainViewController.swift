@@ -233,6 +233,19 @@ class MainViewController: UIViewController {
         newTabPageViewController != nil
     }
 
+    private(set) var appOpenKeyboardRequestID = UUID()
+    private var isClearingNavigationForAppOpen = false
+
+    func cancelPendingAppOpenKeyboard() {
+        // Automatic dismissal can end editing or select the tab switcher's browsing mode.
+        guard !isClearingNavigationForAppOpen else { return }
+        appOpenKeyboardRequestID = UUID()
+    }
+
+    private var isAppOpenKeyboardWindowVisible: Bool {
+        UIApplication.shared.applicationState == .active && viewIfLoaded?.window?.isHidden == false
+    }
+
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true
     private var hasLoadedInitialView = false
@@ -1543,6 +1556,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardWillHide() {
         if !didSendGestureDismissPixel, newTabPageViewController?.isDragging == true, keyboardShowing {
+            cancelPendingAppOpenKeyboard()
             PixelKit.fire(Pixel.Event.addressBarGestureDismiss)
             recordNewTabPageSessionAction { $0.dismissKeyboard() }
             didSendGestureDismissPixel = true
@@ -1775,6 +1789,7 @@ class MainViewController: UIViewController {
     }
 
     @objc private func onAppDidEnterBackground() {
+        cancelPendingAppOpenKeyboard()
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -2321,6 +2336,26 @@ class MainViewController: UIViewController {
         return escapeHatchModelBuilder.makeAfterIdleHatch(router: self)
     }
 
+    private var isChatPathCompletionPending: Bool {
+        daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+    }
+
+    /// Suppress the keyboard on a New Tab Page when an NTP onboarding dialog is about to appear:
+    /// viewDidAppear shows the dialog after the page attaches, and an editing state created first
+    /// would immediately cover it.
+    /// Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
+    /// is scheduled to fire: it drives its own beginEditing, and a premature activation
+    /// causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
+    private var isNewTabPageKeyboardBlockedByDialog: Bool {
+        daxDialogsManager.subscriptionPromotionPending || isChatPathCompletionPending
+    }
+
+    /// Contextual onboarding owns the New Tab Page while it runs, so behind the flag no landing raises
+    /// the keyboard over its dialogs. The Add Favorite flow borrows those dialogs but isn't onboarding.
+    private var isNewTabPageKeyboardHeldForOnboarding: Bool {
+        daxDialogsManager.isStillOnboarding() && !daxDialogsManager.isAddFavoriteFlow
+    }
+
     fileprivate func attachHomeScreen(isNewTab: Bool = false,
                                       allowingKeyboard: Bool = false,
                                       previousTab: TabViewController? = nil,
@@ -2379,18 +2414,10 @@ class MainViewController: UIViewController {
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
-        // Suppress keyboard-on-new-tab when an NTP onboarding dialog is about to appear:
-        // viewDidAppear fires after this function and shows the dialog, but the editing state
-        // created here would immediately cover it.
-        // Also suppress when the chat-path completion dialog (presentChatPathOnboardingCompletionIfNeeded)
-        // is scheduled to fire: it drives its own beginEditing, and a premature activation here
-        // causes the Dax logo to blink (disappear–reappear) before the completion dialog shows.
-        let chatPathCompletionPending = daxDialogsManager.chatPathPhase == .trackerToEOJ && aiChatSettings.isAIChatEnabled
+        let chatPathCompletionPending = isChatPathCompletionPending
         // Resolved before the instrumentation call below, so the wide event records the mode
         // the app decided on rather than racing the keyboard to observe it.
-        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab
-            && !daxDialogsManager.subscriptionPromotionPending
-            && !chatPathCompletionPending
+        let willBeginEditing = isNewTab && allowingKeyboard && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
 
         let controller = newTabPageControllerStore.page(for: tabModel,
                                                         isNewTab: isNewTab,
@@ -2516,6 +2543,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
+        cancelPendingAppOpenKeyboard()
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
         restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
@@ -2797,6 +2825,29 @@ class MainViewController: UIViewController {
         }
     }
 
+    /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
+    func showKeyboardOnAppOpenIfAllowed() {
+        guard isAppOpenKeyboardWindowVisible else { return }
+        let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
+        guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
+        if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return }
+        // The page is already on screen, so this is its own dialog. The last onboarding dialog counts
+        // itself as seen as soon as it appears, so the onboarding check alone misses it.
+        if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return }
+        // Does nothing while the tab switcher, Settings or another screen is presented.
+        enterSearchOnAppOpen()
+    }
+
+    /// The app-open keyboard. The New Tab Page visit started with the keyboard down, because the app
+    /// decides on it a moment later, so the visit is told the keyboard came up.
+    func enterSearchOnAppOpen() {
+        guard presentedViewController == nil else { return }
+        if isNewTabPageVisible, isAppOpenKeyboardWindowVisible {
+            newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+        }
+        enterSearch()
+    }
+
     func loadQuery(_ query: String, completion: ((Tab) -> Void)? = nil) {
         guard let url = URL.makeSearchURL(query: query, useUnifiedLogic: isUnifiedURLPredictionEnabled, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.shortDescription ?? "<nil>", privacy: .public)\"")
@@ -2942,6 +2993,7 @@ class MainViewController: UIViewController {
     }
 
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
+        cancelPendingAppOpenKeyboard()
         guard let tab else { return }
         previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
         previousTab?.tabModel.openedAfterIdle = false
@@ -3887,6 +3939,29 @@ class MainViewController: UIViewController {
     }
 
     // MARK: - Idle return NTP (dismiss overlays so NTP is visible)
+
+    /// Finish both input teardown and modal dismissal before starting the visit or raising the keyboard.
+    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
+        guard isAppOpenKeyboardWindowVisible else { return }
+        guard presentedViewController != nil else {
+            completion()
+            return
+        }
+        // Dismissing a tab switcher on an empty Fire page switches to Fire mode with no tab to show.
+        if let tabSwitcherController, !tabSwitcherController.canDismissOnEmpty, tabSwitcherController.tabsModel.isEmpty {
+            return
+        }
+        let requestID = appOpenKeyboardRequestID
+        clearNavigationStack(forAppOpen: true) { [weak self] in
+            guard let self, appOpenKeyboardRequestID == requestID, isAppOpenKeyboardWindowVisible else { return }
+            // Foregrounding skipped this visit while another screen covered the page.
+            if isNewTabPageVisible, presentedViewController == nil {
+                startNewTabPageSessionInstrumentation(isNewTab: false, willBeginEditing: false, isAfterFire: false)
+            }
+            completion()
+        }
+    }
+
     /// Dismisses tab switcher and any presented view controller (e.g. Settings) so the caller can then show the NTP.
     func prepareForIdleReturnNTP(completion: @escaping () -> Void) {
         // A child of this controller rather than a presented one, so it outlives the dismissal below.
@@ -5767,6 +5842,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onEditingEnd() -> OmniBarEditingEndResult {
+        cancelPendingAppOpenKeyboard()
         if areSuggestionsVisible {
             return .suspended
         } else {
@@ -5917,6 +5993,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func performCancel(animated: Bool = true) {
+        cancelPendingAppOpenKeyboard()
         dismissOmniBar(animated: animated)
         omniBar.cancel()
         hideSuggestionTray()
@@ -6335,6 +6412,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onExperimentalAddressBarCancelPressed() {
+        cancelPendingAppOpenKeyboard()
         fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite,
@@ -7785,13 +7863,17 @@ extension MainViewController: GestureToolbarButtonDelegate {
 
 extension MainViewController {
 
-    func clearNavigationStack() {
-        dismissOmniBar()
+    func clearNavigationStack(forAppOpen: Bool = false, completion: (() -> Void)? = nil) {
+        isClearingNavigationForAppOpen = forAppOpen
+        defer { isClearingNavigationForAppOpen = false }
+        dismissOmniBar(animated: !forAppOpen)
 
         if let presented = presentedViewController {
             presented.dismiss(animated: false) { [weak self] in
-                self?.clearNavigationStack()
+                self?.clearNavigationStack(forAppOpen: forAppOpen, completion: completion)
             }
+        } else {
+            completion?()
         }
     }
 

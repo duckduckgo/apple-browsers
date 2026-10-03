@@ -38,6 +38,15 @@ protocol AddressBarTextFieldFocusDelegate: AnyObject {
 
 final class AddressBarTextField: NSTextField {
 
+    override class var cellClass: AnyClass? {
+        get {
+            AddressBarTextFieldCell.self
+        }
+        set {
+            // NO-OP
+        }
+    }
+
     weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
             subscribeToSelectedTabViewModel()
@@ -101,9 +110,23 @@ final class AddressBarTextField: NSTextField {
 
     // MARK: - Lifecycle
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpEditingAndDragging()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpEditingAndDragging()
+    }
+
+    private func setUpEditingAndDragging() {
         allowsEditingTextAttributes = true
         super.delegate = self
 

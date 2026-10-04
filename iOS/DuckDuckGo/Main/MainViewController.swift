@@ -2828,16 +2828,16 @@ class MainViewController: UIViewController {
     }
 
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
-    func showKeyboardOnAppOpenIfAllowed() {
-        guard isAppOpenKeyboardWindowVisible else { return }
+    func showKeyboardOnAppOpenIfAllowed() -> Bool {
+        guard isAppOpenKeyboardWindowVisible, presentedViewController == nil else { return false }
         let onNewTabPage = tabManager.currentTabsModel.currentTab?.isHomeTab == true
-        guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return }
-        if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return }
+        guard NewTabPageKeyboardPolicy().showsKeyboardOnAppOpen(onNewTabPage: onNewTabPage) else { return false }
+        if onNewTabPage, isNewTabPageKeyboardHeldForOnboarding || isNewTabPageKeyboardBlockedByDialog { return false }
         // The page is already on screen, so this is its own dialog. The last onboarding dialog counts
         // itself as seen as soon as it appears, so the onboarding check alone misses it.
-        if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return }
-        // Does nothing while the tab switcher, Settings or another screen is presented.
+        if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return false }
         enterSearchOnAppOpen()
+        return viewCoordinator.omniBar.isTextFieldEditing
     }
 
     /// The app-open keyboard. The New Tab Page visit started with the keyboard down, because the app

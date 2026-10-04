@@ -35,7 +35,7 @@ protocol AppOpenKeyboardHandling: AnyObject {
     var isNewTabPageVisible: Bool { get }
     var appOpenKeyboardRequestID: UUID { get }
     func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void)
-    func showKeyboardOnAppOpenIfAllowed()
+    func showKeyboardOnAppOpenIfAllowed() -> Bool
     func enterSearchOnAppOpen()
 }
 
@@ -95,7 +95,7 @@ final class KeyboardPresenter: KeyboardPresenting {
         let onAppLaunch = onAppLaunch()
         guard flagOn || onAppLaunch else { return }
         let isAppOpen = NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate)
-        if isAppOpen && onAppLaunch {
+        if !flagOn && isAppOpen && onAppLaunch {
             pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
         }
 
@@ -106,7 +106,10 @@ final class KeyboardPresenter: KeyboardPresenting {
             schedule { [self] in
                 if flagOn {
                     guard isCurrentRequest(requestID) else { return }
-                    mainViewController.showKeyboardOnAppOpenIfAllowed()
+                    let didShowKeyboard = mainViewController.showKeyboardOnAppOpenIfAllowed()
+                    if didShowKeyboard && onAppLaunch && !mainViewController.isNewTabPageVisible {
+                        pixelFiring?.fire(Pixel.Event.keyboardOnAppLaunchUsedDaily, frequency: .dailyAndCount)
+                    }
                 } else {
                     mainViewController.enterSearchOnAppOpen()
                 }

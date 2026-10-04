@@ -31,6 +31,7 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
     var dismissalCompletion: (() -> Void)?
     var closeScreensCallCount = 0
     var allowedKeyboardCallCount = 0
+    var keyboardWasShown = true
     var legacyKeyboardCallCount = 0
 
     func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
@@ -38,8 +39,9 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
         dismissalCompletion = completion
     }
 
-    func showKeyboardOnAppOpenIfAllowed() {
+    func showKeyboardOnAppOpenIfAllowed() -> Bool {
         allowedKeyboardCallCount += 1
+        return keyboardWasShown
     }
 
     func enterSearchOnAppOpen() {
@@ -66,16 +68,13 @@ final class KeyboardPresenterTests {
     func coldLaunch(flagOn: Bool, launchSetting: Bool) {
         featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
         onAppLaunch = launchSetting
+        target.isNewTabPageVisible = false
 
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: false)
 
         #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == (flagOn || launchSetting ? 1 : 0))
-        #expect(pixelFiring.actualFireCalls.count == (launchSetting ? 1 : 0))
-        if launchSetting {
-            #expect(pixelFiring.actualFireCalls.first?.pixel.name == Pixel.Event.keyboardOnAppLaunchUsedDaily.name)
-            #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
-        }
+        #expect(pixelFiring.actualFireCalls.count == (!flagOn && launchSetting ? 1 : 0))
         #expect(target.allowedKeyboardCallCount == 0)
         #expect(target.legacyKeyboardCallCount == 0)
 
@@ -83,6 +82,11 @@ final class KeyboardPresenterTests {
 
         #expect(target.allowedKeyboardCallCount == (flagOn ? 1 : 0))
         #expect(target.legacyKeyboardCallCount == (!flagOn && launchSetting ? 1 : 0))
+        #expect(pixelFiring.actualFireCalls.count == (launchSetting ? 1 : 0))
+        if launchSetting {
+            #expect(pixelFiring.actualFireCalls.first?.pixel.name == Pixel.Event.keyboardOnAppLaunchUsedDaily.name)
+            #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
+        }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -90,11 +94,31 @@ final class KeyboardPresenterTests {
     func backgroundThreshold(flagOn: Bool, secondsInBackground: TimeInterval) {
         featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
         onAppLaunch = true
+        target.isNewTabPageVisible = false
 
         presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: false)
 
         #expect(scheduledActions.count == (secondsInBackground == 25 ? 1 : 0))
+        #expect(pixelFiring.actualFireCalls.count == (!flagOn && secondsInBackground == 25 ? 1 : 0))
+        scheduledActions.forEach { $0() }
         #expect(pixelFiring.actualFireCalls.count == (secondsInBackground == 25 ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("App Launch usage requires successful focus on another tab", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func appLaunchPixelRequiresFocusOnAnotherTab(onNewTabPage: Bool, keyboardWasShown: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        onAppLaunch = true
+        target.isNewTabPageVisible = onNewTabPage
+        target.keyboardWasShown = keyboardWasShown
+
+        presenter.showKeyboardOnLaunch()
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+        scheduledActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 1)
+        #expect(pixelFiring.actualFireCalls.count == (!onNewTabPage && keyboardWasShown ? 1 : 0))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -121,6 +145,7 @@ final class KeyboardPresenterTests {
     @Test("A cancelled request or disabled flag cannot focus after dismissal or delay", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
     func invalidatedRequest(beforeDismissal: Bool, disableFlag: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        onAppLaunch = true
         presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
         if !beforeDismissal {
             target.dismissalCompletion?()
@@ -140,6 +165,7 @@ final class KeyboardPresenterTests {
 
         #expect(target.allowedKeyboardCallCount == 0)
         #expect(target.legacyKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)

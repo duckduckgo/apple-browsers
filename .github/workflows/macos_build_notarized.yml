@@ -253,6 +253,18 @@ jobs:
           ./scripts/archive.sh ${{ env.release-type }}
         fi
 
+    - name: Upload archive failure diagnostics
+      if: failure() && steps.archive.outcome == 'failure'
+      uses: actions/upload-artifact@v6
+      with:
+        name: archive-diagnostics-${{ env.release-type }}-${{ github.run_attempt }}
+        path: |
+          macOS/release/archive.log
+          macOS/release/export.log
+          macOS/release/DerivedData/**/swbuild.tmp.*/Data.noindex/**
+        retention-days: 7
+        if-no-files-found: warn
+
     - name: Report job duration
       continue-on-error: true
       uses: ./.github/actions/measure-duration

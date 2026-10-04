@@ -627,6 +627,7 @@ struct ExternalSchemeRowView: View {
     private var decisionPopUpButton: some View {
         NSPopUpButtonView(selection: $currentDecision) {
             let button = NSPopUpButton()
+            button.setAccessibilityIdentifier("PermissionCenterView.externalScheme.\(schemeInfo.scheme).decision")
             button.bezelStyle = .accessoryBarAction
             button.isBordered = true
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)

@@ -39,7 +39,7 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
                       toggleEnabled: Bool)
 
     /// Updates the New Tab page's recorded starting keyboard state to `.up`.
-    /// Use when the app shows the keyboard after the page appears, such as when DuckDuckGo opens.
+    /// Use when the app shows the keyboard after the page appears, such as when the app opens.
     /// Does not record a user action. Ignored after user interaction or a session timeout.
     func keyboardRaisedOnArrival()
 

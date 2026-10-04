@@ -18,6 +18,8 @@
 //
 
 import Foundation
+import UIKit
+import Combine
 
 /// This class coordinates foreground tasks that require synchronization between various services.
 /// It manages the sequence of operations that occur when the app becomes active, ensuring proper order of execution
@@ -29,19 +31,25 @@ final class UIInteractionManager {
     private let launchActionHandler: LaunchActionHandling
     private let onboardingPresenter: OnboardingPresenting
     private let waitsForSuccessfulAuthentication: Bool
+    private let notificationCenter: NotificationCenter
+    private let isApplicationActive: @MainActor () -> Bool
     private var pendingInteractions: Task<Void, Never>?
 
     init(authenticationService: AuthenticationServiceProtocol,
          autoClearService: AutoClearServiceProtocol,
          launchActionHandler: LaunchActionHandling,
          onboardingPresenter: OnboardingPresenting,
-         waitsForSuccessfulAuthentication: Bool = false
+         waitsForSuccessfulAuthentication: Bool = false,
+         notificationCenter: NotificationCenter = .default,
+         isApplicationActive: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
     ) {
         self.authenticationService = authenticationService
         self.autoClearService = autoClearService
         self.launchActionHandler = launchActionHandler
         self.onboardingPresenter = onboardingPresenter
         self.waitsForSuccessfulAuthentication = waitsForSuccessfulAuthentication
+        self.notificationCenter = notificationCenter
+        self.isApplicationActive = isApplicationActive
     }
 
     @MainActor
@@ -91,6 +99,10 @@ final class UIInteractionManager {
                 }
                 await group.waitForAll()
                 guard !Task.isCancelled else { return }
+                if waitsForSuccessfulAuthentication {
+                    await waitForApplicationActive()
+                    guard !Task.isCancelled else { return }
+                }
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
                 if case .standardLaunch = launchAction {
                     self.launchActionHandler.handleLaunchAction(launchAction)
@@ -100,6 +112,25 @@ final class UIInteractionManager {
         }
         pendingInteractions = task
         return task
+    }
+
+    @MainActor
+    private func waitForApplicationActive() async {
+        guard !isApplicationActive() else { return }
+        var activationContinuation: AsyncStream<Void>.Continuation?
+        let activations = AsyncStream<Void> { continuation in
+            activationContinuation = continuation
+            let cancellable = notificationCenter.publisher(for: UIApplication.didBecomeActiveNotification)
+                .sink { _ in continuation.yield(()) }
+            continuation.onTermination = { _ in cancellable.cancel() }
+        }
+        defer { activationContinuation?.finish() }
+        // Authentication can succeed before the system prompt returns the app to active.
+        guard !isApplicationActive() else { return }
+        for await _ in activations {
+            guard !Task.isCancelled else { return }
+            if isApplicationActive() { return }
+        }
     }
 
 }

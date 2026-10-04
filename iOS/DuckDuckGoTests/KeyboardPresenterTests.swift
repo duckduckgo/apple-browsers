@@ -224,21 +224,28 @@ final class KeyboardPresenterTests {
         #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == 1)
     }
+
     @available(iOS 16, macOS 13, *)
-    @Test("A pending prompt defers the keyboard until its close delay completes", .timeLimit(.minutes(1)))
-    func promptDefersKeyboard() {
+    @Test("A pending prompt defers keyboard focus and usage recording", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func promptDefersKeyboard(onNewTabPage: Bool, keyboardWasShown: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         promptPending = true
+        onAppLaunch = true
+        target.isNewTabPageVisible = onNewTabPage
+        target.keyboardWasShown = keyboardWasShown
         presenter.showKeyboardOnLaunch()
         scheduledActions.forEach { $0() }
+        #expect(pixelFiring.actualFireCalls.isEmpty)
         #expect(target.allowedKeyboardCallCount == 0)
         #expect(promptRequestIsValid?() == true)
 
         promptCloseHandler?()
         #expect(afterPromptActions.count == 1)
         #expect(target.allowedKeyboardCallCount == 0)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
         afterPromptActions.forEach { $0() }
         #expect(target.allowedKeyboardCallCount == 1)
+        #expect(pixelFiring.actualFireCalls.count == (!onNewTabPage && keyboardWasShown ? 1 : 0))
     }
 
     @available(iOS 16, macOS 13, *)

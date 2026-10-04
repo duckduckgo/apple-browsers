@@ -2837,7 +2837,11 @@ class MainViewController: UIViewController {
         // itself as seen as soon as it appears, so the onboarding check alone misses it.
         if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return false }
         enterSearchOnAppOpen()
-        return viewCoordinator.omniBar.isTextFieldEditing
+        let didShowKeyboard = viewCoordinator.omniBar.isTextFieldEditing
+        if didShowKeyboard {
+            postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+        }
+        return didShowKeyboard
     }
 
     /// The app-open keyboard. The New Tab Page visit started with the keyboard down, because the app

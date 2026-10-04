@@ -233,7 +233,9 @@ class MainViewController: UIViewController {
         newTabPageViewController != nil
     }
 
+    /// Allows delayed keyboard callbacks to detect cancellation.
     private(set) var appOpenKeyboardRequestID = UUID()
+    /// Prevents automatic screen dismissal from cancelling the pending app-open keyboard request.
     private var isClearingNavigationForAppOpen = false
 
     func cancelPendingAppOpenKeyboard() {

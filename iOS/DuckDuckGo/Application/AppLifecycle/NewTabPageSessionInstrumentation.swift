@@ -38,9 +38,9 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
                       toggleEnabled: Bool)
 
-    /// The app raised the keyboard just after the visit started with it down, as it does when the
-    /// app opens onto the page, so the visit reports the mode the app decided on. Not an action,
-    /// and ignored once the user has acted.
+    /// Updates the New Tab page's recorded starting keyboard state to `.up`.
+    /// Use when the app shows the keyboard after the page appears, such as when DuckDuckGo opens.
+    /// Does not record a user action. Ignored after user interaction or a session timeout.
     func keyboardRaisedOnArrival()
 
     // MARK: - Actions

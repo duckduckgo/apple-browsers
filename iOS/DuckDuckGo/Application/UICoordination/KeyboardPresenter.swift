@@ -26,6 +26,8 @@ import FeatureFlags_iOS
 @MainActor
 protocol KeyboardPresenting {
 
+    /// - Parameter isAfterIdleReturn: Whether this return meets the After Inactivity rules.
+    ///   With the feature on, closes screens over an existing New Tab page before requesting focus.
     func showKeyboardOnLaunch(lastBackgroundDate: Date?, isAfterIdleReturn: Bool)
 
 }

@@ -241,8 +241,10 @@ final class PromoCoordinationServiceTests {
 
     // MARK: - Launch Prompt Close Handler
 
+    @available(iOS 16, macOS 13, *)
     @Test(
         "Check The Launch Prompt Close Handler Goes To The Coordination Manager",
+        .timeLimit(.minutes(1)),
         arguments: [true, false],
         [PromoCoordinationMode.legacy, .coordinated]
     )
@@ -266,7 +268,8 @@ final class PromoCoordinationServiceTests {
         #expect((managerMock.capturedModalPromptCloseHandler != nil) == isPending)
     }
 
-    @Test("Check Backgrounding Stops Waiting For The Launch Prompt To Close")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check Backgrounding Stops Waiting For The Launch Prompt To Close", .timeLimit(.minutes(1)))
     func whenAppIsBackgroundedThenLaunchPromptCloseHandlerIsDropped() {
         // GIVEN
         sut = PromoCoordinationService(

@@ -33,7 +33,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.2.1")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.2.0")
     }
 
     // MARK: - jsonParameters

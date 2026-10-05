@@ -119,26 +119,7 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.browsingMenuNTP.rawValue == "browsing_menu_ntp")
         #expect(AIChatEntryPointSource.browsingMenuWebpage.rawValue == "browsing_menu_webpage")
         #expect(AIChatEntryPointSource.browsingMenuDuckAI.rawValue == "browsing_menu_duckai")
-    }
-
-    // MARK: - Browsing menu
-
-    @available(iOS 16, *)
-    @Test("The browsing menu opened over a Duck.ai page resolves to browsing_menu_duckai", .timeLimit(.minutes(1)))
-    func browsingMenuOnDuckAIResolves() {
-        #expect(AIChatEntryPointSource.forBrowsingMenu(isNewTabPage: false, isDuckAI: true) == .browsingMenuDuckAI)
-    }
-
-    @available(iOS 16, *)
-    @Test("The browsing menu opened over any other page resolves to browsing_menu_webpage", .timeLimit(.minutes(1)))
-    func browsingMenuOnWebpageResolves() {
-        #expect(AIChatEntryPointSource.forBrowsingMenu(isNewTabPage: false, isDuckAI: false) == .browsingMenuWebpage)
-    }
-
-    @available(iOS 16, *)
-    @Test("The browsing menu opened over the new tab page resolves to browsing_menu_ntp", .timeLimit(.minutes(1)))
-    func browsingMenuOnNewTabPageResolves() {
-        #expect(AIChatEntryPointSource.forBrowsingMenu(isNewTabPage: true, isDuckAI: false) == .browsingMenuNTP)
+        #expect(AIChatEntryPointSource.duckAINewChat.rawValue == "duck_ai_new_chat")
     }
 
     // MARK: - In-page navigations

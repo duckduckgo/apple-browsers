@@ -1406,6 +1406,8 @@ extension AIChatUserScriptHandlerTests {
             ("userDidClickPromotionCardButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__promotioncard"),
             ("userDidViewSettingsSubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
             ("userDidClickSettingsSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
+            ("userDidViewSettingsResubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
+            ("userDidClickSettingsResubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
             ("userDidViewProUpgradeDisclaimerBanner", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidClickProUpgradeDisclaimerBannerButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidViewVoiceChatLimitModal", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__voicechatlimit"),

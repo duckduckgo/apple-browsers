@@ -50,6 +50,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
     /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
     var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
+    var isFireTabProvider: (() -> Bool)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
         fileAttachment(from: metadata, id: id)
@@ -236,6 +237,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let picker = MultiTabAttachmentPickerView(viewModel: viewModel)
         let hostingController = MultiTabAttachmentPickerHostingController(rootView: picker)
         let navigationController = UINavigationController(rootViewController: hostingController)
+        navigationController.overrideUserInterfaceStyle = isFireTabProvider?() == true ? .dark : .unspecified
 
         let closeAction = UIAction { [weak navigationController] _ in
             navigationController?.dismiss(animated: true)

@@ -2183,6 +2183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Create manager synchronously so it's available during state restoration.
             // Tabs restored before the manager exists won't have webExtensionController attached.
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                keyValueStore: keyValueStore,
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
                 darkReaderExcludedDomainsProvider: darkReaderSettings,
@@ -2217,6 +2218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,

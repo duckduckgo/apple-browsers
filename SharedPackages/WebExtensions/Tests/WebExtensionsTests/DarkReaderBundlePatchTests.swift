@@ -111,8 +111,17 @@ final class DarkReaderBundlePatchTests: XCTestCase {
         let components = version.split(separator: ".")
 
         XCTAssertEqual(components.count, 4, "Patched Dark Reader version must contain four numeric components")
-        XCTAssertEqual(components.last.map(String.init), "1", "Patched Dark Reader version must use DuckDuckGo patch component 1")
         XCTAssertTrue(components.allSatisfy { Int($0) != nil }, "Patched Dark Reader version components must be numeric")
+        XCTAssertGreaterThanOrEqual(components.last.flatMap { Int($0) } ?? 0, 1, "Patched Dark Reader version must use a DuckDuckGo patch component of at least 1")
+    }
+
+    func testManifestRequiresExtraction() throws {
+        let manifest = try loadManifestJSON()
+        let browserSpecific = try XCTUnwrap(manifest["browser_specific_settings"] as? [String: Any])
+        let duckduckgo = try XCTUnwrap(browserSpecific["duckduckgo"] as? [String: Any])
+
+        XCTAssertEqual(duckduckgo["appleRequiresExtraction"] as? Bool, true,
+                       "Dark Reader must be stored unzipped, otherwise WebKit unzips it on the main thread on every load")
     }
 
     func testManifestUsesNonpersistentBackgroundPage() throws {

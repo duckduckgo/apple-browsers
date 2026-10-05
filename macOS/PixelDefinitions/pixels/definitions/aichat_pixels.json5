@@ -101,6 +101,8 @@
             "pixelSource",
             "channel",
             "aiChatConversationSource",
+            "aiChatPromptSurface",
+            "aiChatFirstPromptNewInstall",
             {
                 "key": "isOpenedFromAskDuckAiButton",
                 "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar) and kept only for continuity with dashboards that predate `source`.",
@@ -122,6 +124,8 @@
             "pixelSource",
             "channel",
             "aiChatConversationSource",
+            "aiChatPromptSurface",
+            "aiChatFirstPromptNewInstall",
             {
                 "key": "isOpenedFromAskDuckAiButton",
                 "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar) and kept only for continuity with dashboards that predate `source`.",

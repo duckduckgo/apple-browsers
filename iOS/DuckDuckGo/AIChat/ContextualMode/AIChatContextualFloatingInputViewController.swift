@@ -277,6 +277,14 @@ final class AIChatContextualFloatingInputViewController: UIViewController {
         chipsViewController.showStartActions()
     }
 
+    func showSuggestionsLoading() {
+        chipsViewController.updateStartActions(suggestions: [], quickActions: [])
+        chipsViewController.updateSuggestionsLoading(true)
+        // A previous empty state may have hidden the container or left a fade-out in flight.
+        chipsContainerView.layer.removeAllAnimations()
+        chipsContainerView.alpha = 1
+    }
+
     /// Clears only once invisible: removing them collapses the stack into the input's own animation.
     func clearChipsFadingOut() {
         if areTabMentionSuggestionsVisible {

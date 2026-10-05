@@ -422,7 +422,7 @@ final class AIChatContextualSheetCoordinator {
             if !isVisible {
                 // Attachment state changes synchronously; its scheduled rendering can still be pending.
                 let content = StartActionsContent(viewState: self.sessionState.viewState)
-                if !content.isLoaded || content.isEmpty {
+                if content.isLoaded && content.isEmpty {
                     controller.clearChipsFadingOut()
                 }
             }
@@ -459,8 +459,7 @@ final class AIChatContextualSheetCoordinator {
     /// coordinator drives them for as long as it is the current surface.
     private func observeViewStateForFloatingChips() {
         floatingChipsCancellable = sessionState.$viewState
-            // `rebuildViewState` fires on many changes that leave the chips alone; without this, each
-            // one rebuilds every chip's `UIVisualEffectView` and the one-shot entrance skips them.
+            // Unrelated session changes don't need to reapply the floating surface's loading and visibility state.
             .map { StartActionsContent(viewState: $0) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -471,8 +470,7 @@ final class AIChatContextualSheetCoordinator {
                 guard content.isLoaded else {
                     // Loader alone while suggestions resolve. Passing the actions through here would
                     // flash the placeholder "Ask about page" chip beside it, then replace it.
-                    chips.updateStartActions(suggestions: [], quickActions: [])
-                    chips.updateSuggestionsLoading(true)
+                    floatingInput.showSuggestionsLoading()
                     self?.areFloatingSuggestionsVisible = false
                     return
                 }

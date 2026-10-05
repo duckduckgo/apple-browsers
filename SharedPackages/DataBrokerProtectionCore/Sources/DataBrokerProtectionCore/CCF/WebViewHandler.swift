@@ -51,6 +51,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var webView: WebView?
 
 #if os(macOS)
+#if DEBUG
+    private let livePreviewOperationID = UUID()
+    private let previewBrokerName: String?
+#endif
     private var urlObservation: NSKeyValueObservation?
     private var window: NSWindow?
     private var addressBarTextField: NSTextField?
@@ -73,7 +77,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                previewBrokerName: String? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) throws {
+#if os(macOS) && DEBUG
+        self.previewBrokerName = previewBrokerName ?? challengePixelDataBroker
+#endif
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.challengePixelDataBroker = challengePixelDataBroker
@@ -106,6 +114,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
+#if os(macOS) && DEBUG
+        if let webView, let previewBrokerName {
+            PIRLivePreview.shared.register(webView: webView, operationID: livePreviewOperationID, brokerName: previewBrokerName)
+        }
+#endif
 
         if showWebView {
 #if os(macOS)
@@ -164,6 +177,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 #if os(macOS)
         didDetectChallenge = false
         didReportChallengeClearance = false
+#if DEBUG
+        PIRLivePreview.shared.updateActivity("Opening page", operationID: livePreviewOperationID)
+#endif
 #endif
         webView?.load(url)
         Logger.action.log("Loading URL: \(url.shortDescription)")
@@ -177,6 +193,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func finish() {
+#if os(macOS) && DEBUG
+        PIRLivePreview.shared.unregister(operationID: livePreviewOperationID)
+#endif
         Logger.action.log("WebViewHandler finished")
         webView?.stopLoading()
         userContentController?.cleanUpBeforeClosing()
@@ -219,6 +238,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
+#if os(macOS) && DEBUG
+        PIRLivePreview.shared.updateActivity(action.actionType.livePreviewActivity, operationID: livePreviewOperationID)
+#endif
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
 
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
@@ -564,3 +586,22 @@ private class WebView: WKWebView {
         Logger.action.log("DBP WebView Deinit")
     }
 }
+
+#if os(macOS) && DEBUG
+private extension ActionType {
+    var livePreviewActivity: String {
+        switch self {
+        case .navigate: return "Opening page"
+        case .extract: return "Checking for matches"
+        case .fillForm: return "Completing form"
+        case .click: return "Continuing on broker site"
+        case .expectation, .condition: return "Checking page"
+        case .executeScript: return "Processing page"
+        case .generateEmail: return "Preparing email address"
+        case .getEmailData, .emailConfirmation: return "Checking confirmation email"
+        case .getCaptchaInfo: return "Checking CAPTCHA"
+        case .solveCaptcha: return "Resolving CAPTCHA"
+        }
+    }
+}
+#endif

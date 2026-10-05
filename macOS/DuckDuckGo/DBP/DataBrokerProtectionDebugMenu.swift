@@ -126,6 +126,15 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .targetting(self)
             }
 
+#if DEBUG
+            NSMenuItem(title: "Live Preview") {
+                NSMenuItem(title: "Start local demo", action: #selector(DataBrokerProtectionDebugMenu.startLivePreviewDemo))
+                    .targetting(self)
+                NSMenuItem(title: "Stop local demo", action: #selector(DataBrokerProtectionDebugMenu.stopLivePreviewDemo))
+                    .targetting(self)
+            }
+#endif
+
             NSMenuItem(title: "Debug Server") {
                 NSMenuItem(title: "Start", action: #selector(DataBrokerProtectionDebugMenu.startPIRDebugServer))
                     .targetting(self)
@@ -428,6 +437,16 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @objc private func showAgentIPAddress() {
         DataBrokerProtectionManager.shared.showAgentIPAddress()
     }
+
+#if DEBUG
+    @objc private func startLivePreviewDemo() {
+        Task { await DataBrokerProtectionManager.shared.loginItemInterface.startLivePreviewDemo() }
+    }
+
+    @objc private func stopLivePreviewDemo() {
+        Task { await DataBrokerProtectionManager.shared.loginItemInterface.stopLivePreviewDemo() }
+    }
+#endif
 
     @objc private func startPIRDebugServer() {
         Task { @MainActor in

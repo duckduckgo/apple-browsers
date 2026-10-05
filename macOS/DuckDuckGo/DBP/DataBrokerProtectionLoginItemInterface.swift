@@ -127,6 +127,20 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         ipcClient.runEmailConfirmationOperations(showWebView: showWebView)
     }
 
+#if DEBUG
+    func startLivePreviewDemo() async {
+        await ipcClient.startLivePreviewDemo()
+    }
+
+    func stopLivePreviewDemo() async {
+        await ipcClient.stopLivePreviewDemo()
+    }
+
+    func getLivePreview() async throws -> DBPLivePreviewFrame? {
+        try await ipcClient.getLivePreview()
+    }
+#endif
+
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
     }

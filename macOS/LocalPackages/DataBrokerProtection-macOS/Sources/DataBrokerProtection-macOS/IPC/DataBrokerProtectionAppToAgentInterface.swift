@@ -39,8 +39,21 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata?
     func startDebugServer() async -> Bool
     func stopDebugServer()
+#if DEBUG
+    func getLivePreview() async throws -> DBPLivePreviewFrame?
+    func startLivePreviewDemo() async
+    func stopLivePreviewDemo() async
+#endif
 }
 
 public protocol DataBrokerProtectionAppToAgentInterface: AnyObject, DataBrokerProtectionAgentAppEvents, DataBrokerProtectionAgentDebugCommands {
 
 }
+
+#if DEBUG
+public extension DataBrokerProtectionAgentDebugCommands {
+    func getLivePreview() async throws -> DBPLivePreviewFrame? { nil }
+    func startLivePreviewDemo() async {}
+    func stopLivePreviewDemo() async {}
+}
+#endif

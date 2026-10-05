@@ -401,6 +401,7 @@ public extension SubJobWebRunning {
                                                                                shouldContinueActionHandler: shouldRunNextStep,
                                                                                applicationNameForUserAgentProvider: applicationNameProvider,
                                                                                contentBlocking: contentBlocking,
+                                                                               previewBrokerName: context.dataBroker.name,
                                                                                pixelHandler: pixelHandler)
         }
 

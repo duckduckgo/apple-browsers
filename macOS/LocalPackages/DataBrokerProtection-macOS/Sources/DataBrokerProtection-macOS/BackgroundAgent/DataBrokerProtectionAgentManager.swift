@@ -560,6 +560,22 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
         queueManager.addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
     }
 
+#if DEBUG
+    public func startLivePreviewDemo() async {
+        await PIRLivePreviewDemo.shared.start()
+    }
+
+    public func stopLivePreviewDemo() async {
+        await PIRLivePreviewDemo.shared.stop()
+    }
+
+    @MainActor
+    public func getLivePreview() async throws -> DBPLivePreviewFrame? {
+        guard let frame = try await PIRLivePreview.shared.captureFrame() else { return nil }
+        return DBPLivePreviewFrame(frame: frame)
+    }
+#endif
+
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
 
         if let backgroundAgentVersion = Bundle.main.releaseVersionNumber,

@@ -120,6 +120,11 @@ protocol XPCServerInterface {
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
     func startDebugServer(completion: @escaping (Bool) -> Void)
     func stopDebugServer()
+#if DEBUG
+    func getLivePreview(completion: @escaping (DBPLivePreviewFrame?, Error?) -> Void)
+    func startLivePreviewDemo(completion: @escaping () -> Void)
+    func stopLivePreviewDemo(completion: @escaping () -> Void)
+#endif
 }
 
 protocol DataBrokerProtectionIPCServer: IPCClientInterface, XPCServerInterface {
@@ -230,4 +235,31 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
     func stopDebugServer() {
         serverDelegate?.stopDebugServer()
     }
+
+#if DEBUG
+    func startLivePreviewDemo(completion: @escaping () -> Void) {
+        Task {
+            await serverDelegate?.startLivePreviewDemo()
+            completion()
+        }
+    }
+
+    func stopLivePreviewDemo(completion: @escaping () -> Void) {
+        Task {
+            await serverDelegate?.stopLivePreviewDemo()
+            completion()
+        }
+    }
+
+    func getLivePreview(completion: @escaping (DBPLivePreviewFrame?, Error?) -> Void) {
+        Task {
+            do {
+                let frame = try await serverDelegate?.getLivePreview()
+                completion(frame, nil)
+            } catch {
+                completion(nil, error)
+            }
+        }
+    }
+#endif
 }

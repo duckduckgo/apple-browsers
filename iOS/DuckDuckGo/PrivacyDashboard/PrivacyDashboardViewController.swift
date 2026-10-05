@@ -40,9 +40,11 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let featureFlagger: FeatureFlagger
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
+    private lazy var brokenSiteReporter: BrokenSiteReporter = { [featureFlagger] in
         BrokenSiteReporter(pixelHandler: { parameters in
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: parameters, featureFlagger: featureFlagger)
             PixelKit.fire(Pixel.Event.brokenSiteReport,
                           options: PixelKit.Options(additionalParameters: parameters,
                                                     allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
@@ -76,7 +78,8 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -89,6 +92,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.featureFlagger = featureFlagger
 
         super.init(nibName: nil, bundle: nil)
 

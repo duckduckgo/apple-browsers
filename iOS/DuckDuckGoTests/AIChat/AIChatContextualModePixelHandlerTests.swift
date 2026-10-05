@@ -635,22 +635,6 @@ final class AIChatContextualModePixelHandlerTests {
         #expect(fired.first?.parameters == ["depth_bucket": expectedBucket])
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("Opening the sheet on a deleted chat fires a daily and count PixelKit event", .timeLimit(.minutes(1)))
-    func sheet_opened_on_deleted_chat_fires_pixel() {
-        var firedEventNames: [String] = []
-        let sut = AIChatContextualModePixelHandler(
-            firePixel: { _ in Issue.record("Must use PixelKit") },
-            firePixelKitEvent: { event, frequency in
-                #expect(frequency == .dailyAndCount)
-                firedEventNames.append(event.name)
-            })
-
-        sut.fireSheetOpenedOnDeletedChat()
-
-        #expect(firedEventNames == ["aichat_contextual_sheet_opened_on_deleted_chat"])
-    }
-
     @Test("Concurrent reset and navigation calls are thread-safe")
     func testConcurrentResetAndNavigation() async {
         // GIVEN

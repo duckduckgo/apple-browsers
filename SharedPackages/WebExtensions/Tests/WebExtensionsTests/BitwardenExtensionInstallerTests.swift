@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CryptoKit
 import WebExtensionsTestSupport
 import XCTest
 import ZIPFoundation
@@ -61,10 +62,22 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
 
         XCTAssertEqual(requestedURL, BitwardenExtensionInstaller.downloadURL)
         XCTAssertEqual(manifest?["name"] as? String, "Bitwarden")
-        XCTAssertEqual(manifest?["key"] as? String, WebExtensionManifestKeyPatcher.knownPublicKeys["Bitwarden"])
+        XCTAssertEqual(manifest?["key"] as? String, developerKey.base64EncodedString())
         XCTAssertTrue(manager.uninstalledIdentifiers.isEmpty)
         let installed = try XCTUnwrap(installedURL)
         XCTAssertFalse(FileManager.default.fileExists(atPath: installed.path))
+    }
+
+    func testWhenManifestAlreadyHasKey_ThenItIsLeftAlone() async throws {
+        var manifest: [String: Any]?
+        manager.installExtensionHandler = { url in
+            manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: url.appendingPathComponent("manifest.json"))) as? [String: Any]
+        }
+        let installer = makeInstaller(crx: try makeCRX3(manifest: "{\"name\":\"Bitwarden\",\"key\":\"existing-key\"}"))
+
+        try await installer.install()
+
+        XCTAssertEqual(manifest?["key"] as? String, "existing-key")
     }
 
     func testWhenBitwardenIsInstalled_ThenUninstallsItBeforeInstalling() async throws {
@@ -118,17 +131,24 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
                                     installedIdentifiers: { installedIdentifiers })
     }
 
-    private func makeCRX3() throws -> Data {
+    private let developerKey = Data("developer-key".utf8)
+
+    private func makeCRX3(manifest manifestJSON: String = "{\"name\":\"Bitwarden\"}") throws -> Data {
         let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).zip")
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         let archive = try Archive(url: zipURL, accessMode: .create)
-        let manifest = Data("{\"name\":\"Bitwarden\"}".utf8)
+        let manifest = Data(manifestJSON.utf8)
         try archive.addEntry(with: "manifest.json", type: .file, uncompressedSize: Int64(manifest.count)) { position, size in
             manifest.subdata(in: Int(position)..<Int(position) + size)
         }
 
-        let header = Data(repeating: 0, count: 8)
+        // CrxFileHeader: one RSA proof holding the developer key, and signed_header_data holding its crx_id.
+        let crxID = Data(SHA256.hash(data: developerKey).prefix(16))
+        let proof = Data([0x0A, UInt8(developerKey.count)]) + developerKey
+        let signedData = Data([0x0A, UInt8(crxID.count)]) + crxID
+        let header = Data([0x12, UInt8(proof.count)]) + proof
+            + Data([0x82, 0xF1, 0x04, UInt8(signedData.count)]) + signedData
         return Data("Cr24".utf8) + uint32(3) + uint32(UInt32(header.count)) + header + (try Data(contentsOf: zipURL))
     }
 

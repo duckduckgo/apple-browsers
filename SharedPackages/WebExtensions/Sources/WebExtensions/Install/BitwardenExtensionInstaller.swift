@@ -96,7 +96,7 @@ public struct BitwardenExtensionInstaller {
         try fileManager.createDirectory(at: extensionDirectory, withIntermediateDirectories: true)
         try zip.write(to: zipURL)
         try fileManager.unzipItem(at: zipURL, to: extensionDirectory)
-        try restorePublicKey(in: extensionDirectory)
+        try restorePublicKey(from: crx, in: extensionDirectory)
 
         // The old copy is removed only once the new one unpacked, so a bad download never removes a working install.
         for identifier in installedIdentifiers() {
@@ -109,19 +109,19 @@ public struct BitwardenExtensionInstaller {
         Logger.webExtensions.info("Installed Bitwarden from the Chrome Web Store")
     }
 
-    /// The `.crx` the Web Store serves carries no `key`, so the installed copy would have no Chrome
-    /// identifier, and a later install could not find it to replace it. Putting the key back gives it
-    /// the identifier Chrome would.
-    private func restorePublicKey(in extensionDirectory: URL) throws {
+    /// The `.crx` carries the developer's public key in its header, not in `manifest.json`, so once the
+    /// header is stripped the installed copy would have no Chrome identifier, and a later install could
+    /// not find it to replace it. Writing the header's key back into the manifest gives it the
+    /// identifier Chrome derives. A manifest that already has a `key` is left alone.
+    private func restorePublicKey(from crx: Data, in extensionDirectory: URL) throws {
         let manifestURL = extensionDirectory.appendingPathComponent("manifest.json")
-        guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any] else {
+        guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any],
+              (manifest["key"] as? String)?.isEmpty != false,
+              let publicKey = CRXArchive.publicKey(from: crx) else {
             return
         }
 
-        let keyPatcher = WebExtensionManifestKeyPatcher(fileManager: fileManager)
-        guard keyPatcher.insertKnownPublicKeyIfNeeded(in: &manifest, manifestDirectory: extensionDirectory) else {
-            return
-        }
+        manifest["key"] = publicKey.base64EncodedString()
         try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
     }
 }

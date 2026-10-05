@@ -37,14 +37,10 @@ public struct ChromeWebStoreDownloader: ChromeWebStoreDownloading {
               let responseURL = response.url, ChromeWebStoreURL.isAllowedDownloadDestination(responseURL) else {
             throw ChromeWebStoreError.downloadFailed
         }
-        let size = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard size > 0, size <= DownloadPolicy.maximumSize else { throw ChromeWebStoreError.packageTooLarge }
         return try Data(contentsOf: file, options: .mappedIfSafe)
     }
 
-    private final class DownloadPolicy: NSObject, URLSessionDownloadDelegate {
-        static let maximumSize = 64 * 1024 * 1024
-
+    private final class DownloadPolicy: NSObject, URLSessionTaskDelegate {
         func urlSession(_ session: URLSession, task: URLSessionTask,
                         willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
                         completionHandler: @escaping (URLRequest?) -> Void) {
@@ -54,14 +50,5 @@ public struct ChromeWebStoreDownloader: ChromeWebStoreDownloading {
             }
             completionHandler(request)
         }
-
-        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                        didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-            if totalBytesWritten > Self.maximumSize || totalBytesExpectedToWrite > Self.maximumSize {
-                downloadTask.cancel()
-            }
-        }
-
-        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
     }
 }

@@ -24,7 +24,7 @@ public enum ChromeWebStoreStatus: String, Codable {
 }
 
 public enum ChromeWebStoreError: Error {
-    case invalidRequest, unavailable, invalidPackage, invalidSignature, unsupportedManifest, downloadFailed, packageTooLarge
+    case invalidRequest, unavailable, invalidPackage, invalidSignature, unsupportedManifest, downloadFailed
 }
 
 public enum ChromeWebStoreURL {

@@ -33,7 +33,7 @@ public struct ChromeWebStorePackageVerifier {
     public init() {}
 
     public func verifiedArchive(in package: Data, extensionID: String) throws -> VerifiedArchive {
-        guard package.count >= 12, package.count <= 64 * 1024 * 1024,
+        guard package.count >= 12,
               package.prefix(4) == Data("Cr24".utf8), uint32(package, at: 4) == 3 else {
             throw ChromeWebStoreError.invalidPackage
         }

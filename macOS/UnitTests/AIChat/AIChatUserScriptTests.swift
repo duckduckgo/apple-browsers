@@ -308,6 +308,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
     var isFireWindowProvider: (() -> Bool)?
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
+    var directNavigationFallback: AIChatConversationSource?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling

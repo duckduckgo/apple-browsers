@@ -779,6 +779,82 @@ struct AIChatUserScriptHandlerTests {
         #expect(parameters?["source"] == "new-tab-page")
     }
 
+    // MARK: - Direct navigation fallback
+
+    @MainActor
+    private func reportedSource(stamp: AIChatConversationSource?,
+                                url: String,
+                                fallbackBeforeLoad: AIChatConversationSource? = nil,
+                                fallbackAfterLoad: AIChatConversationSource? = nil) async -> String? {
+        let sourceHandler = AIChatConversationSourceHandler()
+        if let stamp {
+            sourceHandler.setData(stamp)
+        }
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+        let webView = mockWebView(url: url)
+
+        testHandler.directNavigationFallback = fallbackBeforeLoad
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
+        if let fallbackAfterLoad {
+            testHandler.directNavigationFallback = fallbackAfterLoad
+        }
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock(webView: webView))
+
+        return testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"]
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A direct navigation names a chat nothing else stamped", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatTheDirectNavigationFallbackAttributesAnUnstampedChat() async {
+        #expect(await reportedSource(stamp: nil, url: "https://duck.ai/", fallbackBeforeLoad: .directBookmark) == "direct-bookmark")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A surface's stamp wins over a direct navigation", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAStampWinsOverTheDirectNavigationFallback() async {
+        #expect(await reportedSource(stamp: .omnibar, url: "https://duck.ai/", fallbackBeforeLoad: .directTyped) == "omnibar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The homepage marker wins over a direct navigation", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatTheHomepageMarkerWinsOverTheDirectNavigationFallback() async {
+        #expect(await reportedSource(stamp: nil, url: Self.homepageFunnelChatURL, fallbackBeforeLoad: .directLink) == "duckduckgo-homepage")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A direct navigation that commits after the chat loaded still names it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatALateDirectNavigationFallbackIsAdopted() async {
+        #expect(await reportedSource(stamp: nil, url: "https://duck.ai/", fallbackAfterLoad: .directTyped) == "direct-typed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A late direct navigation doesn't replace a surface's stamp", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatALateDirectNavigationFallbackDoesNotReplaceAStamp() async {
+        #expect(await reportedSource(stamp: .omnibar, url: "https://duck.ai/", fallbackAfterLoad: .directTyped) == "omnibar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new document drops the previous document's direct navigation", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANewDocumentDropsTheDirectNavigationFallback() async {
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: AIChatConversationSourceHandler(), pixelFiring: testPixelFiring)
+        let webView = mockWebView(url: "https://duck.ai/")
+        testHandler.directNavigationFallback = .directHistory
+
+        testHandler.resetConversationSourceForNewDocument()
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock(webView: webView))
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "unattributed")
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("didReportMetric does not fire pixels for non-prompt metrics", .timeLimit(.minutes(1)))
     @MainActor
@@ -1747,6 +1823,13 @@ struct AIChatConversationSourcePixelTests {
         "serp",
         "sidebar-handoff",
         "settings",
+        "direct-typed",
+        "direct-suggestion",
+        "direct-bookmark",
+        "direct-favorite",
+        "direct-history",
+        "direct-external",
+        "direct-link",
         "duckduckgo-homepage",
         "unattributed"
     ]

@@ -119,6 +119,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     var isFireWindowProvider: (() -> Bool)? { get set }
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)? { get set }
+    var directNavigationFallback: AIChatConversationSource? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
@@ -213,6 +214,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
 
+    /// How this document was reached when it was a direct navigation to Duck.ai; used only when no
+    /// surface stamped the chat. The navigation can commit after the chat already loaded, so a late
+    /// value is still adopted.
+    var directNavigationFallback: AIChatConversationSource? {
+        didSet {
+            if didConsumeConversationSource, conversationSource == nil {
+                conversationSource = directNavigationFallback
+            }
+        }
+    }
+
     /// Whether page context with content is currently attached to this chat — set by the native
     /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
     /// the conversation pixels' `hasPageContext`. Best-effort, mirroring Windows: only sidebar chats
@@ -294,6 +306,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             if url == nil || url?.isDuckAIURL == true {
                 conversationSource = conversationSourceHandler.consumeData()
                     ?? (url?.isDuckAIOpenedFromHomepage == true ? .duckduckgoHomepage : nil)
+                    ?? directNavigationFallback
             }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
@@ -310,6 +323,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func resetConversationSourceForNewDocument() {
         didConsumeConversationSource = false
         conversationSource = nil
+        directNavigationFallback = nil
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {

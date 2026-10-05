@@ -133,6 +133,20 @@ enum PromptBarPixel: PixelKit.Event {
     /// The on/off pixels only cover users who touch a setting; this one sizes the enabled base.
     case state(shortcutEnabled: Bool, menuBarIconEnabled: Bool)
 
+    /// Event Trigger: The Prompt Bar is presented for the first time on this install, from either entry point.
+    case firstUse(source: PromptBarPresentationSource)
+
+    // MARK: - Launcher promo
+
+    /// Event Trigger: A launcher promo state becomes visible: its drawer on focus of the input, or its hint placeholder.
+    case promoShown(kind: DuckAiLauncherPromoKind)
+
+    /// Event Trigger: The user clicks the launcher promo button ("Try Now", or "Turn On" for the shortcut nudge).
+    case promoCtaClicked(kind: DuckAiLauncherPromoKind)
+
+    /// Event Trigger: The user dismisses the launcher promo or the shortcut nudge.
+    case promoDismissed(kind: DuckAiLauncherPromoKind)
+
     // MARK: -
 
     var name: String {
@@ -203,6 +217,14 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_settings_shortcut_changed"
         case .state:
             return "aichat_promptbar_state"
+        case .firstUse:
+            return "aichat_promptbar_first_use_u"
+        case .promoShown:
+            return "aichat_promptbar_promo_shown"
+        case .promoCtaClicked:
+            return "aichat_promptbar_promo_cta_clicked"
+        case .promoDismissed:
+            return "aichat_promptbar_promo_dismissed"
         }
     }
 
@@ -254,12 +276,36 @@ enum PromptBarPixel: PixelKit.Event {
                     "menu_bar_icon_enabled": String(menuBarIconEnabled)]
         case .modelPickerShown(let origin), .reasoningPickerShown(let origin):
             return ["origin": origin]
+        case .firstUse(let source):
+            return ["source": source.pixelValue]
+        case .promoShown(let kind), .promoCtaClicked(let kind), .promoDismissed(let kind):
+            // The New Tab Page is the only surface so far; the address bar would add its own value.
+            return ["kind": kind.pixelValue, "surface": "new_tab"]
         }
     }
 
     /// Matches the address bar pixels, so a surface breakdown stays comparable.
     var standardParameters: [PixelKitStandardParameter]? {
         [.pixelSource]
+    }
+}
+
+private extension PromptBarPresentationSource {
+    var pixelValue: String {
+        switch self {
+        case .keyboardShortcut: "shortcut"
+        case .menuBarIcon: "menu_bar_icon"
+        }
+    }
+}
+
+private extension DuckAiLauncherPromoKind {
+    var pixelValue: String {
+        switch self {
+        case .promo: "promo"
+        case .shortcutHint: "shortcut_hint"
+        case .shortcutNudge: "shortcut_nudge"
+        }
     }
 }
 

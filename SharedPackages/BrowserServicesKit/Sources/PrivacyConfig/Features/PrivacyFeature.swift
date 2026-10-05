@@ -545,6 +545,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
 
+    /// Promotes the Duck.ai launcher (prompt bar) to users who chat often but haven't turned it on.
+    case launcherPromo
+
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
 }

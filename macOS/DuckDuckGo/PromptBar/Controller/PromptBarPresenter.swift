@@ -89,7 +89,14 @@ final class PromptBarPresenter: PromptBarPresenting {
     init(content: PromptBarContentHosting,
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
-         firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
+         firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
+            // `firstUse` reports once per install; everything else counts every presentation.
+            if case .firstUse = pixel {
+                PixelKit.fire(pixel, frequency: .uniqueByName, includeAppVersionParameter: true)
+            } else {
+                PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+         }) {
         self.content = content
         self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
         self.makeWindow = makeWindow
@@ -128,6 +135,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         subscribeToResignKey(of: window)
 
         firePixel(source.shownPixel)
+        firePixel(.firstUse(source: source))
     }
 
     func dismiss(reason: PromptBarDismissReason) {

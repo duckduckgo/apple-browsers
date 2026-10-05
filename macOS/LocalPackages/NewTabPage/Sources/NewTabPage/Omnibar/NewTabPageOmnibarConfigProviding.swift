@@ -100,6 +100,23 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// open NTP stops offering the disclaimer.
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { get }
 
+    /// Duck.ai launcher discovery state; `nil` shows nothing. Resolved after `usageLimits()`, which takes the drawer first.
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
+
+    /// The page made `kind` visible. Native fires the exposure pixel.
+    @MainActor
+    func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+
+    @MainActor
+    func selectLauncherPromoCta(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+
+    @MainActor
+    func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+
+    /// Fires when anything `launcherPromo()` reads changes: launcher settings, chat count, dismissal.
+    var launcherPromoPublisher: AnyPublisher<Void, Never> { get }
+
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the
     /// `aiChatNtpAttachMoreTabs` feature flag. Published so the client can push an
     /// `omnibar_onConfigUpdate` when the flag flips at runtime, keeping an open NTP in sync.

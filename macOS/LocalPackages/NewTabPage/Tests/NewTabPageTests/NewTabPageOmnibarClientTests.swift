@@ -935,6 +935,39 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.usageLimits)
     }
 
+    // MARK: - Launcher promo
+
+    @MainActor
+    func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(kind: .promo, message: "Open Duck.ai with {shortcut}",
+                                                             shortcut: "⌥ Space", ctaLabel: "Try Now", dismissible: true)
+        configProvider.launcherPromoResult = promo
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.launcherPromo, promo)
+    }
+
+    @MainActor
+    func testLauncherPromoMessagesForwardTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarLauncherPromoAction(kind: .shortcutNudge)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown, parameters: action)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta, parameters: action)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoShownKinds, [.shortcutNudge])
+        XCTAssertEqual(configProvider.selectLauncherPromoCtaKinds, [.shortcutNudge])
+        XCTAssertEqual(configProvider.dismissLauncherPromoKinds, [.shortcutNudge])
+    }
+
+    @MainActor
+    func testWhenTheLauncherPromoKindIsUnrecognisedThenNothingIsForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta, parameters: ["kind": "banner"])
+
+        XCTAssertTrue(configProvider.selectLauncherPromoCtaKinds.isEmpty)
+    }
+
     @MainActor
     func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)

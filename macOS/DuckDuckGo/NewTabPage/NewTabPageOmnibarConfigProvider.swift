@@ -100,6 +100,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
     private let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring?
+    private let duckAiLauncherPromo: DuckAiLauncherPromo?
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
@@ -121,6 +122,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
          attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring? = nil,
+         duckAiLauncherPromo: DuckAiLauncherPromo? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -133,6 +135,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
         self.attachmentPrivacyDisclosureStore = attachmentPrivacyDisclosureStore
+        self.duckAiLauncherPromo = duckAiLauncherPromo
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -499,6 +502,32 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private var isAttachmentPrivacyDisclosureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
+    }
+
+    // MARK: - Launcher promo
+
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
+        duckAiLauncherPromo?.presentation()
+    }
+
+    @MainActor
+    func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
+        duckAiLauncherPromo?.shown(kind: kind)
+    }
+
+    @MainActor
+    func selectLauncherPromoCta(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
+        duckAiLauncherPromo?.selectCta(kind: kind)
+    }
+
+    @MainActor
+    func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
+        duckAiLauncherPromo?.dismiss(kind: kind)
+    }
+
+    var launcherPromoPublisher: AnyPublisher<Void, Never> {
+        duckAiLauncherPromo?.changesPublisher ?? Empty().eraseToAnyPublisher()
     }
 
     @MainActor

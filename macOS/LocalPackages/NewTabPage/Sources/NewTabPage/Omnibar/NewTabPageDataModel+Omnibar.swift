@@ -303,6 +303,7 @@ public extension NewTabPageDataModel {
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
         var usageLimits: OmnibarUsageLimits?
+        var launcherPromo: OmnibarLauncherPromo?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
@@ -331,6 +332,47 @@ public extension NewTabPageDataModel {
         public let kind: OmnibarAttachmentPrivacyKind
 
         public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    // MARK: - Launcher promo
+
+    enum OmnibarLauncherPromoKind: String, Codable {
+        case promo, shortcutHint, shortcutNudge
+    }
+
+    /// Native-resolved launcher discovery state. The page shows a drawer when `message` is set and
+    /// swaps the AI input placeholder when `placeholder` is set; it only echoes `kind` back.
+    struct OmnibarLauncherPromo: Codable, Equatable {
+        let kind: OmnibarLauncherPromoKind
+        /// May contain one `{shortcut}` token, which the page renders as a key combination.
+        let message: String?
+        let shortcut: String?
+        let ctaLabel: String?
+        let dismissible: Bool?
+        let placeholder: String?
+
+        public init(kind: OmnibarLauncherPromoKind,
+                    message: String? = nil,
+                    shortcut: String? = nil,
+                    ctaLabel: String? = nil,
+                    dismissible: Bool? = nil,
+                    placeholder: String? = nil) {
+            self.kind = kind
+            self.message = message
+            self.shortcut = shortcut
+            self.ctaLabel = ctaLabel
+            self.dismissible = dismissible
+            self.placeholder = placeholder
+        }
+    }
+
+    /// Payload of `omnibar_launcherPromoShown`, `omnibar_selectLauncherPromoCta` and `omnibar_dismissLauncherPromo`.
+    struct OmnibarLauncherPromoAction: Codable, Equatable {
+        public let kind: OmnibarLauncherPromoKind
+
+        public init(kind: OmnibarLauncherPromoKind) {
             self.kind = kind
         }
     }

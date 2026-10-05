@@ -362,6 +362,11 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor
     func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {}
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    @MainActor func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? { nil }
+    @MainActor func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {}
+    @MainActor func selectLauncherPromoCta(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {}
+    @MainActor func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {}
+    var launcherPromoPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var selectedModelId: String?

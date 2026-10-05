@@ -704,8 +704,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForExistingUsers
     case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
-    case subscriptionOnboardingFreeTrialsSep2026
-    case subscriptionOnboardingPaidSubsSep2026
+    case subscriptionOnboardingFreeTrialsOct2026
+    case subscriptionOnboardingPaidSubsOct2026
     case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
@@ -847,6 +847,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Controls permission prompts and persistence on macOS.
+    case permissions
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.

@@ -75,7 +75,8 @@ struct SubscriptionOnboardingProgressView: View {
             navigationButton: navigationButton,
             header: header,
             footer: footer,
-            declaresNavigationChrome: variant != .duckAIInterstitial) {
+            declaresNavigationChrome: variant != .duckAIInterstitial,
+            footerBlur: true) {
             SubscriptionOnboardingProgressCardView(percentage: percentage,
                                                    items: progress.checklist,
                                                    completedItems: completedItems,

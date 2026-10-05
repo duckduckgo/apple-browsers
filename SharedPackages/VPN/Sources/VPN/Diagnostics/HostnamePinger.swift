@@ -19,11 +19,13 @@
 import Foundation
 import Network
 
+/// Measures ICMP latency to a host name from the calling process, independently of the VPN tunnel.
 public struct HostnamePinger: Sendable {
 
     private let host: String
     private let timeout: TimeInterval
 
+    /// - Parameter timeout: Bounds the DNS lookup and the ping separately.
     public init(host: String, timeout: TimeInterval) {
         self.host = host
         self.timeout = timeout
@@ -31,27 +33,45 @@ public struct HostnamePinger: Sendable {
 
     /// Pings the configured host once and buckets the round-trip time; `.unknown` when resolution or the ping fails.
     public func currentPingQuality() async -> NetworkProtectionLatencyMonitor.ConnectionQuality {
-        guard let ip = await Self.resolveIPv4(host: host),
-              case .success(let result) = await Pinger(ip: ip, timeout: timeout).ping() else {
+        guard let ip = await resolveIPv4() else {
             return .unknown
         }
 
-        return .init(average: result.time * 1000)
+        guard case .success(let result) = await Pinger(ip: ip, timeout: timeout).ping() else {
+            return .unknown
+        }
+
+        let milliseconds = result.time * 1000
+        return .init(average: milliseconds)
     }
 
-    /// Runs the blocking lookup off the cooperative pool.
-    private static func resolveIPv4(host: String) async -> IPv4Address? {
-        await withCheckedContinuation { continuation in
+    /// Runs the blocking lookup off the cooperative pool; `nil` if it outlasts `timeout`, whichever arrives first wins.
+    private func resolveIPv4() async -> IPv4Address? {
+        let results = AsyncStream<IPv4Address?> { continuation in
             DispatchQueue.global(qos: .utility).async {
-                continuation.resume(returning: resolveIPv4Sync(host: host))
+                continuation.yield(resolveIPv4Sync())
+                continuation.finish()
+            }
+
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeout) {
+                continuation.yield(nil)
+                continuation.finish()
             }
         }
+
+        for await address in results {
+            return address
+        }
+
+        return nil
     }
 
-    private static func resolveIPv4Sync(host: String) -> IPv4Address? {
+    private func resolveIPv4Sync() -> IPv4Address? {
+        // The resolver needs a port, but only the address is used.
         let endpoint = Endpoint(host: .name(host, nil), port: .https)
-        guard case .success(let resolved) = DefaultDNSResolver().resolveSync(endpoints: [endpoint]).first ?? nil,
-              case .ipv4(let address) = resolved.host else {
+        let resolution = DefaultDNSResolver().resolveSync(endpoints: [endpoint]).first ?? nil
+
+        guard case .success(let resolved) = resolution, case .ipv4(let address) = resolved.host else {
             return nil
         }
 

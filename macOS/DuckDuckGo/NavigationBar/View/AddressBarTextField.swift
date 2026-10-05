@@ -17,19 +17,19 @@
 //
 
 import AddressBarPerformance
+import AIChat
 import AppKit
 import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
-import FoundationExtensions
-import PixelKit
-import Suggestions
-import Subscription
-import os.log
-import UIComponents
-import AIChat
 import DesignResourcesKit
+import FoundationExtensions
+import os.log
+import PixelKit
+import Subscription
+import Suggestions
+import UIComponents
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -1613,6 +1613,7 @@ enum SuggestionInputMethod {
     case mouse
 }
 
+// MARK: - URL+makeUrl, upgradeToHttps
 extension URL {
 
     static func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -1659,7 +1660,6 @@ extension URL {
             }
         }
     }
-
 }
 
 // MARK: - SharingMenuDelegate

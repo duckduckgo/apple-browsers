@@ -43,7 +43,7 @@ protocol AppOpenKeyboardHandling: AnyObject {
     func enterSearchOnAppOpen()
 }
 
-/// Keyboard rule for NTP landings behind `.alwaysShowKeyboardOnNewTabPage`: an NTP shows the keyboard
+/// Keyboard behavior on New Tab Pages behind `.alwaysShowKeyboardOnNewTabPage`: an NTP shows the keyboard
 /// when New Tab is on, unless the user dismissed it or onboarding is running.
 /// Callers check the flag and onboarding, which after Fire they pass in; flag-off paths keep their own conditions.
 struct NewTabPageKeyboardPolicy {
@@ -71,11 +71,6 @@ struct NewTabPageKeyboardPolicy {
     func showsKeyboardAfterFire(onDuckAITab: Bool, stillOnboarding: Bool) -> Bool {
         onNewTab && !onDuckAITab && !stillOnboarding
     }
-
-    /// New Tab governs a landing on an NTP inside the app that doesn't come through `newTab()`:
-    /// Close All Tabs, closing the last tab, the Home button and explicitly switching onto an NTP. Swiping between tabs is excluded.
-    var showsKeyboardOnInAppLanding: Bool { onNewTab }
-
 
 }
 

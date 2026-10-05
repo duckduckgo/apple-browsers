@@ -88,14 +88,6 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(showsKeyboard == testCase.showsKeyboard)
     }
 
-    @Test("An in-app landing follows New Tab alone", .timeLimit(.minutes(1)), arguments: [true, false], [true, false])
-    @available(iOS 16, macOS 13, *)
-    func whenLandingInsideTheAppThenOnlyNewTabDecides(onNewTab: Bool, onAppLaunch: Bool) {
-        let policy = NewTabPageKeyboardPolicy(onNewTab: onNewTab, onAppLaunch: onAppLaunch)
-
-        #expect(policy.showsKeyboardOnInAppLanding == onNewTab)
-    }
-
     @available(iOS 16, macOS 13, *)
     @Test("A short return before the first unlock still counts as the cold start", .timeLimit(.minutes(1)))
     func whenReturningBeforeFirstUnlockThenItIsAnAppOpen() {

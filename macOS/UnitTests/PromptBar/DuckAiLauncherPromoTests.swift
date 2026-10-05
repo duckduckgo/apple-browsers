@@ -17,6 +17,7 @@
 //
 
 import Combine
+import FeatureFlags
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import XCTest

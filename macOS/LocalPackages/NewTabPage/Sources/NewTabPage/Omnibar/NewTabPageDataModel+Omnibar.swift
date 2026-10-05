@@ -337,10 +337,10 @@ public extension NewTabPageDataModel {
     }
 
     struct OmnibarLauncherPromo: Codable, Equatable {
-        let message: String
-        let secondaryText: String?
-        let ctaLabel: String?
-        let dismissible: Bool?
+        public let message: String
+        public let secondaryText: String?
+        public let ctaLabel: String?
+        public let dismissible: Bool?
 
         public init(message: String, secondaryText: String? = nil, ctaLabel: String? = nil, dismissible: Bool? = nil) {
             self.message = message

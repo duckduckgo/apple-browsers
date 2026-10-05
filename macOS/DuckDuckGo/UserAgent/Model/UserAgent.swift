@@ -63,6 +63,17 @@ extension UserAgent {
     static let brandedDefaultSuffix = "Version/\(safariVersion) " + "Safari/\(webKitVersion) " + ddgVersion
     static let `default` = UserAgent.brandedDefault
 
+    // MARK: - Web extensions
+
+    /// User agent suffix used by the web views the web extension controller creates (background, popup, options pages).
+    ///
+    /// Same as `brandedDefaultSuffix` with a Chrome token inserted before the `Safari/` token, where Chrome places it — a
+    /// Chrome-shaped major version with zeroed minor components, the way Chrome's own reduced user agent is formatted.
+    /// Chrome-only extensions branch on the presence of ` Chrome/` in `navigator.userAgent` to choose their native messaging channel
+    /// and their clipboard implementation; without the token they take a Safari path that talks to a Safari app extension host we do
+    /// not provide. Tab web views are unaffected and keep `brandedDefaultSuffix`.
+    static let webExtensionSuffix = "Version/\(safariVersion) " + "Chrome/140.0.0.0 " + "Safari/\(webKitVersion) " + ddgVersion
+
     static func `for`(_ url: URL?,
                       privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) -> String {
         guard let url, privacyConfig.isEnabled(featureKey: .customUserAgent) else {

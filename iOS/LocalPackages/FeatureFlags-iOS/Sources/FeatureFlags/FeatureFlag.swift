@@ -558,7 +558,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
 
-    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219175598274067
     case syncImprovedPairingFlow
 
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.

@@ -1587,7 +1587,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
             view.addSubview(snapshot)
         }
         closeTab(tab, behavior: .onlyClose)
-        showKeyboardOnNewTabPageLandingIfAllowed()
+        showKeyboardOnNewTabPageIfAllowed()
         guard let snapshot else { return }
         UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
             snapshot.alpha = 0

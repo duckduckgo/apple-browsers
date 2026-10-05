@@ -997,7 +997,7 @@ extension MainViewController: TabsBarDelegate {
         
         selectTab(tab)
         if switchesTab {
-            showKeyboardOnNewTabPageLandingIfAllowed()
+            showKeyboardOnNewTabPageIfAllowed()
         }
     }
     
@@ -1006,7 +1006,7 @@ extension MainViewController: TabsBarDelegate {
             let closesCurrentTab = tab === tabManager.currentTabsModel.currentTab
             closeTab(tab, refreshInPlace: true)
             if closesCurrentTab {
-                showKeyboardOnNewTabPageLandingIfAllowed()
+                showKeyboardOnNewTabPageIfAllowed()
             }
         }
     }
@@ -1022,19 +1022,33 @@ extension MainViewController: TabsBarDelegate {
             message: UserText.alertMessageCloseOtherTabs(withCount: otherTabsCount),
             preferredStyle: .alert)
         alert.addAction(title: UserText.actionCancel, style: .cancel)
-        alert.addAction(title: UserText.closeTabs(withCount: otherTabsCount), style: .destructive) { [weak self] in
+        alert.addAction(title: UserText.closeTabs(withCount: otherTabsCount), style: .destructive) { [weak self, weak alert] in
             guard let self else { return }
             // Recompute live: the tab set can change while the alert is up.
             let currentModel = self.tabManager.currentTabsModel
             guard currentModel.tabs.contains(where: { $0 === keptTab }) else { return }
             let tabsToClose = currentModel.tabs.filter { $0 !== keptTab }
             guard !tabsToClose.isEmpty else { return }
+            let shouldFocusKeyboard = keptTab !== currentModel.currentTab && keptTab.isHomeTab
+                && self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
             PixelKit.fire(Pixel.Event.tabBarCloseOtherTabs, frequency: .dailyAndCount)
+            if shouldFocusKeyboard {
+                self.dismissOmniBar(animated: false)
+            }
             self.tabManager.select(keptTab, dismissCurrent: false)
             self.notifyTabsWillClose(tabsToClose)
             self.tabManager.bulkRemoveTabs(tabsToClose)
             self.tabsBarController?.refresh(tabsModel: self.tabManager.currentTabsModel, scrollToSelected: true)
             self.updateCurrentTab()
+            if shouldFocusKeyboard {
+                let requestID = self.appOpenKeyboardRequestID
+                alert?.dismiss(animated: true) { [weak self] in
+                    guard let self,
+                          self.appOpenKeyboardRequestID == requestID,
+                          self.tabManager.currentTabsModel.currentTab === keptTab else { return }
+                    self.showKeyboardOnNewTabPageIfAllowed()
+                }
+            }
         }
         present(alert, animated: true)
     }

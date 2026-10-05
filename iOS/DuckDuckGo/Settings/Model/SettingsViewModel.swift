@@ -1856,7 +1856,7 @@ extension SettingsViewModel {
     enum SettingsDeepLinkSection: Identifiable, Equatable {
         case netP(source: VPNConnectionWideEventData.ScreenSource,
                   scrollToStrictRouting: Bool = false)
-        case dbp
+        case dbp(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil)
         case itr
         case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
         case subscriptionPlanChangeFlow(redirectURLComponents: URLComponents? = nil)

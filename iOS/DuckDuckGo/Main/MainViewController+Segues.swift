@@ -344,8 +344,8 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .dbp)
-        }, deepLinkTarget: .dbp)
+            $0.triggerDeepLinkNavigation(to: .dbp())
+        }, deepLinkTarget: .dbp())
     }
 
     func segueToPIRWithSubscriptionCheck() {
@@ -357,9 +357,11 @@ extension MainViewController {
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
             if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
+                let freeScanEntryPoint: FreemiumDBPEntryPoint? = hasEntitlement ? nil
+                    : freemiumDBPUserStateManager.firstScanResult == nil ? .freeScanBanner : .viewResultsBanner
                 launchSettings(completion: {
-                    $0.triggerDeepLinkNavigation(to: .dbp)
-                }, deepLinkTarget: .dbp)
+                    $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
+                }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))
             } else {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .subscriptionFlow())

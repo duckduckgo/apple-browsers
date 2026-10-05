@@ -344,12 +344,10 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let networkSignalsProvider = networkSignalsProvider
+        async let asyncBreakageReportData = collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
         async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
 
-        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
-
-        let networkSignals = await asyncNetworkSignals
+        let (breakageReportData, networkSignals) = await (asyncBreakageReportData, asyncNetworkSignals)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance

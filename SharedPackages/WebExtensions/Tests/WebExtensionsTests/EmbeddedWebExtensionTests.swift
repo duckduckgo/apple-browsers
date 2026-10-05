@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import ZIPFoundation
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -134,14 +135,79 @@ final class EmbeddedWebExtensionTests: XCTestCase {
         let metadata = WebExtensionMetadata(
             type: .embedded,
             version: "1.0.0",
-            displayName: "Test Extension",
             requiresExtraction: false
         )
 
         XCTAssertEqual(metadata.type, .embedded)
         XCTAssertEqual(metadata.version, "1.0.0")
-        XCTAssertEqual(metadata.displayName, "Test Extension")
         XCTAssertFalse(metadata.requiresExtraction)
+    }
+
+    // MARK: - WebExtensionMetadata.fromZip Tests
+
+    func testWhenZipManifestHasTypeAndExtractionFlag_ThenFromZipReturnsThem() async throws {
+        let zipURL = try makeZip(files: ["manifest.json": """
+        {
+            "manifest_version": 3,
+            "name": "__MSG_extensionName__",
+            "version": "4.9.128.2",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "org.duckduckgo.web-extension.darkreader",
+                    "appleRequiresExtraction": true
+                }
+            }
+        }
+        """, "background/index.js": "// background"])
+
+        let metadata = try await WebExtensionMetadata.fromZip(at: zipURL)
+
+        XCTAssertEqual(metadata.type, .darkReader)
+        XCTAssertEqual(metadata.version, "4.9.128.2")
+        XCTAssertTrue(metadata.requiresExtraction)
+    }
+
+    func testWhenZipManifestHasNoDuckDuckGoSettings_ThenFromZipReturnsNoTypeAndNoExtraction() async throws {
+        let zipURL = try makeZip(files: ["manifest.json": #"{ "manifest_version": 3, "name": "Test", "version": "1.0.0" }"#])
+
+        let metadata = try await WebExtensionMetadata.fromZip(at: zipURL)
+
+        XCTAssertNil(metadata.type)
+        XCTAssertEqual(metadata.version, "1.0.0")
+        XCTAssertFalse(metadata.requiresExtraction)
+    }
+
+    func testWhenZipHasNoRootManifest_ThenFromZipThrowsInvalidManifest() async throws {
+        let zipURL = try makeZip(files: ["nested/manifest.json": #"{ "manifest_version": 3, "name": "Test", "version": "1.0.0" }"#])
+
+        do {
+            _ = try await WebExtensionMetadata.fromZip(at: zipURL)
+            XCTFail("Expected fromZip to throw")
+        } catch WebExtensionError.invalidManifest {
+            // expected
+        }
+    }
+
+    private var createdURLs: [URL] = []
+
+    override func tearDown() {
+        createdURLs.forEach { try? FileManager.default.removeItem(at: $0) }
+        createdURLs.removeAll()
+        super.tearDown()
+    }
+
+    private func makeZip(files: [String: String]) throws -> URL {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("FromZipTest-\(UUID().uuidString)")
+        let contentDir = root.appendingPathComponent("content")
+        createdURLs.append(root)
+        for (path, contents) in files {
+            let fileURL = contentDir.appendingPathComponent(path)
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try contents.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+        let zipURL = root.appendingPathComponent("extension.zip")
+        try FileManager.default.zipItem(at: contentDir, to: zipURL, shouldKeepParent: false)
+        return zipURL
     }
 }
 

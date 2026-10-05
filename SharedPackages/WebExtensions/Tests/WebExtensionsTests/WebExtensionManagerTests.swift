@@ -74,11 +74,12 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) -> WebExtensionManager {
+                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
+                             storageProvider: WebExtensionStorageProviding? = nil) -> WebExtensionManager {
         let manager = WebExtensionManager(
             configuration: configurationMock,
             windowTabProvider: windowTabProviderMock,
-            storageProvider: storageProvidingMock,
+            storageProvider: storageProvider ?? storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: webExtensionLoadingMock,
             eventsListener: eventsListenerMock,
@@ -606,6 +607,42 @@ final class WebExtensionManagerTests: XCTestCase {
         assertSleptForRemainderBeforeUnloading()
         XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
                        "upgrade should have uninstalled the old extension after the settle window")
+    }
+
+    // MARK: - Zip to Folder Upgrade Tests
+
+    /// Existing Dark Reader installs are stored as a zip, which WebKit unzips on the main thread on
+    /// every load. Upgrading to a bundled version that requires extraction must leave a folder install.
+    @MainActor
+    func testWhenZipInstalledExtensionIsUpgradedToVersionRequiringExtraction_ThenFolderInstallReplacesZip() async throws {
+        let extensionsDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("ZipUpgradeTest-\(UUID().uuidString)")
+        createdTestExtensionDirs.append(extensionsDirectory)
+        let storageProvider = WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory)
+
+        let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .darkReader)?.bundledURL)
+        let bundledMetadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
+        XCTAssertTrue(bundledMetadata.requiresExtraction, "precondition: the bundled Dark Reader requires extraction")
+
+        let oldIdentifier = "old-darkreader"
+        _ = try storageProvider.copyExtension(from: bundledURL, identifier: oldIdentifier)
+        XCTAssertEqual(storageProvider.resolveInstalledExtension(identifier: oldIdentifier)?.pathExtension, "zip",
+                       "precondition: the old install resolves to its zip")
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: oldIdentifier, filename: "darkreader.zip", version: "4.9.128.1", embeddedType: .darkReader)
+        ]
+
+        let manager = makeManager(storageProvider: storageProvider)
+        await manager.syncEmbeddedExtensions(enabledTypes: [.darkReader])
+
+        let installed = try XCTUnwrap(manager.installedEmbeddedExtension(for: .darkReader))
+        XCTAssertNotEqual(installed.uniqueIdentifier, oldIdentifier)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: extensionsDirectory.appendingPathComponent(oldIdentifier).path),
+                       "the old zip install should have been removed")
+
+        let resolvedURL = try XCTUnwrap(storageProvider.resolveInstalledExtension(identifier: installed.uniqueIdentifier))
+        XCTAssertEqual(resolvedURL.lastPathComponent, installed.uniqueIdentifier,
+                       "the new install should resolve to its extracted folder, not a zip")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: resolvedURL.appendingPathComponent("manifest.json").path))
     }
 #endif
 

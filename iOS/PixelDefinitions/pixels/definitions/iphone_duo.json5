@@ -1,0 +1,9 @@
+{
+    "iphone-duo-launched": {
+        "description": "Daily app launch on an iPhone Duo whose hw.machine identifier is iPhone19,4.",
+        "owners": ["brindy"],
+        "triggers": ["startup"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

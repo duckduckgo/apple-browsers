@@ -65,6 +65,16 @@ struct DebugScreensView: View {
                     .foregroundStyle(.secondary)
                 }
                 .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                Section(header: Text(verbatim: "Device")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(verbatim: "Hardware machine (hw.machine)")
+                        Text(verbatim: DeviceLaunchPixelReporter.hardwareMachine() ?? "Unavailable")
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+
                 DebugTogglesView(model: model)
                     .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 

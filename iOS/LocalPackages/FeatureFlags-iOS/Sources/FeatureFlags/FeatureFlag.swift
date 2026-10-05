@@ -867,7 +867,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .unifiedToggleInputAttachmentPrivacy:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
         case .aiChatAttachmentPrivacyIPad:
-            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.iPadAttachmentPrivacy))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadAttachmentPrivacy))
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .tabSwitcherTrackerCount:

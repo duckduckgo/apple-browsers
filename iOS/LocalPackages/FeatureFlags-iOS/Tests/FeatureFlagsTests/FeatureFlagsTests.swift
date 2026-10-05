@@ -40,7 +40,7 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
-    func testIPadAttachmentPrivacyUsesItsOwnRemoteKillSwitchAndDisabledDefault() {
+    func testIPadAttachmentPrivacyUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.aiChatAttachmentPrivacyIPad
         guard case let .remoteReleasable(subfeature) = flag.source else {
             XCTFail("Expected remote-releasable source")
@@ -49,8 +49,8 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertEqual(subfeature as? AIChatSubfeature, .iPadAttachmentPrivacy)
         XCTAssertEqual(subfeature.parent, .aiChat)
         XCTAssertEqual(subfeature.rawValue, "iPadAttachmentPrivacy")
-        guard case .disabled = flag.defaultValue else {
-            XCTFail("Expected disabled default")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)

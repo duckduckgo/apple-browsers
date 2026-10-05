@@ -45,13 +45,14 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
 
     func testWhenDownloadSucceeds_ThenInstallsUnpackedDirectoryAndCleansUp() async throws {
         var installedURL: URL?
-        var manifestContents: String?
+        var manifest: [String: Any]?
         manager.installExtensionHandler = { url in
             installedURL = url
             var isDirectory: ObjCBool = false
             XCTAssertTrue(FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory))
             XCTAssertTrue(isDirectory.boolValue)
-            manifestContents = try? String(contentsOf: url.appendingPathComponent("manifest.json"), encoding: .utf8)
+            let data = try Data(contentsOf: url.appendingPathComponent("manifest.json"))
+            manifest = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         }
         var requestedURL: URL?
         let installer = makeInstaller(crx: try makeCRX3()) { requestedURL = $0 }
@@ -59,7 +60,8 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
         try await installer.install()
 
         XCTAssertEqual(requestedURL, BitwardenExtensionInstaller.downloadURL)
-        XCTAssertEqual(manifestContents, "{\"name\":\"Bitwarden\"}")
+        XCTAssertEqual(manifest?["name"] as? String, "Bitwarden")
+        XCTAssertEqual(manifest?["key"] as? String, WebExtensionManifestKeyPatcher.knownPublicKeys["Bitwarden"])
         XCTAssertTrue(manager.uninstalledIdentifiers.isEmpty)
         let installed = try XCTUnwrap(installedURL)
         XCTAssertFalse(FileManager.default.fileExists(atPath: installed.path))

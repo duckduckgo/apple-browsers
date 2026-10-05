@@ -96,6 +96,7 @@ public struct BitwardenExtensionInstaller {
         try fileManager.createDirectory(at: extensionDirectory, withIntermediateDirectories: true)
         try zip.write(to: zipURL)
         try fileManager.unzipItem(at: zipURL, to: extensionDirectory)
+        try restorePublicKey(in: extensionDirectory)
 
         // The old copy is removed only once the new one unpacked, so a bad download never removes a working install.
         for identifier in installedIdentifiers() {
@@ -106,5 +107,21 @@ public struct BitwardenExtensionInstaller {
 
         try await webExtensionManager.installExtension(from: extensionDirectory)
         Logger.webExtensions.info("Installed Bitwarden from the Chrome Web Store")
+    }
+
+    /// The `.crx` the Web Store serves carries no `key`, so the installed copy would have no Chrome
+    /// identifier, and a later install could not find it to replace it. Putting the key back gives it
+    /// the identifier Chrome would.
+    private func restorePublicKey(in extensionDirectory: URL) throws {
+        let manifestURL = extensionDirectory.appendingPathComponent("manifest.json")
+        guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any] else {
+            return
+        }
+
+        let keyPatcher = WebExtensionManifestKeyPatcher(fileManager: fileManager)
+        guard keyPatcher.insertKnownPublicKeyIfNeeded(in: &manifest, manifestDirectory: extensionDirectory) else {
+            return
+        }
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
     }
 }

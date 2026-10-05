@@ -2451,8 +2451,8 @@ public struct UserText {
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
-    public static let aiChatAttachmentOptionAskAboutDocument = NotLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Top-level attachment menu option to attach the current document content to an AI chat message")
-    public static let aiChatAttachmentOptionContinueInDuckAi = NotLocalizedString("aichat.attachment.option.continue.in.duckAI", value: "Continue in Duck.ai", comment: "Top-level attachment menu option to attach the continue with the prompt in duck.ai")
+    public static let aiChatAttachmentOptionAskAboutDocument = NSLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat")
+    public static let aiChatAttachmentOptionContinueInDuckAi = NSLocalizedString("aichat.attachment.option.continue.in.duckAI", value: "Continue in Duck.ai", comment: "Address bar Duck.ai menu option shown on a search results page; sends the search the user just made to a new Duck.ai chat. 'Duck.ai' is a brand name and should not be translated")
     public static let aiChatAttachmentOptionAddTabs = NotLocalizedString(
         "aichat.attachment.option.add.tabs",
         value: "Add Tabs",

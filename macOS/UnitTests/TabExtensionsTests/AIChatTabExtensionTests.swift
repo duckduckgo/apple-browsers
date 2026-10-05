@@ -169,6 +169,40 @@ final class AIChatTabExtensionTests: XCTestCase {
         XCTAssertEqual(firedVias, ["link", "link", "link"])
     }
 
+    // MARK: - Tabs a page opens for a link
+
+    func testWhenAPageOpensANewTabForALinkThenItsFirstLoadIsALink() {
+        // WebKit's first load in the new tab is a plain, non-user-initiated `.other` with no source page.
+        tabExtension.noteOpenedForLink(from: URL(string: "https://www.w3schools.com/")!)
+        perform(makeNavigation(to: duckAIURL, type: .other, from: duckAIURL))
+
+        XCTAssertEqual(firedVias, ["link"])
+    }
+
+    func testWhenTheOpenerPageIsUnknownThenTheNewTabStillCountsAsALink() {
+        tabExtension.noteOpenedForLink(from: nil)
+        perform(makeNavigation(to: duckAIURL, type: .other))
+
+        XCTAssertEqual(firedVias, ["link"])
+    }
+
+    func testWhenDuckAIOrDuckDuckGoOpensANewTabThenNothingIsReported() {
+        tabExtension.noteOpenedForLink(from: URL(string: "https://duck.ai/chat")!)
+        perform(makeNavigation(to: duckAIURL, type: .other))
+        tabExtension.noteOpenedForLink(from: URL(string: "https://duckduckgo.com/?q=test")!)
+        perform(makeNavigation(to: duckAIURL, type: .other))
+
+        XCTAssertEqual(firedVias, [])
+    }
+
+    func testThatTheLinkOpenerOnlyAppliesToTheNewTabsFirstLoad() {
+        tabExtension.noteOpenedForLink(from: URL(string: "https://www.w3schools.com/")!)
+        perform(makeNavigation(to: duckAIURL, type: .other))
+        perform(makeNavigation(to: duckAIURL, type: .other))
+
+        XCTAssertEqual(firedVias, ["link"])
+    }
+
     // MARK: - Redirect pages
 
     func testWhenALinkGoesThroughALinkWrapperThenTheRedirectToDuckAIIsALink() {

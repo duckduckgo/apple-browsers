@@ -58,6 +58,12 @@ final class AIChatTabExtension {
     /// How a direct navigation started when it landed on another page first, such as a link wrapper
     /// like google.com/url, so that page's client redirect to Duck.ai still counts.
     private var viaForClientRedirect: AIChatDirectNavigationVia?
+    /// Set when a page opened this tab for a user's link click (⌘-click, `target=_blank`): WebKit's
+    /// first load in a new tab carries neither the click nor the page it came from.
+    private var linkOpener: LinkOpener?
+    private struct LinkOpener {
+        let sourceURL: URL?
+    }
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -268,6 +274,10 @@ final class AIChatTabExtension {
         addressBarSuggestionURL = url
     }
 
+    func noteOpenedForLink(from sourceURL: URL?) {
+        linkOpener = LinkOpener(sourceURL: sourceURL)
+    }
+
     /// Many surfaces open duck.ai as plain `.url` content, so both carry the navigation's source.
     private static func navigationSource(of content: TabContent) -> TabContent.URLSource? {
         switch content {
@@ -388,9 +398,13 @@ extension AIChatTabExtension: NavigationResponder {
         addressBarSuggestionURL = nil
         let inheritedVia = viaForClientRedirect
         viaForClientRedirect = nil
+        let linkOpener = self.linkOpener
+        self.linkOpener = nil
 
         if case .redirect(.client) = navigation.navigationAction.navigationType {
             navigation.duckAIDirectNavigationVia = inheritedVia
+        } else if let linkOpener {
+            navigation.duckAIDirectNavigationVia = Self.isDuckDuckGo(linkOpener.sourceURL) ? nil : .link
         } else {
             navigation.duckAIDirectNavigationVia = directNavigationVia(for: navigation.navigationAction, suggestionURL: suggestionURL)
         }
@@ -429,17 +443,17 @@ extension AIChatTabExtension: NavigationResponder {
         case .custom(.appOpenUrl):
             return .external
         case .custom(.link), .linkActivated:
-            return isFromDuckDuckGo(action) ? nil : .link
+            return Self.isDuckDuckGo(action.sourceFrame.url) ? nil : .link
         case .other where action.isUserInitiated:
-            return isFromDuckDuckGo(action) ? nil : .link
+            return Self.isDuckDuckGo(action.sourceFrame.url) ? nil : .link
         default:
             return nil
         }
     }
 
     /// Duck.ai and duckduckgo.com link to Duck.ai themselves, which isn't a direct navigation.
-    private func isFromDuckDuckGo(_ action: NavigationAction) -> Bool {
-        let sourceURL = action.sourceFrame.url
+    private static func isDuckDuckGo(_ sourceURL: URL?) -> Bool {
+        guard let sourceURL else { return false }
         return sourceURL.isDuckAIURL || sourceURL.isDuckDuckGo
     }
 }
@@ -512,6 +526,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
     func requestOpenSettings()
     func noteAddressBarSuggestionNavigation(to url: URL)
+    func noteOpenedForLink(from sourceURL: URL?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }

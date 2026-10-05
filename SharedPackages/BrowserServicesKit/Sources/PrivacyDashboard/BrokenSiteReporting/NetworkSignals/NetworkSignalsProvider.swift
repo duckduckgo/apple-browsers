@@ -17,25 +17,10 @@
 //
 
 import Foundation
-import Network
 
 public protocol NetworkSignalsProviding {
     /// Returns `nil` when collecting network signals is disabled.
     func currentSignals() async -> NetworkSignals?
-}
-
-public struct NetworkPathState: Equatable, Sendable {
-    public let networkType: NetworkSignals.NetworkType
-    public let isConstrained: Bool
-
-    public init(networkType: NetworkSignals.NetworkType, isConstrained: Bool) {
-        self.networkType = networkType
-        self.isConstrained = isConstrained
-    }
-}
-
-public protocol NetworkPathProviding: AnyObject {
-    var currentPathState: NetworkPathState { get }
 }
 
 public protocol VPNConnectivityIssuesProviding {
@@ -43,9 +28,9 @@ public protocol VPNConnectivityIssuesProviding {
 }
 
 public protocol PingQualityProviding: Sendable {
-    associatedtype ConnectionQuality: RawRepresentable where ConnectionQuality.RawValue == String
+    associatedtype Quality: RawRepresentable where Quality.RawValue == String
 
-    func currentPingQuality() async -> ConnectionQuality
+    func currentPingQuality() async -> Quality
 }
 
 public final class NetworkSignalsProvider: NetworkSignalsProviding {
@@ -91,49 +76,5 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
 
         let quality = await pingQualityProvider.currentPingQuality()
         return PingQuality(rawValue: quality.rawValue) ?? .unknown
-    }
-}
-
-public final class NetworkPathMonitor: NetworkPathProviding {
-
-    private let queue: DispatchQueue
-    private let monitor: NWPathMonitor
-
-    public init(monitor: NWPathMonitor = NWPathMonitor(), queue: DispatchQueue? = nil) {
-        let targetqQueue = queue ?? DispatchQueue(label: "com.duckduckgo.network-signals.path-monitor")
-
-        self.queue = targetqQueue
-        self.monitor = monitor
-
-        monitor.start(queue: targetqQueue)
-    }
-
-    deinit {
-        monitor.cancel()
-    }
-
-    public var currentPathState: NetworkPathState {
-        let path = monitor.currentPath
-        return NetworkPathState(networkType: networkType(for: path), isConstrained: path.isConstrained)
-    }
-
-    private func networkType(for path: NWPath) -> NetworkSignals.NetworkType {
-        guard path.status == .satisfied else {
-            return .unavailable
-        }
-
-        if path.usesInterfaceType(.wiredEthernet) {
-            return .wired
-        }
-
-        if path.usesInterfaceType(.wifi) {
-            return .wifi
-        }
-
-        if path.usesInterfaceType(.cellular) {
-            return .cellular
-        }
-
-        return .unknown
     }
 }

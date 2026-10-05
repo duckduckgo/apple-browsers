@@ -390,6 +390,7 @@
         "description": "Fired when the contextual sheet is opened on a chat that has since been deleted elsewhere, so the active chat is discarded and the user starts over",
         "owners": ["stardio"],
         "triggers": ["other"],
+        "expires": "2027-04-30",
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },

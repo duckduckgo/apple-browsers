@@ -7953,6 +7953,8 @@ extension MainViewController {
                                 suppressPostFireKeyboard: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         let tabsCount = tabsCount(for: request.scope)
+        // Tab teardown resets the keyboard request ID; keep background/return cancellation valid across the whole burn.
+        let foregroundEntryDate = lastForegroundEntryDate
         // Read before the burn: the page it lands on marks onboarding's last dialog as seen as soon as it
         // appears, before the keyboard below is decided. Flag-gated, because the check can update
         // onboarding state.
@@ -7993,6 +7995,7 @@ extension MainViewController {
                     let showKeyboardAfterFireButton = DispatchWorkItem { [weak self] in
                         guard let self,
                               self.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+                              self.lastForegroundEntryDate == foregroundEntryDate,
                               self.appOpenKeyboardRequestID == requestID,
                               self.isAppOpenKeyboardWindowVisible,
                               self.isNewTabPageVisible,

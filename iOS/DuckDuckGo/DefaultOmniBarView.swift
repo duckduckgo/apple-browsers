@@ -521,7 +521,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var selectedTool: AIChatRAGTool? {
         didSet {
             selectedToolIconView.image = selectedTool?.toolbarChipIcon
-            selectedToolTitleLabel.text = selectedTool?.toolbarChipTitle
             selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
             refreshSelectedToolBadgeVisibility()
         }
@@ -554,18 +553,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return imageView
     }()
 
-    private lazy var selectedToolTitleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.daxSubheadSemibold()
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.lineBreakMode = .byTruncatingTail
-        // Let the label truncate rather than push into the trailing controls when width is tight.
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return label
-    }()
-
     private lazy var selectedToolClearButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -591,7 +578,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         view.isHidden = true
         view.accessibilityIdentifier = "AIChat.Omnibar.iPad.SelectedToolBadge"
 
-        let stackView = UIStackView(arrangedSubviews: [selectedToolIconView, selectedToolTitleLabel, selectedToolClearButton])
+        let stackView = UIStackView(arrangedSubviews: [selectedToolIconView, selectedToolClearButton])
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .horizontal
         stackView.alignment = .center

@@ -99,14 +99,41 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         //
         // `loadedExtensions` is a set, so sort the contexts to keep the button order
         // the same between updates and between app launches.
-        let contexts = webExtensionManager.loadedExtensions
+        let loaded = webExtensionManagerProvider()?.loadedExtensions ?? []
+        let contexts = loaded
             .filter { $0.needsChromeCompatibility && $0.declaresToolbarAction }
             .sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
+
+        logLoadedExtensions(loaded, withButtons: contexts)
 
         removeButtons(forExtensionsRemovedFrom: contexts)
         addButtons(forExtensionsAddedTo: contexts)
 
         container.needsDisplay = true
+    }
+
+    /// Records which loaded extensions get a toolbar button, and which do not.
+    ///
+    /// An extension without a button also gets no popup, because
+    /// `WebExtensionWindowTabProvider.presentPopup(_:for:)` anchors the popup to the button.
+    /// This log separates "no button" from "button, but the popup fails".
+    private func logLoadedExtensions(_ loaded: Set<WKWebExtensionContext>,
+                                     withButtons contexts: [WKWebExtensionContext]) {
+        guard !loaded.isEmpty else {
+            Logger.webExtensions.debug("🧩 Navigation bar: no loaded extensions")
+            return
+        }
+
+        for context in loaded.sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier }) {
+            let hasButton = contexts.contains { $0.uniqueIdentifier == context.uniqueIdentifier }
+            Logger.webExtensions.debug("""
+            🧩 Navigation bar: \(context.webExtension.displayName ?? "unnamed", privacy: .public) \
+            \(context.uniqueIdentifier, privacy: .public) \
+            manifestVersion=\(context.webExtension.manifestVersion, privacy: .public) \
+            declaresToolbarAction=\(context.declaresToolbarAction, privacy: .public) \
+            button=\(hasButton, privacy: .public)
+            """)
+        }
     }
 
     private func removeButtons(forExtensionsRemovedFrom contexts: [WKWebExtensionContext]) {
@@ -166,6 +193,11 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         return button
     }
 
+    private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
+        button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
+        button.cornerRadius = theme.toolbarButtonsCornerRadius
+    }
+
     private func makeContextMenu(for context: WKWebExtensionContext) -> NSMenu {
         let menu = NSMenu()
         menu.delegate = self
@@ -178,11 +210,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         menu.addItem(item)
 
         return menu
-    }
-
-    private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
-        button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
-        button.cornerRadius = theme.toolbarButtonsCornerRadius
     }
 
     // MARK: - Actions
@@ -206,9 +233,17 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
 
         // A second click on the button of the open popup closes it.
         if let popupPresenter, popupPresenter.isShown(for: context) {
+            Logger.webExtensions.debug("🧩 Click closes the open popup of \(identifier, privacy: .public)")
             popupPresenter.close()
             return
         }
+
+        Logger.webExtensions.debug("""
+        🧩 Click on \(identifier, privacy: .public): \
+        action=\(action == nil ? "nil" : "present", privacy: .public) \
+        presentsPopup=\(action?.presentsPopup ?? false, privacy: .public) \
+        webView=\(action?.popupWebView == nil ? "nil" : "non-nil", privacy: .public)
+        """)
 
         context.performAction(for: nil)
     }
@@ -228,7 +263,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
 
     /// The presenter that hosts extension popups, owned by the manager's window/tab provider.
     private var popupPresenter: WebExtensionPopupPresenter? {
-        guard let manager = webExtensionManager as? WebExtensionManager else { return nil }
+        guard let manager = webExtensionManagerProvider() as? WebExtensionManager else { return nil }
         return (manager.windowTabProvider as? WebExtensionWindowTabProvider)?.popupPresenter
     }
 }

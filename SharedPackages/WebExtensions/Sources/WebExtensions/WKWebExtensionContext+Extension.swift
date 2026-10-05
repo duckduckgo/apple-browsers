@@ -101,6 +101,20 @@ public extension WKWebExtension {
         !declaresDuckDuckGoSettings(inManifest: manifest)
     }
 
+    /// Returns whether the extension declares a toolbar action in its manifest.
+    ///
+    /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
+    /// Extensions without one of these keys have no user-facing button, so the browser
+    /// must not put them in the navigation bar.
+    ///
+    /// Our own embedded extensions are currently forced to not display a toolbar action at all.
+    var declaresToolbarAction: Bool {
+        if duckDuckGoWebExtensionType != nil {
+            return false
+        }
+        return manifest[actionKey] != nil || manifest[browserActionKey] != nil || manifest[pageActionKey] != nil
+    }
+
     /// Returns whether the extension requires extraction from zip before loading.
     /// Read from manifest `browser_specific_settings.duckduckgo.appleRequiresExtraction`.
     var requiresExtraction: Bool {
@@ -141,15 +155,8 @@ public extension WKWebExtensionContext {
         webExtension.needsChromeCompatibility
     }
 
-    /// Returns whether the extension declares a toolbar action in its manifest.
-    ///
-    /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
-    /// Extensions without one of these keys have no user-facing button, so the browser
-    /// must not put them in the navigation bar. Not every one of our own extensions is in that
-    /// group (Dark Reader declares an action popup), so the browser also checks
-    /// `needsChromeCompatibility`.
+    /// Convenience proxy to the underlying web extension's toolbar action declaration.
     var declaresToolbarAction: Bool {
-        let manifest = webExtension.manifest
-        return manifest[actionKey] != nil || manifest[browserActionKey] != nil || manifest[pageActionKey] != nil
+        webExtension.declaresToolbarAction
     }
 }

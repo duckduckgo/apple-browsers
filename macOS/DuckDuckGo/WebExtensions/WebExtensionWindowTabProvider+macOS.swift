@@ -101,14 +101,14 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         _ action: WKWebExtension.Action,
         for context: WKWebExtensionContext
     ) async throws {
-        guard action.presentsPopup else {
-            // The extension declares an action without a popup, so the click is its own event.
-            Logger.webExtensions.debug("🧩 Action of \(context.uniqueIdentifier) presents no popup")
+        guard let button = buttonForContext(context) else {
+            Logger.webExtensions.error("❌ No navigation bar button for \(context.uniqueIdentifier), popup not shown")
             return
         }
 
-        guard let button = buttonForContext(context) else {
-            Logger.webExtensions.error("❌ No navigation bar button for \(context.uniqueIdentifier), popup not shown")
+        guard action.presentsPopup else {
+            // The extension declares an action without a popup, so the click is its own event.
+            Logger.webExtensions.debug("🧩 Action of \(context.uniqueIdentifier) presents no popup")
             return
         }
 

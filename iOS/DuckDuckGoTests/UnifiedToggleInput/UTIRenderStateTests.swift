@@ -318,7 +318,7 @@ final class UTIRenderStateTests: XCTestCase {
         sut.selectTool(.imageGeneration)
         XCTAssertEqual(sut.viewController.handler.termsOfServiceSendButton, .create)
 
-        sut.resetToolsSelection()
+        sut.clearSelectedTool()
         XCTAssertEqual(sut.viewController.handler.termsOfServiceSendButton, .ask)
     }
 

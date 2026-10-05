@@ -811,6 +811,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task { @MainActor in
             do {
                 try await syncService.disconnect(deviceId: device.id)
+                pixelFiring?.fire(SyncDeviceDetailsPixel.otherDeviceRemoveDeviceConfirmed)
                 refreshDevices()
             } catch {
                 await handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)

@@ -1,5 +1,32 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
+    "m_mac_newtab_shown_d": {
+        "description": "Daily pixel fired when the New Tab Page is displayed. Reports which widgets are visible and the background type",
+        "owners": ["ayoy"],
+        "triggers": ["new_tab"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "favorites",
+                "description": "Whether the Favorites section is visible",
+                "type": "boolean"
+            },
+            {
+                "key": "protections",
+                "description": "State of the Protections Report section",
+                "type": "string",
+                "enum": ["recent-activity", "blocked-tracking-attempts", "collapsed", "hidden"]
+            },
+            {
+                "key": "background",
+                "description": "Whether the New Tab Page uses a custom background",
+                "type": "string",
+                "enum": ["custom", "default"]
+            }
+        ]
+    },
     "m_mac_new-tab-page_aichat_recent_chat_selected_pinned_mouse": {
         "description": "Fires when the user opens a pinned recent AI chat from the New Tab Page omnibar by clicking with the mouse.",
         "owners": ["tomasstrba"],

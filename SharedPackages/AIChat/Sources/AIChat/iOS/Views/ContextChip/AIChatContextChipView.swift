@@ -441,7 +441,8 @@ private extension AIChatContextChipView {
         case .attachmentStrip:
             size = Constants.stripRemoveButtonSize
             trailingInset = Constants.stripRemoveButtonTrailing
-            removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
+            let isDarkMode = traitCollection.userInterfaceStyle == .dark
+            removeButton.backgroundColor = UIColor(designSystemColor: isDarkMode ? .surfaceTertiary : .controlsRaisedFillPrimary)
         }
         if case .suggested? = currentState {
             removeButton.backgroundColor = UIColor(designSystemColor: .accentGlowPrimary)

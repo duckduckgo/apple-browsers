@@ -312,7 +312,12 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.layer.borderColor = borderColor.cgColor
         fileNameLabel.textColor = UIColor(designSystemColor: .textPrimary)
         removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
-        removeButton.backgroundColor = usesCompactLayout ? UIColor(designSystemColor: .controlsRaisedFillPrimary) : .clear
+        if usesCompactLayout {
+            let isDarkMode = traitCollection.userInterfaceStyle == .dark
+            removeButton.backgroundColor = UIColor(designSystemColor: isDarkMode ? .surfaceTertiary : .controlsRaisedFillPrimary)
+        } else {
+            removeButton.backgroundColor = .clear
+        }
     }
 
     @objc func removeTapped() {

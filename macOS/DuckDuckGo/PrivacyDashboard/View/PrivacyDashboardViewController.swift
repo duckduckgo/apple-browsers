@@ -168,6 +168,12 @@ final class PrivacyDashboardViewController: NSViewController {
         refreshDashboardStyle()
     }
 
+    override func viewWillAppear() {
+        super.viewWillAppear()
+
+        networkSignalsProvider.prefetchPing()
+    }
+
     override func viewWillDisappear() {
         super.viewWillDisappear()
         if !privacyDashboardDidTriggerDismiss {

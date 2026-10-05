@@ -19,6 +19,9 @@
 import Foundation
 
 public protocol NetworkSignalsProviding {
+    /// Starts collecting ping quality without waiting for the lookup to complete.
+    func prefetchPing()
+
     /// Returns `nil` when collecting network signals is disabled.
     func currentSignals() async -> NetworkSignals?
 }
@@ -42,6 +45,8 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
     private let vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviding
     private let pingQualityProvider: any PingQualityProviding
     private let isEnabledProvider: () -> Bool
+    private let pingLock = NSLock()
+    private var prefetchedPingQuality: PingQuality = .unknown
 
     public init(pathProvider: NetworkPathProviding,
                 vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviding,
@@ -53,29 +58,41 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
         self.isEnabledProvider = isEnabledProvider
     }
 
+    public func prefetchPing() {
+        pingLock.withLock { prefetchedPingQuality = .unknown }
+
+        guard isEnabledProvider(), pathProvider.currentPathState.networkType != .unavailable else {
+            return
+        }
+
+        Task { [weak self] in
+            await self?.refreshPingQuality()
+        }
+    }
+
+    /// Uses the prefetched ping quality, if any, rather than waiting for a new ping.
     public func currentSignals() async -> NetworkSignals? {
         guard isEnabledProvider() else {
             return nil
         }
 
         let pathState = pathProvider.currentPathState
+        let pingQuality = pingLock.withLock { prefetchedPingQuality }
+        let hasVPNConnectivityIssues = await vpnConnectivityIssuesProvider.isExperiencingVPNConnectivityIssues()
 
-        async let pingQuality = pingQuality(networkType: pathState.networkType)
-        async let hasVPNConnectivityIssues = vpnConnectivityIssuesProvider.isExperiencingVPNConnectivityIssues()
-
-        return await NetworkSignals(networkType: pathState.networkType,
-                                    isLowDataModeEnabled: pathState.isConstrained,
-                                    hasVPNConnectivityIssues: hasVPNConnectivityIssues,
-                                    pingQuality: pingQuality)
+        return NetworkSignals(networkType: pathState.networkType,
+                              isLowDataModeEnabled: pathState.isConstrained,
+                              hasVPNConnectivityIssues: hasVPNConnectivityIssues,
+                              pingQuality: pingQuality)
     }
+}
 
-    /// Skips the ping when there is no network, since it could only time out.
-    private func pingQuality(networkType: NetworkSignals.NetworkType) async -> PingQuality {
-        guard networkType != .unavailable else {
-            return .unknown
-        }
+private extension NetworkSignalsProvider {
 
+    func refreshPingQuality() async {
         let quality = await pingQualityProvider.currentPingQuality()
-        return PingQuality(rawValue: quality.rawValue) ?? .unknown
+        let pingQuality = PingQuality(rawValue: quality.rawValue) ?? .unknown
+
+        pingLock.withLock { prefetchedPingQuality = pingQuality }
     }
 }

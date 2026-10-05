@@ -34,11 +34,13 @@ appId: com.duckduckgo.mobile.ios
     centerElement: false
 - tapOn: "AI Chat"
 
+# Not centered: centering adds a ~490pt swipe that can park the row under the nav bar, where
+# Maestro still counts it as visible and its tap hits the bar instead.
 - scrollUntilVisible:
     element:
         text: "${PRESET}"
     direction: DOWN
-    centerElement: true
+    centerElement: false
 - tapOn: "${PRESET}"
 
 - tapOn: "Debug"

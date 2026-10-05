@@ -20,6 +20,8 @@ import Foundation
 import PrivacyConfig
 import Common
 import FoundationExtensions
+import AppKitExtensions
+import DataBrokerProtection_macOS
 
 extension UserAgent {
 

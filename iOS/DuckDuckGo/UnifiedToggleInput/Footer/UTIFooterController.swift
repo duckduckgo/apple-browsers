@@ -34,6 +34,8 @@ final class UTIFooterController {
 
     weak var presenter: UTIFooterPresenting?
     var onInputBlockChanged: ((Bool) -> Void)?
+    /// The disclaimer on screen means the next Ask tap accepts the terms.
+    var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
@@ -53,7 +55,12 @@ final class UTIFooterController {
     private var isInputBlocked = false
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
-    private var visibleIDs: Set<UTIFooterItem.ID> = []
+    private var visibleIDs: Set<UTIFooterItem.ID> = [] {
+        didSet {
+            guard isTermsOfServiceVisible != oldValue.contains(.termsConsent) else { return }
+            onTermsOfServiceVisibilityChanged?(isTermsOfServiceVisible)
+        }
+    }
     private var retainedMessageIDs: Set<UTIFooterItem.ID>?
     private var applicableIDs: Set<UTIFooterItem.ID> = []
     private var applicableHighUsageModelID: String?
@@ -61,6 +68,7 @@ final class UTIFooterController {
     private var isDismissing = false
     private(set) var currentMessages: [UTIFooterItem] = []
     var currentMessage: UTIFooterMessage? { currentMessages.first?.message }
+    var isTermsOfServiceVisible: Bool { visibleIDs.contains(.termsConsent) }
 
     init(viewModel: DuckAiUsageWarningViewModel?,
          termsOfServiceStore: DuckAiTermsOfServiceStore? = nil,
@@ -185,10 +193,16 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    func acceptTermsIfDisclaimerShown() {
-        guard visibleIDs.contains(.termsConsent), let termsOfServiceStore else { return }
-        termsOfServiceStore.recordAcceptedInNativeInput()
-        applyCurrentState()
+    /// Call only for an Ask tap. Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        guard let termsOfServiceStore else { return false }
+        if visibleIDs.contains(.termsConsent) {
+            termsOfServiceStore.recordAcceptedInNativeInput()
+            Logger.aiChat.debug("[TermsOfService] Ask tapped with the disclaimer on screen: acceptance recorded")
+            applyCurrentState()
+        }
+        return termsOfServiceStore.hasAccepted
     }
 
     func recordLinkTapped(_ id: UTIFooterItem.ID = .attachmentPrivacy) {
@@ -238,7 +252,8 @@ final class UTIFooterController {
         switch action {
         case .switchToModel, .switchToFreeModel: return .switchModel
         case .tryForFree: return .upsell
-        case .startUsingWeeklyLimit, .none: return nil
+        case .startUsingWeeklyLimit: return .weeklyLimit
+        case .none: return nil
         }
     }
 
@@ -314,49 +329,39 @@ final class UTIFooterController {
     }
 
     static let springAnimator: Animator = { changes in
-        guard !UIAccessibility.isReduceMotionEnabled else { return changes() }
+        animateWithSpring(changes)
+    }
+
+    static func animateWithSpring(_ changes: @escaping () -> Void, completion: ((Bool) -> Void)? = nil) {
+        guard !UIAccessibility.isReduceMotionEnabled else {
+            changes()
+            completion?(true)
+            return
+        }
         UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85,
-                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: changes)
+                       initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction],
+                       animations: changes, completion: completion)
     }
 }
 
 // MARK: - Attachment privacy notice
 
-/// Resolves the disclosure from valid attachments and the display cap for the current browsing scope.
+/// Resolves the disclosure from valid attachments. It shows once per device: the first display sets
+/// a persistent flag, and a display already on screen stays until it ends.
 @MainActor
 final class UTIFooterAttachmentPrivacyNoticeSource {
 
-    enum DisplayScope: Equatable {
-        case normal
-        case fireTab(Tab?)
-
-        static func == (lhs: Self, rhs: Self) -> Bool {
-            switch (lhs, rhs) {
-            case (.normal, .normal): return true
-            case (.fireTab(let lhs), .fireTab(let rhs)): return lhs === rhs
-            default: return false
-            }
-        }
-    }
-
-    private let displayScope: () -> DisplayScope
     private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
-    private let displayStore: UTIFooterDisplayStoring
-    private var displayedScope: DisplayScope?
-
-    /// Travels with the in-memory draft; ending an appearance does not reset it.
-    var hasCountedDraft = false
-    var onDraftCounted: (() -> Void)?
+    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private var isDisplayed = false
 
     private(set) var isPresented = false
     private(set) var kind: UTIAttachmentPrivacyKind?
 
     init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
-         displayScope: @escaping () -> DisplayScope = { .normal },
-         displayStore: UTIFooterDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
-        self.displayScope = displayScope
+         displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled
         self.displayStore = displayStore
@@ -365,43 +370,24 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
     func refresh() {
         kind = attachmentKind()
         let enabled = isEnabled()
-        let scope = displayScope()
-        if !enabled || kind == nil || displayedScope != scope { endDisplay() }
-        isPresented = enabled && kind != nil && (displayedScope != nil || count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit)
+        if !enabled || kind == nil { endDisplay() }
+        isPresented = enabled && kind != nil && (isDisplayed || !displayStore.hasShown)
     }
 
     func recordDisplay() -> Bool {
-        let scope = displayScope()
-        guard isPresented, displayedScope == nil,
-              count(in: scope) < UTIAttachmentPrivacyNoticeDisplayStore.displayLimit else { return false }
-        displayedScope = scope
-        if !hasCountedDraft {
-            hasCountedDraft = true
-            switch scope {
-            case .normal:
-                displayStore.recordDisplay()
-            case .fireTab(let tab):
-                tab?.attachmentPrivacyNoticeDisplayCount += 1
-            }
-            onDraftCounted?()
-        }
+        guard isPresented, !isDisplayed, !displayStore.hasShown else { return false }
+        isDisplayed = true
+        displayStore.markShown()
         return true
     }
 
     func endDisplay() {
-        displayedScope = nil
+        isDisplayed = false
     }
 
     func clear() {
         endDisplay()
         isPresented = false
-    }
-
-    private func count(in scope: DisplayScope) -> Int {
-        switch scope {
-        case .normal: return displayStore.displayCount
-        case .fireTab(let tab): return tab?.attachmentPrivacyNoticeDisplayCount ?? 0
-        }
     }
 }
 

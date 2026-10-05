@@ -30,7 +30,7 @@ import UIKit
 protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapWhileCollapsed(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidRequestSubmitCurrentInput(_ vc: UnifiedToggleInputViewController)
-    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode)
+    func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeText text: String)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode)
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, isDraggingToggle isDragging: Bool)
@@ -42,6 +42,7 @@ protocol UnifiedToggleInputViewControllerDelegate: AnyObject {
     func unifiedToggleInputVCDidTapAIChatShortcut(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapAppMenu(_ vc: UnifiedToggleInputViewController)
+    func unifiedToggleInputVCDidLongPressAppMenu(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidTapReturnKey(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowModelPicker(_ vc: UnifiedToggleInputViewController)
     func unifiedToggleInputVCDidShowReasoningPicker(_ vc: UnifiedToggleInputViewController)
@@ -65,7 +66,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     let handler: UnifiedToggleInputHandler
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
                                                           isToggleEnabled: isToggleEnabled,
-                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput,
+                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -99,9 +101,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     /// Decided by the coordinator, which knows whether this is the omnibar or a contextual surface.
     private let placesAttachmentsAboveInput: Bool
 
-    init(isToggleEnabled: Bool, isFireTab: Bool = false, placesAttachmentsAboveInput: Bool = false) {
+    private let usesCompactAttachmentLayout: Bool
+
+    init(isToggleEnabled: Bool,
+         isFireTab: Bool = false,
+         placesAttachmentsAboveInput: Bool = false,
+         usesCompactAttachmentLayout: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
+        self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -550,8 +558,8 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
         delegate?.unifiedToggleInputVCDidRequestSubmitCurrentInput(self)
     }
 
-    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode) {
-        delegate?.unifiedToggleInputVC(self, didSubmitText: text, mode: mode)
+    func unifiedToggleInputViewDidSubmitText(_ view: UnifiedToggleInputView, text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger) {
+        delegate?.unifiedToggleInputVC(self, didSubmitText: text, mode: mode, trigger: trigger)
     }
 
     func unifiedToggleInputViewDidChangeText(_ view: UnifiedToggleInputView, text: String) {
@@ -576,6 +584,10 @@ extension UnifiedToggleInputViewController: UnifiedToggleInputViewDelegate {
 
     func unifiedToggleInputViewDidTapAppMenu(_ view: UnifiedToggleInputView) {
         delegate?.unifiedToggleInputVCDidTapAppMenu(self)
+    }
+
+    func unifiedToggleInputViewDidLongPressAppMenu(_ view: UnifiedToggleInputView) {
+        delegate?.unifiedToggleInputVCDidLongPressAppMenu(self)
     }
 
     func unifiedToggleInputViewDidTapReturnKey(_ view: UnifiedToggleInputView) {

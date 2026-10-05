@@ -67,15 +67,16 @@ enum WebViewTransitionGeometry {
                       height: availableWidth * previewAspectRatio)
     }
 
-    static func destinationImageFrame(for containerSize: CGSize, previewSize: CGSize?) -> CGRect {
+    static func destinationImageFrame(for containerSize: CGSize,
+                                      previewSize: CGSize?,
+                                      alignsWithContainerBottom: Bool = false) -> CGRect {
         guard let previewSize, let previewAspectRatio = aspectRatio(of: previewSize) else {
             return CGRect(origin: .zero, size: containerSize)
         }
 
-        return CGRect(x: 0,
-                      y: 0,
-                      width: containerSize.width,
-                      height: containerSize.width * previewAspectRatio)
+        let height = containerSize.width * previewAspectRatio
+        let originY = alignsWithContainerBottom ? max(0, containerSize.height - height) : 0
+        return CGRect(x: 0, y: originY, width: containerSize.width, height: height)
     }
 
     static func webContentFrame(from containerFrame: CGRect, topObscuredHeight: CGFloat) -> CGRect {

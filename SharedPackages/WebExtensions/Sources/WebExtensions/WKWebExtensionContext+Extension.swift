@@ -18,6 +18,7 @@
 
 import Foundation
 import WebKit
+import ZIPFoundation
 
 private let browserSpecificSettingsKey = "browser_specific_settings"
 private let duckduckgoKey = "duckduckgo"
@@ -49,26 +50,53 @@ public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable, Sendable 
 
 /// Metadata extracted from a web extension without loading it into a controller.
 @available(macOS 15.4, iOS 18.4, *)
-public struct WebExtensionMetadata {
+public struct WebExtensionMetadata: Sendable {
     public let type: DuckDuckGoWebExtensionType?
     public let version: String?
-    public let displayName: String?
     public let requiresExtraction: Bool
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+extension WebExtensionMetadata {
+
+    /// Parses metadata from a manifest dictionary.
+    /// Type and extraction come from `browser_specific_settings.duckduckgo`, e.g.
+    /// `"browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.web-extension.embedded", "appleRequiresExtraction": true } }`
+    init(manifest: [String: Any]) {
+        let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any]
+        let duckduckgo = browserSpecific?[duckduckgoKey] as? [String: Any]
+        self.init(
+            type: (duckduckgo?[idKey] as? String).flatMap(DuckDuckGoWebExtensionType.init(rawValue:)),
+            version: manifest["version"] as? String,
+            requiresExtraction: duckduckgo?[requiresExtractionKey] as? Bool ?? false
+        )
+    }
+
+    /// Reads metadata from the `manifest.json` at the root of a zipped extension.
+    /// Unlike `WKWebExtension.metadata(from:)`, this doesn't make WebKit unzip the whole archive
+    /// on the main thread, and it runs off the main actor.
+    static func fromZip(at url: URL) async throws -> WebExtensionMetadata {
+        let archive = try Archive(url: url, accessMode: .read)
+        guard let entry = archive["manifest.json"] else {
+            throw WebExtensionError.invalidManifest
+        }
+
+        var data = Data()
+        _ = try archive.extract(entry) { data.append($0) }
+
+        guard let manifest = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw WebExtensionError.invalidManifest
+        }
+        return WebExtensionMetadata(manifest: manifest)
+    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WKWebExtension {
 
     /// Returns the extension type from manifest `browser_specific_settings.duckduckgo.id`, if present and recognized.
-    /// Example manifest entry:
-    /// `"browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.web-extension.embedded" } }`
     var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
-        guard let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any],
-              let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
-              let idString = duckduckgo[idKey] as? String else {
-            return nil
-        }
-        return DuckDuckGoWebExtensionType(rawValue: idString)
+        WebExtensionMetadata(manifest: manifest).type
     }
 
     /// Returns whether the extension declares a toolbar action in its manifest.
@@ -88,27 +116,19 @@ public extension WKWebExtension {
     /// Returns whether the extension requires extraction from zip before loading.
     /// Read from manifest `browser_specific_settings.duckduckgo.appleRequiresExtraction`.
     var requiresExtraction: Bool {
-        guard let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any],
-              let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
-              let requiresExtraction = duckduckgo[requiresExtractionKey] as? Bool else {
-            return false
-        }
-        return requiresExtraction
+        WebExtensionMetadata(manifest: manifest).requiresExtraction
     }
 
     /// Reads metadata from a web extension at the given URL without loading it into a controller.
     /// This can be used to inspect version and type before deciding whether to install/upgrade.
+    /// Given a zip, WebKit unzips the whole archive on the main thread, so prefer
+    /// `WebExtensionMetadata.fromZip(at:)` for zips known to have `manifest.json` at the root.
     /// - Parameter url: URL to the extension (folder or zip file)
-    /// - Returns: Metadata containing type, version, and display name
+    /// - Returns: Metadata containing type, version and whether extraction is required
     @MainActor
     static func metadata(from url: URL) async throws -> WebExtensionMetadata {
         let webExtension = try await WKWebExtension(resourceBaseURL: url)
-        return WebExtensionMetadata(
-            type: webExtension.duckDuckGoWebExtensionType,
-            version: webExtension.version,
-            displayName: webExtension.displayName,
-            requiresExtraction: webExtension.requiresExtraction
-        )
+        return WebExtensionMetadata(manifest: webExtension.manifest)
     }
 }
 

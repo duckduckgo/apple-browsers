@@ -277,6 +277,61 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     // MARK: - handleSelectionAction Tests
 
     @MainActor
+    func testDismissingTabMentionsWhileSuggestionsLoadKeepsLoaderVisible() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .aiChatContextualAttachMoreTabs, .contextualSuggestedPrompts]
+        await sut.presentFloatingInput(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        let floatingInput = try XCTUnwrap(sut.floatingInputViewController)
+        XCTAssertEqual(sut.sessionState.viewState.suggestionsLoadState, .loading)
+
+        host.onTabMentionVisibilityChanged?(true)
+        host.onTabMentionVisibilityChanged?(false)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+
+        XCTAssertFalse(floatingInput.chipsViewController.view.isHidden)
+        let container = try XCTUnwrap(floatingInput.chipsViewController.view.superview)
+        XCTAssertEqual(container.alpha, 1)
+        XCTAssertEqual(floatingInput.chipsViewController.startActionCount, 0)
+        XCTAssertTrue(containsSuggestionsLoader(in: container))
+    }
+
+    @MainActor
+    func testLoadingSuggestionsAfterEmptyContentRestoresFloatingContainerVisibility() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput, .aiChatContextualAttachMoreTabs, .contextualSuggestedPrompts]
+        await sut.presentFloatingInput(from: mockPresentingVC)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        let floatingInput = try XCTUnwrap(sut.floatingInputViewController)
+        sut.sessionState.inputHasAttachedTabs = { true }
+        sut.sessionState.refreshForAttachmentChange()
+        host.onTabMentionVisibilityChanged?(true)
+        host.onTabMentionVisibilityChanged?(false)
+        let container = try XCTUnwrap(floatingInput.chipsViewController.view.superview)
+        XCTAssertEqual(container.alpha, 0)
+
+        sut.sessionState.inputHasAttachedTabs = { false }
+        sut.sessionState.beginLoadingSuggestions()
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+
+        XCTAssertEqual(container.alpha, 1)
+        XCTAssertFalse(floatingInput.chipsViewController.view.isHidden)
+        XCTAssertEqual(floatingInput.chipsViewController.startActionCount, 0)
+        XCTAssertTrue(containsSuggestionsLoader(in: container))
+    }
+
+    @MainActor
+    private func containsSuggestionsLoader(in view: UIView) -> Bool {
+        view is AIChatSuggestionsLoadingView || view.subviews.contains { containsSuggestionsLoader(in: $0) }
+    }
+
+    @MainActor
     func testAttachSelectionAttachesAndPresentsTheSheet() async {
         await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: URL(string: "https://example.com"), faviconBase64: nil), from: mockPresentingVC)
 
@@ -291,7 +346,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.chipState, .placeholder)
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?")
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false)
 
         XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
@@ -307,9 +362,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             return
         }
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page")
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false)
 
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
+    }
+
+    /// A chip never taps Ask, so its prompt goes out without claiming the Terms of Service.
+    @MainActor
+    func testWhenTheSummarizePageChipIsTappedInTheBasicInputThenThePromptCarriesTermsAcceptedFalse() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var submittedTermsAccepted: [Bool] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, let termsAccepted) = effect { submittedTermsAccepted.append(termsAccepted) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSelectQuickAction: .summarizePage)
+
+        XCTAssertEqual(submittedTermsAccepted, [false])
     }
 
     @MainActor

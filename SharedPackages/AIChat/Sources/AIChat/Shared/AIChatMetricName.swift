@@ -40,6 +40,7 @@ public enum AIChatMetricName: String, Codable {
     case userDidViewPlusLimitMessage
     case userDidViewPromotionCard
     case userDidViewSettingsSubscribeButton
+    case userDidViewSettingsResubscribeButton
     case userDidViewProUpgradeDisclaimerBanner
     case userDidViewVoiceChatLimitModal
     case userDidViewVoiceChatDurationLimitModal
@@ -55,6 +56,7 @@ public enum AIChatMetricName: String, Codable {
     case userDidClickPlusLimitUpgradeLink
     case userDidClickPromotionCardButton
     case userDidClickSettingsSubscribeButton
+    case userDidClickSettingsResubscribeButton
     case userDidClickProUpgradeDisclaimerBannerButton
     case userDidClickVoiceChatLimitModalSubscribeButton
     case userDidClickVoiceChatDurationLimitModalSubscribeButton

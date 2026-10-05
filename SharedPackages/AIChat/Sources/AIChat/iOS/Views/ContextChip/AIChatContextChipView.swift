@@ -38,11 +38,13 @@ public final class AIChatContextChipView: UIView {
         static let borderWidth: CGFloat = 1
         /// The offer reads as provisional, so its outline is heavier and broken rather than solid.
         static let suggestedBorderWidth: CGFloat = 1.5
-        static let suggestedFillAlpha: CGFloat = 0.4
-        static let suggestedBorderAlpha: CGFloat = 0.16
-        static let suggestedDashPattern: [NSNumber] = [5, 7]
+        static let suggestedOpacity: CGFloat = 0.5
+        static let suggestedDashPattern: [NSNumber] = [8, 4]
 
         static let faviconSize: CGFloat = 28
+        static let stripFaviconSize: CGFloat = 20
+        static let stripFaviconFrameSize: CGFloat = 24
+        static let stripFaviconCornerRadius: CGFloat = 4
         /// The design's rounded variant shows a circular favicon, but its asset is a circle with its
         /// own padding. Real site favicons are square and full-bleed, so a circular mask crops them.
         static let faviconCornerRadius: CGFloat = 6
@@ -51,8 +53,28 @@ public final class AIChatContextChipView: UIView {
         static let removeButtonSize: CGFloat = 32
         static let removeButtonTrailing: CGFloat = 10
         static let removeButtonHitTarget: CGFloat = 44
+        static let stripRemoveButtonSize: CGFloat = 28
+        static let stripRemoveButtonTrailing: CGFloat = 8
 
         static let contentSpacing: CGFloat = 8
+        static let compactHorizontalPadding: CGFloat = 6
+        static let compactContentSpacing: CGFloat = 4
+    }
+
+    public enum Style {
+        case standalone
+        case attachmentStrip
+    }
+
+    private let style: Style
+    private let faviconLayoutGuide = UILayoutGuide()
+
+    private var faviconSize: CGFloat {
+        style == .attachmentStrip ? Constants.stripFaviconSize : Constants.faviconSize
+    }
+
+    private var faviconFrameSize: CGFloat {
+        style == .attachmentStrip ? Constants.stripFaviconFrameSize : Constants.faviconSize
     }
 
     // MARK: - State
@@ -84,6 +106,11 @@ public final class AIChatContextChipView: UIView {
 
     private var fixedWidthConstraint: NSLayoutConstraint!
     private var titleTrailingToRemoveButtonConstraint: NSLayoutConstraint!
+    private var faviconLeadingConstraint: NSLayoutConstraint!
+    private var titleLeadingConstraint: NSLayoutConstraint!
+    private var removeButtonTrailingConstraint: NSLayoutConstraint!
+    private var removeButtonWidthConstraint: NSLayoutConstraint!
+    private var removeButtonHeightConstraint: NSLayoutConstraint!
 
     // MARK: - Properties
 
@@ -93,6 +120,34 @@ public final class AIChatContextChipView: UIView {
     /// Callback invoked when the chip itself is tapped, which in the suggested state means the user
     /// is asking for the page to be attached.
     public var onTap: (() -> Void)?
+
+    /// Hosts can override the default width; attachment-strip loading keeps its content width.
+    public var preferredWidth: CGFloat? {
+        didSet {
+            guard preferredWidth != oldValue else { return }
+            updateLayout()
+        }
+    }
+
+    public var maximumContentWidth: CGFloat {
+        if style == .attachmentStrip, case .loading? = currentState, let loadingView {
+            return loadingView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
+        }
+        return Constants.chipWidth
+    }
+
+    /// Minimum attachment-strip width that fits the loader or keeps the truncated title readable.
+    public var minimumContentWidth: CGFloat {
+        if style == .attachmentStrip, case .loading? = currentState {
+            return maximumContentWidth
+        }
+        let title = titleLabel.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let compactTitle = String(title.prefix(1)) + "…"
+        let font = titleLabel.font ?? .daxSubheadSemibold()
+        let titleWidth = ceil((compactTitle as NSString).size(withAttributes: [.font: font]).width) + 1
+        return Constants.compactHorizontalPadding + Constants.stripRemoveButtonTrailing + faviconFrameSize + titleWidth
+            + 2 * Constants.compactContentSpacing + Constants.stripRemoveButtonSize
+    }
 
     // MARK: - UI Components
 
@@ -116,7 +171,7 @@ public final class AIChatContextChipView: UIView {
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = UIColor(designSystemColor: .textSecondary)
         imageView.backgroundColor = UIColor(designSystemColor: .surface)
-        imageView.layer.cornerRadius = Constants.faviconCornerRadius
+        imageView.layer.cornerRadius = style == .attachmentStrip ? Constants.stripFaviconCornerRadius : Constants.faviconCornerRadius
         imageView.layer.masksToBounds = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -146,9 +201,17 @@ public final class AIChatContextChipView: UIView {
 
     // MARK: - Initialization
 
-    public override init(frame: CGRect) {
+    public override convenience init(frame: CGRect) {
+        self.init(style: .standalone, frame: frame)
+    }
+
+    public init(style: Style, frame: CGRect = .zero) {
+        self.style = style
         super.init(frame: frame)
         setupUI()
+        if style == .attachmentStrip {
+            updateLayout()
+        }
     }
 
     public required init?(coder: NSCoder) {
@@ -157,6 +220,7 @@ public final class AIChatContextChipView: UIView {
 
     /// Clamped to a capsule: the design's 24 exceeds half the 44pt height and would kink.
     public override func layoutSubviews() {
+        updateContentSpacing()
         super.layoutSubviews()
         layer.cornerRadius = min(Constants.cornerRadius, bounds.height / 2)
 
@@ -202,8 +266,10 @@ public final class AIChatContextChipView: UIView {
     }
 
     /// Without this the recogniser, which spans the pill, would swallow taps on the remove button.
+    /// A hidden or non-interactive button keeps its frame, so its region stays tappable.
     func shouldReceiveChipTap(at point: CGPoint) -> Bool {
-        !removeButtonHitRect.contains(point)
+        guard !removeButton.isHidden, removeButton.isUserInteractionEnabled else { return true }
+        return !removeButtonHitRect.contains(point)
     }
 
     private var removeButtonHitRect: CGRect {
@@ -233,6 +299,7 @@ private extension AIChatContextChipView {
         layer.addSublayer(dashedBorderLayer)
         addSubview(mainStackView)
 
+        chipContentView.addLayoutGuide(faviconLayoutGuide)
         chipContentView.addSubview(faviconView)
         chipContentView.addSubview(titleLabel)
         chipContentView.addSubview(removeButton)
@@ -253,6 +320,7 @@ private extension AIChatContextChipView {
         removeButton.backgroundColor = .clear
         dashedBorderLayer.isHidden = true
         accessibilityCustomActions = nil
+        alpha = 1
 
         switch state {
         case .loading:
@@ -262,7 +330,7 @@ private extension AIChatContextChipView {
             removeButton.isHidden = true
             backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
             applyBorder(color: UIColor(designSystemColor: .lines))
-            fixedWidthConstraint.isActive = false
+            fixedWidthConstraint.isActive = preferredWidth != nil
             titleTrailingToRemoveButtonConstraint.isActive = false
             showLoadingView()
             isUserInteractionEnabled = false
@@ -272,41 +340,38 @@ private extension AIChatContextChipView {
             accessibilityLabel = UserText.askAboutPage
             accessibilityTraits = .none
 
-        case .suggested(let title, let favicon):
-            let offer = UserText.askAboutPage(title: title)
+        case .suggested:
+            let offer = UserText.askAboutPage
+            let tint = UIColor(designSystemColor: .accentPrimary)
             isHidden = false
+            alpha = Constants.suggestedOpacity
             titleLabel.text = offer
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
-            titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-            titleLabel.font = UIFont.daxSubheadSemibold()
+            if style == .standalone {
+                titleLabel.font = UIFont.daxSubheadSemibold()
+            }
+            titleLabel.textColor = tint
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
             applyPillLayout()
+            // The plus is an affordance, not a control: the whole pill accepts the offer.
             removeButton.isHidden = false
-            removeButton.tintColor = UIColor(designSystemColor: .icons)
-            removeButton.backgroundColor = UIColor(designSystemColor: .controlsRaisedFillPrimary)
-            faviconView.tintColor = UIColor(designSystemColor: .accentPrimary)
-            faviconView.image = favicon ?? fallbackFavicon()
+            removeButton.isUserInteractionEnabled = false
+            removeButton.setImage(DesignSystemImages.Glyphs.Size16.add.withRenderingMode(.alwaysTemplate), for: .normal)
+            removeButton.tintColor = tint
+            faviconView.tintColor = tint
+            faviconView.image = fallbackFavicon()
             faviconView.backgroundColor = .clear
             faviconView.layer.borderWidth = 0
             faviconView.layer.borderColor = nil
-            backgroundColor = UIColor(designSystemColor: .accentAltGlowPrimary)
-                .withAlphaComponent(Constants.suggestedFillAlpha)
+            backgroundColor = .clear
             // The chip itself is the button, so VoiceOver activate accepts the offer (a UILabel marked
-            // as a button cannot be activated). Making the chip an element hides the X, so dismissal is
-            // offered as a custom action instead.
+            // as a button cannot be activated).
             isAccessibilityElement = true
             accessibilityIdentifier = "AIChat.ContextChip.Suggested"
             accessibilityLabel = offer
             accessibilityTraits = .button
-            accessibilityCustomActions = [
-                UIAccessibilityCustomAction(name: removeButton.accessibilityLabel ?? "Remove") { [weak self] _ in
-                    self?.onRemove?()
-                    return true
-                }
-            ]
-            applyDashedBorder(color: UIColor(designSystemColor: .accentPrimary)
-                .withAlphaComponent(Constants.suggestedBorderAlpha))
+            applyDashedBorder(color: tint)
             isUserInteractionEnabled = true
             chipTapRecognizer.isEnabled = true
 
@@ -314,12 +379,16 @@ private extension AIChatContextChipView {
             isHidden = false
             titleLabel.text = title
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.AttachedTitle"
+            if style == .standalone {
+                titleLabel.font = UIFont.daxSubheadSemibold()
+            }
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-            titleLabel.font = UIFont.daxSubheadSemibold()
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
             applyPillLayout()
             removeButton.isHidden = false
+            removeButton.isUserInteractionEnabled = true
+            removeButton.setImage(DesignSystemImages.Glyphs.Size16.close.withRenderingMode(.alwaysTemplate), for: .normal)
             removeButton.tintColor = UIColor(designSystemColor: .textSecondary)
             faviconView.tintColor = UIColor(designSystemColor: .textSecondary)
             faviconView.image = favicon ?? fallbackFavicon()
@@ -336,12 +405,70 @@ private extension AIChatContextChipView {
             isUserInteractionEnabled = true
             chipTapRecognizer.isEnabled = false
         }
+        updateLayout()
     }
 
     /// `.loading` drops the fixed geometry, so the pill states have to put it back.
     func applyPillLayout() {
         fixedWidthConstraint.isActive = true
         titleTrailingToRemoveButtonConstraint.isActive = true
+    }
+
+    func updateLayout() {
+        if style == .attachmentStrip, case .loading? = currentState {
+            fixedWidthConstraint.constant = maximumContentWidth
+        } else {
+            fixedWidthConstraint.constant = preferredWidth ?? Constants.chipWidth
+        }
+        updateRemoveButtonAppearance()
+        updateContentSpacing()
+
+        if case .loading? = currentState {
+            fixedWidthConstraint.isActive = preferredWidth != nil
+        } else {
+            fixedWidthConstraint.isActive = true
+        }
+    }
+
+    func updateRemoveButtonAppearance() {
+        let size: CGFloat
+        let trailingInset: CGFloat
+        switch style {
+        case .standalone:
+            size = Constants.removeButtonSize
+            trailingInset = Constants.removeButtonTrailing
+            removeButton.backgroundColor = .clear
+        case .attachmentStrip:
+            size = Constants.stripRemoveButtonSize
+            trailingInset = Constants.stripRemoveButtonTrailing
+            let isDarkMode = traitCollection.userInterfaceStyle == .dark
+            removeButton.backgroundColor = UIColor(designSystemColor: isDarkMode ? .surfaceTertiary : .controlsRaisedFillPrimary)
+        }
+        if case .suggested? = currentState {
+            removeButton.backgroundColor = UIColor(designSystemColor: .accentGlowPrimary)
+        }
+        removeButtonWidthConstraint.constant = size
+        removeButtonHeightConstraint.constant = size
+        removeButtonTrailingConstraint.constant = -trailingInset
+        removeButton.layer.cornerRadius = size / 2
+    }
+
+    func updateContentSpacing() {
+        guard style == .attachmentStrip else {
+            faviconLeadingConstraint.constant = Constants.faviconLeading
+            titleLeadingConstraint.constant = Constants.contentSpacing
+            titleTrailingToRemoveButtonConstraint.constant = -Constants.contentSpacing
+            return
+        }
+
+        let leadingExpansion = Constants.faviconLeading - Constants.compactHorizontalPadding
+        let spacingExpansion = Constants.contentSpacing - Constants.compactContentSpacing
+        let totalExpansion = leadingExpansion + 2 * spacingExpansion
+        let width = preferredWidth ?? Constants.chipWidth
+        let fraction = min(1, max(0, (width - minimumContentWidth) / totalExpansion))
+        faviconLeadingConstraint.constant = Constants.compactHorizontalPadding + leadingExpansion * fraction
+        titleLeadingConstraint.constant = Constants.compactContentSpacing + spacingExpansion * fraction
+        titleTrailingToRemoveButtonConstraint.constant = -(Constants.compactContentSpacing + spacingExpansion * fraction)
     }
 
     func applyDashedBorder(color: UIColor) {
@@ -365,6 +492,12 @@ private extension AIChatContextChipView {
         let width = widthAnchor.constraint(equalToConstant: Constants.chipWidth)
         fixedWidthConstraint = width
 
+        faviconLeadingConstraint = faviconLayoutGuide.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading)
+        titleLeadingConstraint = titleLabel.leadingAnchor.constraint(equalTo: faviconLayoutGuide.trailingAnchor, constant: Constants.contentSpacing)
+        removeButtonTrailingConstraint = removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing)
+        removeButtonWidthConstraint = removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize)
+        removeButtonHeightConstraint = removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize)
+
         // Dropped by `.loading`, which hugs its spinner instead.
         titleTrailingToRemoveButtonConstraint = titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: removeButton.leadingAnchor, constant: -Constants.contentSpacing)
 
@@ -378,19 +511,23 @@ private extension AIChatContextChipView {
 
             height,
 
-            faviconView.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor, constant: Constants.faviconLeading),
-            faviconView.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
-            faviconView.widthAnchor.constraint(equalToConstant: Constants.faviconSize),
-            faviconView.heightAnchor.constraint(equalToConstant: Constants.faviconSize),
+            faviconLeadingConstraint,
+            faviconLayoutGuide.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
+            faviconLayoutGuide.widthAnchor.constraint(equalToConstant: faviconFrameSize),
+            faviconLayoutGuide.heightAnchor.constraint(equalToConstant: faviconFrameSize),
+            faviconView.centerXAnchor.constraint(equalTo: faviconLayoutGuide.centerXAnchor),
+            faviconView.centerYAnchor.constraint(equalTo: faviconLayoutGuide.centerYAnchor),
+            faviconView.widthAnchor.constraint(equalToConstant: faviconSize),
+            faviconView.heightAnchor.constraint(equalToConstant: faviconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: Constants.contentSpacing),
+            titleLeadingConstraint,
             titleLabel.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
             titleTrailingToRemoveButtonConstraint,
 
-            removeButton.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor, constant: -Constants.removeButtonTrailing),
+            removeButtonTrailingConstraint,
             removeButton.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor),
-            removeButton.widthAnchor.constraint(equalToConstant: Constants.removeButtonSize),
-            removeButton.heightAnchor.constraint(equalToConstant: Constants.removeButtonSize),
+            removeButtonWidthConstraint,
+            removeButtonHeightConstraint,
         ])
     }
 
@@ -401,6 +538,9 @@ private extension AIChatContextChipView {
     }
 
     func fallbackFavicon() -> UIImage? {
+        if style == .attachmentStrip {
+            return DesignSystemImages.Glyphs.Size16.globe.withRenderingMode(.alwaysTemplate)
+        }
         return DesignSystemImages.Glyphs.Size24.globe.withRenderingMode(.alwaysTemplate)
     }
 
@@ -411,11 +551,26 @@ private extension AIChatContextChipView {
         view.layer.borderWidth = 0
         view.translatesAutoresizingMaskIntoConstraints = false
         chipContentView.addSubview(view)
-        NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor),
-            view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
-        ])
+        if style == .attachmentStrip {
+            let leading = view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor)
+            let trailing = view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor)
+            leading.priority = .defaultHigh
+            trailing.priority = .defaultHigh
+            NSLayoutConstraint.activate([
+                leading,
+                trailing,
+                view.centerXAnchor.constraint(equalTo: chipContentView.centerXAnchor),
+                view.leadingAnchor.constraint(greaterThanOrEqualTo: chipContentView.leadingAnchor),
+                view.trailingAnchor.constraint(lessThanOrEqualTo: chipContentView.trailingAnchor),
+                view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: chipContentView.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: chipContentView.trailingAnchor),
+                view.centerYAnchor.constraint(equalTo: chipContentView.centerYAnchor)
+            ])
+        }
         loadingView = view
     }
 
@@ -452,6 +607,9 @@ extension AIChatContextChipView {
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection),
            let currentState {
             updateUI(for: currentState)
+        }
+        if traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory {
+            setNeedsLayout()
         }
     }
 }

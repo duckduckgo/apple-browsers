@@ -113,6 +113,24 @@ final class WebViewTransitionGeometryTests: XCTestCase {
         XCTAssertEqual(frame.height, 780) // 390 * (200/100)
     }
 
+    func testFloatingDestinationImageFramePreservesCroppedTopRegion() {
+        let frame = WebViewTransitionGeometry.destinationImageFrame(
+            for: CGSize(width: 390, height: 844),
+            previewSize: CGSize(width: 390, height: 733),
+            alignsWithContainerBottom: true)
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: 111, width: 390, height: 733))
+    }
+
+    func testBottomAlignedDestinationImageFrameDoesNotMoveOversizedPreview() {
+        let frame = WebViewTransitionGeometry.destinationImageFrame(
+            for: CGSize(width: 390, height: 800),
+            previewSize: CGSize(width: 100, height: 300),
+            alignsWithContainerBottom: true)
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: 0, width: 390, height: 1170))
+    }
+
     func testWebContentFrameInsetsTheContainerBelowTheObscuredTop() {
         let container = CGRect(x: 0, y: 0, width: 390, height: 844)
         let frame = WebViewTransitionGeometry.webContentFrame(from: container, topObscuredHeight: 59)

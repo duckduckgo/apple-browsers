@@ -143,6 +143,7 @@ final class AIChatContextualInputViewController: UIViewController {
         }
     }
     private var displayedTermsOfServiceMessage: UTIFooterMessage?
+    private var renderedStartActions: [ContextualSheetAction] = []
 
     // MARK: - Initialization
 
@@ -239,6 +240,8 @@ final class AIChatContextualInputViewController: UIViewController {
     func updateStartActions(suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction]) {
         let actions = suggestions.map(ContextualSheetAction.suggestion)
             + quickActions.map(ContextualSheetAction.quickAction)
+        guard actions != renderedStartActions else { return }
+        renderedStartActions = actions
         quickActionsView.configure(with: actions)
     }
 
@@ -279,10 +282,14 @@ final class AIChatContextualInputViewController: UIViewController {
         quickActionsView.isUserInteractionEnabled = !dimmed
     }
 
-    /// Sending with the disclaimer on screen is the acceptance, whether typed or picked from the chips.
-    func acceptTermsIfDisclaimerShown() {
-        guard termsOfServiceDisclaimer.acceptIfShown(visibleTermsOfServiceMessage) else { return }
-        refreshTermsOfServiceDisclaimer()
+    /// Call only for an Ask tap: sending with the disclaimer on screen is the acceptance, a chip never is.
+    /// Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        if termsOfServiceDisclaimer.acceptIfShown(visibleTermsOfServiceMessage) {
+            refreshTermsOfServiceDisclaimer()
+        }
+        return termsOfServiceDisclaimer.hasAccepted
     }
 
     private var visibleTermsOfServiceMessage: UTIFooterMessage? {
@@ -388,6 +395,7 @@ private extension AIChatContextualInputViewController {
         }
         displayedTermsOfServiceMessage = message
         termsOfServiceCard.isHidden = message == nil
+        basicNativeInputViewController.submitButtonTitle = message == nil ? nil : UserText.duckAIAskButtonTitle
 
         // The outgoing pin goes first, so the two are never active together.
         let (outgoing, incoming) = message == nil

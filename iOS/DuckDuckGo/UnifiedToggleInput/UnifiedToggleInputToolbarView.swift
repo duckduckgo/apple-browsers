@@ -79,8 +79,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    /// Swaps the arrow for an "Ask" label while the Terms of Service disclaimer shows.
+    var usesAskSubmitButton: Bool = false {
+        didSet {
+            guard oldValue != usesAskSubmitButton else { return }
+            updateSubmitButtonAppearance()
+        }
+    }
+
     private var isFireTab: Bool = false
     private var preservesSubmitStyleDuringDismissal = false
+    private var preservesAskTitleDuringDismissal = false
     private var isImageButtonAvailable = true
 
     func refreshFireMode(fireMode: Bool) {
@@ -99,15 +108,18 @@ final class UnifiedToggleInputToolbarView: UIView {
     func prepareForToolbarVisibilityChange(showToolbar: Bool) {
         if showToolbar {
             preservesSubmitStyleDuringDismissal = false
+            preservesAskTitleDuringDismissal = false
         } else {
             preservesSubmitStyleDuringDismissal = preservesSubmitStyleDuringDismissal || usesNewPromptSubmitStyle
+            preservesAskTitleDuringDismissal = preservesAskTitleDuringDismissal || usesAskSubmitButton
         }
         updateSubmitButtonAppearance()
     }
 
     func finalizeToolbarShown() {
-        guard preservesSubmitStyleDuringDismissal else { return }
+        guard preservesSubmitStyleDuringDismissal || preservesAskTitleDuringDismissal else { return }
         preservesSubmitStyleDuringDismissal = false
+        preservesAskTitleDuringDismissal = false
         updateSubmitButtonAppearance()
     }
 
@@ -393,12 +405,16 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
         button.accessibilityLabel = UserText.aiChatToolbarSubmitButtonAccessibilityLabel
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.Submit"
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize),
-            button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize),
-        ])
+        button.heightAnchor.constraint(equalToConstant: Constants.toolButtonSize).isActive = true
         return button
+    }()
+
+    private lazy var submitButtonWidthConstraint: NSLayoutConstraint = {
+        let constraint = submitButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
+        constraint.isActive = true
+        return constraint
     }()
 
     private lazy var stopButton: CircularButton = {
@@ -553,6 +569,7 @@ private extension UnifiedToggleInputToolbarView {
 
     func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
+        let showsAskTitle = (usesAskSubmitButton || preservesAskTitleDuringDismissal) && !showVoice
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -563,7 +580,13 @@ private extension UnifiedToggleInputToolbarView {
                 return DesignSystemImages.Glyphs.Size24.arrowUp
             }
         }()
-        submitButton.setImage(icon, for: .normal)
+        let askTitle = showsAskTitle ? UserText.duckAIAskButtonTitle : nil
+        submitButton.setImage(askTitle == nil ? icon : nil, for: .normal)
+        submitButton.setTitle(askTitle, for: .normal)
+        submitButton.accessibilityLabel = askTitle ?? UserText.aiChatToolbarSubmitButtonAccessibilityLabel
+        submitButtonWidthConstraint.constant = askTitle.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.toolButtonSize)
+        } ?? Constants.toolButtonSize
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
         let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
         submitButton.isEnabled = isActive

@@ -79,8 +79,7 @@ default.profraw
 .claude/settings.local.json
 
 # Cursor
-.cursor/*
-!.cursor/rules/
+.cursor/
 
 # AI assistants
 .github/copilot-instructions.md
@@ -107,5 +106,3 @@ privacy-configuration/
 
 # Codex will sometimes create artifacts, e.g. screenshots and videos in this location.
 .codex-artifacts/
-
-

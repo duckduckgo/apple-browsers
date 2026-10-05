@@ -71,6 +71,22 @@ final class UTIMultiTabPromotionTests: XCTestCase {
             promotionStore: displayStore)
     }
 
+    func testCompactAttachmentLayoutFollowsFlagEvenWhenTabAttachmentsAreUnavailableOnIPad() {
+        let padFeature = AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: flagger, aiChatSettings: settings, devicePlatform: PromotionPad.self,
+            promotionStore: displayStore)
+
+        XCTAssertEqual(padFeature.state, .unavailable)
+        XCTAssertTrue(padFeature.usesCompactAttachmentLayout)
+        XCTAssertTrue(feature.usesCompactAttachmentLayout)
+
+        flagger.enabledFeatureFlags = []
+
+        XCTAssertEqual(padFeature.state, .unavailable)
+        XCTAssertFalse(padFeature.usesCompactAttachmentLayout)
+        XCTAssertFalse(feature.usesCompactAttachmentLayout)
+    }
+
     private func makeController(terms: DuckAiTermsOfServiceStore? = nil) -> UTIFooterController {
         UTIFooterController(viewModel: nil, termsOfServiceStore: terms, multiTabPromotion: source,
                             createImagePixelFiring: MockCreateImagePixelFiring(), animator: { $0() })
@@ -231,18 +247,16 @@ final class UTIMultiTabPromotionTests: XCTestCase {
         XCTAssertEqual(displayStore.displayCount, 1)
     }
 
-    func testNormalAndFireConsumersShareCountAndPrivacyResetDoesNotResetPromotion() async {
+    func testConsumersShareCountAndPrivacyResetDoesNotResetPromotion() {
         let otherStore = UTIMultiTabPromotionDisplayStore(keyValueStore: defaults, dateProvider: clock)
         displayStore.recordDisplay()
         XCTAssertEqual(otherStore.displayCount, 1)
         let privacyStore = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: defaults)
-        privacyStore.recordDisplay()
-        let worker = AttachmentPrivacyNoticeFireWorker(displayStore: privacyStore)
+        privacyStore.markShown()
         feature.recordTabAttachment()
         feature.dismissDrawerPromo()
-        await worker.burnNormalModeData()
-        await worker.burnFireModeData()
-        XCTAssertEqual(privacyStore.displayCount, 0)
+        privacyStore.reset()
+        XCTAssertFalse(privacyStore.hasShown)
         XCTAssertEqual(otherStore.displayCount, 1)
         XCTAssertFalse(otherStore.isAvailable(startDate: start, isCurrentDisplay: true))
         XCTAssertTrue(otherStore.hasAttachedTab)
@@ -257,4 +271,8 @@ private final class PromotionDateProvider: CurrentDateProviding {
 
 private struct PromotionPhone: DevicePlatformProviding {
     static var isIphone: Bool { true }
+}
+
+private struct PromotionPad: DevicePlatformProviding {
+    static var isIphone: Bool { false }
 }

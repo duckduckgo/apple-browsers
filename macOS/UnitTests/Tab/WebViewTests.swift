@@ -18,6 +18,7 @@
 
 import PrivacyConfig
 import SharedTestUtilities
+import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -217,6 +218,38 @@ final class WebViewTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(capturingZoomLevelDelegate.setLevel, .percent100)
+    }
+
+    // MARK: - User scripts on deinit
+
+    func testWhenWebViewIsDeallocatedThenItsUserScriptsAreRemoved() {
+        let userContentController = makeUserContentControllerWithScript()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = userContentController
+
+        autoreleasepool {
+            _ = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger())
+        }
+
+        XCTAssertTrue(userContentController.userScripts.isEmpty)
+    }
+
+    func testWhenWebExtensionPageWebViewIsDeallocatedThenSharedUserScriptsAreKept() {
+        let userContentController = makeUserContentControllerWithScript()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = userContentController
+
+        autoreleasepool {
+            _ = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger(), isWebExtensionPage: true)
+        }
+
+        XCTAssertEqual(userContentController.userScripts.count, 1)
+    }
+
+    private func makeUserContentControllerWithScript() -> WKUserContentController {
+        let userContentController = WKUserContentController()
+        userContentController.addUserScript(WKUserScript(source: "void 0;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        return userContentController
     }
 }
 

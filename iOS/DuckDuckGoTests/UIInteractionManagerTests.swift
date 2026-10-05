@@ -24,12 +24,10 @@ import Testing
 final class MockAuthenticationService: AuthenticationServiceProtocol {
 
     var authenticateCalled = false
-    var authenticationCallback: (() async -> Void)?
     var waitUntilUnlockedCallback: (() async -> Void)?
 
     func authenticate(waitForSuccessfulAuthentication: Bool) async {
         authenticateCalled = true
-        await authenticationCallback?()
         if waitForSuccessfulAuthentication {
             await waitUntilUnlockedCallback?()
         }

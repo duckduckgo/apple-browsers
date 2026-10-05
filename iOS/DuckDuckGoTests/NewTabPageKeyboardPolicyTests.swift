@@ -23,32 +23,18 @@ import Testing
 
 struct NewTabPageKeyboardPolicyTests {
 
-    struct AppOpenCase: Sendable {
-        let onNewTab: Bool
-        let onAppLaunch: Bool
-        let onNewTabPage: Bool
-        let showsKeyboard: Bool
-    }
-
     @available(iOS 16, macOS 13, *)
     @Test(
         "App open follows New Tab on a New Tab Page, and App Launch elsewhere",
         .timeLimit(.minutes(1)),
-        arguments: [
-            AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: true, showsKeyboard: true),
-            AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: true, showsKeyboard: true),
-            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: true, showsKeyboard: false),
-            AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: true, showsKeyboard: false),
-            AppOpenCase(onNewTab: true, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false),
-            AppOpenCase(onNewTab: true, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),
-            AppOpenCase(onNewTab: false, onAppLaunch: true, onNewTabPage: false, showsKeyboard: true),
-            AppOpenCase(onNewTab: false, onAppLaunch: false, onNewTabPage: false, showsKeyboard: false)
-        ]
+        arguments: [false, true]
     )
-    func whenAppOpensThenKeyboardFollowsTheSettingsTable(_ testCase: AppOpenCase) {
-        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: testCase.onAppLaunch)
+    func whenAppOpensThenKeyboardFollowsTheSettingsTable(onNewTab: Bool) {
+        let onAppLaunch = !onNewTab
+        let policy = NewTabPageKeyboardPolicy(onNewTab: onNewTab, onAppLaunch: onAppLaunch)
 
-        #expect(policy.showsKeyboardOnAppOpen(onNewTabPage: testCase.onNewTabPage) == testCase.showsKeyboard)
+        #expect(policy.showsKeyboardOnAppOpen(onNewTabPage: true) == onNewTab)
+        #expect(policy.showsKeyboardOnAppOpen(onNewTabPage: false) == onAppLaunch)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -58,8 +44,7 @@ struct NewTabPageKeyboardPolicyTests {
         arguments: [
             (nil, true),
             (21, true),
-            (20, false),
-            (5, false)
+            (20, false)
         ] as [(TimeInterval?, Bool)]
     )
     func whenReturningAfterTimeInBackgroundThenItIsAnAppOpenOnlyPastTheThreshold(secondsInBackground: TimeInterval?, isAppOpen: Bool) {

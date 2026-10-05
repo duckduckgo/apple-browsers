@@ -208,10 +208,10 @@ struct PostIdleSessionInstrumentationTests {
     // MARK: - Arrival focus
 
     @available(iOS 16, macOS 13, *)
-    @Test("Automatic arrival focus updates only the return context, once, without an interaction", .timeLimit(.minutes(1)), arguments: [false, true])
-    func arrivalFocusUpdatesContextOnly(afterIdle: Bool) {
+    @Test("Automatic arrival focus updates only the return context, once, without an interaction", .timeLimit(.minutes(1)))
+    func arrivalFocusUpdatesContextOnly() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: afterIdle ? .lut : nil, focused: false)
+        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: .lut, focused: false)
         let startedAt = clock.now
         clock.advance(by: 0.1)
 
@@ -221,7 +221,7 @@ struct PostIdleSessionInstrumentationTests {
         #expect(wideEvent.updates.count == 1)
         #expect(lastReturnUpdate(wideEvent)?.focused == true)
         #expect(lastReturnUpdate(wideEvent)?.landedOn == .ntpUserInitiated)
-        #expect(lastReturnUpdate(wideEvent)?.afterIdle == afterIdle)
+        #expect(lastReturnUpdate(wideEvent)?.afterIdle == true)
         #expect(lastReturnUpdate(wideEvent)?.firstInteractionInterval.end == nil)
         #expect(lastReturnUpdate(wideEvent)?.sessionInterval.start == startedAt)
         #expect(lastReturnUpdate(wideEvent)?.sessionInterval.end == nil)

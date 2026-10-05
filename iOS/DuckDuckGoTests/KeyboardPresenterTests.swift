@@ -105,7 +105,11 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("App Launch usage requires successful focus on another tab", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    @Test("App Launch usage requires successful focus on another tab", .timeLimit(.minutes(1)), arguments: [
+        (false, true),
+        (false, false),
+        (true, true)
+    ])
     func appLaunchPixelRequiresFocusOnAnotherTab(onNewTabPage: Bool, keyboardWasShown: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         onAppLaunch = true

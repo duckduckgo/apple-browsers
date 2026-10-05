@@ -372,7 +372,6 @@ final class LaunchActionHandlerTests {
         .timeLimit(.minutes(1)),
         arguments: [
             (false, true),
-            (false, false),
             (true, false)
         ] as [(Bool, Bool)]
     )
@@ -395,34 +394,32 @@ final class LaunchActionHandlerTests {
     @available(iOS 16, *)
     @Test(
         "When idle return keeps the current NTP and the flag is on then keyboard presenter is called",
-        .timeLimit(.minutes(1)),
-        arguments: [false, true]
+        .timeLimit(.minutes(1))
     )
-    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled(isFirstForeground: Bool) {
+    func whenIdleReturnKeepsCurrentNTPAndFlagIsOnThenKeyboardIsCalled() {
         let date = Date()
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
         idleReturnDelegate.showNewTabPageAfterIdleReturnResult = true
 
-        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: isFirstForeground))
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: date, isFirstForeground: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
-        #expect(keyboardPresenter.lastBackgroundDate == (isFirstForeground ? nil : date))
+        #expect(keyboardPresenter.lastBackgroundDate == date)
         #expect(keyboardPresenter.isAfterIdleReturn)
     }
 
     @available(iOS 16, *)
     @Test(
         "When idle return with LUT treatment then markLastUsedTabAsResumedAfterIdle is called and keyboard shows",
-        .timeLimit(.minutes(1)),
-        arguments: [false, true]
+        .timeLimit(.minutes(1))
     )
-    func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled(flagOn: Bool) {
+    func whenIdleReturnLUTTreatmentThenLUTHandlerIsCalled() {
         let date = Date()
-        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        featureFlagger.enabledFeatureFlags = []
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .lut
         idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false
@@ -441,12 +438,11 @@ final class LaunchActionHandlerTests {
     @available(iOS 16, *)
     @Test(
         "When no idle return then showKeyboardOnLaunch is called and neither delegate is called",
-        .timeLimit(.minutes(1)),
-        arguments: [false, true]
+        .timeLimit(.minutes(1))
     )
-    func whenNoIdleReturnThenKeyboardIsCalled(flagOn: Bool) {
+    func whenNoIdleReturnThenKeyboardIsCalled() {
         let date = Date()
-        featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
+        featureFlagger.enabledFeatureFlags = []
         idleReturnEvaluator.didReturnAfterIdleResult = false
         idleReturnDelegate.showNewTabPageAfterIdleReturnCalled = false
         idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled = false

@@ -22,7 +22,39 @@ import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-final class DuckAiLauncherPromoEligibilityTests: XCTestCase {
+final class DuckAiLauncherPromoTests: XCTestCase {
+
+    private var featureFlagger: MockFeatureFlagger!
+    private var preferences: PromptBarPreferences!
+    private var keyValueStore: MockKeyValueFileStore!
+    private var chatCount: CurrentValueSubject<Int, Never>!
+    private var firedPixels: [PromptBarPixel] = []
+    private var openSettingsCount = 0
+    private var cancellables = Set<AnyCancellable>()
+
+    override func setUp() {
+        super.setUp()
+        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLauncherPromo.rawValue: true])
+        let configuration = MockAIChatConfig()
+        configuration.shouldDisplayAnyAIChatFeature = true
+        preferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueFileStore()),
+                                           aiChatMenuConfiguration: configuration)
+        keyValueStore = MockKeyValueFileStore()
+        chatCount = CurrentValueSubject(5)
+        firedPixels = []
+        openSettingsCount = 0
+    }
+
+    override func tearDown() {
+        cancellables.removeAll()
+        featureFlagger = nil
+        preferences = nil
+        keyValueStore = nil
+        chatCount = nil
+        super.tearDown()
+    }
+
+    // MARK: - Eligibility
 
     private func kind(isFeatureOn: Bool = true,
                       shortcut: Bool = false,
@@ -66,39 +98,8 @@ final class DuckAiLauncherPromoEligibilityTests: XCTestCase {
     func testWhenNudgeIsDismissedThenItNeverComesBack() {
         XCTAssertNil(kind(menuBarIcon: true, dismissed: [.shortcutNudge]))
     }
-}
 
-final class DuckAiLauncherPromoTests: XCTestCase {
-
-    private var featureFlagger: MockFeatureFlagger!
-    private var preferences: PromptBarPreferences!
-    private var keyValueStore: MockKeyValueFileStore!
-    private var chatCount: CurrentValueSubject<Int, Never>!
-    private var firedPixels: [PromptBarPixel] = []
-    private var openSettingsCount = 0
-    private var cancellables = Set<AnyCancellable>()
-
-    override func setUp() {
-        super.setUp()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLauncherPromo.rawValue: true])
-        let configuration = MockAIChatConfig()
-        configuration.shouldDisplayAnyAIChatFeature = true
-        preferences = PromptBarPreferences(persistor: PromptBarPreferencesUserDefaultsPersistor(keyValueStore: MockKeyValueFileStore()),
-                                           aiChatMenuConfiguration: configuration)
-        keyValueStore = MockKeyValueFileStore()
-        chatCount = CurrentValueSubject(5)
-        firedPixels = []
-        openSettingsCount = 0
-    }
-
-    override func tearDown() {
-        cancellables.removeAll()
-        featureFlagger = nil
-        preferences = nil
-        keyValueStore = nil
-        chatCount = nil
-        super.tearDown()
-    }
+    // MARK: - Promo
 
     @MainActor
     private func makePromo() -> DuckAiLauncherPromo {
@@ -114,17 +115,27 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testPromoCarriesShortcutCopyAndCanBeDismissed() {
+    func testPromoCarriesCopyAndCanBeDismissed() {
+        let presentation = makePromo().presentation()
+
+        XCTAssertEqual(presentation?.kind, .promo)
+        XCTAssertEqual(presentation?.message, UserText.duckAiLauncherPromoMessage)
+        XCTAssertEqual(presentation?.secondaryText, " • " + UserText.duckAiLauncherPromoSecondaryText)
+        XCTAssertEqual(presentation?.ctaLabel, UserText.duckAiLauncherPromoTryNow)
+        XCTAssertEqual(presentation?.dismissible, true)
+        XCTAssertNil(presentation?.placeholder)
+    }
+
+    @MainActor
+    func testNudgeCarriesTheUsersShortcut() {
+        preferences.isMenuBarIconVisible = true
         preferences.keyboardShortcut = .defaultShortcut
 
         let presentation = makePromo().presentation()
 
-        XCTAssertEqual(presentation?.kind, .promo)
+        XCTAssertEqual(presentation?.kind, .shortcutNudge)
         XCTAssertEqual(presentation?.shortcut, "⌥ \(UserText.promptBarShortcutSpaceKey)")
-        XCTAssertEqual(presentation?.dismissible, true)
-        XCTAssertNotNil(presentation?.ctaLabel)
         XCTAssertTrue(presentation?.message?.contains("{shortcut}") == true)
-        XCTAssertNil(presentation?.placeholder)
     }
 
     @MainActor

@@ -87,7 +87,8 @@ final class DuckAiLauncherPromo {
         let shortcut = preferences.keyboardShortcut.promoDisplayString
         switch kind {
         case .promo:
-            return .init(kind: kind, message: UserText.duckAiLauncherPromoMessage, shortcut: shortcut,
+            return .init(kind: kind, message: UserText.duckAiLauncherPromoMessage,
+                         secondaryText: " • " + UserText.duckAiLauncherPromoSecondaryText,
                          ctaLabel: UserText.duckAiLauncherPromoTryNow, dismissible: true)
         case .shortcutHint:
             return .init(kind: kind, placeholder: String(format: UserText.duckAiLauncherShortcutHintPlaceholder, shortcut))

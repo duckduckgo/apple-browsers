@@ -348,6 +348,8 @@ public extension NewTabPageDataModel {
         let kind: OmnibarLauncherPromoKind
         /// May contain one `{shortcut}` token, which the page renders as a key combination.
         let message: String?
+        /// Shown after `message`, separator included.
+        let secondaryText: String?
         let shortcut: String?
         let ctaLabel: String?
         let dismissible: Bool?
@@ -355,12 +357,14 @@ public extension NewTabPageDataModel {
 
         public init(kind: OmnibarLauncherPromoKind,
                     message: String? = nil,
+                    secondaryText: String? = nil,
                     shortcut: String? = nil,
                     ctaLabel: String? = nil,
                     dismissible: Bool? = nil,
                     placeholder: String? = nil) {
             self.kind = kind
             self.message = message
+            self.secondaryText = secondaryText
             self.shortcut = shortcut
             self.ctaLabel = ctaLabel
             self.dismissible = dismissible

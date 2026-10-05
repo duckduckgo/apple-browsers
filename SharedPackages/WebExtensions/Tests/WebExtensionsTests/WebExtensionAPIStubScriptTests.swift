@@ -1013,7 +1013,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.setObject(scheduleTimer, forKeyedSubscript: "setTimeout" as NSString)
 
         context.evaluateScript("""
-        \(JSContextPolyfills.url)
+        \(JSContextTestPolyfills.url)
 
         var location = { href: "chrome-extension://abc/ddg-background-page.html" };
         var document = {

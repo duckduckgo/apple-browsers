@@ -1,5 +1,5 @@
 //
-//  JSContextPolyfills.swift
+//  JSContextTestPolyfills.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,9 +18,9 @@
 
 import Foundation
 
-/// Globals a bare `JSContext` lacks but every extension page has, for the scripts under test that
-/// reach for them.
-enum JSContextPolyfills {
+/// Browser APIs that extension pages have but a bare `JSContext` doesn't, defined so the scripts
+/// under test can use them.
+enum JSContextTestPolyfills {
 
     /// Just enough of the WHATWG `URL` parser for the scripts under test: absolute passthrough,
     /// root-absolute and directory-relative resolution against a base.

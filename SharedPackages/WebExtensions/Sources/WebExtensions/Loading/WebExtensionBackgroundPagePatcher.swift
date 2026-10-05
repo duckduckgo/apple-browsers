@@ -46,10 +46,6 @@ import os.log
 /// For a classic (non-module) worker the generated page also loads `WebExtensionImportScriptsShim`
 /// plus the bundle's split chunks ahead of the extension's own script, so a worker bundle calling
 /// `importScripts` still bootstraps.
-///
-/// The same pass also restores a missing Chrome Web Store `key`, see `WebExtensionManifestKeyPatcher`.
-/// That part is independent of the background rewrite and runs even when the manifest declares no
-/// service worker at all.
 struct WebExtensionBackgroundPagePatcher {
 
     /// Name of the generated background page, written next to `manifest.json`.
@@ -67,15 +63,13 @@ struct WebExtensionBackgroundPagePatcher {
     }
 
     private let fileManager: FileManager
-    private let keyPatcher: WebExtensionManifestKeyPatcher
 
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
-        self.keyPatcher = WebExtensionManifestKeyPatcher(fileManager: fileManager)
     }
 
     /// Patches the manifest of the extension installed at `installedExtensionURL`: rewrites a
-    /// service-worker-only background into a background page, and restores a missing Web Store `key`.
+    /// service-worker-only background into a background page.
     /// - Parameter installedExtensionURL: The installed extension directory, as
     ///   `WebExtensionStorageProviding.resolveInstalledExtension` resolved it — so the manifest sits
     ///   directly in it, and any top-level wrapper folder an archive carried is already unwrapped.
@@ -102,10 +96,7 @@ struct WebExtensionBackgroundPagePatcher {
                 return false
             }
 
-            let backgroundWasPatched = try patchBackground(in: &manifest, manifestDirectory: manifestDirectory)
-            let keyWasPatched = keyPatcher.insertKnownPublicKeyIfNeeded(in: &manifest, manifestDirectory: manifestDirectory)
-
-            guard backgroundWasPatched || keyWasPatched else {
+            guard try patchBackground(in: &manifest, manifestDirectory: manifestDirectory) else {
                 return false
             }
 

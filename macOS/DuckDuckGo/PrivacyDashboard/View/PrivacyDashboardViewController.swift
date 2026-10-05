@@ -402,12 +402,10 @@ extension PrivacyDashboardViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
-        let networkSignalsProvider = networkSignalsProvider
+        async let asyncBreakageReportData = collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
         async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
 
-        let breakageReportData = await collectBreakageReportData(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature)
-
-        let networkSignals = await asyncNetworkSignals
+        let (breakageReportData, networkSignals) = await (asyncBreakageReportData, asyncNetworkSignals)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance

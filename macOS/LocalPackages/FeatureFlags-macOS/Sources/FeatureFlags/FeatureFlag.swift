@@ -564,6 +564,7 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatUsageWarnings
 
     /// Promotes the Duck.ai launcher in the New Tab Page AI-mode drawer, then hints at its shortcut.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
     case aiChatLauncherPromo
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.

@@ -546,6 +546,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case usageWarnings
 
     /// Promotes the Duck.ai launcher (prompt bar) to users who chat often but haven't turned it on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
     case launcherPromo
 
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.

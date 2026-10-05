@@ -177,7 +177,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          floatingUIManager: FloatingUIManaging? = nil) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
-            isFloatingUIFeatureEnabled: featureFlagger.isFeatureOn(.floatingUIAugust2026)
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings

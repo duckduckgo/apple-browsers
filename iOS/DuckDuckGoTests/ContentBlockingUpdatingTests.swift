@@ -82,66 +82,81 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         WKContentRuleList.restoreDealloc()
     }
 
-    @MainActor
-    func testConfigChangesKeepExistingAndNewTabsOnLaunchStateUntilRelaunch() throws {
-        for initialState in [nil, "disabled", "enabled"] as [String?] {
-            let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: initialState)
-            let launchEnabled = flagger.isFeatureOn(for: FeatureFlag.sitePermissions)
-            let existingTab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
-            existingTab.specialErrorPageNavigationHandler.delegate = nil
-            defer { existingTab.prepareForDataClearing() }
-            XCTAssertEqual(launchEnabled, initialState == "enabled")
+    func testWhenSupportedOSAndFlagIsEnabledThenSitePermissionsAreAvailableAtLaunch() throws {
+        let (flagger, _, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
 
-            for nextState in ["enabled", nil, "disabled"] as [String?] {
-                manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: nextState)
-                manager.updatesSubject.send()
-                let newTab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
-                let relaunchedTab = TabViewController.fake(featureFlagger: flagger,
-                                                          sitePermissionsEnabled: flagger.isFeatureOn(for: FeatureFlag.sitePermissions))
-                for tab in [newTab, relaunchedTab] { tab.specialErrorPageNavigationHandler.delegate = nil }
-                defer {
-                    newTab.prepareForDataClearing()
-                    relaunchedTab.prepareForDataClearing()
-                }
-                XCTAssertEqual(existingTab.isSitePermissionsEnabled, initialState == "enabled")
-                XCTAssertEqual(newTab.isSitePermissionsEnabled, initialState == "enabled")
-                XCTAssertEqual(relaunchedTab.isSitePermissionsEnabled, nextState == "enabled")
-            }
-        }
+        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
     }
 
-    @MainActor
-    func testLocalOverrideChangesApplyOnlyToNextLaunchWhileOtherFlagsStayLive() throws {
-        for remoteEnabled in [false, true] {
-            let (flagger, manager, overrides) = try makeFeatureFlagger(
-                sitePermissionsState: remoteEnabled ? "enabled" : "disabled")
-            overrides.toggleOverride(for: FeatureFlag.sitePermissions)
-            let launchEnabled = flagger.isFeatureOn(for: FeatureFlag.sitePermissions)
-            let tab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
-            tab.specialErrorPageNavigationHandler.delegate = nil
-            defer { tab.prepareForDataClearing() }
-            XCTAssertEqual(tab.isSitePermissionsEnabled, !remoteEnabled)
-            XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
+    func testWhenSupportedOSAndFlagIsDisabledThenSitePermissionsAreUnavailableAtLaunch() throws {
+        let (flagger, _, _) = try makeFeatureFlagger(sitePermissionsState: "disabled")
 
-            overrides.clearOverride(for: FeatureFlag.sitePermissions)
-            manager.privacyConfig = try makePrivacyConfiguration(
-                sitePermissionsState: remoteEnabled ? "enabled" : "disabled", promoEnabled: true)
-            manager.updatesSubject.send()
-            let newTab = TabViewController.fake(featureFlagger: flagger, sitePermissionsEnabled: launchEnabled)
-            let relaunchedTab = TabViewController.fake(featureFlagger: flagger,
-                                                      sitePermissionsEnabled: flagger.isFeatureOn(for: FeatureFlag.sitePermissions))
-            for tab in [newTab, relaunchedTab] { tab.specialErrorPageNavigationHandler.delegate = nil }
-            defer {
-                newTab.prepareForDataClearing()
-                relaunchedTab.prepareForDataClearing()
-            }
-            XCTAssertEqual(tab.isSitePermissionsEnabled, !remoteEnabled)
-            XCTAssertEqual(newTab.isSitePermissionsEnabled, !remoteEnabled)
-            XCTAssertEqual(relaunchedTab.isSitePermissionsEnabled, remoteEnabled)
-            XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
-            overrides.toggleOverride(for: FeatureFlag.promoPresentationCoordination)
-            XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.promoPresentationCoordination))
-        }
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+    }
+
+    func testWhenUnsupportedOSAndFlagIsEnabledThenSitePermissionsAreUnavailableAtLaunch() throws {
+        let (flagger, _, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
+        XCTAssertTrue(flagger.isFeatureOn(.sitePermissions))
+
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { false }))
+    }
+
+    func testWhenUnsupportedOSAndFlagIsForcedOnThenSitePermissionsAreUnavailableAtLaunch() throws {
+        let (flagger, _, overrides) = try makeFeatureFlagger(sitePermissionsState: "disabled")
+        overrides.toggleOverride(for: FeatureFlag.sitePermissions)
+        XCTAssertTrue(flagger.isFeatureOn(.sitePermissions))
+
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { false }))
+    }
+
+    func testWhenRemoteFlagIsAddedThenNextLaunchAvailabilityIsEnabled() throws {
+        let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: nil)
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+
+        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: "enabled")
+        manager.updatesSubject.send()
+
+        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+    }
+
+    func testWhenRemoteFlagIsDisabledThenNextLaunchAvailabilityIsDisabled() throws {
+        let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
+        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+
+        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: "disabled")
+        manager.updatesSubject.send()
+
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+    }
+
+    func testWhenRemoteFlagIsRemovedThenNextLaunchAvailabilityIsDisabled() throws {
+        let (flagger, manager, _) = try makeFeatureFlagger(sitePermissionsState: "enabled")
+        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+
+        manager.privacyConfig = try makePrivacyConfiguration(sitePermissionsState: nil)
+        manager.updatesSubject.send()
+
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+    }
+
+    func testWhenForcedOnOverrideIsClearedThenNextLaunchUsesRemoteDisabledState() throws {
+        let (flagger, _, overrides) = try makeFeatureFlagger(sitePermissionsState: "disabled")
+        overrides.toggleOverride(for: FeatureFlag.sitePermissions)
+        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+
+        overrides.clearOverride(for: FeatureFlag.sitePermissions)
+
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+    }
+
+    func testWhenForcedOffOverrideIsClearedThenNextLaunchUsesRemoteEnabledState() throws {
+        let (flagger, _, overrides) = try makeFeatureFlagger(sitePermissionsState: "enabled")
+        overrides.toggleOverride(for: FeatureFlag.sitePermissions)
+        XCTAssertFalse(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
+
+        overrides.clearOverride(for: FeatureFlag.sitePermissions)
+
+        XCTAssertTrue(AppDependencyProvider.sitePermissionsEnabledAtLaunch(featureFlagger: flagger, isSupportedOSProvider: { true }))
     }
 
     private func makeFeatureFlagger(sitePermissionsState: String?) throws
@@ -171,8 +186,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         return (base, manager, overrides)
     }
 
-    private func makePrivacyConfiguration(sitePermissionsState: String?, promoEnabled: Bool = false) throws -> AppPrivacyConfiguration {
-        var subfeatures: [String: Any] = ["promoPresentationCoordination": ["state": promoEnabled ? "enabled" : "disabled"]]
+    private func makePrivacyConfiguration(sitePermissionsState: String?) throws -> AppPrivacyConfiguration {
+        var subfeatures = [String: Any]()
         if let sitePermissionsState {
             subfeatures["sitePermissions"] = ["state": sitePermissionsState]
         }
@@ -763,17 +778,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
-    func testContentUpdatesRetainTheLaunchTimeScriptsAfterRemoteFlagChanges() {
-        for initiallyEnabled in [false, true] {
-            let remoteFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.sitePermissions] : [])
-            let sitePermissionsEnabled = remoteFlagger.isFeatureOn(.sitePermissions)
+    func testWhenContentUpdatesThenScriptsKeepLaunchAvailability() {
+        for enabledAtLaunch in [false, true] {
             let mediaCaptureUserScript = MediaCaptureUserScript()
             let geolocationUserScript = GeolocationUserScript()
             let contentSubject = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>()
             var receivedScripts = [(MediaCaptureUserScript?, GeolocationUserScript?)]()
             let cancellable = TabViewController.sitePermissionsContentBlockingAssetsPublisher(
                 contentSubject.eraseToAnyPublisher(),
-                sitePermissionsEnabled: sitePermissionsEnabled,
+                sitePermissionsEnabled: enabledAtLaunch,
                 mediaCaptureUserScript: mediaCaptureUserScript,
                 geolocationUserScript: geolocationUserScript
             ).sink { content in
@@ -781,12 +794,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                 receivedScripts.append((scripts.mediaCaptureUserScript, scripts.geolocationUserScript))
             }
 
-            for isFlagUpdate in [false, true] {
-                if isFlagUpdate {
-                    remoteFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.sitePermissions]
-                    remoteFlagger.triggerUpdate()
-                    XCTAssertEqual(receivedScripts.count, 1, "Flag updates do not rebuild assets")
-                }
+            for _ in 0..<2 {
                 contentSubject.send(.init(rulesUpdate: Self.testUpdate(),
                                           sourceProvider: makeScriptSourceProvider(),
                                           duckAiNativeStorageHandler: nil))
@@ -794,7 +802,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             XCTAssertEqual(receivedScripts.count, 2)
             for (media, geolocation) in receivedScripts {
                 XCTAssertTrue(media === mediaCaptureUserScript)
-                XCTAssertTrue(geolocation === (initiallyEnabled ? geolocationUserScript : nil))
+                XCTAssertTrue(geolocation === (enabledAtLaunch ? geolocationUserScript : nil))
             }
             withExtendedLifetime(cancellable) {}
         }

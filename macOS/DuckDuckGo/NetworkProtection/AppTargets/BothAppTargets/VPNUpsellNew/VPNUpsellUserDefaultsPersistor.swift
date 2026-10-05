@@ -19,11 +19,29 @@
 import Foundation
 import Persistence
 
+/// Flags written by the pre-Promo-Queue VPN upsell. Production code only reads them to retire the promos for
+/// users who already dismissed or timed out the legacy upsell; only the debug reset writes them.
 protocol VPNUpsellUserDefaultsPersisting {
-    var vpnUpsellDismissed: Bool { get set }
-    var vpnUpsellPopoverViewed: Bool { get set }
-    var vpnUpsellFirstPinnedDate: Date? { get set }
+    var legacyUpsellDismissed: Bool { get set }
+    var legacyPopoverViewed: Bool { get set }
+    var legacyFirstPinnedDate: Date? { get set }
     var expectedUpsellTimeInterval: TimeInterval { get set }
+}
+
+extension VPNUpsellUserDefaultsPersisting {
+
+    /// The legacy upsell dismissed itself this long after the button was first pinned.
+    private var legacyAutoDismissInterval: TimeInterval { .days(7) }
+
+    func isLegacyUpsellFinished(asOf now: Date) -> Bool {
+        if legacyUpsellDismissed {
+            return true
+        }
+        guard let firstPinnedDate = legacyFirstPinnedDate else {
+            return false
+        }
+        return now.timeIntervalSince(firstPinnedDate) >= legacyAutoDismissInterval
+    }
 }
 
 struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
@@ -41,17 +59,17 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
         self.keyValueStore = keyValueStore
     }
 
-    var vpnUpsellDismissed: Bool {
+    var legacyUpsellDismissed: Bool {
         get { (try? keyValueStore.object(forKey: Key.vpnUpsellDismissed.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.vpnUpsellDismissed.rawValue) }
     }
 
-    var vpnUpsellPopoverViewed: Bool {
+    var legacyPopoverViewed: Bool {
         get { (try? keyValueStore.object(forKey: Key.vpnUpsellPopoverViewed.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.vpnUpsellPopoverViewed.rawValue) }
     }
 
-    var vpnUpsellFirstPinnedDate: Date? {
+    var legacyFirstPinnedDate: Date? {
         get { try? keyValueStore.object(forKey: Key.vpnUpsellFirstPinnedDate.rawValue) as? Date }
         set {
             if let value = newValue {

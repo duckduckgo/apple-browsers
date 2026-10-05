@@ -36,6 +36,7 @@ enum PromoTrigger {
     case firstPasswordSaved
     case updateAvailable
     case browserUpdated
+    case vpnUpsellBecameEligible
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
@@ -51,7 +52,8 @@ enum PromoTrigger {
                 publisher(for: .firstPasswordSaved, trigger: .firstPasswordSaved),
                 publisher(for: NSApplication.didBecomeActiveNotification, trigger: .appBecameActive),
                 publisher(for: .updateAvailable, trigger: .updateAvailable),
-                publisher(for: .browserUpdated, trigger: .browserUpdated)
+                publisher(for: .browserUpdated, trigger: .browserUpdated),
+                publisher(for: .vpnUpsellBecameEligible, trigger: .vpnUpsellBecameEligible)
             ]
 
             if PromoServiceFactory.includeTestPromos {
@@ -79,4 +81,5 @@ extension Notification.Name {
     static let firstPasswordSaved = Notification.Name("com.duckduckgo.app.firstPasswordSaved")
     static let updateAvailable = Notification.Name("com.duckduckgo.app.updateAvailable")
     static let browserUpdated = Notification.Name("com.duckduckgo.app.browserUpdated")
+    static let vpnUpsellBecameEligible = Notification.Name("com.duckduckgo.app.vpnUpsellBecameEligible")
 }

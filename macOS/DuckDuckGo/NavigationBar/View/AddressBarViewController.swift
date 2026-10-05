@@ -1323,7 +1323,7 @@ final class AddressBarViewController: NSViewController {
 
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
-                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+                activeOuterBorderView.backgroundColor = isBurner ? NSColor(resource: .burnerAccent).withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
 
                 if !themeManager.isAppRebranded {
                     addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)

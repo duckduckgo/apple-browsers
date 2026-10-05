@@ -26,7 +26,11 @@ import BrowserServicesKit
 import Networking
 import PrivacyDashboard
 
-extension VPNControllerXPCClient: @retroactive VPNConnectivityIssuesProviding {}
+extension ConnectivityIssueObserverThroughDistributedNotifications: @retroactive VPNConnectivityIssuesProviding {
+    public func isExperiencingVPNConnectivityIssues() async -> Bool {
+        recentValue
+    }
+}
 
 extension HostnamePinger: @retroactive PingQualityProviding {}
 

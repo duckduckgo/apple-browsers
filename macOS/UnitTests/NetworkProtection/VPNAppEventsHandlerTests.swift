@@ -65,10 +65,6 @@ final class MockVPNControllerXPCClient: VPNControllerXPCClientProtocol {
         completion(nil)
     }
 
-    func fetchConnectivityIssues(completion: @escaping (Bool) -> Void) {
-        completion(false)
-    }
-
     func command(_ command: VPNCommand) async throws {
         // Mock implementation
     }

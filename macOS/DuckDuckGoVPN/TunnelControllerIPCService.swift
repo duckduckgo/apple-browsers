@@ -32,7 +32,6 @@ import UDSHelper
 ///
 final class TunnelControllerIPCService {
     private let tunnelController: NetworkProtectionTunnelController
-    private let connectivityIssuesProvider: TunnelConnectivityIssuesProvider
     private let networkExtensionController: NetworkExtensionController
     private let uninstaller: VPNUninstalling
     private let server: NetworkProtectionIPC.VPNControllerXPCServer
@@ -83,7 +82,6 @@ final class TunnelControllerIPCService {
          pixelKit: PixelKit? = .shared) {
 
         self.tunnelController = tunnelController
-        self.connectivityIssuesProvider = TunnelConnectivityIssuesProvider(sessionProvider: tunnelController)
         self.uninstaller = uninstaller
         self.networkExtensionController = networkExtensionController
         server = .init(machServiceName: Bundle.main.bundleIdentifier!)
@@ -234,12 +232,6 @@ extension TunnelControllerIPCService: XPCServerInterface {
         Task { @MainActor in
             await tunnelController.refreshSystemState()
             completion(nil)
-        }
-    }
-
-    func fetchConnectivityIssues(completion: @escaping (Bool) -> Void) {
-        Task {
-            completion(await connectivityIssuesProvider.isExperiencingVPNConnectivityIssues())
         }
     }
 

@@ -268,25 +268,6 @@ extension VPNControllerXPCClient: XPCServerInterface {
         }
     }
 
-    public func fetchConnectivityIssues(completion: @escaping (Bool) -> Void) {
-        xpc.execute(call: { server in
-            server.fetchConnectivityIssues(completion: completion)
-        }, xpcReplyErrorHandler: { _ in
-            completion(false)
-        })
-    }
-
-    /// Returns `false` without an XPC round trip unless the VPN is connected.
-    public func isExperiencingVPNConnectivityIssues() async -> Bool {
-        guard case .connected = connectionStatusObserver.recentValue else {
-            return false
-        }
-
-        return await withCheckedContinuation { continuation in
-            fetchConnectivityIssues { continuation.resume(returning: $0) }
-        }
-    }
-
     public func command(_ command: VPNCommand) async throws {
         guard let payload = try? JSONEncoder().encode(command) else {
             return

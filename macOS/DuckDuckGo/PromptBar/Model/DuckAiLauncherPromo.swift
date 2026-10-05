@@ -45,7 +45,7 @@ enum DuckAiLauncherPromoEligibility {
                            isMenuBarIconVisible: Bool,
                            chatCount: Int,
                            outcome: DuckAiLauncherPromoOutcome?) -> Bool {
-        isFeatureOn && !isShortcutEnabled && !isMenuBarIconVisible && chatCount >= minimumChatCount && outcome == nil
+        isFeatureOn && !(isShortcutEnabled && isMenuBarIconVisible) && chatCount >= minimumChatCount && outcome == nil
     }
 }
 
@@ -97,8 +97,12 @@ final class DuckAiLauncherPromo {
 
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
         guard isEligible else { return nil }
+        // Names the missing entry point; the menu bar icon when both are off.
+        let secondaryText = preferences.isMenuBarIconVisible
+            ? UserText.duckAiLauncherPromoAddKeyboardShortcut
+            : UserText.duckAiLauncherPromoAddToMenuBar
         return .init(message: UserText.duckAiLauncherPromoMessage,
-                     secondaryText: " • " + UserText.duckAiLauncherPromoSecondaryText,
+                     secondaryText: " • " + secondaryText,
                      ctaLabel: UserText.duckAiLauncherPromoTryNow,
                      dismissible: true)
     }

@@ -78,9 +78,11 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                                                   outcome: outcome)
     }
 
-    func testEligibleWithFlagOnLauncherOffThreeChatsAndNotDismissed() {
+    func testEligibleWhileEitherEntryPointIsOff() {
         XCTAssertTrue(isEligible())
         XCTAssertTrue(isEligible(chats: 40))
+        XCTAssertTrue(isEligible(shortcut: true))
+        XCTAssertTrue(isEligible(menuBarIcon: true))
     }
 
     func testNotEligibleWhenAnyConditionFails() {
@@ -89,8 +91,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         XCTAssertFalse(isEligible(outcome: .triedNow))
         XCTAssertFalse(isEligible(outcome: .closed))
         XCTAssertFalse(isEligible(outcome: .ignored))
-        XCTAssertFalse(isEligible(shortcut: true))
-        XCTAssertFalse(isEligible(menuBarIcon: true))
+        XCTAssertFalse(isEligible(shortcut: true, menuBarIcon: true))
     }
 
     // MARK: - Promo
@@ -100,9 +101,32 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         let presentation = makePromo().presentation()
 
         XCTAssertEqual(presentation?.message, UserText.duckAiLauncherPromoMessage)
-        XCTAssertEqual(presentation?.secondaryText, " • " + UserText.duckAiLauncherPromoSecondaryText)
         XCTAssertEqual(presentation?.ctaLabel, UserText.duckAiLauncherPromoTryNow)
         XCTAssertEqual(presentation?.dismissible, true)
+    }
+
+    @MainActor
+    func testSecondaryTextNamesTheMissingEntryPoint() {
+        XCTAssertEqual(makePromo().presentation()?.secondaryText, " • " + UserText.duckAiLauncherPromoAddToMenuBar)
+
+        preferences.isKeyboardShortcutEnabled = true
+        XCTAssertEqual(makePromo().presentation()?.secondaryText, " • " + UserText.duckAiLauncherPromoAddToMenuBar)
+
+        preferences.isKeyboardShortcutEnabled = false
+        preferences.isMenuBarIconVisible = true
+        XCTAssertEqual(makePromo().presentation()?.secondaryText, " • " + UserText.duckAiLauncherPromoAddKeyboardShortcut)
+    }
+
+    @MainActor
+    func testTryNowWithOneEntryPointOnTurnsOnTheOther() {
+        preferences.isMenuBarIconVisible = true
+        let promo = makePromo()
+
+        promo.tryNow()
+
+        XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
+        XCTAssertTrue(preferences.isMenuBarIconVisible)
+        XCTAssertNil(promo.presentation())
     }
 
     @MainActor

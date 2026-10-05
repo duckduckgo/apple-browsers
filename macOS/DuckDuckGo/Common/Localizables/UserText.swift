@@ -709,7 +709,8 @@ struct UserText {
     }
     static let promptBarShortcutSpaceKey = NSLocalizedString("duckai.prompt-bar.shortcut.space-key", value: "Space", comment: "Display name of the Space bar key shown in the keyboard shortcut recorder")
     static let duckAiLauncherPromoMessage = NotLocalizedString("duckai.launcher-promo.message", value: "Chat privately outside the browser", comment: "Emphasized title of the New Tab Page Duck.ai promo inviting the user to turn on the Duck.ai launcher")
-    static let duckAiLauncherPromoSecondaryText = NotLocalizedString("duckai.launcher-promo.secondary", value: "Add Duck.ai to your menu bar", comment: "Text after the title of the New Tab Page Duck.ai launcher promo")
+    static let duckAiLauncherPromoAddToMenuBar = NotLocalizedString("duckai.launcher-promo.add-to-menu-bar", value: "Add Duck.ai to your menu bar", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is off")
+    static let duckAiLauncherPromoAddKeyboardShortcut = NotLocalizedString("duckai.launcher-promo.add-keyboard-shortcut", value: "Add a keyboard shortcut to Duck.ai", comment: "Text after the title of the New Tab Page Duck.ai launcher promo, shown while the Duck.ai menu bar icon is on but its keyboard shortcut is off")
     static let duckAiLauncherPromoTryNow = NotLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the New Tab Page Duck.ai launcher promo that turns the launcher on")
 
     // Duck.ai main menu

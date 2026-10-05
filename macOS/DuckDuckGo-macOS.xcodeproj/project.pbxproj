@@ -3279,8 +3279,6 @@
 		B598E7BD2F4F745E00F19027 /* StartupProfilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */; };
 		B598E7BE2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */; };
 		B598E7BF2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */; };
-		B599B5E62FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */; };
-		B599B5E82FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */; };
 		B599B5ED2FFE9DF700B5E877 /* Flame-24.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5EC2FFE9DF700B5E877 /* Flame-24.json */; };
 		B599B5EE2FFE9DF700B5E877 /* Flame-24.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5EC2FFE9DF700B5E877 /* Flame-24.json */; };
 		B59AB6442EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
@@ -6633,7 +6631,6 @@
 		B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsPixelTests.swift; sourceTree = "<group>"; };
 		B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsTests.swift; sourceTree = "<group>"; };
 		B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupProfilerTests.swift; sourceTree = "<group>"; };
-		B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Shield-Color-24-Hover.json"; sourceTree = "<group>"; };
 		B599B5EC2FFE9DF700B5E877 /* Flame-24.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Flame-24.json"; sourceTree = "<group>"; };
 		B59AB6432EFB179F00C2F87A /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
@@ -10488,7 +10485,6 @@
 				37EE55C32D5F197300D53C7C /* trackers-3.json */,
 				B599B5EC2FFE9DF700B5E877 /* Flame-24.json */,
 				B5EA14A92FFFDB8000FC2512 /* Shield-Color-24.json */,
-				B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */,
 				B531B7F830112DB60087A2DE /* Shield-Off-Gray.json */,
 			);
 			path = Resources;
@@ -14928,7 +14924,6 @@
 				37EE56092D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				37EE560A2D5F197300D53C7C /* shield.json in Resources */,
 				37EE560B2D5F197300D53C7C /* shield-dot.json in Resources */,
-				B599B5E62FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */,
 				37EE560C2D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
 				D6229C312ED0E213001DAE71 /* shield.new.json in Resources */,
 				37EE560D2D5F197300D53C7C /* shield-mouse-over.json in Resources */,
@@ -15174,7 +15169,6 @@
 				37EE55E02D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */,
 				37EE55E12D5F197300D53C7C /* shield.json in Resources */,
-				B599B5E82FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */,
 				37EE55E22D5F197300D53C7C /* shield-dot.json in Resources */,
 				37EE55E32D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
 				D6229C302ED0E213001DAE71 /* shield.new.json in Resources */,

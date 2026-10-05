@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Ontbrekende pictogrammen downloaden?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Pictogrammen automatisch downloaden";
-
 /* No comment provided by engineer. */
 "Keep Development" = "In ontwikkelen houden";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Dit apparaat";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Beschik over dezelfde favorieten op verschillende apparaten";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Je gebruikt de ontwikkelomgeving van Sync";

@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Descarci pictogramele lipsă?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Descărcare automată a pictogramelor";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Continuă dezvoltarea";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Acest dispozitiv";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Unifică favoritele pe toate dispozitivele";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Utilizează mediul de dezvoltare a sincronizării";

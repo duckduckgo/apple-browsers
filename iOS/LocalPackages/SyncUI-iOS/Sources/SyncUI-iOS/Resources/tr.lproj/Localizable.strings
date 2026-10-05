@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Kayıp Simgeler İndirilsin mi?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Simgeleri Otomatik İndir";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Geliştirmeye Devam Et";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Bu Cihaz";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Favorileri Cihazlar Arasında Birleştirin";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Senkronizasyon Geliştirme ortamını kullanıyorsunuz";

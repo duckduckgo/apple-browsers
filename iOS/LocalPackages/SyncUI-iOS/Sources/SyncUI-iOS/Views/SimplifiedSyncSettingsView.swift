@@ -495,7 +495,7 @@ extension SimplifiedSyncSettingsView {
         Section {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(UserText.unifiedFavoritesTitle)
+                    Text(UserText.simplifiedBookmarksUnifiedFavoritesTitle)
                         .daxBodyRegular()
                     Text(UserText.simplifiedBookmarksUnifiedFavoritesCaption)
                         .daxFootnoteRegular()
@@ -506,13 +506,13 @@ extension SimplifiedSyncSettingsView {
                 Toggle("", isOn: $model.isUnifiedFavoritesEnabled)
                     .labelsHidden()
                     .tint(Color(designSystemColor: .accentPrimary))
-                    .accessibilityLabel(UserText.unifiedFavoritesTitle)
+                    .accessibilityLabel(UserText.simplifiedBookmarksUnifiedFavoritesTitle)
                     .accessibility(identifier: "UnifiedFavoritesToggle")
             }
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(UserText.fetchFaviconsOptionTitle)
+                    Text(UserText.simplifiedBookmarksFetchFaviconsTitle)
                         .daxBodyRegular()
                     Text(UserText.simplifiedBookmarksFetchFaviconsCaption)
                         .daxFootnoteRegular()
@@ -523,7 +523,7 @@ extension SimplifiedSyncSettingsView {
                 Toggle("", isOn: $model.isFaviconsFetchingEnabled)
                     .labelsHidden()
                     .tint(Color(designSystemColor: .accentPrimary))
-                    .accessibilityLabel(UserText.fetchFaviconsOptionTitle)
+                    .accessibilityLabel(UserText.simplifiedBookmarksFetchFaviconsTitle)
                     .accessibility(identifier: "FaviconFetchingToggle")
             }
         } header: {

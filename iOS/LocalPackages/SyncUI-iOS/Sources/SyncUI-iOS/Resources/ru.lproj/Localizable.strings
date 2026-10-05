@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Загрузить недостающие значки?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Автоматическая загрузка значков";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Остаться на стадии разработки";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Это устройство";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Одно и то же избранное на разных устройствах";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Вы используете среду разработки синхронизации";

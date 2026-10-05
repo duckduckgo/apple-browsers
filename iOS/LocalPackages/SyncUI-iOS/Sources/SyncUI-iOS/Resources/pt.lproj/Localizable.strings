@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Transferir ícones em falta?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Transferir automaticamente os ícones";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Manter desenvolvimento";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Este dispositivo";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Unifica os favoritos entre dispositivos";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Estás a usar o ambiente de desenvolvimento da sincronização";

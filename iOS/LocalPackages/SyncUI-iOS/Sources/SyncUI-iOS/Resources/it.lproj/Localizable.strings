@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Scaricare le icone mancanti?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Download automatico delle icone";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Mantenere lo sviluppo";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Questo dispositivo";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Unifica i preferiti su tutti i dispositivi";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Stai utilizzando l'ambiente di sviluppo Sync";

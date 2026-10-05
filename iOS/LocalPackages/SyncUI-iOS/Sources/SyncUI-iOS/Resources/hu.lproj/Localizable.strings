@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Hiányzó ikonok letöltése?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Ikonok automatikus letöltése";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Fejlesztés folytatása";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Ez az eszköz";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Kedvencek egyesítése az eszközökön";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "A Sync Development környezetet használod";

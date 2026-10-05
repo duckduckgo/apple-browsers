@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Изтегляне липсващи икони?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Автоматично изтегляне на икони";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Продължаване на разработката";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Това устройство";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Обединяване на любимите на всички устройства";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Използвате среда за разработка Sync Development";

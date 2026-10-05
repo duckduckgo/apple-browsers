@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Chcete si stiahnuť chýbajúce ikony?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Ikony automatického sťahovania";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Udržiavanie vývoja";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Toto zariadenie";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Zjednotenie obľúbených položiek medzi zariadeniami";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Používate vývojárske prostredie Sync";

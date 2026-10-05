@@ -84,6 +84,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case pageContext
     case webExtensions
+    case chromeWebstorePatching
+    case extensionManagement
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -971,4 +973,11 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
 
     case featureEnabled
+}
+
+public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionManagement }
+
+    case isLaunchedExtensions
+    case curatedExtensions
 }

@@ -274,7 +274,7 @@ struct CustomDNSServerPageSheet: View {
                     Text(UserText.vpnDnsServerIPv4Description)
                         .padding(.trailing, 10)
                     Spacer()
-                    TextField("0.0.0.0", text: $customDNSServers)
+                    TextField("0.0.0.0" as String, text: $customDNSServers)
                         .frame(width: 250)
                         .onChange(of: customDNSServers) { newValue in
                             validateDNSServers(newValue)

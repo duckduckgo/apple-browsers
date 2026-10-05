@@ -96,19 +96,14 @@ struct RedesignedEscapeHatchView: View {
                        role: .destructive,
                        action: deleteTab)
             Section {
-                Picker(selection: model.afterInactivityOptionBinding) {
-                    ForEach(AfterInactivityOption.allCases, id: \.self) { option in
-                        Text(option.description).tag(option)
-                    }
-                } label: {
+                Button(action: model.openAfterInactivitySettingsFromMenu) {
                     Text(UserText.settingsAfterInactivityLabel)
-                    Text(model.afterInactivityOptionBinding.wrappedValue.description)
+                    Text(model.afterInactivityOption.description)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .daxSubheadRegular()
                     Image(uiImage: DesignSystemImages.Glyphs.Size16.settings)
                         .foregroundColor(Color(designSystemColor: .icons))
                 }
-                .pickerStyle(.menu)
                 menuButton(UserText.escapeHatchMenuHideTheseShortcuts,
                            icon: DesignSystemImages.Glyphs.Size16.eyeClosed,
                            action: model.hideShortcut)

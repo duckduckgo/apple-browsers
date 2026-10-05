@@ -195,6 +195,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -204,9 +205,6 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
-
-    // duckduckgo.com homepage chat suggestions
-    @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {

@@ -70,11 +70,13 @@ public final class HomepageAiChatsProvider {
     public static let defaultMaxChats = 5
     static let maxChatsLimit = 20
 
-    private let storageHandler: DuckAiNativeStorageHandling?
     private let featureFlagProvider: AIChatFeatureFlagProviding
 
-    public init(storageHandler: DuckAiNativeStorageHandling?, featureFlagProvider: AIChatFeatureFlagProviding) {
-        self.storageHandler = storageHandler
+    /// Chats are read through this script's store, which resolves to the fire-mode store in a
+    /// fire tab or window, so those never list the normal chats.
+    public weak var storageUserScript: DuckAiNativeStorageUserScript?
+
+    public init(featureFlagProvider: AIChatFeatureFlagProviding) {
         self.featureFlagProvider = featureFlagProvider
     }
 
@@ -105,7 +107,7 @@ public final class HomepageAiChatsProvider {
     private var readyStorageHandler: DuckAiNativeStorageHandling? {
         guard featureFlagProvider.isHomepageChatSuggestionsEnabled(),
               featureFlagProvider.isNativeDataAccessEnabled(),
-              let storageHandler,
+              let storageHandler = storageUserScript?.handler,
               storageHandler.setupSucceeded != false,
               (try? storageHandler.isMigrationDone()) == true else {
             return nil

@@ -82,7 +82,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             && duckAiNativeStorageHandler != nil
             && duckAiNativeStorageHandler?.setupSucceeded != false
         let homepageAiChatsProvider = HomepageAiChatsProvider(
-            storageHandler: duckAiNativeStorageHandler,
             featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: sourceProvider.featureFlagger)
         )
         let aiChatMessageHandler = AIChatMessageHandler(
@@ -140,6 +139,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         } else {
             duckAiNativeStorageUserScript = nil
         }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig

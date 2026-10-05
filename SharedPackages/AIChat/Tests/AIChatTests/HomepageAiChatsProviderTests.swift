@@ -24,12 +24,14 @@ import XCTest
 final class HomepageAiChatsProviderTests: XCTestCase {
 
     private var storageHandler: HomepageChatsStorageHandler!
+    private var storageUserScript: DuckAiNativeStorageUserScript!
     private var featureFlags: MockAIChatFeatureFlagProvider!
 
     override func setUp() {
         super.setUp()
         storageHandler = HomepageChatsStorageHandler()
         storageHandler.isMigrationDoneResult = true
+        storageUserScript = DuckAiNativeStorageUserScript(handler: storageHandler, originRules: [.exact(hostname: "duck.ai")])
         featureFlags = MockAIChatFeatureFlagProvider()
         featureFlags.isHomepageChatSuggestionsEnabledResult = true
         featureFlags.isNativeDataAccessEnabledResult = true
@@ -37,12 +39,15 @@ final class HomepageAiChatsProviderTests: XCTestCase {
 
     override func tearDown() {
         storageHandler = nil
+        storageUserScript = nil
         featureFlags = nil
         super.tearDown()
     }
 
     private func makeSUT() -> HomepageAiChatsProvider {
-        HomepageAiChatsProvider(storageHandler: storageHandler, featureFlagProvider: featureFlags)
+        let sut = HomepageAiChatsProvider(featureFlagProvider: featureFlags)
+        sut.storageUserScript = storageUserScript
+        return sut
     }
 
     // MARK: - Support gate
@@ -77,8 +82,8 @@ final class HomepageAiChatsProviderTests: XCTestCase {
         XCTAssertFalse(makeSUT().isSupported)
     }
 
-    func testWhenNoStorageHandlerThenNotSupported() {
-        let sut = HomepageAiChatsProvider(storageHandler: nil, featureFlagProvider: featureFlags)
+    func testWhenNoStorageUserScriptThenNotSupported() {
+        let sut = HomepageAiChatsProvider(featureFlagProvider: featureFlags)
         XCTAssertFalse(sut.isSupported)
     }
 
@@ -138,6 +143,35 @@ final class HomepageAiChatsProviderTests: XCTestCase {
         let response = await makeSUT().chats(for: HomepageAiChatsRequest())
 
         XCTAssertEqual(response, .empty)
+    }
+
+    // MARK: - Fire mode
+
+    func testWhenFireModeStorageAvailableThenListsFireChatsOnly() async {
+        storageHandler.chatsToReturn = [makeChatRecord(chatId: "normal", title: "Normal", lastEdit: Date(), pinned: false)]
+        let fireStorageHandler = HomepageChatsStorageHandler()
+        fireStorageHandler.isMigrationDoneResult = true
+        fireStorageHandler.chatsToReturn = [makeChatRecord(chatId: "fire", title: "Fire", lastEdit: Date(), pinned: false)]
+        storageUserScript.fireModeStorageProvider = { .available(fireStorageHandler) }
+        let sut = makeSUT()
+
+        let response = await sut.chats(for: HomepageAiChatsRequest())
+
+        XCTAssertTrue(sut.isSupported)
+        XCTAssertEqual(response.chats.map(\.chatId), ["fire"])
+        XCTAssertEqual(storageHandler.getAllChatsCalls, 0)
+    }
+
+    func testWhenFireModeStorageUnavailableThenNotSupportedAndNoChats() async {
+        storageHandler.chatsToReturn = [makeChatRecord(chatId: "normal", title: "Normal", lastEdit: Date(), pinned: false)]
+        storageUserScript.fireModeStorageProvider = { .unavailable }
+        let sut = makeSUT()
+
+        let response = await sut.chats(for: HomepageAiChatsRequest())
+
+        XCTAssertFalse(sut.isSupported)
+        XCTAssertEqual(response, .empty)
+        XCTAssertEqual(storageHandler.getAllChatsCalls, 0)
     }
 
     // MARK: - Origin

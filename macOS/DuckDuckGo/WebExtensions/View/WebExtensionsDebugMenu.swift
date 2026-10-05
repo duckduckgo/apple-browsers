@@ -34,6 +34,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
     private let simulateCPMBreakageMenuItem = NSMenuItem(title: "", action: #selector(WebExtensionsDebugMenu.toggleCPMBreakageSimulation))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
+    private let apiCompatibilityLogMenuItem = NSMenuItem(title: "JavaScript API Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
 
     init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
         self.webExtensionManager = webExtensionManager
@@ -53,6 +54,8 @@ final class WebExtensionsDebugMenu: NSMenu {
         simulateCPMBreakageMenuItem.setAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.simulateCPMBreakage)
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
+        apiCompatibilityLogMenuItem.target = self
+        apiCompatibilityLogMenuItem.isEnabled = true
 
         addItems()
     }
@@ -73,6 +76,7 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(processMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
+        addItem(apiCompatibilityLogMenuItem)
 
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
@@ -187,6 +191,10 @@ final class WebExtensionsDebugMenu: NSMenu {
             ? AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOn
             : AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOff
         simulateCPMBreakageMenuItem.state = isEnabled ? .on : .off
+    }
+
+    @objc func showAPICompatibilityLog() {
+        WebExtensionAPICompatibilityLogPresenter.shared.show()
     }
 
     @objc func openExtensionsFolderInFinder() {

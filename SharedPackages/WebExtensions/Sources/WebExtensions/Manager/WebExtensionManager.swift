@@ -122,6 +122,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
+    /// Receives the API compatibility reports of extension pages.
+    private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
+
     /// Pixel firing for analytics.
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
@@ -163,6 +166,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 scriptletConfiguration: ScriptletConfiguration? = nil) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
+
+        // WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a
+        // top-level reference to one aborts an extension's background script. The stub script
+        // defines them. A user script on the controller's configuration reaches every page the
+        // extension owns — the background page, the action popup, the options page and, with
+        // `forMainFrameOnly: false`, the offscreen iframe the stub script creates — where a
+        // `<script>` tag in a generated page reaches only that page. A user script is also
+        // exempt from the page's CSP, which such a tag is not. The stubs return early when
+        // neither `chrome` nor `browser` is defined, so a page that is not an extension page
+        // is left alone.
+        let stubScript = WKUserScript(source: WebExtensionAPIStubScript.source,
+                                      injectionTime: .atDocumentStart,
+                                      forMainFrameOnly: false)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(stubScript)
+
+        // The stub script also reports which unsupported APIs an extension touches, for the
+        // API compatibility log.
+        controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
+                                                                                name: WebExtensionAPIStubScript.compatibilityMessageHandlerName)
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -182,6 +205,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        apiCompatibilityHandler.resolveExtension = { [weak self] url in
+            guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }
+            return (WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                    WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version))
+        }
 
         if let scriptletConfiguration {
             let coordinator = WebExtensionScriptletCoordinator(
@@ -680,7 +709,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
-        contexts.first { url.absoluteString.hasPrefix($0.baseURL.absoluteString) }
+        contexts.first { Self.url(url, isWithin: $0.baseURL) }
+    }
+
+    /// Hosts are case-insensitive, and a security origin's host does not always keep the case the
+    /// extension's base URL was created with, so the prefix is compared without regard to case.
+    static func url(_ url: URL, isWithin baseURL: URL) -> Bool {
+        url.absoluteString.range(of: baseURL.absoluteString, options: [.anchored, .caseInsensitive]) != nil
     }
 
     public func context(for identifier: String) -> WKWebExtensionContext? {

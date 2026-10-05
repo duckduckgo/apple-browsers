@@ -385,11 +385,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - VPN
 
     public let vpnSettings = VPNSettings(defaults: .netP)
-    private(set) lazy var networkSignalsProvider: NetworkSignalsProviding = NetworkSignalsProvider(
-        pathProvider: NetworkPathMonitor(),
-        vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
-        pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: 1),
-        isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+    let networkSignalsProvider: NetworkSignalsProviding
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
         featureGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
@@ -721,6 +717,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        // Created at launch so the VPN issues observer catches notifications before the first report
+        networkSignalsProvider = NetworkSignalsProvider(
+            pathProvider: NetworkPathMonitor(),
+            vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
+            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: 1),
+            isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
         webExtensionAvailability = WebExtensionAvailability(
             featureFlagger: featureFlagger,

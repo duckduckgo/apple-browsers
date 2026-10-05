@@ -144,7 +144,7 @@ extension NewTabPageActionsManager {
                 featureFlagger: featureFlagger,
                 preferences: NSApp.delegateTyped.promptBarPreferences,
                 // Fire Windows never show the HTML New Tab Page, so only regular chats count.
-                chatCountPublisher: NSApp.delegateTyped.duckAiNativeStorageHandler?.chatsPublisher()
+                chatCountPublisher: (NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
                     .map(\.count)
                     .replaceError(with: 0)
                     .eraseToAnyPublisher() ?? Just(0).eraseToAnyPublisher(),

@@ -174,8 +174,12 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         let promo = makePromo()
         promo.dismiss(kind: .promo)
 
+        let changed = expectation(description: "promo change published")
+        promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
+
         DuckAiLauncherPromo.resetDismissals(in: keyValueStore)
 
+        wait(for: [changed], timeout: 1)
         XCTAssertEqual(promo.kind, .promo)
     }
 

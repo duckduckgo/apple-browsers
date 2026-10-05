@@ -25,6 +25,10 @@ import PrivacyConfig
 
 typealias DuckAiLauncherPromoKind = NewTabPageDataModel.OmnibarLauncherPromoKind
 
+extension Notification.Name {
+    static let duckAiLauncherPromoDismissalsDidReset = Notification.Name("duckAiLauncherPromoDismissalsDidReset")
+}
+
 enum DuckAiLauncherPromoEligibility {
 
     static let minimumChatCount = 3
@@ -102,7 +106,8 @@ final class DuckAiLauncherPromo {
             preferences.$keyboardShortcut.map { _ in () }.eraseToAnyPublisher(),
             $chatCount.map { _ in () }.eraseToAnyPublisher(),
             featureFlagger.updatesPublisher,
-            dismissalSubject.eraseToAnyPublisher()
+            dismissalSubject.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: .duckAiLauncherPromoDismissalsDidReset).map { _ in () }.eraseToAnyPublisher()
         )
         .receive(on: DispatchQueue.main)
         .compactMap { [weak self] in self.map { $0.presentation() } }
@@ -137,11 +142,12 @@ final class DuckAiLauncherPromo {
         dismissalSubject.send()
     }
 
-    /// Debug only. An open New Tab Page picks it up on its next load.
+    /// Debug only. Posts so open New Tab Pages re-read it: a new tab reuses the window's page, which never asks again.
     static func resetDismissals(in keyValueStore: ThrowingKeyValueStoring) {
         for kind in [DuckAiLauncherPromoKind.promo, .shortcutNudge] {
             try? keyValueStore.removeObject(forKey: dismissedKey(kind))
         }
+        NotificationCenter.default.post(name: .duckAiLauncherPromoDismissalsDidReset, object: nil)
     }
 
     private var dismissedKinds: Set<DuckAiLauncherPromoKind> {

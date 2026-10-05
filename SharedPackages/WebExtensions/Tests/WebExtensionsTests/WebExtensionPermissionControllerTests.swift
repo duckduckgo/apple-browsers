@@ -412,23 +412,68 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertNotNil(try store.settings(for: context.uniqueIdentifier))
     }
 
-    func testWhenManagerInstallationIsDeniedThenNothingIsLoadedOrInstalled() async throws {
+    func testWhenManagerInstallationIsDeniedThenItIsCancelledWithoutAnInstallErrorPixel() async throws {
         let source = try makeExtensionURL()
         let storage = WebExtensionStorageProvidingMock()
         storage.resolvedExtensionURL = source
-        let manager = makeManager(storage: storage)
+        let pixels = InstallationPixelFiringMock()
+        let manager = makeManager(storage: storage, pixelFiring: pixels)
         prompter.installationResponse = .denied
 
         do {
             try await manager.installExtension(from: source)
-            XCTFail("Expected installation denial")
-        } catch {
-            XCTAssertTrue(manager.loadedExtensions.isEmpty)
-            XCTAssertTrue(installationStore.installedExtensions.isEmpty)
-            XCTAssertTrue(storage.removeExtensionCalled)
-            let identifier = try XCTUnwrap(storage.copyExtensionIdentifier)
-            XCTAssertNil(try store.settings(for: identifier))
+            XCTFail("Expected installation cancellation")
+        } catch WebExtensionError.installationCancelled {
+            // User cancellation is distinct from an installation failure.
         }
+
+        XCTAssertTrue(pixels.installErrors.isEmpty)
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertTrue(installationStore.installedExtensions.isEmpty)
+        XCTAssertTrue(storage.removeExtensionCalled)
+        let identifier = try XCTUnwrap(storage.copyExtensionIdentifier)
+        XCTAssertNil(try store.settings(for: identifier))
+    }
+
+    func testWhenManagerPermissionPreparationFailsThenItFiresAnInstallErrorPixel() async throws {
+        let source = try makeExtensionURL()
+        let storage = WebExtensionStorageProvidingMock()
+        storage.resolvedExtensionURL = source
+        let pixels = InstallationPixelFiringMock()
+        let manager = makeManager(storage: storage, pixelFiring: pixels)
+        keyValueStore.shouldThrowOnGet = true
+
+        do {
+            try await manager.installExtension(from: source)
+            XCTFail("Expected installation failure")
+        } catch WebExtensionError.failedToLoadWebExtension(let error) {
+            XCTAssertTrue(error is WebExtensionLoader.PermissionPreparationError)
+        }
+
+        XCTAssertEqual(pixels.installErrors.count, 1)
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertTrue(installationStore.installedExtensions.isEmpty)
+        XCTAssertTrue(storage.removeExtensionCalled)
+    }
+
+    func testWhenManagerExtensionLoadingFailsThenItFiresAnInstallErrorPixel() async throws {
+        let source = try makeExtensionURL()
+        let storage = WebExtensionStorageProvidingMock()
+        storage.shouldReturnNilForResolve = true
+        let pixels = InstallationPixelFiringMock()
+        let manager = makeManager(storage: storage, pixelFiring: pixels)
+
+        do {
+            try await manager.installExtension(from: source)
+            XCTFail("Expected installation failure")
+        } catch WebExtensionError.failedToLoadWebExtension(let error) {
+            XCTAssertFalse(error is WebExtensionLoader.PermissionPreparationError)
+        }
+
+        XCTAssertEqual(pixels.installErrors.count, 1)
+        XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        XCTAssertTrue(installationStore.installedExtensions.isEmpty)
+        XCTAssertTrue(storage.removeExtensionCalled)
     }
 
     func testWhenManagerReloadsAfterDataClearingThenConsentSurvivesAndRemovalForgetsIt() async throws {
@@ -844,6 +889,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     }
 
     private func makeManager(storage: WebExtensionStorageProvidingMock,
+                             pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
                                  XCTFail("Unexpected bundled extension lookup")
                                  return nil
@@ -853,6 +899,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                             storageProvider: storage,
                             installationStore: installationStore,
                             permissionController: makeController(),
+                            pixelFiring: pixelFiring,
                             bundledExtensionURL: bundledExtensionURL)
     }
 
@@ -932,5 +979,16 @@ private final class CountingPermissionStore: WebExtensionPermissionStoring {
 private final class FailingUnloadWebExtensionController: WKWebExtensionController {
     override func unload(_ extensionContext: WKWebExtensionContext) throws {
         throw NSError(domain: "WebExtensionPermissionControllerTests", code: 1)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class InstallationPixelFiringMock: WebExtensionPixelFiring {
+    private(set) var installErrors: [Error] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        if case .installError(let error) = event {
+            installErrors.append(error)
+        }
     }
 }

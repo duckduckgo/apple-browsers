@@ -319,7 +319,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 await scriptletCoordinator?.onExtensionEnabled(for: type)
             }
         } catch {
-            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             unregisterHandlers(for: identifier)
             do {
                 try permissionController?.forget(identifier)
@@ -327,6 +326,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 Logger.webExtensions.error("Failed to remove extension consent after installation failure: \(error.localizedDescription)")
             }
             try? storageProvider.removeExtension(identifier: identifier)
+
+            if let preparationError = error as? WebExtensionLoader.PermissionPreparationError,
+               let permissionError = preparationError.underlyingError as? WebExtensionPermissionController.PermissionError,
+               case .installationDenied = permissionError {
+                Logger.webExtensions.info("Extension installation cancelled by the user (\(identifier))")
+                throw WebExtensionError.installationCancelled
+            }
+
+            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
             pixelFiring.fire(.installError(error: error))
             throw WebExtensionError.failedToLoadWebExtension(error)
         }

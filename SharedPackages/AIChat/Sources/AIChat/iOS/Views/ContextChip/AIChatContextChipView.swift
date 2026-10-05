@@ -283,6 +283,7 @@ private extension AIChatContextChipView {
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.SuggestedTitle"
             titleLabel.textColor = tint
             titleLabel.font = UIFont.daxSubheadSemibold()
+            titleLabel.numberOfLines = 2
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
             applyPillLayout()
@@ -314,6 +315,7 @@ private extension AIChatContextChipView {
             titleLabel.accessibilityIdentifier = "AIChat.ContextChip.AttachedTitle"
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.font = UIFont.daxSubheadSemibold()
+            titleLabel.numberOfLines = 1
             titleLabel.accessibilityLabel = nil
             titleLabel.accessibilityTraits = .none
             applyPillLayout()

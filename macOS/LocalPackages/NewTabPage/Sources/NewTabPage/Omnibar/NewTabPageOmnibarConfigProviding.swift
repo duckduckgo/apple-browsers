@@ -114,6 +114,10 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
 
+    /// A Duck.ai prompt went out from the New Tab Page. A promo the user saw and didn't act on counts as dismissed.
+    @MainActor
+    func launcherPromoChatSubmitted()
+
     /// Fires when anything `launcherPromo()` reads changes: launcher settings, chat count, dismissal.
     var launcherPromoPublisher: AnyPublisher<Void, Never> { get }
 

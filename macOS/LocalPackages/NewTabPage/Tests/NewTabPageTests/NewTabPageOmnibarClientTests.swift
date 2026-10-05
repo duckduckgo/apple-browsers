@@ -962,6 +962,26 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
+    func testDuckAiSubmissionTellsTheLauncherPromo() async throws {
+        configProvider.mode = .ai
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoChatSubmittedCallCount, 1)
+    }
+
+    @MainActor
+    func testSearchModeSubmissionLeavesTheLauncherPromoAlone() async throws {
+        configProvider.mode = .search
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoChatSubmittedCallCount, 0)
+    }
+
+    @MainActor
     func testWhenTheLauncherPromoKindIsUnrecognisedThenNothingIsForwarded() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta, parameters: ["kind": "banner"])
 

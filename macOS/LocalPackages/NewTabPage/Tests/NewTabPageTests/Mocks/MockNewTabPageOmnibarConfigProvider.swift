@@ -152,6 +152,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         dismissLauncherPromoKinds.append(kind)
     }
 
+    private(set) var launcherPromoChatSubmittedCallCount = 0
+    @MainActor
+    func launcherPromoChatSubmitted() {
+        launcherPromoChatSubmittedCallCount += 1
+    }
+
     let launcherPromoSubject = PassthroughSubject<Void, Never>()
     var launcherPromoPublisher: AnyPublisher<Void, Never> {
         launcherPromoSubject.eraseToAnyPublisher()

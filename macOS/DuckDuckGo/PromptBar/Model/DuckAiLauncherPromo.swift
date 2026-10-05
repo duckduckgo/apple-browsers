@@ -55,6 +55,7 @@ final class DuckAiLauncherPromo {
     private let firePixel: (PromptBarPixel) -> Void
     private let dismissalSubject = PassthroughSubject<Void, Never>()
     @Published private var chatCount = 0
+    private var shownKinds = Set<DuckAiLauncherPromoKind>()
     private var chatsCancellable: AnyCancellable?
 
     init(featureFlagger: FeatureFlagger,
@@ -117,7 +118,17 @@ final class DuckAiLauncherPromo {
     }
 
     func shown(kind: DuckAiLauncherPromoKind) {
+        shownKinds.insert(kind)
         firePixel(.promoShown(kind: kind))
+    }
+
+    /// The drawer is shown once: sending a prompt past it without acting counts as a dismissal,
+    /// reported apart from the close button so ignoring and closing stay distinguishable.
+    func chatSubmitted() {
+        guard let kind, kind != .shortcutHint, shownKinds.contains(kind) else { return }
+        try? keyValueStore.set(true, forKey: Self.dismissedKey(kind))
+        firePixel(.promoIgnored(kind: kind))
+        dismissalSubject.send()
     }
 
     /// Both CTAs end with the shortcut on, then show Settings so the user knows where to turn it off.

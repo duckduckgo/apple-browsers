@@ -147,6 +147,9 @@ enum PromptBarPixel: PixelKit.Event {
     /// Event Trigger: The user dismisses the launcher promo or the shortcut nudge.
     case promoDismissed(kind: DuckAiLauncherPromoKind)
 
+    /// Event Trigger: The user sends a Duck.ai prompt past a visible launcher promo or shortcut nudge without acting on it.
+    case promoIgnored(kind: DuckAiLauncherPromoKind)
+
     // MARK: -
 
     var name: String {
@@ -225,6 +228,8 @@ enum PromptBarPixel: PixelKit.Event {
             return "aichat_promptbar_promo_cta_clicked"
         case .promoDismissed:
             return "aichat_promptbar_promo_dismissed"
+        case .promoIgnored:
+            return "aichat_promptbar_promo_ignored"
         }
     }
 
@@ -278,7 +283,7 @@ enum PromptBarPixel: PixelKit.Event {
             return ["origin": origin]
         case .firstUse(let source):
             return ["source": source.pixelValue]
-        case .promoShown(let kind), .promoCtaClicked(let kind), .promoDismissed(let kind):
+        case .promoShown(let kind), .promoCtaClicked(let kind), .promoDismissed(let kind), .promoIgnored(let kind):
             // The New Tab Page is the only surface so far; the address bar would add its own value.
             return ["kind": kind.pixelValue, "surface": "new_tab"]
         }

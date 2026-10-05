@@ -526,6 +526,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         duckAiLauncherPromo?.dismiss(kind: kind)
     }
 
+    @MainActor
+    func launcherPromoChatSubmitted() {
+        duckAiLauncherPromo?.chatSubmitted()
+    }
+
     var launcherPromoPublisher: AnyPublisher<Void, Never> {
         duckAiLauncherPromo?.changesPublisher ?? Empty().eraseToAnyPublisher()
     }

@@ -388,6 +388,29 @@
             }
         ]
     },
+    "m_mac_aichat_promptbar_promo_ignored": {
+        "description": "Fired when the user sends a Duck.ai prompt from the New Tab Page past a visible launcher promo or shortcut nudge without clicking it or closing it. The promo then never shows again, as if dismissed",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "kind",
+                "description": "Which launcher promo state: promo invites turning the launcher on, shortcut_hint shows its shortcut in the input placeholder, shortcut_nudge invites turning the shortcut on when only the menu bar icon is on",
+                "type": "string",
+                "enum": ["promo", "shortcut_nudge"]
+            },
+            {
+                "key": "surface",
+                "description": "Where the promo was shown",
+                "type": "string",
+                "enum": ["new_tab"]
+            }
+        ]
+    },
     "m_mac_aichat_promptbar_first_use_u": {
         "description": "Fired once per install, the first time the Prompt Bar is presented. Measures launcher activation, including activation after the launcher promo",
         "owners": ["jotaemepereira"],

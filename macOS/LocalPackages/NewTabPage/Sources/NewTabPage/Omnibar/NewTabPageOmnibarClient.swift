@@ -348,6 +348,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             pageContexts: action.pageContext,
             files: action.files
         )
+        // Search mode has no drawer, so only a Duck.ai-mode submission can go past the promo.
+        if configProvider.mode == .ai {
+            configProvider.launcherPromoChatSubmitted()
+        }
         return nil
     }
 

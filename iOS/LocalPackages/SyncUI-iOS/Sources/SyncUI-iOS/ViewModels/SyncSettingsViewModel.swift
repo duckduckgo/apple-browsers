@@ -44,6 +44,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent)
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent)
+    func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     // Simplified sync setup experiment
@@ -135,6 +136,13 @@ public class SyncSettingsViewModel: ObservableObject {
         case anotherDevicePromptShown
         case anotherDevicePromptOptionTapped(SyncAnotherDeviceOption)
         case anotherDevicePromptDismissed
+    }
+
+    public enum DeviceDetailsPixelEvent: Equatable {
+        case thisDeviceScreenShown
+        case thisDeviceTurnOffSyncTapped
+        case otherDeviceScreenShown
+        case otherDeviceRemoveDeviceTapped
     }
 
     public enum SyncAnotherDeviceOption: String {
@@ -379,6 +387,20 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
+    func deviceDetailsShown(for device: Device) {
+        delegate?.fireDeviceDetailsPixel(event: device.isThisDevice ? .thisDeviceScreenShown : .otherDeviceScreenShown)
+    }
+
+    func thisDeviceDetailsTurnOffSyncTapped() {
+        guard !isBusy else { return }
+        delegate?.fireDeviceDetailsPixel(event: .thisDeviceTurnOffSyncTapped)
+        disableSyncToggleTapped()
+    }
+
+    func otherDeviceDetailsRemoveDeviceTapped() {
+        delegate?.fireDeviceDetailsPixel(event: .otherDeviceRemoveDeviceTapped)
+    }
+
     public func syncEnabled(recoveryCode: String) {
         isBusy = false
         isSyncEnabled = true
@@ -586,5 +608,6 @@ public class SyncSettingsViewModel: ObservableObject {
 public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
+    func fireDeviceDetailsPixel(event _: SyncSettingsViewModel.DeviceDetailsPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
 }

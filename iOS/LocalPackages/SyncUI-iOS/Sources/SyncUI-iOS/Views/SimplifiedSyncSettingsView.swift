@@ -426,6 +426,7 @@ extension SimplifiedSyncSettingsView {
             Button {
                 Task { @MainActor in
                     if await model.commonAuthenticate() {
+                        model.deviceDetailsShown(for: device)
                         selectedDevice = device
                     }
                 }

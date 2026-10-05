@@ -150,7 +150,7 @@ struct WingPointingAnimation: NSViewRepresentable {
     }
 
     private func attachAnimation(to container: NSView, context: Context) {
-        guard let animation = LottieAnimation.asset("wing-pointing", bundle: .main) else {
+        guard let animation = LottieAnimation.asset("wing-pointing", bundle: .module) else {
             return
         }
         let view = LottieAnimationView(animation: animation)

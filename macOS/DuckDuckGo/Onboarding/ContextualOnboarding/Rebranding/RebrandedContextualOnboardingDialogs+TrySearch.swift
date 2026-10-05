@@ -108,7 +108,7 @@ struct DaxWavingAnimation: NSViewRepresentable {
 
     private func attachAnimation(to container: NSView, for colorScheme: ColorScheme) {
         let assetName = colorScheme == .dark ? "dax-waving-dark" : "dax-waving-light"
-        guard let animation = LottieAnimation.asset(assetName, bundle: .main) else {
+        guard let animation = LottieAnimation.asset(assetName, bundle: .module) else {
             return
         }
         let view = LottieAnimationView(animation: animation)

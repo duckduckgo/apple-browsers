@@ -347,7 +347,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     var subscriptionUpsellPolicy: DuckAISubscriptionUpsellPolicy { modelStore.upsellPolicy }
     private var footerController: UTIFooterController?
-    private let attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure
     private var attachmentPrivacyNoticeSource: UTIFooterAttachmentPrivacyNoticeSource?
     private var multiTabPromotionSource: UTIFooterMultiTabPromotionSource?
     private var contextualChatHasActiveConversation: () -> Bool = { false }
@@ -388,8 +387,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         floatingUIManager: FloatingUIManaging? = nil,
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
-        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
-        attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure? = nil
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()
     ) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
@@ -401,10 +399,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
-        self.attachmentPrivacyDisclosure = attachmentPrivacyDisclosure ?? AttachmentPrivacyDisclosure(
-            webKeySource: duckAiNativeStorageHandler,
-            isEnabled: { featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy) }
-        )
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
@@ -1053,8 +1047,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isEnabled: { [weak self] in
                 guard let self, !isApplyingState else { return false }
                 return featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy)
-            },
-            disclosure: attachmentPrivacyDisclosure
+            }
         )
         if host == .contextualChat {
             multiTabPromotionSource = UTIFooterMultiTabPromotionSource(

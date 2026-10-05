@@ -404,6 +404,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 
+    /// Controls the attachment privacy disclosure in Duck.ai on iPad.
+    case iPadAttachmentPrivacy
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 

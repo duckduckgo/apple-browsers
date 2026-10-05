@@ -529,7 +529,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     /// Fired when the badge's clear (✕) button is tapped, so the host can deselect the tool.
     var onSelectedToolClearTapped: (() -> Void)?
     var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
-    var onFooterLinkTapped: ((URL) -> Void)?
+    var onFooterLinkTapped: ((UTIFooterItem.ID, URL) -> Void)?
+    var onFooterVisibilityChanged: (([UTIFooterItem.ID]) -> Void)?
 
     private var canShowToolPicker: Bool {
         isToolPickerEnabled && toolPickerButton.menu != nil
@@ -659,12 +660,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return strip
     }()
 
-    /// One slot below the expanded Duck.ai input, shared by the Terms of Service disclaimer and the
-    /// Create Image model switch notice.
-    private let footerCard: UTIFooterCardView = {
-        let card = UTIFooterCardView()
-        card.translatesAutoresizingMaskIntoConstraints = false
-        return card
+    private let footerCard: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = -UTIFooterCardView.overlap
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
     /// Gives the footer card the expanded bar's shadow; without it the card looks see-through over a white page.
@@ -680,8 +681,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return view
     }()
 
-    /// `nil` whenever the footer card is off screen, including while the input is collapsed.
-    private(set) var visibleFooterMessage: UTIFooterMessage?
+    private(set) var visibleFooterMessages: [UTIFooterItem] = []
+    private var reportedFooterIDs: [UTIFooterItem.ID] = []
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -839,6 +840,11 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         return view
     }()
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        reportFooterVisibility()
+    }
 
     static func create(isFloatingUIEnabled: Bool) -> Self {
         Self.init(isFloatingUIEnabled: isFloatingUIEnabled)
@@ -1118,13 +1124,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(selectedToolChipView)
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
-        // Only the model switch notice carries a close button; the disclaimer is required.
-        footerCard.onDismissTap = { [weak self] in
-            self?.onCreateImageModelSwitchNoticeDismissed?()
-        }
-        footerCard.onLinkTap = { [weak self] url in
-            self?.onFooterLinkTapped?(url)
-        }
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
     }
@@ -1313,6 +1312,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         super.layoutSubviews()
         applyOmnibarCornerStyle()
         updateMaskLayer()
+        reportFooterVisibility()
     }
 
     private func setUpCallbacks() {
@@ -1962,20 +1962,37 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView {
 
-    func setFooterMessage(_ message: UTIFooterMessage?, animated: Bool) {
-        guard let message, isSearchAreaExpanded else {
+    func setFooterMessages(_ messages: [UTIFooterItem], animated: Bool) {
+        guard !messages.isEmpty, isSearchAreaExpanded else {
             hideFooterCard(animated: animated)
             return
         }
 
-        footerCard.configure(with: message, animateIcon: false)
+        for row in footerCard.arrangedSubviews {
+            footerCard.removeArrangedSubview(row)
+            row.removeFromSuperview()
+        }
+        for (index, item) in messages.enumerated() {
+            let card = UTIFooterCardView()
+            card.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
+            card.isBelowAnotherCard = index > 0
+            card.configure(with: item.message, animateIcon: false)
+            card.onDismissTap = { [weak self] in
+                guard item.id == .modelSwitch else { return }
+                self?.onCreateImageModelSwitchNoticeDismissed?()
+            }
+            card.onLinkTap = { [weak self] url in self?.onFooterLinkTapped?(item.id, url) }
+            footerCard.addArrangedSubview(card)
+        }
+        for row in footerCard.arrangedSubviews.reversed() { footerCard.bringSubviewToFront(row) }
         footerCardShadowView.isHidden = false
-        visibleFooterMessage = message
+        visibleFooterMessages = messages
         searchAreaAlignmentView.sendSubviewToBack(footerCardShadowView)
 
         guard animated else {
             footerCardShadowView.alpha = 1
             layoutIfNeeded()
+            reportFooterVisibility()
             return
         }
 
@@ -1984,7 +2001,18 @@ extension DefaultOmniBarView {
                        options: [.curveEaseInOut, .beginFromCurrentState]) {
             self.footerCardShadowView.alpha = 1
             self.layoutIfNeeded()
+        } completion: { _ in
+            self.reportFooterVisibility()
         }
+    }
+
+    private func reportFooterVisibility() {
+        let isVisible = window?.isHidden == false && !isHidden && isSearchAreaExpanded
+            && !footerCardShadowView.isHidden && footerCardShadowView.alpha > 0
+        let ids = isVisible ? visibleFooterMessages.map(\.id) : []
+        guard ids != reportedFooterIDs else { return }
+        reportedFooterIDs = ids
+        onFooterVisibilityChanged?(ids)
     }
 
     func expandedContentMaxY(in view: UIView) -> CGFloat {
@@ -1994,7 +2022,8 @@ extension DefaultOmniBarView {
     }
 
     private func hideFooterCard(animated: Bool) {
-        visibleFooterMessage = nil
+        visibleFooterMessages = []
+        reportFooterVisibility()
         guard !footerCardShadowView.isHidden else { return }
 
         let completion: () -> Void = {

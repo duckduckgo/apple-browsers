@@ -231,13 +231,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
-    private let attachmentPrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private let attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore
     private let attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling?
+
+    private var isAttachmentPrivacyEnabled: Bool {
+        !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
+    }
 
     @MainActor private lazy var attachmentPrivacyDisclosure = AttachmentPrivacyDisclosure(
         store: attachmentPrivacyDisplayStore,
         webKeySource: attachmentPrivacyWebKeySource,
-        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy) }
+        isEnabled: { [weak self] in self?.isAttachmentPrivacyEnabled == true }
     )
 
     /// Set externally via `AIChatContentHandler.setup()`.
@@ -265,7 +269,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
          aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
          isNativeStorageBridgeAvailable: Bool = false,
-         attachmentPrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore(),
+         attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore = AttachmentPrivacyDisclosureStore(),
          attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
@@ -473,7 +477,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
-            supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy)
+            supportsAttachmentPrivacyDisplay: isAttachmentPrivacyEnabled
         )
         return config
     }

@@ -1747,7 +1747,6 @@ final class MockDuckAiChatStorage: DuckAiNativeStorageHandling {
     struct ReadFailure: Error {}
 
     var failsReads = false
-    var failsEntryReads = false
     var migrationDone = true
     var setupSucceeded: Bool? = true
 
@@ -1762,10 +1761,7 @@ final class MockDuckAiChatStorage: DuckAiNativeStorageHandling {
     func isMigrationDone(key: String) throws -> Bool { migrationDone }
 
     func putEntry(key: String, value: Any) throws { try backing.putEntry(key: key, value: value) }
-    func getEntry(key: String) throws -> Any? {
-        if failsEntryReads { throw ReadFailure() }
-        return try backing.getEntry(key: key)
-    }
+    func getEntry(key: String) throws -> Any? { try backing.getEntry(key: key) }
     func getAllEntries() throws -> [String: Any] { try backing.getAllEntries() }
     func deleteEntry(key: String) throws { try backing.deleteEntry(key: key) }
     func deleteAllEntries() throws { try backing.deleteAllEntries() }

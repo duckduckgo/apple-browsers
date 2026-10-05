@@ -34,6 +34,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let isFloatingUIEnabled: Bool
     private lazy var omniBarView = DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
     private var isSuppressingKeyboardTransfer = false
+    private var pendingFooterLinkDraft: String?
 
     override var isExpandedPhone: Bool {
         didSet {
@@ -57,6 +58,21 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         store: termsOfServiceStore
     )
 
+    private let attachmentPrivacyDisclosureOverride: AttachmentPrivacyDisclosure?
+    private let attachmentPrivacyPixelFiring: PixelFiring?
+    private lazy var attachmentPrivacyNotice = IPadAttachmentPrivacyNotice(
+        attachmentKind: { [weak self] in
+            self?.omniBarView.attachmentsStripView.attachments.lazy.compactMap { UTIAttachmentPrivacyKind(attachment: $0) }.first
+        },
+        isEnabled: { [weak self] in
+            self?.selectedTextEntryMode == .aiChat && self?.dependencies.featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad) == true
+        },
+        disclosure: attachmentPrivacyDisclosureOverride ?? AttachmentPrivacyDisclosure(
+            webKeySource: dependencies.duckAiNativeStorageHandler,
+            isEnabled: { [weak self] in self?.dependencies.featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad) == true }
+        )
+    )
+
     override var iPadDuckAIControlValues: IPadDuckAIControlValues {
         IPadDuckAIControlValuesSnapshot(
             selectedModelId: modelPickerController?.currentModelId,
@@ -69,9 +85,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     init(dependencies: OmnibarDependencyProvider,
          isFloatingUIEnabled: Bool,
-         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()) {
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+         attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure? = nil,
+         attachmentPrivacyPixelFiring: PixelFiring? = PixelKit.shared) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
         self.termsOfServiceStore = termsOfServiceStore
+        self.attachmentPrivacyDisclosureOverride = attachmentPrivacyDisclosure
+        self.attachmentPrivacyPixelFiring = attachmentPrivacyPixelFiring
         super.init(dependencies: dependencies)
     }
 
@@ -140,10 +160,19 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.aiChatTextView.addGestureRecognizer(highlightDismissTap)
 
         setUpModelPickerIfNeeded()
+        omniBarView.attachmentsStripView.onAttachmentsChanged = { [weak self] in
+            self?.handleAttachmentsChanged()
+        }
+
         omniBarView.onSearchAreaExpandedStateChanged = { [weak self] isExpanded in
             guard let self else { return }
             // Ahead of the delegate, which anchors the suggestions popover below the card.
             if isExpanded {
+                if let draft = self.pendingFooterLinkDraft, self.selectedTextEntryMode == .aiChat {
+                    self.omniBarView.aiChatTextView.text = draft
+                    self.modeToggleTextModel.updateText(draft)
+                    self.pendingFooterLinkDraft = nil
+                }
                 self.refreshFooterMessage(animated: true)
             }
             self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
@@ -153,8 +182,25 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             }
             self.handleModelPickerExpansionChanged(isExpanded: isExpanded)
         }
-        omniBarView.onFooterLinkTapped = { [weak self] url in
-            self?.omniDelegate?.onOmniBarFooterLinkTapped(url)
+        omniBarView.onFooterLinkTapped = { [weak self] id, url in
+            guard let self else { return }
+            if id == .attachmentPrivacy {
+                pendingFooterLinkDraft = omniBarView.aiChatTextView.text ?? ""
+                fireAttachmentPrivacyPixel(.learnMoreTapped)
+            }
+            omniDelegate?.onOmniBarFooterLinkTapped(url)
+        }
+        omniBarView.onFooterVisibilityChanged = { [weak self] ids in
+            guard let self else { return }
+            if ids.contains(.attachmentPrivacy) {
+                if attachmentPrivacyNotice.recordDisplay() {
+                    fireAttachmentPrivacyPixel(.shown)
+                } else {
+                    refreshFooterMessage(animated: false)
+                }
+            } else {
+                attachmentPrivacyNotice.endDisplay()
+            }
         }
 
         // Handle address bar position changes to set the shadow correctly
@@ -429,7 +475,7 @@ extension DefaultOmniBarViewController {
             } else {
                 // Before the collapse below takes the disclaimer off screen.
                 if sentWithAsk {
-                    termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessage)
+                    termsOfServiceDisclaimer.acceptIfShown(omniBarView.visibleFooterMessages.first { $0.id == .termsConsent }?.message)
                 }
                 let isFirstPromptNewInstall = featureDiscovery.isFirstDuckAIPromptNewInstall
                 let firstPromptParameters: [String: String] = isFirstPromptNewInstall ? [PixelParameters.aiChatFirstPromptNewInstall: "true"] : [:]
@@ -443,6 +489,7 @@ extension DefaultOmniBarViewController {
                 omniBarView.aiChatTextView.resignFirstResponder()
                 omniDelegate?.onPromptSubmitted(query, tools: nil)
                 toolPickerController?.resetSelection()
+                pendingFooterLinkDraft = nil
                 attachmentController?.resetSelection()
             }
         } else {
@@ -459,6 +506,7 @@ extension DefaultOmniBarViewController {
         setSelectedTextEntryMode(.search)
         endEditing()
         isSuppressingKeyboardTransfer = false
+        pendingFooterLinkDraft = nil
         attachmentController?.resetSelection()
     }
 
@@ -590,9 +638,6 @@ extension DefaultOmniBarViewController {
         attachmentControllerInstance.onExpandRequested = { [weak self] in
             self?.omniBarView.setSearchAreaExpanded(true, animated: false)
         }
-        omniBarView.attachmentsStripView.onAttachmentsChanged = { [weak self] in
-            self?.handleAttachmentsChanged()
-        }
 
         controller.onModelsUpdated = { [weak self] in
             guard let self else { return }
@@ -628,11 +673,24 @@ extension DefaultOmniBarViewController {
         refreshAttachButton()
     }
 
-    /// The required disclaimer outranks the model switch notice, as it does in the iPhone input.
+    private func fireAttachmentPrivacyPixel(_ action: AttachmentPrivacyPixel.Action) {
+        guard let kind = attachmentPrivacyNotice.kind else { return }
+        attachmentPrivacyPixelFiring?.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: .addressBar), frequency: .dailyAndCount)
+    }
+
     private func refreshFooterMessage(animated: Bool) {
-        let message = termsOfServiceDisclaimer.message
-            ?? toolPickerController?.currentModelSwitchNotice.map { UTIFooterMessageMapper().message(for: $0) }
-        omniBarView.setFooterMessage(message, animated: animated)
+        attachmentPrivacyNotice.refresh()
+        var messages: [UTIFooterItem] = []
+        if let message = termsOfServiceDisclaimer.message {
+            messages.append(.init(id: .termsConsent, message: message))
+        }
+        if attachmentPrivacyNotice.isPresented {
+            messages.append(.init(id: .attachmentPrivacy, message: IPadAttachmentPrivacyNotice.message()))
+        }
+        if let notice = toolPickerController?.currentModelSwitchNotice {
+            messages.append(.init(id: .modelSwitch, message: UTIFooterMessageMapper().message(for: notice)))
+        }
+        omniBarView.setFooterMessages(UTIFooterItem.visible(from: messages, isEditing: false), animated: animated)
         omniBarView.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
@@ -641,7 +699,7 @@ extension DefaultOmniBarViewController {
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.
     private var isTermsOfServiceDisclaimerShown: Bool {
-        guard let visibleMessage = omniBarView.visibleFooterMessage else { return false }
+        guard let visibleMessage = omniBarView.visibleFooterMessages.first(where: { $0.id == .termsConsent })?.message else { return false }
         return visibleMessage == termsOfServiceDisclaimer.message
     }
 
@@ -742,8 +800,10 @@ extension DefaultOmniBarViewController {
     /// (limits change with the pending set), grows or collapses the expanded area to fit, and nudges
     /// any anchored suggestions popover to follow the new height.
     private func handleAttachmentsChanged() {
+        if omniBarView.attachmentsStripView.attachments.isEmpty { pendingFooterLinkDraft = nil }
         refreshAttachButton()
         omniBarView.updateAttachmentsLayout(animated: true)
+        refreshFooterMessage(animated: true)
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
@@ -772,6 +832,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
+        pendingFooterLinkDraft = nil
         let newQuery = textView.text ?? ""
 
         modeToggleTextModel.updateText(newQuery)

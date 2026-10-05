@@ -344,7 +344,7 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
 
     private let attachmentKind: () -> UTIAttachmentPrivacyKind?
     private let isEnabled: () -> Bool
-    private let disclosure: AttachmentPrivacyDisclosure
+    private let displayStore: UTIAttachmentPrivacyNoticeDisplayStoring
     private var isDisplayed = false
 
     private(set) var isPresented = false
@@ -352,22 +352,23 @@ final class UTIFooterAttachmentPrivacyNoticeSource {
 
     init(attachmentKind: @escaping () -> UTIAttachmentPrivacyKind?,
          isEnabled: @escaping () -> Bool,
-         disclosure: AttachmentPrivacyDisclosure) {
+         displayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore()) {
         self.attachmentKind = attachmentKind
         self.isEnabled = isEnabled
-        self.disclosure = disclosure
+        self.displayStore = displayStore
     }
 
     func refresh() {
         kind = attachmentKind()
         let enabled = isEnabled()
         if !enabled || kind == nil { endDisplay() }
-        isPresented = enabled && kind != nil && (isDisplayed || disclosure.canShow)
+        isPresented = enabled && kind != nil && (isDisplayed || !displayStore.hasShown)
     }
 
     func recordDisplay() -> Bool {
-        guard isPresented, !isDisplayed, isEnabled(), disclosure.claim() else { return false }
+        guard isPresented, !isDisplayed, !displayStore.hasShown else { return false }
         isDisplayed = true
+        displayStore.markShown()
         return true
     }
 

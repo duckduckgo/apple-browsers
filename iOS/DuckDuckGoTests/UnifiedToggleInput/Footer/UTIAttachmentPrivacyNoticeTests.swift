@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Persistence
 import XCTest
 @testable import DuckDuckGo
@@ -26,8 +25,6 @@ import XCTest
 final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
     private var storage: AttachmentPrivacyTestStore!
     private var store: UTIAttachmentPrivacyNoticeDisplayStore!
-    private var webStorage: MockDuckAiChatStorage!
-    private var disclosure: AttachmentPrivacyDisclosure!
     private var source: UTIFooterAttachmentPrivacyNoticeSource!
     private var kind: UTIAttachmentPrivacyKind? = .image
     private var enabled = true
@@ -36,8 +33,6 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
         super.setUp()
         storage = AttachmentPrivacyTestStore()
         store = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
-        webStorage = MockDuckAiChatStorage()
-        disclosure = makeDisclosure()
         kind = .image
         enabled = true
         source = makeSource()
@@ -45,8 +40,6 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
 
     override func tearDown() {
         source = nil
-        disclosure = nil
-        webStorage = nil
         store = nil
         storage = nil
         super.tearDown()
@@ -55,109 +48,7 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
     private func makeSource() -> UTIFooterAttachmentPrivacyNoticeSource {
         UTIFooterAttachmentPrivacyNoticeSource(attachmentKind: { [unowned self] in kind },
                                               isEnabled: { [unowned self] in enabled },
-                                              disclosure: disclosure)
-    }
-
-    private func makeDisclosure() -> AttachmentPrivacyDisclosure {
-        AttachmentPrivacyDisclosure(store: store, webKeySource: webStorage, isEnabled: { [unowned self] in enabled })
-    }
-
-    func testNativeDisplayPreventsWebDisplayAcrossPolicyInstances() {
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        XCTAssertFalse(makeDisclosure().claim())
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-    }
-
-    func testWebDisplayPreventsNativeDisplay() {
-        XCTAssertTrue(makeDisclosure().claim())
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-        XCTAssertFalse(source.recordDisplay())
-    }
-
-    func testExistingNativeStatePreventsWebDisplay() {
-        store.markShown()
-        XCTAssertFalse(disclosure.claim())
-    }
-
-    func testPositiveWebValuesAreAdoptedAndSurviveHydration() throws {
-        let values: [Any] = [true, "true", "TRUE", 1, 3, 0.5, "2"]
-        for value in values {
-            store.reset()
-            try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: value)
-            XCTAssertFalse(store.hasShown)
-            XCTAssertFalse(disclosure.canShow, "Failed to adopt \(value)")
-            XCTAssertTrue(store.hasShown)
-            try webStorage.replaceAllEntries([:])
-            XCTAssertFalse(makeDisclosure().claim())
-        }
-    }
-
-    func testNegativeAndMalformedWebValuesDoNotConsumeDisplay() throws {
-        let values: [Any] = [false, "false", "FALSE", 0, -1, -0.5, "0", "-1", "invalid", ["shown": true]]
-        for value in values {
-            try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: value)
-            XCTAssertTrue(disclosure.canShow, "Unexpected adoption of \(value)")
-            XCTAssertFalse(store.hasShown)
-        }
-    }
-
-    func testMissingMalformedAndFailedWebReadsRetry() throws {
-        XCTAssertTrue(disclosure.canShow)
-        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: "invalid")
-        XCTAssertTrue(disclosure.canShow)
-        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: true)
-        webStorage.failsEntryReads = true
-        XCTAssertTrue(disclosure.canShow)
-        XCTAssertFalse(store.hasShown)
-        webStorage.failsEntryReads = false
-        XCTAssertFalse(disclosure.canShow)
-        XCTAssertTrue(store.hasShown)
-    }
-
-    func testFlagDisabledDoesNotAdoptAndReenabledAdopts() throws {
-        enabled = false
-        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: true)
-        XCTAssertFalse(disclosure.canShow)
-        XCTAssertFalse(disclosure.claim())
-        XCTAssertFalse(store.hasShown)
-        enabled = true
-        XCTAssertFalse(disclosure.claim())
-        XCTAssertTrue(store.hasShown)
-    }
-
-    func testFlagChangesBetweenPreviewAndDisplayDoNotConsumeDisplay() {
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        enabled = false
-        XCTAssertFalse(source.recordDisplay())
-        XCTAssertFalse(store.hasShown)
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-        enabled = true
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-    }
-
-    func testWebClaimBetweenPreviewAndNativeDisplayWins() {
-        source.refresh()
-        XCTAssertTrue(makeDisclosure().claim())
-        XCTAssertFalse(source.recordDisplay())
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-    }
-
-    func testResetClearsNativeAndWebStateOnly() throws {
-        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: true)
-        try webStorage.putEntry(key: "other", value: "preserved")
-        XCTAssertFalse(disclosure.canShow)
-        disclosure.reset()
-        XCTAssertFalse(store.hasShown)
-        XCTAssertNil(try webStorage.getEntry(key: AttachmentPrivacyDisclosure.webEntryKey))
-        XCTAssertEqual(try webStorage.getEntry(key: "other") as? String, "preserved")
-        XCTAssertTrue(disclosure.claim())
+                                              displayStore: store)
     }
 
     func testAttachShowsAndSetsFlagThenNextPromptDoesNotShow() {

@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+@_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import UIKit
 import XCTest
@@ -222,6 +223,122 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
 
 @MainActor
 final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
+
+    func testIPadControllerUsesItsFlagAndClaimsVisibleDisclosureWithAddressBarPixel() throws {
+        let flags = MockFeatureFlagger()
+        flags.enabledFeatureFlags = [.unifiedToggleInputAttachmentPrivacy, .duckAINativeTermsOfService]
+        let suiteName = UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let displayStore = AttachmentPrivacyDisclosureStore(keyValueStore: defaults)
+        let pixels = PixelKitMock()
+        let disclosure = AttachmentPrivacyDisclosure(store: displayStore, webKeySource: nil, isEnabled: { true })
+        let controller = DefaultOmniBarViewController(
+            dependencies: MockOmnibarDependency(featureFlagger: flags),
+            isFloatingUIEnabled: false,
+            termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: defaults),
+            attachmentPrivacyDisclosure: disclosure,
+            attachmentPrivacyPixelFiring: pixels
+        )
+        controller.loadViewIfNeeded()
+        controller.selectedTextEntryMode = .aiChat
+        let sut = try XCTUnwrap(controller.view as? DefaultOmniBarView)
+        sut.setLayoutMode(.expandedPad)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        sut.attachmentsStripView.addAttachment(.file(AIChatFileAttachment(data: Data([1]), fileName: "file.pdf", mimeType: "application/pdf")))
+        sut.setSearchAreaExpanded(true, animated: false)
+        sut.onSearchAreaExpandedStateChanged?(true)
+        XCTAssertFalse(displayStore.hasShown)
+        XCTAssertFalse(sut.visibleFooterMessages.contains { $0.id == .attachmentPrivacy })
+
+        flags.enabledFeatureFlags.append(.aiChatAttachmentPrivacyIPad)
+        UIView.performWithoutAnimation {
+            sut.onSearchAreaExpandedStateChanged?(true)
+            sut.layoutIfNeeded()
+        }
+
+        XCTAssertEqual(sut.visibleFooterMessages.map(\.id), [.termsConsent, .attachmentPrivacy])
+        XCTAssertTrue(displayStore.hasShown)
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        XCTAssertEqual(pixels.actualFireCalls.first?.pixel.name, AttachmentPrivacyPixel(action: .shown, kind: .file, surface: .addressBar).name)
+        XCTAssertEqual(pixels.actualFireCalls.first?.frequency, .dailyAndCount)
+        XCTAssertEqual(pixels.actualFireCalls.first?.pixel.parameters, ["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
+
+        sut.aiChatTextView.text = "Draft with attachment"
+        let url = try XCTUnwrap(IPadAttachmentPrivacyNotice.message().link?.url)
+        sut.onFooterLinkTapped?(.attachmentPrivacy, url)
+        sut.setSearchAreaExpanded(false, animated: false)
+        sut.textField.text = url.absoluteString
+        sut.setSearchAreaExpanded(true, animated: false)
+        XCTAssertEqual(sut.aiChatTextView.text, "Draft with attachment")
+        XCTAssertEqual(sut.attachmentsStripView.attachments.count, 1)
+        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, AttachmentPrivacyPixel(action: .learnMoreTapped, kind: .file, surface: .addressBar).name)
+    }
+
+    func testPrivacyAndTermsCardsStackAndReportVisibilityOnlyInWindow() {
+        let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        sut.setLayoutMode(.expandedPad)
+        sut.setSearchAreaExpanded(true, animated: false)
+        let messages = [
+            UTIFooterItem(id: .termsConsent, message: UTIFooterMessageMapper().termsOfServiceMessage()),
+            UTIFooterItem(id: .attachmentPrivacy, message: IPadAttachmentPrivacyNotice.message())
+        ]
+        var visibility: [[UTIFooterItem.ID]] = []
+        sut.onFooterVisibilityChanged = { visibility.append($0) }
+
+        sut.setFooterMessages(messages, animated: false)
+        XCTAssertTrue(visibility.isEmpty)
+
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.addSubview(sut)
+        XCTAssertTrue(visibility.isEmpty)
+        window.makeKeyAndVisible()
+        sut.setNeedsLayout()
+        sut.layoutIfNeeded()
+        defer { window.isHidden = true }
+        XCTAssertEqual(visibility, [[.termsConsent, .attachmentPrivacy]])
+        XCTAssertEqual(sut.visibleFooterMessages, messages)
+        let cards = footerCards(in: sut)
+        XCTAssertEqual(cards.count, 2)
+        XCTAssertEqual(cards.map(\.isBelowAnotherCard), [false, true])
+
+        sut.setFooterMessages([], animated: false)
+        XCTAssertEqual(visibility.last, [])
+        XCTAssertTrue(sut.visibleFooterMessages.isEmpty)
+    }
+
+    func testPrivacyFooterLinkKeepsItsIdentityAlongsideTerms() throws {
+        let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        sut.setLayoutMode(.expandedPad)
+        sut.setSearchAreaExpanded(true, animated: false)
+        let mapper = UTIFooterMessageMapper()
+        sut.setFooterMessages([
+            .init(id: .termsConsent, message: mapper.termsOfServiceMessage()),
+            .init(id: .attachmentPrivacy, message: IPadAttachmentPrivacyNotice.message())
+        ], animated: false)
+        var tappedID: UTIFooterItem.ID?
+        var tappedURL: URL?
+        sut.onFooterLinkTapped = { tappedID = $0; tappedURL = $1 }
+        let card = try XCTUnwrap(footerCards(in: sut).last)
+        let url = try XCTUnwrap(IPadAttachmentPrivacyNotice.message().link?.url)
+
+        card.onLinkTap?(url)
+
+        XCTAssertEqual(tappedID, .attachmentPrivacy)
+        XCTAssertEqual(tappedURL, url)
+    }
+
+    private func footerCards(in view: UIView) -> [UTIFooterCardView] {
+        let children = (view as? UIStackView)?.arrangedSubviews ?? view.subviews
+        return children.flatMap { child -> [UTIFooterCardView] in
+            if let card = child as? UTIFooterCardView { return [card] }
+            return footerCards(in: child)
+        }
+    }
 
     func testWhenVisibleAttachmentButtonHasNoMenuThenItIsShownDisabled() {
         let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)

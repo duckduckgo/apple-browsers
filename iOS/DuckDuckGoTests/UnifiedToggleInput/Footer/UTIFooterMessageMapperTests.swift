@@ -36,7 +36,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertNil(message.primaryAction)
         XCTAssertFalse(message.isDismissible)
         XCTAssertEqual(message.link?.text, "Learn more")
-        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files")
+        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
     }
 
     func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {

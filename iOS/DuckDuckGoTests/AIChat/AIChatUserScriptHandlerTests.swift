@@ -21,6 +21,7 @@
 import Combine
 import Common
 import FoundationExtensions
+import FeatureFlags_iOS
 import Core
 import DDGSync
 import XCTest
@@ -96,29 +97,67 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
-            attachmentPrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults),
+            attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults),
             attachmentPrivacyWebKeySource: attachmentPrivacyWebKeySource,
             installDateProvider: installDateProvider,
             installTypeProvider: installTypeProvider
         )
     }
 
-    func testAttachmentPrivacyCapabilityTracksFlagOnIPadAndIPhone() {
+    @MainActor
+    func testAttachmentPrivacyIsIPadOnlyAndIndependentOfUnifiedInputFlag() async {
+        let flagStates: [([FeatureFlag], Bool)] = [
+            ([], false),
+            ([.unifiedToggleInputAttachmentPrivacy], false),
+            ([.aiChatAttachmentPrivacyIPad], true),
+            ([.unifiedToggleInputAttachmentPrivacy, .aiChatAttachmentPrivacyIPad], true)
+        ]
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
         for isIphone in [false, true] {
             MockDevicePlatform.isIphone = isIphone
-            for enabled in [false, true, false] {
-                mockFeatureFlagger.enabledFeatureFlags = enabled ? [.unifiedToggleInputAttachmentPrivacy] : []
-                let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(
-                    params: [:], message: MockUserScriptMessage(name: "test", body: [:])
-                ) as? AIChatNativeConfigValues
-                XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, enabled)
+            for (flags, enabledOnIPad) in flagStates {
+                store.reset()
+                mockFeatureFlagger.enabledFeatureFlags = flags
+                aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+                let expected = !isIphone && enabledOnIPad
+                let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues
+                let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                    params: [:], message: message
+                ) as? AttachmentPrivacyShouldDisplayResponse
+
+                XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, expected, "iPhone: \(isIphone), flags: \(flags)")
+                XCTAssertEqual(response?.show, expected, "iPhone: \(isIphone), flags: \(flags)")
+                XCTAssertEqual(store.hasShown, expected)
+            }
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyRechecksDeviceFlagWithoutConsumingDisabledRequests() async {
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        for enabled in [false, true, false] {
+            mockFeatureFlagger.enabledFeatureFlags = enabled ? [.aiChatAttachmentPrivacyIPad] : [.unifiedToggleInputAttachmentPrivacy]
+            let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues
+            let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+
+            XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, enabled)
+            XCTAssertEqual(response?.show, enabled)
+            XCTAssertEqual(store.hasShown, enabled)
+            if enabled {
+                store.reset()
             }
         }
     }
 
     @MainActor
     func testAttachmentPrivacyMessageClaimsOnceAndReturnsShowResponse() async throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.unifiedToggleInputAttachmentPrivacy]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
         let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
         XCTAssertNotNil(script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue))
         let message = MockUserScriptMessage(name: "test", body: [:])
@@ -135,15 +174,65 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         let webStorage = DuckAiNativeMemoryStorageHandler()
         try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: "true")
         aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
-        let store = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults)
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
         let message = MockUserScriptMessage(name: "test", body: [:])
         let disabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
         XCTAssertEqual(disabled?.show, false)
         XCTAssertFalse(store.hasShown)
-        mockFeatureFlagger.enabledFeatureFlags = [.unifiedToggleInputAttachmentPrivacy]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
         let enabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
         XCTAssertEqual(enabled?.show, false)
         XCTAssertTrue(store.hasShown)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyAdoptsWebStateDurablyAcrossHandlers() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let shownValues: [Any] = [true, 1, 0.5, "true", "TRUE", "2"]
+
+        for value in shownValues {
+            store.reset()
+            try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: value)
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+            let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+            XCTAssertEqual(response?.show, false)
+            XCTAssertTrue(store.hasShown)
+
+            try webStorage.deleteEntry(key: AttachmentPrivacyDisclosure.webEntryKey)
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+            let subsequentResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+            XCTAssertEqual(subsequentResponse?.show, false)
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyResetClearsIPadAndWebStateWithoutChangingIPhoneState() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let iphoneStore = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults)
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        store.markShown()
+        iphoneStore.markShown()
+        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: true)
+        let disclosure = AttachmentPrivacyDisclosure(store: store, webKeySource: webStorage, isEnabled: { true })
+
+        disclosure.reset()
+
+        XCTAssertFalse(store.hasShown)
+        XCTAssertTrue(iphoneStore.hasShown)
+        XCTAssertNil(try webStorage.getEntry(key: AttachmentPrivacyDisclosure.webEntryKey))
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+        let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+            params: [:], message: MockUserScriptMessage(name: "test", body: [:])
+        ) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(response?.show, true)
     }
 
     func testWhenReturningUserThenInstallTypeIsReturning() {

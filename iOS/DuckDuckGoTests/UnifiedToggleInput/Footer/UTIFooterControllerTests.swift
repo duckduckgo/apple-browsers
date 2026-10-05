@@ -76,7 +76,7 @@ final class UTIFooterControllerTests: XCTestCase {
         let privacySource = UTIFooterAttachmentPrivacyNoticeSource(
             attachmentKind: { [unowned self] in privacyKind },
             isEnabled: { [unowned self] in privacyEnabled },
-            disclosure: AttachmentPrivacyDisclosure(store: privacyDisplayStore, webKeySource: nil, isEnabled: { true }))
+            displayStore: privacyDisplayStore)
         let controller = UTIFooterController(viewModel: viewModel,
                                   termsOfServiceStore: termsOfServiceStore,
                                   highUsageNotice: makeNoticeSource(),
@@ -317,7 +317,7 @@ final class UTIFooterControllerTests: XCTestCase {
     func testPrivacyWorksWithoutUsageWarningsModel() {
         let source = UTIFooterAttachmentPrivacyNoticeSource(attachmentKind: { .image },
                                                            isEnabled: { true },
-                                                           disclosure: AttachmentPrivacyDisclosure(store: privacyDisplayStore, webKeySource: nil, isEnabled: { true }))
+                                                           displayStore: privacyDisplayStore)
         let controller = UTIFooterController(viewModel: nil,
                                              attachmentPrivacyNotice: source,
                                              createImagePixelFiring: createImagePixelFiring,

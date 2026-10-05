@@ -31,11 +31,11 @@ struct UTIFooterMessageMapper {
     }
 
     /// Required, so it carries no close button: sending the prompt is what retires it.
-    func termsOfServiceMessage() -> UTIFooterMessage {
+    func termsOfServiceMessage(sendButton: DuckAiTermsOfServiceSendButton = .ask) -> UTIFooterMessage {
         let linkText = UserText.duckAITermsOfServiceDisclaimerLink
         return UTIFooterMessage(
             icon: .shield,
-            title: String(format: UserText.duckAITermsOfServiceDisclaimer, linkText),
+            title: String(format: sendButton.disclaimerFormat, linkText),
             subtitle: nil,
             primaryAction: nil,
             isDismissible: false,

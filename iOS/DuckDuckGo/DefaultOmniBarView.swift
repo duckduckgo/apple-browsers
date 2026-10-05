@@ -354,17 +354,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var aiChatSendButtonWidthConstraint = aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize)
 
-    /// While the Terms of Service disclaimer shows, the send button reads "Ask" and Return adds a new line.
-    var isTermsOfServiceDisclaimerShown = false {
+    /// While the Terms of Service disclaimer shows, the send button reads the label it names ("Ask" or "Create")
+    /// and Return adds a new line.
+    var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton? {
         didSet {
-            guard oldValue != isTermsOfServiceDisclaimerShown else { return }
+            guard (oldValue == nil) != (termsOfServiceSendButton == nil) else { return }
             aiChatTextView.keyboardType = aiChatKeyboardType
             if aiChatTextView.isFirstResponder { aiChatTextView.reloadInputViews() }
         }
     }
 
     /// The web-search keyboard always draws Return as Go, so only the default one shows a new-line key.
-    private var aiChatKeyboardType: UIKeyboardType { isTermsOfServiceDisclaimerShown ? .default : .webSearch }
+    private var aiChatKeyboardType: UIKeyboardType { termsOfServiceSendButton == nil ? .webSearch : .default }
 
     var onAIChatSendPressed: (() -> Void)?
 
@@ -2462,7 +2463,7 @@ extension DefaultOmniBarView {
 
     /// The "Ask" label stands in for the arrow only; the voice icon stays.
     private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
-        let title = allowsAskTitle && isTermsOfServiceDisclaimerShown ? UserText.duckAIAskButtonTitle : nil
+        let title = allowsAskTitle ? termsOfServiceSendButton?.title : nil
         aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
         aiChatSendButton.setTitle(title, for: .normal)
         aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel

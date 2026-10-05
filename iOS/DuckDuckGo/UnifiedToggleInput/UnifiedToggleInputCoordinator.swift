@@ -2423,7 +2423,16 @@ private extension UnifiedToggleInputCoordinator {
     func syncInputBehaviorToHandler() {
         viewController.handler.submitsAIChatOnKeyboardReturn = submitsAIChatPromptOnKeyboardReturn
         viewController.handler.usesReturnKeySubmitButtonStyle = usesReturnKeySubmitButtonStyle
-        viewController.handler.usesAskSubmitButton = isTermsOfServiceDisclaimerShown
+        syncTermsOfServiceSendButtonToHandler()
+    }
+
+    func syncTermsOfServiceSendButtonToHandler() {
+        viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
+    }
+
+    /// The disclaimer and the send button name the same button: "Create" while Create Image is selected.
+    var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton {
+        DuckAiTermsOfServiceSendButton(selectedTool: toolsController.selectedTool)
     }
 
     func resetSessionState() {
@@ -2497,6 +2506,8 @@ private extension UnifiedToggleInputCoordinator {
         // Reflect the image-generation tool in the input placeholder ("Create images privately").
         viewController.handler.isImageGenerationSelected = toolsController.selectedTool == .imageGeneration
         viewController.refreshPlaceholderForCurrentMode()
+        footerController?.setTermsOfServiceSendButton(termsOfServiceSendButton)
+        syncTermsOfServiceSendButtonToHandler()
     }
 
     func resetToolsSelection() {

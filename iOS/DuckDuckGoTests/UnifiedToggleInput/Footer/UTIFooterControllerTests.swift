@@ -1569,6 +1569,28 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
     }
 
+    func test_setTermsOfServiceSendButton_namesTheButtonTheUserWillTap() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.setTermsOfServiceSendButton(.create)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage(sendButton: .create))
+
+        sut.setTermsOfServiceSendButton(.ask)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage(sendButton: .ask))
+    }
+
+    func test_setTermsOfServiceSendButton_keepsTheDisclaimerOnScreenForTheAcceptingTap() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.setTermsOfServiceSendButton(.create)
+
+        XCTAssertTrue(sut.isTermsOfServiceVisible)
+        XCTAssertTrue(sut.acceptTermsIfDisclaimerShown())
+    }
+
     func test_refresh_presentsNothingOnceTheTermsAreAccepted() {
         termsStore.recordWebReport()
         sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)

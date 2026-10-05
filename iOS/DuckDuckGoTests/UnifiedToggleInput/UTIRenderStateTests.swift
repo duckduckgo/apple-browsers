@@ -299,9 +299,27 @@ final class UTIRenderStateTests: XCTestCase {
         showFooter([.termsConsent])
 
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
-        XCTAssertTrue(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertEqual(sut.viewController.handler.termsOfServiceSendButton, .ask)
         XCTAssertFalse(sut.computeRenderState().isFloatingReturnKeyVisible)
         XCTAssertEqual(availabilityChanges, 1)
+    }
+
+    func test_omnibarNewAIChat_whenCreateImageIsSelectedWithTheDisclaimerOnScreen_submitReadsCreate() {
+        let preferences = StoreStubPreferences()
+        preferences.selectedModelId = "image-model"
+        sut = makeCoordinatorWithTermsOfService(host: .omnibar, preferences: preferences)
+        sut.modelStore.models = [AIChatModel(id: "image-model", name: "image-model", provider: .unknown,
+                                             supportsImageUpload: false, supportedTools: [.imageGeneration],
+                                             entityHasAccess: true)]
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        sut.setText("a cat")
+        showFooter([.termsConsent])
+
+        sut.selectTool(.imageGeneration)
+        XCTAssertEqual(sut.viewController.handler.termsOfServiceSendButton, .create)
+
+        sut.resetToolsSelection()
+        XCTAssertEqual(sut.viewController.handler.termsOfServiceSendButton, .ask)
     }
 
     func test_omnibarNewAIChat_whenTheDisclaimerLeavesTheScreen_returnSubmitsAgain() {
@@ -313,7 +331,7 @@ final class UTIRenderStateTests: XCTestCase {
         showFooter([])
 
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
-        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertNil(sut.viewController.handler.termsOfServiceSendButton)
         XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
     }
 
@@ -326,7 +344,7 @@ final class UTIRenderStateTests: XCTestCase {
         showFooter([.termsConsent])
 
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
-        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertNil(sut.viewController.handler.termsOfServiceSendButton)
         XCTAssertTrue(sut.computeRenderState().isFloatingReturnKeyVisible)
     }
 
@@ -338,7 +356,7 @@ final class UTIRenderStateTests: XCTestCase {
         showFooter([.termsConsent])
 
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
-        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertNil(sut.viewController.handler.termsOfServiceSendButton)
     }
 
     func test_contextualChat_whenTheDisclaimerIsOnScreen_returnAddsANewLineAndSubmitReadsAsk() {
@@ -348,7 +366,7 @@ final class UTIRenderStateTests: XCTestCase {
         showFooter([.termsConsent])
 
         XCTAssertFalse(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
-        XCTAssertTrue(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertEqual(sut.viewController.handler.termsOfServiceSendButton, .ask)
     }
 
     func test_contextualChat_whenTermsAreAcceptedOnSend_returnSubmitsAgain() {
@@ -360,7 +378,7 @@ final class UTIRenderStateTests: XCTestCase {
 
         XCTAssertTrue(termsOfServiceStore.hasAccepted)
         XCTAssertTrue(sut.viewController.handler.submitsAIChatOnKeyboardReturn)
-        XCTAssertFalse(sut.viewController.handler.usesAskSubmitButton)
+        XCTAssertNil(sut.viewController.handler.termsOfServiceSendButton)
     }
 
     func test_omnibarNewAIChat_whenAskIsTappedWithTheDisclaimerOnScreen_theTermsAreAcceptedAndThePromptCarriesThem() {
@@ -503,9 +521,11 @@ final class UTIRenderStateTests: XCTestCase {
 
     private func makeCoordinatorWithTermsOfService(host: UnifiedToggleInputHost,
                                                    isAvailable: Bool = true,
-                                                   contextualStart: ContextualInputStart = .expandedOnExistingChat) -> UnifiedToggleInputCoordinator {
+                                                   contextualStart: ContextualInputStart = .expandedOnExistingChat,
+                                                   preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor()) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(host: host,
                                       isToggleEnabled: host == .omnibar,
+                                      preferences: preferences,
                                       contextualStart: contextualStart,
                                       nativeTermsOfServiceFeature: StubNativeTermsOfServiceFeature(isAvailable: isAvailable),
                                       termsOfServiceStore: termsOfServiceStore)

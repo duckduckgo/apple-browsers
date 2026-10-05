@@ -213,7 +213,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         let removeTrailing = usesCompactLayout ? Constants.removeButtonTrailing : Constants.horizontalPadding
         removeTrailingConstraint = removeButton.trailingAnchor.constraint(equalTo: chipView.trailingAnchor, constant: -removeTrailing)
 
-        if !usesCompactLayout || !attachment.isImage {
+        if !attachment.isImage {
             NSLayoutConstraint.activate([titleLeadingConstraint, titleTrailingConstraint])
         } else {
             fileNameLabel.leadingAnchor.constraint(equalTo: chipView.leadingAnchor).isActive = true

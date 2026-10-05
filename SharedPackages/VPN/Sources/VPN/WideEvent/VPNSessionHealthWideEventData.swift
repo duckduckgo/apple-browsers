@@ -83,8 +83,11 @@ public struct VPNSessionHealthWideEventData: WideEventData {
     /// Compares event duration with wall-clock time since tunnel-provider initialization, including when recovering a backdated orphan.
     public var eventDurationExceedsProcessLifetime: Bool?
 
-    /// Start reason of the process recovering this orphan; set only when `processIDChanged`.
+    /// Start reason of the process recovering this orphan; set only on orphan recovery.
     public var currentProcessStartReason: EventStartReason?
+
+    /// Wall-clock time from the orphan's last observation to the recovering process start; set only on orphan recovery.
+    public var processRestartGap: TimeInterval?
 
     /// Set only when the starting PID differs from the completing or recovering process; otherwise omitted.
     public var processIDChanged: Bool?
@@ -139,6 +142,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
             (Key.failureRecoverySucceeded, failureRecoverySucceeded),
             (Key.eventDurationExceedsProcessLifetime, eventDurationExceedsProcessLifetime),
             (Key.currentProcessStartReason, currentProcessStartReason?.rawValue),
+            (Key.processRestartGap, processRestartGap.map(Self.processRestartGapBucket)),
             (Key.processIDChanged, processIDChanged),
             (Key.appVersionChanged, appVersionChanged),
         ])
@@ -276,6 +280,10 @@ private extension VPNSessionHealthWideEventData {
         bucket(seconds, thresholds: [0, 1, 15, 60, 300, 900, 1_800, 3_600])
     }
 
+    static func processRestartGapBucket(_ seconds: TimeInterval) -> String {
+        bucket(seconds, thresholds: [0, 60, 300, 900, 1_800, 3_600, 43_200])
+    }
+
     static func outageCountBucket(_ count: Int) -> String {
         bucket(count, thresholds: [0, 1, 2, 4, 9])
     }
@@ -381,6 +389,7 @@ extension WideEventParameter {
         static let eventDuration = "feature.data.ext.event_duration_seconds_bucketed"
         static let eventDurationExceedsProcessLifetime = "feature.data.ext.event_duration_exceeds_process_lifetime"
         static let currentProcessStartReason = "feature.data.ext.current_process_start_reason"
+        static let processRestartGap = "feature.data.ext.process_restart_gap_seconds_bucketed"
         static let processIDChanged = "feature.data.ext.process_id_changed"
         static let appVersionChanged = "feature.data.ext.app_version_changed"
         static let connectionTestFailureSeen = "feature.data.ext.connection_tester_failure_seen"

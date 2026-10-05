@@ -381,8 +381,14 @@
             {
                 "key": "feature.data.ext.current_process_start_reason",
                 "type": "string",
-                "description": "Start reason of the process that recovered this orphaned event. Present only on orphan recovery when process_id_changed is true.",
+                "description": "Start reason of the process that recovered this orphaned event. Present only on orphan recovery.",
                 "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start"]
+            },
+            {
+                "key": "feature.data.ext.process_restart_gap_seconds_bucketed",
+                "type": "string",
+                "description": "Wall-clock time from the orphaned event's last observation to the start of the process that recovered it, bucketed (lower end of bucket, in seconds). An upper bound: observations are not written while paused. Present only on orphan recovery.",
+                "enum": ["0", "60", "300", "900", "1800", "3600", "43200"]
             },
             {
                 "key": "feature.data.ext.process_id_changed",

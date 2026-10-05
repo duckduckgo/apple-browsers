@@ -251,6 +251,10 @@ private extension VPNSessionHealthWideEventData {
             currentProcessStartReason = processStartReason
         }
 
+        if processRestartGap == nil, processStartReason != nil, processStartDate >= lastObservedAt {
+            processRestartGap = processStartDate.timeIntervalSince(lastObservedAt)
+        }
+
         if appVersionChanged == nil, appData.version != appVersion {
             appVersionChanged = true
         }

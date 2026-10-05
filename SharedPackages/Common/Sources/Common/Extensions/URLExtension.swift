@@ -752,6 +752,28 @@ extension URL {
     }
 #endif
 
+    /**
+     Returns a new URL with the given query item added or replaced.  If the query item's value
+     is nil or empty after trimming whitespace, the original URL is returned.
+
+     - Parameter queryItem: The query item to add or replace.
+     - Returns: A new URL with the query item added or replaced, or the original URL if the query item's value is invalid.
+     */
+    public func addingOrReplacing(_ queryItem: URLQueryItem) -> URL {
+        guard let queryValue = queryItem.value,
+              !queryValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return self
+        }
+
+        var components = URLComponents(url: self, resolvingAgainstBaseURL: false)
+
+        var queryItems = components?.queryItems ?? []
+        queryItems.removeAll { $0.name == queryItem.name }
+        queryItems.append(queryItem)
+        components?.queryItems = queryItems
+
+        return components?.url ?? self
+    }
 }
 
 public extension CharacterSet {

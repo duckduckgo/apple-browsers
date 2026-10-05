@@ -176,7 +176,7 @@ struct DataImportSummaryDetailView: View {
     }
     private func failedRowText(item: ImportItem) -> Text {
         guard case .password(let title, let domain, let username, let errorMessage) = item else {
-            return Text("")
+            return Text(verbatim: "")
         }
 
         func valueOrNone(_ value: String?) -> String {

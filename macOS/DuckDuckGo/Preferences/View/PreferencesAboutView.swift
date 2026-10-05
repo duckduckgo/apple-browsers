@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppUpdaterShared
 import DesignResourcesKit
 import PreferencesUI_macOS
@@ -326,7 +328,7 @@ extension Preferences {
         @ViewBuilder
         private var lastCheckedText: some View {
             let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-            Text("\(UserText.lastChecked): \(lastChecked)")
+            Text(verbatim: "\(UserText.lastChecked): \(lastChecked)")
                 .foregroundColor(.secondary)
         }
 

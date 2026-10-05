@@ -35,10 +35,16 @@ protocol AIChatHistoryCleaning {
 
     /// Deletes all Duck.ai chat history.
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
+    /// What happened during the most recent clear (retries, timings), or `nil` if none ran.
+    @MainActor var lastClearingReport: AIChatClearingReport? { get }
 
     /// All Duck.ai chats currently stored locally, decoded with their titles.
     /// Returns an empty array if native chat storage isn't available or a chat fails to decode.
     func allChats() -> [DuckAiChat]
+}
+
+extension AIChatHistoryCleaning {
+    @MainActor var lastClearingReport: AIChatClearingReport? { nil }
 }
 
 final class AIChatHistoryCleaner: AIChatHistoryCleaning {
@@ -89,6 +95,9 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             notificationCenter.removeObserver(token)
         }
     }
+
+    @MainActor
+    var lastClearingReport: AIChatClearingReport? { historyCleaner.lastClearingReport }
 
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor

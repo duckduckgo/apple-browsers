@@ -21,6 +21,12 @@ import Common
 import Foundation
 import Persistence
 
+protocol UTIFooterDisplayStoring {
+    var displayCount: Int { get }
+    func recordDisplay()
+    func reset()
+}
+
 protocol UTIMultiTabPromotionDisplayStoring: UTIFooterDisplayStoring {
     func isAvailable(startDate: Date?, isCurrentDisplay: Bool) -> Bool
     func dismiss()

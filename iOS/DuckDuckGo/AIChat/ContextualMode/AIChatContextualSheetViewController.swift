@@ -78,8 +78,8 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user asks to open Duck.ai itself, rather than continue in this sheet.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController)
 
-    /// Called when the user submits a prompt from native input
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String)
+    /// Called when the user submits a prompt from native input. `termsAccepted` is `true` only for a prompt sent with Ask.
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool)
 
     /// Called when the user taps a suggested prompt.
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async
@@ -176,7 +176,10 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+        termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+            feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
+        )
     )
     private var cancellables = Set<AnyCancellable>()
     private var contentContainerBottomConstraint: NSLayoutConstraint?
@@ -219,7 +222,12 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Stops async suggestion work as soon as the sheet starts dismissing.
     private var canProcessSuggestionSubmission = false
-    private var suggestionAwaitingAppearance: ContextualSuggestedPrompt?
+    private var submissionAwaitingAppearance: PendingSubmission?
+
+    private enum PendingSubmission {
+        case suggestion(ContextualSuggestedPrompt)
+        case searchQuery(String)
+    }
 
     // MARK: - UI Components
 
@@ -526,9 +534,15 @@ final class AIChatContextualSheetViewController: UIViewController {
             mountPersistentUTIHostIfNeeded()
         }
         canProcessSuggestionSubmission = true
-        if let suggestion = suggestionAwaitingAppearance {
-            suggestionAwaitingAppearance = nil
+        switch submissionAwaitingAppearance {
+        case .suggestion(let suggestion):
+            submissionAwaitingAppearance = nil
             submitSuggestion(suggestion)
+        case .searchQuery(let query):
+            submissionAwaitingAppearance = nil
+            submitSearchQuery(query)
+        case nil:
+            break
         }
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
@@ -696,7 +710,7 @@ private extension AIChatContextualSheetViewController {
         isWebViewVisible = true
     }
 
-    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+    func showWebViewWithPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
         Logger.aiChat.debug("[SheetVC] showWebViewWithPrompt called")
 
         guard let webVC = webViewController else {
@@ -707,7 +721,7 @@ private extension AIChatContextualSheetViewController {
 
         // Don't transition immediately - wait for delegate callback after prompt is submitted
         // This prevents showing the initial duck.ai page before the prompt navigates it
-        webVC.submitPrompt(prompt, pageContext: pageContext)
+        webVC.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
         if !isWaitingForInitialPromptResponseState {
             expandToLargeDetent()
         }
@@ -925,7 +939,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
         cancelSuggestionSubmission()
-        submitPromptFromNativeInput(prompt)
+        submitPromptFromNativeInput(prompt, sentWithAsk: true)
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
@@ -952,7 +966,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
             if let persistentUTIHost {
                 persistentUTIHost.submitQuickActionPrompt(action.prompt)
             } else {
-                submitPromptFromNativeInput(action.prompt)
+                submitPromptFromNativeInput(action.prompt, sentWithAsk: false)
             }
         }
     }
@@ -973,7 +987,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         // a surface the user has left, and would otherwise resurface on the next presentation.
         guard canProcessSuggestionSubmission else {
             if !isBeingDismissed {
-                suggestionAwaitingAppearance = suggestion
+                submissionAwaitingAppearance = .suggestion(suggestion)
             }
             return
         }
@@ -982,6 +996,34 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         cancelSuggestionSubmission()
         delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
+        runSubmission { [weak self] in
+            guard let self else { return true }
+            let didDeliver = if actsOnSelection {
+                await self.deliverSelectionSuggestionPrompt(suggestion)
+            } else {
+                await self.deliverSuggestionPrompt(suggestion)
+            }
+            return didDeliver
+        }
+    }
+
+    /// Nothing is attached: the results page is what the user is leaving, not something to ask about.
+    func submitSearchQuery(_ query: String) {
+        guard canProcessSuggestionSubmission else {
+            if !isBeingDismissed {
+                submissionAwaitingAppearance = .searchQuery(query)
+            }
+            return
+        }
+        cancelSuggestionSubmission()
+        runSubmission { [weak self] in
+            guard let self else { return true }
+            return await self.deliverSearchQuery(query)
+        }
+    }
+
+    /// Runs `deliver` as the sheet's one in-flight submission, undimming the start actions after it.
+    private func runSubmission(_ deliver: @escaping () async -> Bool) {
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
         suggestionSubmissionID = submissionID
@@ -997,15 +1039,22 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            let didDeliver = if actsOnSelection {
-                await self.deliverSelectionSuggestionPrompt(suggestion)
-            } else {
-                await self.deliverSuggestionPrompt(suggestion)
-            }
+            let didDeliver = await deliver()
             if !didDeliver {
                 self.abandonAwaitedSubmittedChat()
             }
         }
+    }
+
+    private func deliverSearchQuery(_ query: String) async -> Bool {
+        guard let webViewController else { return false }
+
+        let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+        guard isFrontendReady else { return false }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+
+        submitSuggestionPrompt(query)
+        return true
     }
 
     private func deliverSelectionSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
@@ -1060,6 +1109,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
         handleChipRemoved()
+    }
+
+    /// Opens in a new tab once the sheet is down; the draft stays for when the user comes back.
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL) {
+        delegate?.aiChatContextualSheetViewController(self, didRequestToLoad: url)
     }
 }
 
@@ -1234,8 +1288,8 @@ private extension AIChatContextualSheetViewController {
 
     func apply(_ effect: SheetEffect) {
         switch effect {
-        case .submitPrompt(let prompt, let context):
-            showWebViewWithPrompt(prompt, pageContext: context)
+        case .submitPrompt(let prompt, let context, let termsAccepted):
+            showWebViewWithPrompt(prompt, pageContext: context, termsAccepted: termsAccepted)
         case .reloadWebView:
             webViewController?.reload()
         case .deliverPageContext:
@@ -1291,7 +1345,7 @@ private extension AIChatContextualSheetViewController {
     func prepareForDismissal() {
         guard canProcessSuggestionSubmission else { return }
         canProcessSuggestionSubmission = false
-        suggestionAwaitingAppearance = nil
+        submissionAwaitingAppearance = nil
         cancelSuggestionSubmission()
         contextualInputViewController.setStartActionsDimmed(false)
     }
@@ -1302,16 +1356,24 @@ private extension AIChatContextualSheetViewController {
         suggestionSubmissionID = nil
     }
 
-    func submitPromptFromNativeInput(_ prompt: String) {
+    /// Only an Ask tap accepts the Terms of Service; chips and Summarize send without it.
+    func submitPromptFromNativeInput(_ prompt: String, sentWithAsk: Bool) {
+        let termsAccepted: Bool
+        if sentWithAsk {
+            termsAccepted = contextualInputViewController.acceptTermsIfDisclaimerShown()
+        } else {
+            Logger.aiChat.debug("[TermsOfService] Contextual prompt sent without Ask: acceptance not recorded, termsAccepted=false")
+            termsAccepted = false
+        }
         beginWaitingForInitialPromptResponseStateIfNeeded()
-        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt)
+        delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
     }
 
     func submitSuggestionPrompt(_ prompt: String) {
         if let persistentUTIHost {
             persistentUTIHost.submitQuickActionPrompt(prompt)
         } else {
-            submitPromptFromNativeInput(prompt)
+            submitPromptFromNativeInput(prompt, sentWithAsk: false)
         }
     }
 

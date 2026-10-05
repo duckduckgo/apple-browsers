@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppKit
 import DDGSync
 import Persistence

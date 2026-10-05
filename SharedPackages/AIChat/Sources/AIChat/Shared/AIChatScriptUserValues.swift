@@ -154,9 +154,10 @@ public struct AIChatNativeConfigValues: Codable {
     /// and discover tools. The front end must not open a session when this is false — it also
     /// serves as version-skew protection against builds that predate the bridge.
     public let supportsBrowserTools: Bool
-    /// `true` when the native input shows the Terms of Service disclaimer itself, so the FE can trust
-    /// a prompt's `termsAccepted` marker instead of showing its own card.
-    public let supportsNativeTermsOfService: Bool
+
+    /// `true` when native owns how often the file-upload privacy disclosure is shown, so the web
+    /// app asks before displaying it. Absent on builds that predate the handler.
+    public let supportsAttachmentPrivacyDisplay: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -233,7 +234,7 @@ public struct AIChatNativeConfigValues: Codable {
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
                 supportsBrowserTools: Bool = false,
-                supportsNativeTermsOfService: Bool = false) {
+                supportsAttachmentPrivacyDisplay: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -264,7 +265,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
         self.supportsBrowserTools = supportsBrowserTools
-        self.supportsNativeTermsOfService = supportsNativeTermsOfService
+        self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the
@@ -334,8 +335,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
     /// Text selections attached to this prompt, sent alongside `pageContext` rather than folded into it.
     public let selections: [AIChatSelectionContextData]?
 
-    /// Whether the user has accepted the Terms of Service natively. `nil` omits the key, which is how
-    /// a build without native Terms of Service support reads to the FE.
+    /// `true` only for a prompt the user sent by tapping Ask in a native input, with the Terms of Service
+    /// accepted. `nil` omits the key, which is how a build without native Terms of Service reads to the FE.
     public let termsAccepted: Bool?
 
     public enum Tool: Equatable {
@@ -491,7 +492,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         self.termsAccepted = termsAccepted
     }
 
-    /// The same prompt carrying `termsAccepted`, stamped where it crosses the bridge.
+    /// The same prompt carrying `termsAccepted`.
     public func withTermsAccepted(_ termsAccepted: Bool?) -> AIChatNativePrompt {
         AIChatNativePrompt(platform: platform,
                            tool: tool,

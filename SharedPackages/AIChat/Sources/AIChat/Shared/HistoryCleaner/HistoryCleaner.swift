@@ -26,6 +26,12 @@ public protocol HistoryCleaning {
     @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
     @MainActor func deleteAIChat(chatID: String) async -> Result<Void, Error>
     @MainActor func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error>
+    /// What happened during the most recent JS clear (retries, timings), or `nil` if none ran.
+    @MainActor var lastClearingReport: AIChatClearingReport? { get }
+}
+
+public extension HistoryCleaning {
+    @MainActor var lastClearingReport: AIChatClearingReport? { nil }
 }
 
 /// Splits `deleteAIChat`'s two phases so a caller can await the fast native delete without the slow JS clear.
@@ -42,6 +48,8 @@ public final class HistoryCleaner: PhasedAIChatHistoryCleaning {
     private let nativeStorageHandler: DuckAiNativeStorageHandling?
     private let featureFlagProvider: AIChatFeatureFlagProviding?
     private let jsDataCleaner: AIChatJSDataCleaning
+
+    @MainActor public var lastClearingReport: AIChatClearingReport? { jsDataCleaner.lastReport }
 
     /// Creates a history cleaner that clears Duck.ai data from both native storage and the JS layer.
     ///

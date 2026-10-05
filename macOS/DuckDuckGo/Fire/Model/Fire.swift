@@ -740,6 +740,9 @@ final class Fire: FireProtocol {
     @MainActor
     func burnChatHistory() async -> Result<Void, Error> {
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
+        if let report = aiChatHistoryCleaner.lastClearingReport {
+            dataClearingWideEventService?.recordAIChatClearing(report)
+        }
         if syncService?.authState != .inactive {
             syncService?.scheduler.requestSyncImmediately()
         }

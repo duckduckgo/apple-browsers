@@ -28,22 +28,10 @@ enum FloatingUILayoutPolicy {
         let obscuredContentInsets: UIEdgeInsets
     }
 
-    static func webViewLayout(obscuredContentInsets: UIEdgeInsets,
-                              addressBarPosition: AddressBarPosition) -> WebViewLayout {
-        guard addressBarPosition.isBottom else {
-            var remainingObscuredContentInsets = obscuredContentInsets
-            remainingObscuredContentInsets.top = 0
-            remainingObscuredContentInsets.bottom = 0
-            return WebViewLayout(topAnchorConstant: obscuredContentInsets.top,
-                                 bottomAnchorConstant: -obscuredContentInsets.bottom,
-                                 obscuredContentInsets: remainingObscuredContentInsets)
-        }
-
-        var remainingObscuredContentInsets = obscuredContentInsets
-        remainingObscuredContentInsets.bottom = 0
+    static func webViewLayout(obscuredContentInsets: UIEdgeInsets) -> WebViewLayout {
         return WebViewLayout(topAnchorConstant: 0,
-                             bottomAnchorConstant: -obscuredContentInsets.bottom,
-                             obscuredContentInsets: remainingObscuredContentInsets)
+                             bottomAnchorConstant: 0,
+                             obscuredContentInsets: obscuredContentInsets)
     }
 
     static func shouldApplyFloatingTopContentInset(isFloatingUIEnabled: Bool,

@@ -28,7 +28,6 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
     private var source: UTIFooterAttachmentPrivacyNoticeSource!
     private var kind: UTIAttachmentPrivacyKind? = .image
     private var enabled = true
-    private var scope: UTIFooterAttachmentPrivacyNoticeSource.DisplayScope = .normal
 
     override func setUp() {
         super.setUp()
@@ -36,7 +35,6 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
         store = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
         kind = .image
         enabled = true
-        scope = .normal
         source = makeSource()
     }
 
@@ -50,142 +48,69 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
     private func makeSource() -> UTIFooterAttachmentPrivacyNoticeSource {
         UTIFooterAttachmentPrivacyNoticeSource(attachmentKind: { [unowned self] in kind },
                                               isEnabled: { [unowned self] in enabled },
-                                              displayScope: { [unowned self] in scope },
                                               displayStore: store)
     }
 
-    private func displayAndFinishDraft() {
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        source.endDisplay()
-        source.hasCountedDraft = false
-    }
-
-    func testRemovingAndReattachingCountsDraftOnceButRecordsBothDisplays() {
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        kind = nil
-        source.refresh()
-        kind = .file
+    func testAttachShowsAndSetsFlagThenNextPromptDoesNotShow() {
         source.refresh()
         XCTAssertTrue(source.isPresented)
         XCTAssertTrue(source.recordDisplay())
-        XCTAssertEqual(store.displayCount, 1)
-        XCTAssertTrue(source.hasCountedDraft)
-    }
+        XCTAssertTrue(store.hasShown)
 
-    func testThreeDraftsReachCapEvenWithRepeatedDisplays() {
-        for expectedCount in 1...3 {
-            source.refresh()
-            XCTAssertTrue(source.recordDisplay())
-            XCTAssertEqual(store.displayCount, expectedCount)
-            if expectedCount < 3 {
-                source.endDisplay()
-                source.refresh()
-                XCTAssertTrue(source.recordDisplay())
-                XCTAssertEqual(store.displayCount, expectedCount)
-            }
-            source.clear()
-            source.hasCountedDraft = false
-        }
+        kind = nil
         source.refresh()
-        XCTAssertFalse(source.isPresented)
-    }
-
-    func testFireTabCountsOncePerDraftWithoutPersistentAccess() {
-        let tab = Tab(fireTab: true)
-        scope = .fireTab(tab)
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
         source.clear()
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
-        XCTAssertEqual(storage.readCount, 0)
-        XCTAssertEqual(storage.writeCount, 0)
-    }
-
-    func testResolvingWithoutDisplayingDoesNotCount() {
-        source.refresh()
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        XCTAssertEqual(store.displayCount, 0)
-    }
-
-    func testCountRoundTripsAcrossStoreInstances() {
-        store.recordDisplay()
-        let reloaded = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
-        XCTAssertEqual(reloaded.displayCount, 1)
-    }
-
-    func testThirdDisplayStaysVisibleUntilItEndsThenCapApplies() {
-        for _ in 0..<2 { displayAndFinishDraft() }
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        XCTAssertEqual(store.displayCount, 3)
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        XCTAssertFalse(source.recordDisplay())
-        source.endDisplay()
+        kind = .image
         source.refresh()
         XCTAssertFalse(source.isPresented)
         XCTAssertFalse(source.recordDisplay())
     }
 
-    func testAttachmentRemovalEndsThirdDisplay() {
-        for _ in 0..<2 { displayAndFinishDraft() }
+    func testAttachRemoveAttachShowsOnceAndSetsFlag() {
         source.refresh()
         XCTAssertTrue(source.recordDisplay())
         kind = nil
         source.refresh()
+        XCTAssertFalse(source.isPresented)
         kind = .file
         source.refresh()
         XCTAssertFalse(source.isPresented)
-        XCTAssertEqual(store.displayCount, 3)
+        XCTAssertFalse(source.recordDisplay())
+        XCTAssertTrue(store.hasShown)
     }
 
-    func testRecreatedSourceHonoursCap() {
-        for _ in 0..<3 { displayAndFinishDraft() }
-        let reopened = makeSource()
-        reopened.refresh()
-        XCTAssertFalse(reopened.isPresented)
-    }
-
-    func testRepeatedDisplayCallbackAndRefreshDoNotIncrementAgain() {
+    func testDisplayStaysUntilItEndsAndIsRecordedOnce() {
         source.refresh()
         XCTAssertTrue(source.recordDisplay())
         source.refresh()
+        XCTAssertTrue(source.isPresented)
         XCTAssertFalse(source.recordDisplay())
-        XCTAssertEqual(store.displayCount, 1)
-    }
-
-    func testResetAllowsAnotherDisplay() {
-        for _ in 0..<3 { displayAndFinishDraft() }
-        store.reset()
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        XCTAssertEqual(store.displayCount, 0)
-    }
-
-    func testInvalidAndNegativeStorageDefaultsToZero() {
-        storage.overrideRead = "not a count"
-        XCTAssertEqual(store.displayCount, 0)
-        storage.overrideRead = -1
-        XCTAssertEqual(store.displayCount, 0)
-        storage.failReads = true
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-    }
-
-    func testStoreDoesNotOverflowOrIncrementBeyondCap() {
-        storage.overrideRead = Int.max
-        store.recordDisplay()
-        XCTAssertEqual(storage.writeCount, 0)
+        XCTAssertEqual(storage.writeCount, 1)
+        source.endDisplay()
         source.refresh()
         XCTAssertFalse(source.isPresented)
     }
 
-    func testFlagOffAndMissingAttachmentDoNotCount() {
+    func testDisplayInFireTabSetsFlagSoNormalTabDoesNotShow() {
+        let fireTabSource = makeSource()
+        fireTabSource.refresh()
+        XCTAssertTrue(fireTabSource.recordDisplay())
+        XCTAssertTrue(store.hasShown)
+
+        let normalTabSource = makeSource()
+        normalTabSource.refresh()
+        XCTAssertFalse(normalTabSource.isPresented)
+        XCTAssertFalse(normalTabSource.recordDisplay())
+    }
+
+    func testResolvingWithoutDisplayingDoesNotSetFlag() {
+        source.refresh()
+        source.refresh()
+        XCTAssertTrue(source.isPresented)
+        XCTAssertFalse(store.hasShown)
+    }
+
+    func testFlagOffAndMissingAttachmentDoNotShowOrSetFlag() {
         enabled = false
         source.refresh()
         XCTAssertFalse(source.isPresented)
@@ -195,85 +120,26 @@ final class UTIAttachmentPrivacyNoticeTests: XCTestCase {
         source.refresh()
         XCTAssertFalse(source.isPresented)
         XCTAssertFalse(source.recordDisplay())
-        kind = .file
+        XCTAssertFalse(store.hasShown)
+    }
+
+    func testFlagRoundTripsAcrossStoreInstances() {
+        store.markShown()
+        let reloaded = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage)
+        XCTAssertTrue(reloaded.hasShown)
+        reloaded.reset()
+        XCTAssertFalse(UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: storage).hasShown)
+    }
+
+    func testInvalidOrFailingStorageReadsAsNotShown() {
+        storage.overrideRead = "not a flag"
+        XCTAssertFalse(store.hasShown)
+        storage.overrideRead = 1
+        XCTAssertFalse(store.hasShown)
+        storage.overrideRead = nil
+        storage.failReads = true
         source.refresh()
         XCTAssertTrue(source.isPresented)
-        XCTAssertEqual(store.displayCount, 0)
-    }
-
-    func testFireTabIgnoresPersistentCapWithoutReadingIt() {
-        for _ in 0..<3 { store.recordDisplay() }
-        storage.readCount = 0
-        scope = .fireTab(Tab(fireTab: true))
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        XCTAssertEqual(storage.readCount, 0)
-        XCTAssertEqual(storage.writeCount, 3)
-    }
-
-    func testFireDisplaysNeverReadOrWritePersistentStorage() {
-        let tab = Tab(fireTab: true)
-        scope = .fireTab(tab)
-        for _ in 0..<3 { displayAndFinishDraft() }
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-        XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 3)
-        XCTAssertEqual(storage.readCount, 0)
-        XCTAssertEqual(storage.writeCount, 0)
-        scope = .normal
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        XCTAssertEqual(store.displayCount, 0)
-    }
-
-    func testFireCountSurvivesSourceRecreationButNewTabStartsFresh() {
-        let tab = Tab(fireTab: true)
-        scope = .fireTab(tab)
-        for _ in 0..<3 { displayAndFinishDraft() }
-        source = makeSource()
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-        scope = .fireTab(Tab(fireTab: true))
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-        scope = .fireTab(tab)
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-    }
-
-    func testScopeChangeCannotReuseVisibleThirdDisplay() {
-        scope = .fireTab(Tab(fireTab: true))
-        source.refresh()
-        XCTAssertTrue(source.recordDisplay())
-        for _ in 0..<3 { store.recordDisplay() }
-        scope = .normal
-        source.refresh()
-        XCTAssertFalse(source.isPresented)
-    }
-
-    func testMissingFireTabNeverFallsBackToPersistentStorage() {
-        scope = .fireTab(nil)
-        displayAndFinishDraft()
-        XCTAssertEqual(storage.readCount, 0)
-        XCTAssertEqual(storage.writeCount, 0)
-    }
-
-    func testNormalBurnClearsPersistentCount() async {
-        for _ in 0..<3 { store.recordDisplay() }
-        await AttachmentPrivacyNoticeFireWorker(displayStore: store).burnNormalModeData()
-        XCTAssertEqual(store.displayCount, 0)
-        source.refresh()
-        XCTAssertTrue(source.isPresented)
-    }
-
-    func testFireModeBurnClearsPersistentCountWithoutChangingSurvivingTab() async {
-        store.recordDisplay()
-        let tab = Tab(fireTab: true)
-        scope = .fireTab(tab)
-        displayAndFinishDraft()
-        await AttachmentPrivacyNoticeFireWorker(displayStore: store).burnFireModeData()
-        XCTAssertEqual(store.displayCount, 0)
-        XCTAssertEqual(tab.attachmentPrivacyNoticeDisplayCount, 1)
     }
 }
 

@@ -39,6 +39,11 @@ extension TabViewController {
         }
     }
 
+    @MainActor
+    func presentContextualAIChat(withSearchQuery query: String, from presentingViewController: UIViewController) async {
+        await aiChatContextualSheetCoordinator.submitSearchQuery(query, from: presentingViewController)
+    }
+
     func presentContextualFloatingInput(from presentingViewController: UIViewController) {
         Task { @MainActor in
             await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController)

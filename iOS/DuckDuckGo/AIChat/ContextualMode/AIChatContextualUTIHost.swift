@@ -35,6 +35,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     private weak var pendingUserScriptToBind: AIChatUserScript?
     private var isBoundToUserScript = false
     private var hasDeliveredFirstPrompt = false
+    private var tabMentionSuggestionsView: MultiTabMentionSuggestionsView?
+    var onTabMentionVisibilityChanged: ((Bool) -> Void)?
 
     /// The input's bottom while it follows the keyboard, and the fixed pin that replaces it once frozen.
     private var keyboardBottomConstraint: NSLayoutConstraint?
@@ -51,7 +53,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onRemoveRequested: (() -> Void)?
     /// The user accepted the offer to attach the page they navigated to.
     var onSuggestionAccepted: (() -> Void)?
-    var onSuggestionDismissed: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
     var onPromptDelivered: (() -> Void)?
@@ -85,7 +86,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
         start: ContextualInputStart = .expandedOnExistingChat,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-        tabProvider: @escaping () -> Tab? = { nil },
+        floatingUIManager: FloatingUIManaging = FloatingUIManager(isFloatingUIFeatureEnabled: false),
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
         isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
@@ -111,7 +112,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
             placesAttachmentsAboveInput: isFloatingInputAvailable,
             usageLimitsStore: usageLimitsStore,
-            tabProvider: tabProvider
+            floatingUIManager: floatingUIManager
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -133,7 +134,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.onPageContextRemoveRequested = { [weak chipViewModel] in
             chipViewModel?.tapToRemove()
         }
-        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature)
+        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature, hasActiveChat: hasActiveChat)
+        coordinator.onTabMentionSuggestionsChanged = { [weak self] in self?.showTabMentionSuggestions($0) }
         coordinator.didPressStopGeneratingButton
             .sink { [weak self] in self?.contextualChatViewController?.cancelPendingTabAttachmentPrompt() }
             .store(in: &cancellables)
@@ -147,9 +149,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         }
         chipViewModel.onSuggestionAccepted = { [weak self] in
             self?.onSuggestionAccepted?()
-        }
-        chipViewModel.onSuggestionDismissed = { [weak self] in
-            self?.onSuggestionDismissed?()
         }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
@@ -221,6 +220,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// Uploads and explicit tab attachments currently in the input; the current-page chip is counted by the session.
     var attachmentCount: Int {
         coordinator.attachmentCount
+    }
+
+    var hasAttachedTabs: Bool {
+        coordinator.hasAttachedTabs
     }
 
     /// Fires when the input's attachments change.
@@ -419,6 +422,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     }
 
     private func detachInput() {
+        coordinator.dismissTabMentions()
         // Ahead of the mounted check, so a surface that lost its parent some other way still leaves these
         // behind. Rebuilt by the next mount, against whatever parent that is.
         legacyKeyboardPinCancellables.removeAll()
@@ -435,12 +439,21 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         viewController.removeFromParent()
     }
 
+    func beginPresentation() {
+        coordinator.beginContextualInputPresentation()
+    }
+
+    func endPresentation() {
+        coordinator.endContextualInputPresentation()
+    }
+
     func activateInput() {
         coordinator.showExpanded()
     }
 
     /// Collapses to the plain pill, dropping first responder; without that pill, only resigns.
     func deactivateInput() {
+        coordinator.dismissTabMentions()
         guard usesFloatingInput else {
             coordinator.viewController.deactivateInput()
             return
@@ -450,6 +463,48 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
     var isInputFirstResponder: Bool {
         coordinator.viewController.isInputFirstResponder
+    }
+
+    private func showTabMentionSuggestions(_ suggestions: [MultiTabMentionController.Suggestion]?) {
+        guard let suggestions, let parent = coordinator.viewController.parent else {
+            guard tabMentionSuggestionsView != nil else { return }
+            tabMentionSuggestionsView?.dismiss()
+            tabMentionSuggestionsView = nil
+            onTabMentionVisibilityChanged?(false)
+            return
+        }
+
+        if tabMentionSuggestionsView == nil {
+            tabMentionSuggestionsView = makeTabMentionSuggestionsView(in: parent)
+            onTabMentionVisibilityChanged?(true)
+        }
+        tabMentionSuggestionsView?.configure(with: suggestions)
+    }
+
+    private func makeTabMentionSuggestionsView(in parent: UIViewController) -> MultiTabMentionSuggestionsView {
+        let suggestionsView = MultiTabMentionSuggestionsView(showsGlassShadow: parent is AIChatContextualSheetViewController)
+        suggestionsView.overrideUserInterfaceStyle = coordinator.viewController.handler.isFireTab ? .dark : .unspecified
+        suggestionsView.onSelect = { [weak self] in self?.coordinator.selectTabMention($0) }
+        suggestionsView.onDismiss = { [weak self] in self?.coordinator.dismissTabMentions() }
+        parent.view.insertSubview(suggestionsView, belowSubview: coordinator.viewController.view)
+
+        let topAnchor: NSLayoutYAxisAnchor
+        if let sheet = parent as? AIChatContextualSheetViewController {
+            topAnchor = sheet.inputSuggestionsTopAnchor
+        } else if let browser = parent.parent as? MainViewController,
+                  browser.viewCoordinator.addressBarPosition == .top {
+            topAnchor = browser.viewCoordinator.navigationBarContainer.bottomAnchor
+        } else {
+            topAnchor = parent.view.safeAreaLayoutGuide.topAnchor
+        }
+        NSLayoutConstraint.activate([
+            suggestionsView.leadingAnchor.constraint(equalTo: inputCardLeadingAnchor),
+            suggestionsView.trailingAnchor.constraint(equalTo: inputCardTrailingAnchor),
+            suggestionsView.bottomAnchor.constraint(equalTo: inputCardTopAnchor, constant: -8),
+            suggestionsView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 8),
+            suggestionsView.topAnchor.constraint(greaterThanOrEqualTo: parent.view.safeAreaLayoutGuide.topAnchor, constant: 8),
+        ])
+        return suggestionsView
     }
 
     var isInputCollapsed: Bool {
@@ -551,7 +606,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            tools: [AIChatRAGTool]?,
                                            reasoningEffort: AIChatReasoningEffort?,
                                            images: [AIChatNativePrompt.NativePromptImage]?,
-                                           files: [AIChatNativePrompt.NativePromptFile]?) {
+                                           files: [AIChatNativePrompt.NativePromptFile]?,
+                                           termsAccepted: Bool) {
         guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
@@ -561,7 +617,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                                    tools: tools,
                                                    pageContext: chipViewModel.pendingAttachedContextData,
                                                    reasoningEffort: reasoningEffort,
-                                                   tabAttachmentRequest: takeTabAttachmentRequest())
+                                                   tabAttachmentRequest: takeTabAttachmentRequest(),
+                                                   termsAccepted: termsAccepted)
         commitDeferredBindIfNeeded()
         onPromptDelivered?()
     }
@@ -578,6 +635,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
     func unifiedToggleInputDidRequestFire() {}
     func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidRequestAppMenuLongPress() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         onEditModeChange?(isEditing)
     }

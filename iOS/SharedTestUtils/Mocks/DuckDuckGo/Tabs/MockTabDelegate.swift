@@ -91,7 +91,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
-    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource) {}
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didStartDuckAINavigationTo url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
 
@@ -216,6 +216,7 @@ extension TabViewController {
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
         sitePermissionsEnabled: Bool = false,
+        webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false,
@@ -256,6 +257,7 @@ extension TabViewController {
             autoplaySettings: MockAutoplaySettings(),
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub(),
+            webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
             sitePermissionsEnabled: sitePermissionsEnabled
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,

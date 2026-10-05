@@ -52,9 +52,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     /// Invoked when the user taps the suggested chip, accepting the offer to attach that page.
     var onSuggestionAccepted: (() -> Void)?
 
-    /// Invoked when the user taps the X on the suggested chip.
-    var onSuggestionDismissed: (() -> Void)?
-
     private let isAutoAttachEnabled: () -> Bool
     private(set) var attachedContext: AIChatPageContext?
     private(set) var suggestedContext: AIChatPageContext?
@@ -148,12 +145,6 @@ final class UnifiedToggleInputPageContextChipViewModel: ObservableObject {
     }
 
     func tapToRemove() {
-        if suggestedContext != nil {
-            Logger.contextualUTI.info("PageContextChip suggestion dismissed")
-            clearSuggested()
-            onSuggestionDismissed?()
-            return
-        }
         Logger.contextualUTI.info("PageContextChip remove tapped — detaching")
         clearAttached()
         onRemoveActionRequested?()

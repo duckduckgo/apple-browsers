@@ -42,7 +42,6 @@ struct FilePreviewHelper {
                 return CalendarEventPreviewHelper(filePath, viewController: viewController)
             }
             if hasVCardFileExtension(url: filePath, filename: nil) {
-                PixelKit.fire(Pixel.Event.vcardContactRoutedByExtension)
                 return ContactPreviewHelper(filePath, viewController: viewController)
             }
             return QuickLookPreviewHelper(filePath, viewController: viewController)

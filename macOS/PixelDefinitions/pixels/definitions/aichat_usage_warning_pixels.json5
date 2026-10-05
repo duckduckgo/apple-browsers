@@ -319,6 +319,29 @@
             }
         ]
     },
+    "m_mac_aichat_usage_warning_weekly_limit_tapped": {
+        "description": "Fires when the user taps Start Using Weekly Limit on the daily limit-reached card. Counts as follow-through for the exposure, so no m_mac_aichat_usage_warning_limit_reached_abandoned follows it.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "surface",
+                "description": "Which native input reported the card.",
+                "type": "string",
+                "enum": ["address_bar", "prompt_bar"]
+            },
+            {
+                "key": "window",
+                "description": "Which allowance the message was about.",
+                "type": "string",
+                "enum": ["daily", "weekly"]
+            }
+        ]
+    },
     "m_mac_aichat_high_usage_model_notice_shown": {
         "description": "Fires when the high-usage model notice appears under the Duck.ai omnibar. One per appearance.",
         "owners": ["Bunn"],

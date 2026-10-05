@@ -110,7 +110,7 @@ private struct IdentificationView: View {
             EditableIdentityField(textFieldValue: $model.lastName, title: UserText.pmLastName, accessibilityIdentifier: "LastName TextField")
 
             if model.isInEditMode {
-                Text("Birthday", comment: "Title of the section of the Identities manager where the user can add/modify a date of birth")
+                Text("Birthday", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify a date of birth")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -193,7 +193,7 @@ private struct IdentificationView: View {
                 }
                 .padding(.bottom, interItemSpacing)
             } else if let day = model.birthdayDay, let month = model.birthdayMonth, let year = model.birthdayYear {
-                Text("Birthday")
+                Text("Birthday", bundle: #bundle)
                     .bold()
                     .padding(.bottom, 5)
 
@@ -224,7 +224,7 @@ private struct AddressView: View {
                 !model.addressPostalCode.isEmpty ||
                 !model.addressCountryCode.isEmpty ||
                 model.isInEditMode {
-                Text("Address", comment: "Title of the section of the Identities manager where the user can add/modify an address (street city etc,)")
+                Text("Address", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify an address (street city etc,)")
                     .bold()
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
@@ -237,7 +237,7 @@ private struct AddressView: View {
             EditableIdentityField(textFieldValue: $model.addressPostalCode, title: UserText.pmAddressPostalCode, accessibilityIdentifier: "AddressPostalCode TextField")
 
             if model.isInEditMode {
-                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
+                Text("Country", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -257,7 +257,7 @@ private struct AddressView: View {
                 .padding(.bottom, 5)
 
             } else if !model.addressCountryCode.isEmpty {
-                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
+                Text("Country", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -279,7 +279,7 @@ private struct ContactInfoView: View {
 
         VStack(alignment: .leading, spacing: 0) {
             if !model.homePhone.isEmpty || !model.mobilePhone.isEmpty || !model.emailAddress.isEmpty || model.isInEditMode {
-                Text("Contact Info", comment: "Title of the section of the Identities manager where the user can add/modify contact info (phone, email address)")
+                Text("Contact Info", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify contact info (phone, email address)")
                     .bold()
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
@@ -393,7 +393,7 @@ private struct EditableIdentityField: View {
 
                 if model.isEditing || model.isNew {
 
-                    TextField("", text: $textFieldValue)
+                    TextField("" as String, text: $textFieldValue)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.bottom, interItemSpacing)
                         .accessibility(identifier: accessibilityIdentifier)

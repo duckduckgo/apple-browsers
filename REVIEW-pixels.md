@@ -15,14 +15,15 @@ A PR introduces a pixel if it adds or changes a case, or a `name` string, in:
 - **iOS:** `iOS/Core/PixelEvent.swift`, or any enum conforming to
   `PixelKit.Event` under `iOS/`
 - **macOS:** any enum conforming to `PixelKit.Event` under `macOS/`, such as
-  `UpdateFlowPixels.swift` or `CrashReportPixels.swift`
+  `UpdateFlowPixels.swift` or `FireButtonPixel.swift`
 - **Shared packages:** any type conforming to `PixelKit.Event` under
   `SharedPackages/`
 
 The pixel name is the string returned by the `name` computed property, e.g.
-`m_mac_default-browser` or `m_autocomplete_click_phrase`. iOS names typically
-start `m_`, macOS `m_mac_`, and the key in the `.json5` must match the Swift
-string exactly.
+`fire_started_macos` or `m_autocomplete_click_phrase`, plus any prefix PixelKit
+prepends. The key in the `.json5` must match that name exactly. Older names
+start `m_` (iOS) or `m_mac_` (macOS); new ones drop the prefix, and new macOS
+names end in `_macos` instead.
 
 If a name is removed from one file and added to another in the same PR, treat it
 as a move, not a new pixel — the existing definition still stands.
@@ -32,6 +33,7 @@ as a move, not a new pixel — the existing definition still stands.
 - iOS pixels: `iOS/PixelDefinitions/pixels/definitions/*.json5`
 - macOS pixels: `macOS/PixelDefinitions/pixels/definitions/*.json5`
 - iOS wide events: `iOS/PixelDefinitions/wide_events/definitions/*.json5`
+- macOS wide events: `macOS/PixelDefinitions/wide_events/definitions/*.json5`
 
 A static pixel name in Swift with no matching key in the right platform's
 directory is missing its definition. Any `.json5` within that directory counts —
@@ -84,9 +86,8 @@ pattern.
 
 Unlike parameters, suffixes are **order-sensitive and all required**.
 
-- A pixel fired with a daily frequency — `DailyPixel.fire`,
-  `DailyPixel.fireDailyAndCount`, or `PixelKit.fire(..., frequency: .daily)` /
-  `.dailyAndCount` / `.dailyAndStandard` — needs a daily-related suffix:
+- A pixel fired with a daily frequency — `.daily`, `.dailyAndCount` or
+  `.dailyAndStandard` — needs a daily-related suffix:
   `daily`, `daily_count`, `daily_standard`, `first_daily_count`, or
   `legacy_daily_count`. Flag a daily-fired pixel whose definition has none
 - Suffixes should be defined as `enum` unless the type is genuinely bounded,
@@ -210,9 +211,9 @@ is. This is a compiler error, not a style nit, and only a real type-checking
 build catches it — `swiftc -parse` does not — so flag it as broken rather than
 assuming CI already screens it out.
 
-New production code firing pixels through a dependency-injected seam should
-inject `(any PixelKitFiring)?`, defaulting to `PixelKit.shared`, not the legacy
-`Core.PixelFiring.Type` / `DailyPixelFiring.Type`. Its tests should mock with
-`PixelKitMock` (`@_spi(Testing) import PixelKit`), not `PixelFiringMock`. Flag a
-new seam adopting the legacy protocols — that is new debt in the direction the
+New production code should inject `PixelFiring?`, defaulting to
+`PixelKit.shared`, rather than call the static `PixelKit.fire`, which the
+PixelKit README reserves for existing code. Its tests should mock with
+`PixelKitMock` (`@_spi(Testing) import PixelKit`). Flag a new type that fires
+through the static entry points — that is new debt in the direction the
 codebase is migrating away from.

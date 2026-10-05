@@ -74,6 +74,19 @@ struct UTIFooterMessageMapper {
         )
     }
 
+    func multiTabPromotionMessage() -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .gift,
+            title: UserText.aiChatMultiTabPromotion,
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: true,
+            titleFormatting: .init(emphasizedText: UserText.aiChatMultiTabPromotionNew,
+                                   attachmentPlaceholder: "{attachment}",
+                                   attachmentAccessibilityLabel: UserText.aiChatMultiTabPromotionAttachment)
+        )
+    }
+
     private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"
 
     func message(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool = true) -> UTIFooterMessage {

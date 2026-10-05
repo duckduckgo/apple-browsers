@@ -99,6 +99,7 @@ final class AIChatUsageWarningCardView: NSView {
         static let fontSize: CGFloat = 12
         /// Bright enough over a dark page, low enough to still read as translucent.
         static let tintAlpha: CGFloat = 0.75
+        static let disclosureInsetTolerance: CGFloat = 0.5
     }
 
     // MARK: - UI Components
@@ -168,6 +169,25 @@ final class AIChatUsageWarningCardView: NSView {
         return button
     }()
 
+    private lazy var disclosureTextView: NSTextView = {
+        let view = NSTextView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.delegate = self
+        view.isEditable = false
+        view.isSelectable = true // Required for link clicks to reach the delegate.
+        view.drawsBackground = false
+        view.textContainerInset = .zero
+        view.textContainer?.lineFragmentPadding = 0
+        view.isVerticallyResizable = false
+        view.isHorizontallyResizable = false
+        view.isHidden = true
+        view.linkTextAttributes = [
+            .foregroundColor: NSColor(designSystemColor: .textLink),
+            .cursor: NSCursor.pointingHand
+        ]
+        return view
+    }()
+
     /// Content centres on the visible band, not the card, whose top runs up behind the panel.
     private let contentGuide = NSLayoutGuide()
 
@@ -212,6 +232,7 @@ final class AIChatUsageWarningCardView: NSView {
     var onAction: (() -> Void)?
     var onOpenModelPicker: (() -> Void)?
     var onDismiss: (() -> Void)?
+    var onLearnMore: (() -> Void)?
 
     /// The `>`, so a menu opens against the control the user actually clicked.
     var modelPickerAnchor: NSView { actionButton.pickerAnchor }
@@ -244,6 +265,8 @@ final class AIChatUsageWarningCardView: NSView {
         addSubview(iconImageView)
         addSubview(ringView)
         addSubview(titleLabel)
+        disclosureTextView.setAccessibilityIdentifier("AIChatUsageWarningCardView.disclosureTextView")
+        addSubview(disclosureTextView)
         addSubview(actionButton)
         addSubview(closeButton)
 
@@ -290,6 +313,12 @@ final class AIChatUsageWarningCardView: NSView {
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: contentGuide.centerYAnchor),
+
+            disclosureTextView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            disclosureTextView.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor,
+                                                         constant: -Constants.horizontalPadding),
+            disclosureTextView.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            disclosureTextView.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor),
 
             actionButton.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor,
                                                   constant: Constants.titleActionSpacing),
@@ -339,9 +368,24 @@ final class AIChatUsageWarningCardView: NSView {
 
     // MARK: - Content
 
+    func updateForAttachmentPrivacy() {
+        applyInfoIcon()
+        titleLabel.isHidden = true
+        disclosureTextView.isHidden = false
+        let disclosure = Self.attributedDisclosure()
+        disclosureTextView.textStorage?.setAttributedString(disclosure)
+        disclosureTextView.setAccessibilityLabel(disclosure.string)
+
+        actionButton.isHidden = true
+        actionButton.collapse()
+
+        applyCloseButton(isVisible: false)
+    }
+
     /// Lays the row out for the high-usage model notice: no reset detail and no CTA, since it is
     /// about which model is selected rather than about an allowance running out.
     func update(with notice: DuckAiHighUsageModelNotice) {
+        showTitleLabel()
         let text = UserText.aiChatUsageWarningsHighUsageModel(notice.modelShortName)
         applyInfoIcon()
         titleLabel.maximumNumberOfLines = 1
@@ -356,6 +400,7 @@ final class AIChatUsageWarningCardView: NSView {
 
     /// Lays the row out for `warning`. Whether the card shows at all is the host's call.
     func update(with warning: DuckAiUsageWarning) {
+        showTitleLabel()
         applyIcon(for: warning)
         titleLabel.maximumNumberOfLines = 1
         titleLabel.attributedStringValue = Self.attributedTitle(headline: warning.localizedHeadline,
@@ -398,6 +443,7 @@ final class AIChatUsageWarningCardView: NSView {
     }
 
     func update(with notice: AIChatCreateImageModelSwitchNotice) {
+        showTitleLabel()
         let title = notice.localizedTitle
         let subtitle = notice.localizedSubtitle
 
@@ -454,6 +500,53 @@ final class AIChatUsageWarningCardView: NSView {
     /// Regular weight throughout: the notice is a sentence, where the warnings lead with a headline.
     private static func attributedNotice(_ text: String) -> NSAttributedString {
         NSAttributedString(string: text, attributes: textAttributes(weight: .regular))
+    }
+
+    private static func attributedDisclosure() -> NSAttributedString {
+        var bodyAttributes = textAttributes(weight: .regular)
+        bodyAttributes[.cursor] = NSCursor.arrow
+
+        var linkAttributes = bodyAttributes
+        linkAttributes[.link] = URL.aiChatPrivacy
+        // Set here, not left to `linkTextAttributes`: the body's arrow is in the text storage and wins.
+        linkAttributes[.cursor] = NSCursor.pointingHand
+
+        let format = UserText.aiChatAttachmentPrivacyDisclosureFormat
+        let link = NSAttributedString(string: UserText.aiChatAttachmentPrivacyLearnMore, attributes: linkAttributes)
+        let result = NSMutableAttributedString(string: format, attributes: bodyAttributes)
+
+        // Substituted rather than appended: where the link sits in the sentence is the translator's.
+        guard let placeholder = format.range(of: "%@") else {
+            result.append(NSAttributedString(string: " ", attributes: bodyAttributes))
+            result.append(link)
+            return result
+        }
+        result.replaceCharacters(in: NSRange(placeholder, in: format), with: link)
+        return result
+    }
+
+    override func layout() {
+        super.layout()
+        centreDisclosureText()
+    }
+
+    private func centreDisclosureText() {
+        guard !disclosureTextView.isHidden,
+              let layoutManager = disclosureTextView.layoutManager,
+              let container = disclosureTextView.textContainer else { return }
+
+        layoutManager.ensureLayout(for: container)
+        let textHeight = layoutManager.usedRect(for: container).height
+        let inset = max(0, (disclosureTextView.bounds.height - textHeight) / 2)
+        // Setting the inset lays out again, so stop once it is centred.
+        guard abs(disclosureTextView.textContainerInset.height - inset) > Constants.disclosureInsetTolerance else { return }
+
+        disclosureTextView.textContainerInset = NSSize(width: 0, height: inset)
+    }
+
+    private func showTitleLabel() {
+        disclosureTextView.isHidden = true
+        titleLabel.isHidden = false
     }
 
     private static func attributedTitle(headline: String, resetsIn: String) -> NSAttributedString {
@@ -811,5 +904,15 @@ final class AIChatUsageWarningActionButton: NSView {
 
     override func mouseExited(with event: NSEvent) {
         isHovered = false
+    }
+}
+
+// MARK: - Inline link
+
+extension AIChatUsageWarningCardView: NSTextViewDelegate {
+
+    func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+        onLearnMore?()
+        return true
     }
 }

@@ -1169,6 +1169,9 @@ extension AIChatUserScriptHandlerTests {
 
 extension AIChatUserScriptHandlerTests {
 
+    private var askPrompt: AIChatNativePrompt { AIChatNativePrompt.queryPrompt("hello", autoSubmit: true).withTermsAccepted(true) }
+    private var promptSentWithoutAsk: AIChatNativePrompt { AIChatNativePrompt.queryPrompt("hello", autoSubmit: true) }
+
     private func enableNativeTermsOfService() {
         mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
         MockDevicePlatform.isIphone = true
@@ -1176,94 +1179,104 @@ extension AIChatUserScriptHandlerTests {
         aiChatUserScriptHandler = makeAIChatUserScriptHandler()
     }
 
-    private func configValues() -> AIChatNativeConfigValues? {
-        aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+    private func recordAcceptedInNativeInput() {
+        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
     }
 
-    func testWhenNativeTermsOfServiceFlagIsOnAndNativeChatInputAvailableThenConfigAdvertisesSupport() {
+    private func pullPrompt() -> AIChatNativePrompt? {
+        aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
+    }
+
+    func testWhenPromptIsSentWithAskAndTermsAreAcceptedThenMarkerIsTrue() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true)
+    }
+
+    /// A chip, Summarize or voice prompt never claims acceptance, even from a user who accepted.
+    func testWhenPromptIsSentWithoutAskThenMarkerIsFalseEvenAfterAcceptance() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: promptSentWithoutAsk), false)
+    }
+
+    func testWhenPromptIsSentWithAskButTermsAreNotAcceptedThenMarkerIsFalse() {
         enableNativeTermsOfService()
 
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, true)
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), false)
     }
 
-    func testWhenNativeTermsOfServiceFlagIsOffThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        MockDevicePlatform.isIphone = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
-    }
-
-    /// The disclaimer lives on the native input, so without it the FE must keep its own card.
-    func testWhenNativeTermsOfServiceFlagIsOnButNativeChatInputUnavailableThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = true
-        mockUnifiedToggleInputFeature.isAvailable = false
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
-    }
-
-    /// The iPad inputs don't show the disclaimer yet.
-    func testWhenNativeTermsOfServiceFlagIsOnButDeviceIsIPadThenConfigDoesNotAdvertiseSupport() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = false
-        mockAIChatContextualModeFeature.isAvailable = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
-
-        XCTAssertEqual(configValues()?.supportsNativeChatInput, true)
-        XCTAssertEqual(configValues()?.supportsNativeTermsOfService, false)
-    }
-
-    func testWhenNativeTermsOfServiceIsUnsupportedThenPromptsCarryNoMarker() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        mockUserDefaults.set(true, forKey: termsAcceptedKey)
-
-        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker())
-    }
-
-    func testWhenNativeTermsOfServiceIsSupportedAndNotAcceptedThenMarkerIsFalse() {
-        enableNativeTermsOfService()
-
-        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(), false)
-    }
-
-    /// One acceptance state: accepting on the web also counts for prompts native sends later.
-    func testWhenWebReportsAcceptanceThenMarkerIsTrue() async {
+    /// One acceptance state: accepting on the web also counts for prompts the user later sends with Ask.
+    func testWhenWebReportsAcceptanceThenAskPromptMarkerIsTrue() async {
         enableNativeTermsOfService()
 
         _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": "userDidAcceptTermsAndConditions"],
                                                        message: MockUserScriptMessage(name: "test", body: [:]))
 
-        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(), true)
+        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true)
     }
 
-    func testWhenAcceptedInNativeInputThenMarkerIsTrue() {
-        enableNativeTermsOfService()
-
-        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
-
-        XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(), true)
-    }
-
-    /// The page-loading path: the FE pulls the prompt, so it must be stamped on the way out.
-    func testWhenPromptIsPulledThenItCarriesTheMarker() {
-        enableNativeTermsOfService()
-        DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
-        AIChatPromptHandler.shared.setData(.queryPrompt("hello", autoSubmit: true))
-
-        let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
-
-        XCTAssertEqual(prompt?.termsAccepted, true)
-    }
-
-    func testWhenNativeTermsOfServiceIsUnsupportedThenPulledPromptCarriesNoMarker() {
+    func testWhenNativeTermsOfServiceFlagIsOffThenPromptsCarryNoMarker() {
         mockFeatureFlagger.enabledFeatureFlags = []
-        AIChatPromptHandler.shared.setData(.queryPrompt("hello", autoSubmit: true))
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
 
-        let prompt = aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    /// The disclaimer lives on the native input, so without it the FE keeps its own card.
+    func testWhenNativeChatInputIsUnavailableThenPromptsCarryNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
+
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    /// duck.ai on iPad keeps its own Terms of Service, even though the iPad inputs show the disclaimer.
+    func testWhenAcceptedInAnIPadInputThenPromptsCarryNoMarkerInAnyDisplayMode() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
+            aiChatUserScriptHandler.displayMode = displayMode
+            XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), "\(displayMode)")
+        }
+    }
+
+    /// The page-loading path: the FE pulls the prompt, so it is stamped on the way out.
+    func testWhenAskPromptIsPulledThenItCarriesTermsAccepted() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        XCTAssertEqual(pullPrompt()?.termsAccepted, true)
+    }
+
+    func testWhenPromptSentWithoutAskIsPulledThenItCarriesTermsAcceptedFalse() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+        AIChatPromptHandler.shared.setData(promptSentWithoutAsk)
+
+        XCTAssertEqual(pullPrompt()?.termsAccepted, false)
+    }
+
+    func testWhenNativeTermsOfServiceIsOffThenPulledPromptCarriesNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        let prompt = pullPrompt()
 
         XCTAssertNotNil(prompt)
         XCTAssertNil(prompt?.termsAccepted)
@@ -1393,6 +1406,8 @@ extension AIChatUserScriptHandlerTests {
             ("userDidClickPromotionCardButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__promotioncard"),
             ("userDidViewSettingsSubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
             ("userDidClickSettingsSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
+            ("userDidViewSettingsResubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
+            ("userDidClickSettingsResubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
             ("userDidViewProUpgradeDisclaimerBanner", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidClickProUpgradeDisclaimerBannerButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidViewVoiceChatLimitModal", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__voicechatlimit"),

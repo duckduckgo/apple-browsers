@@ -218,12 +218,12 @@
             {
                 "key": "appFeatureFlags_floatingUIiOS26",
                 "type": "boolean",
-                "description": "Present with true when the floatingUIiOS26 app feature flag is enabled; otherwise omitted"
+                "description": "Present with true when floatingUIiOS26 is enabled at report time; otherwise omitted. Reflects flag configuration, not whether floating UI is active. UI availability also depends on OS, device and other feature gates."
             },
             {
                 "key": "appFeatureFlags_floatingUIiOS27",
                 "type": "boolean",
-                "description": "Present with true when the floatingUIiOS27 app feature flag is enabled; otherwise omitted"
+                "description": "Present with true when floatingUIiOS27 is enabled at report time; otherwise omitted. Reflects flag configuration, not whether floating UI is active. UI availability also depends on OS, device and other feature gates."
             },
             {
                 "key": "debugFlags",

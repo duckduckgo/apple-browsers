@@ -4,7 +4,7 @@
         "owners": ["Bunn"],
         "meta": {
             "type": "ios-return-session",
-            "version": "2.0"
+            "version": "3.0"
         },
         "feature": {
             "name": "return-session",
@@ -98,9 +98,9 @@
                         "type": "boolean",
                         "description": "True if the user pressed back / cancel from the landing surface during the session"
                     },
-                    "opening_screen_changed": {
+                    "after_inactivity_settings_opened": {
                         "type": "boolean",
-                        "description": "True if the user changed the Opening Screen option from the escape hatch's settings menu during the session"
+                        "description": "True if the user opened Settings > General from the escape hatch's After Inactivity menu item during the session"
                     },
                     "close_tab_tapped": {
                         "type": "boolean",

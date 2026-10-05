@@ -26,7 +26,7 @@ protocol ReturnSessionInteractionData: AnyObject {
     var pageEngaged: Bool { get set }
     var toggleUsed: Bool { get set }
     var backPressed: Bool { get set }
-    var openingScreenChanged: Bool { get set }
+    var afterInactivitySettingsOpened: Bool { get set }
     var closeTabTapped: Bool { get set }
     var burnTabTapped: Bool { get set }
 }
@@ -63,8 +63,8 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User pressed back / cancel from the landing surface.
     func backPressed()
 
-    /// User changed the Opening Screen option from the escape hatch's settings menu.
-    func openingScreenChanged()
+    /// User opened Settings → General from the escape hatch's "After Inactivity" menu item.
+    func afterInactivitySettingsOpened()
 
     /// User closed the open tab from the escape hatch's menu. Idempotent within a session.
     func closeTabTapped()
@@ -159,8 +159,8 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         recordInteraction { $0.backPressed = true }
     }
 
-    func openingScreenChanged() {
-        recordInteraction { $0.openingScreenChanged = true }
+    func afterInactivitySettingsOpened() {
+        recordInteraction { $0.afterInactivitySettingsOpened = true }
     }
 
     func closeTabTapped() {

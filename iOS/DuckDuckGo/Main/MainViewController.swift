@@ -6681,6 +6681,7 @@ extension MainViewController: EscapeHatchActionRouter {
     }
 
     func escapeHatchDidRequestAfterInactivitySettings() {
+        postIdleSessionInstrumentation.afterInactivitySettingsOpened()
         segueToGeneralSettings()
     }
 

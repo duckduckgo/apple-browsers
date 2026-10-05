@@ -341,6 +341,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         notifyUpdate()
+        if let storeIdentity, storeIdentity.store == .chromeWebStore {
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
+                                            userInfo: ["extensionId": storeIdentity.id])
+        }
     }
 
     @MainActor
@@ -389,7 +393,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         pixelFiring.fire(.uninstalled)
         notifyUpdate()
         if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
-            NotificationCenter.default.post(name: .chromeWebStoreExtensionRemoved, object: self,
+            NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
                                             userInfo: ["extensionId": storeIdentity.id])
         }
     }
@@ -802,9 +806,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
 public extension Notification.Name {
 
-    /// Posted after successful removal and installation-state update, for every removal entry point.
+    /// Posted after successful installation or removal and the corresponding installation-state update.
     /// `userInfo["extensionId"]` contains the Chrome Web Store ID, not the local installation UUID.
-    static let chromeWebStoreExtensionRemoved = Notification.Name("chromeWebStoreExtensionRemoved")
+    static let chromeWebStoreExtensionChanged = Notification.Name("chromeWebStoreExtensionChanged")
 
     /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
     ///

@@ -34,7 +34,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     private let serviceProvider: @MainActor () -> ChromeWebStoreManaging?
 
     private let notificationCenter: NotificationCenter
-    private var removalCancellable: AnyCancellable?
+    private var changeCancellable: AnyCancellable?
     @MainActor private weak var webView: WKWebView?
 
     init(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?,
@@ -48,23 +48,23 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
         guard isEnabled else { return }
-        removalCancellable = notificationCenter.publisher(for: .chromeWebStoreExtensionRemoved)
+        changeCancellable = notificationCenter.publisher(for: .chromeWebStoreExtensionChanged)
             .sink { [weak self] notification in
                 guard let extensionId = notification.userInfo?["extensionId"] as? String else { return }
                 Task { @MainActor [weak self] in
-                    self?.extensionRemoved(extensionId)
+                    self?.extensionChanged(extensionId)
                 }
             }
     }
 
     @MainActor
-    private func extensionRemoved(_ extensionId: String) {
+    private func extensionChanged(_ extensionId: String) {
         // A tab may have navigated away since its last validated store request.
         guard isEnabled, ChromeWebStoreURL.isValidExtensionID(extensionId),
               let webView, let url = webView.url,
               url.scheme == "https", url.host == ChromeWebStoreURL.host,
               url.port == nil || url.port == 443 else { return }
-        broker?.push(method: Method.extensionRemoved.rawValue, params: ["extensionId": extensionId], for: self, into: webView)
+        broker?.push(method: Method.extensionChanged.rawValue, params: ["extensionId": extensionId], for: self, into: webView)
     }
 
     struct ExtensionRequest: Decodable {
@@ -93,7 +93,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     }
 
     enum Method: String {
-        case initialSetup, getExtensionStatus, installExtension, removeExtension, extensionRemoved
+        case initialSetup, getExtensionStatus, installExtension, removeExtension, extensionChanged
     }
 
     func handler(forMethodNamed methodName: String) -> Handler? {
@@ -140,7 +140,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
         case .removeExtension:
             let success = await service?.remove(identifier: request.extensionId) ?? false
             return OperationResponse(success: success)
-        case .initialSetup, .extensionRemoved:
+        case .initialSetup, .extensionChanged:
             return nil
         }
     }

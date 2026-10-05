@@ -34,6 +34,15 @@ struct UserText {
     static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
 
     // MARK: - Web Extensions
+    static let chromeWebStoreDownloadTitle = NotLocalizedString("webExtensions.store.download.title", value: "Add Extension", comment: "Extension download window title")
+    static let chromeWebStoreDownloadMessage = NotLocalizedString("webExtensions.store.download.message", value: "Downloading and verifying extension…", comment: "Extension download progress message")
+    static let chromeWebStoreRemoveTitle = NotLocalizedString("webExtensions.store.remove.title", value: "Remove “%@”?", comment: "Remove extension title; placeholder is the name")
+    static let chromeWebStoreRemoveMessage = NotLocalizedString("webExtensions.store.remove.message", value: "The extension and its saved permissions will be removed.", comment: "Remove extension confirmation")
+    static let chromeWebStoreRemoveButton = NotLocalizedString("webExtensions.store.remove.button", value: "Remove Extension", comment: "Confirm removing an extension")
+    static let chromeWebStoreErrorTitle = NotLocalizedString("webExtensions.store.error.title", value: "Couldn’t Complete Extension Request", comment: "Extension operation error title")
+    static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
+    static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
+    static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
     static let webExtensionInstallTitle = NotLocalizedString("webExtensions.install.title", value: "Add “%@”?", comment: "Extension installation title; placeholder is the extension name")
     static let webExtensionPermissionTitle = NotLocalizedString("webExtensions.permissions.title", value: "Allow “%@” additional access?", comment: "Extension permissions title; placeholder is the extension name")
     static let webExtensionUnnamedExtension = NotLocalizedString("webExtensions.unnamed", value: "Extension", comment: "Fallback for an unnamed web extension")

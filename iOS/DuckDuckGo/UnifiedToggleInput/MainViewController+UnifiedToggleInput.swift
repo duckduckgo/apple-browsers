@@ -1594,11 +1594,11 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         })
     }
 
+    /// Opens the chat in a new tab, so the current one stays reachable.
     func aiChatTabChatHeaderDidTapNewChat() {
+        guard let tab = currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
-        unifiedToggleInputCoordinator?.startNewChat()
-        unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
-        currentTab?.submitStartChatAction()
+        openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {

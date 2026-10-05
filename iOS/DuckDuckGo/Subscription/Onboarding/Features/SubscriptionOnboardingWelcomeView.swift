@@ -39,7 +39,8 @@ struct SubscriptionOnboardingWelcomeView: View {
                 visual: .image(Image(.subscriptionDDG96)),
                 title: UserText.subscriptionOnboardingWelcomeTitle,
                 explanation: UserText.subscriptionOnboardingWelcomeExplanation),
-            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext))) {
+            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext)),
+            footerBlur: true) {
             WelcomeCard(features: features, onSelect: { selectedFeature = $0 })
         }
         .subscriptionOnboardingInfoSheet(item: $selectedFeature)

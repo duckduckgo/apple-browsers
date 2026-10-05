@@ -84,6 +84,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case pageContext
     case webExtensions
+    case chromeWebstorePatching
+    case extensionManagement
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -704,8 +706,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForExistingUsers
     case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
-    case subscriptionOnboardingFreeTrialsSep2026
-    case subscriptionOnboardingPaidSubsSep2026
+    case subscriptionOnboardingFreeTrialsOct2026
+    case subscriptionOnboardingPaidSubsOct2026
     case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
@@ -971,4 +973,11 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
 
     case featureEnabled
+}
+
+public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionManagement }
+
+    case isLaunchedExtensions
+    case curatedExtensions
 }

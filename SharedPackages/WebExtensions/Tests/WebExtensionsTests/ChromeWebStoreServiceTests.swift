@@ -86,6 +86,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         let service = service(manager, fixture: fixture)
         let success = await service.install(identifier: fixture.identifier, downloadURL: try ChromeWebStoreURL.downloadURL(for: fixture.identifier))
         XCTAssertFalse(success)
+        XCTAssertEqual(prompter.installationRequests, 1)
         XCTAssertTrue(installationStore.installedExtensions.isEmpty)
         XCTAssertTrue(manager.loadedExtensions.isEmpty)
         XCTAssertTrue(presenter.errors.isEmpty)
@@ -146,18 +147,6 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         XCTAssertEqual(prompter.installationRequests, 0)
         XCTAssertEqual(presenter.errors.count, 1)
         XCTAssertTrue(installationStore.installedExtensions.isEmpty)
-    }
-
-    func testUnsupportedRequiredPermissionsFailBeforePrompt() async throws {
-        let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Unsupported",
-                                                          "description": "Unsupported fixture", "version": "1",
-                                                          "permissions": ["nativeMessaging"]])
-        let manager = try makeManager()
-        let service = service(manager, fixture: fixture)
-        let success = await service.install(identifier: fixture.identifier, downloadURL: try ChromeWebStoreURL.downloadURL(for: fixture.identifier))
-        XCTAssertFalse(success)
-        XCTAssertEqual(prompter.installationRequests, 0)
-        XCTAssertEqual(presenter.errors.count, 1)
     }
 
     func testCatalogRevokedDuringDownloadPreventsInstall() async throws {

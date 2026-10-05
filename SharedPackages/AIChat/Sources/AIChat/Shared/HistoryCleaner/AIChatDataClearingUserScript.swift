@@ -88,6 +88,12 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             }
         }
 
+        /// Everything but `notReady` (no web view or broker, i.e. misuse) can succeed on a fresh page.
+        var isTransient: Bool {
+            guard case .notReady = self else { return true }
+            return false
+        }
+
         var underlyingError: Error? {
             guard case .failedFromScript(let failure) = self else { return nil }
             return failure

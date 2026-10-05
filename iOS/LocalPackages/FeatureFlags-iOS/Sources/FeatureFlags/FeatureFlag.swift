@@ -605,6 +605,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    public enum PerformanceOptimizedPaywallsCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     /// Cohorts for the `subscriptionOnboardingFreeTrialsSep2026` ABN test.
     public enum SubscriptionOnboardingFreeTrialsSep2026Cohort: String, FeatureFlagCohortDescribing {
         case control
@@ -715,7 +720,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProOnboardingPromotion:
             Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .performanceOptimizedPaywalls:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls))
+            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls), cohortType: PerformanceOptimizedPaywallsCohort.self)
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub))
         case .subscriptionPromoForReinstallers:
@@ -839,7 +844,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualSuggestedPrompts:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
         case .showWhatsNewPromptOnDemand:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         case .updatedModelPicker:

@@ -146,13 +146,11 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testCloseAndPromptPastThePromoAreRecordedApart() throws {
-        let before = Date()
+    func testCloseAndPromptPastThePromoAreRecordedApart() {
         makePromo().dismiss()
         XCTAssertEqual(makePromo().outcome, .closed)
-        XCTAssertGreaterThanOrEqual(try XCTUnwrap(makePromo().outcomeDate), before)
 
-        DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
+        keyValueStore = MockKeyValueFileStore()
         makePromo().ignore()
         XCTAssertEqual(makePromo().outcome, .ignored)
     }
@@ -162,21 +160,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         makePromo().dismiss()
 
         XCTAssertNil(makePromo().presentation())
-    }
-
-    @MainActor
-    func testResetOutcomeBringsThePromoBackAndPublishes() {
-        let promo = makePromo()
-        promo.dismiss()
-        let changed = expectation(description: "promo change published")
-        promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
-
-        DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
-
-        wait(for: [changed], timeout: 1)
-        XCTAssertNil(promo.outcome)
-        XCTAssertNil(promo.outcomeDate)
-        XCTAssertNotNil(promo.presentation())
     }
 
     @MainActor

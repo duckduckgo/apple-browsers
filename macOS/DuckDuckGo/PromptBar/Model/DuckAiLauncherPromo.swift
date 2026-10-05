@@ -23,10 +23,6 @@ import NewTabPage
 import Persistence
 import PrivacyConfig
 
-extension Notification.Name {
-    static let duckAiLauncherPromoDismissalsDidReset = Notification.Name("duckAiLauncherPromoDismissalsDidReset")
-}
-
 enum DuckAiLauncherPromoOutcome: String {
     case triedNow = "tried_now"
     case closed
@@ -49,7 +45,6 @@ enum DuckAiLauncherPromoEligibility {
 final class DuckAiLauncherPromo {
 
     private static let outcomeKey = "duckai.launcher-promo.outcome"
-    private static let outcomeDateKey = "duckai.launcher-promo.outcome-date"
 
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
@@ -86,10 +81,6 @@ final class DuckAiLauncherPromo {
         ((try? keyValueStore.object(forKey: Self.outcomeKey)) as? String).flatMap(DuckAiLauncherPromoOutcome.init(rawValue:))
     }
 
-    var outcomeDate: Date? {
-        (try? keyValueStore.object(forKey: Self.outcomeDateKey)) as? Date
-    }
-
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
         guard isEligible else { return nil }
         let secondaryText = preferences.isMenuBarIconVisible
@@ -107,8 +98,7 @@ final class DuckAiLauncherPromo {
             preferences.$isMenuBarIconVisible.map { _ in () }.eraseToAnyPublisher(),
             $chatCount.map { _ in () }.eraseToAnyPublisher(),
             featureFlagger.updatesPublisher,
-            dismissalSubject.eraseToAnyPublisher(),
-            NotificationCenter.default.publisher(for: .duckAiLauncherPromoDismissalsDidReset).map { _ in () }.eraseToAnyPublisher()
+            dismissalSubject.eraseToAnyPublisher()
         )
         .receive(on: DispatchQueue.main)
         .compactMap { [weak self] in self.map { $0.presentation() } }
@@ -136,13 +126,6 @@ final class DuckAiLauncherPromo {
 
     private func record(_ outcome: DuckAiLauncherPromoOutcome) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
-        try? keyValueStore.set(Date(), forKey: Self.outcomeDateKey)
         dismissalSubject.send()
-    }
-
-    static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
-        try? keyValueStore.removeObject(forKey: outcomeKey)
-        try? keyValueStore.removeObject(forKey: outcomeDateKey)
-        NotificationCenter.default.post(name: .duckAiLauncherPromoDismissalsDidReset, object: nil)
     }
 }

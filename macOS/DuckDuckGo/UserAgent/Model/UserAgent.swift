@@ -65,13 +65,14 @@ extension UserAgent {
 
     // MARK: - Web extensions
 
-    /// User agent suffix used by the web views the web extension controller creates (background, popup, options pages).
+    /// User agent suffix used by web views showing web extension pages: the background, popup and options pages, and
+    /// extension pages opened in tabs, such as a pop-out. It applies to every extension, our own included.
     ///
     /// Same as `brandedDefaultSuffix` with a Chrome token inserted before the `Safari/` token, where Chrome places it — a
     /// Chrome-shaped major version with zeroed minor components, the way Chrome's own reduced user agent is formatted.
     /// Chrome-only extensions branch on the presence of ` Chrome/` in `navigator.userAgent` to choose their native messaging channel
     /// and their clipboard implementation; without the token they take a Safari path that talks to a Safari app extension host we do
-    /// not provide. Tab web views are unaffected and keep `brandedDefaultSuffix`.
+    /// not provide. Tabs showing websites are unaffected and keep `brandedDefaultSuffix`.
     static let webExtensionSuffix = "Version/\(safariVersion) " + "Chrome/140.0.0.0 " + "Safari/\(webKitVersion) " + ddgVersion
 
     static func `for`(_ url: URL?,

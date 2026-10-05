@@ -23,7 +23,8 @@ import WebExtensions
 @available(macOS 15.4, *)
 struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
 
-    /// Applies to the web views the extension controller creates (background, popup, options pages) — not to tab web views.
+    /// Applies to every web view showing a web extension page (background, popup, options pages, and extension pages in
+    /// tabs), for every extension — not to tabs showing websites.
     ///
     /// Includes a Chrome token because Chrome-only extensions branch on the presence of ` Chrome/` in `navigator.userAgent`: they use it
     /// to pick their native messaging channel and their clipboard implementation, and on the Safari branch they target a Safari app

@@ -28,6 +28,7 @@ import FeatureFlags_iOS
 protocol KeyboardPresenting {
 
     func showKeyboardOnLaunch(lastBackgroundDate: Date?, hasCompletedAuthentication: Bool, isAfterIdleReturn: Bool)
+    func showKeyboardOnNewTabPageCreated()
 
 }
 
@@ -116,21 +117,7 @@ final class KeyboardPresenter: KeyboardPresenting {
         let screenLeftOpen = mainViewController.presentedViewController
         let scheduleKeyboard = { [self] in
             guard isAppOpen else { return }
-            if flagOn, !isCurrentRequest(requestID) { return }
-            schedule { [self] in
-                if flagOn {
-                    guard isCurrentRequest(requestID) else { return }
-                    let waitsForLaunchPrompt = runOnceModalPromptCloses({ [weak self] in
-                        self?.isCurrentRequest(requestID) == true
-                    }, { [weak self] in
-                        self?.showKeyboardAfterLaunchPrompt(requestID: requestID, onAppLaunch: onAppLaunch)
-                    })
-                    guard !waitsForLaunchPrompt else { return }
-                    showKeyboardOnAppOpen(onAppLaunch: onAppLaunch)
-                } else {
-                    mainViewController.enterSearchOnAppOpen()
-                }
-            }
+            scheduleKeyboardFocus(requestID: requestID, flagOn: flagOn, onAppLaunch: onAppLaunch)
         }
 
         guard flagOn else {
@@ -162,6 +149,30 @@ final class KeyboardPresenter: KeyboardPresenting {
     /// Each foreground has its own presenter, so a launch task that outlives it can't raise the keyboard on a later one.
     func foregroundDidEnd() {
         hasForegroundEnded = true
+    }
+
+    /// A page created for an idle return follows New Tab behavior, without the app-open time threshold.
+    func showKeyboardOnNewTabPageCreated() {
+        guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
+        scheduleKeyboardFocus(requestID: mainViewController.appOpenKeyboardRequestID, flagOn: true, onAppLaunch: false)
+    }
+
+    private func scheduleKeyboardFocus(requestID: UUID, flagOn: Bool, onAppLaunch: Bool) {
+        if flagOn, !isCurrentRequest(requestID) { return }
+        schedule { [self] in
+            if flagOn {
+                guard isCurrentRequest(requestID) else { return }
+                let waitsForLaunchPrompt = runOnceModalPromptCloses({ [weak self] in
+                    self?.isCurrentRequest(requestID) == true
+                }, { [weak self] in
+                    self?.showKeyboardAfterLaunchPrompt(requestID: requestID, onAppLaunch: onAppLaunch)
+                })
+                guard !waitsForLaunchPrompt else { return }
+                showKeyboardOnAppOpen(onAppLaunch: onAppLaunch)
+            } else {
+                mainViewController.enterSearchOnAppOpen()
+            }
+        }
     }
 
     private func showKeyboardAfterLaunchPrompt(requestID: UUID, onAppLaunch: Bool) {

@@ -946,10 +946,11 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-            return false
+            completion(.suppressed)
+            return
         }
 
         // Already on the NTP — no rebuild needed. This preserves any existing
@@ -961,16 +962,18 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-            return true
+            completion(.keptCurrent)
+            return
         }
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.prepareForIdleReturnNTP { [weak self] in
+        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+        controller.prepareForIdleReturnNTP(forAppOpen: deferKeyboard) { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            completion(.openedNewTab)
         }
-        return false
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {

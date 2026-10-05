@@ -64,12 +64,17 @@ protocol OnboardingPresenting: AnyObject {
 
 @MainActor
 protocol IdleReturnLaunchDelegate: AnyObject {
-    /// Returns `true` only when the current tab is already a New Tab Page, is kept as it is, and no voice chat is active.
-    @discardableResult
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) -> Bool
+    /// Completes after any screen dismissal and New Tab Page creation finish.
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void)
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?)
     /// A standard-launch return that did not qualify for an after-idle treatment.
     func recordOrdinaryReturn(timeAwayMs: Int?)
+}
+
+enum IdleReturnNewTabPageResult {
+    case keptCurrent
+    case openedNewTab
+    case suppressed
 }
 
 @MainActor
@@ -130,9 +135,21 @@ final class LaunchActionHandler: LaunchActionHandling {
             if isAfterIdleReturn {
                 switch idleReturnEvaluator.treatmentForIdleReturn() {
                 case .ntp:
-                    let keptCurrentNewTabPage = idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) ?? false
-                    // A kept New Tab Page is an app open like any other, so it falls through to the keyboard presenter.
-                    guard keptCurrentNewTabPage, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
+                    let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs) { [self] result in
+                        guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
+                        switch result {
+                        case .keptCurrent:
+                            keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate,
+                                                                   hasCompletedAuthentication: hasCompletedAuthentication,
+                                                                   isAfterIdleReturn: true)
+                        case .openedNewTab:
+                            keyboardPresenter.showKeyboardOnNewTabPageCreated()
+                        case .suppressed:
+                            break
+                        }
+                    }
+                    return
                 case .lut:
                     idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
                 }

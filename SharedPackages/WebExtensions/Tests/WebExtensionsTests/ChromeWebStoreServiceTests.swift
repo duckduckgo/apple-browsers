@@ -56,6 +56,7 @@ final class ChromeWebStoreServiceTests: XCTestCase {
         let installed = await service.install(identifier: fixture.identifier, downloadURL: try ChromeWebStoreURL.downloadURL(for: fixture.identifier))
         XCTAssertTrue(installed, "\(presenter.errors)")
         let record = try XCTUnwrap(installationStore.installedExtensions.first)
+        XCTAssertEqual(record.filename, "\(fixture.identifier)-1.0.zip")
         XCTAssertEqual(record.storeIdentity, .init(store: .chromeWebStore, id: fixture.identifier))
         XCTAssertNil(record.embeddedType)
         XCTAssertNotEqual(record.uniqueIdentifier, fixture.identifier)

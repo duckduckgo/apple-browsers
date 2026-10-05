@@ -256,6 +256,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    // swiftlint:disable:next cyclomatic_complexity
     public func installExtension(from sourceURL: URL,
                                  storeIdentity: WebExtensionStoreIdentity?,
                                  replacing oldIdentifier: String? = nil) async throws {
@@ -507,7 +508,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
-    // swiftlint:disable:next cyclomatic_complexity
     func reloadExtension(identifier: String, trigger: WebExtensionReloadTrigger) async throws {
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 

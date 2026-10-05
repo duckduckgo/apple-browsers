@@ -27,12 +27,43 @@ final class ChromeWebStorePackageVerifierTests: XCTestCase {
 
     func testValidECDSAPackage() throws {
         let fixture = try ChromeWebStoreFixture()
-        XCTAssertEqual(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier), fixture.archive)
+        let archive = try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier)
+        XCTAssertEqual(archive.data, fixture.archive)
+        XCTAssertEqual(archive.version, "1.0")
     }
 
     func testValidRSAPackage() throws {
         let fixture = try ChromeWebStoreFixture(rsa: true)
-        XCTAssertEqual(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier), fixture.archive)
+        let archive = try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier)
+        XCTAssertEqual(archive.data, fixture.archive)
+        XCTAssertEqual(archive.version, "1.0")
+    }
+
+    func testArchiveVersion() throws {
+        for version in ["1", "1.2.3.4", "65535.65535.65535.65535"] {
+            let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Test", "version": version])
+            XCTAssertEqual(try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier).version, version)
+        }
+    }
+
+    func testUnsafeOrInvalidArchiveVersionIsOmittedWithoutRejectingArchive() throws {
+        for version in ["", "../escape", "1/2", "1:2", "1\\2", "1\0", "1\n", ".", "1..2", "1.2.3.4.5", "65536", String(repeating: "1", count: 256)] {
+            let fixture = try ChromeWebStoreFixture(manifest: ["manifest_version": 3, "name": "Test", "version": version])
+            let archive = try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier)
+            XCTAssertEqual(archive.data, fixture.archive)
+            XCTAssertNil(archive.version, version)
+        }
+    }
+
+    func testMissingOrNonStringArchiveVersionIsOmittedWithoutRejectingArchive() throws {
+        for version: Any? in [nil, 1, NSNull()] {
+            var manifest: [String: Any] = ["manifest_version": 3, "name": "Test"]
+            manifest["version"] = version
+            let fixture = try ChromeWebStoreFixture(manifest: manifest)
+            let archive = try verifier.verifiedArchive(in: fixture.package, extensionID: fixture.identifier)
+            XCTAssertEqual(archive.data, fixture.archive)
+            XCTAssertNil(archive.version)
+        }
     }
 
     func testTamperedPayload() throws {

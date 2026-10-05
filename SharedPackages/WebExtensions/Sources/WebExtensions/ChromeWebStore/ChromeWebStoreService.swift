@@ -82,8 +82,9 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: directory) }
-            let file = directory.appendingPathComponent("extension.zip")
-            try archive.write(to: file, options: .atomic)
+            let filename = archive.version.map { "\(identifier)-\($0).zip" } ?? "\(identifier).zip"
+            let file = directory.appendingPathComponent(filename)
+            try archive.data.write(to: file, options: .atomic)
             let webExtension = try await WKWebExtension(resourceBaseURL: file)
 
             guard webExtension.errors.isEmpty else {

@@ -24,9 +24,15 @@ import ZIPFoundation
 /// CRX3 signs a domain separator, the signed protobuf header, and the complete ZIP payload.
 /// See Chromium's components/crx_file/crx3.proto and crx_verifier.cc.
 public struct ChromeWebStorePackageVerifier {
+    public struct VerifiedArchive: Sendable {
+        public let data: Data
+        /// Best-effort version for the archive filename; unavailable or unsafe values are omitted.
+        public let version: String?
+    }
+
     public init() {}
 
-    public func verifiedArchive(in package: Data, extensionID: String) throws -> Data {
+    public func verifiedArchive(in package: Data, extensionID: String) throws -> VerifiedArchive {
         guard package.count >= 12, package.count <= 64 * 1024 * 1024,
               package.prefix(4) == Data("Cr24".utf8), uint32(package, at: 4) == 3 else {
             throw ChromeWebStoreError.invalidPackage
@@ -61,8 +67,8 @@ public struct ChromeWebStorePackageVerifier {
             }
         }
         guard hasDeveloperSignature else { throw ChromeWebStoreError.invalidSignature }
-        try validateArchive(archive)
-        return archive
+        let version = try validateArchive(archive)
+        return VerifiedArchive(data: archive, version: version)
     }
 
     static func extensionID(from bytes: Data) -> String {
@@ -83,7 +89,7 @@ public struct ChromeWebStorePackageVerifier {
         return SecKeyVerifySignature(key, .rsaSignatureMessagePKCS1v15SHA256, data as CFData, signature as CFData, nil)
     }
 
-    private func validateArchive(_ data: Data) throws {
+    private func validateArchive(_ data: Data) throws -> String? {
         let archive = try Archive(data: data, accessMode: .read)
         var totalSize: UInt64 = 0
         var paths: Set<String> = []
@@ -118,9 +124,16 @@ public struct ChromeWebStorePackageVerifier {
         guard let manifest = archive["manifest.json"], manifest.type == .file,
               manifest.uncompressedSize <= 1024 * 1024 else { throw ChromeWebStoreError.invalidPackage }
         guard let object = try JSONSerialization.jsonObject(with: manifestData) as? [String: Any],
-              let version = object["manifest_version"] as? Int, [2, 3].contains(version),
-              object["name"] is String, object["version"] is String,
+              let manifestVersion = object["manifest_version"] as? Int, [2, 3].contains(manifestVersion),
+              object["name"] is String,
               object["app"] == nil, object["theme"] == nil else { throw ChromeWebStoreError.unsupportedManifest }
+        // Naming is best-effort and must not reject an otherwise installable archive.
+        guard let version = object["version"] as? String else { return nil }
+        let components = version.split(separator: ".", omittingEmptySubsequences: false)
+        guard (1...4).contains(components.count), components.allSatisfy({ component in
+            (1...5).contains(component.count) && component.utf8.allSatisfy { (48...57).contains($0) } && UInt16(component) != nil
+        }) else { return nil }
+        return version
     }
 
     private func uint32(_ data: Data, at offset: Int) -> UInt32 {

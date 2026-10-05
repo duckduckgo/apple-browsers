@@ -1180,7 +1180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let hasEntitlement = (try? await subscriptionManagerForPIR.isFeatureEnabled(.dataBrokerProtection)) ?? false
                 await MainActor.run {
                     if hasEntitlement {
-                        windowControllersManager.showTab(with: .dataBrokerProtection)
+                        windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
                     } else {
                         let url = subscriptionManagerForPIR.url(for: .purchase)
                         windowControllersManager.showTab(with: .subscription(url))

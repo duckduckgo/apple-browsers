@@ -90,6 +90,16 @@ public final class DBPUIViewModel {
 
         return configuration
     }
+
+    /// The handshake carries the value and runs once per document load, so an already-loaded UI
+    /// needs a reload to see a new entry point.
+    @MainActor func setFreeScanEntryPoint(_ entryPoint: String?, in webView: WKWebView?) {
+        guard dataManager?.communicator.freeScanEntryPoint != entryPoint else { return }
+        dataManager?.communicator.freeScanEntryPoint = entryPoint
+
+        guard entryPoint != nil, let webView, webView.url != nil else { return }
+        webView.reload()
+    }
 }
 
 extension DBPUIViewModel: DBPUIScanOps {

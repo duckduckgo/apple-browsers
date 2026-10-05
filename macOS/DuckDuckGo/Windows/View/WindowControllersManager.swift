@@ -239,7 +239,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
 extension WindowControllersManager {
 
     func showDataBrokerProtectionTab() {
-        showTab(with: .dataBrokerProtection)
+        showTab(with: .dataBrokerProtection(.subscribed))
     }
 
     func showBookmarksTab() {

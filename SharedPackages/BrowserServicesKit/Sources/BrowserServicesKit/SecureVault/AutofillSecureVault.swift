@@ -39,8 +39,8 @@ public let AutofillSecureVaultFactory: AutofillVaultFactory = SecureVaultFactory
 ///
 /// * L0 - not encrypted.  Currently no data at this level and we're not likely to use it.
 /// * L1 - secret key encrypted.  Usernames, domains, duck addresses.
-/// * L2 - user password encrypted and can be accessed without password during a specifed amount of time.  User passwords.
-/// * L3 - user password is required at time of request.  Currently no data at this level, but later e.g, credit cards.
+/// * L2 - user password encrypted and can be accessed without password during a specifed amount of time.  User passwords and credit card numbers.
+/// * L3 - user password is required at time of request.  Currently no data at this level.
 ///
 /// Data always goes in and comes out unencrypted.
 public protocol AutofillSecureVault: SecureVault {

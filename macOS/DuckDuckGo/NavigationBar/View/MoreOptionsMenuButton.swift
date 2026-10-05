@@ -78,9 +78,7 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
     }
 
     private func subscribeToUpdateInfo() {
-        let dockPublisher: AnyPublisher<Bool, Never> =
-            dockCustomization?.shouldShowNotificationPublisher
-            ?? Just(false).eraseToAnyPublisher()
+        let dockPublisher: AnyPublisher<Bool, Never> = dockCustomization?.shouldShowNotificationPublisher ?? Just(false).eraseToAnyPublisher()
         guard let updateController else { return }
 
         cancellable = Publishers.CombineLatest4(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockPublisher, isEnabledPublisher)

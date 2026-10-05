@@ -22,8 +22,8 @@ import Cocoa
 import Combine
 import CombineExtensions
 import Common
-import FoundationExtensions
 import DesignResourcesKitIcons
+import FoundationExtensions
 import Freemium
 import History
 import NetworkProtectionIPC
@@ -270,76 +270,75 @@ final class NavigationBarViewController: NSViewController {
                        }
     ) -> NavigationBarViewController {
         self.init(
-                tabCollectionViewModel: tabCollectionViewModel,
-                downloadListCoordinator: downloadListCoordinator,
-                bookmarkManager: bookmarkManager,
-                bookmarkDragDropManager: bookmarkDragDropManager,
-                historyCoordinator: historyCoordinator,
-                recentlyClosedCoordinator: recentlyClosedCoordinator,
-                contentBlocking: contentBlocking,
-                fireproofDomains: fireproofDomains,
-                permissionManager: permissionManager,
-                networkProtectionPopoverManager: networkProtectionPopoverManager,
-                networkProtectionStatusReporter: networkProtectionStatusReporter,
-                autofillPopoverPresenter: autofillPopoverPresenter,
-                brokenSitePromptLimiter: brokenSitePromptLimiter,
-                brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-                featureFlagger: featureFlagger,
-                adBlockingAvailability: adBlockingAvailability,
-                searchPreferences: searchPreferences,
-                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                themeManager: themeManager,
-                aiChatMenuConfig: aiChatMenuConfig,
-                aiChatCoordinator: aiChatCoordinator,
-                vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
-                vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
-                vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
-                sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
-                defaultBrowserPreferences: defaultBrowserPreferences,
-                downloadsPreferences: downloadsPreferences,
-                tabsPreferences: tabsPreferences,
-                accessibilityPreferences: accessibilityPreferences,
-                pinningManager: pinningManager,
-                memoryUsageMonitor: memoryUsageMonitor,
-                pixelFiring: pixelFiring,
-                showTab: showTab
-            )
+            tabCollectionViewModel: tabCollectionViewModel,
+            downloadListCoordinator: downloadListCoordinator,
+            bookmarkManager: bookmarkManager,
+            bookmarkDragDropManager: bookmarkDragDropManager,
+            historyCoordinator: historyCoordinator,
+            recentlyClosedCoordinator: recentlyClosedCoordinator,
+            contentBlocking: contentBlocking,
+            fireproofDomains: fireproofDomains,
+            permissionManager: permissionManager,
+            networkProtectionPopoverManager: networkProtectionPopoverManager,
+            networkProtectionStatusReporter: networkProtectionStatusReporter,
+            autofillPopoverPresenter: autofillPopoverPresenter,
+            brokenSitePromptLimiter: brokenSitePromptLimiter,
+            brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
+            featureFlagger: featureFlagger,
+            adBlockingAvailability: adBlockingAvailability,
+            searchPreferences: searchPreferences,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            themeManager: themeManager,
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate,
+            vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
+            sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+            defaultBrowserPreferences: defaultBrowserPreferences,
+            downloadsPreferences: downloadsPreferences,
+            tabsPreferences: tabsPreferences,
+            accessibilityPreferences: accessibilityPreferences,
+            pinningManager: pinningManager,
+            memoryUsageMonitor: memoryUsageMonitor,
+            pixelFiring: pixelFiring,
+            showTab: showTab
+        )
     }
 
-    init(
-        tabCollectionViewModel: TabCollectionViewModel,
-        downloadListCoordinator: DownloadListCoordinator,
-        bookmarkManager: BookmarkManager,
-        bookmarkDragDropManager: BookmarkDragDropManager,
-        historyCoordinator: HistoryCoordinator,
-        recentlyClosedCoordinator: RecentlyClosedCoordinating,
-        contentBlocking: ContentBlockingProtocol,
-        fireproofDomains: FireproofDomains,
-        permissionManager: PermissionManagerProtocol,
-        networkProtectionPopoverManager: NetPPopoverManager,
-        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
-        autofillPopoverPresenter: AutofillPopoverPresenter,
-        brokenSitePromptLimiter: BrokenSitePromptLimiter,
-        brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating,
-        featureFlagger: FeatureFlagger,
-        adBlockingAvailability: AdBlockingAvailabilityProviding,
-        searchPreferences: SearchPreferences,
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-        themeManager: ThemeManaging,
-        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-        aiChatCoordinator: AIChatCoordinating,
-        vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
-        vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate,
-        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
-        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
-        defaultBrowserPreferences: DefaultBrowserPreferences,
-        downloadsPreferences: DownloadsPreferences,
-        tabsPreferences: TabsPreferences,
-        accessibilityPreferences: AccessibilityPreferences,
-        pinningManager: PinningManager,
-        memoryUsageMonitor: MemoryUsageMonitor,
-        pixelFiring: (any PixelKitFiring)?,
-        showTab: @escaping (Tab.TabContent) -> Void
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         downloadListCoordinator: DownloadListCoordinator,
+         bookmarkManager: BookmarkManager,
+         bookmarkDragDropManager: BookmarkDragDropManager,
+         historyCoordinator: HistoryCoordinator,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating,
+         contentBlocking: ContentBlockingProtocol,
+         fireproofDomains: FireproofDomains,
+         permissionManager: PermissionManagerProtocol,
+         networkProtectionPopoverManager: NetPPopoverManager,
+         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
+         autofillPopoverPresenter: AutofillPopoverPresenter,
+         brokenSitePromptLimiter: BrokenSitePromptLimiter,
+         brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinating,
+         featureFlagger: FeatureFlagger,
+         adBlockingAvailability: AdBlockingAvailabilityProviding,
+         searchPreferences: SearchPreferences,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         themeManager: ThemeManaging,
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatCoordinator: AIChatCoordinating,
+         vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
+         vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate,
+         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
+         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
+         downloadsPreferences: DownloadsPreferences,
+         tabsPreferences: TabsPreferences,
+         accessibilityPreferences: AccessibilityPreferences,
+         pinningManager: PinningManager,
+         memoryUsageMonitor: MemoryUsageMonitor,
+         pixelFiring: (any PixelKitFiring)?,
+         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
         self.popovers = NavigationBarPopovers(
@@ -456,20 +455,20 @@ final class NavigationBarViewController: NSViewController {
     private func makeAddressBarViewController() -> AddressBarViewController {
         let onboardingPixelReporter = OnboardingPixelReporter()
         let addressBarViewController = AddressBarViewController(tabCollectionViewModel: tabCollectionViewModel,
-                                                                      bookmarkManager: bookmarkManager,
-                                                                      historyCoordinator: historyCoordinator,
-                                                                      privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                                                                      permissionManager: permissionManager,
-                                                                      burnerMode: burnerMode,
-                                                                      popovers: popovers,
-                                                                      searchPreferences: searchPreferences,
-                                                                      tabsPreferences: tabsPreferences,
-                                                                      accessibilityPreferences: accessibilityPreferences,
-                                                                      onboardingPixelReporter: onboardingPixelReporter,
-                                                                      aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatCoordinator: aiChatCoordinator,
-                                                                      featureFlagger: featureFlagger,
-                                                                      adBlockingAvailability: adBlockingAvailability)
+                                                                bookmarkManager: bookmarkManager,
+                                                                historyCoordinator: historyCoordinator,
+                                                                privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                                                                permissionManager: permissionManager,
+                                                                burnerMode: burnerMode,
+                                                                popovers: popovers,
+                                                                searchPreferences: searchPreferences,
+                                                                tabsPreferences: tabsPreferences,
+                                                                accessibilityPreferences: accessibilityPreferences,
+                                                                onboardingPixelReporter: onboardingPixelReporter,
+                                                                aiChatMenuConfig: aiChatMenuConfig,
+                                                                aiChatCoordinator: aiChatCoordinator,
+                                                                featureFlagger: featureFlagger,
+                                                                adBlockingAvailability: adBlockingAvailability)
 
         self.addressBarViewController = addressBarViewController
         self.addressBarViewController?.delegate = self
@@ -798,8 +797,8 @@ final class NavigationBarViewController: NSViewController {
     private func setupWebExtensionButtons() {
         if #available(macOS 15.4, *) {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
-                                                          themeManager: themeManager,
-                                                          container: menuButtons)
+                                                           themeManager: themeManager,
+                                                           container: menuButtons)
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
         }
@@ -982,8 +981,8 @@ final class NavigationBarViewController: NSViewController {
             // Keep the button visible while the onboarding popover is anchored to it, otherwise hiding the button
             // collapses the stack view and the popover detaches to a stray position.
             passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown
-                || isAutoFillAutosaveMessageVisible
-                || popovers.isAutofillOnboardingPopoverShown
+            || isAutoFillAutosaveMessageVisible
+            || popovers.isAutofillOnboardingPopoverShown
         }
 
         popovers.passwordManagementDomain = nil
@@ -1834,7 +1833,8 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: NSImage(resource: .passwordManagement), buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
                 self?.showPasswordManagerPopover(selectedWebsiteAccount: account)
             } onDismiss: { [weak self] in
@@ -1861,14 +1861,11 @@ final class NavigationBarViewController: NSViewController {
         DispatchQueue.main.async { [weak self] in
             guard self?.view.window?.isKeyWindow == true,
                   let topUrl = sender.userInfo?["topUrl"] as? URL,
-                  let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool
-            else { return }
+                  let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool else { return }
 
             guard let self = self,
                   self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl,
-                  self.addressBarViewController?.addressBarButtonsViewController?
-                      .shouldSuppressForAdBlocking(url: topUrl) != true
-            else { return }
+                  self.addressBarViewController?.addressBarButtonsViewController?.shouldSuppressForAdBlocking(url: topUrl) != true else { return }
 
             let animationType: NavigationBarBadgeAnimationView.AnimationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
             self.addressBarViewController?.addressBarButtonsViewController?.showBadgeNotification(animationType)
@@ -1878,8 +1875,8 @@ final class NavigationBarViewController: NSViewController {
     @objc private func attemptToShowBrokenSitePrompt(_ sender: Notification) {
         guard brokenSitePromptLimiter.shouldShowToast(),
               let url = tabCollectionViewModel.selectedTabViewModel?.tab.url, !url.isDuckDuckGo,
-              isOnboardingReadyForPrompts
-        else { return }
+              isOnboardingReadyForPrompts else { return }
+
         showBrokenSitePrompt()
     }
 
@@ -1979,9 +1976,8 @@ final class NavigationBarViewController: NSViewController {
         addressBarViewController?.addressBarButtonsViewController?.$buttonsWidth
             .sink { [weak self] totalWidth in
                 guard let self,
-                        let staticButton = addressBarViewController?.addressBarButtonsViewController?.privacyDashboardButton else {
-                    return
-                }
+                      let staticButton = addressBarViewController?.addressBarButtonsViewController?.privacyDashboardButton else { return }
+
                 let optionalButtonsWidth = totalWidth - staticButton.bounds.width
                 addressBarButtonsAddedWidth = optionalButtonsWidth
                 updateNavigationBarForCurrentWidth()
@@ -2445,8 +2441,8 @@ extension NavigationBarViewController: NSMenuDelegate {
             }
             .store(in: &cancellables)
     }
-
 }
+
 // MARK: - OptionsButtonMenuDelegate
 extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
@@ -2546,7 +2542,6 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 }
 
 // MARK: - NSPopoverDelegate
-
 extension NavigationBarViewController: NSPopoverDelegate {
 
     /// We check references here because these popovers might be on other windows.
@@ -2578,6 +2573,7 @@ extension NavigationBarViewController: NSPopoverDelegate {
         }
     }
 }
+
 // MARK: - DownloadsViewControllerDelegate
 extension NavigationBarViewController: DownloadsViewControllerDelegate {
 
@@ -2585,8 +2581,8 @@ extension NavigationBarViewController: DownloadsViewControllerDelegate {
         invalidateDownloadButtonHidingTimer()
         hideDownloadButtonIfPossible()
     }
-
 }
+
 // MARK: - MouseOverButtonDelegate
 extension NavigationBarViewController: MouseOverButtonDelegate {
 
@@ -2621,8 +2617,8 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
             self.dragDestination = (mouseLocation: cursorPosition, hoverStarted: Date())
         }
     }
-
 }
+
 // MARK: - AddressBarViewControllerDelegate
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
@@ -2717,7 +2713,6 @@ extension NavigationBarViewController {
                                         usingView: passwordManagementButton,
                                         withDelegate: self)
     }
-
 }
 #endif
 
@@ -2757,14 +2752,15 @@ extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
             guard autofillPinningPromoCompletion != nil else { return }
 
             let didPresent = popovers.showAutofillOnboardingPopover(from: passwordManagementButton,
-                                                                         withDelegate: self) { [weak self] didAddShortcut in
+                                                                    withDelegate: self,
+                                                                    ctaCallback: { [weak self] didAddShortcut in
                 guard let self else { return }
                 resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
                 if didAddShortcut {
                     pinningManager.pin(.autofill)
                 }
                 popovers.closeAutofillOnboardingPopover()
-            }
+            })
 
             if !didPresent {
                 resolveAutofillPinningPromo(with: .noChange)

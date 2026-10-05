@@ -79,8 +79,7 @@ default.profraw
 .claude/settings.local.json
 
 # Cursor
-.cursor/*
-!.cursor/rules/
+.cursor/
 
 # AI assistants
 .github/copilot-instructions.md

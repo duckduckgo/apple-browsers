@@ -16,24 +16,24 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
+import AppKitExtensions
 import AVFoundation
 import Cocoa
 import Combine
 import Common
+import DesignResourcesKitIcons
+import DuckPlayer
 import FoundationExtensions
 import Lottie
 import os.log
+import Persistence
+import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
-import PixelKit
-import AppKitExtensions
-import AIChat
-import UIComponents
-import DesignResourcesKitIcons
-import DuckPlayer
-import Persistence
 import SwiftUI
+import UIComponents
 import WebExtensions
 import WebKit
 
@@ -717,9 +717,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = privacyDashboardButton.superview {
             privacyDashboardButton.translatesAutoresizingMaskIntoConstraints = false
+
             privacyShieldLeadingConstraint.constant = isFocused
-                ? IconLeadingTuning.buttonLeadingPad.focused
-                : IconLeadingTuning.buttonLeadingPad.unfocused
+            ? IconLeadingTuning.buttonLeadingPad.focused
+            : IconLeadingTuning.buttonLeadingPad.unfocused
+
             NSLayoutConstraint.activate([
                 privacyDashboardButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 privacyDashboardButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
@@ -1008,9 +1010,10 @@ final class AddressBarButtonsViewController: NSViewController {
         }.store(in: &permissionsCancellables)
         tabViewModel?.$permissionAuthorizationQuery
             .receive(on: DispatchQueue.main)
-            .dropFirst().sink { [weak self] _ in
+            .dropFirst()
+            .sink { [weak self] _ in
                 self?.updatePermissionCenterButton()
-        }.store(in: &permissionsCancellables)
+            }.store(in: &permissionsCancellables)
 
         // Show informational popover when permission blocked due to system being disabled
         tabViewModel?.tab.permissions.permissionBlockedBySystem
@@ -1599,12 +1602,14 @@ final class AddressBarButtonsViewController: NSViewController {
     ///   glyph in the tertiary icon color so it visually reads as muted.
     private func updateYouTubeAdBlockButtonAppearance() {
         let isAdBlockingActive = adBlockingAvailability.isEnabled
+
         youTubeAdBlockButton.image = isAdBlockingActive
-            ? DesignSystemImages.Glyphs.Size16.videoPlayerBlocked
-            : DesignSystemImages.Glyphs.Size16.videoPlayer
+        ? DesignSystemImages.Glyphs.Size16.videoPlayerBlocked
+        : DesignSystemImages.Glyphs.Size16.videoPlayer
+
         youTubeAdBlockButton.normalTintColor = isAdBlockingActive
-            ? theme.colorsProvider.iconsColor
-            : theme.palette.iconsTertiary
+        ? theme.colorsProvider.iconsColor
+        : theme.palette.iconsTertiary
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -2322,8 +2327,9 @@ final class AddressBarButtonsViewController: NSViewController {
         // present, fall through to the normal Permission Center route so the user can
         // manage them; the FE failure handler still surfaces the system-disabled popover
         // automatically when voice chat is actually attempted.
-        if isDuckAiVoiceChatSystemMicDenied(forDomain: url.host ?? "") &&
-           shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
+        if isDuckAiVoiceChatSystemMicDenied(forDomain: url.host ?? "")
+            && shouldSuppressShieldOnDuckAi(forDomain: domain, tabViewModel: tabViewModel) {
+
             if let existing = systemDisabledInfoPopover, existing.isShown {
                 existing.close()
                 systemDisabledInfoPopover = nil
@@ -2412,11 +2418,11 @@ final class AddressBarButtonsViewController: NSViewController {
         let isTextFieldValueText = textFieldValue?.isText ?? false
 
         youTubeAdBlockButton.isShown = isPlayableYoutubeVideo
-            && adBlockingAvailability.isFeatureSupported
-            && !isAIChatPanelActive
-            && !isEditingMode
-            && !isTextFieldValueText
-            && !isTextFieldEditorFirstResponder
+        && adBlockingAvailability.isFeatureSupported
+        && !isAIChatPanelActive
+        && !isEditingMode
+        && !isTextFieldValueText
+        && !isTextFieldEditorFirstResponder
 
         if !youTubeAdBlockButton.isShown, let popover = youTubeAdBlockPopover, popover.isShown {
             popover.close()
@@ -2910,6 +2916,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 }
 
+// MARK: - AddressBarButtonsView
 /// Custom view for AddressBarButtonsViewController that accepts first mouse in popup windows
 /// to allow dragging the window when it's inactive
 final class AddressBarButtonsView: NSView {
@@ -2947,6 +2954,7 @@ final class AddressBarButtonsView: NSView {
     }
 }
 
+// MARK: - ThemeUpdateListening
 extension AddressBarButtonsViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -2979,7 +2987,6 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
 }
 
 // MARK: - Contextual Onboarding View Highlight
-
 extension AddressBarButtonsViewController {
 
     func highlightPrivacyShield() {
@@ -2994,11 +3001,9 @@ extension AddressBarButtonsViewController {
         hasPrivacyInfoPulseQueuedAnimation = false
         ViewHighlighter.stopHighlighting(view: privacyDashboardButton)
     }
-
 }
 
 // MARK: - NavigationBarBadgeAnimatorDelegate
-
 extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
 
     func didFinishAnimating(type: NavigationBarBadgeAnimationView.AnimationType) {
@@ -3091,11 +3096,9 @@ extension AddressBarButtonsViewController: NavigationBarBadgeAnimatorDelegate {
             self.playPrivacyInfoHighlightAnimationIfNecessary()
         }
     }
-
 }
 
 // MARK: - NSPopoverDelegate
-
 extension AddressBarButtonsViewController: NSPopoverDelegate {
 
     func popoverWillShow(_ notification: Notification) {
@@ -3166,25 +3169,19 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             break
         }
     }
-
 }
 
 // MARK: - Autoplay Discoverability Promo
-
 extension AddressBarButtonsViewController {
 
     /// Opens the Permission Center for the Autoplay Discoverability promo
     /// - Returns: Whether it was presented. `false` leaves the promo eligible for the next autoplay event.
     func presentPermissionCenterForAutoplayPromoIfPossible() -> Bool {
-        guard
-            isViewLoaded,
-            view.window?.isKeyWindow == true,
-            tabViewModel?.tab.mustDisplayAutoplayPolicy == true,
-            permissionCenterButton.isShown,
-            permissionCenterPopover?.isShown != true
-        else {
-            return false
-        }
+        guard isViewLoaded,
+              view.window?.isKeyWindow == true,
+              tabViewModel?.tab.mustDisplayAutoplayPolicy == true,
+              permissionCenterButton.isShown,
+              permissionCenterPopover?.isShown != true else { return false }
 
         return presentPermissionCenterPopoverIfPossible(displaysAutoplayDiscovery: true)
     }
@@ -3193,9 +3190,7 @@ extension AddressBarButtonsViewController {
     /// - Important: This flow is required by the `Promo Queue > Autoplay Discoverability > Force Show` flow
     @discardableResult
     func forcePresentPermissionCenterForAutoplayPromo() -> Bool {
-        guard isViewLoaded, view.window?.isKeyWindow == true else {
-            return false
-        }
+        guard isViewLoaded, view.window?.isKeyWindow == true else { return false }
 
         permissionCenterButton.isShown = true
         return presentPermissionCenterPopoverIfPossible(displaysAutoplayDiscovery: true)
@@ -3205,9 +3200,9 @@ extension AddressBarButtonsViewController {
     /// - Returns: Whether the popover was closed. `false` means there was nothing to close, or the user already engaged with it.
     @discardableResult
     func autodismissPermissionCenterIfPossible() -> Bool {
-        guard let permissionCenterPopover, permissionCenterPopover.isShown, permissionCenterPopover.viewController.allowsAutodismiss else {
-            return false
-        }
+        guard let permissionCenterPopover,
+              permissionCenterPopover.isShown,
+              permissionCenterPopover.viewController.allowsAutodismiss else { return false }
 
         permissionCenterPopover.close()
         return true
@@ -3244,7 +3239,7 @@ extension URL {
     var isLocalURL: Bool {
         if let host = self.host {
             for regex in Self.compiledRegexes
-            where regex.firstMatch(in: host, options: [], range: host.fullRange) != nil {
+                    where regex.firstMatch(in: host, options: [], range: host.fullRange) != nil {
                 return true
             }
         }
@@ -3276,10 +3271,9 @@ extension TabViewModel {
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
         return (shouldShowWhileFocused
-            || (isUnfocusedAndIdle && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
-            || (isUnfocusedAndIdle && mustDisplayAutoplayPolicy)
-            || (isUnfocusedAndIdle && isPermissionCenterPopoverShown))
+                || (isUnfocusedAndIdle && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions))
+                || (isUnfocusedAndIdle && mustDisplayAutoplayPolicy)
+                || (isUnfocusedAndIdle && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
     }
-
 }

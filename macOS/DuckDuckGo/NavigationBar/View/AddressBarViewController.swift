@@ -16,16 +16,16 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Combine
 import CombineExtensions
-import Lottie
 import Common
 import FoundationExtensions
-import AIChat
-import UIComponents
+import Lottie
 import PixelKit
 import PrivacyConfig
+import UIComponents
 import WebExtensions
 
 protocol AddressBarViewControllerDelegate: AnyObject {
@@ -390,7 +390,6 @@ final class AddressBarViewController: NSViewController {
 
         passiveTextField = PassiveAddressBarTextField(frame: .zero)
         passiveTextField.translatesAutoresizingMaskIntoConstraints = false
-        passiveTextField.cell = PassiveAddressBarTextFieldCell()
         passiveTextField.isEditable = false
         passiveTextField.isBordered = false
         passiveTextField.drawsBackground = false
@@ -406,7 +405,6 @@ final class AddressBarViewController: NSViewController {
 
         addressBarTextField = AddressBarTextField(frame: .zero)
         addressBarTextField.translatesAutoresizingMaskIntoConstraints = false
-        addressBarTextField.cell = AddressBarTextFieldCell()
         addressBarTextField.isEditable = true
         addressBarTextField.isSelectable = true
         addressBarTextField.isBordered = false
@@ -450,8 +448,10 @@ final class AddressBarViewController: NSViewController {
         switchToTabBox.setContentCompressionResistancePriority(.required, for: .horizontal)
         switchToTabBox.addSubview(switchToTabRoundedView)
 
+        // Frame-driven: `layoutShadowView` positions it with `shadowView.frame`
+        // after moving it into the window's content view, so it must keep
+        // translatesAutoresizingMaskIntoConstraints on.
         shadowView = ShadowView()
-        shadowView.translatesAutoresizingMaskIntoConstraints = false
         shadowView.shadowColor = NSColor(resource: .addressBarShadow)
         shadowView.shadowOffset = LayoutConstants.shadowOffset
         shadowView.shadowRadius = LayoutConstants.shadowRadius
@@ -1007,8 +1007,8 @@ final class AddressBarViewController: NSViewController {
             passiveTextField.isHidden = true
         case .active, .inactive, .inactiveWithAIChat:
             let isPassiveTextFieldHidden = themeManager.isAppRebranded
-                ? (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
-                : (selectionState.isSelected || mode.isEditing)
+            ? (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
+            : (selectionState.isSelected || mode.isEditing)
 
             addressBarTextField.isHidden = !isPassiveTextFieldHidden
             passiveTextField.isHidden = isPassiveTextFieldHidden
@@ -1323,7 +1323,7 @@ final class AddressBarViewController: NSViewController {
 
                 /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
                 activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
-                activeOuterBorderView.backgroundColor = isBurner ? NSColor(resource: .burnerAccent).withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
 
                 if !themeManager.isAppRebranded {
                     addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
@@ -1401,8 +1401,8 @@ final class AddressBarViewController: NSViewController {
         /// offset so the text isn't pushed past the (now-narrower) buttons container's left edge on that path.
         if styleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
             let pullback = isAddressBarFocused
-                ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
-                : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
+            ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
+            : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
             self.activeTextFieldMinXConstraint.constant = adjustedMinX - pullback
         } else {
             self.activeTextFieldMinXConstraint.constant = adjustedMinX
@@ -1413,6 +1413,21 @@ final class AddressBarViewController: NSViewController {
         addressBarTextTrailingConstraint.constant = width
         passiveTextFieldTrailingConstraint.constant = width
     }
+
+    func resizeAddressBarIfNeeded() {
+        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
+            return
+        }
+
+        requestAddressBarResize(allowsAsync: false)
+    }
+
+    func requestAddressBarResize(allowsAsync: Bool = true) {
+        displaysTallLayout = shouldUseTallAddressBarLayout
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
+    }
+
+    // MARK: - First Responder
 
     private func firstResponderDidChange(_ notification: Notification) {
         let firstResponder = view.window?.firstResponder
@@ -1586,8 +1601,7 @@ final class AddressBarViewController: NSViewController {
                 return nil
             }
 
-            guard self.view.window?.firstResponder !== addressBarTextField.currentEditor()
-            else { return event }
+            guard self.view.window?.firstResponder !== addressBarTextField.currentEditor() else { return event }
 
             // bookmark button visibility is usually determined by hover state, but we def need to hide it right now
             self.addressBarButtonsViewController?.bookmarkButton.isHidden = true
@@ -1677,9 +1691,9 @@ final class AddressBarViewController: NSViewController {
 
         return event
     }
-
 }
 
+// MARK: - ThemeUpdateListening
 extension AddressBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -1689,22 +1703,7 @@ extension AddressBarViewController: ThemeUpdateListening {
     }
 }
 
-private extension AddressBarViewController {
-
-    func resizeAddressBarIfNeeded() {
-        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
-            return
-        }
-
-        requestAddressBarResize(allowsAsync: false)
-    }
-
-    func requestAddressBarResize(allowsAsync: Bool = true) {
-        displaysTallLayout = shouldUseTallAddressBarLayout
-        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
-    }
-}
-
+// MARK: - AddressBarButtonsViewControllerDelegate
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
@@ -1844,9 +1843,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     /// clicks on the AI chat text view through.
     private func isHitViewInsideAddressBarTextFields(_ hitView: NSView?) -> Bool {
         hitView === addressBarTextField
-            || hitView?.isDescendant(of: addressBarTextField) == true
-            || hitView === passiveTextField
-            || hitView?.isDescendant(of: passiveTextField) == true
+        || hitView?.isDescendant(of: addressBarTextField) == true
+        || hitView === passiveTextField
+        || hitView?.isDescendant(of: passiveTextField) == true
     }
 
     /// Transitions from unfocused duck.ai mode (`.inactiveWithAIChat`) back to focused duck.ai mode (`.activeWithAIChat`):
@@ -1986,6 +1985,7 @@ extension AddressBarViewController: NSDraggingDestination {
     }
 }
 
+// MARK: - AddressBarTextFieldFocusDelegate
 extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
         requestAddressBarResize()
@@ -2003,12 +2003,12 @@ extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     }
 }
 
+// MARK: - NSView+shouldShowArrowCursor
 fileprivate extension NSView {
 
     var shouldShowArrowCursor: Bool {
         self is NSButton || self is LottieAnimationView || self is CustomToggleControl
     }
-
 }
 
 extension NSUserInterfaceItemIdentifier {

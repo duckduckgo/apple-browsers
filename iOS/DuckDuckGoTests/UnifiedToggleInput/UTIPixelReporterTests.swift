@@ -79,6 +79,86 @@ final class UTIPixelReporterTests: XCTestCase {
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 12)
     }
 
+    func testWhenTabsAreSentThenCountUsesPrivacyBuckets() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        reporter.makeTabSubmissionReporter(requestedTabCount: 0)(.init(totalTabCount: 0, additionalTabCount: 0))
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+
+        for (count, bucket) in [(1, "one"), (2, "some"), (3, "some"), (4, "many"), (20, "many")] {
+            reporter.makeTabSubmissionReporter(requestedTabCount: count)(.init(totalTabCount: count, additionalTabCount: count))
+            let call = pixelKitMock.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "aichat_unified_input_tabs_sent")
+            XCTAssertEqual(call?.pixel.parameters, ["surface": "contextual_chat", "tab_count": bucket])
+            XCTAssertEqual(call?.frequency, .dailyAndCount)
+        }
+    }
+
+    func testWhenReporterIsReleasedThenSubmissionKeepsOriginalSurface() throws {
+        var liveContext: UTIPixelContext? = context(surface: .contextualChat)
+        var reporter: UTIPixelReporter? = makeReporter { liveContext }
+        weak var weakReporter = reporter
+        let report = try XCTUnwrap(reporter).makeTabSubmissionReporter(requestedTabCount: 1)
+        liveContext = context(surface: .addressBar)
+        reporter = nil
+        XCTAssertNil(weakReporter)
+        liveContext = nil
+
+        report(.init(totalTabCount: 2, additionalTabCount: 1))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "tab_count": "some"])
+    }
+
+    func testWhenSomeRequestedTabsAreMissingThenReportsPartialFailureAndSentCount() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        reporter.makeTabSubmissionReporter(requestedTabCount: 3)(.init(totalTabCount: 2, additionalTabCount: 1))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tabs_sent", "aichat_unified_input_tabs_submission_incomplete"
+        ])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["surface": "contextual_chat", "outcome": "partial"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
+    func testWhenAllAdditionalTabsAreMissingThenCurrentPageDoesNotMaskFailure() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        reporter.makeTabSubmissionReporter(requestedTabCount: 2)(.init(totalTabCount: 1, additionalTabCount: 0))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "aichat_unified_input_tabs_submission_incomplete")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "outcome": "all"])
+    }
+
+    func testWhenTabChipIsRemovedThenReportsOriginalSource() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        let attachment = UnifiedToggleInputAttachment.tab(.init(
+            tabId: "private-id", title: "Private title", url: URL(string: "https://example.com/private")!, source: .mention))
+
+        reporter.reportAttachmentRemoved(attachment)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_removed"
+        ])
+        for call in pixelKitMock.actualFireCalls {
+            XCTAssertEqual(call.pixel.parameters, ["surface": "contextual_chat", "source": "mention"])
+            XCTAssertEqual(call.frequency, .dailyAndCount)
+        }
+    }
+
+    func testWhenPickerSessionClosesThenReportsCancellationOnceOnlyWithoutChoice() {
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        let session = MultiTabPickerPixelSession { actions.append($0) }
+        session.finish()
+        session.show()
+        session.show()
+        session.finish()
+        session.finish()
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled])
+
+        session.show()
+        session.finish(didChoose: true)
+        session.finish()
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled, .pickerShown])
+    }
+
     // MARK: - Omnibar surface shown (toggle visibility from live context)
 
     func testWhenOmnibarSurfaceShownWithToggleVisibleThenPixelReportsToggleVisibleTrue() {

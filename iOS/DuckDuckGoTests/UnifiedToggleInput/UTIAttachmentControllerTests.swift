@@ -242,17 +242,47 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
     // MARK: - Tab attachments
 
+    func testWhenTabSelectionChangesThenReportsOnceAndPreservesOriginalSourceOnRemoval() {
+        enableTabAttachments(limit: 1)
+        let controller = makeController()
+        let first = candidate(id: "first")
+
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .mention))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .tabPicker))
+        XCTAssertFalse(controller.setTabAttachment(candidate(id: "second"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false, attachmentSource: .tabPicker))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_attached", "aichat_unified_input_tab_removed"
+        ])
+        for call in pixelKitMock.actualFireCalls {
+            XCTAssertEqual(call.pixel.parameters?["source"], "mention")
+            XCTAssertEqual(call.frequency, .dailyAndCount)
+        }
+    }
+
+    func testWhenCurrentPageOrDisabledFeatureIsSelectedThenNoAdditionalTabPixel() {
+        enableTabAttachments()
+        config.pageContextAttachHandler = { }
+        let controller = makeController()
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs))
+        config.tabFeatureState = .unavailable
+        XCTAssertFalse(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
     func testFirstUseCallbackRequiresSuccessfulAdditionalTabAttachment() {
         enableTabAttachments(limit: 1)
         let controller = makeController()
         let first = candidate(id: "first")
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs))
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 1)
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true))
-        XCTAssertFalse(controller.setTabAttachment(candidate(id: "second"), isAttached: true))
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertFalse(controller.setTabAttachment(candidate(id: "second"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs))
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 1)
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second"), attachmentSource: .recentTabs))
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 2)
     }
 
@@ -263,7 +293,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let controller = makeController()
         controller.updateAttachButtonPresentation()
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 0)
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs))
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 0)
     }
 
@@ -273,10 +303,10 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let first = candidate(id: "first")
         let second = candidate(id: "second")
 
-        XCTAssertTrue(controller.toggleTabAttachment(first))
-        XCTAssertTrue(controller.toggleTabAttachment(second))
+        XCTAssertTrue(controller.toggleTabAttachment(first, attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.toggleTabAttachment(second, attachmentSource: .recentTabs))
         XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["first", "second"])
-        XCTAssertTrue(controller.toggleTabAttachment(first))
+        XCTAssertTrue(controller.toggleTabAttachment(first, attachmentSource: .recentTabs))
         XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["second"])
     }
 
@@ -287,12 +317,12 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.pageContextRemoveHandler = { [unowned config] in config.isCurrentPageAttached = false }
         let controller = makeController()
 
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second")))
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "third")))
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "current")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second"), attachmentSource: .recentTabs))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "third"), attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "current"), attachmentSource: .recentTabs))
         XCTAssertFalse(config.isCurrentPageAttached)
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "third")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "third"), attachmentSource: .recentTabs))
         XCTAssertEqual(view.attachments.count, 3)
     }
 
@@ -306,11 +336,11 @@ final class UTIAttachmentControllerTests: XCTestCase {
         }
         let controller = makeController()
 
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "current")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "current"), attachmentSource: .recentTabs))
         XCTAssertEqual(attachCount, 1)
         XCTAssertTrue(view.attachments.isEmpty)
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs))
         XCTAssertEqual(attachCount, 1)
     }
 
@@ -320,7 +350,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let controller = makeController()
 
         _ = controller.makeAttachmentMenu()
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         XCTAssertEqual(config.candidateReadCount, 0)
         XCTAssertTrue(view.attachments.isEmpty)
         XCTAssertEqual(callbackSpy.onDraftChangedCount, 0)
@@ -332,7 +362,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         _ = controller.makeAttachmentMenu()
         config.tabFeatureState = .unavailable
 
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
@@ -340,10 +370,10 @@ final class UTIAttachmentControllerTests: XCTestCase {
         enableTabAttachments()
         let controller = makeController()
         config.isContextualChatState = false
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         config.isContextualChatState = true
         view.isGenerating = true
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
@@ -354,8 +384,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
         _ = controller.makeAttachmentMenu()
         config.tabs.removeAll { $0.uid == "first" }
 
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "fire")))
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "fire"), attachmentSource: .recentTabs))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
@@ -364,8 +394,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.tabs.append(Tab(uid: "standard", link: Link(title: "Standard", url: candidate(id: "standard").url), fireTab: false))
         let controller = makeController()
 
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "standard")))
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "standard"), attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
     }
 
     func test_tabSelection_usesFreshMetadataWhenCandidateNavigated() {
@@ -375,7 +405,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let newURL = URL(string: "https://example.org/new")!
         config.tabs.first { $0.uid == "first" }?.link = Link(title: "New page", url: newURL)
 
-        XCTAssertTrue(controller.toggleTabAttachment(oldCandidate))
+        XCTAssertTrue(controller.toggleTabAttachment(oldCandidate, attachmentSource: .recentTabs))
         XCTAssertEqual(view.attachments.first?.tabAttachment?.url, newURL)
         XCTAssertEqual(view.attachments.first?.tabAttachment?.title, "New page")
     }
@@ -387,29 +417,29 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.pageContextAttachHandler = { didRequestPage = true }
         let controller = makeController()
 
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "current")))
+        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "current"), attachmentSource: .recentTabs))
         XCTAssertFalse(didRequestPage)
     }
 
     func test_tabSelection_explicitStateDoesNotInvertExistingAttachment() {
         enableTabAttachments()
         let controller = makeController()
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true))
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs))
         XCTAssertEqual(view.attachments.count, 1)
         XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false))
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false, attachmentSource: .recentTabs))
+        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false, attachmentSource: .recentTabs))
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
     func test_tabChipRemovalReleasesCapacity() throws {
         enableTabAttachments(limit: 1)
         let controller = makeController()
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         controller.removeAttachment(id: try XCTUnwrap(view.attachments.first?.id))
 
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second"), attachmentSource: .recentTabs))
         XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["second"])
     }
 
@@ -418,7 +448,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         config.isCurrentPageAttached = true
         config.pageContextAttachHandler = {}
         let controller = makeController()
-        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first")))
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
         let menu = try XCTUnwrap(controller.makeAttachmentMenu())
         let recent = try XCTUnwrap(menu.children.first as? UIMenu)
         let actions = recent.children.compactMap { $0 as? UIAction }

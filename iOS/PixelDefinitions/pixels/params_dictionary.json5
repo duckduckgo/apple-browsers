@@ -21,6 +21,18 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "aichat_tab_picker_source": {
+        "key": "source",
+        "type": "string",
+        "description": "Selector that was presented.",
+        "enum": ["tab_picker", "mention"]
+    },
+    "aichat_tab_attachment_source": {
+        "key": "source",
+        "type": "string",
+        "description": "Where the tab was originally selected, including when it is later removed through another control.",
+        "enum": ["recent_tabs", "tab_picker", "mention"]
+    },
     "aichat_first_prompt_new_install": {
         "key": "first_prompt_new_install",
         "type": "boolean",

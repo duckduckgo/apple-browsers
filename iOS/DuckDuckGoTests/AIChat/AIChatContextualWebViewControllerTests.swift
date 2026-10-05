@@ -441,6 +441,7 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedNative() {}
     func firePageContextRemovedFrontend() {}
     func firePageContextCollectionEmpty() {}
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {}
     func firePageContextCollectionUnavailable() {}
     func firePromptSubmittedWithContext() {}
     func firePromptSubmittedWithoutContext() {}

@@ -41,6 +41,9 @@ final class MultiTabMentionController: TextEntryMentionHandling {
         let isEnabled: Bool
     }
 
+    var onPickerEvent: ((MultiTabAttachmentPixel.Action) -> Void)?
+    private lazy var pixelSession = MultiTabPickerPixelSession { [weak self] in self?.onPickerEvent?($0) }
+
     var onSuggestionsChanged: (([Suggestion]?) -> Void)?
     private let environment: Environment
     private weak var textView: UITextView?
@@ -61,6 +64,7 @@ final class MultiTabMentionController: TextEntryMentionHandling {
     }
 
     func dismiss() {
+        pixelSession.finish()
         pendingUpdate?.cancel()
         pendingUpdate = nil
         activeToken = nil
@@ -92,6 +96,11 @@ final class MultiTabMentionController: TextEntryMentionHandling {
         let attachedIDs = environment.attachedTabIds()
         let availableTabs = environment.tabs().filter { !attachedIDs.contains($0.tabId) }
         let candidates = MultiTabAttachmentCandidateFilter.filter(availableTabs, query: token.query)
+        if candidates.isEmpty {
+            pixelSession.finish()
+        } else {
+            pixelSession.show()
+        }
         self.textView = textView
         activeToken = token
         onSuggestionsChanged?(candidates.isEmpty ? nil : candidates.map {
@@ -125,6 +134,7 @@ final class MultiTabMentionController: TextEntryMentionHandling {
         guard !environment.attachedTabIds().contains(candidate.tabId),
               environment.canAttach(candidate.tabId),
               environment.attachTab(candidate) else { return }
+        pixelSession.finish(didChoose: true)
         textView.replace(range, withText: "")
         textView.selectedRange = NSRange(location: activeToken.range.location, length: 0)
         textView.delegate?.textViewDidChange?(textView)

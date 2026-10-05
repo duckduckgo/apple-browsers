@@ -107,6 +107,10 @@ final class UTIAttachmentController {
         presenter.isFireTabProvider = { [weak self] in
             self?.environment.isFireTab() ?? false
         }
+        presenter.onTabPickerEvent = { [weak self] action in
+            guard let self, canUseTabAttachments else { return }
+            pixelReporter.reportTabAttachment(action, source: .tabPicker)
+        }
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar
         }
@@ -425,8 +429,8 @@ final class UTIAttachmentController {
                 guard let self else { return false }
                 return self.canUseTabAttachments && !self.view.isGenerating()
             },
-            tabActionHandler: { [weak self] candidate, isAttached in
-                self?.setTabAttachment(candidate, isAttached: isAttached) ?? false
+            tabActionHandler: { [weak self] candidate, isAttached, source in
+                self?.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source) ?? false
             }
         )
     }
@@ -456,13 +460,14 @@ final class UTIAttachmentController {
     }
 
     @discardableResult
-    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate) -> Bool {
-        setTabAttachment(candidate, isAttached: !environment.policy().selectedTabIDs.contains(candidate.tabId))
+    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate, attachmentSource: TabAttachmentOrigin) -> Bool {
+        setTabAttachment(candidate, isAttached: !environment.policy().selectedTabIDs.contains(candidate.tabId), attachmentSource: attachmentSource)
     }
 
     /// Explicit desired state makes staged picker confirmation safe if the draft changed while it was open.
     @discardableResult
-    func setTabAttachment(_ candidate: MultiTabAttachmentCandidate, isAttached: Bool) -> Bool {
+    func setTabAttachment(_ candidate: MultiTabAttachmentCandidate, isAttached: Bool,
+                          attachmentSource: TabAttachmentOrigin) -> Bool {
         guard canUseTabAttachments, !view.isGenerating(),
               let source = environment.tabAttachmentSource() else { return false }
         let policy = environment.policy()
@@ -482,7 +487,9 @@ final class UTIAttachmentController {
                 view.addAttachment(.tab(UnifiedToggleInputTabAttachment(tabId: currentCandidate.tabId,
                                                                         title: currentCandidate.title,
                                                                         url: currentCandidate.url,
-                                                                        favicon: favicon)))
+                                                                        favicon: favicon,
+                                                                        source: attachmentSource)))
+                pixelReporter.reportTabAttachment(.attached, source: attachmentSource)
                 callbacks.onTabAttached()
             }
         } else if candidate.tabId == source.currentTabID {
@@ -491,6 +498,7 @@ final class UTIAttachmentController {
         } else {
             for attachment in view.currentAttachments() where attachment.tabAttachment?.tabId == candidate.tabId {
                 view.removeAttachment(attachment.id)
+                pixelReporter.reportAttachmentRemoved(attachment)
             }
         }
         callbacks.onDraftChanged()

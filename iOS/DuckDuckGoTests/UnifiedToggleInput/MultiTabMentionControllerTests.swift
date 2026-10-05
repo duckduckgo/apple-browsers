@@ -174,6 +174,106 @@ final class MultiTabMentionControllerTests: XCTestCase {
         XCTAssertTrue(fixture.attachmentAttempts.isEmpty)
     }
 
+    func testWhenSuggestionsRefreshThenReportsOneImpressionAndNoCancellationOnSelection() async {
+        let fixture = MentionFixture()
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.setText("@wiki")
+        await presentSuggestions(fixture)
+        fixture.controller.refresh()
+        fixture.controller.refresh()
+        fixture.controller.accept(fixture.candidate)
+        fixture.controller.dismiss()
+        XCTAssertEqual(actions, [.pickerShown])
+    }
+
+    func testWhenMentionClosesWithoutSelectionThenReportsOneCancellation() async {
+        let fixture = MentionFixture()
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.setText("@wiki")
+        await presentSuggestions(fixture)
+        fixture.controller.dismiss()
+        fixture.controller.dismiss()
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled])
+    }
+
+    func testWhenResultsDisappearThenCancelsOnceAndStartsNewSessionWhenResultsReturn() async {
+        let fixture = MentionFixture()
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.setText("@wiki")
+        await presentSuggestions(fixture)
+        XCTAssertEqual(actions, [.pickerShown])
+
+        await updateSuggestions(fixture, text: "@wikiblabla", selection: NSRange(location: 11, length: 0))
+        XCTAssertNil(fixture.suggestions)
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled])
+
+        fixture.controller.refresh()
+        await updateSuggestions(fixture, selection: NSRange(location: 0, length: 11))
+        fixture.controller.dismiss()
+        XCTAssertNil(fixture.suggestions)
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled])
+
+        await updateSuggestions(fixture, text: "@wiki", selection: NSRange(location: 5, length: 0))
+        XCTAssertEqual(fixture.suggestions?.map(\.candidate.tabId), [fixture.candidate.tabId])
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled, .pickerShown])
+
+        fixture.controller.accept(fixture.candidate)
+        fixture.controller.dismiss()
+        XCTAssertNil(fixture.suggestions)
+        XCTAssertEqual(fixture.attachmentAttempts, [fixture.candidate.tabId])
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled, .pickerShown])
+    }
+
+    func testWhenResultsReturnWithoutLeavingMentionThenReportsNewImpression() async {
+        let fixture = MentionFixture()
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.setText("@wiki")
+        await presentSuggestions(fixture)
+
+        await updateSuggestions(fixture, text: "@wikiblabla", selection: NSRange(location: 11, length: 0))
+        XCTAssertNil(fixture.suggestions)
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled])
+
+        await updateSuggestions(fixture, text: "@wiki", selection: NSRange(location: 5, length: 0))
+        fixture.controller.refresh()
+        XCTAssertEqual(fixture.suggestions?.map(\.candidate.tabId), [fixture.candidate.tabId])
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled, .pickerShown])
+    }
+
+    func testWhenMentionNeverHasResultsThenDoesNotReportShownOrCanceled() async {
+        let fixture = MentionFixture()
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        fixture.controller.onPickerEvent = { actions.append($0) }
+
+        await updateSuggestions(fixture, text: "@wikiblabla", selection: NSRange(location: 11, length: 0))
+        XCTAssertNil(fixture.suggestions)
+        await updateSuggestions(fixture, selection: NSRange(location: 0, length: 11))
+        fixture.controller.dismiss()
+
+        XCTAssertNil(fixture.suggestions)
+        XCTAssertTrue(actions.isEmpty)
+    }
+
+    private func updateSuggestions(_ fixture: MentionFixture, text: String? = nil, selection: NSRange) async {
+        let updated = expectation(description: "Mention suggestions updated")
+        fixture.onUpdate = { _ in updated.fulfill() }
+        if let text {
+            fixture.textView.text = text
+        }
+        fixture.textView.selectedRange = selection
+        if text != nil {
+            fixture.controller.textDidChange(in: fixture.textView)
+        } else {
+            fixture.controller.selectionDidChange(in: fixture.textView)
+        }
+        await fulfillment(of: [updated], timeout: 1)
+        fixture.onUpdate = nil
+    }
+
     private func presentSuggestions(_ fixture: MentionFixture) async {
         let presented = expectation(description: "Suggestions presented")
         fixture.onUpdate = { if $0 != nil { presented.fulfill() } }

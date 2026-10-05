@@ -507,6 +507,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    // swiftlint:disable:next cyclomatic_complexity
     func reloadExtension(identifier: String, trigger: WebExtensionReloadTrigger) async throws {
         Logger.webExtensions.debug("🔄 Reloading extension '\(identifier)'")
 

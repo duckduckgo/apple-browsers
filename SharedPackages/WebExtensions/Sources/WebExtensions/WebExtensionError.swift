@@ -24,4 +24,5 @@ public enum WebExtensionError: Error {
     case failedToLoadWebExtension(_ error: Error)
     case failedToUnloadWebExtension(_ error: Error)
     case failedToRemoveWebExtension(_ error: Error)
+    case invalidManifest
 }

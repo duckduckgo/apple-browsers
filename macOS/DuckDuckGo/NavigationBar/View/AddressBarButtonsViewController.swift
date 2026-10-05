@@ -663,6 +663,8 @@ final class AddressBarButtonsViewController: NSViewController {
             privacyDashboardButton.position = .left
         }
 
+        // The PrivacyDashboard onHover Animation requires the Lottie View to live in the superview, to avoid clipping issues
+        privacyDashboardButton.showsAnimationInSuperview = true
         privacyDashboardButton.sendAction(on: .leftMouseUp)
 
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)

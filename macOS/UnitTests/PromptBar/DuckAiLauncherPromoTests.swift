@@ -70,12 +70,12 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                             shortcut: Bool = false,
                             menuBarIcon: Bool = false,
                             chats: Int = 3,
-                            dismissed: Bool = false) -> Bool {
+                            outcome: DuckAiLauncherPromoOutcome? = nil) -> Bool {
         DuckAiLauncherPromoEligibility.isEligible(isFeatureOn: isFeatureOn,
                                                   isShortcutEnabled: shortcut,
                                                   isMenuBarIconVisible: menuBarIcon,
                                                   chatCount: chats,
-                                                  isDismissed: dismissed)
+                                                  outcome: outcome)
     }
 
     func testEligibleWithFlagOnLauncherOffThreeChatsAndNotDismissed() {
@@ -86,7 +86,9 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     func testNotEligibleWhenAnyConditionFails() {
         XCTAssertFalse(isEligible(isFeatureOn: false))
         XCTAssertFalse(isEligible(chats: 2))
-        XCTAssertFalse(isEligible(dismissed: true))
+        XCTAssertFalse(isEligible(outcome: .triedNow))
+        XCTAssertFalse(isEligible(outcome: .closed))
+        XCTAssertFalse(isEligible(outcome: .ignored))
         XCTAssertFalse(isEligible(shortcut: true))
         XCTAssertFalse(isEligible(menuBarIcon: true))
     }
@@ -112,7 +114,26 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
         XCTAssertTrue(preferences.isMenuBarIconVisible)
         XCTAssertEqual(openSettingsCount, 1)
-        XCTAssertNil(promo.presentation())
+        XCTAssertEqual(promo.outcome, .triedNow)
+    }
+
+    @MainActor
+    func testTryNowEndsThePromoEvenIfTheLauncherIsTurnedOffAgain() {
+        makePromo().tryNow()
+        preferences.isKeyboardShortcutEnabled = false
+        preferences.isMenuBarIconVisible = false
+
+        XCTAssertNil(makePromo().presentation())
+    }
+
+    @MainActor
+    func testCloseAndPromptPastThePromoAreRecordedApart() {
+        makePromo().dismiss()
+        XCTAssertEqual(makePromo().outcome, .closed)
+
+        DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
+        makePromo().ignore()
+        XCTAssertEqual(makePromo().outcome, .ignored)
     }
 
     @MainActor
@@ -123,15 +144,16 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testResetDismissalBringsThePromoBackAndPublishes() {
+    func testResetOutcomeBringsThePromoBackAndPublishes() {
         let promo = makePromo()
         promo.dismiss()
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
 
-        DuckAiLauncherPromo.resetDismissal(in: keyValueStore)
+        DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
 
         wait(for: [changed], timeout: 1)
+        XCTAssertNil(promo.outcome)
         XCTAssertNotNil(promo.presentation())
     }
 

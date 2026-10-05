@@ -27,6 +27,15 @@ extension Notification.Name {
     static let duckAiLauncherPromoDismissalsDidReset = Notification.Name("duckAiLauncherPromoDismissalsDidReset")
 }
 
+/// How the user settled the promo. Kept so a later change can treat each group differently.
+enum DuckAiLauncherPromoOutcome: String {
+    case triedNow = "tried_now"
+    /// The close button.
+    case closed
+    /// A prompt sent while the promo was on screen.
+    case ignored
+}
+
 enum DuckAiLauncherPromoEligibility {
 
     static let minimumChatCount = 3
@@ -35,8 +44,8 @@ enum DuckAiLauncherPromoEligibility {
                            isShortcutEnabled: Bool,
                            isMenuBarIconVisible: Bool,
                            chatCount: Int,
-                           isDismissed: Bool) -> Bool {
-        isFeatureOn && !isShortcutEnabled && !isMenuBarIconVisible && chatCount >= minimumChatCount && !isDismissed
+                           outcome: DuckAiLauncherPromoOutcome?) -> Bool {
+        isFeatureOn && !isShortcutEnabled && !isMenuBarIconVisible && chatCount >= minimumChatCount && outcome == nil
     }
 }
 
@@ -44,7 +53,7 @@ enum DuckAiLauncherPromoEligibility {
 /// `presentation()` returns, so eligibility, copy and the CTA all live here. Main thread only.
 final class DuckAiLauncherPromo {
 
-    private static let dismissedKey = "duckai.launcher-promo.dismissed"
+    private static let outcomeKey = "duckai.launcher-promo.outcome"
 
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
@@ -74,7 +83,11 @@ final class DuckAiLauncherPromo {
                                                   isShortcutEnabled: preferences.isKeyboardShortcutEnabled,
                                                   isMenuBarIconVisible: preferences.isMenuBarIconVisible,
                                                   chatCount: chatCount,
-                                                  isDismissed: (try? keyValueStore.object(forKey: Self.dismissedKey)) as? Bool == true)
+                                                  outcome: outcome)
+    }
+
+    var outcome: DuckAiLauncherPromoOutcome? {
+        ((try? keyValueStore.object(forKey: Self.outcomeKey)) as? String).flatMap(DuckAiLauncherPromoOutcome.init(rawValue:))
     }
 
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
@@ -108,18 +121,27 @@ final class DuckAiLauncherPromo {
     func tryNow() {
         preferences.isKeyboardShortcutEnabled = true
         preferences.isMenuBarIconVisible = true
+        record(.triedNow)
         openSettings()
     }
 
-    /// Covers the close button and a prompt sent past the drawer: either way it never shows again.
     func dismiss() {
-        try? keyValueStore.set(true, forKey: Self.dismissedKey)
+        record(.closed)
+    }
+
+    func ignore() {
+        record(.ignored)
+    }
+
+    /// Any outcome ends the promo: it shows once.
+    private func record(_ outcome: DuckAiLauncherPromoOutcome) {
+        try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
         dismissalSubject.send()
     }
 
     /// Debug only. Posts so open New Tab Pages re-read it: a new tab reuses the window's page, which never asks again.
-    static func resetDismissal(in keyValueStore: ThrowingKeyValueStoring) {
-        try? keyValueStore.removeObject(forKey: dismissedKey)
+    static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
+        try? keyValueStore.removeObject(forKey: outcomeKey)
         NotificationCenter.default.post(name: .duckAiLauncherPromoDismissalsDidReset, object: nil)
     }
 }

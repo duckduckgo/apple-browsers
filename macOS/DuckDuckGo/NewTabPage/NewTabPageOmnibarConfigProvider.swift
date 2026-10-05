@@ -528,7 +528,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     @MainActor
     func launcherPromoIgnored() {
-        duckAiLauncherPromo?.dismiss()
+        duckAiLauncherPromo?.ignore()
     }
 
     var launcherPromoPublisher: AnyPublisher<Void, Never> {

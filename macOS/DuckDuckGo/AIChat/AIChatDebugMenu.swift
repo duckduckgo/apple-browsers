@@ -88,7 +88,7 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Reset Launcher Promo Dismissal", action: #selector(resetLauncherPromoDismissal))
+            NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
                 .targetting(self)
 
             NSMenuItem.separator()
@@ -149,8 +149,8 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 
-    @objc private func resetLauncherPromoDismissal() {
-        DuckAiLauncherPromo.resetDismissal(in: NSApp.delegateTyped.keyValueStore)
+    @objc private func resetLauncherPromo() {
+        DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
     }
 
     // MARK: - Attachment privacy disclosure

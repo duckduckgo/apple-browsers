@@ -4702,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Määra aadressiriba asukoht";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Luba alati";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Küsi iga kord";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Kaamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Asukoht";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Saitide haldamine";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Mikrofon";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Ära kunagi luba";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Eemalda kõik saidi load";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Eemalda õigused";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Kõikide saitide load on eemaldatud";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Saidi %@ load on eemaldatud";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Saidi %@ load";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Saad vaadata ja muuta DuckDuckGo süsteemilube saidil %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Süsteemi seaded.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Aktiveerimine";
 
@@ -4899,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Kas sait ei tööta? Anna DuckDuckGole teada.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Saidi load";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Saada aruanne";
@@ -5853,3 +5898,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "Kõik vestlused";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Faile kontrollitakse automaatselt ebaseadusliku sisu suhtes. Märgistatud vestlustel on piiratud andmete säilitamise aeg. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Loe edasi";

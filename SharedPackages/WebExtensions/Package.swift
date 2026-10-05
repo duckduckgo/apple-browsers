@@ -70,6 +70,7 @@ let package = Package(
             dependencies: [
                 "WebExtensions",
                 "WebExtensionsTestSupport",
+                "ZIPFoundation",
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]

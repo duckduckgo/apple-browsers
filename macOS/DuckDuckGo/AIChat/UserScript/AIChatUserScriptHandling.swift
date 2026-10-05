@@ -92,6 +92,7 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -117,6 +118,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var messageHandling: AIChatMessageHandling { get }
 
     var isFireWindowProvider: (() -> Bool)? { get set }
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
@@ -204,6 +206,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let browserTools: AIChatBrowserToolsService
 
     var isFireWindowProvider: (() -> Bool)?
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
 
     /// Surface that opened this chat, consumed once per document and retained for its pixels.
     private var conversationSource: AIChatConversationSource?
@@ -295,6 +298,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    @MainActor
+    public func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
+        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosureProvider?().claim() ?? false)
     }
 
     /// A committed document is a new conversation as far as attribution goes — a tab reused for a

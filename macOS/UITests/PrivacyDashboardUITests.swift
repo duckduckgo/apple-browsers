@@ -160,24 +160,18 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
     }
 
-    func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtNYTimes() throws {
-        // Navigate to a page with known trackers
-        let trackerTestURL = URL(string: "https://nytimes.com")!
+    func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtPrivacyTestPages() throws {
+        let trackerTestURL = URL(string: "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
         addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)
 
-        // Wait for specific tracker test page content
-        let trackerPageContent = webView.staticTexts.containing(\.value, containing: "New York Times").firstMatch
-        XCTAssertTrue(trackerPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Page should load")
+        let trackerPageContent = webView.staticTexts.containing(\.value, containing: "1 major tracker loaded via script src").firstMatch
+        XCTAssertTrue(trackerPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Tracker test page should load")
 
-        // Access privacy dashboard
         XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for tracker test page")
-
         privacyButton.click()
 
-        // Privacy dashboard should open and show tracker information
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
 
-        // Click "View Tracker Companies" button to see detailed tracker information
         let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.label, containing: "View Tracker Companies").firstMatch
         XCTAssertTrue(viewTrackerCompaniesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "View Tracker Companies button should be available")
 
@@ -201,8 +195,8 @@ class PrivacyDashboardUITests: UITestCase {
                 .or(.keyPath(\.label, beginsWith: "Tracker domains for "))
         )
         XCTAssertTrue(
-            trackerDomainSections.wait(for: \.count, in: 3..., timeout: UITests.Timeouts.elementExistence),
-            "Expected more than 2 tracker domain sections (\(trackerDomainSections.count) found in \(descr()))"
+            trackerDomainSections.wait(for: \.count, in: 1..., timeout: UITests.Timeouts.elementExistence),
+            "Expected at least one tracker domain section (\(trackerDomainSections.count) found in \(descr()))"
         )
 
         // AX snapshots can be deeply nested and vary between runs, so we validate domains from the

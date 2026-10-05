@@ -17,19 +17,19 @@
 //
 
 import AddressBarPerformance
+import AIChat
 import AppKit
 import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
-import FoundationExtensions
-import PixelKit
-import Suggestions
-import Subscription
-import os.log
-import UIComponents
-import AIChat
 import DesignResourcesKit
+import FoundationExtensions
+import os.log
+import PixelKit
+import Subscription
+import Suggestions
+import UIComponents
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -37,6 +37,15 @@ protocol AddressBarTextFieldFocusDelegate: AnyObject {
 }
 
 final class AddressBarTextField: NSTextField {
+
+    override class var cellClass: AnyClass? {
+        get {
+            AddressBarTextFieldCell.self
+        }
+        set {
+            // NO-OP
+        }
+    }
 
     weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
@@ -101,9 +110,23 @@ final class AddressBarTextField: NSTextField {
 
     // MARK: - Lifecycle
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpEditingAndDragging()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpEditingAndDragging()
+    }
+
+    private func setUpEditingAndDragging() {
         allowsEditingTextAttributes = true
         super.delegate = self
 
@@ -747,16 +770,14 @@ final class AddressBarTextField: NSTextField {
         private enum Metrics {
             static let shadowOffset: CGFloat = -2
             static let windowOffset = CGPoint(x: -20, y: -3)
-            static let legacyShadowOffset: CGFloat = 5
-            static let legacyWindowOffset = CGPoint(x: -20, y: 5)
         }
 
-        static func shadowOffset(isAppRebranded: Bool) -> CGFloat {
-            isAppRebranded ? Metrics.shadowOffset : Metrics.legacyShadowOffset
+        static var shadowOffset: CGFloat {
+            Metrics.shadowOffset
         }
 
-        static func windowOffset(isAppRebranded: Bool) -> CGPoint {
-            isAppRebranded ? Metrics.windowOffset : Metrics.legacyWindowOffset
+        static var windowOffset: CGPoint {
+            Metrics.windowOffset
         }
     }
 
@@ -857,7 +878,7 @@ final class AddressBarTextField: NSTextField {
         }
 
         /// Shift the panel so its top edge clears the AI Chat omnibar toggle / aligns with the focused bar.
-        let padding = SuggestionWindowSizes.windowOffset(isAppRebranded: themeManager.isAppRebranded)
+        let padding = SuggestionWindowSizes.windowOffset
 
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
@@ -1592,6 +1613,7 @@ enum SuggestionInputMethod {
     case mouse
 }
 
+// MARK: - URL+makeUrl, upgradeToHttps
 extension URL {
 
     static func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -1638,7 +1660,6 @@ extension URL {
             }
         }
     }
-
 }
 
 // MARK: - SharingMenuDelegate

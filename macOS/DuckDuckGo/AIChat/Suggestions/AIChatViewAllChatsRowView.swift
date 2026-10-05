@@ -29,12 +29,9 @@ final class AIChatViewAllChatsRowView: NSView {
 
     private enum Constants {
         static let rowHeight: CGFloat = 34
-        static let legacyRowHeight: CGFloat = 32
         static let horizontalPadding: CGFloat = 14
-        static let legacyHorizontalPadding: CGFloat = 12
         static let iconSize: CGFloat = 16
         static let iconTitleSpacing: CGFloat = 8
-        static let legacyIconTitleSpacing: CGFloat = 6
         static let trailingSpacing: CGFloat = 6
 
         static let iconColor: NSColor = .suggestionIcon
@@ -42,8 +39,6 @@ final class AIChatViewAllChatsRowView: NSView {
     }
 
     // MARK: - UI Components
-
-    private let themeManager: ThemeManaging
 
     private let iconImageView: NSImageView = {
         let imageView = NSImageView()
@@ -123,7 +118,6 @@ final class AIChatViewAllChatsRowView: NSView {
         themeProvider: SuggestionRowThemeProviding? = nil,
         isBurner: Bool = false)
     {
-        self.themeManager = themeManager
         self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
@@ -149,23 +143,19 @@ final class AIChatViewAllChatsRowView: NSView {
         addSubview(openDuckAILabel)
         addSubview(arrowImageView)
 
-        let rowHeight = themeManager.isAppRebranded ? Constants.rowHeight : Constants.legacyRowHeight
-        let iconPadding = themeManager.isAppRebranded ? Constants.horizontalPadding : Constants.legacyHorizontalPadding
-        let titlePadding = themeManager.isAppRebranded ? Constants.iconTitleSpacing : Constants.legacyIconTitleSpacing
-
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: rowHeight),
+            heightAnchor.constraint(equalToConstant: Constants.rowHeight),
 
-            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: iconPadding),
+            iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: titlePadding),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -titlePadding),
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -iconPadding),
+            arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
             arrowImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             arrowImageView.widthAnchor.constraint(equalToConstant: 9),
             arrowImageView.heightAnchor.constraint(equalToConstant: 9),

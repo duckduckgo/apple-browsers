@@ -87,7 +87,8 @@ extension MainViewController {
             aiChatSyncCleaner: aiChatSyncCleaner,
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
-            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            floatingUIManager: floatingUIManager
         )
         coordinator.delegate = self
         coordinator.pageTypeProvider = { [weak self] in self?.currentPromptPageType() }
@@ -520,6 +521,10 @@ private extension MainViewController {
                 self?.updateFloatingReturnKeyVisibility()
             }
             .store(in: &unifiedToggleInputCancellables)
+
+        coordinator.onFloatingReturnKeyAvailabilityChanged = { [weak self] in
+            self?.updateFloatingReturnKeyVisibility()
+        }
 
         coordinator.textChangePublisher
             .sink { [weak self] text in
@@ -1359,7 +1364,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
         recordDuckAISessionPromptSubmittedOnCurrentTab()
     }
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
@@ -1376,7 +1381,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
             loadUrlRespectingAIBoundary(url)
             return
         }
-        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files)
+        openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
+                   termsAccepted: termsAccepted)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
@@ -1433,12 +1439,18 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onMenuPressed()
     }
 
+    func unifiedToggleInputDidRequestAppMenuLongPress() {
+        onMenuLongPressed()
+    }
+
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
         applyEditModeChrome(isEditing)
     }
 
-    /// A new tab, like the web app's own links, so the draft and the chat stay where they were.
-    func unifiedToggleInputDidRequestOpenURL(_ url: URL) {
+    /// Deliberately not `loadUrlRespectingAIBoundary`: that only spawns a tab when the navigation
+    /// crosses the AI/web boundary, so from the address bar it would load in place and take the
+    /// user's pending attachment with it.
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {
         omniBar.endEditing()
         recordNewTabPageSessionDeparture()
         loadUrlInNewTab(url, inheritedAttribution: nil)

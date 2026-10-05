@@ -182,6 +182,7 @@ final class AIChatOmnibarController {
             usageWarningMeasurement.ctaTapped(.upsell)
             onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
+            usageWarningMeasurement.ctaTapped(.weeklyLimit)
             // Web reads the entry on its next hydration, so there is nothing to reload here.
             usageLimitsStore?.write(entries)
         }
@@ -1320,6 +1321,13 @@ final class AIChatOmnibarController {
         isImageGenerationMode || selectedModelSupportsImageUpload
     }
 
+    /// Attachments that would ship with a submit, so a prompt with no text can still be sent.
+    var hasSendableAttachments: Bool {
+        (canSendImages && !activeImageAttachments.isEmpty)
+            || (selectedModelSupportsFileUpload && !activeFileAttachments.isEmpty)
+            || !activeTabAttachments.isEmpty
+    }
+
     /// Each picker allows one pick past its limit as a visible cue, so submitting stays held there.
     private var hasSubmitBlockingAttachmentExcess: Bool {
         if canSendImages && activeImageAttachments.count > maxImageAttachments {
@@ -1352,7 +1360,7 @@ final class AIChatOmnibarController {
     }
 
     func submit() {
-        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasSendableAttachments else {
             return
         }
 

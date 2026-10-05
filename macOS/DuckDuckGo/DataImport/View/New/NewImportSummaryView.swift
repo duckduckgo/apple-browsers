@@ -123,7 +123,7 @@ struct NewImportSummaryView: View {
                 .padding(.top, 0)
                 .padding(.bottom, 1)
             Spacer()
-            Toggle("", isOn: isOn)
+            Toggle("" as String, isOn: isOn)
                 .toggleStyle(.switch)
                 .rebrandedControlTint()
         }

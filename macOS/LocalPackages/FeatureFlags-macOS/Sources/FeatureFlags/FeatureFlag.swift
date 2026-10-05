@@ -95,6 +95,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
+    case webExtensionStateRestorationGate
+
     /// Failsafe for Web Extensions background-process diagnostics observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
@@ -106,6 +110,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     /// https://app.asana.com/0/0/1218855001685906
     case cpmMessagingHangRecovery
+
+    /// Remotely activated Web Extension background Web View graveyard treatment.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
+    case cpmBackgroundGraveyardTreatment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
@@ -274,7 +282,12 @@ public enum FeatureFlag: String, CaseIterable {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
+
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
+    case websitePermissionsPrompts
 
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
@@ -321,10 +334,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Cookie Pop-up Protection opt-in dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
-
-    /// A/B experiment cohorts for the Cookie Pop-up Protection opt-in dialog
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216573422000546?focus=true
-    case cookiePopupOptInDialogExperiment
 
     /// Enables advanced card ordering for the Next Steps List widget
     /// This flag is disabled by default to allow testing the new widget design with current ordering logic
@@ -452,6 +461,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
     case promoQueueBrowserUpdatedPromo
 
+    /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
+    case promoQueueVPNUpsellPromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -537,6 +550,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
     case simplifiedSyncSetupV2
 
+    /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
+    /// a Duck.ai input.
+    case aiChatAttachmentPrivacyDisclosure
+
     /// Gates the bookmarks "Sort by name permanently" action, which permanently reorders the target
     /// folder's direct children alphabetically and persists the new order.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
@@ -578,17 +595,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the autoconsent heuristic action experiment
     public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -644,13 +659,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .contextualOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .appRebranding:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .newTabPageRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingNonBlocking:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlocking), cohortType: OnboardingNonBlockingCohort.self)
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
@@ -682,12 +697,18 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate), category: .webExtensions)
         case .cpmBackgroundDelegateProxy:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
+        case .cpmBackgroundGraveyardTreatment:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
+                   category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -796,6 +817,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
                    supportsLocalOverriding: true)
+        case .websitePermissionsPrompts:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsPrompts),
+                   supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .firstTimeQuitSurveySkipNonUserQuit:
@@ -820,8 +845,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .cookiePopupOptInDialogExperiment:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialogExperiment), cohortType: CookiePopupOptInDialogCohort.self, category: .popupBlocking)
         case .nextStepsListAdvancedCardOrdering:
             Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
@@ -894,6 +917,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueBrowserUpdatedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
+        case .promoQueueVPNUpsellPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -953,6 +978,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatAttachmentPrivacyDisclosure:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
         case .aiChatBrowserToolListOpenTabs:
@@ -970,6 +997,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
+        case .pageSignals:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         }
     }
 

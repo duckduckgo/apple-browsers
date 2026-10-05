@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import AppKit
 import AppUpdaterShared

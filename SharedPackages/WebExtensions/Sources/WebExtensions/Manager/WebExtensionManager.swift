@@ -489,6 +489,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
+    public func loadEmbeddedExtensionBackgroundContent() async {
+        guard let context = controller.extensionContexts.first(where: {
+            $0.webExtension.duckDuckGoWebExtensionType == .embedded
+        }), context.webExtension.hasBackgroundContent else { return }
+
+        // Explicitly await WebKit's background startup so restored tabs cannot navigate before the
+        // Web Extension has registered the listeners and scripts needed for that first document.
+        do {
+            try await context.loadBackgroundContent()
+        } catch {
+            Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
     private func loadInstalledExtensions(lifecycle: InstalledExtensionsLoadLifecycle) async {
 
         isLoadingInstalledExtensions = true
@@ -700,7 +715,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
+        NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: self)
     }
+}
+
+public extension Notification.Name {
+
+    /// Posted by `WebExtensionManager` when the set of loaded extensions changes.
+    ///
+    /// Unlike `extensionUpdates`, which an `AsyncStream` limits to a single consumer,
+    /// this notification reaches every observer. Per-window UI needs that, because each
+    /// browser window keeps its own set of extension toolbar buttons.
+    static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
 }
 
 // MARK: - WKWebExtensionControllerDelegate

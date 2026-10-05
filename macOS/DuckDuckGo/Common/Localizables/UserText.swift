@@ -976,6 +976,9 @@ struct UserText {
         let message = NSLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
         return String(format: message, modelShortName)
     }
+    // Copy, keys and translations shared with iOS, which shipped this disclosure first.
+    static let aiChatAttachmentPrivacyDisclosureFormat = NSLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
+    static let aiChatAttachmentPrivacyLearnMore = NSLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
         let message = NSLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)
@@ -1559,6 +1562,10 @@ struct UserText {
     static let websitePermissionsDefaultSection = NotLocalizedString("preferences.website-permissions.default", value: "Default", comment: "Header above the radio group choosing the default behavior for a website permission")
     static let websitePermissionsAskEachTime = NotLocalizedString("preferences.website-permissions.decision.ask-each-time", value: "Ask each time", comment: "Website permission option that prompts on every request")
     static let websitePermissionsDefaultAccessibilityLabel = NotLocalizedString("preferences.website-permissions.default.accessibility", value: "Default behavior for %@", comment: "Accessibility label for the default behavior radio group, %@ is the permission name")
+    static let websitePermissionsPromptAllowThisVisit = NotLocalizedString("permission.prompt.allow-this-visit", value: "Allow this visit", comment: "Permission prompt button that grants a website permission until the page is reloaded or closed")
+    static let websitePermissionsPromptLocationFormat = NotLocalizedString("permission.prompt.location.format", value: "“%@” wants to know your location", comment: "Permission prompt title, %@ is the domain asking for the user's location")
+    static let websitePermissionsPromptDeviceFormat = NotLocalizedString("permission.prompt.device.format", value: "“%1$@” wants to use your %2$@", comment: "Permission prompt title, %1$@ is the domain and %2$@ is camera, microphone, or camera and microphone")
+    static let websitePermissionsPromptNotificationsFormat = NotLocalizedString("permission.prompt.notifications.format", value: "“%@” wants to send you notifications", comment: "Permission prompt title, %@ is the domain asking to send notifications")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
     static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
     static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")

@@ -32,6 +32,43 @@ struct CreateImageModelSwitchNotice: Equatable {
     }
 }
 
+struct UTIFooterItem: Equatable, Identifiable {
+    enum ID: Int, CaseIterable {
+        case termsConsent
+        case outOfUsage
+        case attachmentPrivacy
+        case modelSwitch
+        case usageWarning
+        case highUsage
+        case multiTabPromotion
+    }
+
+    enum MessageType {
+        case required
+        case action
+        case informational
+    }
+
+    var type: MessageType {
+        switch id {
+        case .termsConsent: return .required
+        case .outOfUsage, .attachmentPrivacy: return .required
+        case .modelSwitch: return .action
+        case .usageWarning, .highUsage, .multiTabPromotion: return .informational
+        }
+    }
+
+    let id: ID
+    let message: UTIFooterMessage
+
+    static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        guard !isEditing else { return [] }
+        let ordered = items.sorted { $0.id.rawValue < $1.id.rawValue }
+        let required = ordered.filter { $0.type == .required }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
@@ -41,13 +78,20 @@ struct UTIFooterMessage: Equatable {
         case info
         case modelSwitch
         case shield
+        case gift
+    }
+
+    struct TitleFormatting: Equatable {
+        let emphasizedText: String
+        let attachmentPlaceholder: String
+        let attachmentAccessibilityLabel: String
     }
 
     struct PrimaryAction: Equatable {
         let title: String
     }
 
-    /// A phrase inside `title` that opens `url`.
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
     struct Link: Equatable {
         let text: String
         let url: URL
@@ -59,19 +103,22 @@ struct UTIFooterMessage: Equatable {
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
     let link: Link?
+    let titleFormatting: TitleFormatting?
 
     init(icon: Icon,
          title: String,
          subtitle: String?,
          primaryAction: PrimaryAction?,
          isDismissible: Bool,
-         link: Link? = nil) {
+         link: Link? = nil,
+         titleFormatting: TitleFormatting? = nil) {
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
         self.primaryAction = primaryAction
         self.isDismissible = isDismissible
         self.link = link
+        self.titleFormatting = titleFormatting
     }
 }
 

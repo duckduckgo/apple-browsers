@@ -55,9 +55,39 @@ struct UTIFooterMessageMapper {
             title: String(format: UserText.utiCreateImageModelSwitchTitle, notice.newModelShortName),
             subtitle: String(format: subtitleFormat, notice.previousModelShortName),
             primaryAction: nil,
-            isDismissible: true
+            isDismissible: true,
+            link: nil
         )
     }
+
+    func attachmentPrivacyMessage(format: String = UserText.aiChatAttachmentPrivacyNoticeFormat,
+                                  learnMoreText: String = UserText.aiChatAttachmentPrivacyNoticeLearnMore) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .info,
+            title: String(format: format, learnMoreText),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: false,
+            link: URL(string: Self.attachmentPrivacyLearnMoreURL).map {
+                .init(text: learnMoreText, url: $0)
+            }
+        )
+    }
+
+    func multiTabPromotionMessage() -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .gift,
+            title: UserText.aiChatMultiTabPromotion,
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: true,
+            titleFormatting: .init(emphasizedText: UserText.aiChatMultiTabPromotionNew,
+                                   attachmentPlaceholder: "{attachment}",
+                                   attachmentAccessibilityLabel: UserText.aiChatMultiTabPromotionAttachment)
+        )
+    }
+
+    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"
 
     func message(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool = true) -> UTIFooterMessage {
         UTIFooterMessage(
@@ -65,7 +95,8 @@ struct UTIFooterMessageMapper {
             title: Self.title(for: warning),
             subtitle: String(format: UserText.utiDuckAIWarningsResetsIn, resetDescriber.describe(warning.resetsIn)),
             primaryAction: Self.primaryAction(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell),
-            isDismissible: warning.isDismissible
+            isDismissible: warning.isDismissible && !warning.blocksInput,
+            link: nil
         )
     }
 
@@ -75,7 +106,8 @@ struct UTIFooterMessageMapper {
             title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
             subtitle: nil,
             primaryAction: nil,
-            isDismissible: true
+            isDismissible: true,
+            link: nil
         )
     }
 

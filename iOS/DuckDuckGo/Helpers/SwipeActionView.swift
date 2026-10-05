@@ -66,10 +66,11 @@ struct SwipeActionView<Content: View, Actions: View>: View {
                     .frame(maxWidth: .infinity)
 
                 actions
-                    .frame(width: actionsWidth(in: availableWidth))
+                    .frame(width: actionsWidth(in: availableWidth), height: proxy.size.height)
                     .clipShape(Capsule())
                     .opacity(progress(in: availableWidth))
             }
+            .frame(width: availableWidth, height: proxy.size.height)
             .animation(
                 .spring(response: configuration.springResponse, dampingFraction: configuration.springDamping),
                 value: contentOffset

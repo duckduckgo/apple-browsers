@@ -60,11 +60,11 @@ class FireWindowTests: UITestCase {
     func testFireWindowDoNotShowPinnedTabs() {
         app.openNewWindow()
         app.openSite(pageTitle: "Page #1")
-        app.menuItems["Pin Tab"].tap()
+        app.pinCurrentTab()
 
         app.openNewTab()
         app.openSite(pageTitle: "Page #2")
-        app.menuItems["Pin Tab"].tap()
+        app.pinCurrentTab()
 
         app.openFireWindow()
         assertFireWindowDoesNotHavePinnedTabs()
@@ -257,7 +257,7 @@ class FireWindowTests: UITestCase {
         let toolbarCoordinate = toolbar.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
         let startPoint = toolbarCoordinate.withOffset(CGVector(dx: 120, dy: -15))
         let endPoint = toolbarCoordinate.withOffset(CGVector(dx: -100, dy: -100))
-        startPoint.press(forDuration: 0.5, thenDragTo: endPoint)
+        startPoint.click(forDuration: 0.5, thenDragTo: endPoint)
     }
 
     private func assertFireWindowDoesNotHavePinnedTabs() {

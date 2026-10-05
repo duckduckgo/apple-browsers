@@ -180,6 +180,14 @@ final class DuckAiUsageWarningMeasurementTests: XCTestCase {
         XCTAssertEqual(firing.events, [.shown(limitReached), .upsellTapped(limitReached)])
     }
 
+    func testWhenTheWeeklyLimitCTAIsTappedThenItIsReported() {
+        sut.cardBecameVisible(limitReached)
+
+        sut.ctaTapped(.weeklyLimit)
+
+        XCTAssertEqual(firing.events, [.shown(limitReached), .weeklyLimitTapped(limitReached)])
+    }
+
     /// The switch the CTA performs is already reported as a CTA tap; reporting it again as a
     /// self-initiated switch would double-count it.
     func testWhenTheSwitchFollowsTheCardsOwnCTAThenItIsNotAlsoReportedAsAModelSwitch() {
@@ -199,6 +207,15 @@ final class DuckAiUsageWarningMeasurementTests: XCTestCase {
         sut.inputSessionEnded()
 
         XCTAssertEqual(firing.events, [.shown(limitReached), .upsellTapped(limitReached)])
+    }
+
+    func testWhenTheWeeklyLimitCTAIsTappedThenTheExposureIsNotReportedAsAbandoned() {
+        sut.cardBecameVisible(limitReached)
+
+        sut.ctaTapped(.weeklyLimit)
+        sut.inputSessionEnded()
+
+        XCTAssertEqual(firing.events, [.shown(limitReached), .weeklyLimitTapped(limitReached)])
     }
 
     // MARK: - Exposure from the resolved message

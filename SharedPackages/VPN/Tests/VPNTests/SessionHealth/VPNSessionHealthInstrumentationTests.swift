@@ -471,7 +471,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertEqual(recovered.currentProcessStartReason, .physicalTunnelStartOnDemand)
     }
 
-    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsOmitted() throws {
+    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsReported() throws {
         startTunnel(.manual)
 
         instrumentation = makeInstrumentation()
@@ -480,7 +480,7 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         let recovered = try completedEvent()
         XCTAssertEqual(recovered.endReason, .processDied)
         XCTAssertNil(recovered.processIDChanged)
-        XCTAssertNil(recovered.currentProcessStartReason)
+        XCTAssertEqual(recovered.currentProcessStartReason, .physicalTunnelStartOnDemand)
     }
 
     func testOrphanOlderThanCurrentProcessReportsDurationExceedingLifetime() throws {

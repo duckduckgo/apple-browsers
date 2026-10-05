@@ -348,12 +348,12 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.current_process_start_reason"] as? String, "physical_tunnel_on_demand_start")
     }
 
-    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsOmitted() {
+    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsReported() {
         let ended = makeEvent(sessionStartPID: 123)
             .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processStartReason: .physicalTunnelStartOnDemand, processIdentifier: 123, appVersion: appVersion)
 
         XCTAssertNil(ended.event.processIDChanged)
-        XCTAssertNil(ended.event.jsonParameters()["feature.data.ext.current_process_start_reason"])
+        XCTAssertEqual(ended.event.jsonParameters()["feature.data.ext.current_process_start_reason"] as? String, "physical_tunnel_on_demand_start")
     }
 
     func testWhenStoppedByDifferentPIDThenCurrentProcessStartReasonIsOmitted() {

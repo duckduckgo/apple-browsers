@@ -30,6 +30,8 @@ public enum BitwardenExtensionInstallerError: Error, Equatable {
 
 /// Debug tooling that installs the latest Bitwarden from the Chrome Web Store as an unpacked folder,
 /// replacing any copy already installed.
+///
+/// The `.crx` signatures are not verified; the download relies on HTTPS from Google's update endpoint.
 @available(macOS 15.4, iOS 18.4, *)
 public struct BitwardenExtensionInstaller {
 

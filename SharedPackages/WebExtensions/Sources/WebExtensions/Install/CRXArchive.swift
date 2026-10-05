@@ -29,13 +29,9 @@ public enum CRXArchiveError: Error, Equatable {
 
 /// Splits a Chrome extension package (`.crx`) into its ZIP payload and reads its developer public key.
 ///
-/// CRX3 is `"Cr24"`, a little-endian `uint32` version (3), a `uint32` header length, the header,
-/// then the ZIP. CRX2 is `"Cr24"`, version 2, `uint32` public key length, `uint32` signature
-/// length, the key, the signature, then the ZIP. The header and signatures are not verified here.
-///
-/// The CRX3 header is a `CrxFileHeader` protobuf. Its `sha256_with_rsa` (field 2) and
-/// `sha256_with_ecdsa` (field 3) entries each hold a `public_key` (field 1), and `signed_header_data`
-/// (field 10000) holds a `crx_id` (field 1): the first 16 bytes of the SHA-256 of the developer's key.
+/// The CRX3 format is defined in Chromium's `crx3.proto`:
+/// https://chromium.googlesource.com/chromium/src/+/main/components/crx_file/crx3.proto
+/// The older CRX2 layout is also accepted. Signatures are not verified here.
 public enum CRXArchive {
 
     private static let magic = Data("Cr24".utf8)
@@ -79,8 +75,8 @@ public enum CRXArchive {
     /// Returns the developer's public key (DER `SubjectPublicKeyInfo`) from the CRX header, or `nil` when
     /// the header has none or is malformed.
     ///
-    /// For CRX3 it is the proof key whose SHA-256 prefix equals the `crx_id`; the other proofs are keys
-    /// the Web Store signed with. For CRX2 it is the header's key.
+    /// For CRX3 it is the proof key matching the header's `crx_id` (see `crx3.proto`); the other proofs
+    /// are the Web Store's. For CRX2 it is the header's key.
     public static func publicKey(from crx: Data) -> Data? {
         let crx = Data(crx) // normalize indices to start at 0
         guard crx.count >= 12, crx.prefix(magic.count) == magic,

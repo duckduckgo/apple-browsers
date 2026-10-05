@@ -163,6 +163,20 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
+    func testResetOutcomeBringsThePromoBackAndPublishes() {
+        let promo = makePromo()
+        promo.dismiss()
+        let changed = expectation(description: "promo change published")
+        promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
+
+        DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
+
+        wait(for: [changed], timeout: 1)
+        XCTAssertNil(promo.outcome)
+        XCTAssertNotNil(promo.presentation())
+    }
+
+    @MainActor
     func testWhenChatCountCrossesThresholdThenChangeIsPublished() {
         chatCount.send(2)
         let promo = makePromo()

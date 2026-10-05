@@ -23,6 +23,10 @@ import NewTabPage
 import Persistence
 import PrivacyConfig
 
+extension Notification.Name {
+    static let duckAiLauncherPromoOutcomeDidReset = Notification.Name("duckAiLauncherPromoOutcomeDidReset")
+}
+
 enum DuckAiLauncherPromoOutcome: String {
     case triedNow = "tried_now"
     case closed
@@ -98,7 +102,8 @@ final class DuckAiLauncherPromo {
             preferences.$isMenuBarIconVisible.map { _ in () }.eraseToAnyPublisher(),
             $chatCount.map { _ in () }.eraseToAnyPublisher(),
             featureFlagger.updatesPublisher,
-            dismissalSubject.eraseToAnyPublisher()
+            dismissalSubject.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: .duckAiLauncherPromoOutcomeDidReset).map { _ in () }.eraseToAnyPublisher()
         )
         .receive(on: DispatchQueue.main)
         .compactMap { [weak self] in self.map { $0.presentation() } }
@@ -127,5 +132,10 @@ final class DuckAiLauncherPromo {
     private func record(_ outcome: DuckAiLauncherPromoOutcome) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
         dismissalSubject.send()
+    }
+
+    static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
+        try? keyValueStore.removeObject(forKey: outcomeKey)
+        NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidReset, object: nil)
     }
 }

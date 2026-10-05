@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Puuttuvatko kuvakkeet latauksesta?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Automaattisesti ladattavat kuvakkeet";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Säilytä kehitys";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Tämä laite";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Yhdistä suosikit eri laitteilla";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Käytät Sync Development -ympäristöä";

@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "不足しているアイコンをダウンロードしますか？";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "アイコンを自動ダウンロード";
-
 /* No comment provided by engineer. */
 "Keep Development" = "開発環境で継続";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "このデバイス";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "デバイス間でお気に入りを統合する";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Sync Development環境を使用しています";

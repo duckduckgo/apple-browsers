@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Lejupielādēt trūkstošās ikonas?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Automātiski lejupielādēt ikonas";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Paturēt izstrādi";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Šī ierīce";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Izlases apvienošana visās ierīcēs";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Jūs izmantojat Sync Development vidi";

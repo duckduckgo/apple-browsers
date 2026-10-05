@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Kas laadida alla puuduvad ikoonid?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Ikoonide automaatne allalaadimine";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Säilita arendus";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "See seade";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Lemmikute sünkroonimine kõigis seadmetes";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Kasutad sünkroonimise arenduskeskkonda";

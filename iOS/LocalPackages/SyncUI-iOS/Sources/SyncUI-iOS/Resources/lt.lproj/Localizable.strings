@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Atsisiųsti trūkstamas piktogramas?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Automatinio atsisiuntimo piktogramos";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Laikytis kūrimo";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Šis įrenginys";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Suvienodinti adresynus visuose įrenginiuose";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Naudojate sinchronizavimo kūrimo aplinką";

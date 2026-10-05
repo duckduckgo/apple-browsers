@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Ladda ner saknade ikoner?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Ladda ner ikoner automatiskt";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Behåll utveckling";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Denna enhet";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Samla alla favoriter på olika enheter";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Du använder en utvecklingsmiljö för synkronisering";

@@ -53,9 +53,6 @@ public struct UserText {
 
     // Synced Devices
     static let syncedDevicesThisDeviceLabel = NSLocalizedString("synced.devices.this.device.label", bundle: Bundle.module, value: "This Device", comment: "Synced Devices - This Device Label")
-    // Options
-    static let unifiedFavoritesTitle = NSLocalizedString("unified.favorites.title", bundle: Bundle.module, value: "Unify Favorites Across Devices", comment: "Options - Unify Favorites Title")
-    static let fetchFaviconsOptionTitle = NSLocalizedString("fetch.favicons.option.title", bundle: Bundle.module, value: "Auto-Download Icons", comment: "Options - Fetch Favicons Title")
 
     // Recovery Section
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
@@ -130,6 +127,8 @@ public struct UserText {
     static let simplifiedDownloadSectionHeader = NSLocalizedString("sync.simplified.download.section.header", bundle: Bundle.module, value: "Download", comment: "Section header above the get-desktop-browser option in sync setup")
     static let simplifiedGetOurDesktopBrowserTitle = NSLocalizedString("sync.simplified.get.our.desktop.browser.title", bundle: Bundle.module, value: "Get Our Desktop Browser", comment: "Row label to get the DuckDuckGo desktop browser")
     static let simplifiedBookmarksSectionHeader = NSLocalizedString("sync.simplified.bookmarks.section.header", bundle: Bundle.module, value: "Bookmarks", comment: "Bookmarks section header in sync settings")
+    static let simplifiedBookmarksUnifiedFavoritesTitle = NSLocalizedString("sync.simplified.bookmarks.section.unified-favorites.title", bundle: Bundle.module, value: "Share Favorites Across Devices", comment: "Title of the toggle in the sync settings bookmarks section that shares favorites across devices")
+    static let simplifiedBookmarksFetchFaviconsTitle = NSLocalizedString("sync.simplified.bookmarks.section.fetch-favicons.title", bundle: Bundle.module, value: "Load Bookmark Icons", comment: "Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks")
     static let simplifiedBookmarksUnifiedFavoritesCaption = NSLocalizedString("sync.simplified.bookmarks.section.unified-favorites.caption", bundle: Bundle.module, value: "Use the same favorite bookmarks on mobile and desktop.", comment: "Caption displayed on 'unify favorites' toggle.")
     static let simplifiedBookmarksFetchFaviconsCaption = NSLocalizedString("sync.simplified.bookmarks.section.fetch-favicons.caption", bundle: Bundle.module, value: "Loads icons from websites you've bookmarked. Icon downloads are exposed to your network.", comment: "Caption displayed on 'auto-download bookmarks icons' toggle.")
     static let simplifiedDownloadRecoveryCodeButton = NSLocalizedString("sync.simplified.download.recovery.code.button", bundle: Bundle.module, value: "Download Recovery Code", comment: "Sync settings 'Download Recovery Code' button")

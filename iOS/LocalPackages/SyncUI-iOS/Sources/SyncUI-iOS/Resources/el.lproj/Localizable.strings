@@ -85,9 +85,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Λήψη των εικονιδίων που λείπουν;";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Αυτόματη λήψη εικονιδίων";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Συνεχίστε την ανάπτυξη";
 
@@ -345,9 +342,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Αυτή η συσκευή";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Ενοποίηση αγαπημένων σε όλες τις συσκευές";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Χρησιμοποιείτε περιβάλλον Ανάπτυξης συγχρονισμού";

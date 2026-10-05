@@ -988,7 +988,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .syncCanUseExchangeV2Point1:
-            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
         case .syncCanSendExchangeChannelSecret:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret), category: .sync)
         case .syncCanWriteUnifiedDeviceList:

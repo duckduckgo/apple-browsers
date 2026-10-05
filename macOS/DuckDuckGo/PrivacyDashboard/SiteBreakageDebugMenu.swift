@@ -43,17 +43,25 @@ final class SiteBreakageDebugMenu: NSMenuItem {
     @objc private func showNetworkSignals() {
         Task { @MainActor in
             let start = Date()
-            let signals = await networkSignalsProvider.currentSignals()
-            let elapsedMilliseconds = Int(Date().timeIntervalSince(start) * 1000)
 
-            let alert = NSAlert()
-            alert.messageText = "Network Signals"
+            // Awaits a fresh ping, since `currentSignals()` only reads the prefetched one.
+            await networkSignalsProvider.prefetchPing()?.value
+            let signals = await networkSignalsProvider.currentSignals()
+
+            let elapsedMilliseconds = Int(Date().timeIntervalSince(start) * 1000)
             let details = signals.map(Self.description(for:)) ?? "Disabled: the `pageSignals` feature flag is off."
-            alert.informativeText = details + "\n• Generated in: \(elapsedMilliseconds) ms"
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "OK")
-            await alert.runModal()
+
+            showAlert(message: details + "\n• Generated in: \(elapsedMilliseconds) ms")
         }
+    }
+
+    private func showAlert(message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Network Signals"
+        alert.informativeText = message
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     private static func description(for signals: NetworkSignals) -> String {

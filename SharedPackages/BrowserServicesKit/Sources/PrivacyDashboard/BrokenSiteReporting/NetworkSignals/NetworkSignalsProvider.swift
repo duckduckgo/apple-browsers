@@ -19,8 +19,9 @@
 import Foundation
 
 public protocol NetworkSignalsProviding {
-    /// Starts collecting ping quality without waiting for the lookup to complete.
-    func prefetchPing()
+    /// Starts collecting ping quality without waiting for the lookup to complete; `nil` when no ping is started.
+    @discardableResult
+    func prefetchPing() -> Task<Void, Never>?
 
     /// Returns `nil` when collecting network signals is disabled.
     func currentSignals() async -> NetworkSignals?
@@ -39,7 +40,7 @@ public protocol PingQualityProviding: Sendable {
 public final class NetworkSignalsProvider: NetworkSignalsProviding {
 
     public static let pingHost = "duckduckgo.com"
-    public static let lookupTimeout: TimeInterval = 0.5
+    public static let lookupTimeout: TimeInterval = 1
 
     private let pathProvider: NetworkPathProviding
     private let vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviding
@@ -58,14 +59,15 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
         self.isEnabledProvider = isEnabledProvider
     }
 
-    public func prefetchPing() {
+    @discardableResult
+    public func prefetchPing() -> Task<Void, Never>? {
         pingLock.withLock { prefetchedPingQuality = .unknown }
 
         guard isEnabledProvider(), pathProvider.currentPathState.networkType != .unavailable else {
-            return
+            return nil
         }
 
-        Task { [weak self] in
+        return Task { [weak self] in
             await self?.refreshPingQuality()
         }
     }

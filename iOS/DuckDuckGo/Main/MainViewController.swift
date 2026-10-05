@@ -3840,12 +3840,12 @@ class MainViewController: UIViewController {
         return UIHostingController(rootView: BrokenSitePromptView(viewModel: viewModel), ignoreSafeArea: true)
     }
 
-    func animateBackgroundTab() {
+    func animateBackgroundTab(_ tab: Tab) {
         showBars()
         tabSwitcherButton?.animateUpdate {
             self.refreshTabIcon()
         }
-        tabsBarController?.backgroundTabAdded()
+        tabsBarController?.backgroundTabAdded(tab)
     }
 
     /// `startsNewTabPageSessionVisit` is false when the tab is only a container for something
@@ -7025,8 +7025,8 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestNewBackgroundTabForUrl url: URL,
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
-        _ = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
-        animateBackgroundTab()
+        let controller = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
+        animateBackgroundTab(controller.tabModel)
     }
 
     func tab(_ tab: TabViewController,

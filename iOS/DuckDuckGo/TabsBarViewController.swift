@@ -544,9 +544,13 @@ class TabsBarViewController: UIViewController {
         flareBackground.update()
     }
 
-    func backgroundTabAdded() {
+    func backgroundTabAdded(_ tab: Tab) {
         recomputeItemSize()
         reloadData()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let index = self.tabsModel?.indexOf(tab: tab) else { return }
+            self.collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: [], animated: true)
+        }
         tabSwitcherButton.animateUpdate {
             self.tabSwitcherButton.tabCount = self.tabsCount
         }

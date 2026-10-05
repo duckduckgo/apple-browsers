@@ -48,6 +48,53 @@ final class TabsBarViewControllerSizingTests: XCTestCase {
         XCTAssertIdentical(controller.addTabButton.superview, controller.view)
     }
 
+    @MainActor
+    func testBackgroundTabAddedRevealsTabAfterLastTabWithoutSelectingIt() async throws {
+        try await assertBackgroundTabIsRevealed(currentIndex: 11)
+    }
+
+    @MainActor
+    func testBackgroundTabAddedRevealsTabInMiddleWithoutSelectingIt() async throws {
+        try await assertBackgroundTabIsRevealed(currentIndex: 6)
+    }
+
+    @MainActor
+    private func assertBackgroundTabIsRevealed(currentIndex: Int) async throws {
+        let model = TabsModel(tabs: (0..<12).map { _ in Tab(link: nil) }, desktop: false)
+        let selectedTab = model.tabs[currentIndex]
+        model.select(tab: selectedTab)
+        let controller = TabsBarViewController.create()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.addSubview(controller.view)
+        controller.view.frame = CGRect(x: 0, y: 0, width: 1024, height: 40)
+        controller.view.layoutIfNeeded()
+        controller.refresh(tabsModel: model)
+        controller.collectionView.layoutIfNeeded()
+
+        let tab = Tab(link: nil)
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
+        let index = try XCTUnwrap(model.indexOf(tab: tab))
+
+        controller.backgroundTabAdded(tab)
+
+        let revealed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let attributes = controller.collectionView.layoutAttributesForItem(at: IndexPath(item: index, section: 0)) else {
+                return false
+            }
+            let collectionView = controller.collectionView
+            let visibleRect = CGRect(origin: collectionView.contentOffset,
+                                     size: CGSize(width: collectionView.bounds.width - collectionView.contentInset.right,
+                                                  height: collectionView.bounds.height))
+            return visibleRect.contains(attributes.frame)
+        }, object: nil)
+        await fulfillment(of: [revealed], timeout: 3)
+
+        XCTAssertEqual(model.currentIndex, currentIndex)
+        XCTAssertIdentical(model.tabs[currentIndex], selectedTab)
+        XCTAssertFalse(tab.viewed)
+        withExtendedLifetime(window) {}
+    }
+
     // MARK: - Duck.ai chrome controls
 
     @MainActor

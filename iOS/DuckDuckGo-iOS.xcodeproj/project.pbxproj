@@ -1321,6 +1321,7 @@
 		A8452A0101C0DE0000000002 /* HomeScreenTransitionGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000001 /* HomeScreenTransitionGeometry.swift */; };
 		A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */; };
 		A8452A0101C0DE0000000006 /* BrowserToolbarViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8452A0101C0DE0000000005 /* BrowserToolbarViewTests.swift */; };
+		DEB97716DF756B5A0C1EAAB9 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = A712D023676769C4FFFD5573 /* Swifter */; };
 		A91A00033031000100000003 /* UITestingSupport in Frameworks */ = {isa = PBXBuildFile; productRef = A91A00023031000100000002 /* UITestingSupport */; };
 		AA10B5022FA0000100AB12CD /* WebExtensionAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10B5012FA0000100AB12CD /* WebExtensionAvailabilityTests.swift */; };
 		AA2000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000010000000000000002 /* TabSwitcherTrackerInfoHeaderView.swift */; };
@@ -4115,6 +4116,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A91A00033031000100000003 /* UITestingSupport in Frameworks */,
+				DEB97716DF756B5A0C1EAAB9 /* Swifter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8154,6 +8156,7 @@
 			name = "UI Tests";
 			packageProductDependencies = (
 				A91A00023031000100000002 /* UITestingSupport */,
+				A712D023676769C4FFFD5573 /* Swifter */,
 			);
 			productName = "UI Tests";
 			productReference = 7F6EEC9D78144B7DA2E63C91 /* UI Tests.xctest */;
@@ -14901,6 +14904,11 @@
 		FCFC00021F00000000030001 /* URLPredictor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = URLPredictor;
+		};
+		A712D023676769C4FFFD5573 /* Swifter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Swifter;
 		};
 /* End XCSwiftPackageProductDependency section */
 

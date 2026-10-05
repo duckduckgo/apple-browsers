@@ -490,8 +490,8 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
                                 inputMode: .aiChat, isToggleVisible: false, pageType: .contextual, duckAIEntrySource: nil)
             })
             return MultiTabAttachmentContext(feature: feature).makeRequest {
-                guard var request = requestProvider?() else { return nil }
-                request.didDispatch = reporter.makeTabSubmissionReporter(requestedTabCount: requestedTabCount)
+                guard var request = self.requestProvider?() else { return nil }
+                request.didDispatch = reporter.makeTabSubmissionReporter(requestedTabCount: self.requestedTabCount)
                 return request
             }
         }

@@ -2,7 +2,7 @@
 {
     "m_mac_newtab_shown_d": {
         "description": "Daily pixel fired when the New Tab Page is displayed. Reports which widgets are visible and the background type",
-        "owners": ["ayoy"],
+        "owners": ["tomasstrba"],
         "triggers": ["new_tab"],
         "parameters": [
             "appVersion",

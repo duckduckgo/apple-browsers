@@ -52,7 +52,7 @@
     },
     "m_mac_aichat_summarize_text": {
         "description": "Fired when the AI Chat summarization action was triggered",
-        "owners": ["ayoy"],
+        "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": [
@@ -69,7 +69,7 @@
     },
     "m_mac_aichat_summarize_source_link_clicked": {
         "description": "Fired when user clicks the website link on a summarization prompt in Duck.ai tab or sidebar",
-        "owners": ["ayoy"],
+        "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]

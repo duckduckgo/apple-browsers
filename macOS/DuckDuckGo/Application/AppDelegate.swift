@@ -722,7 +722,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         networkSignalsProvider = NetworkSignalsProvider(
             pathProvider: NetworkPathMonitor(),
             vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
-            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: 1),
+            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
             isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
         webExtensionAvailability = WebExtensionAvailability(

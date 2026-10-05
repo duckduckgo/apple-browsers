@@ -393,7 +393,7 @@ final class AppDependencyProvider: DependencyProvider {
         networkSignalsProvider = NetworkSignalsProvider(
             pathProvider: NetworkPathMonitor(),
             vpnConnectivityIssuesProvider: TunnelConnectivityIssuesProvider(sessionProvider: networkProtectionTunnelController),
-            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: 1),
+            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
             isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
     }

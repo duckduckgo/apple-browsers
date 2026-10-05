@@ -36,6 +36,7 @@ public protocol PingQualityProviding: Sendable {
 public final class NetworkSignalsProvider: NetworkSignalsProviding {
 
     public static let pingHost = "duckduckgo.com"
+    public static let lookupTimeout: TimeInterval = 0.5
 
     private let pathProvider: NetworkPathProviding
     private let vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviding

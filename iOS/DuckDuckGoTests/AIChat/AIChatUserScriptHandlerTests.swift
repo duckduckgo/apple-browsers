@@ -81,6 +81,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
+                                             attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
                                              installDateProvider: @escaping () -> Date? = { nil },
                                              installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger)
@@ -95,9 +96,54 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            attachmentPrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults),
+            attachmentPrivacyWebKeySource: attachmentPrivacyWebKeySource,
             installDateProvider: installDateProvider,
             installTypeProvider: installTypeProvider
         )
+    }
+
+    func testAttachmentPrivacyCapabilityTracksFlagOnIPadAndIPhone() {
+        for isIphone in [false, true] {
+            MockDevicePlatform.isIphone = isIphone
+            for enabled in [false, true, false] {
+                mockFeatureFlagger.enabledFeatureFlags = enabled ? [.unifiedToggleInputAttachmentPrivacy] : []
+                let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(
+                    params: [:], message: MockUserScriptMessage(name: "test", body: [:])
+                ) as? AIChatNativeConfigValues
+                XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, enabled)
+            }
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyMessageClaimsOnceAndReturnsShowResponse() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.unifiedToggleInputAttachmentPrivacy]
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
+        XCTAssertNotNil(script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue))
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let firstResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message)
+        let first = try XCTUnwrap(firstResponse)
+        let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Bool]
+        XCTAssertEqual(json, ["show": true])
+        let second = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(second?.show, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyMessageRechecksFlagAndAdoptsWebState() async throws {
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: "true")
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+        let store = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let disabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(disabled?.show, false)
+        XCTAssertFalse(store.hasShown)
+        mockFeatureFlagger.enabledFeatureFlags = [.unifiedToggleInputAttachmentPrivacy]
+        let enabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(enabled?.show, false)
+        XCTAssertTrue(store.hasShown)
     }
 
     func testWhenReturningUserThenInstallTypeIsReturning() {

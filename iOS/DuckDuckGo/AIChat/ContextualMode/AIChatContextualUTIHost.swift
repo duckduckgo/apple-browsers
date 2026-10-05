@@ -89,7 +89,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         floatingUIManager: FloatingUIManaging = FloatingUIManager(isFloatingUIFeatureEnabled: false),
         tabAttachmentSource: MultiTabAttachmentSource? = nil,
         duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
-        isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
+        isCurrentPageAttachInProgress: @escaping () -> Bool = { false },
+        attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure? = nil
     ) {
         let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
@@ -112,7 +113,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
             placesAttachmentsAboveInput: isFloatingInputAvailable,
             usageLimitsStore: usageLimitsStore,
-            floatingUIManager: floatingUIManager
+            floatingUIManager: floatingUIManager,
+            attachmentPrivacyDisclosure: attachmentPrivacyDisclosure
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,

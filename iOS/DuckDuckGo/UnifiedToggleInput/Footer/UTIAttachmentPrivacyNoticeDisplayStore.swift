@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Persistence
 
@@ -50,6 +51,67 @@ struct UTIAttachmentPrivacyNoticeDisplayStore: UTIAttachmentPrivacyNoticeDisplay
     func reset() {
         try? keyValueStore.removeObject(forKey: Key.shown.rawValue)
     }
+}
+
+@MainActor
+final class AttachmentPrivacyDisclosure {
+    static let webEntryKey = DuckAiNativeStorageReservedEntryKeys.fileUploadDisclaimerShown.rawValue
+
+    private let store: UTIAttachmentPrivacyNoticeDisplayStoring
+    private let webKeySource: DuckAiNativeStorageHandling?
+    private let isEnabled: () -> Bool
+
+    init(store: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore(),
+         webKeySource: DuckAiNativeStorageHandling?,
+         isEnabled: @escaping () -> Bool) {
+        self.store = store
+        self.webKeySource = webKeySource
+        self.isEnabled = isEnabled
+    }
+
+    var canShow: Bool {
+        isEnabled() && !hasBeenShown()
+    }
+
+    @discardableResult
+    func claim() -> Bool {
+        guard canShow else { return false }
+        store.markShown()
+        return true
+    }
+
+    func reset() {
+        store.reset()
+        try? webKeySource?.deleteEntry(key: Self.webEntryKey)
+    }
+
+    private func hasBeenShown() -> Bool {
+        if store.hasShown { return true }
+        guard webFlagSaysShown() else { return false }
+        store.markShown()
+        return true
+    }
+
+    private func webFlagSaysShown() -> Bool {
+        guard let entry = try? webKeySource?.getEntry(key: Self.webEntryKey) else { return false }
+        switch entry {
+        case let shown as Bool:
+            return shown
+        case let count as Int:
+            return count > 0
+        case let count as Double:
+            return count > 0
+        case let text as String:
+            if let flag = Bool(text.lowercased()) { return flag }
+            return (Int(text) ?? 0) > 0
+        default:
+            return false
+        }
+    }
+}
+
+struct AttachmentPrivacyShouldDisplayResponse: Encodable {
+    let show: Bool
 }
 
 enum UTIAttachmentPrivacyKind: String {

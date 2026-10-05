@@ -195,6 +195,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Sync
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable?
@@ -230,6 +231,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
+    private let attachmentPrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring
+    private let attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling?
+
+    @MainActor private lazy var attachmentPrivacyDisclosure = AttachmentPrivacyDisclosure(
+        store: attachmentPrivacyDisplayStore,
+        webKeySource: attachmentPrivacyWebKeySource,
+        isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy) }
+    )
 
     /// Set externally via `AIChatContentHandler.setup()`.
     var displayMode: AIChatDisplayMode?
@@ -256,6 +265,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
          aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> = AIChatUserScriptErrorEventMapper(),
          isNativeStorageBridgeAvailable: Bool = false,
+         attachmentPrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStoring = UTIAttachmentPrivacyNoticeDisplayStore(),
+         attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
@@ -271,9 +282,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper
         self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.attachmentPrivacyDisplayStore = attachmentPrivacyDisplayStore
+        self.attachmentPrivacyWebKeySource = attachmentPrivacyWebKeySource
         self.installDateProvider = installDateProvider
         self.installTypeProvider = installTypeProvider
         setUpSyncStatusObserver()
+    }
+
+    @MainActor
+    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable? {
+        AttachmentPrivacyShouldDisplayResponse(show: attachmentPrivacyDisclosure.claim())
     }
 
     enum AIChatKeys {
@@ -454,7 +472,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),
-            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider())
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
+            supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy)
         )
         return config
     }

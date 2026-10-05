@@ -37,7 +37,7 @@ struct AIChatDebugView: View {
             AIChatStorageServerSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 
 #if DEBUG || ALPHA
-            AIChatAttachmentPrivacySection()
+            AIChatAttachmentPrivacySection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatMultiTabPromotionSection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
@@ -477,7 +477,7 @@ private struct AIChatUsageWarningsSection: View {
         DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
-        UTIAttachmentPrivacyNoticeDisplayStore().reset()
+        AttachmentPrivacyDisclosure(webKeySource: duckAiNativeStorageHandler, isEnabled: { true }).reset()
         status = "Dismissals and attachment disclosure reset."
     }
 
@@ -621,12 +621,13 @@ private struct AIChatMultiTabPromotionSection: View {
 }
 
 private struct AIChatAttachmentPrivacySection: View {
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     @State private var status = ""
 
     var body: some View {
         Section {
             Button {
-                UTIAttachmentPrivacyNoticeDisplayStore().reset()
+                AttachmentPrivacyDisclosure(webKeySource: duckAiNativeStorageHandler, isEnabled: { true }).reset()
                 status = "Attachment disclosure reset. It shows on the next image or file attachment."
             } label: {
                 Text(verbatim: "Reset attachment disclosure")

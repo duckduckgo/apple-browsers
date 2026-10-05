@@ -297,6 +297,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .cancelEdit:
             return handler.cancelEdit
+        case .attachmentPrivacyShouldDisplay:
+            return handler.attachmentPrivacyShouldDisplay
         default:
             return nil
         }

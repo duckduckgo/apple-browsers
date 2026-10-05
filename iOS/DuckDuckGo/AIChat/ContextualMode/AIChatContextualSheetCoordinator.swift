@@ -910,7 +910,11 @@ private extension AIChatContextualSheetCoordinator {
             usageLimitsStore: duckAiUsageLimitsStore,
             floatingUIManager: floatingUIManager,
             tabAttachmentSource: tabAttachmentSource,
-            isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
+            isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false },
+            attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure(
+                webKeySource: duckAiNativeStorageHandler,
+                isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPrivacy) }
+            )
         )
         host.onAttachRequested = { [weak self] in
             self?.requestManualPageContextAttach()

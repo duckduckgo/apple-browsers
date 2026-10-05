@@ -145,8 +145,6 @@ final class AIChatContextualChatSessionState {
     /// URL included in the last submitted prompt with no navigation since; used to spot a stale auto-attach echo.
     private var deliveredContextURLWithNoNavigationSince: URL?
 
-    private var declinedOfferURL: URL?
-
     @Published private(set) var viewState = SheetViewState(
         content: .nativeInput,
         isExpandButtonEnabled: true,
@@ -339,13 +337,6 @@ final class AIChatContextualChatSessionState {
         attachContextFromSuggestionTap(context)
     }
 
-    func dismissSuggestedContext() {
-        guard let context = suggestedContext else { return }
-        declinedOfferURL = URL(string: context.contextData.url)
-        suggestedContext = nil
-        Logger.aiChat.debug("[SessionState] Suggested context dismissed")
-    }
-
     func attachContextFromSuggestionTap(_ context: AIChatPageContext) {
         chipState = .attached(context)
         userDowngradedToPlaceholder = false
@@ -413,7 +404,6 @@ final class AIChatContextualChatSessionState {
         chipState = .placeholder
         contextualChatURL = nil
         deliveredContextURLWithNoNavigationSince = nil
-        declinedOfferURL = nil
         userDowngradedToPlaceholder = false
         isAutomaticAttachInProgress = false
         isManualAttachInProgress = false
@@ -476,7 +466,17 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
         pushDetachedContextToSuggestionsSurfaceIfNeeded(context)
         emitDeliveryIfNeeded(nil)
+        suggestDetachedContext(context)
         Logger.aiChat.debug("[SessionState] Chip downgraded to placeholder via coordinator")
+    }
+
+    /// Keeps the page on the chip as an offer, so one tap puts it back. Deliberately not gated on
+    /// `shouldOfferPageContext`: the user acted on this page just now.
+    private func suggestDetachedContext(_ context: AIChatPageContext) {
+        guard featureFlagger.isFeatureOn(.contextualPagePlaceholder), isUnifiedToggleInputActive else { return }
+        suggestedContext = context
+        emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))
+        Logger.aiChat.debug("[SessionState] Offered the detached page back")
     }
 
     // MARK: - Context Management
@@ -517,7 +517,6 @@ final class AIChatContextualChatSessionState {
         // A real navigation means any subsequent context update is fresh, even if it later
         // resolves to a URL that was already submitted (e.g. the user navigated away and back).
         deliveredContextURLWithNoNavigationSince = nil
-        declinedOfferURL = nil
         // Clear the offer on the chip too, or it lingers stale after navigation.
         if suggestedContext != nil {
             suggestedContext = nil
@@ -569,13 +568,7 @@ final class AIChatContextualChatSessionState {
             && !shouldAutoCollectContext
             && isUnifiedToggleInputActive
             && hasActiveChat
-            && !hasDeclinedOffer(for: pageURL)
             && shouldCollectPage(for: pageURL)
-    }
-
-    private func hasDeclinedOffer(for pageURL: URL?) -> Bool {
-        guard let declinedOfferURL, let pageURL else { return false }
-        return declinedOfferURL.equals(pageURL, by: .sameDocument)
     }
 
     /// Sends a null context as a navigation signal.

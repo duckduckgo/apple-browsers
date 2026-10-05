@@ -148,7 +148,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)

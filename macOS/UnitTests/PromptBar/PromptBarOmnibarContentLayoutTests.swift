@@ -76,7 +76,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
     /// layout catches up — the bar visibly jumping while you type.
     func testWhenTheHeightIsReadBeforeLayoutHasSettledThenItAlreadyMatchesTheSettledHeight() {
         let view = content.view
-        guard let textView = firstDescendant(of: view, ofType: NSTextView.self) else {
+        guard let textView = promptTextView(in: view) else {
             return XCTFail("No prompt text view in the hierarchy")
         }
         textView.string = String(repeating: "what is a duck ", count: 20)
@@ -164,6 +164,14 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         8 + containerViewController.additionalContentHeight
     }
 
+    /// By identifier: the usage-warning card carries its own `NSTextView`, so the first one in the
+    /// tree isn't necessarily the prompt.
+    private func promptTextView(in host: NSView) -> NSTextView? {
+        descendants(of: host)
+            .compactMap { $0 as? NSTextView }
+            .first { $0.accessibilityIdentifier() == "AIChatOmnibarTextContainerViewController.textView" }
+    }
+
     private func duckAILogo(in host: NSView) -> NSImageView? {
         descendants(of: host)
             .compactMap { $0 as? NSImageView }
@@ -191,7 +199,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
         view.frame = NSRect(origin: .zero, size: content.preferredWindowContentSize)
         view.layoutSubtreeIfNeeded()
 
-        guard let textView = firstDescendant(of: view, ofType: NSTextView.self) else {
+        guard let textView = promptTextView(in: view) else {
             XCTFail("No prompt text view in the hierarchy")
             return (0, 0)
         }

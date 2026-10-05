@@ -266,6 +266,12 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     @MainActor
+    func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireLearnMoreTapped(kind: .init(kind))
+        windowControllersManager.show(url: .aiChatPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
+    }
+
+    @MainActor
     func openCustomizeResponses() {
         guard customizeResponsesModal == nil else { return }
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,

@@ -1774,6 +1774,7 @@ public struct UserText {
     public static let settingsLastTabShortcutSubtitle = NSLocalizedString("settings.lastTabShortcut.subtitle", value: "Displays a link to return to the last used tab when you launch the app after inactivity.", comment: "Settings toggle subtitle describing the ‘Return to’ Shortcut option")
 
     // Escape Hatch (Return to Tab Card)
+    public static let escapeHatchShowAllTabs = NotLocalizedString("escapeHatch.showAllTabs.label", value: "Show All Tabs", comment: "Button in the Return to module header that opens the tab switcher")
     public static let escapeHatchReturnToLabel = NSLocalizedString("escapeHatch.returnTo.label", value: "Return to…", comment: "Label shown on the escape hatch card above the tab title")
     public static let escapeHatchReturnToAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.accessibility.label", value: "Return to %@", comment: "Accessibility label for escape hatch card; %@ is the tab title")
     public static let escapeHatchReturnToWithSubtitleAccessibilityLabelFormat = NSLocalizedString("escapeHatch.returnTo.withSubtitle.accessibility.label", value: "Return to %@, %@", comment: "Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain")

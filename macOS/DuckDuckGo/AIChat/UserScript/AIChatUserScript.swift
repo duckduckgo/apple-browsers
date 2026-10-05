@@ -183,6 +183,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChatSettings
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
+        case .attachmentPrivacyShouldDisplay:
+            return handler.attachmentPrivacyShouldDisplay
         case .closeAIChat:
             return handler.closeAIChat
         case .getAIChatNativePrompt:

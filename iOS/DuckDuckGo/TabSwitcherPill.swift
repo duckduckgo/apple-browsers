@@ -61,7 +61,7 @@ struct TabSwitcherPill: View {
         .onChange(of: count) { newValue in tabCountModel.count = newValue }
         .accessibilityLabel(Text(UserText.tabSwitcherAccessibilityLabel))
         .accessibilityValue(Text(UserText.numberOfTabs(count)))
-        .accessibilityIdentifier("NTP.escapeHatch.tabSwitcher")
+        .accessibilityIdentifier("NewTabPage.escapeHatch.tabSwitcher")
     }
 
     private var content: some View {

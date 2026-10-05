@@ -222,7 +222,12 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Stops async suggestion work as soon as the sheet starts dismissing.
     private var canProcessSuggestionSubmission = false
-    private var suggestionAwaitingAppearance: ContextualSuggestedPrompt?
+    private var submissionAwaitingAppearance: PendingSubmission?
+
+    private enum PendingSubmission {
+        case suggestion(ContextualSuggestedPrompt)
+        case searchQuery(String)
+    }
 
     // MARK: - UI Components
 
@@ -529,9 +534,15 @@ final class AIChatContextualSheetViewController: UIViewController {
             mountPersistentUTIHostIfNeeded()
         }
         canProcessSuggestionSubmission = true
-        if let suggestion = suggestionAwaitingAppearance {
-            suggestionAwaitingAppearance = nil
+        switch submissionAwaitingAppearance {
+        case .suggestion(let suggestion):
+            submissionAwaitingAppearance = nil
             submitSuggestion(suggestion)
+        case .searchQuery(let query):
+            submissionAwaitingAppearance = nil
+            submitSearchQuery(query)
+        case nil:
+            break
         }
         pixelHandler.fireSheetOpened()
         addKeyboardObserver()
@@ -976,7 +987,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         // a surface the user has left, and would otherwise resurface on the next presentation.
         guard canProcessSuggestionSubmission else {
             if !isBeingDismissed {
-                suggestionAwaitingAppearance = suggestion
+                submissionAwaitingAppearance = .suggestion(suggestion)
             }
             return
         }
@@ -985,6 +996,34 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         cancelSuggestionSubmission()
         delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
+        runSubmission { [weak self] in
+            guard let self else { return true }
+            let didDeliver = if actsOnSelection {
+                await self.deliverSelectionSuggestionPrompt(suggestion)
+            } else {
+                await self.deliverSuggestionPrompt(suggestion)
+            }
+            return didDeliver
+        }
+    }
+
+    /// Nothing is attached: the results page is what the user is leaving, not something to ask about.
+    func submitSearchQuery(_ query: String) {
+        guard canProcessSuggestionSubmission else {
+            if !isBeingDismissed {
+                submissionAwaitingAppearance = .searchQuery(query)
+            }
+            return
+        }
+        cancelSuggestionSubmission()
+        runSubmission { [weak self] in
+            guard let self else { return true }
+            return await self.deliverSearchQuery(query)
+        }
+    }
+
+    /// Runs `deliver` as the sheet's one in-flight submission, undimming the start actions after it.
+    private func runSubmission(_ deliver: @escaping () async -> Bool) {
         contextualInputViewController.setStartActionsDimmed(true)
         let submissionID = UUID()
         suggestionSubmissionID = submissionID
@@ -1000,15 +1039,22 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
                 }
             }
 
-            let didDeliver = if actsOnSelection {
-                await self.deliverSelectionSuggestionPrompt(suggestion)
-            } else {
-                await self.deliverSuggestionPrompt(suggestion)
-            }
+            let didDeliver = await deliver()
             if !didDeliver {
                 self.abandonAwaitedSubmittedChat()
             }
         }
+    }
+
+    private func deliverSearchQuery(_ query: String) async -> Bool {
+        guard let webViewController else { return false }
+
+        let isFrontendReady = await webViewController.waitUntilFrontendReady(timeout: Constants.suggestedPromptFrontendReadinessTimeout)
+        guard isFrontendReady else { return false }
+        guard !Task.isCancelled, canProcessSuggestionSubmission else { return true }
+
+        submitSuggestionPrompt(query)
+        return true
     }
 
     private func deliverSelectionSuggestionPrompt(_ suggestion: ContextualSuggestedPrompt) async -> Bool {
@@ -1299,7 +1345,7 @@ private extension AIChatContextualSheetViewController {
     func prepareForDismissal() {
         guard canProcessSuggestionSubmission else { return }
         canProcessSuggestionSubmission = false
-        suggestionAwaitingAppearance = nil
+        submissionAwaitingAppearance = nil
         cancelSuggestionSubmission()
         contextualInputViewController.setStartActionsDimmed(false)
     }

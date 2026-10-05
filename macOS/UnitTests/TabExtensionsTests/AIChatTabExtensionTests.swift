@@ -169,6 +169,43 @@ final class AIChatTabExtensionTests: XCTestCase {
         XCTAssertEqual(firedVias, ["link", "link", "link"])
     }
 
+    // MARK: - Redirect pages
+
+    func testWhenALinkGoesThroughALinkWrapperThenTheRedirectToDuckAIIsALink() {
+        let wrapperURL = URL(string: "https://www.google.com/url?q=https://duck.ai/")!
+        perform(makeNavigation(to: wrapperURL, type: .linkActivated(isMiddleClick: false), from: URL(string: "https://www.google.com/search?q=duck.ai")!))
+        perform(makeNavigation(to: duckAIURL, type: .redirect(.client(delay: 0)), from: wrapperURL))
+
+        XCTAssertEqual(firedVias, ["link"])
+    }
+
+    func testThatAChainOfRedirectPagesKeepsTheOriginalVia() {
+        let firstWrapperURL = URL(string: "https://t.co/abc")!
+        let secondWrapperURL = URL(string: "https://bit.ly/abc")!
+        perform(makeNavigation(to: firstWrapperURL, type: .linkActivated(isMiddleClick: false)))
+        perform(makeNavigation(to: secondWrapperURL, type: .redirect(.client(delay: 0)), from: firstWrapperURL))
+        perform(makeNavigation(to: duckAIURL, type: .redirect(.client(delay: 0)), from: secondWrapperURL))
+
+        XCTAssertEqual(firedVias, ["link"])
+    }
+
+    func testThatAClientRedirectAfterDuckAILoadedDoesNotCountAgain() {
+        content.send(.aiChat(duckAIURL, source: .userEntered("duck.ai")))
+        perform(makeNavigation(to: duckAIURL, type: .custom(.userEnteredUrl)))
+        perform(makeNavigation(to: URL(string: "https://duck.ai/chat")!, type: .redirect(.client(delay: 0)), from: duckAIURL))
+
+        XCTAssertEqual(firedVias, ["typed"])
+    }
+
+    func testThatAnotherNavigationDropsTheViaARedirectPageWouldHaveCarried() {
+        let wrapperURL = URL(string: "https://www.google.com/url?q=https://duck.ai/")!
+        perform(makeNavigation(to: wrapperURL, type: .linkActivated(isMiddleClick: false)))
+        perform(makeNavigation(to: URL(string: "https://example.com/")!, type: .custom(.ui)))
+        perform(makeNavigation(to: duckAIURL, type: .redirect(.client(delay: 0))))
+
+        XCTAssertEqual(firedVias, [])
+    }
+
     // MARK: - No pixel
 
     func testThatLoadsTheUserDidNotStartTowardDuckAIReportNothing() {

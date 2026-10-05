@@ -55,6 +55,9 @@ final class AIChatTabExtension {
     private var latestContentSource: TabContent.URLSource?
     /// The URL of an address-bar suggestion the user just picked, so its navigation isn't counted as typed.
     private var addressBarSuggestionURL: URL?
+    /// How a direct navigation started when it landed on another page first, such as a link wrapper
+    /// like google.com/url, so that page's client redirect to Duck.ai still counts.
+    private var viaForClientRedirect: AIChatDirectNavigationVia?
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -383,16 +386,25 @@ extension AIChatTabExtension: NavigationResponder {
 
         let suggestionURL = addressBarSuggestionURL
         addressBarSuggestionURL = nil
-        navigation.duckAIDirectNavigationVia = directNavigationVia(for: navigation.navigationAction, suggestionURL: suggestionURL)
+        let inheritedVia = viaForClientRedirect
+        viaForClientRedirect = nil
+
+        if case .redirect(.client) = navigation.navigationAction.navigationType {
+            navigation.duckAIDirectNavigationVia = inheritedVia
+        } else {
+            navigation.duckAIDirectNavigationVia = directNavigationVia(for: navigation.navigationAction, suggestionURL: suggestionURL)
+        }
     }
 
     func didCommit(_ navigation: Navigation) {
         aiChatUserScript?.handler.resetConversationSourceForNewDocument()
 
-        guard navigation.isCurrent,
-              let via = navigation.duckAIDirectNavigationVia,
-              navigation.url.isDuckAIURL,
-              !navigation.url.isDuckAIOpenedFromHomepage else { return }
+        guard navigation.isCurrent, let via = navigation.duckAIDirectNavigationVia else { return }
+        guard navigation.url.isDuckAIURL else {
+            viaForClientRedirect = via
+            return
+        }
+        guard !navigation.url.isDuckAIOpenedFromHomepage else { return }
 
         let isDuckAIEnabled = preferencesStorage.isAIFeaturesEnabled
         pixelFiring?.fire(AIChatPixel.aiChatDuckAIDirectNavigation(via: via,
@@ -402,8 +414,8 @@ extension AIChatTabExtension: NavigationResponder {
         setDirectNavigationFallback(via.conversationSource)
     }
 
-    /// Only navigations the user started toward a URL count; app-opened, restored, reloaded and
-    /// redirected loads don't.
+    /// Only navigations the user started toward a URL count; app-opened, restored and reloaded loads
+    /// don't. A client redirect only carries on the navigation that led to its page.
     private func directNavigationVia(for action: NavigationAction, suggestionURL: URL?) -> AIChatDirectNavigationVia? {
         switch action.navigationType {
         case .custom(.userEnteredUrl):

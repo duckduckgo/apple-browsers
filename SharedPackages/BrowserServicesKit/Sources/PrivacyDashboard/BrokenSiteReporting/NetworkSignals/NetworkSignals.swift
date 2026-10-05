@@ -31,10 +31,22 @@ public struct NetworkSignals: Equatable, Sendable {
     public let networkType: NetworkType
     public let isLowDataModeEnabled: Bool
     public let hasVPNConnectivityIssues: Bool
+    public let pingQuality: PingQuality
 
-    public init(networkType: NetworkType, isLowDataModeEnabled: Bool, hasVPNConnectivityIssues: Bool) {
+    public init(networkType: NetworkType, isLowDataModeEnabled: Bool, hasVPNConnectivityIssues: Bool, pingQuality: PingQuality) {
         self.networkType = networkType
         self.isLowDataModeEnabled = isLowDataModeEnabled
         self.hasVPNConnectivityIssues = hasVPNConnectivityIssues
+        self.pingQuality = pingQuality
     }
+}
+
+/// Round-trip latency bucket; raw values match the VPN's `ConnectionQuality`.
+public enum PingQuality: String, Sendable {
+    case excellent
+    case good
+    case moderate
+    case poor
+    case terrible
+    case unknown
 }

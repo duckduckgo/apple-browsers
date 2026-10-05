@@ -42,17 +42,28 @@ public protocol VPNConnectivityIssuesProviding {
     func isExperiencingVPNConnectivityIssues() async -> Bool
 }
 
+public protocol PingQualityProviding: Sendable {
+    associatedtype ConnectionQuality: RawRepresentable where ConnectionQuality.RawValue == String
+
+    func currentPingQuality() async -> ConnectionQuality
+}
+
 public final class NetworkSignalsProvider: NetworkSignalsProviding {
+
+    public static let pingHost = "duckduckgo.com"
 
     private let pathProvider: NetworkPathProviding
     private let vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviding
+    private let pingQualityProvider: any PingQualityProviding
     private let isEnabledProvider: () -> Bool
 
     public init(pathProvider: NetworkPathProviding,
                 vpnConnectivityIssuesProvider: VPNConnectivityIssuesProviding,
+                pingQualityProvider: any PingQualityProviding,
                 isEnabledProvider: @escaping () -> Bool) {
         self.pathProvider = pathProvider
         self.vpnConnectivityIssuesProvider = vpnConnectivityIssuesProvider
+        self.pingQualityProvider = pingQualityProvider
         self.isEnabledProvider = isEnabledProvider
     }
 
@@ -62,11 +73,24 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
         }
 
         let pathState = pathProvider.currentPathState
-        let hasVPNConnectivityIssues = await vpnConnectivityIssuesProvider.isExperiencingVPNConnectivityIssues()
 
-        return NetworkSignals(networkType: pathState.networkType,
-                              isLowDataModeEnabled: pathState.isConstrained,
-                              hasVPNConnectivityIssues: hasVPNConnectivityIssues)
+        async let pingQuality = pingQuality(networkType: pathState.networkType)
+        async let hasVPNConnectivityIssues = vpnConnectivityIssuesProvider.isExperiencingVPNConnectivityIssues()
+
+        return await NetworkSignals(networkType: pathState.networkType,
+                                    isLowDataModeEnabled: pathState.isConstrained,
+                                    hasVPNConnectivityIssues: hasVPNConnectivityIssues,
+                                    pingQuality: pingQuality)
+    }
+
+    /// Skips the ping when there is no network, since it could only time out.
+    private func pingQuality(networkType: NetworkSignals.NetworkType) async -> PingQuality {
+        guard networkType != .unavailable else {
+            return .unknown
+        }
+
+        let quality = await pingQualityProvider.currentPingQuality()
+        return PingQuality(rawValue: quality.rawValue) ?? .unknown
     }
 }
 

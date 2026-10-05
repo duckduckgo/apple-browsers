@@ -388,6 +388,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var networkSignalsProvider: NetworkSignalsProviding = NetworkSignalsProvider(
         pathProvider: NetworkPathMonitor(),
         vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
+        pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: 1),
         isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(

@@ -32,6 +32,8 @@ extension ConnectivityIssueObserverThroughDistributedNotifications: VPNConnectiv
     }
 }
 
+extension HostnamePinger: PingQualityProviding {}
+
 extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {
         let settings = Application.appDelegate.vpnSettings

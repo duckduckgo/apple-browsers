@@ -34,6 +34,8 @@ private class DefaultTunnelSessionProvider: TunnelSessionProvider {
 
 extension TunnelConnectivityIssuesProvider: VPNConnectivityIssuesProviding {}
 
+extension HostnamePinger: PingQualityProviding {}
+
 extension ConnectionStatusObserverThroughSession {
     convenience init() {
         self.init(tunnelSessionProvider: DefaultTunnelSessionProvider(),

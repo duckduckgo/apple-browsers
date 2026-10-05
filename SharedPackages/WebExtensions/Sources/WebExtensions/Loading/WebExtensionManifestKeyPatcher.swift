@@ -22,12 +22,13 @@ import os.log
 /// Restores the Chrome Web Store `key` of a known extension installed from a source that does not
 /// carry one, so the extension keeps the Chrome identity its native messaging host expects.
 ///
-/// The Web Store injects a `key` field into the manifest of every extension it serves, and Chrome
-/// derives the extension's identifier from it (see `WKWebExtension.chromeExtensionIdentifier`). The
-/// release zips vendors publish themselves are built before that step, so they carry no `key` at
-/// all: there is nothing to derive an identifier from, and a native messaging host that gates
-/// callers on `allowed_origins` — Bitwarden's does — rejects the extension
-/// outright. Putting the store's key back restores the identifier the host expects.
+/// Chrome derives an extension's identifier from its public key (see
+/// `WKWebExtension.chromeExtensionIdentifier`). A `.crx` from the Web Store carries that key in its
+/// header, not in `manifest.json`, so once the header is stripped and the package unpacked, the
+/// manifest has no `key`; the release zips vendors publish themselves have none either. Without it
+/// there is nothing to derive an identifier from, and a native messaging host that gates callers on
+/// `allowed_origins` — Bitwarden's does — rejects the extension outright. Putting the store's key
+/// back restores the identifier the host expects.
 ///
 /// The extension is recognized by name, which is what a user sees and what a vendor keeps stable
 /// across releases — the manifest has no other stable identity to match on precisely because the

@@ -95,7 +95,7 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/task/1216395339071576
     case duckAIPromotionCard = "funnel_duckai_ios__promotioncard"
 
-    /// Frontend-reported: the "Subscribe to DuckDuckGo" button in Duck.ai settings.
+    /// Frontend-reported: the "Subscribe to DuckDuckGo" and resubscribe buttons in Duck.ai settings.
     /// https://app.asana.com/1/137249556945/task/1216395339071576
     case duckAISettings = "funnel_duckai_ios__settings"
 

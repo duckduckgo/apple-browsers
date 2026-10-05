@@ -26,18 +26,15 @@ public enum BitwardenExtensionInstallerError: Error {
     case downloadFailed(statusCode: Int)
 }
 
-/// Installs the latest Bitwarden from the Chrome Web Store, replacing any copy already installed.
-///
-/// Debug tooling: it downloads the CRX, strips its header and installs the unpacked folder, so the
-/// background page patcher and the manifest key restore run (zip installs skip them).
+/// Debug tooling that installs the latest Bitwarden from the Chrome Web Store as an unpacked folder,
+/// replacing any copy already installed.
 @available(macOS 15.4, iOS 18.4, *)
 public struct BitwardenExtensionInstaller {
 
     /// The Chrome Web Store identifier of Bitwarden.
     public static let chromeExtensionIdentifier = "nngceckbapebfimnlniiiahkandclblb"
 
-    /// The Chrome version the download asks for. The Web Store returns nothing without one, and serves
-    /// the latest release that supports it, so it only needs to be a version the extension supports.
+    /// The Chrome version the download asks for; the Web Store serves the latest release supporting it.
     private static let chromeVersion = "140.0"
 
     /// The Web Store update endpoint, which redirects to the versioned `.crx`.
@@ -109,10 +106,8 @@ public struct BitwardenExtensionInstaller {
         Logger.webExtensions.info("Installed Bitwarden from the Chrome Web Store")
     }
 
-    /// The `.crx` carries the developer's public key in its header, not in `manifest.json`, so once the
-    /// header is stripped the installed copy would have no Chrome identifier, and a later install could
-    /// not find it to replace it. Writing the header's key back into the manifest gives it the
-    /// identifier Chrome derives. A manifest that already has a `key` is left alone.
+    /// Writes the `.crx` header's developer key into `manifest.json`, giving the installed copy the Chrome
+    /// identifier a later install finds it by. A manifest that already has a `key` is left alone.
     private func restorePublicKey(from crx: Data, in extensionDirectory: URL) throws {
         let manifestURL = extensionDirectory.appendingPathComponent("manifest.json")
         guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any],

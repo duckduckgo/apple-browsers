@@ -19,33 +19,26 @@
 import Foundation
 import os.log
 
-/// Rewrites a Manifest V3 `background.service_worker` declaration into an equivalent
-/// `background.page` declaration in an installed extension's manifest.
+/// Makes Chrome extensions start their background script in WebKit.
 ///
-/// Our `WKWebExtension` host does start a `service_worker` background — measured on macOS 26.6.2 —
-/// but it is unforgiving: a throw at the top level of the worker aborts its registration outright,
-/// so `loadBackgroundContent()` never completes and `WKWebExtensionContext` reports error code 6. A
-/// background page running the same script survives the same throw and keeps whatever the script
-/// managed to set up before it.
+/// Chrome's Manifest V3 extensions run their background code in a service worker
+/// (`"background": { "service_worker": "background.js" }`). In WebKit, if that script throws
+/// while starting, for example because it calls a Chrome API WebKit doesn't have, the whole
+/// background is discarded and the extension doesn't work.
 ///
-/// The conversion therefore buys two things:
-/// - a top-level exception in a Chrome build becomes survivable rather than fatal;
-/// - the generated page is a manifest-level place to load scripts *before* the extension's own
-///   code, which a module service worker offers no hook for, so a classic worker's `importScripts`
-///   can be served without editing the extension's own sources.
+/// A background page doesn't have that problem: when its script throws, the page stays loaded.
+/// So when a third-party extension is installed, this rewrites its manifest to load the same
+/// script from a generated page, `ddg-background-page.html`.
 ///
-/// The patch is deliberately generic and conservative:
-/// - it never touches one of our own extensions (a manifest with a recognized
-///   `browser_specific_settings.duckduckgo.id`), whatever its background looks like — the content
-///   blocker, for one, declares a service worker;
-/// - it only applies when `background.service_worker` is the *only* background declaration, so a
-///   manifest that already uses `background.scripts` or `background.page` is left byte-for-byte
-///   untouched;
-/// - it is idempotent, because a patched manifest no longer declares a service worker.
+/// It leaves the manifest unchanged when:
+/// - the extension is one of ours (its manifest has `browser_specific_settings.duckduckgo`);
+/// - the background is not just a service worker (it already uses `scripts` or `page`).
 ///
-/// For a classic (non-module) worker the generated page also loads `WebExtensionImportScriptsShim`
-/// plus the bundle's split chunks ahead of the extension's own script, so a worker bundle calling
-/// `importScripts` still bootstraps.
+/// Running it twice is harmless: after the first run there is no service worker left to rewrite.
+///
+/// Some service workers load extra files with `importScripts`, which pages don't have. For those,
+/// the page first loads `WebExtensionImportScriptsShim` and the extra files, then the
+/// extension's script.
 struct WebExtensionBackgroundPagePatcher {
 
     /// Name of the generated background page, written next to `manifest.json`.
@@ -152,13 +145,11 @@ struct WebExtensionBackgroundPagePatcher {
         return true
     }
 
-    /// Chunk files a classic worker bundle would load with `importScripts`, as extension-root-relative
-    /// paths sorted by chunk id.
+    /// Finds the extra files a webpack-built service worker loads with `importScripts`.
     ///
-    /// webpack names a split chunk `<chunk id>.<worker basename>` and emits it next to the worker, so
-    /// `background.js` is accompanied by `719.background.js`. The bundle computes that name at runtime
-    /// from an id we cannot see from here, which is why the page preloads every candidate it finds
-    /// rather than the one file a given `importScripts` call asks for.
+    /// webpack names them `<number>.<worker file name>` and puts them next to the worker, so
+    /// `background.js` comes with files like `719.background.js`. We can't tell which ones the worker
+    /// will ask for, so this returns all of them, sorted by number, as paths from the extension folder.
     private func chunkScriptPaths(forWorkerAt normalizedWorkerPath: String, in manifestDirectory: URL) -> [String] {
         let workerFilename = (normalizedWorkerPath as NSString).lastPathComponent
         let workerDirectoryPath = (normalizedWorkerPath as NSString).deletingLastPathComponent
@@ -217,13 +208,13 @@ struct WebExtensionBackgroundPagePatcher {
         return normalizedPath
     }
 
-    /// Builds a background page that loads `normalizedWorkerPath` with a root-absolute `src`, so the
-    /// page resolves the script the same way the manifest's service worker path did.
+    /// Builds the HTML of the background page.
     ///
-    /// Every script the page adds is classic and non-deferred, so all of them finish executing before
-    /// the extension's own script starts — whether that one is a module (always deferred) or a classic
-    /// deferred script. Order matters: the `importScripts` shim first (which the chunks do not need
-    /// but the bundle does), then the chunk payloads the shim will replay, then the bundle itself.
+    /// For a classic worker, the page loads the `importScripts` shim, then the extra files, then the
+    /// extension's script. The extension's script is deferred, so it runs only after the others.
+    /// A module worker loads its extra files itself, so its page loads only the extension's script.
+    ///
+    /// Paths start with `/` so they resolve from the extension folder, like the manifest's path does.
     private static func backgroundPage(loading normalizedWorkerPath: String,
                                        asModule isModule: Bool,
                                        preloadingChunksAt chunkPaths: [String]) -> String {

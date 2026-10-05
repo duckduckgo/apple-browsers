@@ -366,7 +366,7 @@
         "parameters": ["appVersion", "aiChatPageContextOfferReason"]
     },
     "aichat_contextual_page_context_offer_accepted": {
-        "description": "Fired when the user accepts the offer to attach the current page",
+        "description": "Fired when the user accepts the offer to attach the current page, in a contextual chat",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

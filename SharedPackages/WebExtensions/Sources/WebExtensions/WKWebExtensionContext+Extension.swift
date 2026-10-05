@@ -47,6 +47,31 @@ public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable, Sendable 
     }
 }
 
+/// Returns the extension type from a raw manifest dictionary's `browser_specific_settings.duckduckgo.id`.
+///
+/// Shared by everything that must decide whether an extension is one of ours, including code that
+/// runs before a `WKWebExtension` exists (see `WebExtensionBackgroundPagePatcher`).
+@available(macOS 15.4, iOS 18.4, *)
+func webExtensionType(fromManifest manifest: [String: Any]) -> DuckDuckGoWebExtensionType? {
+    guard let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any],
+          let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
+          let idString = duckduckgo[idKey] as? String else {
+        return nil
+    }
+    return DuckDuckGoWebExtensionType(rawValue: idString)
+}
+
+/// Returns whether a raw manifest dictionary declares `browser_specific_settings.duckduckgo`, which only our own
+/// extensions do. Any such extension is ours, even one whose id `DuckDuckGoWebExtensionType` does not know yet.
+///
+/// Shared by everything that must decide whether an extension gets the Chrome-compatibility shims, including code
+/// that runs before a `WKWebExtension` exists (see `WebExtensionBackgroundPagePatcher`). The shim scripts apply the
+/// same rule in JavaScript (see `WebExtensionAPIStubScript` and `WebExtensionWindowCloseScript`).
+func declaresDuckDuckGoSettings(inManifest manifest: [String: Any]) -> Bool {
+    let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any]
+    return browserSpecific?[duckduckgoKey] is [String: Any]
+}
+
 /// Metadata extracted from a web extension without loading it into a controller.
 @available(macOS 15.4, iOS 18.4, *)
 public struct WebExtensionMetadata {
@@ -63,12 +88,17 @@ public extension WKWebExtension {
     /// Example manifest entry:
     /// `"browser_specific_settings": { "duckduckgo": { "id": "com.duckduckgo.web-extension.embedded" } }`
     var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
-        guard let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any],
-              let duckduckgo = browserSpecific[duckduckgoKey] as? [String: Any],
-              let idString = duckduckgo[idKey] as? String else {
-            return nil
-        }
-        return DuckDuckGoWebExtensionType(rawValue: idString)
+        webExtensionType(fromManifest: manifest)
+    }
+
+    /// Whether the extension is a third-party one that needs the Chrome-compatibility shims
+    /// (API stubs, background page conversion, native messaging pass-through, toolbar button,
+    /// keyboard shortcuts).
+    ///
+    /// This is the single source of truth for those shims: they apply only when the extension is
+    /// not one of ours, so DuckDuckGo's own extensions behave as they did before the shims existed.
+    var needsChromeCompatibility: Bool {
+        !declaresDuckDuckGoSettings(inManifest: manifest)
     }
 
     /// Returns whether the extension declares a toolbar action in its manifest.
@@ -118,6 +148,11 @@ public extension WKWebExtensionContext {
     /// Convenience proxy to the underlying web extension's type.
     var duckDuckGoWebExtensionType: DuckDuckGoWebExtensionType? {
         webExtension.duckDuckGoWebExtensionType
+    }
+
+    /// Convenience proxy to `WKWebExtension.needsChromeCompatibility`.
+    var needsChromeCompatibility: Bool {
+        webExtension.needsChromeCompatibility
     }
 
     /// Convenience proxy to the underlying web extension's toolbar action declaration.

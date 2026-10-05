@@ -33,6 +33,7 @@ final class VPNPopoverPresenterTests: XCTestCase {
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager!
+    var buttonDelegate: VPNUpsellToolbarButtonPromoDelegate!
     var firedPixels: [SubscriptionPixel] = []
 
     override func setUp() {
@@ -43,22 +44,15 @@ final class VPNPopoverPresenterTests: XCTestCase {
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         firedPixels = []
 
-        vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
-            isNewUser: true,
-            subscriptionManager: mockSubscriptionManager,
-            defaultBrowserProvider: mockDefaultBrowserProvider,
-            contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            persistor: mockPersistor,
-            timerDuration: 0.01,
-            autoDismissDays: 7,
-            pixelHandler: { _ in }
-        )
-        vpnUpsellVisibilityManager.setup(isFirstLaunch: false, isOnboardingFinished: true)
+        vpnUpsellVisibilityManager = makeVPNUpsellVisibilityManager()
+        buttonDelegate = VPNUpsellToolbarButtonPromoDelegate(featureFlagger: mockFeatureFlagger,
+                                                             visibilityManager: vpnUpsellVisibilityManager,
+                                                             persistor: mockPersistor)
 
         sut = DefaultVPNUpsellPopoverPresenter(
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
-            vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
+            buttonDelegate: buttonDelegate,
             pixelHandler: { pixel in
                 self.firedPixels.append(pixel)
             }
@@ -69,6 +63,7 @@ final class VPNPopoverPresenterTests: XCTestCase {
         super.tearDown()
         sut = nil
         vpnUpsellVisibilityManager = nil
+        buttonDelegate = nil
         mockSubscriptionManager = nil
         mockFeatureFlagger = nil
         mockDefaultBrowserProvider = nil

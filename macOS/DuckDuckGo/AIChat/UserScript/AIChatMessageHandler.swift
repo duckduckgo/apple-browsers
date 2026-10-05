@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import Common
 import Foundation
@@ -156,6 +158,7 @@ extension AIChatMessageHandler {
                 ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
                 : nil,
             supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools),
+            supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure),
             supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true
         )
     }

@@ -1182,6 +1182,11 @@ private final class AttachmentPreparationFixture {
 }
 
 private final class MutableAttachmentFeature: AIChatContextualAttachMoreTabsFeatureProviding {
+    func isDrawerPromoAvailable(isCurrentDisplay: Bool) -> Bool { false }
+    func recordDrawerPromoDisplay() {}
+    func dismissDrawerPromo() {}
+    func recordTabAttachment() {}
+
     var state: AIChatContextualAttachMoreTabsState = .available(maximumTabAttachmentCount: 3)
 }
 

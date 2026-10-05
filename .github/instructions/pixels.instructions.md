@@ -1,1 +1,0 @@
-../../.cursor/BUGBOT.md

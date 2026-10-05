@@ -891,7 +891,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         lastDisplayModeSet = displayMode
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
@@ -905,6 +905,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
                       tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      termsAccepted: Bool,
                       onPromptDispatched: (() -> Void)?) {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
@@ -977,7 +978,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? { nil }
-    func termsAcceptedMarker() -> Bool? { nil }
+    func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool? { nil }
     func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

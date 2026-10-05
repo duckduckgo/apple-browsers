@@ -375,15 +375,20 @@ final class AIChatUserScript: NSObject, Subfeature {
         webView != nil && broker != nil
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
-        submitPrompt(prompt, pageContext: pageContext, modelId: nil)
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
+        submitPrompt(prompt, pageContext: pageContext, modelId: nil, termsAccepted: termsAccepted)
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+    func submitPrompt(_ prompt: String,
+                      pageContext: AIChatPageContextData? = nil,
+                      modelId: String?,
+                      reasoningEffort: AIChatReasoningEffort? = nil,
+                      termsAccepted: Bool = false) {
         let selections = attachedSelectionsPayload
         submitWithTabContexts(currentPageContext: pageContext, request: attachedTabContextsProvider?()) { context in
             AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true, modelId: modelId,
                                            pageContext: context, selections: selections, reasoningEffort: reasoningEffort)
+                .withTermsAccepted(termsAccepted)
         }
     }
 
@@ -411,6 +416,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
                       tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      termsAccepted: Bool = false,
                       onPromptDispatched: (() -> Void)? = nil) {
         let currentPageContext = pageContext ?? attachedPageContextProvider?()
         let selections = attachedSelectionsPayload
@@ -428,7 +434,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 modelId: modelId,
                 pageContext: context,
                 selections: selections,
-                reasoningEffort: reasoningEffort)
+                reasoningEffort: reasoningEffort
+            ).withTermsAccepted(termsAccepted)
         })
     }
 
@@ -512,7 +519,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
     @discardableResult
     private func pushPrompt(_ prompt: AIChatNativePrompt) -> Bool {
-        let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker())
+        let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker(for: prompt))
         guard push(.submitPrompt(payload)) else { return false }
         if let selectionIDs = payload.selections?.map(\.id), !selectionIDs.isEmpty {
             onAttachedSelectionsConsumed?(selectionIDs)

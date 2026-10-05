@@ -291,7 +291,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.chipState, .placeholder)
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?")
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false)
 
         XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
@@ -307,9 +307,26 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             return
         }
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page")
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false)
 
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
+    }
+
+    /// A chip never taps Ask, so its prompt goes out without claiming the Terms of Service.
+    @MainActor
+    func testWhenTheSummarizePageChipIsTappedInTheBasicInputThenThePromptCarriesTermsAcceptedFalse() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var submittedTermsAccepted: [Bool] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, let termsAccepted) = effect { submittedTermsAccepted.append(termsAccepted) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSelectQuickAction: .summarizePage)
+
+        XCTAssertEqual(submittedTermsAccepted, [false])
     }
 
     @MainActor
@@ -338,6 +355,50 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.isFloatingInputPresented)
         XCTAssertNil(sut.sheetViewController)
         XCTAssertEqual(mockPageContextHandler.lastTriggerContextCollectionTrigger, .tabContent)
+    }
+
+    @MainActor
+    func testLearnMoreLeavingFloatingInputDoesNotReportAbandonment() async throws {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualUnifiedToggleInput]
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        let host = try XCTUnwrap(sut.persistentUTIHost)
+        let input = try XCTUnwrap(sut.floatingInputViewController?.children.compactMap { $0 as? UnifiedToggleInputViewController }.first)
+        let attachment = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "retained.jpg"))
+        input.addAttachment(attachment)
+        host.setText("Keep this draft")
+        firedPixelEvents = []
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"))
+
+        sut.openInNewTabLeavingCurrentSurface(url)
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+        XCTAssertFalse(firedPixelEvents.contains(.aiChatContextualFloatingInputDismissedWithoutSubmission))
+        XCTAssertEqual(host.attachmentCount, 1)
+
+        await sut.presentFloatingInput(from: mockPresentingVC)
+
+        XCTAssertTrue(sut.persistentUTIHost === host)
+        XCTAssertEqual(input.currentAttachments.map(\.id), [attachment.id])
+        XCTAssertEqual(input.text, "Keep this draft")
+    }
+
+    @MainActor
+    func testVoiceChatLeavingFloatingInputDoesNotReportAbandonment() async {
+        mockFloatingInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        await sut.handleSelectionAction(.ask, selection: .init(text: "selected text", url: nil, faviconBase64: nil), from: mockPresentingVC)
+        XCTAssertTrue(sut.isFloatingInputPresented)
+        firedPixelEvents = []
+
+        sut.requestNewVoiceChatLeavingCurrentSurface()
+
+        XCTAssertFalse(sut.isFloatingInputPresented)
+        XCTAssertEqual(mockDelegate.newVoiceChatCallCount, 1)
+        XCTAssertFalse(firedPixelEvents.contains(.aiChatContextualFloatingInputDismissedWithoutSubmission))
     }
 
     @MainActor

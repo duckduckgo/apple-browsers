@@ -38,8 +38,9 @@ struct AIChatDebugView: View {
 
 #if DEBUG || ALPHA
             AIChatAttachmentPrivacySection()
+            AIChatMultiTabPromotionSection()
             AIChatUsageWarningsSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
-            AIChatTermsOfServiceSection()
+            AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
 #endif
 
             Section(footer: Text("Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -312,11 +313,14 @@ private struct AIChatDebugSessionTimerEntryView: View {
 #if DEBUG || ALPHA
 private struct AIChatTermsOfServiceSection: View {
 
+    let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+
     @State private var status: String?
 
     private var defaultFooter: String {
-        "Brings the native input's disclaimer back. The web app keeps its own acceptance until "
-        + "Duck.ai data is cleared. Needs the duckAINativeTermsOfService flag on."
+        "Resetting native acceptance brings the native input's disclaimer back. The web app keeps its own "
+        + "acceptance in \(DuckAiNativeStorageConsent.termsOfServiceEntryKey): clear it to see the web card again. "
+        + "Needs the duckAINativeTermsOfService flag on."
     }
 
     var body: some View {
@@ -330,6 +334,28 @@ private struct AIChatTermsOfServiceSection: View {
                 Text(verbatim: "Reset native acceptance")
             }
             .foregroundColor(.red)
+
+            Button {
+                clearWebAcceptance()
+            } label: {
+                Text(verbatim: "Clear web acceptance (\(DuckAiNativeStorageConsent.termsOfServiceEntryKey))")
+            }
+            .foregroundColor(.red)
+        }
+    }
+
+    private func clearWebAcceptance() {
+        let key = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        guard let duckAiNativeStorageHandler else {
+            status = "Native storage is unavailable, so the web app keeps \(key) in its own storage."
+            return
+        }
+        do {
+            try duckAiNativeStorageHandler.deleteEntry(key: key)
+            status = "Removed \(key) from Duck.ai native storage. Reload duck.ai: it reads the value once, at load."
+            Logger.aiChat.debug("[TermsOfService] Debug removed \(key, privacy: .public) from native storage")
+        } catch {
+            status = "Failed to remove \(key): \(error)"
         }
     }
 }
@@ -445,14 +471,14 @@ private struct AIChatUsageWarningsSection: View {
         }
     }
 
-    /// Resets usage dismissals and the normal-browsing attachment disclosure display cap.
+    /// Resets usage dismissals and the attachment disclosure shown flag.
     private func clearDismissals() {
         let store = DuckAiUsageWarningDismissalStore()
         DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
         store.setActedSnapshot(nil)
         DuckAiHighUsageNoticeDismissalStore().clearDismissals()
         UTIAttachmentPrivacyNoticeDisplayStore().reset()
-        status = "Dismissals and attachment disclosure display count reset. Fire Tabs keep their own counts."
+        status = "Dismissals and attachment disclosure reset."
     }
 
     private func clear() {
@@ -567,6 +593,33 @@ private final class StorageServerState: ObservableObject {
 }
 
 #if DEBUG || ALPHA
+private struct AIChatMultiTabPromotionSection: View {
+    @State private var status = ""
+    @State private var displayCount = 0
+    private let displayStore = UTIMultiTabPromotionDisplayStore()
+
+    var body: some View {
+        Section {
+            Button {
+                AIChatContextualAttachMoreTabsFeature.resetDrawerPromoForDebugging()
+                displayCount = displayStore.displayCount
+                status = "Promotion reset. Open a new contextual chat to see it again."
+            } label: {
+                Text(verbatim: "Reset promotion")
+            }
+            Text(verbatim: "Current display count: \(displayCount)")
+                .onAppear {
+                    displayCount = displayStore.displayCount
+                }
+            if !status.isEmpty { Text(verbatim: status) }
+        } header: {
+            Text(verbatim: "Chat across multiple tabs")
+        } footer: {
+            Text(verbatim: "Clears the display count, dismissal, and feature usage. The feature flag and promotion dates still apply.")
+        }
+    }
+}
+
 private struct AIChatAttachmentPrivacySection: View {
     @State private var status = ""
 
@@ -574,15 +627,15 @@ private struct AIChatAttachmentPrivacySection: View {
         Section {
             Button {
                 UTIAttachmentPrivacyNoticeDisplayStore().reset()
-                status = "Normal browsing count reset. Open a new Fire Tab to test a fresh Fire count."
+                status = "Attachment disclosure reset. It shows on the next image or file attachment."
             } label: {
-                Text(verbatim: "Reset attachment disclosure display count")
+                Text(verbatim: "Reset attachment disclosure")
             }
             if !status.isEmpty { Text(verbatim: status) }
         } header: {
             Text(verbatim: "Unified input footer")
         } footer: {
-            Text(verbatim: "Resets the attachment disclosure in normal browsing. Each Fire Tab has its own display count.")
+            Text(verbatim: "Resets the attachment disclosure so it shows once more, in any tab.")
         }
     }
 }

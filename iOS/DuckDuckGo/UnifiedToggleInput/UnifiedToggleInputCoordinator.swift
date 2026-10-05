@@ -1667,6 +1667,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.attachmentCount
     }
 
+    var hasAttachedTabs: Bool {
+        viewController.currentAttachments.contains { $0.tabAttachment != nil }
+    }
+
     /// Surfaces a rejection in the input's validation banner.
     func presentRejectionBanner(_ message: String) {
         attachmentController.presentRejectionBanner(message)

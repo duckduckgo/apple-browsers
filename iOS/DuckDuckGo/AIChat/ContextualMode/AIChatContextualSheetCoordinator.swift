@@ -290,6 +290,7 @@ final class AIChatContextualSheetCoordinator {
         )
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         self.sessionState.inputAttachmentCount = { [weak self] in self?.persistentUTIHost?.attachmentCount ?? 0 }
+        self.sessionState.inputHasAttachedTabs = { [weak self] in self?.persistentUTIHost?.hasAttachedTabs ?? false }
         self.sessionEffectCancellable = self.sessionState.effects
             .sink { [weak self] effect in
                 guard case .deliverPageContext(let context, let targets) = effect else { return }
@@ -930,10 +931,6 @@ private extension AIChatContextualSheetCoordinator {
         host.onSuggestionAccepted = { [weak self] in
             self?.sessionState.acceptSuggestedContext()
         }
-        // A host built mid-session (collapse, expand) inherits the offer already on screen.
-        if let suggestion = sessionState.suggestedContext {
-            host.setSuggestedContext(suggestion)
-        }
         host.onPromptSubmitted = { [weak self] in
             guard let self else { return }
             self.selectionJourneyInstrumentation.promptSubmitted()
@@ -950,8 +947,11 @@ private extension AIChatContextualSheetCoordinator {
             guard let self else { return }
             self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
         }
-        host.onAttachmentsChanged = { [weak self] in
-            self?.sessionState.refreshForAttachmentChange()
+        host.onAttachmentsChanged = { [weak self, weak host] in
+            guard let self, let host else { return }
+            self.sessionState.refreshForAttachmentChange()
+            guard self.featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) else { return }
+            self.updateSuggestedContext(in: host)
         }
         host.onAIVoiceChatRequested = { [weak self] in
             self?.requestNewVoiceChatLeavingCurrentSurface()
@@ -964,6 +964,8 @@ private extension AIChatContextualSheetCoordinator {
             self?.openInNewTabLeavingCurrentSurface(url)
         }
         self.persistentUTIHost = host
+        // A host built mid-session (collapse, expand) inherits the offer already on screen.
+        updateSuggestedContext(in: host)
         if isSheetPresented { host.beginPresentation() }
         return host
     }
@@ -1062,15 +1064,22 @@ private extension AIChatContextualSheetCoordinator {
         }
 
         if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
-            if let suggestion = sessionState.suggestedContext {
-                host.setSuggestedContext(suggestion)
-            } else {
-                host.clearSuggestedContext()
-            }
+            updateSuggestedContext(in: host)
         }
 
         if targets.contains(.frontendBridge) {
             sheetViewController?.pushPageContext(context)
+        }
+    }
+
+    func updateSuggestedContext(in host: AIChatContextualUTIHost) {
+        let suggestion = sessionState.visibleSuggestedContext
+        if featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs),
+           host.chipViewModel.suggestedContext == suggestion { return }
+        if let suggestion {
+            host.setSuggestedContext(suggestion)
+        } else {
+            host.clearSuggestedContext()
         }
     }
 

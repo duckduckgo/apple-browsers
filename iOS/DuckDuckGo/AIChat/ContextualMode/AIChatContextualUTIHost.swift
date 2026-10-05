@@ -222,6 +222,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.attachmentCount
     }
 
+    var hasAttachedTabs: Bool {
+        coordinator.hasAttachedTabs
+    }
+
     /// Fires when the input's attachments change.
     var onAttachmentsChanged: (() -> Void)? {
         get { coordinator.onAttachmentsChanged }

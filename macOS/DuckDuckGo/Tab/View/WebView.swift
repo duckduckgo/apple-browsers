@@ -54,9 +54,9 @@ final class WebView: WKWebView {
     let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
     private let featureFlagger: FeatureFlagger
     private let privacyConfig: PrivacyConfiguration
-    /// Whether the web view shows a web extension's page. Such a web view uses the web extension
-    /// controller's user content controller, which every extension page shares, so it must not clear it.
-    private let isWebExtensionPage: Bool
+    /// Whether the web view shares its user content controller, and so its user scripts, with other web
+    /// views, such as the web extension controller's, which every extension page uses.
+    private let sharesUserScripts: Bool
 
     private var isLoadingObserver: Any?
     /// used in tests
@@ -74,10 +74,10 @@ final class WebView: WKWebView {
          configuration: WKWebViewConfiguration = .init(),
          featureFlagger: FeatureFlagger,
          privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig,
-         isWebExtensionPage: Bool = false) {
+         sharesUserScripts: Bool = false) {
         self.featureFlagger = featureFlagger
         self.privacyConfig = privacyConfig
-        self.isWebExtensionPage = isWebExtensionPage
+        self.sharesUserScripts = sharesUserScripts
 
         _=Self.swizzleImmediateActionAnimationControllerOnce
 
@@ -87,7 +87,7 @@ final class WebView: WKWebView {
     required init?(coder: NSCoder) {
         self.featureFlagger = Application.appDelegate.featureFlagger
         self.privacyConfig = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
-        self.isWebExtensionPage = false
+        self.sharesUserScripts = false
 
         _=Self.swizzleImmediateActionAnimationControllerOnce
 
@@ -139,7 +139,11 @@ final class WebView: WKWebView {
     }
 
     deinit {
-        guard !isWebExtensionPage else { return }
+        // Removing the user scripts here should not be necessary: a tab already cleans up the user
+        // content controller it owns when it closes. It's unclear what this originally worked
+        // around, so it's kept for web views that own their controller, to avoid regressions, and
+        // only skipped for a shared controller, which other web views still use.
+        guard !sharesUserScripts else { return }
         self.configuration.userContentController.removeAllUserScripts()
     }
 

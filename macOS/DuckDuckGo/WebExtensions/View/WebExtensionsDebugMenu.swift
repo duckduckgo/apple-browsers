@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import OSLog
 import SwiftUI
 import Utilities

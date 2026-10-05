@@ -1007,7 +1007,7 @@ final class BrowserTabViewController: NSViewController {
                                       configuration: configuration,
                                       featureFlagger: featureFlagger,
                                       privacyConfig: privacyConfigurationManager.privacyConfig,
-                                      isWebExtensionPage: true)
+                                      sharesUserScripts: true)
                 let request = URLRequest(url: url)
                 webView.load(request)
                 return webView

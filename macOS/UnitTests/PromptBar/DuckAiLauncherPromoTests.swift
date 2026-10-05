@@ -28,7 +28,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     private var preferences: PromptBarPreferences!
     private var keyValueStore: MockKeyValueFileStore!
     private var chatCount: CurrentValueSubject<Int, Never>!
-    private var firedPixels: [PromptBarPixel] = []
     private var openSettingsCount = 0
     private var cancellables = Set<AnyCancellable>()
 
@@ -41,7 +40,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                                            aiChatMenuConfiguration: configuration)
         keyValueStore = MockKeyValueFileStore()
         chatCount = CurrentValueSubject(5)
-        firedPixels = []
         openSettingsCount = 0
     }
 
@@ -107,8 +105,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                                         preferences: preferences,
                                         chatCountPublisher: chatCount.eraseToAnyPublisher(),
                                         keyValueStore: keyValueStore,
-                                        openSettings: { [weak self] in self?.openSettingsCount += 1 },
-                                        firePixel: { [weak self] in self?.firedPixels.append($0) })
+                                        openSettings: { [weak self] in self?.openSettingsCount += 1 })
         // The count lands on the next main run loop.
         RunLoop.main.run(until: Date().addingTimeInterval(0.01))
         return promo
@@ -147,8 +144,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
         XCTAssertTrue(preferences.isMenuBarIconVisible)
         XCTAssertEqual(openSettingsCount, 1)
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.promoCtaClicked(kind: .promo).name])
-        XCTAssertEqual(firedPixels.first?.parameters, ["kind": "promo", "surface": "new_tab"])
         XCTAssertEqual(promo.presentation()?.kind, .shortcutHint)
         XCTAssertNotNil(promo.presentation()?.placeholder)
     }
@@ -172,7 +167,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         makePromo().dismiss(kind: .promo)
 
         XCTAssertNil(makePromo().presentation())
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.promoDismissed(kind: .promo).name])
     }
 
     @MainActor
@@ -218,8 +212,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         promo.chatSubmitted()
 
         XCTAssertNil(makePromo().presentation())
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.promoShown(kind: .promo).name,
-                                                 PromptBarPixel.promoIgnored(kind: .promo).name])
     }
 
     @MainActor
@@ -229,7 +221,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         promo.chatSubmitted()
 
         XCTAssertEqual(promo.kind, .promo)
-        XCTAssertTrue(firedPixels.isEmpty)
     }
 
     @MainActor
@@ -241,14 +232,5 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         promo.chatSubmitted()
 
         XCTAssertEqual(promo.kind, .shortcutHint)
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.promoShown(kind: .shortcutHint).name])
-    }
-
-    @MainActor
-    func testShownFiresExposurePixelWithKind() {
-        makePromo().shown(kind: .shortcutHint)
-
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.promoShown(kind: .shortcutHint).name])
-        XCTAssertEqual(firedPixels.first?.parameters, ["kind": "shortcut_hint", "surface": "new_tab"])
     }
 }

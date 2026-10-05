@@ -104,7 +104,7 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
 
-    /// The page made `kind` visible. Native fires the exposure pixel.
+    /// The page made `kind` visible, so a prompt sent from here on goes past it.
     @MainActor
     func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
 

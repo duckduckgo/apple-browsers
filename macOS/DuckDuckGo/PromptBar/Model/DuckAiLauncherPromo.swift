@@ -21,7 +21,6 @@ import FeatureFlags_macOS
 import Foundation
 import NewTabPage
 import Persistence
-import PixelKit
 import PrivacyConfig
 
 typealias DuckAiLauncherPromoKind = NewTabPageDataModel.OmnibarLauncherPromoKind
@@ -52,7 +51,6 @@ final class DuckAiLauncherPromo {
     private let preferences: PromptBarPreferences
     private let keyValueStore: ThrowingKeyValueStoring
     private let openSettings: @MainActor () -> Void
-    private let firePixel: (PromptBarPixel) -> Void
     private let dismissalSubject = PassthroughSubject<Void, Never>()
     @Published private var chatCount = 0
     private var shownKinds = Set<DuckAiLauncherPromoKind>()
@@ -62,13 +60,11 @@ final class DuckAiLauncherPromo {
          preferences: PromptBarPreferences,
          chatCountPublisher: AnyPublisher<Int, Never>,
          keyValueStore: ThrowingKeyValueStoring,
-         openSettings: @escaping @MainActor () -> Void,
-         firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
+         openSettings: @escaping @MainActor () -> Void) {
         self.featureFlagger = featureFlagger
         self.preferences = preferences
         self.keyValueStore = keyValueStore
         self.openSettings = openSettings
-        self.firePixel = firePixel
 
         chatsCancellable = chatCountPublisher
             .receive(on: DispatchQueue.main)
@@ -119,16 +115,12 @@ final class DuckAiLauncherPromo {
 
     func shown(kind: DuckAiLauncherPromoKind) {
         shownKinds.insert(kind)
-        firePixel(.promoShown(kind: kind))
     }
 
-    /// The drawer is shown once: sending a prompt past it without acting counts as a dismissal,
-    /// reported apart from the close button so ignoring and closing stay distinguishable.
+    /// The drawer is shown once: sending a prompt past it without acting counts as a dismissal.
     func chatSubmitted() {
         guard let kind, kind != .shortcutHint, shownKinds.contains(kind) else { return }
-        try? keyValueStore.set(true, forKey: Self.dismissedKey(kind))
-        firePixel(.promoIgnored(kind: kind))
-        dismissalSubject.send()
+        dismiss(kind: kind)
     }
 
     /// Both CTAs end with the shortcut on, then show Settings so the user knows where to turn it off.
@@ -143,13 +135,11 @@ final class DuckAiLauncherPromo {
         case .shortcutHint:
             return
         }
-        firePixel(.promoCtaClicked(kind: kind))
         openSettings()
     }
 
     func dismiss(kind: DuckAiLauncherPromoKind) {
         try? keyValueStore.set(true, forKey: Self.dismissedKey(kind))
-        firePixel(.promoDismissed(kind: kind))
         dismissalSubject.send()
     }
 

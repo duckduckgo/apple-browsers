@@ -357,8 +357,14 @@ extension MainViewController {
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
             if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
-                let freeScanEntryPoint: FreemiumDBPEntryPoint? = hasEntitlement ? nil
-                    : freemiumDBPUserStateManager.firstScanResult == nil ? .freeScanBanner : .viewResultsBanner
+                let freeScanEntryPoint: FreemiumDBPEntryPoint?
+                if hasEntitlement {
+                    freeScanEntryPoint = nil
+                } else if freemiumDBPUserStateManager.firstScanResult == nil {
+                    freeScanEntryPoint = .freeScanBanner
+                } else {
+                    freeScanEntryPoint = .viewResultsBanner
+                }
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
                 }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))

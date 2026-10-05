@@ -22,22 +22,23 @@ import WebKit
 import ZIPFoundation
 
 /// Errors thrown while downloading Bitwarden.
-public enum BitwardenExtensionInstallerError: Error {
+public enum BitwardenExtensionInstallerError: Error, Equatable {
     case downloadFailed(statusCode: Int)
+    /// The `.crx` header has no developer key, which Chrome also refuses to install.
+    case missingPublicKey
 }
 
-/// Installs the latest Bitwarden from the Chrome Web Store, replacing any copy already installed.
+/// Debug tooling that installs the latest Bitwarden from the Chrome Web Store as an unpacked folder,
+/// replacing any copy already installed.
 ///
-/// Debug tooling: it downloads the CRX, strips its header and installs the unpacked folder, so the
-/// background page patcher and the manifest key restore run (zip installs skip them).
+/// The `.crx` signatures are not verified; the download relies on HTTPS from Google's update endpoint.
 @available(macOS 15.4, iOS 18.4, *)
 public struct BitwardenExtensionInstaller {
 
     /// The Chrome Web Store identifier of Bitwarden.
     public static let chromeExtensionIdentifier = "nngceckbapebfimnlniiiahkandclblb"
 
-    /// The Chrome version the download asks for. The Web Store returns nothing without one, and serves
-    /// the latest release that supports it, so it only needs to be a version the extension supports.
+    /// The Chrome version the download asks for; the Web Store serves the latest release supporting it.
     private static let chromeVersion = "140.0"
 
     /// The Web Store update endpoint, which redirects to the versioned `.crx`.
@@ -66,9 +67,14 @@ public struct BitwardenExtensionInstaller {
     private let installedIdentifiers: () -> [String]
     private let fileManager: FileManager
 
+    /// Creates an installer. Only `webExtensionManager` is required: the other parameters default to what
+    /// the app uses, and tests replace them.
+    ///
     /// - Parameters:
-    ///   - installedIdentifiers: Returns the identifiers of installed Bitwarden copies. Defaults to the
-    ///     loaded extensions whose manifest `key` derives to Bitwarden's Chrome identifier.
+    ///   - webExtensionManager: Installs the new copy and uninstalls the old one.
+    ///   - download: Fetches the `.crx`.
+    ///   - installedIdentifiers: Returns the installed Bitwarden copies. Defaults to the loaded extensions with Bitwarden's Chrome identifier.
+    ///   - fileManager: Holds the temporary files while unpacking.
     public init(webExtensionManager: WebExtensionManaging,
                 download: @escaping (URL) async throws -> Data = BitwardenExtensionInstaller.urlSessionDownload,
                 installedIdentifiers: (() -> [String])? = nil,
@@ -87,6 +93,9 @@ public struct BitwardenExtensionInstaller {
     public func install() async throws {
         let crx = try await download(Self.downloadURL)
         let zip = try CRXArchive.zipData(from: crx)
+        guard let publicKey = CRXArchive.publicKey(from: crx) else {
+            throw BitwardenExtensionInstallerError.missingPublicKey
+        }
 
         let workDirectory = fileManager.temporaryDirectory.appendingPathComponent("bitwarden-\(UUID().uuidString)")
         defer { try? fileManager.removeItem(at: workDirectory) }
@@ -96,7 +105,7 @@ public struct BitwardenExtensionInstaller {
         try fileManager.createDirectory(at: extensionDirectory, withIntermediateDirectories: true)
         try zip.write(to: zipURL)
         try fileManager.unzipItem(at: zipURL, to: extensionDirectory)
-        try restorePublicKey(in: extensionDirectory)
+        try writePublicKey(publicKey, in: extensionDirectory)
 
         // The old copy is removed only once the new one unpacked, so a bad download never removes a working install.
         for identifier in installedIdentifiers() {
@@ -109,19 +118,16 @@ public struct BitwardenExtensionInstaller {
         Logger.webExtensions.info("Installed Bitwarden from the Chrome Web Store")
     }
 
-    /// The `.crx` the Web Store serves carries no `key`, so the installed copy would have no Chrome
-    /// identifier, and a later install could not find it to replace it. Putting the key back gives it
-    /// the identifier Chrome would.
-    private func restorePublicKey(in extensionDirectory: URL) throws {
+    /// Writes `publicKey` into the manifest in `extensionDirectory`, replacing any `key` it has, as Chrome
+    /// does when installing a `.crx`. The key gives the installed copy its Chrome identifier.
+    /// https://chromium.googlesource.com/chromium/src/+/main/extensions/browser/sandboxed_unpacker.cc
+    private func writePublicKey(_ publicKey: Data, in extensionDirectory: URL) throws {
         let manifestURL = extensionDirectory.appendingPathComponent("manifest.json")
         guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any] else {
             return
         }
 
-        let keyPatcher = WebExtensionManifestKeyPatcher(fileManager: fileManager)
-        guard keyPatcher.insertKnownPublicKeyIfNeeded(in: &manifest, manifestDirectory: extensionDirectory) else {
-            return
-        }
+        manifest["key"] = publicKey.base64EncodedString()
         try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
     }
 }

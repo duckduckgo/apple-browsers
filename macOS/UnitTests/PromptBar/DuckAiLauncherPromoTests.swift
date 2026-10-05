@@ -17,7 +17,7 @@
 //
 
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import XCTest

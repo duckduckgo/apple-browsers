@@ -175,6 +175,9 @@
 /* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
 "sync.simplified.bookmarks.section.unified-favorites.title" = "Kedvencek megosztása az eszközökön";
 
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Ellenőrizd a másik eszközödet.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "A Sync & Backup végpontok közötti titkosítással működik minden eszközödön.";
 
@@ -357,4 +360,3 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "A Sync Development környezetet használod";
-

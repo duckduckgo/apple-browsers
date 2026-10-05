@@ -131,6 +131,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     private func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError || (error as? URLError)?.code == .cancelled { return true }
+        if case WebExtensionError.installationCancelled = error { return true }
         if case WebExtensionPermissionController.PermissionError.installationDenied = error { return true }
         if case WebExtensionError.failedToLoadWebExtension(let underlying) = error { return isCancellation(underlying) }
         if let error = error as? WebExtensionLoader.PermissionPreparationError {

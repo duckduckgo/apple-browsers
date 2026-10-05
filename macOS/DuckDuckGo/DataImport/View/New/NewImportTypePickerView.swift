@@ -63,7 +63,7 @@ struct NewImportTypePickerView: View {
             HStack {
                 Spacer()
                 // Hidden “Cancel” target so hitting Esc sets the flag before dismiss
-                Button("") {
+                Button("" as String) {
                     cancelAction()
                 }
                 .keyboardShortcut(.cancelAction)  // Esc

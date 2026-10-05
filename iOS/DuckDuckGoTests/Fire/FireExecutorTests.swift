@@ -29,7 +29,6 @@ import Bookmarks
 @_spi(Testing) import Persistence
 import SitePermissions
 import DDGSync
-@_spi(Testing) import PixelKit
 import WKAbstractions
 import BrowserServicesKitTestsUtils
 @_spi(Testing) import WideEvent

@@ -62,6 +62,7 @@ public enum AIChatEntryPointSource: String {
     case ipadTogglePrompt = "ipad_toggle_prompt"
     case browsingMenuNTP = "browsing_menu_ntp"
     case browsingMenuWebpage = "browsing_menu_webpage"
+    case browsingMenuDuckAI = "browsing_menu_duckai"
     case tabSwitcher = "tab_switcher"
     case tabSwitcherExistingChat = "tab_switcher_existing_chat"
     case tabsBarButton = "tabs_bar_button"
@@ -85,6 +86,13 @@ public enum AIChatEntryPointSource: String {
 }
 
 extension AIChatEntryPointSource {
+
+    /// Names the page the browsing menu was opened over, so a new chat started from a Duck.ai page
+    /// is not reported as a webpage entry.
+    static func forBrowsingMenu(isNewTabPage: Bool, isDuckAI: Bool) -> AIChatEntryPointSource {
+        if isNewTabPage { return .browsingMenuNTP }
+        return isDuckAI ? .browsingMenuDuckAI : .browsingMenuWebpage
+    }
 
     /// Resolves the `source` parameter a Duck.ai deep link carries. Falls back to `.deepLinkOther`
     /// for links with no recognised source, e.g. the URL scheme invoked from outside the app.

@@ -7161,7 +7161,7 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
-        let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
+        let source = AIChatEntryPointSource.forBrowsingMenu(isNewTabPage: tab.link == nil, isDuckAI: tab.isAITab)
         if DevicePlatform.isIpad {
             // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
             newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
@@ -7172,7 +7172,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {
-        let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
+        let source = AIChatEntryPointSource.forBrowsingMenu(isNewTabPage: tab.link == nil, isDuckAI: tab.isAITab)
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
         tab.openNewChatInNewTab(source: source)
     }

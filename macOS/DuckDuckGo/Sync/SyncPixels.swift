@@ -85,6 +85,7 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     case thisDeviceDetailsTurnOffSyncTapped
     case otherDeviceDetailsScreenShown
     case otherDeviceDetailsRemoveDeviceTapped
+    case otherDeviceDetailsRemoveDeviceConfirmed
 
     var name: String {
         switch self {
@@ -108,6 +109,7 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
         case .thisDeviceDetailsTurnOffSyncTapped: return "sync_settings_this_device_details_turn_off_sync_tapped_mac"
         case .otherDeviceDetailsScreenShown: return "sync_settings_other_device_details_screen_shown_mac"
         case .otherDeviceDetailsRemoveDeviceTapped: return "sync_settings_other_device_details_remove_device_tapped_mac"
+        case .otherDeviceDetailsRemoveDeviceConfirmed: return "sync_settings_other_device_details_remove_device_confirmed_mac"
         }
     }
 

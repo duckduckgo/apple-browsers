@@ -156,6 +156,36 @@ final class SyncSettingsViewControllerPixelTests {
         })
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Removing another device fires the remove device confirmed pixel", .timeLimit(.minutes(1)))
+    func removingDeviceFiresRemoveDeviceConfirmedPixel() async throws {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.removeDevice(.init(id: "2", name: "Mac", type: "desktop", isThisDevice: false))
+
+        for _ in 0..<200 where pixelKitMock.actualFireCalls.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == SyncDeviceDetailsPixel.otherDeviceRemoveDeviceConfirmed.name &&
+            ($0.additionalParameters ?? [:]).isEmpty
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed device removal does not fire the remove device confirmed pixel", .timeLimit(.minutes(1)))
+    func failedDeviceRemovalDoesNotFireRemoveDeviceConfirmedPixel() async throws {
+        ddgSyncing.disconnectDeviceError = SyncError.failedToLoadAccount
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.removeDevice(.init(id: "2", name: "Mac", type: "desktop", isThisDevice: false))
+
+        try await Task.sleep(nanoseconds: 200_000_000)
+        #expect(!pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == SyncDeviceDetailsPixel.otherDeviceRemoveDeviceConfirmed.name
+        })
+    }
+
     private func makeViewController(source: String?, enabledFeatureFlags: [FeatureFlag]) -> SyncSettingsViewController {
         SyncSettingsViewController(
             syncService: ddgSyncing,

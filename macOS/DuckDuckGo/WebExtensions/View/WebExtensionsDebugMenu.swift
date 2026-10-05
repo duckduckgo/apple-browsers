@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import OSLog
 import Utilities
 import WebExtensions
@@ -94,6 +95,10 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         submenu.addItem(.separator())
 
+        let bitwardenItem = NSMenuItem(title: "Install Bitwarden", action: #selector(installBitwarden))
+        bitwardenItem.target = self
+        submenu.addItem(bitwardenItem)
+
         return submenu
     }
 
@@ -119,6 +124,25 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         Task {
             try? await webExtensionManager.installExtension(from: url)
+        }
+    }
+
+    /// Downloads the latest Bitwarden from the Chrome Web Store and installs it, replacing any installed copy.
+    @objc func installBitwarden() {
+        let installer = BitwardenExtensionInstaller(webExtensionManager: webExtensionManager,
+                                                    chromeMajorVersion: UserAgent.webExtensionChromeMajorVersion)
+        Task { @MainActor in
+            let alert = NSAlert()
+            do {
+                try await installer.install()
+                alert.messageText = "Bitwarden installed"
+            } catch {
+                Logger.webExtensions.error("Failed to install Bitwarden: \(error.localizedDescription)")
+                alert.alertStyle = .warning
+                alert.messageText = "Failed to install Bitwarden"
+                alert.informativeText = error.localizedDescription
+            }
+            _ = await alert.runModal()
         }
     }
 

@@ -357,7 +357,7 @@
     "aiChatPageContextOfferReason": {
         "key": "offer_reason",
         "type": "string",
-        "description": "Why the page was offered: navigation means the user moved to another page during an active chat, detached means they had just removed the page from the input",
+        "description": "Why Duck.ai offered to attach the current page: navigation means the user moved to another page while a contextual chat was active; detached means the user had just removed the page from the input",
         "enum": ["navigation", "detached"]
     },
     "aiChatPromptDepthBucket": {

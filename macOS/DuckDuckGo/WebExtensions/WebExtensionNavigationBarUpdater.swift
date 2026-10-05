@@ -218,9 +218,9 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         let action = context.action(for: nil)
 
         // A second click on the button of the open popup closes it.
-        if let action, action.popupPopover?.isShown == true {
+        if let popupPresenter, popupPresenter.isShown(for: context) {
             Logger.webExtensions.debug("🧩 Click closes the open popup of \(identifier, privacy: .public)")
-            action.closePopup()
+            popupPresenter.close()
             return
         }
 
@@ -232,5 +232,11 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         """)
 
         context.performAction(for: nil)
+    }
+
+    /// The presenter that hosts extension popups, owned by the manager's window/tab provider.
+    private var popupPresenter: WebExtensionPopupPresenter? {
+        guard let manager = webExtensionManagerProvider() as? WebExtensionManager else { return nil }
+        return (manager.windowTabProvider as? WebExtensionWindowTabProvider)?.popupPresenter
     }
 }

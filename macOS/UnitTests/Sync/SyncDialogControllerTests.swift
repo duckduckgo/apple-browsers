@@ -1521,14 +1521,29 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
     }
 
-    func testPostPairingConfirmationDialog_whenV2Enabled_returnsWaitForOtherDeviceDialog() {
-        let dialog = SyncDialogController.postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: true)
+    func testPostPairingConfirmationDialog_whenV2EnabledForJoiner_returnsWaitForOtherDeviceDialog() {
+        let dialog = SyncDialogController.postPairingConfirmationDialog(
+            isSimplifiedSyncSetupV2Enabled: true,
+            setupRole: .receiver(.exchange, .qrCode)
+        )
 
         XCTAssertEqual(dialog, .waitForOtherDevice)
     }
 
+    func testPostPairingConfirmationDialog_whenV2EnabledForHost_returnsNil() {
+        let dialog = SyncDialogController.postPairingConfirmationDialog(
+            isSimplifiedSyncSetupV2Enabled: true,
+            setupRole: .sharer
+        )
+
+        XCTAssertNil(dialog)
+    }
+
     func testPostPairingConfirmationDialog_whenV2Disabled_returnsNil() {
-        let dialog = SyncDialogController.postPairingConfirmationDialog(isSimplifiedSyncSetupV2Enabled: false)
+        let dialog = SyncDialogController.postPairingConfirmationDialog(
+            isSimplifiedSyncSetupV2Enabled: false,
+            setupRole: .receiver(.exchange, .qrCode)
+        )
 
         XCTAssertNil(dialog)
     }
@@ -1656,6 +1671,19 @@ final class SyncDialogControllerTests: XCTestCase {
 
         syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
 
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_afterTransmitting_keepsHostOnConnectingUntilUnknown() async {
+        managementDialogModel.isSimplifiedSyncSetupV2Enabled = true
+
+        await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.waiting)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync(.twoDevicePairing))
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
         XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
     }
 

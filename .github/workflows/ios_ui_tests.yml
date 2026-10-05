@@ -372,6 +372,7 @@ jobs:
         group_reports: false
         flaky_summary: true
         verbose_summary: false
+        include_passed: true
         include_time_in_summary: true
         skip_annotations: true
         fail_on_failure: false

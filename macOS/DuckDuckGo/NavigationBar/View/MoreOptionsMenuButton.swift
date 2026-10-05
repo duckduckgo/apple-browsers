@@ -43,9 +43,23 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
         }
     }
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpUpdateInfo()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpUpdateInfo()
+    }
+
+    private func setUpUpdateInfo() {
         if AppVersion.runType != .uiTests {
             updateController = Application.appDelegate.updateController
             dockCustomization = Application.appDelegate.dockCustomization
@@ -64,9 +78,7 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
     }
 
     private func subscribeToUpdateInfo() {
-        let dockPublisher: AnyPublisher<Bool, Never> =
-            dockCustomization?.shouldShowNotificationPublisher
-            ?? Just(false).eraseToAnyPublisher()
+        let dockPublisher: AnyPublisher<Bool, Never> = dockCustomization?.shouldShowNotificationPublisher ?? Just(false).eraseToAnyPublisher()
         guard let updateController else { return }
 
         cancellable = Publishers.CombineLatest4(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockPublisher, isEnabledPublisher)

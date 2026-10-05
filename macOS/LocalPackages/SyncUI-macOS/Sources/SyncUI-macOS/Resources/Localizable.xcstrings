@@ -3185,8 +3185,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Überprüfe dein anderes Gerät ..."
+            "state" : "translated",
+            "value" : "Überprüfe dein anderes Gerät."
           }
         },
         "en" : {
@@ -3197,44 +3197,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Comprueba tu otro dispositivo..."
+            "state" : "translated",
+            "value" : "Comprueba tu otro dispositivo."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vérifier votre autre appareil..."
+            "state" : "translated",
+            "value" : "Vérifiez votre autre appareil."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Controlla l'altro dispositivo..."
+            "state" : "translated",
+            "value" : "Controlla l'altro dispositivo."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Controleer je andere apparaat ..."
+            "state" : "translated",
+            "value" : "Controleer je andere apparaat."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Sprawdź drugie urządzenie..."
+            "state" : "translated",
+            "value" : "Sprawdź drugie urządzenie."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Verifica o teu outro dispositivo..."
+            "state" : "translated",
+            "value" : "Verifica o teu outro dispositivo."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Проверьте другое устройство..."
+            "state" : "translated",
+            "value" : "Проверьте другое устройство."
           }
         }
       }
@@ -3245,7 +3245,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Verbinden ..."
           }
         },
@@ -3257,44 +3257,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Conectando..."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Connexion en cours…"
+            "state" : "translated",
+            "value" : "Connexion…"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Connessione in corso..."
+            "state" : "translated",
+            "value" : "Connessione…"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Er wordt verbinding gemaakt ..."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Łączenie..."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "A ligar..."
+            "state" : "translated",
+            "value" : "A ligar…"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Выполняется подключение..."
+            "state" : "translated",
+            "value" : "Выполняется подключение…"
           }
         }
       }

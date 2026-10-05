@@ -452,7 +452,7 @@ struct NewDataImportFilePickerScreenView: View {
         case .fallback(.bookmarks):
             return Text(UserText.importBookmarksManuallyTitle)
         case .archive:
-            return Text("Import from \(model.importSource.importSourceName)")
+            return Text("Import from \(model.importSource.importSourceName)", bundle: #bundle)
         }
     }
 }
@@ -788,7 +788,7 @@ struct NewCircleNumberView: View {
             .fill(Color(designSystemColor: .toneTintSecondary))
             .frame(width: Constants.diameter, height: Constants.diameter)
             .overlay(
-                Text("\(number)")
+                Text(verbatim: "\(number)")
                     .font(.system(size: 8.75, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
             )
@@ -800,7 +800,7 @@ struct NewCircleNumberView: View {
 
 #Preview("Multiple Types") {
     VStack(spacing: 20) {
-        Text("Safari Multi-Type Import").font(.headline)
+        Text("Safari Multi-Type Import", bundle: #bundle).font(.headline)
         NewInstructionsView {
             newFileImportMultipleTypeInstructionsBuilder(source: .safari)
         }
@@ -813,112 +813,112 @@ struct NewCircleNumberView: View {
 #Preview("Passwords") {
     ScrollView {
         VStack(alignment: .leading, spacing: 30) {
-            Text("Chrome").font(.headline)
+            Text("Chrome", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chrome, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Brave").font(.headline)
+            Text("Brave", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .brave, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Chromium").font(.headline)
+            Text("Chromium", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chromium, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Edge").font(.headline)
+            Text("Edge", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .edge, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Cốc Cốc").font(.headline)
+            Text("Cốc Cốc", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .coccoc, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Opera").font(.headline)
+            Text("Opera", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .opera, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Vivaldi").font(.headline)
+            Text("Vivaldi", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .vivaldi, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Opera GX").font(.headline)
+            Text("Opera GX", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .operaGX, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Yandex").font(.headline)
+            Text("Yandex", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .yandex, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Safari").font(.headline)
+            Text("Safari", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .safari, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Firefox").font(.headline)
+            Text("Firefox", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .firefox, dataType: .passwords)
             }
 
             Divider()
 
-            Text("1Password 8").font(.headline)
+            Text("1Password 8", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .onePassword8, dataType: .passwords)
             }
 
             Divider()
 
-            Text("1Password 7").font(.headline)
+            Text("1Password 7", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .onePassword7, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Bitwarden").font(.headline)
+            Text("Bitwarden", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .bitwarden, dataType: .passwords)
             }
 
             Divider()
 
-            Text("LastPass").font(.headline)
+            Text("LastPass", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .lastPass, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Generic CSV").font(.headline)
+            Text("Generic CSV", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .csv, dataType: .passwords)
             }
@@ -932,91 +932,91 @@ struct NewCircleNumberView: View {
 #Preview("Bookmarks") {
     ScrollView {
         VStack(alignment: .leading, spacing: 30) {
-            Text("Chrome").font(.headline)
+            Text("Chrome", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chrome, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Brave").font(.headline)
+            Text("Brave", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .brave, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Chromium").font(.headline)
+            Text("Chromium", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chromium, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Edge").font(.headline)
+            Text("Edge", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .edge, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Cốc Cốc").font(.headline)
+            Text("Cốc Cốc", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .coccoc, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Vivaldi").font(.headline)
+            Text("Vivaldi", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .vivaldi, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Opera").font(.headline)
+            Text("Opera", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .opera, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Opera GX").font(.headline)
+            Text("Opera GX", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .operaGX, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Yandex").font(.headline)
+            Text("Yandex", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .yandex, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Safari").font(.headline)
+            Text("Safari", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .safari, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Firefox").font(.headline)
+            Text("Firefox", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .firefox, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Tor").font(.headline)
+            Text("Tor", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .tor, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Generic HTML").font(.headline)
+            Text("Generic HTML", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .bookmarksHTML, dataType: .bookmarks)
             }

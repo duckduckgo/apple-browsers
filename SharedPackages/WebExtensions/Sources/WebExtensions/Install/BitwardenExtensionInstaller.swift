@@ -36,12 +36,16 @@ public struct BitwardenExtensionInstaller {
     /// The Chrome Web Store identifier of Bitwarden.
     public static let chromeExtensionIdentifier = "nngceckbapebfimnlniiiahkandclblb"
 
+    /// The Chrome version the download asks for. The Web Store returns nothing without one, and serves
+    /// the latest release that supports it, so it only needs to be a version the extension supports.
+    private static let chromeVersion = "140.0"
+
     /// The Web Store update endpoint, which redirects to the versioned `.crx`.
-    public static func downloadURL(chromeMajorVersion: Int) -> URL {
+    public static var downloadURL: URL {
         var components = URLComponents(string: "https://clients2.google.com/service/update2/crx")!
         components.percentEncodedQueryItems = [
             URLQueryItem(name: "response", value: "redirect"),
-            URLQueryItem(name: "prodversion", value: "\(chromeMajorVersion).0"),
+            URLQueryItem(name: "prodversion", value: chromeVersion),
             URLQueryItem(name: "acceptformat", value: "crx2,crx3"),
             URLQueryItem(name: "x", value: "id%3D\(chromeExtensionIdentifier)%26uc")
         ]
@@ -58,7 +62,6 @@ public struct BitwardenExtensionInstaller {
     }
 
     private let webExtensionManager: WebExtensionManaging
-    private let chromeMajorVersion: Int
     private let download: (URL) async throws -> Data
     private let installedIdentifiers: () -> [String]
     private let fileManager: FileManager
@@ -67,12 +70,10 @@ public struct BitwardenExtensionInstaller {
     ///   - installedIdentifiers: Returns the identifiers of installed Bitwarden copies. Defaults to the
     ///     loaded extensions whose manifest `key` derives to Bitwarden's Chrome identifier.
     public init(webExtensionManager: WebExtensionManaging,
-                chromeMajorVersion: Int,
                 download: @escaping (URL) async throws -> Data = BitwardenExtensionInstaller.urlSessionDownload,
                 installedIdentifiers: (() -> [String])? = nil,
                 fileManager: FileManager = .default) {
         self.webExtensionManager = webExtensionManager
-        self.chromeMajorVersion = chromeMajorVersion
         self.download = download
         self.installedIdentifiers = installedIdentifiers ?? {
             webExtensionManager.loadedExtensions
@@ -84,7 +85,7 @@ public struct BitwardenExtensionInstaller {
 
     /// Downloads and installs Bitwarden, uninstalling a previously installed copy first.
     public func install() async throws {
-        let crx = try await download(Self.downloadURL(chromeMajorVersion: chromeMajorVersion))
+        let crx = try await download(Self.downloadURL)
         let zip = try CRXArchive.zipData(from: crx)
 
         let workDirectory = fileManager.temporaryDirectory.appendingPathComponent("bitwarden-\(UUID().uuidString)")

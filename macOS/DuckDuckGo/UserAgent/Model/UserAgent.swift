@@ -63,11 +63,6 @@ extension UserAgent {
     static let brandedDefaultSuffix = "Version/\(safariVersion) " + "Safari/\(webKitVersion) " + ddgVersion
     static let `default` = UserAgent.brandedDefault
 
-    // MARK: - Web extensions
-
-    /// The major version of the Chrome token advertised to web extensions.
-    static let webExtensionChromeMajorVersion = 140
-
     static func `for`(_ url: URL?,
                       privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig) -> String {
         guard let url, privacyConfig.isEnabled(featureKey: .customUserAgent) else {

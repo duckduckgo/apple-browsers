@@ -38,7 +38,7 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
     }
 
     func testDownloadURLCarriesChromeVersionAndExtensionID() {
-        let url = BitwardenExtensionInstaller.downloadURL(chromeMajorVersion: 140)
+        let url = BitwardenExtensionInstaller.downloadURL
 
         XCTAssertEqual(url.absoluteString, "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=140.0&acceptformat=crx2,crx3&x=id%3Dnngceckbapebfimnlniiiahkandclblb%26uc")
     }
@@ -58,7 +58,7 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
 
         try await installer.install()
 
-        XCTAssertEqual(requestedURL, BitwardenExtensionInstaller.downloadURL(chromeMajorVersion: 140))
+        XCTAssertEqual(requestedURL, BitwardenExtensionInstaller.downloadURL)
         XCTAssertEqual(manifestContents, "{\"name\":\"Bitwarden\"}")
         XCTAssertTrue(manager.uninstalledIdentifiers.isEmpty)
         let installed = try XCTUnwrap(installedURL)
@@ -92,7 +92,6 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
     func testWhenDownloadFails_ThenThrows() async {
         struct DownloadError: Error {}
         let installer = BitwardenExtensionInstaller(webExtensionManager: manager,
-                                                    chromeMajorVersion: 140,
                                                     download: { _ in throw DownloadError() },
                                                     installedIdentifiers: { [] })
 
@@ -110,7 +109,6 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
                                installedIdentifiers: [String] = [],
                                onDownload: @escaping (URL) -> Void = { _ in }) -> BitwardenExtensionInstaller {
         BitwardenExtensionInstaller(webExtensionManager: manager,
-                                    chromeMajorVersion: 140,
                                     download: { url in
                                         onDownload(url)
                                         return crx

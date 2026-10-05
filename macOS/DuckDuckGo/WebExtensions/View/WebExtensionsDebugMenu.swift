@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import AppKitExtensions
 import OSLog
 import Utilities
 import WebExtensions
@@ -129,8 +128,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     /// Downloads the latest Bitwarden from the Chrome Web Store and installs it, replacing any installed copy.
     @objc func installBitwarden() {
-        let installer = BitwardenExtensionInstaller(webExtensionManager: webExtensionManager,
-                                                    chromeMajorVersion: UserAgent.webExtensionChromeMajorVersion)
+        let installer = BitwardenExtensionInstaller(webExtensionManager: webExtensionManager)
         Task { @MainActor in
             let alert = NSAlert()
             do {

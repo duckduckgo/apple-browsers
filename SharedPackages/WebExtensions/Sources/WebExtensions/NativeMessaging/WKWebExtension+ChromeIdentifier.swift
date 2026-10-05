@@ -21,7 +21,7 @@ import Foundation
 import WebKit
 
 /// The constants Chrome's identifier derivation is pinned to.
-private enum Chrome {
+private enum ChromeExtensionIdentity {
 
     /// The manifest field holding the extension's public key.
     static let manifestKey = "key"
@@ -57,7 +57,7 @@ extension WKWebExtension {
     /// Unpacked extensions and our own bundled ones have no `key`, and neither has a Chrome
     /// identity to claim.
     var chromeExtensionIdentifier: String? {
-        guard let key = manifest[Chrome.manifestKey] as? String,
+        guard let key = manifest[ChromeExtensionIdentity.manifestKey] as? String,
               let publicKey = Data(base64Encoded: key),
               !publicKey.isEmpty else {
             return nil
@@ -65,11 +65,11 @@ extension WKWebExtension {
 
         let digest = SHA256.hash(data: publicKey)
         var identifier = ""
-        identifier.reserveCapacity(Chrome.identifierHashByteCount * 2)
+        identifier.reserveCapacity(ChromeExtensionIdentity.identifierHashByteCount * 2)
 
-        for byte in digest.prefix(Chrome.identifierHashByteCount) {
-            identifier.append(Character(UnicodeScalar(Chrome.identifierAlphabetStart + (byte >> 4))))
-            identifier.append(Character(UnicodeScalar(Chrome.identifierAlphabetStart + (byte & 0x0F))))
+        for byte in digest.prefix(ChromeExtensionIdentity.identifierHashByteCount) {
+            identifier.append(Character(UnicodeScalar(ChromeExtensionIdentity.identifierAlphabetStart + (byte >> 4))))
+            identifier.append(Character(UnicodeScalar(ChromeExtensionIdentity.identifierAlphabetStart + (byte & 0x0F))))
         }
         return identifier
     }
@@ -83,6 +83,6 @@ extension WKWebExtension {
     /// Returns `nil` when the extension has no derivable ``chromeExtensionIdentifier``.
     public var chromeExtensionOrigin: String? {
         guard let chromeExtensionIdentifier else { return nil }
-        return "\(Chrome.extensionScheme)://\(chromeExtensionIdentifier)/"
+        return "\(ChromeExtensionIdentity.extensionScheme)://\(chromeExtensionIdentifier)/"
     }
 }

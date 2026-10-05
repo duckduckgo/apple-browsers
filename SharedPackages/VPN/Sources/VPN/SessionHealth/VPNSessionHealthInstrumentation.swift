@@ -271,7 +271,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
         completeEventBeforeRestartInLock()
 
-        completeOrphanedEvents()
+        completeOrphanedEvents(reason: reason)
 
         guard isTelemetryEnabled() else {
             return
@@ -310,7 +310,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         completeEvent(event: completed.event, outcome: completed.outcome)
     }
 
-    func completeOrphanedEvents() {
+    func completeOrphanedEvents(reason: VPNSessionHealthWideEventData.EventStartReason) {
         let orphans = wideEvent.getAllFlowData(VPNSessionHealthWideEventData.self)
         Logger.networkProtectionSessionHealth.log("Orphaned events: \(orphans.count, privacy: .public)")
 
@@ -319,6 +319,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
 
             let completed = orphan.finalizedAfterOrphanRecovery(at: now(),
                                                                 processStartDate: processStartedAt,
+                                                                processStartReason: reason,
                                                                 processIdentifier: processIdentifier(),
                                                                 appVersion: appVersion())
             completeEvent(event: completed.event, outcome: completed.outcome)

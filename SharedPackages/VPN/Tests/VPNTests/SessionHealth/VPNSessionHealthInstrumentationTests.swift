@@ -437,6 +437,52 @@ final class VPNSessionHealthInstrumentationTests: XCTestCase {
         XCTAssertNil(fresh.appVersionChanged)
     }
 
+    func testWhenStoppedThenCurrentProcessStartReasonIsOmitted() throws {
+        startTunnel(.onDemand)
+        inputs.pid = 2
+        instrumentation.tunnelStopped(reason: .userInitiated)
+
+        let completed = try completedEvent()
+        XCTAssertEqual(completed.processIDChanged, true)
+        XCTAssertNil(completed.currentProcessStartReason)
+    }
+
+    func testWhenRestartedWithoutStopThenCurrentProcessStartReasonIsOmitted() throws {
+        startTunnel(.manual)
+        inputs.pid = 2
+        startTunnel(.onDemand)
+
+        let completed = try completedEvent()
+        XCTAssertEqual(completed.endReason, .restartedWithoutStop)
+        XCTAssertEqual(completed.processIDChanged, true)
+        XCTAssertNil(completed.currentProcessStartReason)
+    }
+
+    func testWhenOrphanIsRecoveredByNewProcessThenCurrentProcessStartReasonIsReported() throws {
+        startTunnel(.manual)
+
+        inputs.pid = 2
+        instrumentation = makeInstrumentation()
+        startTunnel(.onDemand)
+
+        let recovered = try completedEvent()
+        XCTAssertEqual(recovered.endReason, .processDied)
+        XCTAssertEqual(recovered.startReason, .physicalTunnelStartManual)
+        XCTAssertEqual(recovered.currentProcessStartReason, .physicalTunnelStartOnDemand)
+    }
+
+    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsOmitted() throws {
+        startTunnel(.manual)
+
+        instrumentation = makeInstrumentation()
+        startTunnel(.onDemand)
+
+        let recovered = try completedEvent()
+        XCTAssertEqual(recovered.endReason, .processDied)
+        XCTAssertNil(recovered.processIDChanged)
+        XCTAssertNil(recovered.currentProcessStartReason)
+    }
+
     func testOrphanOlderThanCurrentProcessReportsDurationExceedingLifetime() throws {
         var orphan = VPNSessionHealthWideEventData(startReason: .physicalTunnelStartManual,
                                                    startedAt: hourStart.addingTimeInterval(-3_600),

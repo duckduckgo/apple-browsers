@@ -283,7 +283,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
     func testOrphanEndsAtLastObservationWithoutInventingUnobservedDuration() {
         var data = makeEventWithOutage()
         data.lastObservedAt = timestamp(after: 30)
-        let ended = data.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123, appVersion: appVersion)
+        let ended = data.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: sessionStart.addingTimeInterval(-100_000), processStartReason: .physicalTunnelStartManual, processIdentifier: 123, appVersion: appVersion)
 
         XCTAssertEqual(ended.event.endedAt, data.lastObservedAt)
         XCTAssertEqual(ended.event.totalOutageDuration, 15)
@@ -295,14 +295,14 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         orphan.lastObservedAt = timestamp(after: 30)
         let recoveryDate = timestamp(after: 20)
 
-        let ended = orphan.finalizedAfterOrphanRecovery(at: recoveryDate, processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123, appVersion: appVersion)
+        let ended = orphan.finalizedAfterOrphanRecovery(at: recoveryDate, processStartDate: sessionStart.addingTimeInterval(-100_000), processStartReason: .physicalTunnelStartManual, processIdentifier: 123, appVersion: appVersion)
 
         XCTAssertEqual(ended.event.endedAt, recoveryDate)
     }
 
     func testOrphanWithKnownFailurePreservesFailureOutcome() {
         let orphan = makeEventWithOutage(failedChecks: 8)
-            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: sessionStart.addingTimeInterval(-100_000), processIdentifier: 123, appVersion: appVersion)
+            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: sessionStart.addingTimeInterval(-100_000), processStartReason: .physicalTunnelStartManual, processIdentifier: 123, appVersion: appVersion)
 
         XCTAssertEqual(orphan.outcome, .failure(.routingOutage))
     }
@@ -333,10 +333,35 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         let sameVersion = makeEvent()
             .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: -10), processIdentifier: 123, appVersion: appVersion)
         let differentVersion = makeEvent()
-            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processIdentifier: 123, appVersion: "1.1.0")
+            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processStartReason: .physicalTunnelStartManual, processIdentifier: 123, appVersion: "1.1.0")
 
         XCTAssertNil(sameVersion.event.jsonParameters()["feature.data.ext.app_version_changed"])
         XCTAssertEqual(differentVersion.event.jsonParameters()["feature.data.ext.app_version_changed"] as? Bool, true)
+    }
+
+    func testWhenOrphanIsRecoveredByDifferentPIDThenCurrentProcessStartReasonIsReported() {
+        let ended = makeEvent(sessionStartPID: 123)
+            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processStartReason: .physicalTunnelStartOnDemand, processIdentifier: 456, appVersion: appVersion)
+        let parameters = ended.event.jsonParameters()
+
+        XCTAssertEqual(parameters["feature.data.ext.start_reason"] as? String, "physical_tunnel_manual_start")
+        XCTAssertEqual(parameters["feature.data.ext.current_process_start_reason"] as? String, "physical_tunnel_on_demand_start")
+    }
+
+    func testWhenOrphanIsRecoveredBySamePIDThenCurrentProcessStartReasonIsOmitted() {
+        let ended = makeEvent(sessionStartPID: 123)
+            .finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processStartReason: .physicalTunnelStartOnDemand, processIdentifier: 123, appVersion: appVersion)
+
+        XCTAssertNil(ended.event.processIDChanged)
+        XCTAssertNil(ended.event.jsonParameters()["feature.data.ext.current_process_start_reason"])
+    }
+
+    func testWhenStoppedByDifferentPIDThenCurrentProcessStartReasonIsOmitted() {
+        let ended = makeEvent(sessionStartPID: 123)
+            .finalized(for: .stoppedByUser, at: timestamp(after: 60), processStartDate: timestamp(after: -10), processIdentifier: 456, appVersion: appVersion)
+
+        XCTAssertEqual(ended.event.processIDChanged, true)
+        XCTAssertNil(ended.event.jsonParameters()["feature.data.ext.current_process_start_reason"])
     }
 
     func testOrphanDiagnosticsUseBackdatedDuration() {
@@ -344,7 +369,7 @@ final class VPNSessionHealthWideEventDataTests: XCTestCase {
         orphan.lastObservedAt = timestamp(after: 30)
 
         // Duration ends at the last observation (30s); the lifetime runs until recovery (50s).
-        let ended = orphan.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processIdentifier: 123, appVersion: appVersion)
+        let ended = orphan.finalizedAfterOrphanRecovery(at: timestamp(after: 900), processStartDate: timestamp(after: 850), processStartReason: .physicalTunnelStartManual, processIdentifier: 123, appVersion: appVersion)
 
         XCTAssertNil(ended.event.eventDurationExceedsProcessLifetime)
     }

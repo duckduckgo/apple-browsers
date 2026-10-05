@@ -83,6 +83,9 @@ public struct VPNSessionHealthWideEventData: WideEventData {
     /// Compares event duration with wall-clock time since tunnel-provider initialization, including when recovering a backdated orphan.
     public var eventDurationExceedsProcessLifetime: Bool?
 
+    /// Start reason of the process recovering this orphan; set only when `processIDChanged`.
+    public var currentProcessStartReason: EventStartReason?
+
     /// Set only when the starting PID differs from the completing or recovering process; otherwise omitted.
     public var processIDChanged: Bool?
 
@@ -135,6 +138,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
             (Key.staleHandshakeRecovered, staleHandshakeDetected ? staleHandshakeRecovered : nil),
             (Key.failureRecoverySucceeded, failureRecoverySucceeded),
             (Key.eventDurationExceedsProcessLifetime, eventDurationExceedsProcessLifetime),
+            (Key.currentProcessStartReason, currentProcessStartReason?.rawValue),
             (Key.processIDChanged, processIDChanged),
             (Key.appVersionChanged, appVersionChanged),
         ])
@@ -376,6 +380,7 @@ extension WideEventParameter {
         static let monitoringCoverage = "feature.data.ext.monitoring_coverage"
         static let eventDuration = "feature.data.ext.event_duration_seconds_bucketed"
         static let eventDurationExceedsProcessLifetime = "feature.data.ext.event_duration_exceeds_process_lifetime"
+        static let currentProcessStartReason = "feature.data.ext.current_process_start_reason"
         static let processIDChanged = "feature.data.ext.process_id_changed"
         static let appVersionChanged = "feature.data.ext.app_version_changed"
         static let connectionTestFailureSeen = "feature.data.ext.connection_tester_failure_seen"

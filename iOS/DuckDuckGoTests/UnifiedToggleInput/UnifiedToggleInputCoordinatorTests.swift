@@ -626,7 +626,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         for isAttached in [true, false] {
             let instrumentation = MockDuckAIWideEventInstrumentation()
             sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
-                                                duckAIWideEventInstrumentation: instrumentation)
+                                                duckAIWideEventInstrumentation: instrumentation,
+                                                duckAIWideEventFlowScope: .contextual(UUID()))
             sut.delegate = mockDelegate
             sut.hasPendingPageContextProvider = { isAttached }
 

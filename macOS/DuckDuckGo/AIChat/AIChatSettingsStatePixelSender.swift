@@ -30,6 +30,8 @@ final class AIChatSettingsStatePixelSender {
     private let menuConfiguration: AIChatMenuVisibilityConfigurable
     private let chromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
     private let featureFlagger: FeatureFlagger
+    private let isGlobalShortcutEnabled: () -> Bool
+    private let isMenuBarIconVisible: () -> Bool
     private let isNewTabPageSearchBoxVisible: () -> Bool
     private let newTabPageOmnibarMode: () -> NewTabPageDataModel.OmnibarMode
     private let pixelFiring: PixelFiring?
@@ -38,6 +40,8 @@ final class AIChatSettingsStatePixelSender {
          menuConfiguration: AIChatMenuVisibilityConfigurable,
          chromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
          featureFlagger: FeatureFlagger,
+         isGlobalShortcutEnabled: @escaping () -> Bool,
+         isMenuBarIconVisible: @escaping () -> Bool,
          isNewTabPageSearchBoxVisible: @escaping () -> Bool,
          newTabPageOmnibarMode: @escaping () -> NewTabPageDataModel.OmnibarMode,
          pixelFiring: PixelFiring? = PixelKit.shared) {
@@ -45,6 +49,8 @@ final class AIChatSettingsStatePixelSender {
         self.menuConfiguration = menuConfiguration
         self.chromeButtonsVisibilityManager = chromeButtonsVisibilityManager
         self.featureFlagger = featureFlagger
+        self.isGlobalShortcutEnabled = isGlobalShortcutEnabled
+        self.isMenuBarIconVisible = isMenuBarIconVisible
         self.isNewTabPageSearchBoxVisible = isNewTabPageSearchBoxVisible
         self.newTabPageOmnibarMode = newTabPageOmnibarMode
         self.pixelFiring = pixelFiring
@@ -54,6 +60,8 @@ final class AIChatSettingsStatePixelSender {
         pixelFiring?.fire(AIChatPixel.aiChatSettingsState(duckAIEnabled: preferencesStorage.isAIFeaturesEnabled,
                                                           addressBarToggle: preferencesStorage.showSearchAndDuckAIToggle,
                                                           tabBarButton: !chromeButtonsVisibilityManager.isHidden(.duckAI),
+                                                          globalShortcut: isGlobalShortcutEnabled(),
+                                                          menuBarIcon: isMenuBarIconVisible(),
                                                           newTabPage: newTabPageState),
                           frequency: .daily)
     }

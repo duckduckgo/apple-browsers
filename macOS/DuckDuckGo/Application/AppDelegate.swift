@@ -1763,6 +1763,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menuConfiguration: aiChatMenuConfiguration,
             chromeButtonsVisibilityManager: LocalDuckAIChromeButtonsVisibilityManager(),
             featureFlagger: featureFlagger,
+            isGlobalShortcutEnabled: { [promptBarPreferences] in promptBarPreferences.isKeyboardShortcutEnabled },
+            isMenuBarIconVisible: { [promptBarPreferences] in promptBarPreferences.isMenuBarIconVisible },
             isNewTabPageSearchBoxVisible: { [appearancePreferences] in appearancePreferences.isOmnibarVisible },
             newTabPageOmnibarMode: { [keyValueStore] in NewTabPageOmnibarConfigProvider.storedMode(in: keyValueStore) }
         ).firePixel()

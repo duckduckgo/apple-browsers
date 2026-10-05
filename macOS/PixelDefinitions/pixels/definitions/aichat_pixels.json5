@@ -378,6 +378,16 @@
                 "type": "boolean"
             },
             {
+                "key": "global_shortcut",
+                "description": "Whether the setting to open the Duck.ai floating window with a system-wide keyboard shortcut is on. Reports the setting even while Duck.ai is off, when the shortcut isn't registered.",
+                "type": "boolean"
+            },
+            {
+                "key": "menubar_icon",
+                "description": "Whether the setting to show the Duck.ai shortcut in the macOS menu bar is on. Reports the setting even while Duck.ai is off, when the icon is hidden.",
+                "type": "boolean"
+            },
+            {
                 "key": "ntp_search_box",
                 "description": "Whether the New Tab Page search box is shown. Omitted when the New Tab Page has no search box.",
                 "type": "boolean"

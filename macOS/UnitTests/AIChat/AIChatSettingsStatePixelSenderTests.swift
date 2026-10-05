@@ -37,6 +37,8 @@ struct AIChatSettingsStatePixelSenderTests {
     private let pixelFiring = PixelKitMock()
 
     private func makeSender(preferencesStorage: AIChatPreferencesStorage? = nil,
+                            isGlobalShortcutEnabled: Bool = true,
+                            isMenuBarIconVisible: Bool = true,
                             isNewTabPageOmnibarOn: Bool = true,
                             isSearchBoxVisible: Bool = true,
                             storedMode: NewTabPageDataModel.OmnibarMode = .search) -> AIChatSettingsStatePixelSender {
@@ -45,6 +47,8 @@ struct AIChatSettingsStatePixelSenderTests {
             menuConfiguration: menuConfiguration,
             chromeButtonsVisibilityManager: chromeButtonsVisibilityManager,
             featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.newTabPageOmnibar.rawValue: isNewTabPageOmnibarOn]),
+            isGlobalShortcutEnabled: { isGlobalShortcutEnabled },
+            isMenuBarIconVisible: { isMenuBarIconVisible },
             isNewTabPageSearchBoxVisible: { isSearchBoxVisible },
             newTabPageOmnibarMode: { storedMode },
             pixelFiring: pixelFiring
@@ -68,6 +72,8 @@ struct AIChatSettingsStatePixelSenderTests {
             "duckai_enabled": "true",
             "addressbar_toggle": "true",
             "tabbar_button": "true",
+            "global_shortcut": "true",
+            "menubar_icon": "true",
             "ntp_search_box": "true",
             "ntp_duckai": "true",
             "ntp_mode": "ai"
@@ -82,12 +88,14 @@ struct AIChatSettingsStatePixelSenderTests {
         menuConfiguration.shouldDisplayNewTabPageShortcut = false
         chromeButtonsVisibilityManager.setHidden(true, for: .duckAI)
 
-        makeSender(isSearchBoxVisible: false, storedMode: .search).firePixel()
+        makeSender(isGlobalShortcutEnabled: false, isMenuBarIconVisible: false, isSearchBoxVisible: false, storedMode: .search).firePixel()
 
         #expect(firedParameters == [
             "duckai_enabled": "false",
             "addressbar_toggle": "false",
             "tabbar_button": "false",
+            "global_shortcut": "false",
+            "menubar_icon": "false",
             "ntp_search_box": "false",
             "ntp_duckai": "false",
             "ntp_mode": "search"
@@ -111,7 +119,7 @@ struct AIChatSettingsStatePixelSenderTests {
 
         makeSender(isNewTabPageOmnibarOn: false, storedMode: .ai).firePixel()
 
-        #expect(firedParameters.map { Set($0.keys) } == ["duckai_enabled", "addressbar_toggle", "tabbar_button"])
+        #expect(firedParameters.map { Set($0.keys) } == ["duckai_enabled", "addressbar_toggle", "tabbar_button", "global_shortcut", "menubar_icon"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -136,6 +144,8 @@ struct AIChatSettingsStatePixelSenderTests {
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSettingsState(duckAIEnabled: true,
                                                                                       addressBarToggle: true,
                                                                                       tabBarButton: true,
+                                                                                      globalShortcut: true,
+                                                                                      menuBarIcon: true,
                                                                                       newTabPage: nil),
                                                frequency: .daily)]
 

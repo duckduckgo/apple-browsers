@@ -533,6 +533,8 @@ enum AIChatPixel: PixelKit.Event {
     case aiChatSettingsState(duckAIEnabled: Bool,
                              addressBarToggle: Bool,
                              tabBarButton: Bool,
+                             globalShortcut: Bool,
+                             menuBarIcon: Bool,
                              newTabPage: AIChatNewTabPageSettingsState?)
 
     /// Event Trigger: The Duck.ai FE reported that `getUserMedia()` rejected while attempting
@@ -1052,11 +1054,13 @@ enum AIChatPixel: PixelKit.Event {
             return ["flow_type": flowType, "source": source, "origin": origin]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
-        case .aiChatSettingsState(let duckAIEnabled, let addressBarToggle, let tabBarButton, let newTabPage):
+        case .aiChatSettingsState(let duckAIEnabled, let addressBarToggle, let tabBarButton, let globalShortcut, let menuBarIcon, let newTabPage):
             var params = [
                 "duckai_enabled": String(duckAIEnabled),
                 "addressbar_toggle": String(addressBarToggle),
-                "tabbar_button": String(tabBarButton)
+                "tabbar_button": String(tabBarButton),
+                "global_shortcut": String(globalShortcut),
+                "menubar_icon": String(menuBarIcon)
             ]
             if let newTabPage {
                 params["ntp_search_box"] = String(newTabPage.isSearchBoxVisible)

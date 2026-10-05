@@ -511,7 +511,7 @@ struct LegacyPermissionAuthorizationSwiftUIView: View {
                 Circle()
                     .fill(Color.primary)
                     .frame(width: stepIndicatorSize, height: stepIndicatorSize)
-                Text("\(step)")
+                Text(verbatim: "\(step)")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(NSColor.windowBackgroundColor))
             } else {
@@ -519,7 +519,7 @@ struct LegacyPermissionAuthorizationSwiftUIView: View {
                 Circle()
                     .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
                     .frame(width: stepIndicatorSize, height: stepIndicatorSize)
-                Text("\(step)")
+                Text(verbatim: "\(step)")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color.secondary.opacity(0.6))
             }

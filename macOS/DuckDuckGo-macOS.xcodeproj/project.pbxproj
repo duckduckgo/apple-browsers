@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9D3F46E26B6DDE5C13CA6354 /* NSLocalizedString+Bundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */; };
+		6C13A19AF741074B72DC92DC /* NSLocalizedString+Bundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */; };
 		00D8FF2311AEAC102CCB6061 /* BookmarksBarMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */; };
 		021EA0802BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
 		021EA0812BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
@@ -3277,8 +3279,6 @@
 		B598E7BD2F4F745E00F19027 /* StartupProfilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */; };
 		B598E7BE2F4F745E00F19027 /* StartupMetricsBucketsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B42F4F745E00F19027 /* StartupMetricsBucketsTests.swift */; };
 		B598E7BF2F4F745E00F19027 /* StartupMetricsPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */; };
-		B599B5E62FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */; };
-		B599B5E82FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */; };
 		B599B5ED2FFE9DF700B5E877 /* Flame-24.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5EC2FFE9DF700B5E877 /* Flame-24.json */; };
 		B599B5EE2FFE9DF700B5E877 /* Flame-24.json in Resources */ = {isa = PBXBuildFile; fileRef = B599B5EC2FFE9DF700B5E877 /* Flame-24.json */; };
 		B59AB6442EFB179F00C2F87A /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59AB6432EFB179F00C2F87A /* SearchField.swift */; };
@@ -5073,6 +5073,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSLocalizedString+Bundle.swift"; sourceTree = "<group>"; };
 		021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferences.swift; sourceTree = "<group>"; };
 		021EA0822BD6DF1B00772C9A /* TabsPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferencesTests.swift; sourceTree = "<group>"; };
 		0230C0A2272080090018F728 /* KeyedCodingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedCodingExtension.swift; sourceTree = "<group>"; };
@@ -6630,7 +6631,6 @@
 		B598E7B52F4F745E00F19027 /* StartupMetricsPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsPixelTests.swift; sourceTree = "<group>"; };
 		B598E7B62F4F745E00F19027 /* StartupMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetricsTests.swift; sourceTree = "<group>"; };
 		B598E7B72F4F745E00F19027 /* StartupProfilerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupProfilerTests.swift; sourceTree = "<group>"; };
-		B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Shield-Color-24-Hover.json"; sourceTree = "<group>"; };
 		B599B5EC2FFE9DF700B5E877 /* Flame-24.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Flame-24.json"; sourceTree = "<group>"; };
 		B59AB6432EFB179F00C2F87A /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
@@ -10485,7 +10485,6 @@
 				37EE55C32D5F197300D53C7C /* trackers-3.json */,
 				B599B5EC2FFE9DF700B5E877 /* Flame-24.json */,
 				B5EA14A92FFFDB8000FC2512 /* Shield-Color-24.json */,
-				B599B5E42FFE95A900B5E877 /* Shield-Color-24-Hover.json */,
 				B531B7F830112DB60087A2DE /* Shield-Off-Gray.json */,
 			);
 			path = Resources;
@@ -11685,6 +11684,7 @@
 		AA80EC52256BE33A007083E7 /* Localizables */ = {
 			isa = PBXGroup;
 			children = (
+				47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */,
 				AA80EC53256BE3BC007083E7 /* UserText.swift */,
 				4B4D60D22A0C84F700BCD287 /* UserText+NetworkProtection.swift */,
 				1EC7114F2D033D200009EB5C /* UserText+NetworkProtection+Shared.swift */,
@@ -14924,7 +14924,6 @@
 				37EE56092D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				37EE560A2D5F197300D53C7C /* shield.json in Resources */,
 				37EE560B2D5F197300D53C7C /* shield-dot.json in Resources */,
-				B599B5E62FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */,
 				37EE560C2D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
 				D6229C312ED0E213001DAE71 /* shield.new.json in Resources */,
 				37EE560D2D5F197300D53C7C /* shield-mouse-over.json in Resources */,
@@ -15170,7 +15169,6 @@
 				37EE55E02D5F197300D53C7C /* flame-mouse-over.json in Resources */,
 				7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */,
 				37EE55E12D5F197300D53C7C /* shield.json in Resources */,
-				B599B5E82FFE95A900B5E877 /* Shield-Color-24-Hover.json in Resources */,
 				37EE55E22D5F197300D53C7C /* shield-dot.json in Resources */,
 				37EE55E32D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
 				D6229C302ED0E213001DAE71 /* shield.new.json in Resources */,
@@ -15588,6 +15586,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D3F46E26B6DDE5C13CA6354 /* NSLocalizedString+Bundle.swift in Sources */,
 				FB07BAD2000000000000020A /* PromptBarPixel.swift in Sources */,
 				FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */,
 				FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */,
@@ -17992,6 +17991,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6C13A19AF741074B72DC92DC /* NSLocalizedString+Bundle.swift in Sources */,
 				FB07BAD2000000000000030A /* PromptBarPixel.swift in Sources */,
 				FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */,
 				FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */,

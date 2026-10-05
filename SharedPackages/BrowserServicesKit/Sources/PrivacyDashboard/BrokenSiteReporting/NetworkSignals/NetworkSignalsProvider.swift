@@ -21,7 +21,7 @@ import Foundation
 public protocol NetworkSignalsProviding {
     /// Starts collecting ping quality without waiting for the lookup to complete; `nil` when no ping is started.
     @discardableResult
-    func prefetchPing() -> Task<Void, Never>?
+    func prefetchSignals() -> Task<Void, Never>?
 
     /// Returns `nil` when collecting network signals is disabled.
     func currentSignals() async -> NetworkSignals?
@@ -60,7 +60,7 @@ public final class NetworkSignalsProvider: NetworkSignalsProviding {
     }
 
     @discardableResult
-    public func prefetchPing() -> Task<Void, Never>? {
+    public func prefetchSignals() -> Task<Void, Never>? {
         pingLock.withLock { prefetchedPingQuality = .unknown }
 
         guard isEnabledProvider(), pathProvider.currentPathState.networkType != .unavailable else {

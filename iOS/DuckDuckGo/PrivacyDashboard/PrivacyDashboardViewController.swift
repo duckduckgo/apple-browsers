@@ -120,7 +120,7 @@ final class PrivacyDashboardViewController: UIViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        networkSignalsProvider.prefetchPing()
+        networkSignalsProvider.prefetchSignals()
     }
 
     private func setupWebView() {

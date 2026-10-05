@@ -171,7 +171,7 @@ final class PrivacyDashboardViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
 
-        networkSignalsProvider.prefetchPing()
+        networkSignalsProvider.prefetchSignals()
     }
 
     override func viewWillDisappear() {

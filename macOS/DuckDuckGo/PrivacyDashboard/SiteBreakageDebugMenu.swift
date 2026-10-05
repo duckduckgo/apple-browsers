@@ -45,7 +45,7 @@ final class SiteBreakageDebugMenu: NSMenuItem {
             let start = Date()
 
             // Awaits a fresh ping, since `currentSignals()` only reads the prefetched one.
-            await networkSignalsProvider.prefetchPing()?.value
+            await networkSignalsProvider.prefetchSignals()?.value
             let signals = await networkSignalsProvider.currentSignals()
 
             let elapsedMilliseconds = Int(Date().timeIntervalSince(start) * 1000)

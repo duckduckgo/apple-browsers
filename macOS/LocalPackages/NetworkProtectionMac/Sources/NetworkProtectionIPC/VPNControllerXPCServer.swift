@@ -58,6 +58,10 @@ public protocol XPCServerInterface: AnyObject {
     ///
     func refreshSystemState(completion: @escaping (Error?) -> Void)
 
+    /// Asks the tunnel whether it's currently experiencing connectivity issues.
+    ///
+    func fetchConnectivityIssues(completion: @escaping (Bool) -> Void)
+
     /// Commands
     ///
     func command(_ command: VPNCommand) async throws
@@ -98,6 +102,10 @@ protocol XPCServerInterfaceObjC {
     /// Refreshes the login item's view of VPN system state and publishes any resulting state changes.
     ///
     func refreshSystemState(completion: @escaping (Error?) -> Void)
+
+    /// Asks the tunnel whether it's currently experiencing connectivity issues.
+    ///
+    func fetchConnectivityIssues(completion: @escaping (Bool) -> Void)
 
     /// Commands
     ///
@@ -241,6 +249,15 @@ extension VPNControllerXPCServer: XPCServerInterfaceObjC {
 
     func refreshSystemState(completion: @escaping (Error?) -> Void) {
         serverDelegate?.refreshSystemState(completion: completion)
+    }
+
+    func fetchConnectivityIssues(completion: @escaping (Bool) -> Void) {
+        guard let serverDelegate else {
+            completion(false)
+            return
+        }
+
+        serverDelegate.fetchConnectivityIssues(completion: completion)
     }
 
     func command(_ payload: Data, completion: @escaping (Error?) -> Void) {

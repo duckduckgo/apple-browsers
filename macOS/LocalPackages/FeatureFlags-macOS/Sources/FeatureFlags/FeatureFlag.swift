@@ -546,6 +546,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
 
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
+    case syncImprovedPairingFlow
+
     /// Gates the Simplified Sync Setup follow-up screens.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
     case simplifiedSyncSetupV2
@@ -972,6 +975,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .simplifiedSyncSetupV2:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:

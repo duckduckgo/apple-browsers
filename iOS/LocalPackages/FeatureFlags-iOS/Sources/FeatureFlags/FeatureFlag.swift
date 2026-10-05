@@ -558,6 +558,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
     case syncCanReadUnifiedDeviceList
 
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
+    case syncImprovedPairingFlow
+
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -989,6 +992,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename))
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
+        case .syncImprovedPairingFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:

@@ -504,17 +504,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
     }
 
-    // MARK: - Launcher promo
-
     @MainActor
     func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
         duckAiLauncherPromo?.presentation()
     }
 
     @MainActor
-    func launcherPromoShown() {
-        // Nothing to record until the launcher promo pixels land.
-    }
+    func launcherPromoShown() {}
 
     @MainActor
     func selectLauncherPromoCta() {

@@ -336,12 +336,8 @@ public extension NewTabPageDataModel {
         }
     }
 
-    // MARK: - Launcher promo
-
-    /// Native-resolved launcher promo for the AI-mode drawer; the page renders what it gets.
     struct OmnibarLauncherPromo: Codable, Equatable {
         let message: String
-        /// Shown after `message`, separator included.
         let secondaryText: String?
         let ctaLabel: String?
         let dismissible: Bool?
@@ -538,7 +534,6 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
-        /// True when the launcher promo drawer was on screen as the prompt went out.
         var launcherPromoVisible: Bool?
     }
 

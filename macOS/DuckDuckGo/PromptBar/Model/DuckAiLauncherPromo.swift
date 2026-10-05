@@ -27,12 +27,9 @@ extension Notification.Name {
     static let duckAiLauncherPromoDismissalsDidReset = Notification.Name("duckAiLauncherPromoDismissalsDidReset")
 }
 
-/// How the user settled the promo. Kept so a later change can treat each group differently.
 enum DuckAiLauncherPromoOutcome: String {
     case triedNow = "tried_now"
-    /// The close button.
     case closed
-    /// A prompt sent while the promo was on screen.
     case ignored
 }
 
@@ -49,8 +46,6 @@ enum DuckAiLauncherPromoEligibility {
     }
 }
 
-/// Promotes the Duck.ai launcher (the Prompt Bar) on the New Tab Page. The page renders whatever
-/// `presentation()` returns, so eligibility, copy and the CTA all live here. Main thread only.
 final class DuckAiLauncherPromo {
 
     private static let outcomeKey = "duckai.launcher-promo.outcome"
@@ -97,7 +92,6 @@ final class DuckAiLauncherPromo {
 
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
         guard isEligible else { return nil }
-        // Names the missing entry point; the menu bar icon when both are off.
         let secondaryText = preferences.isMenuBarIconVisible
             ? UserText.duckAiLauncherPromoAddKeyboardShortcut
             : UserText.duckAiLauncherPromoAddToMenuBar
@@ -107,7 +101,6 @@ final class DuckAiLauncherPromo {
                      dismissible: true)
     }
 
-    /// `@Published` emits before the value lands, so reads hop to the next run loop.
     var changesPublisher: AnyPublisher<Void, Never> {
         Publishers.MergeMany(
             preferences.$isKeyboardShortcutEnabled.map { _ in () }.eraseToAnyPublisher(),
@@ -125,7 +118,6 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    /// Turns on whichever entry point is off, then shows Settings so the user knows where to turn it off.
     @MainActor
     func tryNow() {
         preferences.isKeyboardShortcutEnabled = true
@@ -142,14 +134,12 @@ final class DuckAiLauncherPromo {
         record(.ignored)
     }
 
-    /// Any outcome ends the promo: it shows once.
     private func record(_ outcome: DuckAiLauncherPromoOutcome) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
         try? keyValueStore.set(Date(), forKey: Self.outcomeDateKey)
         dismissalSubject.send()
     }
 
-    /// Debug only. Posts so open New Tab Pages re-read it: a new tab reuses the window's page, which never asks again.
     static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
         try? keyValueStore.removeObject(forKey: outcomeKey)
         try? keyValueStore.removeObject(forKey: outcomeDateKey)

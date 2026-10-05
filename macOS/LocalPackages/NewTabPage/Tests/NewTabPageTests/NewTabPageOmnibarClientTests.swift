@@ -935,8 +935,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(config.usageLimits)
     }
 
-    // MARK: - Launcher promo
-
     @MainActor
     func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
         let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately outside the browser",

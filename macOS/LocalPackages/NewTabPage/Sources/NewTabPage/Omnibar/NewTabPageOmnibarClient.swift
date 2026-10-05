@@ -435,7 +435,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         return nil
     }
 
-    /// The provider changes launcher settings or the dismissal, which re-pushes the config through `launcherPromoPublisher`.
     @MainActor
     private func selectLauncherPromoCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         configProvider.selectLauncherPromoCta()

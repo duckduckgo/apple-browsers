@@ -59,12 +59,9 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                                         chatCountPublisher: chatCount.eraseToAnyPublisher(),
                                         keyValueStore: keyValueStore,
                                         openSettings: { [weak self] in self?.openSettingsCount += 1 })
-        // The count lands on the next main run loop.
         RunLoop.main.run(until: Date().addingTimeInterval(0.01))
         return promo
     }
-
-    // MARK: - Eligibility
 
     private func isEligible(isFeatureOn: Bool = true,
                             shortcut: Bool = false,
@@ -93,8 +90,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         XCTAssertFalse(isEligible(outcome: .ignored))
         XCTAssertFalse(isEligible(shortcut: true, menuBarIcon: true))
     }
-
-    // MARK: - Promo
 
     @MainActor
     func testPresentationCarriesTheCopy() {

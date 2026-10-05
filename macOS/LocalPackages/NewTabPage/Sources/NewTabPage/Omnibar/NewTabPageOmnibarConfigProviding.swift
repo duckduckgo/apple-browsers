@@ -100,11 +100,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// open NTP stops offering the disclaimer.
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { get }
 
-    /// Duck.ai launcher promo; `nil` shows nothing. The page ranks it below every other drawer notice.
     @MainActor
     func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
 
-    /// The page revealed the drawer.
     @MainActor
     func launcherPromoShown()
 
@@ -114,11 +112,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func dismissLauncherPromo()
 
-    /// A prompt went out while the drawer was on screen, without the user acting on it.
     @MainActor
     func launcherPromoIgnored()
 
-    /// Fires when anything `launcherPromo()` reads changes: launcher settings, chat count, dismissal.
     var launcherPromoPublisher: AnyPublisher<Void, Never> { get }
 
     /// Whether the attach-tabs (and files) affordance is enabled. Driven by the

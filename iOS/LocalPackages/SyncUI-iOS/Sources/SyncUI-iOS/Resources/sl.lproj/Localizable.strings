@@ -214,9 +214,6 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Primer kode:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Odprite svojo drugo";
-
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Prilepite kodo za sinhronizacijo";
 
@@ -271,7 +268,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "S to kodo obnovite podatke, če izgubite dostop do te naprave. Podatkov funkcije Sync & Backup ni mogoče obnoviti po 18 mesecih nedejavnosti. [Več informacij](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Aplikacija DuckDuckGo";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +289,11 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Zapri";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo za namizje";
 
 /* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "Skeniraj kodo QR za sinhronizacijo.";
-
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Odpri";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Pripravljen/a sem na skeniranje";
@@ -321,9 +315,6 @@
 
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Kopiraj besedilno kodo";
-
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "V drugi napravi odprite";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Pojdite v **Sync & Backup** › **Sinhroniziraj z drugo napravo** in skenirajte to kodo:";

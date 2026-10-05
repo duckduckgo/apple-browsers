@@ -1590,6 +1590,33 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAnOpenChatIsDeletedElsewhereThenReopeningIsReported() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
+        try mockNativeStorage.deleteChat(chatId: savedChatID)
+        firedPixelKitEventNames = []
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertEqual(firedPixelKitEventNames, ["aichat_contextual_sheet_opened_on_deleted_chat"])
+    }
+
+    @MainActor
+    func testWhenAnOpenChatStillExistsThenReopeningIsNotReportedAsDeleted() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
+        try mockNativeStorage.putChat(chatId: savedChatID, data: Data())
+        await sut.presentSheet(from: mockPresentingVC, restoreURL: savedChatURL)
+        sut.aiChatContextualSheetViewControllerDidDismiss(try XCTUnwrap(sut.sheetViewController))
+        firedPixelKitEventNames = []
+
+        await sut.presentSheet(from: mockPresentingVC)
+
+        XCTAssertFalse(firedPixelKitEventNames.contains("aichat_contextual_sheet_opened_on_deleted_chat"))
+    }
+
+    @MainActor
     func testWhenTheSheetIsOnScreenThenADeletionLeavesItAlone() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeDataAccess]
         try mockNativeStorage.putChat(chatId: savedChatID, data: Data())

@@ -68,7 +68,7 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: installed.path))
     }
 
-    func testWhenManifestAlreadyHasKey_ThenItIsLeftAlone() async throws {
+    func testWhenManifestAlreadyHasKey_ThenItIsReplacedByTheHeaderKey() async throws {
         var manifest: [String: Any]?
         manager.installExtensionHandler = { url in
             manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: url.appendingPathComponent("manifest.json"))) as? [String: Any]
@@ -77,7 +77,7 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
 
         try await installer.install()
 
-        XCTAssertEqual(manifest?["key"] as? String, "existing-key")
+        XCTAssertEqual(manifest?["key"] as? String, developerKey.base64EncodedString())
     }
 
     func testWhenBitwardenIsInstalled_ThenUninstallsItBeforeInstalling() async throws {
@@ -100,6 +100,18 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
             XCTFail("Expected install to throw")
         } catch {
             XCTAssertEqual(error as? CRXArchiveError, .invalidMagic)
+        }
+        XCTAssertTrue(manager.uninstalledIdentifiers.isEmpty)
+    }
+
+    func testWhenCRXHasNoDeveloperKey_ThenThrowsAndKeepsInstalledCopy() async throws {
+        let installer = makeInstaller(crx: try makeCRX3(includesDeveloperKey: false), installedIdentifiers: ["old"])
+
+        do {
+            try await installer.install()
+            XCTFail("Expected install to throw")
+        } catch {
+            XCTAssertEqual(error as? BitwardenExtensionInstallerError, .missingPublicKey)
         }
         XCTAssertTrue(manager.uninstalledIdentifiers.isEmpty)
     }
@@ -133,7 +145,7 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
 
     private let developerKey = Data("developer-key".utf8)
 
-    private func makeCRX3(manifest manifestJSON: String = "{\"name\":\"Bitwarden\"}") throws -> Data {
+    private func makeCRX3(manifest manifestJSON: String = "{\"name\":\"Bitwarden\"}", includesDeveloperKey: Bool = true) throws -> Data {
         let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).zip")
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
@@ -144,7 +156,7 @@ final class BitwardenExtensionInstallerTests: XCTestCase {
         }
 
         // CrxFileHeader: one RSA proof holding the developer key, and signed_header_data holding its crx_id.
-        let crxID = Data(SHA256.hash(data: developerKey).prefix(16))
+        let crxID = Data(SHA256.hash(data: includesDeveloperKey ? developerKey : Data("other-key".utf8)).prefix(16))
         let proof = Data([0x0A, UInt8(developerKey.count)]) + developerKey
         let signedData = Data([0x0A, UInt8(crxID.count)]) + crxID
         let header = Data([0x12, UInt8(proof.count)]) + proof

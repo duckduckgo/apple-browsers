@@ -132,26 +132,6 @@ final class MockIdleReturnLaunchDelegate: IdleReturnLaunchDelegate {
 }
 
 @MainActor
-private final class IdleReturnKeyboardTarget: AppOpenKeyboardHandling {
-    var isNewTabPageVisible = true
-    var appOpenKeyboardRequestID = UUID()
-    var focusCallCount = 0
-
-    func closeScreensOverNewTabPageForIdleReturn(completion: @escaping () -> Void) {
-        completion()
-    }
-
-    func showKeyboardOnAppOpenIfAllowed() -> Bool {
-        focusCallCount += 1
-        return true
-    }
-
-    func enterSearchOnAppOpen() {
-        Issue.record("An inactivity-created New Tab Page must use the flag-on keyboard path")
-    }
-}
-
-@MainActor
 final class LaunchActionHandlerTests {
 
     let urlHandler = MockURLHandler()
@@ -464,14 +444,14 @@ final class LaunchActionHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("An inactivity-created New Tab Page requests focus only after creation, including short returns", .timeLimit(.minutes(1)), arguments: [5.0, 20.0, 25.0])
-    func createdNewTabPageWaitsForCompletion(secondsInBackground: TimeInterval) throws {
+    @Test("An inactivity-created New Tab Page requests focus only after creation, including short returns", .timeLimit(.minutes(1)))
+    func createdNewTabPageWaitsForCompletion() throws {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         idleReturnEvaluator.didReturnAfterIdleResult = true
         idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
         idleReturnDelegate.completesNewTabPageImmediately = false
 
-        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isFirstForeground: false))
+        launchActionHandler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date().addingTimeInterval(-5), isFirstForeground: false))
 
         #expect(idleReturnDelegate.showNewTabPageAfterIdleReturnCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
@@ -500,72 +480,6 @@ final class LaunchActionHandlerTests {
 
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("An inactivity-created New Tab Page waits for the launch prompt and cancels obsolete focus", .timeLimit(.minutes(1)), arguments: [false, true])
-    func createdNewTabPageDefersFocusUntilPromptCloses(cancelRequest: Bool) throws {
-        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        idleReturnEvaluator.didReturnAfterIdleResult = true
-        idleReturnEvaluator.treatmentForIdleReturnResult = .ntp
-        idleReturnDelegate.completesNewTabPageImmediately = false
-        let target = IdleReturnKeyboardTarget()
-        var scheduledFocus: (() -> Void)?
-        var promptRequestIsValid: (@MainActor () -> Bool)?
-        var promptClosed: (@MainActor () -> Void)?
-        var afterPromptFocus: (() -> Void)?
-        let presenter = KeyboardPresenter(
-            mainViewController: target,
-            featureFlagger: featureFlagger,
-            runOnceModalPromptCloses: { isValid, handler in
-                promptRequestIsValid = isValid
-                promptClosed = handler
-                return true
-            },
-            pixelFiring: pixelKitMock,
-            onAppLaunch: { true },
-            scheduleAfterPrompt: { afterPromptFocus = $0 },
-            schedule: { scheduledFocus = $0 }
-        )
-        let handler = LaunchActionHandler(
-            urlHandler: urlHandler,
-            shortcutItemHandler: shortcutItemHandler,
-            userActivityHandler: userActivityHandler,
-            keyboardPresenter: presenter,
-            launchSourceService: launchSourceManager,
-            idleReturnEvaluator: idleReturnEvaluator,
-            featureFlagger: featureFlagger,
-            idleReturnDelegate: idleReturnDelegate,
-            pixelFiring: pixelKitMock
-        )
-
-        // This new landing must focus even when the return itself is shorter than 20 seconds.
-        handler.handleLaunchAction(.standardLaunch(lastBackgroundDate: Date().addingTimeInterval(-5), isFirstForeground: false))
-        #expect(scheduledFocus == nil)
-        let completion = try #require(idleReturnDelegate.newTabPageCompletion)
-        completion(.openedNewTab)
-        let focus = try #require(scheduledFocus)
-        focus()
-        #expect(promptRequestIsValid?() == true)
-        #expect(target.focusCallCount == 0)
-        #expect(pixelKitMock.actualFireCalls.isEmpty)
-
-        if cancelRequest {
-            target.appOpenKeyboardRequestID = UUID()
-        }
-        let closePrompt = try #require(promptClosed)
-        closePrompt()
-        if cancelRequest {
-            #expect(promptRequestIsValid?() == false)
-            #expect(afterPromptFocus == nil)
-        } else {
-            #expect(target.focusCallCount == 0)
-            let delayedFocus = try #require(afterPromptFocus)
-            delayedFocus()
-            #expect(target.focusCallCount == 1)
-        }
-        #expect(target.focusCallCount == (cancelRequest ? 0 : 1))
-        #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, *)

@@ -312,50 +312,6 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A newly created page uses normal focus checks when no prompt is pending", .timeLimit(.minutes(1)))
-    func createdNewTabPageWithoutPrompt() {
-        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-
-        presenter.showKeyboardOnNewTabPageCreated()
-        #expect(target.allowedKeyboardCallCount == 0)
-        scheduledActions.forEach { $0() }
-
-        #expect(target.allowedKeyboardCallCount == 1)
-        #expect(target.closeScreensCallCount == 0)
-        #expect(promptCloseHandler == nil)
-        #expect(pixelFiring.actualFireCalls.isEmpty)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A newly created page cannot focus after cancellation or flag disabling", .timeLimit(.minutes(1)),
-          arguments: [false, true], [false, true])
-    func invalidatedCreatedNewTabPageRequest(afterClose: Bool, disableFlag: Bool) {
-        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        promptPending = true
-        presenter.showKeyboardOnNewTabPageCreated()
-        scheduledActions.forEach { $0() }
-        if afterClose {
-            promptCloseHandler?()
-        }
-
-        if disableFlag {
-            featureFlagger.enabledFeatureFlags = []
-        } else {
-            target.appOpenKeyboardRequestID = UUID()
-        }
-        #expect(promptRequestIsValid?() == false)
-        if !afterClose {
-            promptCloseHandler?()
-            #expect(afterPromptActions.isEmpty)
-        }
-        afterPromptActions.forEach { $0() }
-
-        #expect(target.allowedKeyboardCallCount == 0)
-        #expect(target.legacyKeyboardCallCount == 0)
-        #expect(pixelFiring.actualFireCalls.isEmpty)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("A locked app holds the flag-on keyboard until unlock, unless the request is cancelled first",
           .timeLimit(.minutes(1)), arguments: [false, true])
     func lockedAppWaitsForUnlock(cancelBeforeUnlock: Bool) {

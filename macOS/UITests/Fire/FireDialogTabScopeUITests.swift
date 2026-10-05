@@ -139,10 +139,11 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openHistory()
         let historyWebView = app.webViews["History"]
 
-        // Verify background window's domains ARE still in history (check for github.com or stackoverflow.com in page titles)
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "GitHub")).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        // Verify background window's domains ARE still in history. Match the domain, not the page title:
+        // these live sites can serve bot challenges or error pages to CI runners (e.g. "Just a moment...").
+        XCTAssertTrue(historyWebView.staticTexts.element(matching: .keyPath(\.value, contains: "github.com")).waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Background window's GitHub site should still be in history")
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "Stack Overflow")).exists,
+        XCTAssertTrue(historyWebView.staticTexts.element(matching: .keyPath(\.value, contains: "stackoverflow.com")).exists,
                       "Background window's Stack Overflow site should still be in history")
         XCTAssertTrue(historyWebView.links[tab2Title].exists, "tab2 in current window should still be in history")
         XCTAssertTrue(historyWebView.links[tab3Title].exists, "tab3 in current window should still be in history")

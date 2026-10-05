@@ -821,6 +821,7 @@ class TabViewController: UIViewController {
 
     let sitePermissionsState = SitePermissionsState()
     var sitePermissionsNavigationTimeout: TimeInterval = 10
+    var contentBlockingWaitPixelTimeout: TimeInterval = 10
 
     /// Main-frame response (URL + MIME) for the page-context gate; keyed by URL to avoid stale-MIME leaks.
     private var lastMainFramePageContextResponse: (url: URL, mimeType: String?)?
@@ -3810,7 +3811,9 @@ extension TabViewController: WKNavigationDelegate {
             Task {
                 rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
                 showProgressIndicator()
+                let timeoutPixel = isMainFrame ? fireContentBlockingWaitTimeoutPixelAfterDelay() : nil
                 await userContentController.awaitContentBlockingAssetsInstalled()
+                timeoutPixel?.cancel()
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
                 completion(true)
             }
@@ -3849,11 +3852,20 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
             if !isReady, isMainFrame {
+                self?.pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
             completion(isReady)
         }
         return true
+    }
+
+    /// Measures how often waiting for rules compilation blocks a page load; the navigation keeps waiting.
+    private func fireContentBlockingWaitTimeoutPixelAfterDelay() -> Task<Void, Never> {
+        Task { [pixelFiring, timeout = contentBlockingWaitPixelTimeout] in
+            guard (try? await Task.sleep(nanoseconds: UInt64(timeout * Double(NSEC_PER_SEC)))) != nil else { return }
+            pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
+        }
     }
 
     private func showSitePermissionsAssetsTimeout(for failedURL: URL) {

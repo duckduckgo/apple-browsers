@@ -1,0 +1,9 @@
+{
+    "content-blocking_rules-compilation-timeout": {
+        "description": "Fires when a main-frame navigation has waited 10 seconds for content blocking rules compilation (content blocking assets to be installed). Measures how often compilation blocks page loads; the navigation keeps waiting, or shows the timeout error page when site permissions is enabled.",
+        "owners": ["bkunat"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

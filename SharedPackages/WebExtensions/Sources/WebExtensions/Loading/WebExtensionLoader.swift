@@ -185,15 +185,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        // Optional API permissions are granted up front too, for third-party extensions only. The manager's `promptForPermissions`
-        // delegate already approves every runtime request, so this only removes the need for the extension to ask, and it keeps
-        // behavior consistent for extensions that check `permissions.contains` before asking (and bail out when it returns false).
-        // Optional host permissions are deliberately left ungranted — host access is unchanged.
-        if context.needsChromeCompatibility {
-            for permission in webExtension.optionalPermissions {
-                context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
-            }
-        }
+        // Optional API permissions are left ungranted, as in Chrome: an extension asks for them with
+        // `permissions.request` when the user turns on the feature that needs them, and shows its own
+        // explanation first. The manager's `promptForPermissions` delegate approves those requests.
 
         if context.needsChromeCompatibility {
             reportDroppedPermissions(of: webExtension)

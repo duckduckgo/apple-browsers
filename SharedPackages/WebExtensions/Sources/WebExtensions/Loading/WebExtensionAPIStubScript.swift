@@ -62,7 +62,7 @@ import Foundation
 /// and autofill through `privacy.services.passwordSavingEnabled` and its two autofill siblings, and it
 /// guards every call with `permissions.contains({permissions: ["privacy"]})`, falling back to
 /// `permissions.request` from the click handler. `privacy` is an optional permission in its manifest;
-/// the loader grants it, but WebKit silently drops a grant for a name it does not implement, so both
+/// WebKit rejects a grant or request for a name it does not implement, so both
 /// calls answer `false` and the toggle fails with an error dialog. Since this script is what actually
 /// provides `privacy`, the permissions wrappers treat it as a *virtual* permission that is always
 /// granted: they strip it from the descriptor before asking the host and answer for the rest. The
@@ -948,9 +948,8 @@ public enum WebExtensionAPIStubScript {
             { name: "remove", unknownNameFails: false, answerWithoutHost: false }
         ];
 
-        // Permissions WebKit rejects but this script provides itself, so they count as granted. The
-        // loader does grant an extension's optional permissions, but WebKit silently drops the grant
-        // for a name it does not implement, so the host would answer `false` (or throw) for these
+        // Permissions WebKit rejects but this script provides itself, so they count as granted.
+        // WebKit does not know these names, so the host would answer `false` (or throw) for these
         // forever. `privacy` is backed by makePrivacy and `idle` by makeIdle above; Bitwarden will not touch it until
         // `contains` or `request` says it holds the permission. `permissions.onAdded` is not fired
         // for them: WebKit owns that event, and Bitwarden's Chrome path does not wait for it.

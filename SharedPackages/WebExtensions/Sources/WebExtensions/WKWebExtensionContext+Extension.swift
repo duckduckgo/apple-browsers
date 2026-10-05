@@ -92,8 +92,8 @@ public extension WKWebExtension {
     }
 
     /// Whether the extension is a third-party one that needs the Chrome-compatibility shims
-    /// (API stubs, background page conversion, optional permission grants, native messaging
-    /// pass-through, toolbar button, keyboard shortcuts).
+    /// (API stubs, background page conversion, native messaging pass-through, toolbar button,
+    /// keyboard shortcuts).
     ///
     /// This is the single source of truth for those shims: they apply only when the extension is
     /// not one of ours, so DuckDuckGo's own extensions behave as they did before the shims existed.

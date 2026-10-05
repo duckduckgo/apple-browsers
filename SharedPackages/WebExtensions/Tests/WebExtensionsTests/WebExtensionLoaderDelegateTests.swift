@@ -190,28 +190,13 @@ final class WebExtensionLoaderDelegateTests: XCTestCase {
         XCTAssertNotEqual(context.permissionStatus(for: storagePermission), .grantedExplicitly)
     }
 
-    // MARK: - Optional Permission Granting Tests
+    // MARK: - Optional Permission Tests
 
     @MainActor
-    func testWhenExtensionDeclaresOptionalPermissions_ThenTheyAreGranted() async throws {
+    func testWhenExtensionDeclaresOptionalPermissions_ThenTheyAreNotGrantedUpFront() async throws {
         let identifier = "test-extension-id"
         let extensionURL = try createTestWebExtensionWithPermissions(
             optionalPermissions: ["nativeMessaging"]
-        )
-        storageProvider.resolvedExtensionURL = extensionURL
-
-        try await loader.loadWebExtension(identifier: identifier, into: controller)
-
-        let context = try XCTUnwrap(delegateMock.willLoadContext)
-        XCTAssertTrue(context.hasPermission(.nativeMessaging))
-    }
-
-    @MainActor
-    func testWhenDuckDuckGoExtensionDeclaresOptionalPermissions_ThenTheyAreNotGranted() async throws {
-        let identifier = "test-extension-id"
-        let extensionURL = try createTestWebExtensionWithPermissions(
-            optionalPermissions: ["nativeMessaging"],
-            duckDuckGoExtensionId: DuckDuckGoWebExtensionType.embedded.rawValue
         )
         storageProvider.resolvedExtensionURL = extensionURL
 

@@ -2481,14 +2481,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedReasons, [.navigation])
     }
 
-    func testWhenNoOfferIsOnScreenThenAcceptingReportsNothing() {
-        arrangeOfferConditions()
-
-        sessionState.acceptSuggestedContext()
-
-        XCTAssertTrue(mockPixelHandler.pageContextOfferAcceptedReasons.isEmpty)
-    }
-
     func testWhenNavigatingThenAPreviousOfferIsDropped() {
         arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))

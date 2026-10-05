@@ -74,6 +74,7 @@ public final class DBPUIViewModel {
             try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
                                                       prefs: contentScopeProperties,
                                                       delegate: self,
+                                                      handshakeDelegate: self,
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: nil)
             configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
@@ -107,7 +108,7 @@ public final class DBPUIViewModel {
     }
 }
 
-extension DBPUIViewModel: DBPUICommunicationDelegate {
+extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? true
         let isUserEligibleForFreeTrial = authenticationDelegate?.isUserEligibleForFreeTrial() ?? false

@@ -288,22 +288,19 @@ public final class DBPUICommunicator {
     weak var delegate: DBPUICommunicatorDelegate?
     weak var scanDelegate: DBPUIScanOps?
 
-    public var freeScanEntryPoint: String?
-
     public func invalidateCache() {
         profile = nil
         brokerProfileQueryData.removeAll()
     }
 }
 
-extension DBPUICommunicator: DBPUICommunicationDelegate {
+extension DBPUICommunicator: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
 
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
         let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
         let isUserEligibleForFreeTrial = delegate?.isUserEligibleForFreeTrial() ?? false
         return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser,
-                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial,
-                                      freeScanEntryPoint: freeScanEntryPoint)
+                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
     }
 
     public func saveProfile() async throws {

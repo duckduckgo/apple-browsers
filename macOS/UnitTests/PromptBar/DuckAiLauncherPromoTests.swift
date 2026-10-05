@@ -127,9 +127,11 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testCloseAndPromptPastThePromoAreRecordedApart() {
+    func testCloseAndPromptPastThePromoAreRecordedApart() throws {
+        let before = Date()
         makePromo().dismiss()
         XCTAssertEqual(makePromo().outcome, .closed)
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(makePromo().outcomeDate), before)
 
         DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
         makePromo().ignore()
@@ -154,6 +156,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
 
         wait(for: [changed], timeout: 1)
         XCTAssertNil(promo.outcome)
+        XCTAssertNil(promo.outcomeDate)
         XCTAssertNotNil(promo.presentation())
     }
 

@@ -54,6 +54,7 @@ enum DuckAiLauncherPromoEligibility {
 final class DuckAiLauncherPromo {
 
     private static let outcomeKey = "duckai.launcher-promo.outcome"
+    private static let outcomeDateKey = "duckai.launcher-promo.outcome-date"
 
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
@@ -88,6 +89,10 @@ final class DuckAiLauncherPromo {
 
     var outcome: DuckAiLauncherPromoOutcome? {
         ((try? keyValueStore.object(forKey: Self.outcomeKey)) as? String).flatMap(DuckAiLauncherPromoOutcome.init(rawValue:))
+    }
+
+    var outcomeDate: Date? {
+        (try? keyValueStore.object(forKey: Self.outcomeDateKey)) as? Date
     }
 
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
@@ -136,12 +141,14 @@ final class DuckAiLauncherPromo {
     /// Any outcome ends the promo: it shows once.
     private func record(_ outcome: DuckAiLauncherPromoOutcome) {
         try? keyValueStore.set(outcome.rawValue, forKey: Self.outcomeKey)
+        try? keyValueStore.set(Date(), forKey: Self.outcomeDateKey)
         dismissalSubject.send()
     }
 
     /// Debug only. Posts so open New Tab Pages re-read it: a new tab reuses the window's page, which never asks again.
     static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
         try? keyValueStore.removeObject(forKey: outcomeKey)
+        try? keyValueStore.removeObject(forKey: outcomeDateKey)
         NotificationCenter.default.post(name: .duckAiLauncherPromoDismissalsDidReset, object: nil)
     }
 }

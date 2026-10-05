@@ -78,6 +78,8 @@ final class PairingV2Coordinator {
     private var pendingConfirmationTask: Task<Void, Never>?
     private var pendingRecoveryCode: PairingV2RecoveryCodeResponseMessage?
     private var joinStatusDeadlineDate: Date?
+    private var recoveryCodeWaitDeadlineDate: Date?
+    private var hasRecoveryCodeWaitDeadlinePassed = false
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
     private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
@@ -116,6 +118,20 @@ final class PairingV2Coordinator {
         stateMachine.state
     }
 
+    /// Waiting-screen status for both the host awaiting the join result and the joiner awaiting the recovery code.
+    var joinStatus: PairingV2JoinStatus? {
+        switch state {
+        case .hostWaitingForJoinStatus, .joinerLoggingIn:
+            return .waiting
+        case .hostJoinOutcomeUnknown:
+            return .unknown
+        case .joinerWaitingForRecoveryCode:
+            return hasRecoveryCodeWaitDeadlinePassed ? .unknown : .waiting
+        default:
+            return nil
+        }
+    }
+
     func startPresenting() async throws -> PairingV2QRCodePayload {
         prepareForNewSession(entryRole: .presenter)
         let keyPair = try generateKeyPair(failureStage: .presenterGenerateCode)
@@ -145,12 +161,13 @@ final class PairingV2Coordinator {
 
     /// Performs one poll of this device's channel and handles any new messages.
     /// Production polling goes through `pollUntilFinished`; this is internal for unit testing.
-    func pollOnce() async throws {
+    func pollOnce(onStateChange: ((PairingV2State) async -> Void)? = nil) async throws {
         guard let channelID = localKeyPair?.channelID else {
             throw PairingV2Error.pairingSessionNotReady(.localKeyPair)
         }
 
-        try await handleConfirmationResult()
+        try await handleConfirmationResult(onStateChange: onStateChange)
+        await onStateChange?(state)
         guard !hasFinishedPairing else {
             return
         }
@@ -170,11 +187,15 @@ final class PairingV2Coordinator {
             }
             throw operationFailure
         }
-        try await processPolledMessages(messages)
+        try await processPolledMessages(messages, onStateChange: onStateChange)
         try await handleJoinStatusDeadlineIfNeeded()
+        if case .joinerWaitingForRecoveryCode = state, let recoveryCodeWaitDeadlineDate {
+            hasRecoveryCodeWaitDeadlinePassed = now() >= recoveryCodeWaitDeadlineDate
+        }
     }
 
-    private func processPolledMessages(_ messages: [PairingV2SequencedMessage]) async throws {
+    private func processPolledMessages(_ messages: [PairingV2SequencedMessage],
+                                       onStateChange: ((PairingV2State) async -> Void)?) async throws {
         for message in messages.sorted(by: { $0.seq < $1.seq }) where message.seq > lastProcessedSequence {
             guard !hasFinishedPairing else {
                 return
@@ -189,7 +210,7 @@ final class PairingV2Coordinator {
                 // The peer may release its code before the local user confirms. Keep it while continuing to receive other messages.
                 pendingRecoveryCode = pendingRecoveryCode ?? response
             } else {
-                try await handle(applicationMessage)
+                try await handle(applicationMessage, onStateChange: onStateChange)
             }
             lastProcessedSequence = max(lastProcessedSequence, message.seq)
         }
@@ -209,7 +230,7 @@ final class PairingV2Coordinator {
                 throw SyncError.pollingDidTimeOut
             }
 
-            try await pollOnce()
+            try await pollOnce(onStateChange: onDidPoll)
             await onDidPoll?(state)
             if let completion = try checkPairingCompletion() {
                 return completion
@@ -308,7 +329,8 @@ final class PairingV2Coordinator {
         return message
     }
 
-    private func handle(_ message: PairingV2ApplicationMessage) async throws {
+    private func handle(_ message: PairingV2ApplicationMessage,
+                        onStateChange: ((PairingV2State) async -> Void)?) async throws {
         let commands: [PairingV2Command]
         let stateBeforeMessage = stateMachine.state
         switch message {
@@ -338,6 +360,10 @@ final class PairingV2Coordinator {
 
         case .recoveryCodeResponse(let message):
             commands = stateMachine.handle(.receivedRecoveryCode(message.recoveryCode))
+            if case .joinerLoggingIn = state {
+                // The code has arrived; stop directing the user to the peer while local account work runs.
+                await onStateChange?(state)
+            }
 
         case .recoveryCodeDenied:
             commands = stateMachine.handle(.receivedRecoveryCodeDenied)
@@ -621,7 +647,7 @@ final class PairingV2Coordinator {
         }
     }
 
-    private func handleConfirmationResult() async throws {
+    private func handleConfirmationResult(onStateChange: ((PairingV2State) async -> Void)?) async throws {
         guard let confirmation = pendingConfirmation,
               let event = await confirmation.result,
               pendingConfirmation === confirmation else {
@@ -632,8 +658,11 @@ final class PairingV2Coordinator {
         let recoveryCode = pendingRecoveryCode
         pendingRecoveryCode = nil
         try await execute(stateMachine.handle(event))
+        if case .joinerWaitingForRecoveryCode = state {
+            recoveryCodeWaitDeadlineDate = now().addingTimeInterval(joinStatusDeadline)
+        }
         if let recoveryCode, !hasFinishedPairing {
-            try await handle(.recoveryCodeResponse(recoveryCode))
+            try await handle(.recoveryCodeResponse(recoveryCode), onStateChange: onStateChange)
         }
     }
 
@@ -746,6 +775,8 @@ final class PairingV2Coordinator {
         pendingConfirmationTask = nil
         pendingRecoveryCode = nil
         joinStatusDeadlineDate = nil
+        recoveryCodeWaitDeadlineDate = nil
+        hasRecoveryCodeWaitDeadlinePassed = false
     }
 
     private func negotiateProtocolVersion(with peerVersion: String) {

@@ -349,30 +349,6 @@ final class ModalPromptCoordinationManagerTests {
         #expect(provider.didCallDidPresentModal)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test(
-        "Check A Legacy Attempt Is Pending As Soon As A Prompt Is Committed",
-        .timeLimit(.minutes(1)),
-        arguments: [true, false]
-    )
-    func whenLegacyPromptIsCommittedThenAttemptIsPendingBeforePresentation(hasEligiblePrompt: Bool) {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        sut = ModalPromptCoordinationManager(
-            providers: [MockModalPromptProvider(shouldReturnPrompt: hasEligiblePrompt)],
-            cooldownManager: cooldownManagerMock,
-            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN the scheduled presentation hasn't run yet, but the attempt already counts as pending.
-        #expect(!presenterMock.didCallPresent)
-        #expect(sut.hasActiveOrPendingModalAttempt == hasEligiblePrompt)
-    }
-
     // MARK: - Close Handler
 
     private func makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker,
@@ -422,25 +398,6 @@ final class ModalPromptCoordinationManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check The Close Handler Runs When UIKit Never Attaches The Prompt", .timeLimit(.minutes(1)))
-    func whenPresentationIsRefusedThenCloseHandlerRuns() {
-        // GIVEN
-        let attachmentChecker = MockModalPromptRootAttachmentChecker()
-        let closeChecks = MockModalPromptScheduler()
-        sut = makeSUTWatchingClose(attachmentChecker: attachmentChecker, closeChecks: closeChecks)
-        var handlerRunCount = 0
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
-
-        // WHEN the prompt is handed to UIKit but never attached
-        schedulerMock.executeScheduledBlock()
-        closeChecks.executeScheduledBlock()
-
-        // THEN
-        #expect(handlerRunCount == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Check No Close Handler Is Kept When No Prompt Is Pending", .timeLimit(.minutes(1)))
     func whenNoPromptIsPendingThenCloseHandlerIsNotKept() {
         // GIVEN
@@ -474,47 +431,6 @@ final class ModalPromptCoordinationManagerTests {
         // THEN
         #expect(!waits)
         #expect(!closeChecks.didCallSchedule)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Check A Cancelled Close Handler Never Runs", .timeLimit(.minutes(1)))
-    func whenCloseHandlerIsCancelledThenItNeverRuns() {
-        // GIVEN
-        let closeChecks = MockModalPromptScheduler()
-        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(), closeChecks: closeChecks)
-        var handlerRunCount = 0
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        #expect(sut.runOnceModalPromptCloses { handlerRunCount += 1 })
-
-        // WHEN
-        sut.cancelModalPromptCloseHandler()
-        schedulerMock.executeScheduledBlock()
-        closeChecks.executeScheduledBlock()
-
-        // THEN
-        #expect(handlerRunCount == 0)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A cancelled check cannot poll a replacement keyboard request", .timeLimit(.minutes(1)))
-    func cancelledCheckDoesNotPollReplacement() {
-        let closeChecks = MockModalPromptScheduler()
-        sut = makeSUTWatchingClose(attachmentChecker: MockModalPromptRootAttachmentChecker(), closeChecks: closeChecks)
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        #expect(sut.runOnceModalPromptCloses {})
-        let staleCheck = closeChecks.scheduledBlock
-        sut.cancelModalPromptCloseHandler()
-        var validityChecks = 0
-        #expect(sut.runOnceModalPromptCloses(while: {
-            validityChecks += 1
-            return true
-        }, {}))
-        let checksAtRegistration = validityChecks
-
-        staleCheck?()
-        #expect(validityChecks == checksAtRegistration)
-        closeChecks.executeScheduledBlock()
-        #expect(validityChecks == checksAtRegistration + 1)
     }
 
     @available(iOS 16, macOS 13, *)

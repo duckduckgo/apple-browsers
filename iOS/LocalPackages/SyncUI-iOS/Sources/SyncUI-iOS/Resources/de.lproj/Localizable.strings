@@ -214,9 +214,6 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Beispielcode:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Öffne dein anderes";
-
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Sync-Code einfügen";
 
@@ -271,7 +268,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Verwende diesen Code, um deine Daten wiederherzustellen, wenn du den Zugriff auf dieses Gerät verlierst. Sync & Backup-Daten können nach 18 Monaten Inaktivität nicht wiederhergestellt werden. [Mehr erfahren](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-App";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +289,11 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Schließen";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo für Desktop";
 
 /* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "QR-Code zum Synchronisieren scannen.";
-
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Öffnen";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Ich bin bereit zum Scannen";
@@ -321,9 +315,6 @@
 
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Textcode kopieren";
-
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "Öffne auf einem anderen Gerät";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Gehe zu **Sync & Backup** › **Mit einem anderen Gerät synchronisieren** und scanne diesen Code:";

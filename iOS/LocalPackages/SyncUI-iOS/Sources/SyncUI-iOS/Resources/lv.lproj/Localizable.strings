@@ -214,9 +214,6 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Koda piemērs:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Atver savā citā";
-
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Ielīmēt sinhronizācijas kodu";
 
@@ -271,7 +268,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Izmanto šo kodu, lai atjaunotu datus, ja esi zaudējis piekļuvi šai ierīcei. Sync & Backup datus nevar atgūt pēc 18 mēnešu neaktivitātes. [Uzzināt vairāk](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo lietotne";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +289,11 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Aizvērt";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo datoram";
 
 /* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "Skenē kvadrātkodu, lai sinhronizētu.";
-
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Atvērt";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Esmu gatavs skenēt";
@@ -321,9 +315,6 @@
 
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Kopēt teksta kodu";
-
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "Citā ierīcē atver";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Dodies uz **Sync & Backup** › **Sinhronizēt ar citu ierīci** un skenē šo kodu:";

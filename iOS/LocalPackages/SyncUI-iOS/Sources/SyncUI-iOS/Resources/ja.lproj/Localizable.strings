@@ -214,9 +214,6 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "コード例：";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "もう一方のデバイスを開く";
-
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "同期コードを貼り付け";
 
@@ -271,7 +268,7 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "このデバイスへのアクセスを失った場合は、このコードを使用してデータを復元してください。Sync & Backupのデータは18か月間アクティビティがないと復元できません。[詳細はこちら](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGoアプリ";
 
 /* Status text when connecting devices to sync */
@@ -292,14 +289,11 @@
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "閉じる";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "デスクトップ版DuckDuckGo";
 
 /* Heading overlaid on the camera on the scan-QR tab of the scan screen */
 "sync.simplified.scan.v2.qr.heading" = "同期するためにQRコードをスキャンします。";
-
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "開く";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "スキャンの準備完了";
@@ -321,9 +315,6 @@
 
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "テキストコードをコピー";
-
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "別のデバイスで、開く";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "**「Sync & Backup」** › **「別のデバイスと同期」** に移動して、このコードをスキャン：";

@@ -175,7 +175,7 @@ extension Preferences {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 0) {
                                     Text(UserText.openANew)
-                                    Picker("", selection: $startupModel.startupWindowType) {
+                                    Picker("" as String, selection: $startupModel.startupWindowType) {
                                         ForEach(StartupWindowType.allCases, id: \.self) { windowType in
                                             Text(windowType.displayName).tag(windowType)
                                                 .accessibilityIdentifier(startupWindowTypeAccessibilityIdentifier(windowType))
@@ -408,7 +408,7 @@ struct CustomHomePageSheet: View {
                 HStack {
                     Text(UserText.addressLabel)
                         .padding(.trailing, 10)
-                    TextField("", text: $url)
+                    TextField("" as String, text: $url)
                         .frame(width: 250)
                         .onChange(of: url) { newValue in
                             validateURL(newValue)

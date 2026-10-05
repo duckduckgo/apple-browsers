@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9D3F46E26B6DDE5C13CA6354 /* NSLocalizedString+Bundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */; };
+		6C13A19AF741074B72DC92DC /* NSLocalizedString+Bundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */; };
 		00D8FF2311AEAC102CCB6061 /* BookmarksBarMenuWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E98C31C7349D34C0C8A569A /* BookmarksBarMenuWindow.swift */; };
 		021EA0802BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
 		021EA0812BD2A9D500772C9A /* TabsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */; };
@@ -1442,7 +1444,6 @@
 		37EE55E52D5F197300D53C7C /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C12D5F197300D53C7C /* trackers-1.json */; };
 		37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C22D5F197300D53C7C /* trackers-2.json */; };
 		37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C32D5F197300D53C7C /* trackers-3.json */; };
-		37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */; };
 		37EE55E92D5F197300D53C7C /* BadgeAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AA2D5F197300D53C7C /* BadgeAnimationView.swift */; };
 		37EE55EA2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AB2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift */; };
 		37EE55EB2D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AD2D5F197300D53C7C /* BadgeNotificationContainerView.swift */; };
@@ -1483,7 +1484,6 @@
 		37EE560E2D5F197300D53C7C /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C12D5F197300D53C7C /* trackers-1.json */; };
 		37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C22D5F197300D53C7C /* trackers-2.json */; };
 		37EE56102D5F197300D53C7C /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55C32D5F197300D53C7C /* trackers-3.json */; };
-		37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */; };
 		37EE56122D5F197300D53C7C /* BadgeAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AA2D5F197300D53C7C /* BadgeAnimationView.swift */; };
 		37EE56132D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AB2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift */; };
 		37EE56142D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE55AD2D5F197300D53C7C /* BadgeNotificationContainerView.swift */; };
@@ -5075,6 +5075,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSLocalizedString+Bundle.swift"; sourceTree = "<group>"; };
 		021EA07F2BD2A9D500772C9A /* TabsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferences.swift; sourceTree = "<group>"; };
 		021EA0822BD6DF1B00772C9A /* TabsPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsPreferencesTests.swift; sourceTree = "<group>"; };
 		0230C0A2272080090018F728 /* KeyedCodingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedCodingExtension.swift; sourceTree = "<group>"; };
@@ -5615,7 +5616,6 @@
 		37EE55CC2D5F197300D53C7C /* MenuItemWithNotificationDot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemWithNotificationDot.swift; sourceTree = "<group>"; };
 		37EE55CD2D5F197300D53C7C /* MoreOptionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenu.swift; sourceTree = "<group>"; };
 		37EE55CE2D5F197300D53C7C /* MoreOptionsMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuButton.swift; sourceTree = "<group>"; };
-		37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NavigationBar.storyboard; sourceTree = "<group>"; };
 		37EE55D02D5F197300D53C7C /* NavigationBarPopovers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarPopovers.swift; sourceTree = "<group>"; };
 		37EE55D12D5F197300D53C7C /* NavigationBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarViewController.swift; sourceTree = "<group>"; };
 		37EE55D22D5F197300D53C7C /* NavigationButtonMenuDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationButtonMenuDelegate.swift; sourceTree = "<group>"; };
@@ -5846,7 +5846,6 @@
 		4BE41A5D28446EAD00760399 /* BookmarksBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarViewModel.swift; sourceTree = "<group>"; };
 		4BE4D0BA2D8D2DE400D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
 		FA57C0DE0000000000000017 /* HangMetrics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HangMetrics; path = ../SharedPackages/HangMetrics; sourceTree = SOURCE_ROOT; };
-		4BE53369286912D40019DBFD /* BookmarksBarCollectionViewItem.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BookmarksBarCollectionViewItem.xib; sourceTree = "<group>"; };
 		4BE5336A286912D40019DBFD /* BookmarksBarCollectionViewItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCollectionViewItem.swift; sourceTree = "<group>"; };
 		4BE5336D286915A10019DBFD /* BookmarksBarCenterAlignedLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarCenterAlignedLayout.swift; sourceTree = "<group>"; };
 		4BE53373286E39F10019DBFD /* ChromiumKeychainPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumKeychainPrompt.swift; sourceTree = "<group>"; };
@@ -9059,7 +9058,6 @@
 				37EE55CC2D5F197300D53C7C /* MenuItemWithNotificationDot.swift */,
 				37EE55CD2D5F197300D53C7C /* MoreOptionsMenu.swift */,
 				37EE55CE2D5F197300D53C7C /* MoreOptionsMenuButton.swift */,
-				37EE55CF2D5F197300D53C7C /* NavigationBar.storyboard */,
 				37EE55D02D5F197300D53C7C /* NavigationBarPopovers.swift */,
 				37EE55D12D5F197300D53C7C /* NavigationBarViewController.swift */,
 				37EE55D22D5F197300D53C7C /* NavigationButtonMenuDelegate.swift */,
@@ -11690,6 +11688,7 @@
 		AA80EC52256BE33A007083E7 /* Localizables */ = {
 			isa = PBXGroup;
 			children = (
+				47C7A90B215905B4CB313F2A /* NSLocalizedString+Bundle.swift */,
 				AA80EC53256BE3BC007083E7 /* UserText.swift */,
 				4B4D60D22A0C84F700BCD287 /* UserText+NetworkProtection.swift */,
 				1EC7114F2D033D200009EB5C /* UserText+NetworkProtection+Shared.swift */,
@@ -14936,7 +14935,6 @@
 				37EE560E2D5F197300D53C7C /* trackers-1.json in Resources */,
 				37EE560F2D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE56102D5F197300D53C7C /* trackers-3.json in Resources */,
-				37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				3706FCC3293F65D500E42796 /* userscript.js in Resources */,
 				B5165047300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165048300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
@@ -15184,7 +15182,6 @@
 				37EE55E52D5F197300D53C7C /* trackers-1.json in Resources */,
 				37EE55E62D5F197300D53C7C /* trackers-2.json in Resources */,
 				37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */,
-				37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				B5165045300FACD7007AE203 /* upsell_devices_reveal.json in Resources */,
 				B5165046300FACD7007AE203 /* upsell_devices_loop.json in Resources */,
 				B31055C627A1BA1D001AC618 /* userscript.js in Resources */,
@@ -15595,6 +15592,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D3F46E26B6DDE5C13CA6354 /* NSLocalizedString+Bundle.swift in Sources */,
 				FB07BAD2000000000000020A /* PromptBarPixel.swift in Sources */,
 				FB07BAD20000000000000209 /* PromptBarContentFactory.swift in Sources */,
 				FB07BAD20000000000000208 /* PromptBarPixelHandler.swift in Sources */,
@@ -17999,6 +17997,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6C13A19AF741074B72DC92DC /* NSLocalizedString+Bundle.swift in Sources */,
 				FB07BAD2000000000000030A /* PromptBarPixel.swift in Sources */,
 				FB07BAD20000000000000309 /* PromptBarContentFactory.swift in Sources */,
 				FB07BAD20000000000000308 /* PromptBarPixelHandler.swift in Sources */,

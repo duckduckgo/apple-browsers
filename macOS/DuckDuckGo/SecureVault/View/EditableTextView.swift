@@ -254,7 +254,7 @@ extension EditableTextView {
                                  focusRingType: .exterior,
                                  isFocusedOnAppear: true)
 
-                TextField("", text: .constant(""))
+                TextField("" as String, text: .constant(""))
             }.padding(EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20))
         }
 

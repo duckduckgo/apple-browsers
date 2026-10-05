@@ -85,6 +85,9 @@ enum AIChatPixel: PixelKit.Event {
 
     // MARK: - Sidebar
 
+    /// Event Trigger: A tab reaches Duck.ai by navigating to it directly rather than from a Duck.ai surface.
+    case aiChatDuckAIDirectNavigation(via: AIChatDirectNavigationVia, duckAIEnabled: Bool, toggleEnabled: Bool)
+
     /// Event Trigger: User opens a tab sidebar
     case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?, minutesSinceSidebarHidden: Int?)
 
@@ -582,6 +585,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_settings_displayed"
         case .aiChatAddressBarButtonClicked:
             return "aichat_addressbar_button_clicked"
+        case .aiChatDuckAIDirectNavigation:
+            return "aichat_duck_ai_direct_navigation_macos"
         case .aiChatSidebarOpened:
             return "aichat_sidebar_opened"
         case .aiChatSidebarClosed:
@@ -1071,6 +1076,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["category": category, "reason": "non_attachable", "trigger": trigger]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
+        case .aiChatDuckAIDirectNavigation(let via, let duckAIEnabled, let toggleEnabled):
+            return ["via": via.rawValue, "duckai_enabled": String(duckAIEnabled), "toggle_enabled": String(toggleEnabled)]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
             var params = ["source": source.rawValue]
             if let shouldAutomaticallySendPageContext {
@@ -1122,6 +1129,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSettingsDisplayed,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatAddressBarButtonClicked,
+                .aiChatDuckAIDirectNavigation,
                 .aiChatSidebarOpened,
                 .aiChatSidebarClosed,
                 .aiChatSidebarExpanded,
@@ -1272,11 +1280,12 @@ enum AIChatPixel: PixelKit.Event {
         }
     }
 
-    // Native gated-row pixels omit the legacy platform prefix used by existing AI Chat pixels.
+    // Native gated-row pixels and new `_macos` pixels omit the legacy platform prefix used by existing AI Chat pixels.
     var namePrefix: PixelKitNamePrefix {
         switch self {
         case .aiChatAddressBarGatedRowClick,
-                .aiChatNtpGatedRowClick:
+                .aiChatNtpGatedRowClick,
+                .aiChatDuckAIDirectNavigation:
             return .none
         default:
             return .platformDefault
@@ -1290,6 +1299,24 @@ enum AIChatAddressBarAction: String, CaseIterable {
     case sidebar = "sidebar"
     case tab = "tab"
     case tabWithPrompt = "tab-with-prompt"
+}
+
+/// How a tab reached Duck.ai directly, as `aiChatDuckAIDirectNavigation` reports it.
+enum AIChatDirectNavigationVia: String, CaseIterable {
+    case typed, suggestion, bookmark, favorite, history, external, link
+
+    /// The chat's source when no Duck.ai surface stamped it.
+    var conversationSource: AIChatConversationSource {
+        switch self {
+        case .typed: .directTyped
+        case .suggestion: .directSuggestion
+        case .bookmark: .directBookmark
+        case .favorite: .directFavorite
+        case .history: .directHistory
+        case .external: .directExternal
+        case .link: .directLink
+        }
+    }
 }
 
 /// Source of AI Chat sidebar open action

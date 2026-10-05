@@ -234,13 +234,13 @@ final class WebViewTests: XCTestCase {
         XCTAssertTrue(userContentController.userScripts.isEmpty)
     }
 
-    func testWhenWebExtensionPageWebViewIsDeallocatedThenSharedUserScriptsAreKept() {
+    func testWhenWebViewSharingUserScriptsIsDeallocatedThenUserScriptsAreKept() {
         let userContentController = makeUserContentControllerWithScript()
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = userContentController
 
         autoreleasepool {
-            _ = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger(), isWebExtensionPage: true)
+            _ = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger(), sharesUserScripts: true)
         }
 
         XCTAssertEqual(userContentController.userScripts.count, 1)

@@ -225,6 +225,7 @@ final class WebExtensionSubMenu: NSMenu {
 
         buildItems {
             NSMenuItem(title: "Open Folder in Finder", action: #selector(openFolderInFinder), target: self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
     }

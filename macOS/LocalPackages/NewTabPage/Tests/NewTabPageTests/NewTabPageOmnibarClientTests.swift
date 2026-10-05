@@ -939,8 +939,9 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     @MainActor
     func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
-        let promo = NewTabPageDataModel.OmnibarLauncherPromo(kind: .promo, message: "Open Duck.ai with {shortcut}",
-                                                             shortcut: "⌥ Space", ctaLabel: "Try Now", dismissible: true)
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately outside the browser",
+                                                             secondaryText: " • Add Duck.ai to your menu bar",
+                                                             ctaLabel: "Try Now", dismissible: true)
         configProvider.launcherPromoResult = promo
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
@@ -949,26 +950,24 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
-    func testLauncherPromoMessagesForwardTheKind() async throws {
-        let action = NewTabPageDataModel.OmnibarLauncherPromoAction(kind: .shortcutNudge)
+    func testLauncherPromoMessagesAreForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo)
 
-        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown, parameters: action)
-        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta, parameters: action)
-        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo, parameters: action)
-
-        XCTAssertEqual(configProvider.launcherPromoShownKinds, [.shortcutNudge])
-        XCTAssertEqual(configProvider.selectLauncherPromoCtaKinds, [.shortcutNudge])
-        XCTAssertEqual(configProvider.dismissLauncherPromoKinds, [.shortcutNudge])
+        XCTAssertEqual(configProvider.launcherPromoShownCallCount, 1)
+        XCTAssertEqual(configProvider.selectLauncherPromoCtaCallCount, 1)
+        XCTAssertEqual(configProvider.dismissLauncherPromoCallCount, 1)
     }
 
     @MainActor
     func testSubmissionPastTheLauncherPromoIsForwarded() async throws {
         var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
-        action.launcherPromoKind = "promo"
+        action.launcherPromoVisible = true
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
-        XCTAssertEqual(configProvider.launcherPromoIgnoredKinds, [.promo])
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 1)
     }
 
     @MainActor
@@ -977,27 +976,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
-        XCTAssertTrue(configProvider.launcherPromoIgnoredKinds.isEmpty)
-    }
-
-    @MainActor
-    func testSubmissionWithAnUnknownLauncherPromoKindStillSubmits() async throws {
-        let submitted = expectation(description: "submitChat forwarded")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, _, _, _ in submitted.fulfill() }
-        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
-        action.launcherPromoKind = "banner"
-
-        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
-
-        await fulfillment(of: [submitted], timeout: 1)
-        XCTAssertTrue(configProvider.launcherPromoIgnoredKinds.isEmpty)
-    }
-
-    @MainActor
-    func testWhenTheLauncherPromoKindIsUnrecognisedThenNothingIsForwarded() async throws {
-        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta, parameters: ["kind": "banner"])
-
-        XCTAssertTrue(configProvider.selectLauncherPromoCtaKinds.isEmpty)
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
     }
 
     @MainActor

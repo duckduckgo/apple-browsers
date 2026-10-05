@@ -348,8 +348,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             pageContexts: action.pageContext,
             files: action.files
         )
-        if let kind = action.launcherPromoKind.flatMap(NewTabPageDataModel.OmnibarLauncherPromoKind.init(rawValue:)) {
-            configProvider.launcherPromoIgnored(kind: kind)
+        if action.launcherPromoVisible == true {
+            configProvider.launcherPromoIgnored()
         }
         return nil
     }
@@ -431,29 +431,20 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func launcherPromoShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let action: NewTabPageDataModel.OmnibarLauncherPromoAction = DecodableHelper.decode(from: params) else {
-            return nil
-        }
-        configProvider.launcherPromoShown(kind: action.kind)
+        configProvider.launcherPromoShown()
         return nil
     }
 
     /// The provider changes launcher settings or the dismissal, which re-pushes the config through `launcherPromoPublisher`.
     @MainActor
     private func selectLauncherPromoCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let action: NewTabPageDataModel.OmnibarLauncherPromoAction = DecodableHelper.decode(from: params) else {
-            return nil
-        }
-        configProvider.selectLauncherPromoCta(kind: action.kind)
+        configProvider.selectLauncherPromoCta()
         return nil
     }
 
     @MainActor
     private func dismissLauncherPromo(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let action: NewTabPageDataModel.OmnibarLauncherPromoAction = DecodableHelper.decode(from: params) else {
-            return nil
-        }
-        configProvider.dismissLauncherPromo(kind: action.kind)
+        configProvider.dismissLauncherPromo()
         return nil
     }
 

@@ -100,23 +100,23 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// open NTP stops offering the disclaimer.
     var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> { get }
 
-    /// Duck.ai launcher discovery state; `nil` shows nothing. Resolved after `usageLimits()`, which takes the drawer first.
+    /// Duck.ai launcher promo; `nil` shows nothing. The page ranks it below every other drawer notice.
     @MainActor
     func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
 
-    /// The page made `kind` visible.
+    /// The page revealed the drawer.
     @MainActor
-    func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+    func launcherPromoShown()
 
     @MainActor
-    func selectLauncherPromoCta(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+    func selectLauncherPromoCta()
 
     @MainActor
-    func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+    func dismissLauncherPromo()
 
-    /// A prompt went out while the `kind` drawer was on screen, without the user acting on it.
+    /// A prompt went out while the drawer was on screen, without the user acting on it.
     @MainActor
-    func launcherPromoIgnored(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
+    func launcherPromoIgnored()
 
     /// Fires when anything `launcherPromo()` reads changes: launcher settings, chat count, dismissal.
     var launcherPromoPublisher: AnyPublisher<Void, Never> { get }

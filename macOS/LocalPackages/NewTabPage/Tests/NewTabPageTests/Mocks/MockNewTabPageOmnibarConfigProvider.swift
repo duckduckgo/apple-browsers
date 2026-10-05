@@ -134,28 +134,28 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         launcherPromoResult
     }
 
-    private(set) var launcherPromoShownKinds: [NewTabPageDataModel.OmnibarLauncherPromoKind] = []
+    private(set) var launcherPromoShownCallCount = 0
     @MainActor
-    func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
-        launcherPromoShownKinds.append(kind)
+    func launcherPromoShown() {
+        launcherPromoShownCallCount += 1
     }
 
-    private(set) var selectLauncherPromoCtaKinds: [NewTabPageDataModel.OmnibarLauncherPromoKind] = []
+    private(set) var selectLauncherPromoCtaCallCount = 0
     @MainActor
-    func selectLauncherPromoCta(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
-        selectLauncherPromoCtaKinds.append(kind)
+    func selectLauncherPromoCta() {
+        selectLauncherPromoCtaCallCount += 1
     }
 
-    private(set) var dismissLauncherPromoKinds: [NewTabPageDataModel.OmnibarLauncherPromoKind] = []
+    private(set) var dismissLauncherPromoCallCount = 0
     @MainActor
-    func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
-        dismissLauncherPromoKinds.append(kind)
+    func dismissLauncherPromo() {
+        dismissLauncherPromoCallCount += 1
     }
 
-    private(set) var launcherPromoIgnoredKinds: [NewTabPageDataModel.OmnibarLauncherPromoKind] = []
+    private(set) var launcherPromoIgnoredCallCount = 0
     @MainActor
-    func launcherPromoIgnored(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
-        launcherPromoIgnoredKinds.append(kind)
+    func launcherPromoIgnored() {
+        launcherPromoIgnoredCallCount += 1
     }
 
     let launcherPromoSubject = PassthroughSubject<Void, Never>()

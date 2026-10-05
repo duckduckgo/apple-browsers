@@ -711,9 +711,6 @@ struct UserText {
     static let duckAiLauncherPromoMessage = NotLocalizedString("duckai.launcher-promo.message", value: "Chat privately outside the browser", comment: "Emphasized title of the New Tab Page Duck.ai promo inviting the user to turn on the Duck.ai launcher")
     static let duckAiLauncherPromoSecondaryText = NotLocalizedString("duckai.launcher-promo.secondary", value: "Add Duck.ai to your menu bar", comment: "Text after the title of the New Tab Page Duck.ai launcher promo")
     static let duckAiLauncherPromoTryNow = NotLocalizedString("duckai.launcher-promo.try-now", value: "Try Now", comment: "Button in the New Tab Page Duck.ai launcher promo that turns the launcher on")
-    static let duckAiLauncherShortcutHintPlaceholder = NotLocalizedString("duckai.launcher-promo.shortcut-hint", value: "Ask anything privately · %@ opens Duck.ai anywhere", comment: "Placeholder of the New Tab Page Duck.ai input once the launcher is on. %@ is the launcher keyboard shortcut, such as ⌥ Space")
-    static let duckAiLauncherShortcutNudgeMessage = NotLocalizedString("duckai.launcher-promo.shortcut-nudge", value: "Turn on {shortcut} to open Duck.ai from anywhere on your Mac", comment: "New Tab Page Duck.ai message shown when the launcher is on but its keyboard shortcut is off. {shortcut} is replaced by the keyboard shortcut, such as ⌥ Space, and must stay untranslated")
-    static let duckAiLauncherShortcutNudgeTurnOn = NotLocalizedString("duckai.launcher-promo.shortcut-nudge.turn-on", value: "Turn On", comment: "Button in the New Tab Page Duck.ai message that turns the launcher keyboard shortcut on")
 
     // Duck.ai main menu
     static let aiChatMenuOpenDuckAI = NSLocalizedString("duckai.menu.open-duck-ai", value: "Open Duck.ai", comment: "Duck.ai menu item to open Duck.ai")

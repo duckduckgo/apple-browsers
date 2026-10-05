@@ -52,53 +52,6 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Eligibility
-
-    private func kind(isFeatureOn: Bool = true,
-                      shortcut: Bool = false,
-                      menuBarIcon: Bool = false,
-                      chats: Int = 3,
-                      dismissed: Set<DuckAiLauncherPromoKind> = []) -> DuckAiLauncherPromoKind? {
-        DuckAiLauncherPromoEligibility.kind(isFeatureOn: isFeatureOn,
-                                            isShortcutEnabled: shortcut,
-                                            isMenuBarIconVisible: menuBarIcon,
-                                            chatCount: chats,
-                                            dismissedKinds: dismissed)
-    }
-
-    func testWhenFlagIsOffThenNothingShows() {
-        XCTAssertNil(kind(isFeatureOn: false))
-        XCTAssertNil(kind(isFeatureOn: false, shortcut: true))
-        XCTAssertNil(kind(isFeatureOn: false, menuBarIcon: true))
-    }
-
-    func testWhenLauncherIsOffThenPromoNeedsThreeChats() {
-        XCTAssertNil(kind(chats: 0))
-        XCTAssertNil(kind(chats: 2))
-        XCTAssertEqual(kind(chats: 3), .promo)
-        XCTAssertEqual(kind(chats: 40), .promo)
-    }
-
-    func testWhenPromoIsDismissedThenItNeverComesBack() {
-        XCTAssertNil(kind(chats: 40, dismissed: [.promo]))
-    }
-
-    func testWhenShortcutIsOnThenHintShowsWhateverElseIsTrue() {
-        XCTAssertEqual(kind(shortcut: true), .shortcutHint)
-        XCTAssertEqual(kind(shortcut: true, menuBarIcon: true, chats: 0, dismissed: [.promo, .shortcutNudge]), .shortcutHint)
-    }
-
-    func testWhenOnlyMenuBarIconIsOnThenNudgeShowsWithoutNeedingChatsOrPromo() {
-        XCTAssertEqual(kind(menuBarIcon: true, chats: 0), .shortcutNudge)
-        XCTAssertEqual(kind(menuBarIcon: true, dismissed: [.promo]), .shortcutNudge)
-    }
-
-    func testWhenNudgeIsDismissedThenItNeverComesBack() {
-        XCTAssertNil(kind(menuBarIcon: true, dismissed: [.shortcutNudge]))
-    }
-
-    // MARK: - Promo
-
     @MainActor
     private func makePromo() -> DuckAiLauncherPromo {
         let promo = DuckAiLauncherPromo(featureFlagger: featureFlagger,
@@ -111,90 +64,89 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         return promo
     }
 
+    // MARK: - Eligibility
+
+    private func isEligible(isFeatureOn: Bool = true,
+                            shortcut: Bool = false,
+                            menuBarIcon: Bool = false,
+                            chats: Int = 3,
+                            dismissed: Bool = false) -> Bool {
+        DuckAiLauncherPromoEligibility.isEligible(isFeatureOn: isFeatureOn,
+                                                  isShortcutEnabled: shortcut,
+                                                  isMenuBarIconVisible: menuBarIcon,
+                                                  chatCount: chats,
+                                                  isDismissed: dismissed)
+    }
+
+    func testEligibleWithFlagOnLauncherOffThreeChatsAndNotDismissed() {
+        XCTAssertTrue(isEligible())
+        XCTAssertTrue(isEligible(chats: 40))
+    }
+
+    func testNotEligibleWhenAnyConditionFails() {
+        XCTAssertFalse(isEligible(isFeatureOn: false))
+        XCTAssertFalse(isEligible(chats: 2))
+        XCTAssertFalse(isEligible(dismissed: true))
+        XCTAssertFalse(isEligible(shortcut: true))
+        XCTAssertFalse(isEligible(menuBarIcon: true))
+    }
+
+    // MARK: - Promo
+
     @MainActor
-    func testPromoCarriesCopyAndCanBeDismissed() {
+    func testPresentationCarriesTheCopy() {
         let presentation = makePromo().presentation()
 
-        XCTAssertEqual(presentation?.kind, .promo)
         XCTAssertEqual(presentation?.message, UserText.duckAiLauncherPromoMessage)
         XCTAssertEqual(presentation?.secondaryText, " • " + UserText.duckAiLauncherPromoSecondaryText)
         XCTAssertEqual(presentation?.ctaLabel, UserText.duckAiLauncherPromoTryNow)
         XCTAssertEqual(presentation?.dismissible, true)
-        XCTAssertNil(presentation?.placeholder)
     }
 
     @MainActor
-    func testNudgeCarriesTheUsersShortcut() {
-        preferences.isMenuBarIconVisible = true
-        preferences.keyboardShortcut = .defaultShortcut
-
-        let presentation = makePromo().presentation()
-
-        XCTAssertEqual(presentation?.kind, .shortcutNudge)
-        XCTAssertEqual(presentation?.shortcut, "⌥ \(UserText.promptBarShortcutSpaceKey)")
-        XCTAssertTrue(presentation?.message?.contains("{shortcut}") == true)
-    }
-
-    @MainActor
-    func testWhenTryNowThenShortcutAndMenuBarIconTurnOnSettingsOpensAndHintFollows() {
+    func testTryNowTurnsBothEntryPointsOnAndOpensSettings() {
         let promo = makePromo()
 
-        promo.selectCta(kind: .promo)
+        promo.tryNow()
 
         XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
         XCTAssertTrue(preferences.isMenuBarIconVisible)
         XCTAssertEqual(openSettingsCount, 1)
-        XCTAssertEqual(promo.presentation()?.kind, .shortcutHint)
-        XCTAssertNotNil(promo.presentation()?.placeholder)
-    }
-
-    @MainActor
-    func testWhenTryNowWithMenuBarIconAlreadyOnThenOnlyTheShortcutIsMissing() {
-        preferences.isMenuBarIconVisible = true
-        let promo = makePromo()
-        XCTAssertEqual(promo.kind, .shortcutNudge)
-
-        promo.selectCta(kind: .shortcutNudge)
-
-        XCTAssertTrue(preferences.isKeyboardShortcutEnabled)
-        XCTAssertTrue(preferences.isMenuBarIconVisible)
-        XCTAssertEqual(openSettingsCount, 1)
-        XCTAssertEqual(promo.kind, .shortcutHint)
+        XCTAssertNil(promo.presentation())
     }
 
     @MainActor
     func testDismissalPersistsAcrossInstances() {
-        makePromo().dismiss(kind: .promo)
+        makePromo().dismiss()
 
         XCTAssertNil(makePromo().presentation())
     }
 
     @MainActor
-    func testResetDismissalsBringsThePromoBack() {
+    func testResetDismissalBringsThePromoBackAndPublishes() {
         let promo = makePromo()
-        promo.dismiss(kind: .promo)
-
+        promo.dismiss()
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
 
-        DuckAiLauncherPromo.resetDismissals(in: keyValueStore)
+        DuckAiLauncherPromo.resetDismissal(in: keyValueStore)
 
         wait(for: [changed], timeout: 1)
-        XCTAssertEqual(promo.kind, .promo)
+        XCTAssertNotNil(promo.presentation())
     }
 
     @MainActor
     func testWhenChatCountCrossesThresholdThenChangeIsPublished() {
         chatCount.send(2)
         let promo = makePromo()
-        XCTAssertNil(promo.kind)
+        XCTAssertNil(promo.presentation())
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
 
         chatCount.send(3)
 
         wait(for: [changed], timeout: 1)
-        XCTAssertEqual(promo.kind, .promo)
+        XCTAssertNotNil(promo.presentation())
     }
 
     @MainActor
@@ -203,15 +155,8 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
 
-        promo.dismiss(kind: .promo)
+        promo.dismiss()
 
         wait(for: [changed], timeout: 1)
-    }
-
-    @MainActor
-    func testWhenPromptIsSentPastThePromoThenItNeverComesBack() {
-        makePromo().ignore(kind: .promo)
-
-        XCTAssertNil(makePromo().presentation())
     }
 }

@@ -23,8 +23,6 @@ import NewTabPage
 import Persistence
 import PrivacyConfig
 
-typealias DuckAiLauncherPromoKind = NewTabPageDataModel.OmnibarLauncherPromoKind
-
 extension Notification.Name {
     static let duckAiLauncherPromoDismissalsDidReset = Notification.Name("duckAiLauncherPromoDismissalsDidReset")
 }
@@ -33,23 +31,20 @@ enum DuckAiLauncherPromoEligibility {
 
     static let minimumChatCount = 3
 
-    /// The promo and the nudge are drawers, dismissed separately; the hint is a placeholder and never dismissed.
-    static func kind(isFeatureOn: Bool,
-                     isShortcutEnabled: Bool,
-                     isMenuBarIconVisible: Bool,
-                     chatCount: Int,
-                     dismissedKinds: Set<DuckAiLauncherPromoKind>) -> DuckAiLauncherPromoKind? {
-        guard isFeatureOn else { return nil }
-        if isShortcutEnabled { return .shortcutHint }
-        if isMenuBarIconVisible { return dismissedKinds.contains(.shortcutNudge) ? nil : .shortcutNudge }
-        guard chatCount >= minimumChatCount, !dismissedKinds.contains(.promo) else { return nil }
-        return .promo
+    static func isEligible(isFeatureOn: Bool,
+                           isShortcutEnabled: Bool,
+                           isMenuBarIconVisible: Bool,
+                           chatCount: Int,
+                           isDismissed: Bool) -> Bool {
+        isFeatureOn && !isShortcutEnabled && !isMenuBarIconVisible && chatCount >= minimumChatCount && !isDismissed
     }
 }
 
 /// Promotes the Duck.ai launcher (the Prompt Bar) on the New Tab Page. The page renders whatever
 /// `presentation()` returns, so eligibility, copy and the CTA all live here. Main thread only.
 final class DuckAiLauncherPromo {
+
+    private static let dismissedKey = "duckai.launcher-promo.dismissed"
 
     private let featureFlagger: FeatureFlagger
     private let preferences: PromptBarPreferences
@@ -74,28 +69,20 @@ final class DuckAiLauncherPromo {
             .sink { [weak self] in self?.chatCount = $0 }
     }
 
-    var kind: DuckAiLauncherPromoKind? {
-        DuckAiLauncherPromoEligibility.kind(isFeatureOn: featureFlagger.isFeatureOn(.aiChatLauncherPromo),
-                                            isShortcutEnabled: preferences.isKeyboardShortcutEnabled,
-                                            isMenuBarIconVisible: preferences.isMenuBarIconVisible,
-                                            chatCount: chatCount,
-                                            dismissedKinds: dismissedKinds)
+    var isEligible: Bool {
+        DuckAiLauncherPromoEligibility.isEligible(isFeatureOn: featureFlagger.isFeatureOn(.aiChatLauncherPromo),
+                                                  isShortcutEnabled: preferences.isKeyboardShortcutEnabled,
+                                                  isMenuBarIconVisible: preferences.isMenuBarIconVisible,
+                                                  chatCount: chatCount,
+                                                  isDismissed: (try? keyValueStore.object(forKey: Self.dismissedKey)) as? Bool == true)
     }
 
     func presentation() -> NewTabPageDataModel.OmnibarLauncherPromo? {
-        guard let kind else { return nil }
-        let shortcut = preferences.keyboardShortcut.promoDisplayString
-        switch kind {
-        case .promo:
-            return .init(kind: kind, message: UserText.duckAiLauncherPromoMessage,
-                         secondaryText: " • " + UserText.duckAiLauncherPromoSecondaryText,
-                         ctaLabel: UserText.duckAiLauncherPromoTryNow, dismissible: true)
-        case .shortcutHint:
-            return .init(kind: kind, placeholder: String(format: UserText.duckAiLauncherShortcutHintPlaceholder, shortcut))
-        case .shortcutNudge:
-            return .init(kind: kind, message: UserText.duckAiLauncherShortcutNudgeMessage, shortcut: shortcut,
-                         ctaLabel: UserText.duckAiLauncherShortcutNudgeTurnOn, dismissible: true)
-        }
+        guard isEligible else { return nil }
+        return .init(message: UserText.duckAiLauncherPromoMessage,
+                     secondaryText: " • " + UserText.duckAiLauncherPromoSecondaryText,
+                     ctaLabel: UserText.duckAiLauncherPromoTryNow,
+                     dismissible: true)
     }
 
     /// `@Published` emits before the value lands, so reads hop to the next run loop.
@@ -103,7 +90,6 @@ final class DuckAiLauncherPromo {
         Publishers.MergeMany(
             preferences.$isKeyboardShortcutEnabled.map { _ in () }.eraseToAnyPublisher(),
             preferences.$isMenuBarIconVisible.map { _ in () }.eraseToAnyPublisher(),
-            preferences.$keyboardShortcut.map { _ in () }.eraseToAnyPublisher(),
             $chatCount.map { _ in () }.eraseToAnyPublisher(),
             featureFlagger.updatesPublisher,
             dismissalSubject.eraseToAnyPublisher(),
@@ -117,53 +103,23 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    /// The drawer is shown once: a prompt sent while it was on screen counts as a dismissal.
-    func ignore(kind: DuckAiLauncherPromoKind) {
-        dismiss(kind: kind)
-    }
-
-    /// Both CTAs end with the shortcut on, then show Settings so the user knows where to turn it off.
+    /// Turns on whichever entry point is off, then shows Settings so the user knows where to turn it off.
     @MainActor
-    func selectCta(kind: DuckAiLauncherPromoKind) {
-        switch kind {
-        case .promo:
-            preferences.isKeyboardShortcutEnabled = true
-            preferences.isMenuBarIconVisible = true
-        case .shortcutNudge:
-            preferences.isKeyboardShortcutEnabled = true
-        case .shortcutHint:
-            return
-        }
+    func tryNow() {
+        preferences.isKeyboardShortcutEnabled = true
+        preferences.isMenuBarIconVisible = true
         openSettings()
     }
 
-    func dismiss(kind: DuckAiLauncherPromoKind) {
-        try? keyValueStore.set(true, forKey: Self.dismissedKey(kind))
+    /// Covers the close button and a prompt sent past the drawer: either way it never shows again.
+    func dismiss() {
+        try? keyValueStore.set(true, forKey: Self.dismissedKey)
         dismissalSubject.send()
     }
 
     /// Debug only. Posts so open New Tab Pages re-read it: a new tab reuses the window's page, which never asks again.
-    static func resetDismissals(in keyValueStore: ThrowingKeyValueStoring) {
-        for kind in [DuckAiLauncherPromoKind.promo, .shortcutNudge] {
-            try? keyValueStore.removeObject(forKey: dismissedKey(kind))
-        }
+    static func resetDismissal(in keyValueStore: ThrowingKeyValueStoring) {
+        try? keyValueStore.removeObject(forKey: dismissedKey)
         NotificationCenter.default.post(name: .duckAiLauncherPromoDismissalsDidReset, object: nil)
-    }
-
-    private var dismissedKinds: Set<DuckAiLauncherPromoKind> {
-        Set([DuckAiLauncherPromoKind.promo, .shortcutNudge].filter {
-            (try? keyValueStore.object(forKey: Self.dismissedKey($0))) as? Bool == true
-        })
-    }
-
-    private static func dismissedKey(_ kind: DuckAiLauncherPromoKind) -> String {
-        "duckai.launcher-promo.dismissed.\(kind.rawValue)"
-    }
-}
-
-private extension PromptBarShortcut {
-    /// "⌥ Space": the modifiers stay together, the key stands apart.
-    var promoDisplayString: String {
-        modifierSymbols.joined() + " " + keyDisplayString
     }
 }

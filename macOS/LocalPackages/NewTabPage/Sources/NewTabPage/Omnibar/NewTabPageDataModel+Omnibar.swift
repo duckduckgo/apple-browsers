@@ -338,46 +338,19 @@ public extension NewTabPageDataModel {
 
     // MARK: - Launcher promo
 
-    enum OmnibarLauncherPromoKind: String, Codable {
-        case promo, shortcutHint, shortcutNudge
-    }
-
-    /// Native-resolved launcher discovery state. The page shows a drawer when `message` is set and
-    /// swaps the AI input placeholder when `placeholder` is set; it only echoes `kind` back.
+    /// Native-resolved launcher promo for the AI-mode drawer; the page renders what it gets.
     struct OmnibarLauncherPromo: Codable, Equatable {
-        let kind: OmnibarLauncherPromoKind
-        /// May contain one `{shortcut}` token, which the page renders as a key combination.
-        let message: String?
+        let message: String
         /// Shown after `message`, separator included.
         let secondaryText: String?
-        let shortcut: String?
         let ctaLabel: String?
         let dismissible: Bool?
-        let placeholder: String?
 
-        public init(kind: OmnibarLauncherPromoKind,
-                    message: String? = nil,
-                    secondaryText: String? = nil,
-                    shortcut: String? = nil,
-                    ctaLabel: String? = nil,
-                    dismissible: Bool? = nil,
-                    placeholder: String? = nil) {
-            self.kind = kind
+        public init(message: String, secondaryText: String? = nil, ctaLabel: String? = nil, dismissible: Bool? = nil) {
             self.message = message
             self.secondaryText = secondaryText
-            self.shortcut = shortcut
             self.ctaLabel = ctaLabel
             self.dismissible = dismissible
-            self.placeholder = placeholder
-        }
-    }
-
-    /// Payload of `omnibar_launcherPromoShown`, `omnibar_selectLauncherPromoCta` and `omnibar_dismissLauncherPromo`.
-    struct OmnibarLauncherPromoAction: Codable, Equatable {
-        public let kind: OmnibarLauncherPromoKind
-
-        public init(kind: OmnibarLauncherPromoKind) {
-            self.kind = kind
         }
     }
 
@@ -565,9 +538,8 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
-        /// The launcher promo drawer on screen as the prompt went out. A string, so a kind this build
-        /// doesn't know can't fail the whole submission's decode.
-        var launcherPromoKind: String?
+        /// True when the launcher promo drawer was on screen as the prompt went out.
+        var launcherPromoVisible: Bool?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

@@ -651,7 +651,8 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Verify the external apps permission dropdown exists and shows "Always ask"
-        let externalAppsDropdown = permissionCenterPopover.popUpButtons["PermissionCenterView.externalScheme.mailto.decision"]
+        // Query by identifier: video ads on the page can add an Autoplay row above External apps
+        let externalAppsDropdown = permissionCenterPopover.popUpButtons["PermissionCenterView.externalSchemeDecisionPopUp"]
         XCTAssertTrue(
             externalAppsDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "External apps permission dropdown didn't appear in the permission center."

@@ -627,10 +627,10 @@ struct ExternalSchemeRowView: View {
     private var decisionPopUpButton: some View {
         NSPopUpButtonView(selection: $currentDecision) {
             let button = NSPopUpButton()
-            button.setAccessibilityIdentifier("PermissionCenterView.externalScheme.\(schemeInfo.scheme).decision")
             button.bezelStyle = .accessoryBarAction
             button.isBordered = true
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            button.setAccessibilityIdentifier("PermissionCenterView.externalSchemeDecisionPopUp")
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
                 let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")

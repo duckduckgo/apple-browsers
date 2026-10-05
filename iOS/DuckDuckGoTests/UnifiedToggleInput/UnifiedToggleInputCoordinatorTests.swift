@@ -78,6 +78,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
+    func testAttachmentLayoutUsesAttachMoreTabsFlagOnEveryHost() throws {
+        func findStrip(in view: UIView) -> UnifiedToggleInputAttachmentsStripView? {
+            if let strip = view as? UnifiedToggleInputAttachmentsStripView { return strip }
+            return view.subviews.lazy.compactMap { findStrip(in: $0) }.first
+        }
+
+        for isEnabled in [false, true] {
+            let featureFlagger = MockFeatureFlagger()
+            featureFlagger.enabledFeatureFlags = isEnabled ? [.aiChatContextualAttachMoreTabs] : []
+            for host: UnifiedToggleInputHost in [.omnibar, .contextualChat] {
+                let coordinator = UnifiedToggleInputCoordinator(
+                    host: host,
+                    isToggleEnabled: host == .omnibar,
+                    preferences: mockPreferences,
+                    subscriptionManager: subscriptionManager,
+                    featureFlagger: featureFlagger)
+                coordinator.viewController.loadViewIfNeeded()
+                let strip = try XCTUnwrap(findStrip(in: coordinator.viewController.view))
+                let scrollView = try XCTUnwrap(strip.subviews.compactMap { $0 as? UIScrollView }.first)
+                let stack = try XCTUnwrap(scrollView.subviews.compactMap { $0 as? UIStackView }.first)
+                XCTAssertEqual(stack.spacing, isEnabled ? 4 : 10)
+                XCTAssertEqual(scrollView.alwaysBounceHorizontal, !isEnabled)
+            }
+        }
+    }
+
     func testRejectedStaleModelSelectionDoesNotCreatePendingChoice() {
         mockPreferences.selectedModelId = "free"
         sut.modelStore.models = [makeModel(id: "free", access: true, accessTier: ["free"]),

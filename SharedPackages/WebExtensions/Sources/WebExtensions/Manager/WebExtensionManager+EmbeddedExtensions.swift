@@ -74,13 +74,13 @@ extension WebExtensionManager {
 
     @MainActor
     private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor) async {
-        guard let bundledURL = descriptor.bundledURL else {
+        guard let bundledURL = bundledExtensionURL(descriptor) else {
             Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceFilename)")
             return
         }
 
         do {
-            let bundledMetadata = try await WKWebExtension.metadata(from: bundledURL)
+            let bundledMetadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
 
             guard bundledMetadata.type == descriptor.type else {
                 Logger.webExtensions.error("❌ Bundled extension type mismatch: expected \(descriptor.type.rawValue), got \(bundledMetadata.type?.rawValue ?? "nil")")
@@ -156,8 +156,14 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        permissionController?.trustedInstallations.insert(identifier)
+        defer { permissionController?.trustedInstallations.remove(identifier) }
         if requiresExtraction {
-            _ = try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
+            // Unzipping on the main thread risks the watchdog (Dark Reader has ~140 files).
+            let storageProvider = storageProvider
+            _ = try await Task.detached {
+                try storageProvider.extractExtension(from: sourceURL, identifier: identifier)
+            }.value
         } else {
             _ = try storageProvider.copyExtension(from: sourceURL, identifier: identifier)
         }

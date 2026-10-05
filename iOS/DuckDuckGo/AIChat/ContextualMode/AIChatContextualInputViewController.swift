@@ -143,6 +143,7 @@ final class AIChatContextualInputViewController: UIViewController {
         }
     }
     private var displayedTermsOfServiceMessage: UTIFooterMessage?
+    private var renderedStartActions: [ContextualSheetAction] = []
 
     // MARK: - Initialization
 
@@ -239,6 +240,8 @@ final class AIChatContextualInputViewController: UIViewController {
     func updateStartActions(suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction]) {
         let actions = suggestions.map(ContextualSheetAction.suggestion)
             + quickActions.map(ContextualSheetAction.quickAction)
+        guard actions != renderedStartActions else { return }
+        renderedStartActions = actions
         quickActionsView.configure(with: actions)
     }
 

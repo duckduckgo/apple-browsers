@@ -718,10 +718,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
             pathProvider: NetworkPathMonitor(),
-            vpnConnectivityIssuesProvider: ConnectivityIssueObserverThroughDistributedNotifications(),
+            vpnConnectivityIssuesProvider: VPNControllerXPCClient.shared,
             pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
             isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
 

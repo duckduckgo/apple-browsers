@@ -172,7 +172,7 @@ final class AIChatTabExtensionTests: XCTestCase {
     // MARK: - Tabs a page opens for a link
 
     func testWhenAPageOpensANewTabForALinkThenItsFirstLoadIsALink() {
-        // WebKit's first load in the new tab is a plain, non-user-initiated `.other` with no source page.
+        // WebKit's first load in a new tab doesn't reliably carry the click or the opener page.
         tabExtension.noteOpenedForLink(from: URL(string: "https://www.w3schools.com/")!)
         perform(makeNavigation(to: duckAIURL, type: .other, from: duckAIURL))
 

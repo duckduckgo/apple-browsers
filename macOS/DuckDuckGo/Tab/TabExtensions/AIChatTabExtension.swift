@@ -428,8 +428,9 @@ extension AIChatTabExtension: NavigationResponder {
         setDirectNavigationFallback(via.conversationSource)
     }
 
-    /// Only navigations the user started toward a URL count; app-opened, restored and reloaded loads
-    /// don't. A client redirect only carries on the navigation that led to its page.
+    /// Only navigations the user started toward a URL count; loads the browser starts itself (its own
+    /// Duck.ai buttons, restoration, reloads) don't. A client redirect only carries on the navigation
+    /// that led to its page.
     private func directNavigationVia(for action: NavigationAction, suggestionURL: URL?) -> AIChatDirectNavigationVia? {
         switch action.navigationType {
         case .custom(.userEnteredUrl):

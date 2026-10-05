@@ -83,10 +83,12 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User clicks in the Omnibar duck.ai button
     case aiChatAddressBarButtonClicked(action: AIChatAddressBarAction)
 
-    // MARK: - Sidebar
+    // MARK: - Direct navigation
 
     /// Event Trigger: A tab reaches Duck.ai by navigating to it directly rather than from a Duck.ai surface.
     case aiChatDuckAIDirectNavigation(via: AIChatDirectNavigationVia, duckAIEnabled: Bool, toggleEnabled: Bool)
+
+    // MARK: - Sidebar
 
     /// Event Trigger: User opens a tab sidebar
     case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?, minutesSinceSidebarHidden: Int?)

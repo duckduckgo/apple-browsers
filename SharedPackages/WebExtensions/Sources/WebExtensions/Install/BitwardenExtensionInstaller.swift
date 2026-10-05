@@ -63,9 +63,14 @@ public struct BitwardenExtensionInstaller {
     private let installedIdentifiers: () -> [String]
     private let fileManager: FileManager
 
+    /// Creates an installer. Only `webExtensionManager` is required: the other parameters default to what
+    /// the app uses, and tests replace them.
+    ///
     /// - Parameters:
-    ///   - installedIdentifiers: Returns the identifiers of installed Bitwarden copies. Defaults to the
-    ///     loaded extensions whose manifest `key` derives to Bitwarden's Chrome identifier.
+    ///   - webExtensionManager: Installs the new copy and uninstalls the old one.
+    ///   - download: Fetches the `.crx`.
+    ///   - installedIdentifiers: Returns the installed Bitwarden copies. Defaults to the loaded extensions with Bitwarden's Chrome identifier.
+    ///   - fileManager: Holds the temporary files while unpacking.
     public init(webExtensionManager: WebExtensionManaging,
                 download: @escaping (URL) async throws -> Data = BitwardenExtensionInstaller.urlSessionDownload,
                 installedIdentifiers: (() -> [String])? = nil,
@@ -106,8 +111,8 @@ public struct BitwardenExtensionInstaller {
         Logger.webExtensions.info("Installed Bitwarden from the Chrome Web Store")
     }
 
-    /// Writes the `.crx` header's developer key into `manifest.json`, giving the installed copy the Chrome
-    /// identifier a later install finds it by. A manifest that already has a `key` is left alone.
+    /// Adds the developer key from `crx` to the manifest in `extensionDirectory`, unless it already has a
+    /// `key`. The key gives the installed copy its Chrome identifier.
     private func restorePublicKey(from crx: Data, in extensionDirectory: URL) throws {
         let manifestURL = extensionDirectory.appendingPathComponent("manifest.json")
         guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any],

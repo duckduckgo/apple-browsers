@@ -152,10 +152,10 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         dismissLauncherPromoKinds.append(kind)
     }
 
-    private(set) var launcherPromoChatSubmittedCallCount = 0
+    private(set) var launcherPromoIgnoredKinds: [NewTabPageDataModel.OmnibarLauncherPromoKind] = []
     @MainActor
-    func launcherPromoChatSubmitted() {
-        launcherPromoChatSubmittedCallCount += 1
+    func launcherPromoIgnored(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
+        launcherPromoIgnoredKinds.append(kind)
     }
 
     let launcherPromoSubject = PassthroughSubject<Void, Never>()

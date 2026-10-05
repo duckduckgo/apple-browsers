@@ -104,7 +104,7 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo?
 
-    /// The page made `kind` visible, so a prompt sent from here on goes past it.
+    /// The page made `kind` visible.
     @MainActor
     func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
 
@@ -114,9 +114,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     func dismissLauncherPromo(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
 
-    /// A Duck.ai prompt went out from the New Tab Page. A promo the user saw and didn't act on counts as dismissed.
+    /// A prompt went out while the `kind` drawer was on screen, without the user acting on it.
     @MainActor
-    func launcherPromoChatSubmitted()
+    func launcherPromoIgnored(kind: NewTabPageDataModel.OmnibarLauncherPromoKind)
 
     /// Fires when anything `launcherPromo()` reads changes: launcher settings, chat count, dismissal.
     var launcherPromoPublisher: AnyPublisher<Void, Never> { get }

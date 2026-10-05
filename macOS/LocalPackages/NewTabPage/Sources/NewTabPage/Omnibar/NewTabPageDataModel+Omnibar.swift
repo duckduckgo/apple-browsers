@@ -565,6 +565,9 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
+        /// The launcher promo drawer on screen as the prompt went out. A string, so a kind this build
+        /// doesn't know can't fail the whole submission's decode.
+        var launcherPromoKind: String?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

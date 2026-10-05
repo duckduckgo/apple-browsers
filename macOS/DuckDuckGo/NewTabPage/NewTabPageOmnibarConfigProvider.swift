@@ -513,7 +513,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     @MainActor
     func launcherPromoShown(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
-        duckAiLauncherPromo?.shown(kind: kind)
+        // Nothing to record until the launcher promo pixels land.
     }
 
     @MainActor
@@ -527,8 +527,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     @MainActor
-    func launcherPromoChatSubmitted() {
-        duckAiLauncherPromo?.chatSubmitted()
+    func launcherPromoIgnored(kind: NewTabPageDataModel.OmnibarLauncherPromoKind) {
+        duckAiLauncherPromo?.ignore(kind: kind)
     }
 
     var launcherPromoPublisher: AnyPublisher<Void, Never> {

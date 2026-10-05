@@ -53,7 +53,6 @@ final class DuckAiLauncherPromo {
     private let openSettings: @MainActor () -> Void
     private let dismissalSubject = PassthroughSubject<Void, Never>()
     @Published private var chatCount = 0
-    private var shownKinds = Set<DuckAiLauncherPromoKind>()
     private var chatsCancellable: AnyCancellable?
 
     init(featureFlagger: FeatureFlagger,
@@ -113,13 +112,8 @@ final class DuckAiLauncherPromo {
         .eraseToAnyPublisher()
     }
 
-    func shown(kind: DuckAiLauncherPromoKind) {
-        shownKinds.insert(kind)
-    }
-
-    /// The drawer is shown once: sending a prompt past it without acting counts as a dismissal.
-    func chatSubmitted() {
-        guard let kind, kind != .shortcutHint, shownKinds.contains(kind) else { return }
+    /// The drawer is shown once: a prompt sent while it was on screen counts as a dismissal.
+    func ignore(kind: DuckAiLauncherPromoKind) {
         dismiss(kind: kind)
     }
 

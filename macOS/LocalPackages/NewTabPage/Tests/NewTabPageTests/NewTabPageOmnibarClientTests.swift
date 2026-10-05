@@ -962,23 +962,35 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
-    func testDuckAiSubmissionTellsTheLauncherPromo() async throws {
-        configProvider.mode = .ai
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+    func testSubmissionPastTheLauncherPromoIsForwarded() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.launcherPromoKind = "promo"
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
-        XCTAssertEqual(configProvider.launcherPromoChatSubmittedCallCount, 1)
+        XCTAssertEqual(configProvider.launcherPromoIgnoredKinds, [.promo])
     }
 
     @MainActor
-    func testSearchModeSubmissionLeavesTheLauncherPromoAlone() async throws {
-        configProvider.mode = .search
+    func testSubmissionWithoutTheLauncherPromoLeavesItAlone() async throws {
         let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
-        XCTAssertEqual(configProvider.launcherPromoChatSubmittedCallCount, 0)
+        XCTAssertTrue(configProvider.launcherPromoIgnoredKinds.isEmpty)
+    }
+
+    @MainActor
+    func testSubmissionWithAnUnknownLauncherPromoKindStillSubmits() async throws {
+        let submitted = expectation(description: "submitChat forwarded")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, _, _, _ in submitted.fulfill() }
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.launcherPromoKind = "banner"
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertTrue(configProvider.launcherPromoIgnoredKinds.isEmpty)
     }
 
     @MainActor

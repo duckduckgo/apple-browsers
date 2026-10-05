@@ -205,32 +205,9 @@ final class DuckAiLauncherPromoTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPromptIsSentPastAShownPromoThenItCountsAsIgnoredAndNeverComesBack() {
-        let promo = makePromo()
-        promo.shown(kind: .promo)
-
-        promo.chatSubmitted()
+    func testWhenPromptIsSentPastThePromoThenItNeverComesBack() {
+        makePromo().ignore(kind: .promo)
 
         XCTAssertNil(makePromo().presentation())
-    }
-
-    @MainActor
-    func testWhenPromptIsSentBeforeThePromoWasShownThenItStays() {
-        let promo = makePromo()
-
-        promo.chatSubmitted()
-
-        XCTAssertEqual(promo.kind, .promo)
-    }
-
-    @MainActor
-    func testWhenPromptIsSentWithTheHintThenNothingIsDismissed() {
-        preferences.isKeyboardShortcutEnabled = true
-        let promo = makePromo()
-        promo.shown(kind: .shortcutHint)
-
-        promo.chatSubmitted()
-
-        XCTAssertEqual(promo.kind, .shortcutHint)
     }
 }

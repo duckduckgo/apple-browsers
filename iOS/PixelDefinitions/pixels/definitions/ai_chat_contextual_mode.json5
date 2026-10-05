@@ -359,14 +359,14 @@
         "parameters": ["appVersion", "aiChatSelectionCount"]
     },
     "aichat_contextual_page_context_offer_shown": {
-        "description": "Fired when Duck.ai offers to attach the current page to an active contextual chat. Denominator for the offer funnel; a re-offer of the page already on the chip is not counted again",
+        "description": "Fired when Duck.ai offers the current page for attachment: after the user navigates while a contextual chat is active, or as soon as the user detaches the page, which also happens in the pre-submit input before any chat has started. Denominator for the offer funnel; a re-offer of the page already on the chip is not counted again",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "aiChatPageContextOfferReason"]
     },
     "aichat_contextual_page_context_offer_accepted": {
-        "description": "Fired when the user accepts the offer to attach the current page to an active contextual chat. Numerator for the offer funnel",
+        "description": "Fired when the user accepts the offer to attach the current page, in an active contextual chat or in the pre-submit input. Numerator for the offer funnel",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

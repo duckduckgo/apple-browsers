@@ -359,14 +359,14 @@
         "parameters": ["appVersion", "aiChatSelectionCount"]
     },
     "aichat_contextual_page_context_offer_shown": {
-        "description": "Fired when Duck.ai offers the current page for attachment: after the user navigates while a contextual chat is active, or as soon as the user detaches the page, which also happens in the pre-submit input before any chat has started. Denominator for the offer funnel; a re-offer of the page already on the chip is not counted again",
+        "description": "Fired when Duck.ai offers the current page for attachment: after the user navigates during an active chat, or as soon as the user detaches the page, which also happens before a chat has started",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "aiChatPageContextOfferReason"]
     },
     "aichat_contextual_page_context_offer_accepted": {
-        "description": "Fired when the user accepts the offer to attach the current page, in an active contextual chat or in the pre-submit input. Numerator for the offer funnel",
+        "description": "Fired when the user accepts the offer to attach the current page",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -380,14 +380,14 @@
         "parameters": ["appVersion"]
     },
     "aichat_contextual_prompt_depth": {
-        "description": "Fired on every prompt delivered to a Duck.ai contextual chat, carrying how many prompts deep into that chat it is. Counting restarts on a new chat and on a chat restored from storage; comparing the counts of each bucket gives the distribution of conversation depth",
+        "description": "Fired on every prompt sent to a Duck.ai contextual chat, carrying how many prompts deep into that chat it is. Counting restarts on a new chat and on a restored one",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "aiChatPromptDepthBucket"]
     },
     "aichat_contextual_sheet_opened_on_deleted_chat": {
-        "description": "Fired when the contextual sheet is opened on a chat that has since been deleted elsewhere, so the active chat is discarded and the user starts over",
+        "description": "Fired when the contextual sheet is opened on a chat that has since been deleted elsewhere, so the chat is discarded",
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "expires": "2027-04-30",

@@ -222,7 +222,7 @@ final class DBPHomeViewController: NSViewController {
         let preview = livePreviewViewController.view
         preview.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(preview)
-        let width = preview.widthAnchor.constraint(equalToConstant: 520)
+        let width = preview.widthAnchor.constraint(equalToConstant: 380)
         width.priority = .defaultHigh
         NSLayoutConstraint.activate([
             width,

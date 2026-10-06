@@ -48,9 +48,9 @@ public final class DBPLivePreviewViewController: NSViewController {
         icon.contentTintColor = .controlAccentColor
         icon.translatesAutoresizingMaskIntoConstraints = false
 
-        brokerLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        brokerLabel.font = .systemFont(ofSize: 14, weight: .semibold)
         brokerLabel.lineBreakMode = .byTruncatingTail
-        activityLabel.font = .systemFont(ofSize: 13)
+        activityLabel.font = .systemFont(ofSize: 12)
         activityLabel.textColor = .secondaryLabelColor
         activityLabel.lineBreakMode = .byTruncatingTail
         let labels = NSStackView(views: [brokerLabel, activityLabel])
@@ -81,12 +81,12 @@ public final class DBPLivePreviewViewController: NSViewController {
         previewAspectRatioConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
-            icon.widthAnchor.constraint(equalToConstant: 28),
-            icon.heightAnchor.constraint(equalToConstant: 28),
+            icon.widthAnchor.constraint(equalToConstant: 24),
+            icon.heightAnchor.constraint(equalToConstant: 24),
             header.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
             header.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 14),
             header.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -14),
-            header.heightAnchor.constraint(equalToConstant: 40),
+            header.heightAnchor.constraint(equalToConstant: 34),
             imageView.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 12),
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
@@ -237,6 +237,18 @@ public final class DBPLivePreviewViewController: NSViewController {
 }
 
 private final class PreviewCardView: NSVisualEffectView {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard alphaValue > 0, super.hitTest(point) != nil else { return nil }
+        return self
+    }
+
+    override func mouseDown(with event: NSEvent) {}
+    override func mouseUp(with event: NSEvent) {}
+    override func mouseDragged(with event: NSEvent) {}
+    override func rightMouseDown(with event: NSEvent) {}
+    override func rightMouseUp(with event: NSEvent) {}
+    override func otherMouseDown(with event: NSEvent) {}
+    override func otherMouseUp(with event: NSEvent) {}
+    override func scrollWheel(with event: NSEvent) {}
 }
 #endif

@@ -76,14 +76,11 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(0, tabsModel.currentIndex)
     }
 
-    func testWhenTabRemovedAndSnapshotClearingIsEnabledThenAppSwitcherSnapshotsAreCleared() async throws {
+    func testWhenTabRemovedThenAppSwitcherSnapshotsAreCleared() async throws {
         let tabsModel = TabsModel(desktop: false)
         let tab = try XCTUnwrap(tabsModel.tabs.first)
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.appSwitcherSnapshotClearing]
         let snapshotsCleared = expectation(description: "App switcher snapshots cleared")
         let manager = try makeManager(tabsModel,
-                                      featureFlagger: featureFlagger,
                                       clearAppSwitcherSnapshots: { snapshotsCleared.fulfill() })
 
         manager.remove(tab: tab)

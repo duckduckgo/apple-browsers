@@ -366,6 +366,18 @@
         "description": "Bucketed number of text selections attached to a submitted Duck.ai prompt. Bounded by the 5-selection cap",
         "enum": ["1", "2", "3-5"]
     },
+    "aiChatPageContextOfferReason": {
+        "key": "offer_reason",
+        "type": "string",
+        "description": "Why Duck.ai offered to attach the current page: navigation means the user moved to another page while a contextual chat was active; detached means the user had just removed the page from the input",
+        "enum": ["navigation", "detached"]
+    },
+    "aiChatPromptDepthBucket": {
+        "key": "depth_bucket",
+        "type": "string",
+        "description": "Bucketed position of a prompt within its Duck.ai contextual chat: 1 is the chat's first prompt, 2 its second, and so on",
+        "enum": ["1", "2", "3-5", "6-10", "11+"]
+    },
     "aiChatHadUnsubmittedSelections": {
         "key": "had_unsubmitted_selections",
         "type": "boolean",

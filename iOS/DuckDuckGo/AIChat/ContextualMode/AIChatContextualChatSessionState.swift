@@ -185,6 +185,8 @@ final class AIChatContextualChatSessionState {
 
     private var pendingSignalsOnlyCollection = false
     private(set) var suggestedContext: AIChatPageContext?
+    private var suggestedContextReason: AIChatContextualPageContextOfferReason = .navigation
+    private var promptsInChat = 0
     private var suppressesAutoAttachForSelectionEntry = false
 
     private(set) var suggestionsLoadState: SuggestionsLoadState = .loaded
@@ -343,6 +345,7 @@ final class AIChatContextualChatSessionState {
     func acceptSuggestedContext() {
         guard let context = suggestedContext else { return }
         suggestedContext = nil
+        pixelHandler.firePageContextOfferAccepted(reason: suggestedContextReason)
         attachContextFromSuggestionTap(context)
     }
 
@@ -409,6 +412,7 @@ final class AIChatContextualChatSessionState {
         }
         suppressesAutoAttachForSelectionEntry = false
         lastCollectedContext = nil
+        promptsInChat = 0
         frontendState = .noChat
         chipState = .placeholder
         contextualChatURL = nil
@@ -484,6 +488,8 @@ final class AIChatContextualChatSessionState {
     private func suggestDetachedContext(_ context: AIChatPageContext) {
         guard featureFlagger.isFeatureOn(.contextualPagePlaceholder), isUnifiedToggleInputActive else { return }
         suggestedContext = context
+        suggestedContextReason = .detached
+        pixelHandler.firePageContextOfferShown(reason: .detached)
         emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))
         Logger.aiChat.debug("[SessionState] Offered the detached page back")
     }
@@ -759,6 +765,11 @@ final class AIChatContextualChatSessionState {
     }
 
     /// Marks the attached context delivered on submit so it stops riding later prompts and the chip hides.
+    func recordPromptSent() {
+        promptsInChat += 1
+        pixelHandler.firePromptDepth(AIChatContextualPromptDepthBucket(promptIndex: promptsInChat))
+    }
+
     func markUTIContextDelivered() {
         guard case .attached(let context) = chipState else { return }
         deliveredContextURLWithNoNavigationSince = URL(string: context.contextData.url)
@@ -815,6 +826,10 @@ private extension AIChatContextualChatSessionState {
         guard !isStaleEchoOfDeliveredContext(context.contextData) else {
             Logger.aiChat.debug("[SessionState] Ignoring stale echo for already-delivered context")
             return
+        }
+        if suggestedContext?.contextData.url != context.contextData.url {
+            suggestedContextReason = .navigation
+            pixelHandler.firePageContextOfferShown(reason: .navigation)
         }
         suggestedContext = context
         emit(.deliverPageContext(context.contextData, targets: .utiSuggestedContext))

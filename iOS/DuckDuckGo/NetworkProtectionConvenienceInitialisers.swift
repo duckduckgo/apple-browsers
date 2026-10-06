@@ -32,7 +32,7 @@ private class DefaultTunnelSessionProvider: TunnelSessionProvider {
     }
 }
 
-extension TunnelConnectivityIssuesProvider: VPNConnectivityIssuesProviding {}
+extension TunnelConnectivityIssuesProvider: @retroactive VPNConnectivityIssuesProviding {}
 
 extension HostnamePinger: @retroactive PingQualityProviding {}
 

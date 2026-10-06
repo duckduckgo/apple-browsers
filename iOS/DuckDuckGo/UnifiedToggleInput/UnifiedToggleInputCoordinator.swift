@@ -500,6 +500,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             pixelReporter: pixelReporter,
             view: .init(
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
+                setModelIcon: { [weak self] in self?.viewController.modelIcon = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
                 setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
                 setModelChipMenuIndicatorHidden: { [weak self] in self?.viewController.isModelChipMenuIndicatorHidden = $0 },
@@ -2129,7 +2130,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             reasoningEffort: configuration.reasoningEffort,
             inputMode: .keyboard,
             frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
-            hasPageContext: userScript?.attachedPageContextProvider?() != nil,
+            hasPageContext: hasAttachedPageContext(userScript: userScript),
             toolsSelected: !(tools?.isEmpty ?? true),
             attachmentsSelected: !viewController.currentAttachments.isEmpty
         )
@@ -2148,6 +2149,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
         featureDiscovery.markDuckAIPromptSubmitted()
+    }
+
+    private func hasAttachedPageContext(userScript: AIChatUserScript?) -> Bool {
+        if let userScript {
+            return userScript.attachedPageContextProvider?() != nil
+        }
+        return hasPendingPageContextProvider?() ?? false
     }
 
     private func deliverAIChatPrompt(text: String,
@@ -2438,6 +2446,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func syncTermsOfServiceSendButtonToHandler() {
         viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
+        viewController.handler.reservesTermsOfServiceSendButton = footerController?.isTermsOfServicePending == true
     }
 
     /// The disclaimer and the send button name the same button: "Create" while Create Image is selected.

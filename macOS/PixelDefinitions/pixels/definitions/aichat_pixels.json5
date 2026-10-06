@@ -4,7 +4,7 @@
         "description": "Fired when the AI Chat sidebar is opened",
         "owners": ["miasma13"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "suffixes": ["daily_standard"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -47,8 +47,32 @@
         "description": "Fired when user clicks the website link on a translation prompt in Duck.ai tab or sidebar",
         "owners": ["miasma13"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_summarize_text": {
+        "description": "Fired when the AI Chat summarization action was triggered",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "How the user triggered summarization",
+                "type": "string",
+                "enum": ["context-menu", "keyboard-shortcut"]
+            }
+        ]
+    },
+    "m_mac_aichat_summarize_source_link_clicked": {
+        "description": "Fired when user clicks the website link on a summarization prompt in Duck.ai tab or sidebar",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_attach_selection": {
         "description": "Fired when the user attaches a text selection to Duck.ai via the 'Attach to Duck.ai' context-menu action",
@@ -231,6 +255,13 @@
             },
             "channel"
         ]
+    },
+    "m_mac_aichat_sidebar_expanded": {
+        "description": "Fired when user clicks the button that moves the Duck.ai sidebar chat into a new tab",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_models_fetch_failed": {
         "description": "Fired when the models API fetch fails (endpoint unreachable or returns error)",

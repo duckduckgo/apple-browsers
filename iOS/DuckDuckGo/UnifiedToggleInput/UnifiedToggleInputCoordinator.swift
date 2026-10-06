@@ -1835,8 +1835,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabs: { [weak self] in self?.attachmentController.tabAttachmentCandidates ?? [] },
                 attachedTabIds: { [weak self] in self?.attachmentPolicy.selectedTabIDs ?? [] },
                 canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
-                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true) ?? false }
+                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true, attachmentSource: .mention).isSuccessful ?? false }
             ))
+            mentionController.pixelSurfaceProvider = { [weak self] in
+                guard let self, attachmentController.canUseTabAttachments else { return nil }
+                return pixelSurface
+            }
+            mentionController.onPickerEvent = { [weak self] action, surface in
+                guard let self, case .available = tabAttachmentFeature?.state else { return }
+                pixelReporter.reportTabAttachment(action, source: .mention, surface: surface)
+            }
             mentionController.onSuggestionsChanged = { [weak self] in self?.onTabMentionSuggestionsChanged?($0) }
             tabMentionController = mentionController
             viewController.mentionHandler = mentionController
@@ -1897,7 +1905,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let preparations = viewController.currentAttachments.compactMap { tabAttachmentPreparations[$0.id] }
         transferredTabAttachmentIDs.formUnion(preparations.map { $0.attachment.id })
         tabAttachmentPreparations.removeAll()
-        return tabAttachmentContext?.makeRequest(preparations: preparations)
+        return tabAttachmentContext?.makeRequest(
+            preparations: preparations,
+            didDispatch: pixelReporter.makeTabSubmissionReporter(requestedTabCount: preparations.count))
     }
 
     var onPageContextAttachRequested: (() -> Void)?
@@ -2119,7 +2129,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             reasoningEffort: configuration.reasoningEffort,
             inputMode: .keyboard,
             frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
-            hasPageContext: userScript?.attachedPageContextProvider?() != nil,
+            hasPageContext: hasAttachedPageContext(userScript: userScript),
             toolsSelected: !(tools?.isEmpty ?? true),
             attachmentsSelected: !viewController.currentAttachments.isEmpty
         )
@@ -2138,6 +2148,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
         featureDiscovery.markDuckAIPromptSubmitted()
+    }
+
+    private func hasAttachedPageContext(userScript: AIChatUserScript?) -> Bool {
+        if let userScript {
+            return userScript.attachedPageContextProvider?() != nil
+        }
+        return hasPendingPageContextProvider?() ?? false
     }
 
     private func deliverAIChatPrompt(text: String,
@@ -2232,7 +2249,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool) {
         removeAttachment(id: id)
-        if isUserInitiated {
+        if isUserInitiated, !attachment.isTab || attachmentController.canUseTabAttachments {
             pixelReporter.reportAttachmentRemoved(attachment)
             if isEditing {
                 pixelReporter.reportEditAttachmentRemoved(attachment)
@@ -2423,7 +2440,16 @@ private extension UnifiedToggleInputCoordinator {
     func syncInputBehaviorToHandler() {
         viewController.handler.submitsAIChatOnKeyboardReturn = submitsAIChatPromptOnKeyboardReturn
         viewController.handler.usesReturnKeySubmitButtonStyle = usesReturnKeySubmitButtonStyle
-        viewController.handler.usesAskSubmitButton = isTermsOfServiceDisclaimerShown
+        syncTermsOfServiceSendButtonToHandler()
+    }
+
+    func syncTermsOfServiceSendButtonToHandler() {
+        viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
+    }
+
+    /// The disclaimer and the send button name the same button: "Create" while Create Image is selected.
+    var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton {
+        DuckAiTermsOfServiceSendButton(selectedTool: toolsController.selectedTool)
     }
 
     func resetSessionState() {
@@ -2497,6 +2523,8 @@ private extension UnifiedToggleInputCoordinator {
         // Reflect the image-generation tool in the input placeholder ("Create images privately").
         viewController.handler.isImageGenerationSelected = toolsController.selectedTool == .imageGeneration
         viewController.refreshPlaceholderForCurrentMode()
+        footerController?.setTermsOfServiceSendButton(termsOfServiceSendButton)
+        syncTermsOfServiceSendButtonToHandler()
     }
 
     func resetToolsSelection() {

@@ -389,7 +389,8 @@ private extension AIChatContextualInputViewController {
     /// Re-read whenever the input comes on screen: the user may have accepted on the web since.
     func refreshTermsOfServiceDisclaimer() {
         guard showsBasicNativeInput else { return }
-        let message = termsOfServiceDisclaimer.message
+        // The basic input has no tool picker, so Create Image never applies here.
+        let message = termsOfServiceDisclaimer.message(sendButton: .ask)
         if let message {
             termsOfServiceCard.configure(with: message, animateIcon: false)
         }

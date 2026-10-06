@@ -354,17 +354,18 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private lazy var aiChatSendButtonWidthConstraint = aiChatSendButton.widthAnchor.constraint(equalToConstant: Metrics.sendButtonSize)
 
-    /// While the Terms of Service disclaimer shows, the send button reads "Ask" and Return adds a new line.
-    var isTermsOfServiceDisclaimerShown = false {
+    /// While the Terms of Service disclaimer shows, the send button reads the label it names ("Ask" or "Create")
+    /// and Return adds a new line.
+    var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton? {
         didSet {
-            guard oldValue != isTermsOfServiceDisclaimerShown else { return }
+            guard (oldValue == nil) != (termsOfServiceSendButton == nil) else { return }
             aiChatTextView.keyboardType = aiChatKeyboardType
             if aiChatTextView.isFirstResponder { aiChatTextView.reloadInputViews() }
         }
     }
 
     /// The web-search keyboard always draws Return as Go, so only the default one shows a new-line key.
-    private var aiChatKeyboardType: UIKeyboardType { isTermsOfServiceDisclaimerShown ? .default : .webSearch }
+    private var aiChatKeyboardType: UIKeyboardType { termsOfServiceSendButton == nil ? .webSearch : .default }
 
     var onAIChatSendPressed: (() -> Void)?
 
@@ -520,7 +521,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var selectedTool: AIChatRAGTool? {
         didSet {
             selectedToolIconView.image = selectedTool?.toolbarChipIcon
-            selectedToolTitleLabel.text = selectedTool?.toolbarChipTitle
             selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
             refreshSelectedToolBadgeVisibility()
         }
@@ -554,18 +554,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         return imageView
     }()
 
-    private lazy var selectedToolTitleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = UIFont.daxSubheadSemibold()
-        label.textColor = UIColor(designSystemColor: .textPrimary)
-        label.lineBreakMode = .byTruncatingTail
-        // Let the label truncate rather than push into the trailing controls when width is tight.
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return label
-    }()
-
     private lazy var selectedToolClearButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -591,7 +579,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         view.isHidden = true
         view.accessibilityIdentifier = "AIChat.Omnibar.iPad.SelectedToolBadge"
 
-        let stackView = UIStackView(arrangedSubviews: [selectedToolIconView, selectedToolTitleLabel, selectedToolClearButton])
+        let stackView = UIStackView(arrangedSubviews: [selectedToolIconView, selectedToolClearButton])
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .horizontal
         stackView.alignment = .center
@@ -2491,7 +2479,7 @@ extension DefaultOmniBarView {
 
     /// The "Ask" label stands in for the arrow only; the voice icon stays.
     private func setAIChatSendButtonContent(_ image: UIImage, allowsAskTitle: Bool) {
-        let title = allowsAskTitle && isTermsOfServiceDisclaimerShown ? UserText.duckAIAskButtonTitle : nil
+        let title = allowsAskTitle ? termsOfServiceSendButton?.title : nil
         aiChatSendButton.setImage(title == nil ? image : nil, for: .normal)
         aiChatSendButton.setTitle(title, for: .normal)
         aiChatSendButton.accessibilityLabel = title ?? Constant.aiChatSendAccessibilityLabel

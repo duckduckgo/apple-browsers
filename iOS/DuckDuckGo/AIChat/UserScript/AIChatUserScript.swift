@@ -480,8 +480,17 @@ final class AIChatUserScript: NSObject, Subfeature {
             guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
                   self.webView === sourceWebView else { return }
 
-            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: request?.validate(contexts) ?? [])
+            let validatedContexts = request?.validate(contexts) ?? []
+            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: validatedContexts)
             guard self.pushPrompt(makePayload(context)) else { return }
+            let totalTabCount: Int
+            switch context {
+            case .multiple(let pages): totalTabCount = pages.count
+            case .single: totalTabCount = 1
+            case nil: totalTabCount = 0
+            }
+            request?.didDispatch(.init(totalTabCount: totalTabCount,
+                                       additionalTabCount: validatedContexts.filter { $0.tabId != nil }.count))
             request?.didConsume()
             didSubmit?()
         }

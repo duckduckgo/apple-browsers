@@ -175,7 +175,7 @@ final class UTIFooterCardView: UIView {
 
         let title = NSMutableAttributedString(string: message.title, attributes: [.font: font])
         let emphasisRange = (title.string as NSString).range(of: formatting.emphasizedText)
-        if emphasisRange.location != NSNotFound {
+        if emphasisRange.location != NSNotFound, emphasisRange.length > 0 {
             title.addAttribute(.font, value: UIFont.daxFootnoteSemibold(), range: emphasisRange)
         }
         let iconRange = (title.string as NSString).range(of: formatting.attachmentPlaceholder)

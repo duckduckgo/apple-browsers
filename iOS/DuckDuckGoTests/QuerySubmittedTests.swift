@@ -225,6 +225,18 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertGreaterThan(sendButton.bounds.width, titleWidth)
     }
 
+    func testWhenTheTermsDisclaimerNamesCreateInIPadDuckAIModeThenSendReadsCreate() throws {
+        let sut = makeSUTShowingTermsOfService()
+        let omniBarView = try expandDuckAIPanel(of: sut)
+
+        omniBarView.termsOfServiceSendButton = .create
+        omniBarView.updateAIChatSendButton(hasText: true)
+
+        XCTAssertEqual(omniBarView.aiChatSendButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+        XCTAssertEqual(omniBarView.aiChatSendButton.accessibilityLabel, UserText.duckAICreateButtonTitle)
+        XCTAssertEqual(omniBarView.aiChatTextView.keyboardType, .default, "Return still adds a new line")
+    }
+
     func testWhenTheTermsDisclaimerIsShownInIPadDuckAIModeThenAnEmptyPromptKeepsTheVoiceButton() throws {
         let sut = makeSUTShowingTermsOfService()
         let omniBarView = try expandDuckAIPanel(of: sut)

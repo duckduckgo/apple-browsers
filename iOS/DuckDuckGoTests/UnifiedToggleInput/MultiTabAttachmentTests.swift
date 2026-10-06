@@ -152,7 +152,7 @@ final class MultiTabAttachmentTests: XCTestCase {
     }
 
     private func attachment(id: TabUID) -> UnifiedToggleInputTabAttachment {
-        UnifiedToggleInputTabAttachment(tabId: id, title: "Page", url: URL(string: "https://example.com/page")!)
+        UnifiedToggleInputTabAttachment(tabId: id, title: "Page", url: URL(string: "https://example.com/page")!, source: .recentTabs)
     }
 
     private func tab(id: TabUID, fire: Bool = false, lastViewed: Date? = nil) -> Tab {
@@ -258,7 +258,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
             if case .value(let value) = result { return value }
             return .cancelled
         }
-        coordinator.viewController.addAttachment(.tab(.init(tabId: fixture.tab.uid, title: "Page", url: fixture.url)))
+        coordinator.viewController.addAttachment(.tab(.init(tabId: fixture.tab.uid, title: "Page", url: fixture.url, source: .recentTabs)))
         await fulfillment(of: [started], timeout: 1)
         let request = try XCTUnwrap(coordinator.takeTabAttachmentRequest())
         coordinator.unifiedToggleInputVCDidChangeAttachments(coordinator.viewController)
@@ -293,7 +293,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
             if case .cancelled = result { cancelled.fulfill() }
             return .cancelled
         }
-        let attachment = UnifiedToggleInputTabAttachment(tabId: fixture.tab.uid, title: "Page", url: fixture.url)
+        let attachment = UnifiedToggleInputTabAttachment(tabId: fixture.tab.uid, title: "Page", url: fixture.url, source: .recentTabs)
         coordinator.viewController.addAttachment(.tab(attachment))
         await fulfillment(of: [started], timeout: 1)
         coordinator.removeAttachment(id: attachment.id)
@@ -475,7 +475,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         fixture.isLoaded = false
         var time: TimeInterval = 0
         let preparation = MultiTabAttachmentPreparation(
-            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url, source: .recentTabs),
             tab: fixture.tab, source: fixture.source, now: { time }, isEnabled: { true }, onChange: { _ in })
         defer { preparation.cancel() }
         fixture.terminateProcess()
@@ -575,7 +575,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         fixture.onAcquire = { time = 6 }
         fixture.collect = { _ in .failed }
         let preparation = MultiTabAttachmentPreparation(
-            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url, source: .recentTabs),
             tab: fixture.tab, source: fixture.source, now: { time }, isEnabled: { true }, onChange: { _ in })
         defer { preparation.cancel() }
         let result = await preparation.value()
@@ -592,7 +592,7 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         var time: TimeInterval = 0
         fixture.collect = { _ in .failed }
         let preparation = MultiTabAttachmentPreparation(
-            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+            attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url, source: .recentTabs),
             tab: fixture.tab, source: fixture.source, now: { time }, isEnabled: { true }, onChange: { _ in })
         defer { preparation.cancel() }
         time = 6
@@ -718,11 +718,21 @@ final class MultiTabAttachmentPreparationTests: XCTestCase {
         XCTAssertEqual(fixture.collectionCount, 2)
     }
 
+    func testWhenTabMetadataRefreshesThenPreservesMentionSource() async {
+        let fixture = AttachmentPreparationFixture()
+        let preparation = MultiTabAttachmentPreparation(
+            attachment: .init(tabId: fixture.tab.uid, title: "Old title", url: fixture.url, source: .mention),
+            tab: fixture.tab, source: fixture.source, isEnabled: { true }, onChange: { _ in })
+        _ = await preparation.value()
+        XCTAssertEqual(preparation.attachment.source, .mention)
+        XCTAssertEqual(preparation.attachment.title, fixture.tab.link?.displayTitle)
+    }
+
     func testNavigationTimeoutDoesNotStartExtraction() async {
         let fixture = AttachmentPreparationFixture()
         fixture.isLoading = true
         fixture.isLoaded = false
-        let preparation = MultiTabAttachmentPreparation(attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url),
+        let preparation = MultiTabAttachmentPreparation(attachment: .init(tabId: fixture.tab.uid, title: "Page", url: fixture.url, source: .recentTabs),
                                                          tab: fixture.tab, source: fixture.source, navigationTimeout: 0,
                                                          isEnabled: { true }, onChange: { _ in })
         let result = await preparation.value()
@@ -1036,7 +1046,7 @@ final class MultiTabAttachmentPageTests: XCTestCase {
         let source = MultiTabAttachmentSource(currentTabID: "other", mode: .normal, tabsProvider: { [tab] },
                                                pageProvider: { _ in controller.makeMultiTabAttachmentPage() })
         let context = MultiTabAttachmentContext(source: source, feature: MutableAttachmentFeature())
-        let preparation = try XCTUnwrap(context.prepare(.init(tabId: tab.uid, title: "Page", url: try XCTUnwrap(tab.link?.url)),
+        let preparation = try XCTUnwrap(context.prepare(.init(tabId: tab.uid, title: "Page", url: try XCTUnwrap(tab.link?.url), source: .recentTabs),
                                                        onChange: { _ in }))
         preparation.cancel()
         XCTAssertEqual(webView.stopCount, 0)
@@ -1172,7 +1182,7 @@ private final class AttachmentPreparationFixture {
     }
 
     func prepare(onChange: @escaping (UnifiedToggleInputTabAttachment?) -> Void = { _ in }) -> MultiTabAttachmentPreparation? {
-        context.prepare(.init(tabId: tab.uid, title: "Page", url: url), onChange: onChange)
+        context.prepare(.init(tabId: tab.uid, title: "Page", url: url, source: .recentTabs), onChange: onChange)
     }
 
     func pageContext(content: String = "Content") -> AIChatPageContextData {

@@ -114,6 +114,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
 
     // MARK: - AIChatTabManaging
 
+    /// What every open method below returns; `nil` stands for an open that didn't happen.
+    var aiChatEntryPointTargetToReturn: AIChatEntryPointTarget? = .newTab
+
     struct OpenAIChatCall: Equatable {
         let url: URL
         let behavior: LinkOpenBehavior
@@ -122,8 +125,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     var openAIChatCalls: [OpenAIChatCall] = []
 
     @MainActor
-    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) {
+    func openAIChat(_ url: URL, with behavior: LinkOpenBehavior, hasPrompt: Bool) -> AIChatEntryPointTarget? {
         openAIChatCalls.append(OpenAIChatCall(url: url, behavior: behavior, hasPrompt: hasPrompt))
+        return aiChatEntryPointTargetToReturn
     }
 
     struct OpenAIChatInNewTabOfCall {
@@ -133,8 +137,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     }
     var openAIChatInNewTabOfCalls: [OpenAIChatInNewTabOfCall] = []
 
-    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) {
+    func openAIChat(_ url: URL, inNewTabOf windowController: MainWindowController, hasPrompt: Bool) -> AIChatEntryPointTarget? {
         openAIChatInNewTabOfCalls.append(OpenAIChatInNewTabOfCall(url: url, windowController: windowController, hasPrompt: hasPrompt))
+        return aiChatEntryPointTargetToReturn
     }
 
     struct OpenAIChatInNewWindowCall {
@@ -144,8 +149,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     }
     var openAIChatInNewWindowCalls: [OpenAIChatInNewWindowCall] = []
 
-    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) {
+    func openAIChat(_ url: URL, inNewWindowAt droppingPoint: NSPoint, hasPrompt: Bool) -> AIChatEntryPointTarget? {
         openAIChatInNewWindowCalls.append(OpenAIChatInNewWindowCall(url: url, droppingPoint: droppingPoint, hasPrompt: hasPrompt))
+        return aiChatEntryPointTargetToReturn
     }
 
     struct InsertAIChatTabCall: Equatable {
@@ -162,20 +168,23 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     var insertAIChatTabCalls: [InsertAIChatTabCall] = []
 
     @MainActor
-    func insertAIChatTab(with url: URL, payload: AIChatPayload) {
+    func insertAIChatTab(with url: URL, payload: AIChatPayload) -> AIChatEntryPointTarget? {
         insertAIChatTabCalls.append(InsertAIChatTabCall(url: url, payload: payload, restorationData: nil))
+        return aiChatEntryPointTargetToReturn
     }
 
     @MainActor
-    func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData) {
+    func insertAIChatTab(with url: URL, restorationData: AIChatRestorationData) -> AIChatEntryPointTarget? {
         insertAIChatTabCalls.append(InsertAIChatTabCall(url: url, payload: nil, restorationData: restorationData))
+        return aiChatEntryPointTargetToReturn
     }
 
     var insertAIChatTabRequestingOpenSettingsCalls: [URL] = []
 
     @MainActor
-    func insertAIChatTabRequestingOpenSettings(with url: URL) {
+    func insertAIChatTabRequestingOpenSettings(with url: URL) -> AIChatEntryPointTarget? {
         insertAIChatTabRequestingOpenSettingsCalls.append(url)
+        return aiChatEntryPointTargetToReturn
     }
 
     /// Stubs `focusActiveVoiceSessionTab(inSourceCollection:)` for tests. When `true`, the tab

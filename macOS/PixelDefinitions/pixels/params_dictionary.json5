@@ -545,6 +545,7 @@
             "prompt-bar-voice",
             "main-menu-file-new-chat",
             "main-menu-sidebar",
+            "main-menu-ask-about-page",
             "main-menu-open-duck-ai",
             "main-menu-new-chat",
             "main-menu-view-all-chats",
@@ -567,6 +568,17 @@
             "duckduckgo-homepage",
             "unattributed"
         ]
+    },
+    "aiChatPromptSurface": {
+        "key": "surface",
+        "type": "string",
+        "description": "Where this prompt was submitted, unlike 'source', which says how the chat was opened. 'address_bar', 'new_tab_page' and 'prompt_bar' are native composers that hand Duck.ai a prompt to send on its own; only the prompt they handed over reports them. Every other prompt reports where the chat is shown: 'duck_ai' for a Duck.ai tab, 'sidebar' for the sidebar, 'floating' for a sidebar chat detached into its own window.",
+        "enum": ["address_bar", "new_tab_page", "prompt_bar", "duck_ai", "sidebar", "floating"]
+    },
+    "aiChatFirstPromptNewInstall": {
+        "key": "first_prompt_new_install",
+        "type": "boolean",
+        "description": "Present (true) only when this is the first Duck.ai prompt ever submitted on a brand-new install. Omitted on every later prompt. Installs that predate this parameter are marked at launch, from their existing install statistics, so updating users never report it. Mirrors iOS's first_prompt_new_install."
     },
     "extension_context_loaded": {
         "key": "context_loaded",

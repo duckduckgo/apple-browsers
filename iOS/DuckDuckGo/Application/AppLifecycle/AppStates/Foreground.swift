@@ -93,7 +93,8 @@ struct Foreground: ForegroundHandling {
             privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
         )
-        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager)
+        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager,
+                                                     lastBackgroundDateStorage: lastBackgroundDateStorage)
         appReturnInstrumentation = DefaultAppReturnInstrumentation(
             eligibilityManager: idleReturnEligibilityManager,
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }

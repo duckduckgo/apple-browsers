@@ -20,6 +20,7 @@
 import Foundation
 import Testing
 import Core
+import Persistence
 import PrivacyConfig
 @testable import DuckDuckGo
 
@@ -54,68 +55,96 @@ final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 @MainActor
 final class IdleReturnEvaluatorTests {
 
-    private func makeEligibility(
+    private static let now = Date(timeIntervalSince1970: 1_000_000)
+
+    private func makeEvaluator(
         featureAvailable: Bool = true,
         thresholdSeconds: Int = 60,
-        effectiveOption: AfterInactivityOption = .newTab
-    ) -> MockIdleReturnEligibilityManager {
-        let mock = MockIdleReturnEligibilityManager()
-        mock.isFeatureAvailableResult = featureAvailable
-        mock.idleThresholdSecondsResult = thresholdSeconds
-        mock.effectiveAfterInactivityOptionResult = effectiveOption
-        return mock
+        effectiveOption: AfterInactivityOption = .newTab,
+        secondsSinceLastBackground: TimeInterval? = nil
+    ) -> IdleReturnEvaluator {
+        let eligibility = MockIdleReturnEligibilityManager()
+        eligibility.isFeatureAvailableResult = featureAvailable
+        eligibility.idleThresholdSecondsResult = thresholdSeconds
+        eligibility.effectiveAfterInactivityOptionResult = effectiveOption
+
+        let storage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys> = InMemoryThrowingKeyValueStore().throwingKeyedStoring()
+        if let secondsSinceLastBackground {
+            try? storage.set(Self.now.addingTimeInterval(-secondsSinceLastBackground), for: \.lastBackgroundDate)
+        }
+
+        return IdleReturnEvaluator(eligibilityManager: eligibility,
+                                   lastBackgroundDateStorage: storage,
+                                   now: { Self.now })
     }
 
     @available(iOS 16, *)
-    @Test("When feature is unavailable then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
+    @Test("When feature is unavailable then the return is ordinary", .timeLimit(.minutes(1)))
     func whenFeatureUnavailableThenReturnsFalse() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(featureAvailable: false))
-        let date = Date().addingTimeInterval(-61)
-        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: date))
+        let evaluator = makeEvaluator(featureAvailable: false, secondsSinceLastBackground: 61)
+        #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 61_000))
     }
 
     @available(iOS 16, *)
-    @Test("When lastBackgroundDate is nil then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
-    func whenLastBackgroundDateNilThenReturnsFalse() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility())
-        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: nil))
+    @Test("When no background date is stored then the return is ordinary", .timeLimit(.minutes(1)))
+    func whenNoStoredBackgroundDateThenReturnsFalse() {
+        let evaluator = makeEvaluator()
+        #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: nil))
     }
 
     @available(iOS 16, *)
-    @Test("When under threshold then didReturnAfterIdle returns false", .timeLimit(.minutes(1)))
+    @Test("When under threshold then the return is ordinary", .timeLimit(.minutes(1)))
     func whenUnderThresholdThenReturnsFalse() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
-        let underThreshold = Date().addingTimeInterval(-110)
-        #expect(!evaluator.didReturnAfterIdle(lastBackgroundDate: underThreshold))
+        let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 110)
+        #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 110_000))
     }
 
     @available(iOS 16, *)
-    @Test("When over threshold then didReturnAfterIdle returns true", .timeLimit(.minutes(1)))
+    @Test("When over threshold then the return is after idle", .timeLimit(.minutes(1)))
     func whenOverThresholdThenReturnsTrue() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
-        let overThreshold = Date().addingTimeInterval(-121)
-        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: overThreshold))
+        let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 121)
+        #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .ntp, timeAwayMs: 121_000))
     }
 
     @available(iOS 16, *)
-    @Test("When at exactly threshold then didReturnAfterIdle returns true", .timeLimit(.minutes(1)))
+    @Test("When at exactly threshold then the return is after idle", .timeLimit(.minutes(1)))
     func whenAtThresholdThenReturnsTrue() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(thresholdSeconds: 120))
-        let atThreshold = Date().addingTimeInterval(-120)
-        #expect(evaluator.didReturnAfterIdle(lastBackgroundDate: atThreshold))
+        let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 120)
+        #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .ntp, timeAwayMs: 120_000))
     }
 
     @available(iOS 16, *)
-    @Test("When effective option is .newTab then treatmentForIdleReturn is .ntp", .timeLimit(.minutes(1)))
+    @Test("When no background date is stored then timeAwayMs is nil", .timeLimit(.minutes(1)))
+    func whenNoStoredBackgroundDateThenTimeAwayIsNil() {
+        let evaluator = makeEvaluator()
+        #expect(evaluator.evaluateReturn().timeAwayMs == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("timeAwayMs reports the gap since the stored background date", .timeLimit(.minutes(1)))
+    func timeAwayMsReportsGap() {
+        let evaluator = makeEvaluator(secondsSinceLastBackground: 90)
+        #expect(evaluator.evaluateReturn().timeAwayMs == 90_000)
+    }
+
+    @available(iOS 16, *)
+    @Test("timeAwayMs is reported even when the return did not qualify as idle", .timeLimit(.minutes(1)))
+    func timeAwayMsReportedForOrdinaryReturn() {
+        let evaluator = makeEvaluator(thresholdSeconds: 120, secondsSinceLastBackground: 30)
+        #expect(evaluator.evaluateReturn() == .ordinary(timeAwayMs: 30_000))
+    }
+
+    @available(iOS 16, *)
+    @Test("When effective option is .newTab then the treatment is .ntp", .timeLimit(.minutes(1)))
     func whenEffectiveOptionIsNewTabThenTreatmentIsNTP() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(effectiveOption: .newTab))
-        #expect(evaluator.treatmentForIdleReturn() == .ntp)
+        let evaluator = makeEvaluator(effectiveOption: .newTab, secondsSinceLastBackground: 61)
+        #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .ntp, timeAwayMs: 61_000))
     }
 
     @available(iOS 16, *)
-    @Test("When effective option is .lastUsedTab then treatmentForIdleReturn is .lut", .timeLimit(.minutes(1)))
+    @Test("When effective option is .lastUsedTab then the treatment is .lut", .timeLimit(.minutes(1)))
     func whenEffectiveOptionIsLastUsedTabThenTreatmentIsLUT() {
-        let evaluator = IdleReturnEvaluator(eligibilityManager: makeEligibility(effectiveOption: .lastUsedTab))
-        #expect(evaluator.treatmentForIdleReturn() == .lut)
+        let evaluator = makeEvaluator(effectiveOption: .lastUsedTab, secondsSinceLastBackground: 61)
+        #expect(evaluator.evaluateReturn() == .afterIdle(treatment: .lut, timeAwayMs: 61_000))
     }
 }

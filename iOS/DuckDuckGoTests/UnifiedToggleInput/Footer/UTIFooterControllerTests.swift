@@ -346,7 +346,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
     func testAttachedTabDoesNotTriggerFileUploadPrivacy() {
         let attachment = UnifiedToggleInputAttachment.tab(.init(tabId: "page-tab", title: "Page",
-                                                                 url: URL(string: "https://example.com")!))
+                                                                 url: URL(string: "https://example.com")!, source: .recentTabs))
         XCTAssertNil(UTIAttachmentPrivacyKind(attachment: attachment))
     }
 

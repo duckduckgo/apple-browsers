@@ -445,10 +445,10 @@ struct OnboardingFlowConfiguration {
     }
 }
 
-@available(iOS 16, macOS 13, *)
 @Suite("Onboarding - Duck.ai Fire Resume Checkpoint")
 struct DuckAIFireResumeCheckpointTests {
 
+    @available(iOS 16, macOS 13, *)
     @Test("Completed Fire step clears the Duck.ai answer checkpoint and prompt", .timeLimit(.minutes(1)))
     func completedFireStepClearsAnswerCheckpoint() {
         let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
@@ -465,6 +465,7 @@ struct DuckAIFireResumeCheckpointTests {
         #expect(store.resumeDuckAIQueryPrompt == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Incomplete Fire step keeps the Duck.ai answer checkpoint", .timeLimit(.minutes(1)))
     func incompleteFireStepKeepsAnswerCheckpoint() {
         let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
@@ -481,6 +482,7 @@ struct DuckAIFireResumeCheckpointTests {
         #expect(store.resumeDuckAIQueryPrompt == "test prompt")
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Completed Fire step keeps the tailored-flow interlude checkpoint", .timeLimit(.minutes(1)))
     func completedFireStepKeepsInterludeCheckpoint() {
         let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()

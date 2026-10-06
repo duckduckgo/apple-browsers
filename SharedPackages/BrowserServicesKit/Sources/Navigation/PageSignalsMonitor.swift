@@ -65,7 +65,7 @@ public final class PageSignalsMonitor {
             return
         }
 
-        signalsCollector.startObservingSignals(for: url)
+        signalsCollector.startCollectingSignals(for: url)
     }
 
     public func didFailProvisionalNavigation(to url: URL?, with error: Error) {
@@ -101,16 +101,17 @@ private extension PageSignalsMonitor {
     }
 
     func refreshObservers() {
+        guard isEnabled() else {
+            resourceObserver.detach()
+            signalsCollector.startCollectingSignals(for: nil)
+            return
+        }
+
         guard let observedWebView else {
             return
         }
 
-        guard isEnabled() else {
-            resourceObserver.detach()
-            return
-        }
-
-        signalsCollector.startObservingSignals(for: observedWebView.url)
+        signalsCollector.startCollectingSignals(for: observedWebView.url)
         resourceObserver.attach(to: observedWebView)
     }
 }

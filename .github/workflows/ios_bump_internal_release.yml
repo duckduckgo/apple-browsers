@@ -32,7 +32,7 @@ jobs:
   validate_input_conditions:
 
     name: Validate Input Conditions
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 10
 
     env:
@@ -96,7 +96,7 @@ jobs:
 
     name: Increment Build Number
     needs: [ validate_input_conditions, run_tests ]
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 10
 
     outputs:
@@ -122,8 +122,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-        with:
-          xcode-version: "26.6"
 
       - name: Increment build number
         id: increment-build-number

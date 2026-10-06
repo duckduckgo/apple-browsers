@@ -88,7 +88,7 @@ jobs:
     outputs:
       stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     steps:
       - name: Check out the code
@@ -122,7 +122,7 @@ jobs:
     # by the stop_workflow flag.
     if: needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
-    runs-on: [image:osx-tahoe-26, m4pro]
+    runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 10
 
     steps:
@@ -186,8 +186,6 @@ jobs:
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
-        with:
-          xcode-version: "26.6"
 
       - name: Extract Asana Task ID
         id: task-id

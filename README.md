@@ -60,5 +60,3 @@ Copyright 2026 DuckDuckGo
 Duck Sans is a proprietary typeface created by Fontwerk and licensed to DuckDuckGo under commercial terms. Duck Sans font files are not licensed under the Apache License, Version 2.0, or covered by any open-source license applicable to this repository. You may not extract, copy, distribute, modify, or use Duck Sans font files for any purpose outside of running this software as distributed by DuckDuckGo. Redistributions of compiled builds that include Duck Sans must retain this notice. All rights in and to Duck Sans are reserved by Fontwerk (fontwerk.com).
 
 If you do not have a valid Duck Sans license, remove the DuckSansFont package and the app will fall back to the system font at runtime.
-
-<!-- PR 6880 CI reliability loop: TEMP: Testing PR checks 18 -->

@@ -28,7 +28,7 @@ import ZIPFoundation
 /// background is discarded and the extension doesn't work.
 ///
 /// A background page doesn't have that problem: when its script throws, the page stays loaded.
-/// So when a third-party extension is installed, this rewrites its manifest to load the same
+/// So when a third-party extension loads, this rewrites the manifest of a copy of it to load the same
 /// script from a generated page, `ddg-background-page.html`.
 ///
 /// It leaves the manifest unchanged when:
@@ -37,9 +37,8 @@ import ZIPFoundation
 ///
 /// Running it twice is harmless: after the first run there is no service worker left to rewrite.
 ///
-/// Extensions installed from the Chrome Web Store are kept as a ZIP, which can't be rewritten. Those
-/// are unpacked into a folder next to the ZIP, and the rewrite and WebKit use that folder instead
-/// (see `loadableExtensionURL(for:)`).
+/// The installation itself is never changed: the rewrite applies to a copy that WebKit loads instead
+/// (see `loadableExtensionURL(for:installFolder:)`). That also covers extensions installed as a ZIP.
 ///
 /// Some service workers load extra files with `importScripts`, which pages don't have. For those,
 /// the page first loads `WebExtensionImportScriptsShim` and the extra files, then the
@@ -51,11 +50,11 @@ struct WebExtensionBackgroundPagePatcher {
 
     private static let manifestFilename = "manifest.json"
 
-    /// Name of the folder an archived extension is unpacked into, next to the archive.
-    static let unpackedFolderName = "unpacked"
+    /// Name of the folder, inside the extension's install folder, holding the rewritten copy WebKit loads.
+    static let loadableFolderName = "loadable"
 
-    /// File in the unpacked folder recording the modification date of the archive it came from.
-    private static let archiveDateFilename = ".ddg-archive-date"
+    /// File in the loadable folder recording the modification date of the installation it was copied from.
+    private static let sourceDateFilename = ".ddg-source-date"
 
     private enum ManifestKey {
         static let background = "background"
@@ -72,57 +71,68 @@ struct WebExtensionBackgroundPagePatcher {
         self.fileManager = fileManager
     }
 
-    /// Returns the URL WebKit should load the installed extension from, rewriting its background first
-    /// when needed.
+    /// Returns the URL WebKit should load the installed extension from.
     ///
-    /// For a folder, that's the folder itself, patched in place. For a ZIP whose background must be
-    /// rewritten, it's an unpacked copy next to the ZIP, with the rewrite applied; the ZIP itself is never
-    /// changed. The copy is reused until the ZIP changes, and it lives in the extension's install folder,
-    /// so uninstalling removes it too. Any other ZIP, and any failure, returns the ZIP as it is.
-    func loadableExtensionURL(for installedExtensionURL: URL) -> URL {
-        guard installedExtensionURL.pathExtension.lowercased() == "zip" else {
-            patchIfNeeded(installedExtensionURL: installedExtensionURL)
-            return installedExtensionURL
-        }
+    /// The installation itself is never changed. When a third-party extension's background must be
+    /// rewritten, its files — from a ZIP or a folder — are copied into `loadableFolderName` inside
+    /// `installFolder`, the copy is rewritten, and WebKit loads the copy. The copy is reused until the
+    /// installation changes, removed when no rewrite is needed, and removed with the install folder on
+    /// uninstall. Any failure loads the installation as it is.
+    /// - Parameters:
+    ///   - installedExtensionURL: The installed ZIP or folder, as `WebExtensionStorageProviding.resolveInstalledExtension` resolved it.
+    ///   - installFolder: The extension's own folder in the extensions directory, which holds the installation.
+    func loadableExtensionURL(for installedExtensionURL: URL, installFolder: URL) -> URL {
+        let loadableURL = installFolder.appendingPathComponent(Self.loadableFolderName, isDirectory: true)
+        let isArchive = installedExtensionURL.pathExtension.lowercased() == "zip"
 
         do {
-            let archive = try Archive(url: installedExtensionURL, accessMode: .read)
-            guard let manifest = try Self.manifest(in: archive),
+            guard let manifest = try isArchive ? Self.manifest(inArchiveAt: installedExtensionURL) : manifest(inDirectory: installedExtensionURL),
                   !declaresDuckDuckGoSettings(inManifest: manifest),
                   Self.hasServiceWorkerOnlyBackground(manifest) else {
+                if fileManager.fileExists(atPath: loadableURL.path) {
+                    try fileManager.removeItem(at: loadableURL)
+                }
                 return installedExtensionURL
             }
 
-            let unpackedURL = installedExtensionURL.deletingLastPathComponent()
-                .appendingPathComponent(Self.unpackedFolderName, isDirectory: true)
-            try unpackIfNeeded(installedExtensionURL, to: unpackedURL)
-            guard let extensionDirectory = extensionDirectory(in: unpackedURL) else {
+            try copyIfNeeded(installedExtensionURL, isArchive: isArchive, to: loadableURL)
+            guard let extensionDirectory = extensionDirectory(in: loadableURL) else {
                 return installedExtensionURL
             }
 
             patchIfNeeded(installedExtensionURL: extensionDirectory)
             return extensionDirectory
         } catch {
-            Logger.webExtensions.error("❌ Failed to unpack \(installedExtensionURL.path) for its background rewrite: \(error.localizedDescription)")
+            Logger.webExtensions.error("❌ Failed to prepare \(installedExtensionURL.path) for its background rewrite: \(error.localizedDescription)")
             return installedExtensionURL
         }
     }
 
-    /// Unpacks `archiveURL` into `unpackedURL`, unless it already holds this version of the archive.
-    private func unpackIfNeeded(_ archiveURL: URL, to unpackedURL: URL) throws {
-        // Read from disk each time: `URL` resource values are cached and would miss an updated archive.
-        let archiveDate = try fileManager.attributesOfItem(atPath: archiveURL.path)[.modificationDate] as? Date
-        let dateStamp = archiveDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
-        let stampURL = unpackedURL.appendingPathComponent(Self.archiveDateFilename)
-        if let unpackedStamp = try? String(contentsOf: stampURL, encoding: .utf8), unpackedStamp == dateStamp {
+    /// Copies the installation into `loadableURL`, unless it already holds this version of it. A ZIP is
+    /// unpacked; a folder is copied without the loadable folder itself, which sits inside a flat install.
+    private func copyIfNeeded(_ installedExtensionURL: URL, isArchive: Bool, to loadableURL: URL) throws {
+        // Read from disk each time: `URL` resource values are cached and would miss an update. A folder
+        // install changes with its manifest.
+        let sourceURL = isArchive ? installedExtensionURL : installedExtensionURL.appendingPathComponent(Self.manifestFilename)
+        let sourceDate = try fileManager.attributesOfItem(atPath: sourceURL.path)[.modificationDate] as? Date
+        let dateStamp = sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
+        let stampURL = loadableURL.appendingPathComponent(Self.sourceDateFilename)
+        if let copiedStamp = try? String(contentsOf: stampURL, encoding: .utf8), copiedStamp == dateStamp {
             return
         }
 
-        if fileManager.fileExists(atPath: unpackedURL.path) {
-            try fileManager.removeItem(at: unpackedURL)
+        if fileManager.fileExists(atPath: loadableURL.path) {
+            try fileManager.removeItem(at: loadableURL)
         }
-        try fileManager.createDirectory(at: unpackedURL, withIntermediateDirectories: true)
-        try fileManager.unzipItem(at: archiveURL, to: unpackedURL)
+        try fileManager.createDirectory(at: loadableURL, withIntermediateDirectories: true)
+        if isArchive {
+            try fileManager.unzipItem(at: installedExtensionURL, to: loadableURL)
+        } else {
+            let items = try fileManager.contentsOfDirectory(at: installedExtensionURL, includingPropertiesForKeys: nil)
+            for item in items where item.standardizedFileURL != loadableURL.standardizedFileURL {
+                try fileManager.copyItem(at: item, to: loadableURL.appendingPathComponent(item.lastPathComponent))
+            }
+        }
         try dateStamp.write(to: stampURL, atomically: true, encoding: .utf8)
     }
 
@@ -137,8 +147,15 @@ struct WebExtensionBackgroundPagePatcher {
         return contents.lazy.compactMap { manifestDirectory(in: $0) }.first
     }
 
+    private func manifest(inDirectory directory: URL) throws -> [String: Any]? {
+        let manifestURL = directory.appendingPathComponent(Self.manifestFilename)
+        guard fileManager.fileExists(atPath: manifestURL.path) else { return nil }
+        return try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any]
+    }
+
     /// The manifest of an archived extension, at its root or inside a single top-level folder.
-    private static func manifest(in archive: Archive) throws -> [String: Any]? {
+    private static func manifest(inArchiveAt archiveURL: URL) throws -> [String: Any]? {
+        let archive = try Archive(url: archiveURL, accessMode: .read)
         let entry = archive[manifestFilename]
             ?? archive.first { $0.type == .file && $0.path.split(separator: "/").count == 2 && $0.path.hasSuffix("/" + manifestFilename) }
         guard let entry else { return nil }
@@ -275,7 +292,7 @@ struct WebExtensionBackgroundPagePatcher {
     /// Returns `directory` when it is a directory holding `manifest.json`, and `nil` otherwise.
     ///
     /// The directory check is not redundant: an installed extension can also be an archive file,
-    /// which `loadableExtensionURL(for:)` unpacks first.
+    /// which `loadableExtensionURL(for:installFolder:)` unpacks first.
     private func manifestDirectory(in directory: URL) -> URL? {
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {

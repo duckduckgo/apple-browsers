@@ -2790,6 +2790,7 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedNative() { pageContextRemovedNativeFired = true }
     func firePageContextRemovedFrontend() { pageContextRemovedFrontendFired = true }
     func firePageContextCollectionEmpty() {}
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {}
     func firePageContextCollectionUnavailable() {}
     func firePromptSubmittedWithContext() { promptSubmittedWithContextFired = true }
     func firePromptSubmittedWithoutContext() { promptSubmittedWithoutContextFired = true }

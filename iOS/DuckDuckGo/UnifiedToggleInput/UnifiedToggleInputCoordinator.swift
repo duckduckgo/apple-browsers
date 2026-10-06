@@ -426,9 +426,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedReasoningModeProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.duckAIWideEventFlowScope = duckAIWideEventFlowScope
+        let attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger)
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
-                                                         placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+                                                         placesAttachmentsAboveInput: placesAttachmentsAboveInput,
+                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.
@@ -561,7 +563,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 presenterViewController: { [weak self] in self?.attachmentPresenterViewController },
                 tabAttachmentSource: { [weak self] in self?.tabAttachmentSource },
                 tabAttachmentFeatureState: { [weak self] in self?.tabAttachmentFeature?.state ?? .unavailable },
-                pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested }
+                pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested },
+                isFireTab: { [weak self] in self?.viewController.handler.isFireTab ?? false }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -1664,6 +1667,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.attachmentCount
     }
 
+    var hasAttachedTabs: Bool {
+        viewController.currentAttachments.contains { $0.tabAttachment != nil }
+    }
+
     /// Surfaces a rejection in the input's validation banner.
     func presentRejectionBanner(_ message: String) {
         attachmentController.presentRejectionBanner(message)
@@ -1828,8 +1835,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabs: { [weak self] in self?.attachmentController.tabAttachmentCandidates ?? [] },
                 attachedTabIds: { [weak self] in self?.attachmentPolicy.selectedTabIDs ?? [] },
                 canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
-                toggleAttachment: { [weak self] in self?.attachmentController.toggleTabAttachment($0) ?? false }
+                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true, attachmentSource: .mention).isSuccessful ?? false }
             ))
+            mentionController.pixelSurfaceProvider = { [weak self] in
+                guard let self, attachmentController.canUseTabAttachments else { return nil }
+                return pixelSurface
+            }
+            mentionController.onPickerEvent = { [weak self] action, surface in
+                guard let self, case .available = tabAttachmentFeature?.state else { return }
+                pixelReporter.reportTabAttachment(action, source: .mention, surface: surface)
+            }
             mentionController.onSuggestionsChanged = { [weak self] in self?.onTabMentionSuggestionsChanged?($0) }
             tabMentionController = mentionController
             viewController.mentionHandler = mentionController
@@ -1890,7 +1905,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let preparations = viewController.currentAttachments.compactMap { tabAttachmentPreparations[$0.id] }
         transferredTabAttachmentIDs.formUnion(preparations.map { $0.attachment.id })
         tabAttachmentPreparations.removeAll()
-        return tabAttachmentContext?.makeRequest(preparations: preparations)
+        return tabAttachmentContext?.makeRequest(
+            preparations: preparations,
+            didDispatch: pixelReporter.makeTabSubmissionReporter(requestedTabCount: preparations.count))
     }
 
     var onPageContextAttachRequested: (() -> Void)?
@@ -2225,7 +2242,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didRemoveAttachment id: UUID, attachment: UnifiedToggleInputAttachment, isUserInitiated: Bool) {
         removeAttachment(id: id)
-        if isUserInitiated {
+        if isUserInitiated, !attachment.isTab || attachmentController.canUseTabAttachments {
             pixelReporter.reportAttachmentRemoved(attachment)
             if isEditing {
                 pixelReporter.reportEditAttachmentRemoved(attachment)

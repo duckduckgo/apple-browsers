@@ -122,8 +122,6 @@ protocol XPCServerInterface {
     func stopDebugServer()
 #if DEBUG
     func getLivePreview(completion: @escaping (DBPLivePreviewFrame?, Error?) -> Void)
-    func startLivePreviewDemo(completion: @escaping () -> Void)
-    func stopLivePreviewDemo(completion: @escaping () -> Void)
 #endif
 }
 
@@ -237,20 +235,6 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
     }
 
 #if DEBUG
-    func startLivePreviewDemo(completion: @escaping () -> Void) {
-        Task {
-            await serverDelegate?.startLivePreviewDemo()
-            completion()
-        }
-    }
-
-    func stopLivePreviewDemo(completion: @escaping () -> Void) {
-        Task {
-            await serverDelegate?.stopLivePreviewDemo()
-            completion()
-        }
-    }
-
     func getLivePreview(completion: @escaping (DBPLivePreviewFrame?, Error?) -> Void) {
         Task {
             do {

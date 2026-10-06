@@ -142,6 +142,10 @@ public final class JobQueueManager: JobQueueManaging {
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.jobQueue = jobQueue
+        #if os(macOS) && DEBUG
+        // Email confirmations can enter the queue before a scan or opt-out run configures it.
+        self.jobQueue.maxConcurrentOperationCount = 1
+        #endif
         self.jobProvider = jobProvider
         self.emailConfirmationJobProvider = emailConfirmationJobProvider
         self.mismatchCalculator = mismatchCalculator

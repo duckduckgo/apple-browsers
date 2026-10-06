@@ -561,14 +561,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 
 #if DEBUG
-    public func startLivePreviewDemo() async {
-        await PIRLivePreviewDemo.shared.start()
-    }
-
-    public func stopLivePreviewDemo() async {
-        await PIRLivePreviewDemo.shared.stop()
-    }
-
     @MainActor
     public func getLivePreview() async throws -> DBPLivePreviewFrame? {
         guard let frame = try await PIRLivePreview.shared.captureFrame() else { return nil }

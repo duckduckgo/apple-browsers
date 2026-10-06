@@ -38,10 +38,16 @@ public struct BrokerJobExecutionConfig {
 
         /// Interval for checking if a CSS action should be cancelled
         public static let defaultCssActionCancellationCheckInterval: TimeInterval = .seconds(1)
+        #if os(macOS) && DEBUG
+        // Keep one broker page active for the assisted PIR preview prototype.
+        public static let defaultConcurrentJobsDifferentBrokers: Int = 1
+        public static let defaultConcurrentJobsOnManualScans: Int = 1
+        #else
         /// Number of concurrent jobs allowed for different brokers
         public static let defaultConcurrentJobsDifferentBrokers: Int = 2
         /// Number of concurrent jobs allowed during manual scans
         public static let defaultConcurrentJobsOnManualScans: Int = 6
+        #endif
 
         /// Click await time (delay before click) for opt-out step actions
         public static let defaultClickAwaitTimeForOptOut: TimeInterval = .seconds(3)

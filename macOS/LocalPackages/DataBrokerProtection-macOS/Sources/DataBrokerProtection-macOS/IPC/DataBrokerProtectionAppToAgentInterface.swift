@@ -41,8 +41,6 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func stopDebugServer()
 #if DEBUG
     func getLivePreview() async throws -> DBPLivePreviewFrame?
-    func startLivePreviewDemo() async
-    func stopLivePreviewDemo() async
 #endif
 }
 
@@ -53,7 +51,5 @@ public protocol DataBrokerProtectionAppToAgentInterface: AnyObject, DataBrokerPr
 #if DEBUG
 public extension DataBrokerProtectionAgentDebugCommands {
     func getLivePreview() async throws -> DBPLivePreviewFrame? { nil }
-    func startLivePreviewDemo() async {}
-    func stopLivePreviewDemo() async {}
 }
 #endif

@@ -195,22 +195,6 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
     }
 
 #if DEBUG
-    public func startLivePreviewDemo() async {
-        await withCheckedContinuation { continuation in
-            xpc.execute(call: { server in
-                server.startLivePreviewDemo { continuation.resume() }
-            }, xpcReplyErrorHandler: { _ in continuation.resume() })
-        }
-    }
-
-    public func stopLivePreviewDemo() async {
-        await withCheckedContinuation { continuation in
-            xpc.execute(call: { server in
-                server.stopLivePreviewDemo { continuation.resume() }
-            }, xpcReplyErrorHandler: { _ in continuation.resume() })
-        }
-    }
-
     public func getLivePreview() async throws -> DBPLivePreviewFrame? {
         try await withCheckedThrowingContinuation { continuation in
             xpc.execute(call: { server in

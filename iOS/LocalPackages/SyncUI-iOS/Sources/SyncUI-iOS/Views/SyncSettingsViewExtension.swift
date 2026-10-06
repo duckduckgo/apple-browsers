@@ -18,10 +18,24 @@
 //
 
 import SwiftUI
+import UIKit
 
 // Extension to apply custom view modifier
 extension View {
     @ViewBuilder func modifier(@ViewBuilder _ closure: (Self) -> some View) -> some View {
         closure(self)
+    }
+
+    func syncPasscodeRequiredAlert(isPresented: Binding<Bool>) -> some View {
+        alert(isPresented: isPresented) {
+            Alert(
+                title: Text(UserText.syncPasscodeRequiredAlertTitle),
+                message: Text(UserText.syncPasscodeRequiredAlertMessage),
+                dismissButton: .default(Text(UserText.syncPasscodeRequiredAlertGoToSettingsButton), action: {
+                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                    isPresented.wrappedValue = false
+                })
+            )
+        }
     }
 }

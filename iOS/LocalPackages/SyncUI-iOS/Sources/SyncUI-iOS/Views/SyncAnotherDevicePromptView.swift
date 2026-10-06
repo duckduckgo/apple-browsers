@@ -51,7 +51,7 @@ struct SyncAnotherDevicePromptView: View {
 
                 VStack(spacing: 8) {
                     Button {
-                        model.syncAnotherDeviceFromConnectingSheet()
+                        Task { await model.syncAnotherDeviceFromConnectingSheet() }
                     } label: {
                         HStack(spacing: 8) {
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.qrScan)
@@ -62,7 +62,7 @@ struct SyncAnotherDevicePromptView: View {
                     .disabled(model.isConnectingThisDeviceOnly)
 
                     Button {
-                        model.syncThisDeviceOnlyFromConnectingSheet()
+                        Task { await model.syncThisDeviceOnlyFromConnectingSheet() }
                     } label: {
                         HStack(spacing: 8) {
                             if model.isConnectingThisDeviceOnly {
@@ -81,6 +81,7 @@ struct SyncAnotherDevicePromptView: View {
             .onAppear {
                 model.anotherDevicePromptAppeared()
             }
+            .syncPasscodeRequiredAlert(isPresented: $model.shouldShowPasscodeRequiredAlert)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {

@@ -28,6 +28,7 @@ protocol AIChatContextualModePixelFiring {
     func fireSheetOpened()
     func fireSheetDismissed(hadUnsubmittedSelections: Bool)
     func fireSessionRestored()
+    func fireSheetOpenedOnDeletedChat()
 
     // MARK: - Sheet Actions
     func fireExpandButtonTapped()
@@ -43,6 +44,7 @@ protocol AIChatContextualModePixelFiring {
     func fireAddressBarMenuShown()
     func fireAddressBarMenuNewChatSelected()
     func fireAddressBarMenuAskAboutPageSelected()
+    func fireAddressBarMenuAskAboutSearchSelected()
     func fireAddressBarMenuRecentChatsSelected()
 
     // MARK: - Floating Input
@@ -69,6 +71,10 @@ protocol AIChatContextualModePixelFiring {
     func firePageContextManuallyAttachedNative()
     func firePageContextManuallyAttachedFrontend()
 
+    // MARK: - Page Context Offer
+    func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason)
+    func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason)
+
     // MARK: - Page Context Removal
     func firePageContextRemovedNative()
     func firePageContextRemovedFrontend()
@@ -88,6 +94,7 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - Prompt Submission
     func firePromptSubmittedWithContext()
     func firePromptSubmittedWithoutContext()
+    func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket)
 
     // MARK: - Manual Attach State
     func beginManualAttach()
@@ -158,6 +165,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
         firePixel(.aiChatContextualSessionRestored)
     }
 
+    func fireSheetOpenedOnDeletedChat() {
+        firePixelKitEvent(AIChatContextualSessionPixel.sheetOpenedOnDeletedChat, .dailyAndCount)
+    }
+
     // MARK: - Sheet Actions
 
     func fireExpandButtonTapped() {
@@ -194,6 +205,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func fireAddressBarMenuAskAboutPageSelected() {
         firePixel(.aiChatContextualAddressBarMenuAskAboutPageSelected)
+    }
+
+    func fireAddressBarMenuAskAboutSearchSelected() {
+        firePixelKitEvent(AIChatAddressBarMenuPixel.askAboutSearchSelected, .dailyAndCount)
     }
 
     func fireAddressBarMenuRecentChatsSelected() {
@@ -233,6 +248,16 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePageContextManuallyAttachedFrontend() {
         firePixel(.aiChatContextualPageContextManuallyAttachedFrontend)
+    }
+
+    // MARK: - Page Context Offer
+
+    func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) {
+        firePixelKitEvent(AIChatContextualPageContextOfferPixel.shown(reason: reason), .dailyAndCount)
+    }
+
+    func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) {
+        firePixelKitEvent(AIChatContextualPageContextOfferPixel.accepted(reason: reason), .dailyAndCount)
     }
 
     // MARK: - Page Context Removal
@@ -296,6 +321,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePromptSubmittedWithoutContext() {
         firePromptSubmissionPixel(.aiChatContextualPromptSubmittedWithoutContextNative)
+    }
+
+    func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket) {
+        firePixelKitEvent(AIChatContextualPromptDepthPixel.promptDelivered(bucket: bucket), .dailyAndCount)
     }
 
     /// Marking after the fire keeps the first-prompt claim on this submission's pixel; the UTI
@@ -416,13 +445,97 @@ enum AIChatContextualSelectionPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
+enum AIChatContextualPageContextOfferReason: String {
+    case navigation
+    case detached
+}
+
+enum AIChatContextualPageContextOfferPixel: PixelKit.Event {
+    case shown(reason: AIChatContextualPageContextOfferReason)
+    case accepted(reason: AIChatContextualPageContextOfferReason)
+
+    var name: String {
+        switch self {
+        case .shown:
+            return "aichat_contextual_page_context_offer_shown"
+        case .accepted:
+            return "aichat_contextual_page_context_offer_accepted"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .shown(let reason), .accepted(let reason):
+            return [PixelParameters.aiChatPageContextOfferReason: reason.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+enum AIChatContextualPromptDepthBucket: String {
+    case first = "1"
+    case second = "2"
+    case threeToFive = "3-5"
+    case sixToTen = "6-10"
+    case elevenPlus = "11+"
+
+    init(promptIndex: Int) {
+        switch promptIndex {
+        case ..<2: self = .first
+        case 2: self = .second
+        case 3...5: self = .threeToFive
+        case 6...10: self = .sixToTen
+        default: self = .elevenPlus
+        }
+    }
+}
+
+enum AIChatContextualPromptDepthPixel: PixelKit.Event {
+    case promptDelivered(bucket: AIChatContextualPromptDepthBucket)
+
+    var name: String {
+        switch self {
+        case .promptDelivered:
+            return "aichat_contextual_prompt_depth"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .promptDelivered(let bucket):
+            return [PixelParameters.aiChatPromptDepthBucket: bucket.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
+enum AIChatContextualSessionPixel: PixelKit.Event {
+    case sheetOpenedOnDeletedChat
+
+    var name: String {
+        switch self {
+        case .sheetOpenedOnDeletedChat:
+            return "aichat_contextual_sheet_opened_on_deleted_chat"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
 enum AIChatAddressBarMenuPixel: PixelKit.Event {
     case recentChatsSelected
+    case askAboutSearchSelected
 
     var name: String {
         switch self {
         case .recentChatsSelected:
             return "aichat_contextual_address_bar_menu_all_chats_selected"
+        case .askAboutSearchSelected:
+            return "aichat_contextual_address_bar_menu_ask_about_search_selected"
         }
     }
 

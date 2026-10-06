@@ -279,6 +279,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     let omnibarController: AIChatOmnibarController
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let burnerMode: BurnerMode
+    private let launcherPromo: DuckAiLauncherPromo?
+    private var launcherPromoCancellable: AnyCancellable?
+    private var isShowingLauncherPromo = false
+    /// Another message held the card during this opening, so the promo waits for the next one.
+    private var isLauncherPromoDeferred = false
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -446,11 +451,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     required init(themeManager: ThemeManaging,
                   omnibarController: AIChatOmnibarController,
                   duckAiNativeStorageHandler: DuckAiNativeStorageHandling?,
-                  burnerMode: BurnerMode) {
+                  burnerMode: BurnerMode,
+                  launcherPromo: DuckAiLauncherPromo? = nil) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.burnerMode = burnerMode
+        self.launcherPromo = launcherPromo
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -1189,10 +1196,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         ])
 
         usageWarningCardView.onAction = { [weak self] in
-            self?.omnibarController.usageWarningViewModel?.performAction()
+            guard let self else { return }
+            if isShowingLauncherPromo {
+                launcherPromo?.tryNow()
+                return
+            }
+            omnibarController.usageWarningViewModel?.performAction()
         }
         usageWarningCardView.onDismiss = { [weak self] in
             guard let self else { return }
+            if isShowingLauncherPromo {
+                launcherPromo?.dismiss()
+                refreshUsageCard()
+                return
+            }
             // Ahead of the pixel: this card is not a usage message, so closing it must not report
             // a dismissal against whichever usage exposure happens to be open.
             if createImageModelSwitchNotice != nil {
@@ -1234,6 +1251,13 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         omnibarController.onUsageWarningsRefreshed = { [weak self] in
             self?.refreshUsageCard()
         }
+        omnibarController.onPromptSubmitted = { [weak self] in
+            guard let self, isShowingLauncherPromo, isUsageWarningVisible else { return }
+            launcherPromo?.ignore()
+        }
+        launcherPromoCancellable = launcherPromo?.changesPublisher.sink { [weak self] in
+            self?.refreshUsageCard()
+        }
         highUsageNoticeSource?.refresh()
     }
 
@@ -1252,6 +1276,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// allowance, so the message stays up where suggestions don't.
     private func applyUsageWarning(_ warning: DuckAiUsageWarning?) {
         applyInputBlock(warning?.blocksInput == true)
+        isShowingLauncherPromo = false
 
         // Required > Action > Informational. Out of usage outranks the disclosure: it is the
         // reason Send is disabled.
@@ -1327,11 +1352,21 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// The fallback when no allowance message applies: web shows the same one, and shows it here too.
     private func applyHighUsageNotice() {
         guard let notice = highUsageNoticeSource?.notice else {
-            currentUsageWarningExposure = nil
-            return setUsageWarningVisible(false)
+            return applyLauncherPromo()
         }
         usageWarningCardView.update(with: notice)
         currentUsageWarningExposure = DuckAiUsageWarningExposure(notice: notice)
+        setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+    }
+
+    /// Last in line: shows only when no other message wants the card during this opening.
+    private func applyLauncherPromo() {
+        currentUsageWarningExposure = nil
+        guard !isLauncherPromoDeferred, let promo = launcherPromo?.presentation() else {
+            return setUsageWarningVisible(false)
+        }
+        usageWarningCardView.update(with: promo)
+        isShowingLauncherPromo = true
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
     }
 
@@ -1354,6 +1389,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func setUsageWarningVisible(_ visible: Bool) {
+        if visible && !isShowingLauncherPromo {
+            isLauncherPromoDeferred = true
+        }
         let didChangeVisibility = applyUsageWarningVisibility(visible)
 
         // Reported off the reveal rather than the resolve: the message is resolved while the panel
@@ -1503,6 +1541,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         suggestionsHeightConstraint?.constant = 0
         // The reservation has to come off too, or the next open sizes the panel as if it were up.
         highUsageNoticeSource?.clear()
+        isShowingLauncherPromo = false
+        isLauncherPromoDeferred = false
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()
     }

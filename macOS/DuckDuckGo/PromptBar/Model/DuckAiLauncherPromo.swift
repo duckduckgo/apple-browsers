@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+import AppKit
 import Combine
 import FeatureFlags_macOS
 import Foundation
@@ -137,5 +139,21 @@ final class DuckAiLauncherPromo {
     static func resetOutcome(in keyValueStore: ThrowingKeyValueStoring) {
         try? keyValueStore.removeObject(forKey: outcomeKey)
         NotificationCenter.default.post(name: .duckAiLauncherPromoOutcomeDidReset, object: nil)
+    }
+}
+
+extension DuckAiLauncherPromo {
+
+    @MainActor
+    convenience init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
+        let chatCountPublisher = (NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
+            .map(\.count)
+            .replaceError(with: 0)
+            .eraseToAnyPublisher() ?? Just(0).eraseToAnyPublisher()
+        self.init(featureFlagger: featureFlagger,
+                  preferences: NSApp.delegateTyped.promptBarPreferences,
+                  chatCountPublisher: chatCountPublisher,
+                  keyValueStore: keyValueStore,
+                  openSettings: { Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat) })
     }
 }

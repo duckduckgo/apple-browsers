@@ -140,16 +140,7 @@ extension NewTabPageActionsManager {
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
             attachmentPrivacyDisclosureStore: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
-            duckAiLauncherPromo: DuckAiLauncherPromo(
-                featureFlagger: featureFlagger,
-                preferences: NSApp.delegateTyped.promptBarPreferences,
-                chatCountPublisher: (NSApp.delegateTyped.duckAiNativeStorageHandler as? DuckAiNativeChatsObserving)?.chatsPublisher()
-                    .map(\.count)
-                    .replaceError(with: 0)
-                    .eraseToAnyPublisher() ?? Just(0).eraseToAnyPublisher(),
-                keyValueStore: keyValueStore,
-                openSettings: { Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat) }
-            ),
+            duckAiLauncherPromo: DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore),
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },

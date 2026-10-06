@@ -71,11 +71,19 @@ final class TabsBarUITests: XCTestCase {
     }
 
     func testOpenInBackgroundRevealsNewTabWithoutSwitchingPagesWhenTabBarOverflows() throws {
+        try assertBackgroundTabIsRevealed(additionalTabs: 12)
+    }
+
+    func testOpenInBackgroundRevealsNewTabWithoutSwitchingPagesWhenTabsFit() throws {
+        try assertBackgroundTabIsRevealed(additionalTabs: 1)
+    }
+
+    private func assertBackgroundTabIsRevealed(additionalTabs: Int) throws {
         let addTab = app.buttons["Add 24"]
         let tabCount = app.buttons["Browser.Toolbar.Button.TabSwitcher"].staticTexts.firstMatch
         XCTAssertTrue(addTab.waitForExistence(timeout: UITestTimeouts.elementExistence))
         let initialCount = try XCTUnwrap(Int(tabCount.label))
-        for index in 1...12 {
+        for index in 1...additionalTabs {
             addTab.tap()
             XCTAssertTrue(tabCount.wait(for: \.label, equals: String(initialCount + index)))
         }
@@ -93,7 +101,7 @@ final class TabsBarUITests: XCTestCase {
         XCTAssertTrue(openInBackground.waitForExistence(timeout: UITestTimeouts.elementExistence))
         openInBackground.tap()
 
-        XCTAssertTrue(tabCount.wait(for: \.label, equals: String(initialCount + 13)))
+        XCTAssertTrue(tabCount.wait(for: \.label, equals: String(initialCount + additionalTabs + 1)))
         let backgroundTab = app.descendants(matching: .any).matching(NSPredicate(
             format: "label == %@ OR label == %@",
             "Open \"127.0.0.1\" at 127.0.0.1",

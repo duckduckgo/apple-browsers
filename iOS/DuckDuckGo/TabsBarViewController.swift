@@ -162,6 +162,7 @@ class TabsBarViewController: UIViewController {
         }
     }
     private weak var tabsModel: TabsModelManaging?
+    private var backgroundTabsToAnimate = Set<String>()
 
     private lazy var tabSwitcherButton: TabSwitcherStaticButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
 
@@ -545,11 +546,12 @@ class TabsBarViewController: UIViewController {
     }
 
     func backgroundTabAdded(_ tab: Tab) {
+        backgroundTabsToAnimate.insert(tab.uid)
         recomputeItemSize()
         reloadData()
         DispatchQueue.main.async { [weak self] in
             guard let self, let index = self.tabsModel?.indexOf(tab: tab) else { return }
-            self.collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: [], animated: true)
+            self.collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: [], animated: !UIAccessibility.isReduceMotionEnabled)
         }
         tabSwitcherButton.animateUpdate {
             self.tabSwitcherButton.tabCount = self.tabsCount
@@ -725,6 +727,13 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
 }
 
 extension TabsBarViewController: UICollectionViewDelegate {
+
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        guard let tab = tabsModel?.get(tabAt: indexPath.row),
+              backgroundTabsToAnimate.remove(tab.uid) != nil,
+              let cell = cell as? TabsBarCell else { return }
+        cell.animateBackgroundTabOpening()
+    }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)

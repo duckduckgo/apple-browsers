@@ -27,6 +27,7 @@ class TabsBarCell: UICollectionViewCell {
 
     static let reuseIdentifier = "Tab"
     static let cornerRadius: CGFloat = 12
+    private static let backgroundTabOpeningAnimationKey = "backgroundTabOpening"
 
     private enum Constants {
         static let faviconCornerRadius: CGFloat = 4
@@ -77,7 +78,28 @@ class TabsBarCell: UICollectionViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        contentView.layer.removeAnimation(forKey: Self.backgroundTabOpeningAnimationKey)
         isPointerHovering = false
+    }
+
+    func animateBackgroundTabOpening() {
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 0
+        fade.toValue = 1
+
+        let animation = CAAnimationGroup()
+        animation.animations = [fade]
+        animation.duration = 0.5
+        fade.duration = animation.duration
+        animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        if !UIAccessibility.isReduceMotionEnabled {
+            let rise = CABasicAnimation(keyPath: "transform.translation.y")
+            rise.fromValue = 8
+            rise.toValue = 0
+            rise.duration = animation.duration
+            animation.animations?.append(rise)
+        }
+        contentView.layer.add(animation, forKey: Self.backgroundTabOpeningAnimationKey)
     }
 
     private func setUpSubviews() {

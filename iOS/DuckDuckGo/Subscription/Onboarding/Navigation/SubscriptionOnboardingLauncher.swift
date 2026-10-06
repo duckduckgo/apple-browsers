@@ -64,8 +64,7 @@ extension SubscriptionOnboardingLauncher {
 extension SubscriptionOnboardingFlowViewModel {
 
     /// Walks the whole flow from the order confirmation.
-    /// An existing PIR profile marks `.pir` complete. The VPN is deliberately not backfilled: an installed VPN
-    /// configuration can be left over from a previous subscription, so it says nothing about this one.
+    /// An existing PIR profile marks `.pir` complete. 
     static func postCheckout<PIRScreen: View>(persistor: SubscriptionOnboardingProgressPersisting,
                                               isPIRAvailable: Bool,
                                               subscriptionManager: any SubscriptionManager,

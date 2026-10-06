@@ -266,6 +266,12 @@ class MainViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let idleReturnEvaluator: IdleReturnEvaluating
+
+    /// Set when the launch landed this return on the New Tab Page, so the launch action — which runs
+    /// afterwards and would otherwise treat the return a second time — can tell that it is too late.
+    /// One-shot: reading it clears it, so later returns are handled normally.
+    private var didLandOnNewTabPageForIdleReturnAtLaunch = false
     let afterInactivityOptionAdapter: AfterInactivityOptionAdapter
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let ntpAfterIdleInstrumentation: NTPAfterIdleInstrumentation
@@ -672,6 +678,7 @@ class MainViewController: UIViewController {
         featureFlagger: FeatureFlagger,
         isFloatingUIFeatureEnabledForCurrentLaunch: Bool? = nil,
         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+        idleReturnEvaluator: IdleReturnEvaluating,
         afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
         lastTabShortcutAdapter: LastTabShortcutAdapter,
         lastActiveTabStore: LastActiveTabStoring = LastActiveTabStore(),
@@ -760,6 +767,7 @@ class MainViewController: UIViewController {
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.idleReturnEvaluator = idleReturnEvaluator
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastTabShortcutAdapter = lastTabShortcutAdapter
         self.lastActiveTabStore = lastActiveTabStore
@@ -2236,6 +2244,10 @@ class MainViewController: UIViewController {
             return
         }
 
+        if attachNewTabPageForIdleReturn() {
+            return
+        }
+
         if tabManager.currentTabsModel.currentTab?.link != nil {
             guard let tab = tabManager.current(createIfNeeded: true) else {
                 fatalError("Unable to create tab")
@@ -2244,6 +2256,44 @@ class MainViewController: UIViewController {
         } else {
             attachHomeScreen()
         }
+    }
+
+    /// Lands a cold start that crossed the idle threshold on the New Tab Page, before the restored
+    /// tab is attached — so the launch screen hands over to the NTP rather than to a page that is
+    /// about to be replaced. Returns whether it took over the initial view.
+    private func attachNewTabPageForIdleReturn() -> Bool {
+        guard case .afterIdle(.ntp, let timeAwayMs) = idleReturnEvaluator.evaluateReturn() else { return false }
+        // Clearing tabs on launch owns the landing: the tabs are already gone before this runs and
+        // the burn replaces what is left behind us, so taking over here would only mark a tab that
+        // is about to be discarded — and the ordinary path then starts a second, untreated session.
+        // `autoClearInProgress` is no use as a guard here: the burn is dispatched after this point.
+        guard AutoClearSettingsModel(settings: appSettings)?.action.contains(.tabs) != true else { return false }
+        // A burn that has already begun makes `attachHomeScreen` a no-op, which would leave a tab
+        // selected with nothing attached. Clearing data alone does not replace the tabs, so the
+        // ordinary path can still handle this return.
+        guard !autoClearInProgress else { return false }
+
+        if tabManager.currentTabsModel.currentTab?.link != nil {
+            if let existingHomeTab = tabManager.firstHomeTab() {
+                tabManager.select(existingHomeTab, dismissCurrent: false)
+            } else {
+                tabManager.addHomeTab()
+            }
+        }
+
+        // The session starts when the NTP renders; stash the time away so it carries it.
+        postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        // Matches what the launch action used to pass: the keyboard and the NTP session's trigger
+        // both key off these, so landing here has to look like the new tab it replaces.
+        attachHomeScreen(isNewTab: true, allowingKeyboard: true, openedAfterIdle: true)
+        didLandOnNewTabPageForIdleReturnAtLaunch = true
+        return true
+    }
+
+    /// Whether the launch already applied the after-idle treatment for this return. Clears on read.
+    func consumeIdleReturnTreatmentAppliedAtLaunch() -> Bool {
+        defer { didLandOnNewTabPageForIdleReturnAtLaunch = false }
+        return didLandOnNewTabPageForIdleReturnAtLaunch
     }
 
     private func loadInitialViewIfNeeded() {

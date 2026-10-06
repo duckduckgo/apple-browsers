@@ -113,6 +113,7 @@ final class MainCoordinator {
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         idleReturnEvaluator: IdleReturnEvaluating,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -297,6 +298,7 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        idleReturnEvaluator: idleReturnEvaluator,
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
@@ -938,6 +940,12 @@ extension MainCoordinator: UserActivityHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
+        // The launch already landed this return on the NTP and the render already started its
+        // session; anything here would cancel that session and record the return as untreated.
+        if controller.consumeIdleReturnTreatmentAppliedAtLaunch() {
+            return
+        }
+
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             return

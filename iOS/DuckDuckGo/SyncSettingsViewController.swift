@@ -368,12 +368,13 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
     func dismissPresentedViewController(completion: (() -> Void)? = nil) {
         viewModel.isRecoverSyncedDataSheetVisible = false
-        guard let presentedViewController = navigationController?.presentedViewController,
+        guard let presentingViewController = navigationController,
+              let presentedViewController = presentingViewController.presentedViewController,
               !(presentedViewController is SyncSettingsViewController) else {
             completion?()
             return
         }
-        presentedViewController.dismiss(animated: true, completion: completion)
+        presentingViewController.dismiss(animated: true, completion: completion)
     }
 
     @MainActor
@@ -520,7 +521,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         mapDevices(registeredDevices)
         PixelKit.fire(Pixel.Event.syncLogin, options: .parameters(sourcePixelParameters))
-        presentSuccessScreen(destination: .fullRecoveryCode(isRecovery: codeCollectionIntent == .recoverData))
+        presentSuccessScreen(destination: codeCollectionIntent == .recoverData ? .recovery : .newlySyncing)
     }
 
     var isPresentingConnectingSheet: Bool {
@@ -543,12 +544,14 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     }
 
     private func successDestinationForFlow(isRecovery: Bool = false) -> SyncSettingsViewModel.SuccessDestination {
-        guard !isRecovery,
-              let startingSyncAccountUserId,
-              startingSyncAccountUserId == syncService.account?.userId else {
-            return .fullRecoveryCode(isRecovery: isRecovery)
+        if isRecovery {
+            return .recovery
         }
-        return .alreadySyncing
+        if let startingSyncAccountUserId,
+           startingSyncAccountUserId == syncService.account?.userId {
+            return .alreadySyncing
+        }
+        return .newlySyncing
     }
 
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool {

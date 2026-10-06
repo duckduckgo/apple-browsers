@@ -32,18 +32,6 @@ struct SyncSuccessView: View {
     @ObservedObject var model: SyncSettingsViewModel
     let destination: SyncSettingsViewModel.SuccessDestination
 
-    private var showsRecoveryCode: Bool {
-        if case .fullRecoveryCode(let recovery) = destination { return !recovery }
-        return false
-    }
-
-    private var isRecovery: Bool {
-        if case .fullRecoveryCode(let recovery) = destination {
-            return recovery
-        }
-        return false
-    }
-
     private var autoRestoreBinding: Binding<Bool> {
         Binding {
             model.isAutoRestoreEnabled
@@ -57,7 +45,7 @@ struct SyncSuccessView: View {
             List {
                 headerSection
 
-                if showsRecoveryCode {
+                if destination == .newlySyncing {
                     recoveryCodeSection
 
                     if model.isAutoRestoreFeatureAvailable {
@@ -78,13 +66,13 @@ struct SyncSuccessView: View {
     }
 
     private var title: String {
-        isRecovery
+        destination == .recovery
             ? UserText.simplifiedRecoveryCompleteTitle
             : UserText.simplifiedDeviceAddedTitle(model.thisDeviceName ?? UserText.simplifiedDeviceAddedFallbackDeviceName)
     }
 
     private var description: String {
-        isRecovery
+        destination == .recovery
             ? UserText.simplifiedRecoveryCompleteDescription
             : UserText.simplifiedDeviceAddedDescription
     }
@@ -122,7 +110,7 @@ struct SyncSuccessView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .accessibility(identifier: "SyncSuccessTitle")
 
-                if showsRecoveryCode || isRecovery {
+                if destination != .alreadySyncing {
                     Text(description)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -206,7 +194,7 @@ struct SyncSuccessView_Previews: PreviewProvider {
 
     enum State {
         case deviceAdded
-        case deviceAddedHost
+        case alreadySyncing
         case deviceAddedNoAutoRestore
         case recoveryComplete
     }
@@ -218,7 +206,7 @@ struct SyncSuccessView_Previews: PreviewProvider {
     static let snapshots = PreviewSnapshots<State>(
         configurations: [
             .init(name: "Device Added", state: .deviceAdded),
-            .init(name: "Device Added – Host", state: .deviceAddedHost, scope: .previews),
+            .init(name: "Already Syncing", state: .alreadySyncing, scope: .previews),
             .init(name: "Device Added – No Auto-Restore", state: .deviceAddedNoAutoRestore, scope: .previews),
             .init(name: "Recovery Complete", state: .recoveryComplete, scope: .previews)
         ],
@@ -226,13 +214,13 @@ struct SyncSuccessView_Previews: PreviewProvider {
             Group {
                 switch state {
                 case .deviceAdded:
-                    SyncSuccessView(model: .syncSuccessPreview(), destination: .fullRecoveryCode(isRecovery: false))
-                case .deviceAddedHost:
+                    SyncSuccessView(model: .syncSuccessPreview(), destination: .newlySyncing)
+                case .alreadySyncing:
                     SyncSuccessView(model: .syncSuccessPreview(), destination: .alreadySyncing)
                 case .deviceAddedNoAutoRestore:
-                    SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .fullRecoveryCode(isRecovery: false))
+                    SyncSuccessView(model: .syncSuccessPreview(isAutoRestoreAvailable: false), destination: .newlySyncing)
                 case .recoveryComplete:
-                    SyncSuccessView(model: .syncSuccessPreview(), destination: .fullRecoveryCode(isRecovery: true))
+                    SyncSuccessView(model: .syncSuccessPreview(), destination: .recovery)
                 }
             }
             .applyRebranding()

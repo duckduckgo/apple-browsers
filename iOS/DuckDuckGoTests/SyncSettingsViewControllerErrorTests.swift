@@ -428,7 +428,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
-        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.fullRecoveryCode(isRecovery: false)))
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.newlySyncing))
         XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 0)
     }
 
@@ -531,6 +531,48 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenAccountIsCreatedDuringPairingThenKeepsSettingsOpenUntilScannerIsDismissed() async throws {
+        let settingsVC = try XCTUnwrap(vc)
+        let navigationController = UINavigationController(rootViewController: settingsVC)
+        let rootViewController = UIViewController()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        await withCheckedContinuation { continuation in
+            rootViewController.present(navigationController, animated: false) { continuation.resume() }
+        }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        settingsVC.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+
+        settingsVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+
+        XCTAssertTrue(rootViewController.presentedViewController === navigationController)
+        XCTAssertTrue(navigationController.presentedViewController === scanner)
+        XCTAssertFalse(scanner.isBeingDismissed)
+
+        await settingsVC.controllerWillBeginTransmittingRecoveryKey()
+
+        XCTAssertTrue(rootViewController.presentedViewController === navigationController)
+        XCTAssertTrue(navigationController.presentingViewController === rootViewController)
+        XCTAssertNil(navigationController.presentedViewController)
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        XCTAssertTrue(settingsVC.viewIfLoaded?.window === window)
+        XCTAssertEqual(settingsVC.viewModel.connectingSheetPhase, .connecting(isRecovery: false))
+    }
+
+    @MainActor
     func testWhenPairingScannerHasBeenDismissedThenCleanupPreservesUnrelatedModal() async {
         let navigationController = UINavigationController(rootViewController: vc)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
@@ -618,7 +660,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
         XCTAssertEqual(vc.viewModel.devices, devices)
-        let successDestination = SyncSettingsViewModel.SuccessDestination.fullRecoveryCode(isRecovery: false)
+        let successDestination = SyncSettingsViewModel.SuccessDestination.newlySyncing
         XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: successDestination))
         XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
 
@@ -650,7 +692,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
-        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .newlySyncing))
     }
 
     @MainActor
@@ -687,7 +729,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
-        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false)))
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .newlySyncing))
     }
 
     private func makeSyncAccount(userId: String) -> SyncAccount {
@@ -729,7 +771,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
 
-        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.fullRecoveryCode(isRecovery: false)))
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.newlySyncing))
     }
 
     @MainActor
@@ -752,7 +794,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertEqual(
             spyVC.viewModel.connectingSheetPhase,
-            .connecting(isRecovery: false, successDestination: .fullRecoveryCode(isRecovery: false))
+            .connecting(isRecovery: false, successDestination: .newlySyncing)
         )
         XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
     }
@@ -870,7 +912,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertTrue(loginCalled)
         XCTAssertEqual(vc.viewModel.connectingSheetPhase,
-                       .success(.fullRecoveryCode(isRecovery: true)))
+                       .success(.recovery))
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {

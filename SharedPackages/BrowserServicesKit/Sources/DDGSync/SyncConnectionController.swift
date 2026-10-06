@@ -730,9 +730,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                                            setupRole: SyncSetupRole) async {
         switch completion {
         case .loggedIn:
-            await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [],
-                                                       isRecovery: false,
-                                                       setupRole: setupRole)
+            await delegate?.controllerDidCompleteLogin(registeredDevices: coordinator.completedRegisteredDevices ?? [], isRecovery: false, setupRole: setupRole)
         case .recoveryCodeSent(let credentialKind):
             let shouldWaitForDevicesToChange = credentialKind == .ddg && !coordinator.supportsRecoveryCodeDone
             await delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: shouldWaitForDevicesToChange)
@@ -765,9 +763,7 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool, setupRole: SyncSetupRole) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
-        await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices,
-                                                   isRecovery: isRecovery,
-                                                   setupRole: setupRole)
+        await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices, isRecovery: isRecovery, setupRole: setupRole)
     }
 
     private func remoteConnect() throws -> RemoteConnecting {

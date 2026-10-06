@@ -200,8 +200,9 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
     public enum SuccessDestination: Equatable {
-        case fullRecoveryCode(isRecovery: Bool)
+        case newlySyncing
         case alreadySyncing
+        case recovery
     }
 
     public enum ConnectingSheetPhase: Equatable, Identifiable {
@@ -528,12 +529,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     public func showSuccess(recoveryCode: String, destination: SuccessDestination) {
         self.recoveryCode = recoveryCode
-        let isRecovery: Bool
-        if case .fullRecoveryCode(let recovery) = destination {
-            isRecovery = recovery
-        } else {
-            isRecovery = false
-        }
+        let isRecovery = destination == .recovery
         switch connectingSheetPhase {
         case .connecting, .waitingForOtherDevice:
             connectingSheetPhase = .connecting(isRecovery: isRecovery, successDestination: destination)

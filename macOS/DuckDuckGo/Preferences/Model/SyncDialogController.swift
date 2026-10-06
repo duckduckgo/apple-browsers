@@ -1101,7 +1101,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerDidFinishReportingAccountSwitch(didSucceed: Bool) {
         if didSucceed && managementDialogModel.isSimplifiedSyncSetupV2Enabled {
-            completeAfterPreparingToSyncAnimation(successDialogForCurrentAccount())
+            completeAfterPreparingToSyncAnimation(.saveRecoveryCode(recoveryCode ?? ""))
         } else if didSucceed || managementDialogModel.syncErrorMessage == nil {
             managementDialogModel.endFlow()
         }

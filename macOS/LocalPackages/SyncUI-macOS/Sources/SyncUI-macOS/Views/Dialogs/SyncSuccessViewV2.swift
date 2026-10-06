@@ -150,7 +150,7 @@ struct SyncSuccessViewV2: View {
         .environmentObject(model)
 }
 
-#Preview("Pairing Host") {
+#Preview("Already Syncing") {
     let model = ManagementDialogModel()
     model.thisDeviceName = "Dax’s MacBook Pro"
     return SyncSuccessViewV2(code: nil)

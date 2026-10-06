@@ -182,6 +182,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     var tabBarRemoteMessagePopoverHoverTimer: Timer?
     var feedbackBarButtonHostingController: NSHostingController<TabBarRemoteMessageView>?
     var tabBarRemoteMessageCancellable: AnyCancellable?
+    var foregroundBrowserWindowObserver: ForegroundBrowserWindowObserver?
+    var foregroundBrowserWindowCancellable: AnyCancellable?
+    lazy var tabBarRemoteMessageImpressionTracker = TabBarRemoteMessageImpressionTracker { [weak self] messageID in
+        guard let self else { return }
+        self.tabBarRemoteMessageViewModel.refreshRemoteMessageForPresentation()
+        self.reconcileTabBarRemoteMessageImpression()
+        guard self.feedbackBarButtonHostingController?.rootView.model.id == messageID,
+              self.isTabBarRemoteMessageEligibleForImpression else { return }
+        self.tabBarRemoteMessageViewModel.markTabBarRemoteMessageAsShown(withID: messageID)
+    }
 
     private(set) var shadowView: TabShadowView!
 
@@ -651,7 +661,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     override func viewDidAppear() {
         // Running tests or moving Tab Bar from Title to main view on burn (animateBurningIfNeededAndClose)?
-        guard view.window != nil else { return }
+        guard let window = view.window else { return }
+
+        let observer = ForegroundBrowserWindowObserver(window: window)
+        foregroundBrowserWindowObserver = observer
+        foregroundBrowserWindowCancellable = observer.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reconcileTabBarRemoteMessageImpression() }
+        reconcileTabBarRemoteMessageImpression()
 
         enableScrollButtons()
         subscribeToChildWindows()
@@ -692,6 +709,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
+        foregroundBrowserWindowCancellable = nil
+        foregroundBrowserWindowObserver = nil
+        tabBarRemoteMessageImpressionTracker.update(isEligible: false, messageID: nil)
         disableChromeSidebarObservers()
         dismissAIChatCloseWarningPresenter()
     }

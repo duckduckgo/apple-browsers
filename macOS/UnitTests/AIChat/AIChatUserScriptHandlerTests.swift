@@ -540,6 +540,37 @@ struct AIChatUserScriptHandlerTests {
         #expect(testPixelFiring.expectedFireCalls == testPixelFiring.actualFireCalls)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("didReportMetric fires the duck_ai_new_chat experiment metric only for the first prompt in a chat",
+          .timeLimit(.minutes(1)),
+          arguments: [(AIChatMetricName.userDidSubmitFirstPrompt, 1),
+                      (AIChatMetricName.userDidSubmitPrompt, 0),
+                      (AIChatMetricName.userDidCreateNewChat, 0)])
+    @MainActor
+    func testThatNewAIChatExperimentPixelsFireOnlyForFirstPrompt(metric: AIChatMetricName, expectedFireCount: Int) async throws {
+        var firedCount = 0
+        let testHandler = AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: PixelKitMock(),
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(),
+            notificationCenter: notificationCenter,
+            fireNewAIChatExperimentPixels: { firedCount += 1 }
+        )
+
+        await withCheckedContinuation { continuation in
+            testHandler.didReportMetric(.init(metricName: metric)) {
+                continuation.resume()
+            }
+        }
+
+        #expect(firedCount == expectedFireCount)
+    }
+
     /// `PixelKitMock` runs both sides through the same `parameters` code, so it can't catch a wrong
     /// value — these read the fired parameters directly.
     @MainActor

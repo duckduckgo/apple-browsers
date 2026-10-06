@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/dominik/macos-native-webstore-catalog",
-        "revision" : "aac116aa93267079efe8aa0e9cc3c6462f10018b"
+        "branch" : "pr-releases/igrey/chrome-webstore-native-catalog",
+        "revision" : "3efae5e19b0caa189cc0204ef8a0036591ebadac"
       }
     },
     {

@@ -149,6 +149,20 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertFalse(catalog.contains(identifier))
     }
 
+    func testExtensionIDsListSupportedCatalogEntriesInOrder() throws {
+        let catalog = try makeCatalog()
+        let hidden = String(repeating: "c", count: 32)
+        let disabled = String(repeating: "d", count: 32)
+        try setCatalog(["catalog": [
+            ["id": internalIdentifier], ["id": "invalid"], ["name": "no id"], ["id": hidden], ["id": disabled], ["id": identifier]
+        ]])
+        config.featureSettings = ["hiddenExtensionIds": [hidden], "disabledExtensionIds": [disabled]]
+        XCTAssertEqual(catalog.extensionIDs, [internalIdentifier, identifier])
+
+        config.isFeatureEnabledCheck = { feature, _ in feature != .chromeWebstorePatching }
+        XCTAssertEqual(catalog.extensionIDs, [])
+    }
+
     func testDownloadURLMatchesScriptContractRegardlessOfQueryOrder() throws {
         let url = try ChromeWebStoreURL.downloadURL(for: identifier)
         XCTAssertTrue(ChromeWebStoreURL.isValidDownloadURL(url, for: identifier))

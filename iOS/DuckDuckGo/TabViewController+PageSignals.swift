@@ -32,3 +32,15 @@ extension TabViewController {
         pageSignalsMonitor.didPerformContentRuleListAction(ContentRuleListAction(webKitAction: action), for: url)
     }
 }
+
+extension TabViewController {
+
+    /// Error pages keep the failed navigation's signals.
+    func pageSignalsDidCommitNavigation(to url: URL?) {
+        guard !specialErrorPageNavigationHandler.isSpecialErrorPageRequest else {
+            return
+        }
+
+        pageSignalsMonitor.didCommitNavigation(to: url)
+    }
+}

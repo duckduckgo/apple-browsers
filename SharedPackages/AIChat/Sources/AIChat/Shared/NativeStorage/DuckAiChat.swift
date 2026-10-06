@@ -120,6 +120,34 @@ extension DuckAiChat {
     }
 }
 
+/// The newest message of a saved chat, with what's needed to tell that a response just finished.
+public struct DuckAiChatLastMessage: Equatable {
+    public let chatTitle: String?
+    public let messageCount: Int
+    public let role: String
+    public let text: String?
+
+    public var isFromAssistant: Bool { role == "assistant" }
+
+    public init(chatTitle: String?, messageCount: Int, role: String, text: String?) {
+        self.chatTitle = chatTitle
+        self.messageCount = messageCount
+        self.role = role
+        self.text = text
+    }
+
+    /// Returns `nil` for a chat with no messages. Throws on invalid JSON.
+    public static func decode(from data: Data) throws -> DuckAiChatLastMessage? {
+        let blob = try JSONDecoder().decode(ChatBlob.self, from: data)
+        guard let messages = blob.messages, let last = messages.last else { return nil }
+        let title = blob.title.flatMap { $0.isEmpty ? nil : $0 }
+        return DuckAiChatLastMessage(chatTitle: title,
+                                     messageCount: messages.count,
+                                     role: last.role,
+                                     text: last.effectiveTextContent)
+    }
+}
+
 // MARK: - Private Decodable Types
 
 private struct ChatBlob: Decodable {

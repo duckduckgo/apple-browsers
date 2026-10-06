@@ -40,12 +40,19 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     private let storageQueue = DispatchQueue(label: "com.duckduckgo.native-storage", qos: .userInitiated)
     private var didLogUnavailableFireModeHandler = false
     private let chatUpdatesSubject = PassthroughSubject<String, Never>()
+    private let chatWritesSubject = PassthroughSubject<DuckAiChatRecord, Never>()
 
     /// Emits the `chatId` of every chat written through `putChat` / `putChats` after the
     /// write succeeds. Consumers can use this to react to FE-driven state changes
     /// (e.g. the active model on the current chat changing).
     public var chatUpdatesPublisher: AnyPublisher<String, Never> {
         chatUpdatesSubject.eraseToAnyPublisher()
+    }
+
+    /// Emits each chat the FE saves through a single `putChat`, with its data, after the write
+    /// succeeds. Bulk `putChats` writes (migration, sync) are left out.
+    public var chatWritesPublisher: AnyPublisher<DuckAiChatRecord, Never> {
+        chatWritesSubject.eraseToAnyPublisher()
     }
 
     /// Returns the fire-mode storage state for the surrounding webview.
@@ -271,6 +278,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             }
             Logger.aiChat.debug("DuckAiNativeStorage: putChat '\(chatId)' succeeded (\(jsonData.count) bytes)")
             chatUpdatesSubject.send(chatId)
+            chatWritesSubject.send(DuckAiChatRecord(chatId: chatId, data: jsonData))
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChat failed for \(chatId): \(error.localizedDescription)")
             pixelFiring.fire(.chatPutError(error))

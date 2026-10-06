@@ -251,4 +251,51 @@ final class DuckAiChatDecodeTests: XCTestCase {
         let decoded = try DuckAiChat.decode(from: Data(json.utf8))
         XCTAssertNil(decoded.lastMessageContent)
     }
+
+    // MARK: - DuckAiChatLastMessage
+
+    func testLastMessage_finishedReasoningResponse_readsTextFromParts() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "title": "Duck facts",
+              "messages": [
+                {"role":"user","content":"tell me about ducks"},
+                {"role":"assistant","content":"","parts":[
+                  {"type":"reasoning"},
+                  {"type":"tool-invocation"},
+                  {"type":"text","text":"Ducks are waterfowl."},
+                  {"type":"source"}
+                ]}
+              ]
+            }
+            """
+
+        let lastMessage = try XCTUnwrap(DuckAiChatLastMessage.decode(from: Data(json.utf8)))
+        XCTAssertEqual(lastMessage, DuckAiChatLastMessage(chatTitle: "Duck facts", messageCount: 2, role: "assistant", text: "Ducks are waterfowl."))
+        XCTAssertTrue(lastMessage.isFromAssistant)
+    }
+
+    func testLastMessage_promptJustSent_isFromUserWithoutTitle() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "title": "",
+              "messages": [
+                {"role":"user","content":"hi"}
+              ]
+            }
+            """
+
+        let lastMessage = try XCTUnwrap(DuckAiChatLastMessage.decode(from: Data(json.utf8)))
+        XCTAssertFalse(lastMessage.isFromAssistant)
+        XCTAssertNil(lastMessage.chatTitle)
+        XCTAssertEqual(lastMessage.messageCount, 1)
+    }
+
+    func testLastMessage_noMessages_returnsNil() throws {
+        let json = #"{"chatId": "c1", "messages": []}"#
+
+        XCTAssertNil(try DuckAiChatLastMessage.decode(from: Data(json.utf8)))
+    }
 }

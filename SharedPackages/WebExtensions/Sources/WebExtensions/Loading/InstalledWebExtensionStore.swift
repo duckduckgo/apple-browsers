@@ -29,6 +29,14 @@ public protocol InstalledWebExtensionStoring: AnyObject {
 }
 
 @available(macOS 15.4, iOS 18.4, *)
+public extension InstalledWebExtensionStoring {
+    /// Returns all matching installations because old and new versions can coexist during an update.
+    func installedExtensions(withStoreIdentity identity: WebExtensionStoreIdentity) -> [InstalledWebExtension] {
+        installedExtensions.filter { $0.storeIdentity == identity }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
 public struct InstalledWebExtensionSettings: StoringKeys {
     let extensions = StorageKey<[InstalledWebExtension]>(WebExtensionStorageKeys.installedExtensions, assertionHandler: { _ in })
 

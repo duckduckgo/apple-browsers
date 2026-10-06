@@ -18,13 +18,17 @@
 
 #if DEBUG
 import AppKit
+import DataBrokerProtectionCore
 
 /// A read-only preview of the original page in the PIR background agent.
 @MainActor
 public final class DBPLivePreviewViewController: NSViewController {
-    public init(agentInterface: DataBrokerProtectionAppToAgentInterface, hidesWhenIdle: Bool = true) {
+    public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
+                hidesWhenIdle: Bool = true,
+                scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)? = nil) {
         self.agentInterface = agentInterface
         self.hidesWhenIdle = hidesWhenIdle
+        self.scanProgressProvider = scanProgressProvider
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -33,7 +37,7 @@ public final class DBPLivePreviewViewController: NSViewController {
     }
 
     public override func loadView() {
-        // The demo uses a 200pt square snapshot of the agent's square web view.
+        // The demo uses a 300pt square snapshot of the agent's square web view.
         let card = PreviewCardView()
         card.material = .popover
         card.blendingMode = .withinWindow
@@ -78,6 +82,19 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderLabel)
 
+        progressLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        progressLabel.textColor = .secondaryLabelColor
+        progressBar.style = .bar
+        progressBar.isIndeterminate = false
+        progressBar.minValue = 0
+        progressBar.maxValue = 1
+        let progress = NSStackView(views: [progressLabel, progressBar])
+        progress.orientation = .vertical
+        progress.alignment = .leading
+        progress.spacing = 6
+        progress.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(progress)
+
         NSLayoutConstraint.activate([
             icon.widthAnchor.constraint(equalToConstant: 24),
             icon.heightAnchor.constraint(equalToConstant: 24),
@@ -88,9 +105,14 @@ public final class DBPLivePreviewViewController: NSViewController {
             imageView.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 12),
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            imageView.widthAnchor.constraint(equalToConstant: 200),
-            imageView.heightAnchor.constraint(equalToConstant: 200),
-            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
+            imageView.widthAnchor.constraint(equalToConstant: 300),
+            imageView.heightAnchor.constraint(equalToConstant: 300),
+            progress.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 12),
+            progress.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
+            progress.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
+            progress.heightAnchor.constraint(equalToConstant: 30),
+            progress.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
+            progressBar.widthAnchor.constraint(equalTo: progress.widthAnchor),
             placeholderLabel.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
             placeholderLabel.centerYAnchor.constraint(equalTo: imageView.centerYAnchor)
         ])
@@ -101,6 +123,7 @@ public final class DBPLivePreviewViewController: NSViewController {
         guard timer == nil else { return }
         generation = UUID()
         clearFrame(message: "Connecting to PIR agent")
+        displayProgress(nil)
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.requestFrameIfVisible() }
         }
@@ -117,6 +140,9 @@ public final class DBPLivePreviewViewController: NSViewController {
     }
 
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
+    private let scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)?
+    private let progressLabel = NSTextField(labelWithString: "Scan progress unavailable")
+    private let progressBar = NSProgressIndicator()
     private let hidesWhenIdle: Bool
     private let brokerLabel = NSTextField(labelWithString: "PIR activity")
     private let activityLabel = NSTextField(labelWithString: "Connecting to PIR agent")
@@ -145,9 +171,12 @@ public final class DBPLivePreviewViewController: NSViewController {
         requestStartedAt = Date()
         let generation = generation
         let agentInterface = agentInterface
+        let scanProgressProvider = scanProgressProvider
         requestTask = Task { @MainActor [weak self] in
+            let progress = try? await scanProgressProvider?()
             let result: Result<DBPLivePreviewFrame?, Error>
             do {
+                try Task.checkCancellation()
                 result = .success(try await agentInterface.getLivePreview())
             } catch {
                 result = .failure(error)
@@ -158,11 +187,25 @@ public final class DBPLivePreviewViewController: NSViewController {
             guard !Task.isCancelled, self.generation == generation, self.timer != nil,
                   self.view.window?.isVisible == true, !self.view.isHiddenOrHasHiddenAncestor else { return }
 
+            self.displayProgress(progress)
             switch result {
             case .success(let frame): self.display(frame)
             case .failure: self.clearFrame(message: "Preview unavailable")
             }
         }
+    }
+
+    private func displayProgress(_ progress: DBPUIScanProgress?) {
+        guard let progress, progress.totalScans > 0 else {
+            progressLabel.stringValue = progress == nil ? "Scan progress unavailable" : "No scans yet"
+            progressBar.doubleValue = 0
+            return
+        }
+        let completed = max(0, min(progress.currentScans, progress.totalScans))
+        progressLabel.stringValue = completed == progress.totalScans
+            ? "Scan complete: \(completed) of \(progress.totalScans)"
+            : "Scanning \(completed) of \(progress.totalScans)"
+        progressBar.doubleValue = Double(completed) / Double(progress.totalScans)
     }
 
     private func display(_ frame: DBPLivePreviewFrame?) {

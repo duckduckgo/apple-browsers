@@ -67,7 +67,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 featureFlagger: DBPFeatureFlagging,
                 applicationNameForUserAgentProvider: @escaping () -> String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
-                operationAwaitTime: TimeInterval = 3,
+                operationAwaitTime: TimeInterval = BrokerJobExecutionConfig.Constants.defaultOperationAwaitTime,
                 stageDurationCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,

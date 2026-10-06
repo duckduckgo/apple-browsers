@@ -37,9 +37,11 @@ public final class StatusBarPopover: NSPopover {
 
     #if DEBUG
     @MainActor
-    public func setLivePreviewContent(agentInterface: DataBrokerProtectionAppToAgentInterface) {
-        let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false)
-        let size = NSSize(width: 224, height: 268)
+    public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
+        let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false) {
+            try agentInterface.getLivePreviewScanProgress()
+        }
+        let size = NSSize(width: 324, height: 410)
         controller.view.frame = NSRect(origin: .zero, size: size)
         contentViewController = controller
         contentSize = size

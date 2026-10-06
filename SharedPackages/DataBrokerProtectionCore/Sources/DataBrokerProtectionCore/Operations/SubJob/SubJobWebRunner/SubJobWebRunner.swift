@@ -611,7 +611,7 @@ public extension SubJobWebRunning {
     }
 
     func executeCurrentAction() async {
-        let waitTimeUntilRunningTheActionAgain: TimeInterval = 3
+        let waitTimeUntilRunningTheActionAgain = BrokerJobExecutionConfig.Constants.defaultOperationAwaitTime
         recordDebugEvent(kind: .wait,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: "Waiting \(waitTimeUntilRunningTheActionAgain)s (retry)")

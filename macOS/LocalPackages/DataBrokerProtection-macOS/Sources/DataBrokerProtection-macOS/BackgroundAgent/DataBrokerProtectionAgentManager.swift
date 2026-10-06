@@ -562,6 +562,13 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
 #if DEBUG
     @MainActor
+    public func getLivePreviewScanProgress() throws -> DBPUIScanProgress {
+        let queryData = try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)
+            .excludingIneligibleBrokers(isAuthenticatedUser: currentRunIsFreeScan != true)
+        return DBPUIInitialScanState(from: queryData).scanProgress
+    }
+
+    @MainActor
     public func getLivePreview() async throws -> DBPLivePreviewFrame? {
         guard let frame = try await PIRLivePreview.shared.captureFrame() else { return nil }
         return DBPLivePreviewFrame(frame: frame)

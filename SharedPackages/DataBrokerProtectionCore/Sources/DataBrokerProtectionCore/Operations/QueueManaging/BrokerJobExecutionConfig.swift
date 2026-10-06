@@ -34,7 +34,13 @@ public struct BrokerJobExecutionConfig {
         #endif
 
         /// Maximum time allowed for a CSS action to complete before timing out
+        #if os(macOS) && DEBUG
+        public static let defaultCssActionTimeout: TimeInterval = .seconds(30)
+        public static let defaultOperationAwaitTime: TimeInterval = .seconds(2)
+        #else
         public static let defaultCssActionTimeout: TimeInterval = .seconds(60)
+        public static let defaultOperationAwaitTime: TimeInterval = .seconds(3)
+        #endif
 
         /// Interval for checking if a CSS action should be cancelled
         public static let defaultCssActionCancellationCheckInterval: TimeInterval = .seconds(1)
@@ -50,7 +56,7 @@ public struct BrokerJobExecutionConfig {
         #endif
 
         /// Click await time (delay before click) for opt-out step actions
-        public static let defaultClickAwaitTimeForOptOut: TimeInterval = .seconds(3)
+        public static let defaultClickAwaitTimeForOptOut: TimeInterval = defaultOperationAwaitTime
         /// Click await time for scan step actions
         public static let defaultClickAwaitTimeForScan: TimeInterval = .seconds(0)
 

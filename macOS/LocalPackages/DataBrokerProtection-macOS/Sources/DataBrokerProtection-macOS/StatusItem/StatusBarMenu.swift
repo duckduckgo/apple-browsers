@@ -48,7 +48,7 @@ public final class StatusBarMenu: NSObject {
 
     #if DEBUG
     @MainActor
-    public func setLivePreviewContent(agentInterface: DataBrokerProtectionAppToAgentInterface) {
+    public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
         popover.setLivePreviewContent(agentInterface: agentInterface)
     }
     #endif

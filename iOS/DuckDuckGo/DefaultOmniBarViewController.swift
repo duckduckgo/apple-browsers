@@ -173,12 +173,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             guard let self else { return }
             // Ahead of the delegate, which anchors the suggestions popover below the card.
             if isExpanded {
-                if let draft = self.pendingFooterLinkDraft, self.selectedTextEntryMode == .aiChat {
-                    self.omniBarView.aiChatTextView.text = draft
-                    self.omniBarView.updateTextFieldPlaceholderVisibility(hasText: !draft.isEmpty)
-                    self.modeToggleTextModel.updateText(draft)
-                    self.pendingFooterLinkDraft = nil
-                }
+                self.restorePendingFooterLinkDraft()
                 self.refreshFooterMessage(animated: true)
             }
             self.omniDelegate?.onOmniBarExpandedStateChanged(isExpanded: isExpanded)
@@ -679,6 +674,18 @@ extension DefaultOmniBarViewController {
         refreshAttachButton()
     }
 
+    private func restorePendingFooterLinkDraft() {
+        guard selectedTextEntryMode == .aiChat,
+              omniBarView.aiChatTextView.isFirstResponder,
+              let draft = pendingFooterLinkDraft else { return }
+
+        omniBarView.aiChatTextView.text = draft
+        modeToggleTextModel.updateText(draft)
+        pendingFooterLinkDraft = nil
+        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
+        omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
+    }
+
     private func fireAttachmentPrivacyPixel(_ action: AttachmentPrivacyPixel.Action) {
         guard let kind = attachmentPrivacyNotice.kind else { return }
         attachmentPrivacyPixelFiring?.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: .addressBar), frequency: .dailyAndCount)
@@ -899,6 +906,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         _ = omniDelegate?.onTextFieldDidBeginEditing(barView)
         refreshState(state.onEditingStartedState)
+        restorePendingFooterLinkDraft()
         omniDelegate?.onDidBeginEditing()
 
         omniBarView.layoutIfNeeded()

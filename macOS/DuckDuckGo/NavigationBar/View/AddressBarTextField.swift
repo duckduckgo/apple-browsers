@@ -503,6 +503,14 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
+    /// The suggestions that open a URL rather than search, as `navigate(suggestion:)` counts them.
+    private static func isURLSuggestion(_ suggestion: Suggestion?) -> Bool {
+        switch suggestion {
+        case .bookmark, .historyEntry, .website: true
+        default: false
+        }
+    }
+
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
         case .bookmark,
@@ -637,6 +645,9 @@ final class AddressBarTextField: NSTextField {
         }
 
         self.window?.makeFirstResponder(nil)
+        if Self.isURLSuggestion(suggestion) {
+            selectedTabViewModel.tab.aiChat?.noteAddressBarSuggestionNavigation(to: providedUrl)
+        }
         selectedTabViewModel.tab.setUrl(providedUrl, source: .userEntered(userEnteredValue, downloadRequested: downloadRequested))
         if downloadRequested {
             updateValue(selectedTabViewModel: nil, addressBarString: nil)
@@ -672,6 +683,9 @@ final class AddressBarTextField: NSTextField {
             let tab = Tab(content: .url(url, source: .userEntered(userEnteredValue)),
                           shouldLoadInBackground: true,
                           burnerMode: tabCollectionViewModel.burnerMode)
+            if Self.isURLSuggestion(suggestion) {
+                tab.aiChat?.noteAddressBarSuggestionNavigation(to: url)
+            }
 
             if isUpgraded {
                 updateTab(tab, upgradedTo: url)

@@ -158,6 +158,33 @@
             }
         ]
     },
+    "aichat_duck_ai_direct_navigation_macos": {
+        "description": "Fired when a tab loads Duck.ai through a navigation the user started toward it, rather than from a Duck.ai surface: typed in the address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link from another app, or a link on a web page. A page that redirects to Duck.ai, such as a search engine's link wrapper, counts as the navigation that led to it. Not fired in the sidebar, for links from Duck.ai or duckduckgo.com, for chats the duckduckgo.com homepage hands over, for restored or reloaded loads, or again when Duck.ai redirects within itself.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "via",
+                "description": "How the navigation started. 'typed' includes AI bang searches; 'suggestion' is a bookmark, history or website suggestion picked in the address bar, including inline autocomplete; 'favorite' is a bookmark that is also a favorite, wherever it's opened from; 'external' is a link from another app.",
+                "type": "string",
+                "enum": ["typed", "suggestion", "bookmark", "favorite", "history", "external", "link"]
+            },
+            {
+                "key": "duckai_enabled",
+                "description": "Whether Duck.ai is enabled in AI Features settings.",
+                "type": "boolean"
+            },
+            {
+                "key": "toggle_enabled",
+                "description": "Whether the address bar's Search/Duck.ai toggle setting is on. Always false when Duck.ai is disabled.",
+                "type": "boolean"
+            }
+        ]
+    },
     "m_mac_aichat_sent_prompt_ongoing_chat": {
         "description": "Fired when user submits a prompt in an ongoing Duck.ai conversation",
         "owners": ["pikorddg"],

@@ -600,15 +600,10 @@ final class MainMenu: NSMenu {
             })
     }
 
-    /// Whether the Debug menu, and the debug tools reachable from elsewhere, are available in this build for this user.
-    static func isDebugMenuAvailable(internalUserDecider: InternalUserDecider) -> Bool {
-        let buildType = StandardApplicationBuildType()
-        return buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild || internalUserDecider.isInternalUser
-    }
-
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-        guard Self.isDebugMenuAvailable(internalUserDecider: internalUserDecider) else { return nil }
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild || internalUserDecider.isInternalUser else { return nil }
         return NSMenuItem(title: "Debug")
             .withAccessibilityIdentifier(AccessibilityIdentifiers.debugMenu)
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))

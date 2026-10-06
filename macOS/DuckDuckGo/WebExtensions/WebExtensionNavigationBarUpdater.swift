@@ -272,8 +272,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
             toolbarMenu.delegate?.menuNeedsUpdate?(menu)
         }
 
-        // Offered wherever the Debug menu is.
-        guard MainMenu.isDebugMenuAvailable(internalUserDecider: NSApp.delegateTyped.internalUserDecider) else { return }
+        guard NSApp.delegateTyped.internalUserDecider.isInternalUser else { return }
         if !menu.items.isEmpty {
             menu.addItem(.separator())
         }

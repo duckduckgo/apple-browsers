@@ -25,6 +25,7 @@ extension TabViewController {
 
 
     /// We'll conceal the `contentRuleList` selector whenever the Feature Flag is disabled
+    /// - Important: This same mechanism was used in `DistributedNavigationDelegate`
     override func responds(to aSelector: Selector!) -> Bool {
         let contentRuleListActionSelector = NSSelectorFromString("_webView:contentRuleListWithIdentifier:performedAction:forURL:")
 

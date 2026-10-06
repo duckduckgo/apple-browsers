@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DDGNavigation
 import WebKit
 
 // WebKit delivers these private callbacks to the tab's existing navigation delegate.
@@ -24,6 +25,10 @@ extension TabViewController {
 
     @objc(_webView:contentRuleListWithIdentifier:performedAction:forURL:)
     func webView(_ webView: WKWebView, contentRuleListWithIdentifier identifier: String, performedAction action: NSObject, forURL url: URL) {
-        pageSignalsController.didPerformContentRuleListAction(action, for: url, in: webView)
+        guard webView == self.webView else {
+            return
+        }
+
+        pageSignalsMonitor.didPerformContentRuleListAction(ContentRuleListAction(webKitAction: action), for: url)
     }
 }

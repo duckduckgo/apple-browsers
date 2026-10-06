@@ -97,10 +97,15 @@ public final class DBPLivePreviewViewController: NSViewController {
         progress.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(progress)
 
+        let divider = NSBox()
+        divider.boxType = .separator
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(divider)
+
         NSLayoutConstraint.activate([
             icon.widthAnchor.constraint(equalToConstant: 24),
             icon.heightAnchor.constraint(equalToConstant: 24),
-            header.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            header.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 10),
             header.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 14),
             header.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -14),
             header.heightAnchor.constraint(equalToConstant: 32),
@@ -109,11 +114,15 @@ public final class DBPLivePreviewViewController: NSViewController {
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
             imageView.widthAnchor.constraint(equalToConstant: 300),
             imageView.heightAnchor.constraint(equalToConstant: 300),
-            progress.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 12),
+            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
+            progress.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
             progress.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
             progress.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
             progress.heightAnchor.constraint(equalToConstant: 20),
-            progress.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
+            divider.topAnchor.constraint(equalTo: progress.bottomAnchor, constant: 10),
+            divider.leadingAnchor.constraint(equalTo: progress.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: progress.trailingAnchor),
+            divider.heightAnchor.constraint(equalToConstant: 1),
             progressSpinner.leadingAnchor.constraint(equalTo: progress.leadingAnchor),
             progressSpinner.centerYAnchor.constraint(equalTo: progress.centerYAnchor),
             progressSpinner.widthAnchor.constraint(equalToConstant: 16),

@@ -41,7 +41,7 @@ public final class StatusBarPopover: NSPopover {
         let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false) {
             try agentInterface.getLivePreviewScanProgress()
         }
-        let size = NSSize(width: 324, height: 400)
+        let size = NSSize(width: 324, height: 409)
         controller.view.frame = NSRect(origin: .zero, size: size)
         contentViewController = controller
         contentSize = size

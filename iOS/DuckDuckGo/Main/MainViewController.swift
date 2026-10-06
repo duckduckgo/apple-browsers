@@ -7056,7 +7056,7 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource) {
+             entrySource: AIChatEntryPointSource?) {
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
         }
@@ -7161,6 +7161,10 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestAIChat(tab: TabViewController) {
         fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
+        if tab.isAITab {
+            openNewChatFromDuckAIPage(tab, source: .browsingMenuDuckAI)
+            return
+        }
         let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
         if DevicePlatform.isIpad {
             // The tab is created here, so `openAIChatInTab` would see it blank and report no new tab.
@@ -7172,9 +7176,20 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestNewAIChatTab(tab: TabViewController) {
+        if tab.isAITab {
+            openNewChatFromDuckAIPage(tab, source: .browsingMenuDuckAI)
+            return
+        }
         let source: AIChatEntryPointSource = tab.link == nil ? .browsingMenuNTP : .browsingMenuWebpage
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
         tab.openNewChatInNewTab(source: source)
+    }
+
+    /// The new chat continues the visit to Duck.ai, so its tab keeps this page's entry source;
+    /// `source` names only the control, on the entry pixel.
+    func openNewChatFromDuckAIPage(_ tab: TabViewController, source: AIChatEntryPointSource) {
+        fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
+        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {

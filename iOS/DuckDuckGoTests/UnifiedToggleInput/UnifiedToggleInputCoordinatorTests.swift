@@ -22,6 +22,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+@_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import UIKit
 import UserScript
@@ -180,6 +181,54 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Tab mentions
 
+    func testWhenSurfaceChangesBeforeMentionDismissalThenReportsOriginalSurfaceUnlessFeatureWasDisabled() async throws {
+        let targetStates: [UnifiedToggleInputDisplayState] = [.omnibar(.active), .aiTab(.expanded)]
+        for targetState in targetStates {
+            for disablesFeature in [false, true] {
+                let pixelKitMock = PixelKitMock()
+                sut = makeMentionCoordinator(host: .contextualChat, pixelFiring: UTIPixelFiring(pixelKit: { pixelKitMock }))
+                let feature = MentionAttachmentFeature()
+                feature.state = .available(maximumTabAttachmentCount: 3)
+                let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
+                let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: { [tab] })
+                sut.configureTabAttachments(source: source, feature: feature)
+                let handler = try XCTUnwrap(sut.viewController.mentionHandler)
+                let textView = MentionTestTextView()
+                let window = UIWindow()
+                window.addSubview(textView)
+                defer { window.subviews.forEach { $0.removeFromSuperview() } }
+                textView.text = "@wiki"
+                textView.selectedRange = NSRange(location: 5, length: 0)
+                let presented = expectation(description: "Mention shown before surface change")
+                sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
+
+                handler.textDidChange(in: textView)
+                await fulfillment(of: [presented], timeout: 1)
+                if disablesFeature {
+                    feature.state = .unavailable
+                }
+                sut.displayState = targetState
+                XCTAssertNotEqual(sut.pixelSurface, .contextualChat)
+                sut.dismissTabMentions()
+                sut.dismissTabMentions()
+                if disablesFeature {
+                    feature.state = .available(maximumTabAttachmentCount: 3)
+                    sut.dismissTabMentions()
+                }
+
+                let calls = pixelKitMock.actualFireCalls.filter { $0.pixel.name.hasPrefix("aichat_unified_input_tab_picker_") }
+                let expectedNames = disablesFeature
+                    ? ["aichat_unified_input_tab_picker_shown"]
+                    : ["aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"]
+                XCTAssertEqual(calls.map(\.pixel.name), expectedNames)
+                for call in calls {
+                    XCTAssertEqual(call.pixel.parameters, ["surface": "contextual_chat", "source": "mention"])
+                    XCTAssertEqual(call.frequency, .dailyAndCount)
+                }
+            }
+        }
+    }
+
     func testWhenContextualMentionsAreEnabledThenShowsSuggestionsAndRejectsSelectionAfterDisabling() async throws {
         sut = makeMentionCoordinator(host: .contextualChat)
         let feature = MentionAttachmentFeature()
@@ -217,7 +266,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func testWhenContextualMentionsAreDisabledThenDoesNotReadTabsOrPresentSuggestions() async {
-        sut = makeMentionCoordinator(host: .contextualChat)
+        let pixelKitMock = PixelKitMock()
+        sut = makeMentionCoordinator(host: .contextualChat, pixelFiring: UTIPixelFiring(pixelKit: { pixelKitMock }))
         let feature = MentionAttachmentFeature()
         feature.state = .unavailable
         var candidateReadCount = 0
@@ -244,6 +294,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(candidateReadCount, 0)
         XCTAssertEqual(textView.text, "@wiki")
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name.hasPrefix("aichat_unified_input_tab_picker_") })
     }
 
     func testWhenMentionsAreConfiguredOutsideContextualThenSearchAndDuckAIStayInactive() async throws {
@@ -285,10 +336,11 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
     }
 
-    private func makeMentionCoordinator(host: UnifiedToggleInputHost) -> UnifiedToggleInputCoordinator {
+    private func makeMentionCoordinator(host: UnifiedToggleInputHost, pixelFiring: UTIPixelFiring = .live) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(host: host, isToggleEnabled: host == .omnibar,
                                       preferences: mockPreferences, subscriptionManager: subscriptionManager,
                                       toggleModeStorage: mockToggleModeStorage, featureDiscovery: mockFeatureDiscovery,
+                                      pixelFiring: pixelFiring,
                                       contextualStart: .expandedPreSubmit,
                                       updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
                                       updatedCreateImageFeature: MockUpdatedCreateImageFeature(isAvailable: false))

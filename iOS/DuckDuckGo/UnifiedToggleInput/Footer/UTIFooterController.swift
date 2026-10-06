@@ -55,6 +55,7 @@ final class UTIFooterController {
     private var isInputBlocked = false
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
+    private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
     private var visibleIDs: Set<UTIFooterItem.ID> = [] {
         didSet {
             guard isTermsOfServiceVisible != oldValue.contains(.termsConsent) else { return }
@@ -148,6 +149,13 @@ final class UTIFooterController {
     func clearModelSwitchNotice() {
         guard modelSwitchNotice != nil else { return }
         modelSwitchNotice = nil
+        applyCurrentState()
+    }
+
+    /// The disclaimer names the button the user will tap, which reads "Create" while Create Image is selected.
+    func setTermsOfServiceSendButton(_ sendButton: DuckAiTermsOfServiceSendButton) {
+        guard termsOfServiceSendButton != sendButton else { return }
+        termsOfServiceSendButton = sendButton
         applyCurrentState()
     }
 
@@ -309,7 +317,7 @@ final class UTIFooterController {
     private func applicableMessages() -> [UTIFooterItem] {
         var items: [UTIFooterItem] = []
         if let termsOfServiceStore, !termsOfServiceStore.hasAccepted, viewModel?.warning?.blocksInput != true {
-            items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage()))
+            items.append(.init(id: .termsConsent, message: mapper.termsOfServiceMessage(sendButton: termsOfServiceSendButton)))
         }
         if attachmentPrivacyNotice?.isPresented == true, viewModel?.warning?.blocksInput != true {
             items.append(.init(id: .attachmentPrivacy, message: mapper.attachmentPrivacyMessage()))

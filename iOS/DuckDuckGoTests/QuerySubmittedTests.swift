@@ -304,81 +304,31 @@ class QuerySubmittedTests: XCTestCase {
 final class NewTabPageAppOpenFocusTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("New Tab app-open focus activates unified input before the legacy field is visible", .timeLimit(.minutes(1)), arguments: [false, true])
-    func appOpenFocusActivatesUnifiedInput(flagOn: Bool) {
+    @Test("App-open fallback focuses mounted legacy input only for a valid request", .timeLimit(.minutes(1)),
+          arguments: [false, true], [false, true])
+    func appOpenFocusWithoutUnifiedInput(flagOn: Bool, isRequestValid: Bool) {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
         let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
                                                isFloatingUIEnabled: false)
-        let activating = RecordingUnifiedInputActivator()
-        sut.unifiedToggleInputOmnibarActivating = activating
-        sut.loadViewIfNeeded()
-        sut.barView.textField.text = "  search words  "
-        #expect(sut.view.window == nil)
-        #expect(sut.expandableBarView?.isSearchAreaExpanded == false)
-
-        sut.beginEditingOnNewTabPageAppOpen()
-
-        #expect(activating.callCount == (flagOn ? 1 : 0))
-        #expect(!sut.barView.textField.isFirstResponder)
-        if flagOn {
-            #expect(activating.currentText == "search words")
-            #expect(activating.tapped == false)
-            #expect(activating.textEntryMode == nil)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let previousKeyWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow)
+        window.rootViewController = sut
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        defer {
+            sut.barView.textField.resignFirstResponder()
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
         }
-    }
+        #expect(sut.barView.textField.window != nil)
+        var actualResult: Bool?
 
-    @available(iOS 16, macOS 13, *)
-    @Test("New Tab app-open focus follows flag changes on the same controller", .timeLimit(.minutes(1)), arguments: [false, true])
-    func appOpenFocusFollowsFlagChanges(initiallyEnabled: Bool) {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.alwaysShowKeyboardOnNewTabPage] : [])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
-                                               isFloatingUIEnabled: false)
-        let activating = RecordingUnifiedInputActivator()
-        sut.unifiedToggleInputOmnibarActivating = activating
-        sut.loadViewIfNeeded()
+        sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { isRequestValid }) { actualResult = $0 }
 
-        sut.beginEditingOnNewTabPageAppOpen()
-        #expect(activating.callCount == (initiallyEnabled ? 1 : 0))
-
-        featureFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.alwaysShowKeyboardOnNewTabPage]
-        sut.beginEditingOnNewTabPageAppOpen()
-
-        #expect(activating.callCount == 1)
-        #expect(activating.currentText == nil)
-        #expect(activating.tapped == false)
-        #expect(activating.textEntryMode == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Other programmatic focus keeps the legacy path with the flag enabled", .timeLimit(.minutes(1)))
-    func otherProgrammaticFocusKeepsLegacyPath() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.alwaysShowKeyboardOnNewTabPage])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
-                                               isFloatingUIEnabled: false)
-        let activating = RecordingUnifiedInputActivator()
-        sut.unifiedToggleInputOmnibarActivating = activating
-        sut.loadViewIfNeeded()
-        #expect(sut.view.window == nil)
-
-        sut.beginEditing(animated: true, forTextEntryMode: .aiChat)
-
-        #expect(activating.callCount == 0)
-        #expect(!sut.barView.textField.isFirstResponder)
-    }
-}
-
-private final class RecordingUnifiedInputActivator: UnifiedToggleInputOmnibarActivating {
-    private(set) var callCount = 0
-    private(set) var currentText: String?
-    private(set) var tapped: Bool?
-    private(set) var textEntryMode: TextEntryMode?
-
-    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
-        callCount += 1
-        self.currentText = currentText
-        self.tapped = tapped
-        self.textEntryMode = textEntryMode
-        return .intercept
+        #expect(sut.barView.textField.isFirstResponder == isRequestValid)
+        #expect(actualResult == isRequestValid)
     }
 }
 

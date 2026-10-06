@@ -228,11 +228,6 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.modelIcon = newValue }
     }
 
-    var modelNames: [String] {
-        get { inputBarView.modelNames }
-        set { inputBarView.modelNames = newValue }
-    }
-
     var modelPickerMenu: UIMenu? {
         get { inputBarView.modelPickerMenu }
         set { inputBarView.modelPickerMenu = newValue }

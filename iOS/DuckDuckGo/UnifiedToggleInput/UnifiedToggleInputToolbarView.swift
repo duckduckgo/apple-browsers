@@ -137,7 +137,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet {
             updateModelChipConfiguration()
             guard oldValue != modelName else { return }
-            reservedModelChipWidthCache = nil
+            fullModelChipWidthCache = nil
             setNeedsLayout()
         }
     }
@@ -145,15 +145,6 @@ final class UnifiedToggleInputToolbarView: UIView {
     /// The selected model's provider icon, which the pill shows alone when the row is too narrow for its name.
     var modelIcon: UIImage? {
         didSet { updateModelChipConfiguration() }
-    }
-
-    /// Every name the pill may show. The row reserves the longest, so picking another model never changes the layout.
-    var modelNames: [String] = [] {
-        didSet {
-            guard oldValue != modelNames else { return }
-            reservedModelChipWidthCache = nil
-            setNeedsLayout()
-        }
     }
 
     /// How far the row has shrunk its controls to fit.
@@ -164,11 +155,16 @@ final class UnifiedToggleInputToolbarView: UIView {
             guard oldValue != isModelChipMenuIndicatorHidden else { return }
             updateModelChipConfiguration()
             modelChipButton.isUserInteractionEnabled = !isModelChipMenuIndicatorHidden
+            fullModelChipWidthCache = nil
+            setNeedsLayout()
         }
     }
 
     var selectedTool: AIChatRAGTool? {
-        didSet { updateChipVisibility() }
+        didSet {
+            updateChipVisibility()
+            setNeedsLayout()
+        }
     }
 
     var selectedReasoningMode: AIChatReasoningMode? {
@@ -242,6 +238,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         set {
             modelChipExplicitlyHidden = newValue
             updateChipVisibility()
+            setNeedsLayout()
         }
     }
 
@@ -250,17 +247,24 @@ final class UnifiedToggleInputToolbarView: UIView {
         set {
             toolsButtonExplicitlyHidden = newValue
             updateChipVisibility()
+            setNeedsLayout()
         }
     }
 
     var isReasoningButtonHidden: Bool {
         get { reasoningButton.isHidden }
-        set { reasoningButton.isHidden = newValue }
+        set {
+            reasoningButton.isHidden = newValue
+            setNeedsLayout()
+        }
     }
 
     var isImageButtonHidden: Bool {
         get { imageButton.isHidden }
-        set { imageButton.isHidden = newValue }
+        set {
+            imageButton.isHidden = newValue
+            setNeedsLayout()
+        }
     }
 
     var isImageButtonEnabled: Bool {
@@ -290,7 +294,7 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     private var modelChipExplicitlyHidden = false
     private var toolsButtonExplicitlyHidden = false
-    private var reservedModelChipWidthCache: CGFloat?
+    private var fullModelChipWidthCache: CGFloat?
 
     // MARK: - UI Components
 
@@ -351,7 +355,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         return constraint
     }()
 
-    /// Never on screen: measures the pill showing names it isn't showing.
+    /// Never on screen: measures the pill with its name while it shows only its icon.
     private lazy var modelChipSizingButton = UIButton(configuration: .plain())
 
     private lazy var selectedToolIconView: UIImageView = {
@@ -518,11 +522,15 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - Fitting the row
 
-    /// The row's worst case, from what each control that changes width may need rather than what it shows now.
+    /// The row as it stands, with each control at its full look whatever level is applied now.
     var rowFit: RowFit {
-        RowFit(modelChipWidth: reservedModelChipWidth,
-               submitButtonWidth: reservedSubmitButtonWidth,
-               showsReturnKey: !returnKeyButton.isHidden)
+        RowFit(showsAttachButton: !imageButton.isHidden,
+               showsToolsButton: !toolsButtonExplicitlyHidden,
+               showsModeChip: selectedTool != nil,
+               showsReasoningButton: !reasoningButton.isHidden,
+               modelChipWidth: modelChipExplicitlyHidden ? nil : fullModelChipWidth,
+               showsReturnKey: !returnKeyButton.isHidden,
+               submitButtonWidth: reservedSubmitButtonWidth)
     }
 
     override func layoutSubviews() {
@@ -538,7 +546,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory else { return }
-        reservedModelChipWidthCache = nil
+        fullModelChipWidthCache = nil
         setNeedsLayout()
     }
 }
@@ -558,14 +566,16 @@ enum UTIToolbarCompactLevel: Int, CaseIterable, Comparable {
 
 extension UnifiedToggleInputToolbarView {
 
-    /// Picks the first compact level at which the row fits. Each control counts the most width it may take, shown
-    /// or not, so the layout never changes with the selected model, the typed text or an active mode.
+    /// Picks the first compact level at which the controls on screen fit, so the row only collapses when it has to.
     struct RowFit {
-        /// The pill showing the longest name it may show.
-        let modelChipWidth: CGFloat
-        /// The submit button with the widest label it may show.
-        let submitButtonWidth: CGFloat
-        let showsReturnKey: Bool
+        var showsAttachButton = true
+        var showsToolsButton = true
+        var showsModeChip = false
+        var showsReasoningButton = true
+        /// The pill showing its name, or nil while it is hidden.
+        var modelChipWidth: CGFloat?
+        var showsReturnKey = false
+        var submitButtonWidth = Constants.toolButtonSize
 
         func level(forToolbarWidth width: CGFloat) -> UTIToolbarCompactLevel {
             UTIToolbarCompactLevel.allCases.first { minimumToolbarWidth(at: $0) <= width } ?? .mergedTools
@@ -574,16 +584,18 @@ extension UnifiedToggleInputToolbarView {
         /// The narrowest toolbar that holds the row at `level`.
         func minimumToolbarWidth(at level: UTIToolbarCompactLevel) -> CGFloat {
             let button = Constants.toolButtonSize
-            // Attach and reasoning count whether or not they show: both come and go with the selected model.
-            let attachAndTools = level >= .mergedTools
-                ? [button, max(button, Self.mergedToolChipWidth)]
-                : [button, button, Self.toolChipWidth]
-            let reasoningAndPill = [button, level >= .modelIcon ? button : modelChipWidth]
-            let leading = Self.stackWidth(attachAndTools, spacing: Constants.leftGroupSpacing)
-            let pickers = Self.stackWidth(reasoningAndPill, spacing: Constants.rightGroupSpacing)
-            let trailing = Self.stackWidth([pickers] + (showsReturnKey ? [button] : []) + [submitButtonWidth],
-                                           spacing: Constants.rightGroupSpacing)
-            return 2 * Constants.horizontalPadding + leading + Constants.minimumGroupGap + trailing
+            let mergesTools = level >= .mergedTools && showsModeChip
+            var leadingWidths: [CGFloat] = showsAttachButton ? [button] : []
+            if showsToolsButton && !mergesTools { leadingWidths.append(button) }
+            if showsModeChip { leadingWidths.append(mergesTools ? Self.mergedToolChipWidth : Self.toolChipWidth) }
+            var pickerWidths: [CGFloat] = showsReasoningButton ? [button] : []
+            if let modelChipWidth { pickerWidths.append(level >= .modelIcon ? button : modelChipWidth) }
+            let pickers = Self.stackWidth(pickerWidths, spacing: Constants.rightGroupSpacing)
+            let trailingWidths = [pickers] + (showsReturnKey ? [button] : []) + [submitButtonWidth]
+            return 2 * Constants.horizontalPadding
+                + Self.stackWidth(leadingWidths, spacing: Constants.leftGroupSpacing)
+                + Constants.minimumGroupGap
+                + Self.stackWidth(trailingWidths, spacing: Constants.rightGroupSpacing)
         }
 
         static let toolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
@@ -712,26 +724,24 @@ private extension UnifiedToggleInputToolbarView {
         updateChipVisibility()
     }
 
-    /// The pill at its widest, showing the longest name it may show with its menu indicator.
-    private var reservedModelChipWidth: CGFloat {
-        if let reservedModelChipWidthCache { return reservedModelChipWidthCache }
-        let width = Set(modelNames + [modelName]).map { name in
-            modelChipSizingButton.configuration = Self.modelChipConfiguration(title: name, showsMenuIndicator: true)
-            return ceil(modelChipSizingButton.intrinsicContentSize.width)
-        }.max() ?? 0
-        reservedModelChipWidthCache = width
+    /// The pill showing its name, measured even while it shows only its icon.
+    private var fullModelChipWidth: CGFloat {
+        if let fullModelChipWidthCache { return fullModelChipWidthCache }
+        modelChipSizingButton.configuration = Self.modelChipConfiguration(title: modelName,
+                                                                         showsMenuIndicator: !isModelChipMenuIndicatorHidden)
+        let width = ceil(modelChipSizingButton.intrinsicContentSize.width)
+        fullModelChipWidthCache = width
         return width
     }
 
-    /// The widest label the submit button may show while the terms are unaccepted, or the arrow once they are.
+    /// Counts the "Ask" or "Create" label while the terms are unaccepted, even before anything is typed,
+    /// so the first keystroke never collapses the row.
     private var reservedSubmitButtonWidth: CGFloat {
-        let mayShowTitle = reservesTermsOfServiceSendButton
-            || termsOfServiceSendButton != nil
-            || preservedTermsOfServiceSendButton != nil
-        guard mayShowTitle else { return Constants.toolButtonSize }
-        return DuckAiTermsOfServiceSendButton.allCases
-            .map { AIChatSubmitButtonTitle.buttonWidth(for: $0.title, minimumWidth: Constants.toolButtonSize) }
-            .max() ?? Constants.toolButtonSize
+        let pendingLabel = reservesTermsOfServiceSendButton ? DuckAiTermsOfServiceSendButton(selectedTool: selectedTool) : nil
+        guard let label = preservedTermsOfServiceSendButton ?? termsOfServiceSendButton ?? pendingLabel else {
+            return Constants.toolButtonSize
+        }
+        return AIChatSubmitButtonTitle.buttonWidth(for: label.title, minimumWidth: Constants.toolButtonSize)
     }
 
     private func updateModelPickerPrimaryAction() {

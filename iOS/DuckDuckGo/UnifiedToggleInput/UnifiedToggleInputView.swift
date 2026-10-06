@@ -258,11 +258,6 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.modelIcon = newValue }
     }
 
-    var modelNames: [String] {
-        get { toolsToolbar.modelNames }
-        set { toolsToolbar.modelNames = newValue }
-    }
-
     var modelPickerMenu: UIMenu? {
         get { toolsToolbar.modelPickerMenu }
         set { toolsToolbar.modelPickerMenu = newValue }

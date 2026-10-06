@@ -501,7 +501,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             view: .init(
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
                 setModelIcon: { [weak self] in self?.viewController.modelIcon = $0 },
-                setModelNames: { [weak self] in self?.viewController.modelNames = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
                 setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
                 setModelChipMenuIndicatorHidden: { [weak self] in self?.viewController.isModelChipMenuIndicatorHidden = $0 },

@@ -348,14 +348,14 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     // MARK: - Fitting the row
 
     func testWhenEveryControlFitsThenTheRowStaysFull() {
-        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 40, showsReturnKey: false)
+        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120)
 
         XCTAssertEqual(fit.level(forToolbarWidth: fit.minimumToolbarWidth(at: .full)), .full)
         XCTAssertEqual(fit.level(forToolbarWidth: 1000), .full)
     }
 
     func testWhenTheRowOverflowsThenThePillCollapsesBeforeTheToolsMerge() {
-        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 80, showsReturnKey: false)
+        let fit = UnifiedToggleInputToolbarView.RowFit(showsModeChip: true, modelChipWidth: 120, submitButtonWidth: 80)
 
         XCTAssertGreaterThan(fit.minimumToolbarWidth(at: .full), fit.minimumToolbarWidth(at: .modelIcon))
         XCTAssertGreaterThan(fit.minimumToolbarWidth(at: .modelIcon), fit.minimumToolbarWidth(at: .mergedTools))
@@ -364,14 +364,25 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     }
 
     func testWhenNothingFitsThenTheRowStopsAtMergedTools() {
-        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 120, showsReturnKey: true)
+        let fit = UnifiedToggleInputToolbarView.RowFit(showsModeChip: true, modelChipWidth: 120, showsReturnKey: true, submitButtonWidth: 120)
 
         XCTAssertEqual(fit.level(forToolbarWidth: 100), .mergedTools)
     }
 
-    func testWhenTheReservedSubmitLabelNarrowsThenTheLevelRelaxes() {
-        let arrow = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 40, showsReturnKey: false)
-        let label = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 100, showsReturnKey: false)
+    func testWhenControlsAreHiddenThenTheyTakeNoRoom() {
+        let everything = UnifiedToggleInputToolbarView.RowFit(showsModeChip: true, modelChipWidth: 120)
+        let noModeChip = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120)
+        let noPickers = UnifiedToggleInputToolbarView.RowFit(showsReasoningButton: false, modelChipWidth: nil)
+
+        XCTAssertEqual(everything.minimumToolbarWidth(at: .full) - noModeChip.minimumToolbarWidth(at: .full),
+                       UnifiedToggleInputToolbarView.RowFit.toolChipWidth + 4)
+        XCTAssertLessThan(noPickers.minimumToolbarWidth(at: .full), noModeChip.minimumToolbarWidth(at: .full))
+        XCTAssertEqual(noPickers.level(forToolbarWidth: noPickers.minimumToolbarWidth(at: .full)), .full)
+    }
+
+    func testWhenTheSubmitLabelNarrowsThenTheLevelRelaxes() {
+        let arrow = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 40)
+        let label = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 100)
         let width = arrow.minimumToolbarWidth(at: .full)
 
         XCTAssertEqual(arrow.level(forToolbarWidth: width), .full)
@@ -391,15 +402,16 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
         XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut)).isHidden)
         XCTAssertTrue(try XCTUnwrap(findButton(accessibilityIdentifier: Self.selectedToolMenuIdentifier, in: sut)).isHidden)
+        assertNoControlsOverlap(in: sut)
     }
 
-    func testWhenThePillShowsItsLongestNameThenItTakesTheWidthTheRowReserved() throws {
+    func testWhenThePillShowsItsNameThenItTakesTheWidthTheRowCounted() throws {
         let sut = makeFittingToolbar()
         sut.modelName = "Sonnet 4.6"
         layOut(sut, width: 1000)
 
         let modelChip = try XCTUnwrap(findButton(accessibilityIdentifier: Self.modelChipIdentifier, in: sut))
-        XCTAssertEqual(modelChip.bounds.width, sut.rowFit.modelChipWidth, accuracy: 1)
+        XCTAssertEqual(modelChip.bounds.width, try XCTUnwrap(sut.rowFit.modelChipWidth), accuracy: 1)
     }
 
     func testWhenThePillCollapsesThenItShowsTheProviderIconInASquareThatOpensTheSameMenu() throws {
@@ -418,10 +430,38 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertEqual(modelChip.accessibilityLabel, "5.4 mini")
     }
 
+    func testWhenAModeTurnsOnWithoutRoomForItsChipThenThePillCollapses() {
+        let sut = makeFittingToolbar()
+        var withModeChip = sut.rowFit
+        withModeChip.showsModeChip = true
+        let container = layOut(sut, width: withModeChip.minimumToolbarWidth(at: .modelIcon))
+        XCTAssertEqual(sut.compactLevel, .full)
+
+        sut.selectedTool = .webSearch
+        container.layoutIfNeeded()
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        assertNoControlsOverlap(in: sut)
+
+        sut.selectedTool = nil
+        container.layoutIfNeeded()
+        XCTAssertEqual(sut.compactLevel, .full)
+    }
+
+    func testWhenALongerModelNameNoLongerFitsThenThePillCollapses() {
+        let sut = makeFittingToolbar()
+        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full))
+        XCTAssertEqual(sut.compactLevel, .full)
+
+        sut.modelName = "Sonnet 4.6 with a long name"
+        container.layoutIfNeeded()
+
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        assertNoControlsOverlap(in: sut)
+    }
+
     func testWhenTheToolsMergeThenTheModeChipOpensTheToolsMenuWithoutItsClearButton() throws {
         let sut = makeFittingToolbar()
-        let toolsMenu = UIMenu(children: [UIAction(title: "Web search") { _ in }])
-        sut.toolsMenu = toolsMenu
+        sut.toolsMenu = UIMenu(children: [UIAction(title: "Web search") { _ in }])
         sut.selectedTool = .webSearch
         layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon) - 1)
 
@@ -434,14 +474,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(chipMenuButton.showsMenuAsPrimaryAction)
         XCTAssertEqual(chipMenuButton.accessibilityValue, UserText.aiChatToolbarWebSearchToolTitle)
         XCTAssertGreaterThan(chipMenuButton.bounds.width, 0)
-    }
-
-    func testWhenTheToolsMergeWithoutAModeThenTheToolsButtonStays() throws {
-        let sut = makeFittingToolbar()
-        layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon) - 1)
-
-        XCTAssertEqual(sut.compactLevel, .mergedTools)
-        XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
+        assertNoControlsOverlap(in: sut)
     }
 
     func testWhenTheToolbarWidensThenTheModelNameComesBack() throws {
@@ -458,50 +491,19 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
     }
 
-    func testWhenAShortOrALongModelIsSelectedThenTheLevelIsTheSame() {
-        let sut = makeFittingToolbar()
-        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full) - 1)
-        XCTAssertEqual(sut.compactLevel, .modelIcon, "The short name alone would fit, but the longest one is reserved")
-
-        sut.modelName = "Sonnet 4.6"
-        container.layoutIfNeeded()
-
-        XCTAssertEqual(sut.compactLevel, .modelIcon)
-    }
-
-    func testWhenHiddenControlsAppearThenTheLevelIsTheSame() {
-        let sut = makeFittingToolbar()
-        sut.isReasoningButtonHidden = true
-        sut.isImageButtonHidden = true
-        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full) - 1)
-        XCTAssertEqual(sut.compactLevel, .modelIcon, "Hidden controls and the absent mode chip are still reserved")
-
-        sut.isReasoningButtonHidden = false
-        sut.isImageButtonHidden = false
-        sut.selectedTool = .webSearch
-        container.layoutIfNeeded()
-
-        XCTAssertEqual(sut.compactLevel, .modelIcon)
-        assertNoControlsOverlap(in: sut)
-    }
-
     func testWhenTextIsTypedWithTheTermsUnacceptedThenTheLevelIsTheSame() {
         let sut = makeFittingToolbar()
         sut.reservesTermsOfServiceSendButton = true
         sut.isAIVoiceChatActive = true
         sut.isSubmitEnabled = false
-        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon))
-        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full))
+        XCTAssertEqual(sut.compactLevel, .full, "The empty input already counts the Ask label")
 
         sut.isSubmitEnabled = true
         sut.termsOfServiceSendButton = .ask
         container.layoutIfNeeded()
-        XCTAssertEqual(sut.compactLevel, .modelIcon)
 
-        sut.selectedTool = .imageGeneration
-        sut.termsOfServiceSendButton = .create
-        container.layoutIfNeeded()
-        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        XCTAssertEqual(sut.compactLevel, .full)
         assertNoControlsOverlap(in: sut)
     }
 
@@ -523,7 +525,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
 
     func testWhenTheRowIsAtItsNarrowestThenTheSubmitLabelIsWholeAndNothingOverlaps() throws {
         let sut = makeFittingToolbar()
-        sut.selectedTool = .webSearch
+        sut.selectedTool = .imageGeneration
         sut.reservesTermsOfServiceSendButton = true
         sut.isSubmitEnabled = true
         sut.termsOfServiceSendButton = .create
@@ -548,10 +550,9 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     private static let modelChipIdentifier = "AIChat.Toolbar.Button.ModelChip"
     private static let selectedToolMenuIdentifier = "AIChat.Toolbar.Button.SelectedToolMenu"
 
-    /// Every control on, with "5.4 mini" selected among names up to "Sonnet 4.6".
+    /// Attach, tools, reasoning and the "5.4 mini" pill on, with no mode selected.
     private func makeFittingToolbar() -> UnifiedToggleInputToolbarView {
         let sut = UnifiedToggleInputToolbarView()
-        sut.modelNames = ["5.4 mini", "Sonnet 4.6", "Mistral"]
         sut.modelName = "5.4 mini"
         sut.isReasoningButtonHidden = false
         return sut

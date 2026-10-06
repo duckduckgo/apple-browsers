@@ -58,25 +58,16 @@ enum SubscriptionOnboardingExperiment {
 
     /// Enrolls in whichever ABN test matches trial status, unless already assigned to either.
     /// - Returns: The device's cohort (`nil` if neither experiment is active for this device), and whether
-    ///   this call is the one that freshly enrolled it (`false` for a read of an existing assignment). 
+    ///   this call is the one that freshly enrolled it (`false` for a read of an existing assignment).
     static func resolveCohort(using featureFlagger: FeatureFlagger, isOnFreeTrial: Bool, locale: Locale) -> (cohort: Cohort?, isFreshlyEnrolled: Bool) {
-        if let assigned = assignedCohort(using: featureFlagger) {
-            return (assigned, false)
-        }
-        guard locale.isEnglishUnitedStates else { return (nil, false) }
-        let flag = isOnFreeTrial ? freeTrialsFlag : paidSubsFlag
-        let cohort = featureFlagger.resolveCohort(for: flag).flatMap { Cohort(rawValue: $0.rawValue) }
-        return (cohort, cohort != nil)
+        // HACK (dev/test only): force treatment, bypassing feature flagger/locale gating entirely.
+        return (.treatment, true)
     }
 
     /// Reads whichever experiment this device is already enrolled in, without enrolling it in either.
     private static func assignedCohort(using featureFlagger: FeatureFlagger) -> Cohort? {
-        for flag in flags {
-            if let cohort = featureFlagger.assignedCohort(for: flag), let mapped = Cohort(rawValue: cohort.rawValue) {
-                return mapped
-            }
-        }
-        return nil
+        // HACK (dev/test only): force treatment, bypassing feature flagger gating entirely.
+        return .treatment
     }
 
     /// A read-only check for an already-enrolled device. Still subject to each experiment's remote kill switch.

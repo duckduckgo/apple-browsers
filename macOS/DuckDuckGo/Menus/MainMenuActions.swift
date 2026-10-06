@@ -1564,6 +1564,12 @@ extension MainViewController {
         browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
     }
 
+    @objc func debugShowPageSignals(_ sender: Any?) {
+        let signals = tabCollectionViewModel.selectedTabViewModel?.tab.pageSignals?.pageSignals
+        let alert = PageSignalsAlert(signals: signals)
+        alert.runModal()
+    }
+
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
         browserTabViewController.showCookiePopupProtectionOptInDialog()
     }

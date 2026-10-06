@@ -87,6 +87,28 @@ final class EmbeddedWebExtensionTests: XCTestCase {
         XCTAssertNil(decoded.embeddedType)
     }
 
+    func testInstalledWebExtensionStoreIdentityIsCodable() throws {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let original = InstalledWebExtension(uniqueIdentifier: "installation", filename: "extension.zip",
+                                             name: "Test", version: "1.0", storeIdentity: identity)
+
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(original))
+
+        XCTAssertEqual(decoded, original)
+        XCTAssertEqual(decoded.storeIdentity, identity)
+    }
+
+    func testInstalledWebExtensionWithoutStoreIdentityStillDecodes() throws {
+        let legacyJSON = Data("""
+        {"uniqueIdentifier":"installation","filename":"extension.zip","name":"Test","version":"1.0"}
+        """.utf8)
+
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: legacyJSON)
+
+        XCTAssertEqual(decoded.uniqueIdentifier, "installation")
+        XCTAssertNil(decoded.storeIdentity)
+    }
+
     // MARK: - EmbeddedWebExtensionRegistry Tests
 
     func testRegistryContainsEmbeddedExtension() {

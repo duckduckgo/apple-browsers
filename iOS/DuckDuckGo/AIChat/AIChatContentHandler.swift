@@ -23,6 +23,8 @@ import Common
 import FoundationExtensions
 import Core
 import os.log
+import PixelExperimentKit
+import PixelKit
 import PrivacyConfig
 import Foundation
 import Subscription
@@ -222,6 +224,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
+    private let fireNewAIChatExperimentPixels: () -> Void
 
     private var userScript: AIChatUserScriptProviding?
 
@@ -247,6 +250,7 @@ final class AIChatContentHandler: AIChatContentHandling {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
+         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
          getPageContext: PageContextAsyncProvider? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
@@ -260,6 +264,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.debugSettings = debugSettings
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
+        self.fireNewAIChatExperimentPixels = fireNewAIChatExperimentPixels
         self.getPageContext = getPageContext
     }
 
@@ -473,6 +478,12 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
                         isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
                         isAlreadyActivated: wasAlreadyActivated)
                 }
+            }
+
+            // The first prompt is what actually starts a chat, so `duck_ai_new_chat` hangs off it
+            // rather than off the new-chat page being opened.
+            if metric.metricName == .userDidSubmitFirstPrompt {
+                fireNewAIChatExperimentPixels()
             }
 
             DispatchQueue.main.async {

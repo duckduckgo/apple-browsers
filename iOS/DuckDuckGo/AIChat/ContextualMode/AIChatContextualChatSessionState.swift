@@ -118,6 +118,7 @@ final class AIChatContextualChatSessionState {
 
     /// Supplied from outside because the host that answers it is created after this object.
     var inputAttachmentCount: () -> Int = { 0 }
+    var inputHasAttachedTabs: () -> Bool = { false }
 
     // MARK: - Core State (private(set) - mutations happen via methods)
 
@@ -237,6 +238,14 @@ final class AIChatContextualChatSessionState {
     /// Whether context is available for display
     var hasContext: Bool {
         latestContext != nil
+    }
+
+    var visibleSuggestedContext: AIChatPageContext? {
+        guard featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) else { return suggestedContext }
+        guard let suggestedContext,
+              !inputHasAttachedTabs(),
+              !isStaleEchoOfDeliveredContext(suggestedContext.contextData) else { return nil }
+        return suggestedContext
     }
 
     /// User-attached context (nil if opted out / never attached). Unlike `latestContext`,
@@ -907,6 +916,10 @@ private extension AIChatContextualChatSessionState {
         attachmentCount > 1 || isDocumentChipLoading
     }
 
+    private var shouldHidePageContextSuggestions: Bool {
+        featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) && inputHasAttachedTabs()
+    }
+
     private func resolveQuickActions() -> [AIChatContextualQuickAction] {
         if isDocumentChipLoading {
             return []
@@ -991,15 +1004,16 @@ private extension AIChatContextualChatSessionState {
             content = .webView(restoreURL: contextualChatURL)
         }
 
-        let quickActions = resolveQuickActions()
+        let hidePageContextSuggestions = shouldHidePageContextSuggestions
+        let quickActions = hidePageContextSuggestions ? [] : resolveQuickActions()
         viewState = SheetViewState(
             content: content,
             isExpandButtonEnabled: frontendState == .noChat || contextualChatURL != nil,
             shouldShowNewChatButton: frontendState != .noChat,
             chipState: chipState,
             quickActions: quickActions,
-            suggestions: shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: isDocumentChipLoading ? .loaded : suggestionsLoadState,
+            suggestions: hidePageContextSuggestions || shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
+            suggestionsLoadState: hidePageContextSuggestions || isDocumentChipLoading ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

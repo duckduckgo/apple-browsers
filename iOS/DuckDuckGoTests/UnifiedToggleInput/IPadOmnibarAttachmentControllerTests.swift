@@ -380,6 +380,16 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         }
     }
 
+    func testOmnibarForwardsAttachmentLayoutToItsStrip() throws {
+        for usesCompactLayout in [false, true] {
+            let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false, usesCompactAttachmentLayout: usesCompactLayout)
+            let scrollView = try XCTUnwrap(sut.attachmentsStripView.subviews.compactMap { $0 as? UIScrollView }.first)
+            let stack = try XCTUnwrap(scrollView.subviews.compactMap { $0 as? UIStackView }.first)
+            XCTAssertEqual(stack.spacing, usesCompactLayout ? 4 : 10)
+            XCTAssertEqual(scrollView.alwaysBounceHorizontal, !usesCompactLayout)
+        }
+    }
+
     func testWhenVisibleAttachmentButtonHasNoMenuThenItIsShownDisabled() {
         let sut = DefaultOmniBarView.create(isFloatingUIEnabled: false)
         sut.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)

@@ -114,7 +114,7 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
 
     func test_isOnboardingFeatureEnabled_onFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
         let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
-                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment)
+                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.treatment)
 
         XCTAssertTrue(isEnabled)
     }
@@ -122,7 +122,7 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
     /// A paid (non-trial) subscriber is eligible too, via the separate paid-subs experiment.
     func test_isOnboardingFeatureEnabled_notOnFreeTrialAndEnrolledAsTreatment_returnsTrue() async {
         let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: false,
-                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsSep2026Cohort.treatment)
+                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsOct2026Cohort.treatment)
 
         XCTAssertTrue(isEnabled)
     }
@@ -141,7 +141,7 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
     /// which would mask a broken guard by never firing anyway.
     func test_isOnboardingFeatureEnabled_alreadyEnrolledAsTreatment_returnsTrue() async {
         let isEnabled = await isFeatureEnabled(hasActiveTrialOffer: true,
-                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsSep2026Cohort.treatment,
+                                               resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsOct2026Cohort.treatment,
                                                isAlreadyAssigned: true)
 
         XCTAssertTrue(isEnabled)
@@ -151,7 +151,7 @@ final class SubscriptionOnboardingFeatureCheckTests: XCTestCase {
     func test_isOnboardingFeatureEnabled_subscriptionFetchFails_returnsFalseAndQueriesNeitherExperiment() async {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.resultSubscription = .failure(TestError.fetchFailed)
-        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsSep2026Cohort.treatment)
+        let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingPaidSubsOct2026Cohort.treatment)
 
         let isEnabled = await SubscriptionFlowViewModel.isOnboardingFeatureEnabled(subscriptionManager: subscriptionManager,
                                                                                    featureFlagger: featureFlagger,

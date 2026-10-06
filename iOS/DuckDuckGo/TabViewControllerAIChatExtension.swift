@@ -40,7 +40,7 @@ protocol AITabController {
     func submitToggleSidebarAction()
 
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab(source: AIChatEntryPointSource)
+    func openNewChatInNewTab(source: AIChatEntryPointSource?)
 }
 
 // MARK: - AITabController
@@ -110,7 +110,7 @@ extension TabViewController: AITabController {
     }
     
     /// Opens a new AI chat in a new tab.
-    func openNewChatInNewTab(source: AIChatEntryPointSource) {
+    func openNewChatInNewTab(source: AIChatEntryPointSource?) {
         let newChatURL = aiChatContentHandler.buildQueryURL(
             query: nil,
             autoSend: false,

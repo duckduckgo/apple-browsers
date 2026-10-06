@@ -71,6 +71,22 @@ final class UTIMultiTabPromotionTests: XCTestCase {
             promotionStore: displayStore)
     }
 
+    func testCompactAttachmentLayoutFollowsFlagEvenWhenTabAttachmentsAreUnavailableOnIPad() {
+        let padFeature = AIChatContextualAttachMoreTabsFeature(
+            featureFlagger: flagger, aiChatSettings: settings, devicePlatform: PromotionPad.self,
+            promotionStore: displayStore)
+
+        XCTAssertEqual(padFeature.state, .unavailable)
+        XCTAssertTrue(padFeature.usesCompactAttachmentLayout)
+        XCTAssertTrue(feature.usesCompactAttachmentLayout)
+
+        flagger.enabledFeatureFlags = []
+
+        XCTAssertEqual(padFeature.state, .unavailable)
+        XCTAssertFalse(padFeature.usesCompactAttachmentLayout)
+        XCTAssertFalse(feature.usesCompactAttachmentLayout)
+    }
+
     private func makeController(terms: DuckAiTermsOfServiceStore? = nil) -> UTIFooterController {
         UTIFooterController(viewModel: nil, termsOfServiceStore: terms, multiTabPromotion: source,
                             createImagePixelFiring: MockCreateImagePixelFiring(), animator: { $0() })
@@ -255,4 +271,8 @@ private final class PromotionDateProvider: CurrentDateProviding {
 
 private struct PromotionPhone: DevicePlatformProviding {
     static var isIphone: Bool { true }
+}
+
+private struct PromotionPad: DevicePlatformProviding {
+    static var isIphone: Bool { false }
 }

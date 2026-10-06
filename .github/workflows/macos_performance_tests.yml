@@ -45,11 +45,11 @@ jobs:
   performance-tests:
     name: Performance Tests
     needs: create-notarized-app
-    runs-on: [image:osx-tahoe-26, ui-tests]
+    runs-on: [image:osx-tahoe-27, ui-tests]
 
     env:
-      RUNS_ON: image:osx-tahoe-26,ui-tests # keep this in sync with runs-on above
-      RUNNER_NAME: image-osx-tahoe-26,ui-tests # artifact names cannot contain colons
+      RUNS_ON: image:osx-tahoe-27,ui-tests # keep this in sync with runs-on above
+      RUNNER_NAME: image-osx-tahoe-27,ui-tests # artifact names cannot contain colons
       OS_VERSION: "26"
 
     timeout-minutes: 60

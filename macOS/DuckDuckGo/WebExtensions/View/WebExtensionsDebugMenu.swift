@@ -94,6 +94,10 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         submenu.addItem(.separator())
 
+        let bitwardenItem = NSMenuItem(title: "Install Bitwarden", action: #selector(installBitwarden))
+        bitwardenItem.target = self
+        submenu.addItem(bitwardenItem)
+
         return submenu
     }
 
@@ -120,6 +124,12 @@ final class WebExtensionsDebugMenu: NSMenu {
         Task {
             try? await webExtensionManager.installExtension(from: url)
         }
+    }
+
+    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
+    @objc func installBitwarden() {
+        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {

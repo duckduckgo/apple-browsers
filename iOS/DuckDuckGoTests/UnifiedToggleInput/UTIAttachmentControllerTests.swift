@@ -242,16 +242,129 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
     // MARK: - Tab attachments
 
+    func testWhenDraftChangesWhilePickerIsOpenThenUnchangedConfirmationReportsCancellationOnce() {
+        enableTabAttachments()
+        let controller = makeController()
+        let first = candidate(id: "first")
+
+        for isAttached in [true, false] {
+            let initialTabIds: Set<TabUID> = isAttached ? [] : [first.tabId]
+            let selectedTabIds: Set<TabUID> = isAttached ? [first.tabId] : []
+            let session = makePickerPixelSession()
+            session.show()
+
+            XCTAssertEqual(controller.setTabAttachment(first, isAttached: isAttached, attachmentSource: .mention), .changed)
+            let fireCount = pixelKitMock.actualFireCalls.count
+            let draftChangeCount = callbackSpy.onDraftChangedCount
+
+            UnifiedToggleInputAttachmentPresenter.confirmTabSelection(
+                selectedTabIds, initialTabIds: initialTabIds, candidates: [first], pixelSession: session,
+                tabActionHandler: controller.setTabAttachment)
+            session.finish()
+
+            let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
+            XCTAssertEqual(calls.map(\.pixel.name), ["aichat_unified_input_tab_picker_canceled"])
+            XCTAssertEqual(calls.first?.pixel.parameters, ["surface": "contextual_chat", "source": "tab_picker"])
+            XCTAssertEqual(calls.first?.frequency, .dailyAndCount)
+            XCTAssertEqual(Set(view.attachments.compactMap { $0.tabAttachment?.tabId }), selectedTabIds)
+            XCTAssertEqual(callbackSpy.onDraftChangedCount, draftChangeCount)
+        }
+    }
+
+    func testWhenPickerAddsOrRemovesTabThenReportsMutationWithoutCancellation() {
+        enableTabAttachments()
+        let controller = makeController()
+        let first = candidate(id: "first")
+
+        for isAttached in [true, false] {
+            let initialTabIds: Set<TabUID> = isAttached ? [] : [first.tabId]
+            let selectedTabIds: Set<TabUID> = isAttached ? [first.tabId] : []
+            let session = makePickerPixelSession()
+            session.show()
+            let fireCount = pixelKitMock.actualFireCalls.count
+
+            UnifiedToggleInputAttachmentPresenter.confirmTabSelection(
+                selectedTabIds, initialTabIds: initialTabIds, candidates: [first], pixelSession: session,
+                tabActionHandler: controller.setTabAttachment)
+            session.finish()
+
+            let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
+            XCTAssertEqual(calls.map(\.pixel.name), [isAttached ? "aichat_unified_input_tab_attached" : "aichat_unified_input_tab_removed"])
+            XCTAssertEqual(calls.first?.pixel.parameters?["source"], "tab_picker")
+            XCTAssertEqual(Set(view.attachments.compactMap { $0.tabAttachment?.tabId }), selectedTabIds)
+        }
+    }
+
+    func testWhenPickerConfirmsOriginalSelectionThenReportsCancellationOnce() {
+        enableTabAttachments()
+        let controller = makeController()
+        let session = makePickerPixelSession()
+        session.show()
+        let fireCount = pixelKitMock.actualFireCalls.count
+
+        UnifiedToggleInputAttachmentPresenter.confirmTabSelection(
+            [], initialTabIds: [], candidates: [candidate(id: "first")], pixelSession: session,
+            tabActionHandler: controller.setTabAttachment)
+        session.finish()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.dropFirst(fireCount).map(\.pixel.name), ["aichat_unified_input_tab_picker_canceled"])
+        XCTAssertTrue(view.attachments.isEmpty)
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 0)
+    }
+
+    func testWhenPickerSelectionIsRejectedThenReportsCancellationOnce() {
+        enableTabAttachments(limit: 1)
+        let controller = makeController()
+        let first = candidate(id: "first")
+        let second = candidate(id: "second")
+        let session = makePickerPixelSession()
+        session.show()
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: true, attachmentSource: .mention), .changed)
+        let fireCount = pixelKitMock.actualFireCalls.count
+
+        UnifiedToggleInputAttachmentPresenter.confirmTabSelection(
+            [second.tabId], initialTabIds: [], candidates: [first, second], pixelSession: session,
+            tabActionHandler: controller.setTabAttachment)
+        session.finish()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.dropFirst(fireCount).map(\.pixel.name), ["aichat_unified_input_tab_picker_canceled"])
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, [first.tabId])
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
+    }
+
+    func testWhenPickerConfirmationHasMixedResultsThenActualChangePreventsCancellation() {
+        enableTabAttachments(limit: 2)
+        let controller = makeController()
+        let first = candidate(id: "first")
+        let second = candidate(id: "second")
+        let third = candidate(id: "third")
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs), .changed)
+        let session = makePickerPixelSession()
+        session.show()
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs), .changed)
+        config.tabFeatureState = .available(maximumTabAttachmentCount: 1)
+        let fireCount = pixelKitMock.actualFireCalls.count
+
+        UnifiedToggleInputAttachmentPresenter.confirmTabSelection(
+            [second.tabId, third.tabId], initialTabIds: [first.tabId], candidates: [first, second, third], pixelSession: session,
+            tabActionHandler: controller.setTabAttachment)
+        session.finish()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.dropFirst(fireCount).map(\.pixel.name), ["aichat_unified_input_tab_attached"])
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, [second.tabId])
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 3)
+    }
+
     func testWhenTabSelectionChangesThenReportsOnceAndPreservesOriginalSourceOnRemoval() {
         enableTabAttachments(limit: 1)
         let controller = makeController()
         let first = candidate(id: "first")
 
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .mention))
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .tabPicker))
-        XCTAssertFalse(controller.setTabAttachment(candidate(id: "second"), isAttached: true, attachmentSource: .recentTabs))
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false, attachmentSource: .tabPicker))
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: true, attachmentSource: .mention), .changed)
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: true, attachmentSource: .tabPicker), .unchanged)
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "second"), isAttached: true, attachmentSource: .recentTabs), .rejected)
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: false, attachmentSource: .tabPicker), .changed)
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs), .unchanged)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
             "aichat_unified_input_tab_attached", "aichat_unified_input_tab_removed"
@@ -266,9 +379,9 @@ final class UTIAttachmentControllerTests: XCTestCase {
         enableTabAttachments()
         config.pageContextAttachHandler = { }
         let controller = makeController()
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs), .changed)
         config.tabFeatureState = .unavailable
-        XCTAssertFalse(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs), .rejected)
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
@@ -276,11 +389,11 @@ final class UTIAttachmentControllerTests: XCTestCase {
         enableTabAttachments(limit: 1)
         let controller = makeController()
         let first = candidate(id: "first")
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs), .changed)
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 1)
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs))
-        XCTAssertFalse(controller.setTabAttachment(candidate(id: "second"), isAttached: true, attachmentSource: .recentTabs))
-        XCTAssertTrue(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: true, attachmentSource: .recentTabs), .unchanged)
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "second"), isAttached: true, attachmentSource: .recentTabs), .rejected)
+        XCTAssertEqual(controller.setTabAttachment(first, isAttached: false, attachmentSource: .recentTabs), .changed)
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 1)
         XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "second"), attachmentSource: .recentTabs))
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 2)
@@ -293,7 +406,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         let controller = makeController()
         controller.updateAttachButtonPresentation()
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 0)
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs), .changed)
         XCTAssertEqual(callbackSpy.onTabAttachedCount, 0)
     }
 
@@ -340,7 +453,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertEqual(attachCount, 1)
         XCTAssertTrue(view.attachments.isEmpty)
         XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "current"), isAttached: true, attachmentSource: .recentTabs), .unchanged)
         XCTAssertEqual(attachCount, 1)
     }
 
@@ -424,12 +537,12 @@ final class UTIAttachmentControllerTests: XCTestCase {
     func test_tabSelection_explicitStateDoesNotInvertExistingAttachment() {
         enableTabAttachments()
         let controller = makeController()
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs))
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs), .changed)
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "first"), isAttached: true, attachmentSource: .recentTabs), .unchanged)
         XCTAssertEqual(view.attachments.count, 1)
         XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false, attachmentSource: .recentTabs))
-        XCTAssertTrue(controller.setTabAttachment(candidate(id: "first"), isAttached: false, attachmentSource: .recentTabs))
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "first"), isAttached: false, attachmentSource: .recentTabs), .changed)
+        XCTAssertEqual(controller.setTabAttachment(candidate(id: "first"), isAttached: false, attachmentSource: .recentTabs), .unchanged)
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
@@ -464,6 +577,14 @@ final class UTIAttachmentControllerTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makePickerPixelSession() -> MultiTabPickerPixelSession {
+        let reporter = UTIPixelReporter(
+            firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
+            context: { UTIPixelContext(surface: .contextualChat, isDuckAISurfaceForAttribution: true,
+                                      inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) })
+        return MultiTabPickerPixelSession { reporter.reportTabAttachment($0, source: .tabPicker) }
+    }
 
     private func enableTabAttachments(limit: Int = 3, mode: BrowsingMode = .normal) {
         let config = self.config!

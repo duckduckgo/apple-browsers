@@ -89,7 +89,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         attachedTabIds: Set<TabUID> = [],
         tabAttachmentLimit: Int = 0,
         isTabSelectionAvailable: @escaping () -> Bool = { false },
-        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> Bool)? = nil
+        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
         let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
@@ -160,7 +160,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     private static func makeRecentTabsSection(attachableTabs: [MultiTabAttachmentCandidate],
                                               attachedTabIds: Set<TabUID>,
                                               attachmentLimit: Int,
-                                              tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> Bool) -> UIMenu {
+                                              tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIMenu {
         let reachedAttachmentLimit = attachedTabIds.count >= attachmentLimit
         let tabActions: [UIAction] = attachableTabs.prefix(recentTabsMenuItemLimit).map { candidate in
             let isAttached = attachedTabIds.contains(candidate.tabId)
@@ -172,7 +172,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                             image: favicon,
                             attributes: reachedAttachmentLimit && !isAttached ? .disabled : [],
                             state: isAttached ? .on : .off) { action in
-                guard tabActionHandler(candidate, !isAttached, .recentTabs) else { return }
+                guard tabActionHandler(candidate, !isAttached, .recentTabs).isSuccessful else { return }
                 action.state = action.state == .on ? .off : .on
             }
         }
@@ -213,7 +213,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                      attachedTabIds: Set<TabUID>,
                                      attachmentLimit: Int,
                                      isAvailable: @escaping () -> Bool,
-                                     tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> Bool) -> UIAction {
+                                     tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIAction {
         UIAction(title: UserText.aiChatAttachmentOptionAddTabs,
                  image: DesignSystemImages.Glyphs.Size16.tabContent) { [weak self] _ in
             guard isAvailable(), let presenter = presenterProvider() else { return }
@@ -231,7 +231,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                   attachedTabIds: Set<TabUID>,
                                   attachmentLimit: Int,
                                   isAvailable: @escaping () -> Bool,
-                                  tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> Bool) {
+                                  tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
         let pixelSession = MultiTabPickerPixelSession { [weak self] in self?.onTabPickerEvent?($0) }
         let viewModel = MultiTabAttachmentPickerViewModel(
             candidates: attachableTabs,
@@ -260,11 +260,11 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                 navigationController?.dismiss(animated: true)
                 return
             }
-            let didChangeSelection = Self.applyTabSelection(viewModel.selectedTabIds,
-                                                           initialTabIds: attachedTabIds,
-                                                           candidates: attachableTabs,
-                                                           tabActionHandler: tabActionHandler)
-            pixelSession.finish(didChoose: didChangeSelection)
+            Self.confirmTabSelection(viewModel.selectedTabIds,
+                                     initialTabIds: attachedTabIds,
+                                     candidates: attachableTabs,
+                                     pixelSession: pixelSession,
+                                     tabActionHandler: tabActionHandler)
             navigationController?.dismiss(animated: true)
         }
         let confirmItem = UIBarButtonItem(title: nil,
@@ -288,21 +288,22 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         presenter.present(navigationController, animated: true)
     }
 
-    private static func applyTabSelection(_ selectedTabIds: Set<TabUID>,
-                                          initialTabIds: Set<TabUID>,
-                                          candidates: [MultiTabAttachmentCandidate],
-                                          tabActionHandler: (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> Bool) -> Bool {
+    static func confirmTabSelection(_ selectedTabIds: Set<TabUID>,
+                                    initialTabIds: Set<TabUID>,
+                                    candidates: [MultiTabAttachmentCandidate],
+                                    pixelSession: MultiTabPickerPixelSession,
+                                    tabActionHandler: (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
         let removedTabIds = initialTabIds.subtracting(selectedTabIds)
         let addedTabIds = selectedTabIds.subtracting(initialTabIds)
 
-        var didChangeSelection = false
+        var results: [TabAttachmentSelectionResult] = []
         for candidate in candidates where removedTabIds.contains(candidate.tabId) {
-            if tabActionHandler(candidate, false, .tabPicker) { didChangeSelection = true }
+            results.append(tabActionHandler(candidate, false, .tabPicker))
         }
         for candidate in candidates where addedTabIds.contains(candidate.tabId) {
-            if tabActionHandler(candidate, true, .tabPicker) { didChangeSelection = true }
+            results.append(tabActionHandler(candidate, true, .tabPicker))
         }
-        return didChangeSelection
+        pixelSession.finish(didChoose: results.contains(.changed))
     }
 
     /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.

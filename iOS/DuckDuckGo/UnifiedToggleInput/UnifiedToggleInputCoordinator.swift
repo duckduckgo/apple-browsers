@@ -1835,7 +1835,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabs: { [weak self] in self?.attachmentController.tabAttachmentCandidates ?? [] },
                 attachedTabIds: { [weak self] in self?.attachmentPolicy.selectedTabIDs ?? [] },
                 canAttach: { [weak self] in self?.attachmentPolicy.canAttachTab(withID: $0) ?? false },
-                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true, attachmentSource: .mention) ?? false }
+                attachTab: { [weak self] in self?.attachmentController.setTabAttachment($0, isAttached: true, attachmentSource: .mention).isSuccessful ?? false }
             ))
             mentionController.onPickerEvent = { [weak self] action in
                 guard let self, attachmentController.canUseTabAttachments else { return }

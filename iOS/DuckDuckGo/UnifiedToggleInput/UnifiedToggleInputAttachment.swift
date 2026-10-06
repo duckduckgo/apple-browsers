@@ -52,6 +52,17 @@ enum TabAttachmentOrigin: Equatable {
     case mention
 }
 
+enum TabAttachmentSelectionResult: Equatable {
+    /// Applied the requested attachment change.
+    case changed
+    /// The attachment already matched the requested state.
+    case unchanged
+    /// The request could not be applied.
+    case rejected
+
+    var isSuccessful: Bool { self != .rejected }
+}
+
 /// An explicitly attached browser tab, identified independently of its current address.
 ///
 /// `id` is the attachment's own identity, because the enum's `id` is a `UUID` while a tab is

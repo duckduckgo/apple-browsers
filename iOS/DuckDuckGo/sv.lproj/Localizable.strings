@@ -295,6 +295,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Du kan bara bifoga %d bilder åt gången.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Lägg till flikar";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Fråga om sidan";
 
@@ -307,8 +310,17 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Ta foto";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Filer skannas automatiskt efter olagligt innehåll. Flaggade chattar har begränsad datalagring. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Läs mer";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Meddelandet är för långt för att skickas med bilagor.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Senaste flikar";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Bilagor är tillfälligt inte tillgängliga. Försök igen senare.";
@@ -321,6 +333,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Filtypen stöds inte – bifoga en %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Inga matchande flikar";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Välj upp till %d flikar";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d av %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Lägg till flikar";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan inte skapa bilder. Ingen leverantörssynlighet gäller först när du byter tillbaka.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ stöder inte bildskapande.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Använder nu %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Vid redigering ersätts svaret med ett nytt.";
@@ -423,6 +456,15 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Prova gratis";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. The translation of New must match aichat.multiTab.promotion.new so it can be emphasized. */
+"aichat.multiTab.promotion" = "Nytt · Skriv ”@” eller tryck på ikonen {attachment} för att lägga till en flik.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "bilaga";
+
+/* Emphasized prefix in the multi-tab feature promotion. Must exactly match the translated New in aichat.multiTab.promotion. */
+"aichat.multiTab.promotion.new" = "Ny";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "För analytiska uppgifter";
@@ -1440,9 +1482,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Konfiguration";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bekräfta";
@@ -2585,9 +2624,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Ange ett icke-negativt antal dagar. Det angivna installationsdatumet kommer att vara för så många dagar sedan.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3076,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Händelse tillagd i Apple Kalender";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importera lösenord";
 
@@ -3161,9 +3194,6 @@
 "keyCommandZoomOut" = "Zooma ut";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Senast bearbetad: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Läser in tillgängliga produkter ...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3267,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Värdnamn för meddelandepolicy";
-
-/* No comment provided by engineer. */
-"Messages" = "Meddelande";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3626,7 @@
 "No extensions installed" = "Inga tillägg installerade";
 
 /* No comment provided by engineer. */
-"No Logs" = "Inga loggar";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Inga träffar för \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Inga meddelanden";
 
 /* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
@@ -4139,9 +4160,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo kan inte läsa in den här sidan.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Senaste bearbetningsloggar";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Släktingar: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4517,25 @@
 "settings.complete.setup" = "Slutför din inställning";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Vi strävar efter att endast välja de mest privata cookiealternativen som finns tillgängliga för dig, och sedan stänga dessa popup-fönster.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Hantera popup-fönster för cookies automatiskt";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Skydd mot popup-fönster för cookies";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo kan automatiskt hantera cookieinställningar för att maximera din integritet, minimera antalet cookies och stänga dessa popup-fönster.\n[Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Hantera popup-fönster för cookies";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Låt även DuckDuckGo spara ett klick för dig genom att acceptera cookies i popup-fönster där det inte går att välja bort dessa.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Popup-fönster där det inte går att välja bort cookies";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Ta bort flikar och data";
@@ -4924,9 +4942,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Vad är nytt?";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Visar loggar från den senaste minuten för att hjälpa till att diagnostisera problem direkt efter en uppdatering.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Välj det alternativ som bäst beskriver det problem som du har stött på.";
 
@@ -4971,9 +4986,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Status: Ogiltig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";
@@ -5462,9 +5474,6 @@
 "theme.name.light" = "Ljus";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Den här listan innehåller meddelanden som har visats, samt högst ett meddelande som är schemalagt att visas. Det kan finnas fler meddelanden i konfigurationen som kommer att visas, men de har inte bearbetats ännu.";
-
-/* No comment provided by engineer. */
 "Title" = "Rubrik";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5487,9 +5496,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Kontakt tillagd";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Version: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Sök";
@@ -5887,20 +5893,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Vad vill du importera?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ kan inte skapa bilder. Ingen leverantörssynlighet gäller först när du byter tillbaka.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ stöder inte bildskapande.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Använder nu %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Alla chattar";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Filer skannas automatiskt efter olagligt innehåll. Flaggade chattar har begränsad datalagring. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Läs mer";

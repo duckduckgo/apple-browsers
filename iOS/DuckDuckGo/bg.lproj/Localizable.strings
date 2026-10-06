@@ -224,7 +224,7 @@
 "action.title.vpn" = "VPN";
 
 /* Badge on the VPN browsing menu item promoting the Subscription free trial. Displayed uppercased. */
-"action.title.vpn.free-trial-badge" = "Безплатна проба";
+"action.title.vpn.free-trial-badge" = "Пробвайте безплатно";
 
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Блокира инвазивните тракери, преди да се заредят, като ефективно елиминира рекламите, които разчитат на проследяването.";
@@ -295,6 +295,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Можете да прикачите само %d изображения едновременно.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Добавяне на раздели";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Попитайте за страницата";
 
@@ -307,8 +310,17 @@
 /* Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message */
 "aichat.attachment.option.take.photo" = "Направете снимка";
 
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "Файловете се сканират автоматично за незаконно съдържание. Отбелязаните с флаг чатове имат ограничено съхранение на данни. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Научете повече";
+
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Това съобщение е твърде дълго, за да бъде изпратено с прикачени файлове.";
+
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Последни раздели";
 
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Прикачените файлове са временно недостъпни. Моля, опитайте отново по-късно.";
@@ -321,6 +333,27 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Този тип файл не се поддържа, прикачете %@.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Няма съответстващи раздели";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Изберете до %d раздела";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d от %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Добавяне на раздели";
+
+/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
+"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ не може да създава изображения. Нулевата видимост за доставчика няма да се прилага, докато не превключиш обратно.";
+
+/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
+"aichat.createImage.modelSwitch.subtitle" = "%@ не поддържа създаване на изображения.";
+
+/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
+"aichat.createImage.modelSwitch.title" = "Сега се използва %@";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Редактирането ще замени отговора с нов.";
@@ -423,6 +456,15 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Пробвайте безплатно";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. The translation of New must match aichat.multiTab.promotion.new so it can be emphasized. */
+"aichat.multiTab.promotion" = "Ново · Въведете „@“ или докоснете иконата {attachment}, за да добавите раздел.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "прикачен файл";
+
+/* Emphasized prefix in the multi-tab feature promotion. Must exactly match the translated New in aichat.multiTab.promotion. */
+"aichat.multiTab.promotion.new" = "Ново";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "За аналитични задачи";
@@ -1440,9 +1482,6 @@
 
 /* No comment provided by engineer. */
 "Config Rollout:" = "Config Rollout:";
-
-/* No comment provided by engineer. */
-"Configuration" = "Конфигурация";
 
 /* No comment provided by engineer. */
 "Confirm" = "Потвърдете";
@@ -2585,9 +2624,6 @@
 "Enrolled" = "Enrolled";
 
 /* No comment provided by engineer. */
-"Enter a non-negative number of days. The install date will be set to that many days ago." = "Въведете брой дни не трябва да е отрицателно число. Зададената дата на инсталиране ще бъде толкова дни назад във времето.";
-
-/* No comment provided by engineer. */
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
@@ -3040,9 +3076,6 @@
 /* Toast shown after the user successfully adds an event from a .ics calendar link to their Apple Calendar */
 "ics.event-added-to-calendar" = "Събитието е добавено към Apple Calendar";
 
-/* No comment provided by engineer. */
-"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
-
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Импортиране на пароли";
 
@@ -3161,9 +3194,6 @@
 "keyCommandZoomOut" = "Намаляване";
 
 /* No comment provided by engineer. */
-"Last Processed: %@" = "Последно обработено: %@";
-
-/* No comment provided by engineer. */
 "Loading available products..." = "Зареждане на налични продукти...";
 
 /* No comment provided by engineer. */
@@ -3237,9 +3267,6 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Име на хоста на политиката за съобщения";
-
-/* No comment provided by engineer. */
-"Messages" = "Съобщения";
 
 /* No comment provided by engineer. */
 "Min Version:" = "Min Version:";
@@ -3599,13 +3626,7 @@
 "No extensions installed" = "Няма инсталирани разширения";
 
 /* No comment provided by engineer. */
-"No Logs" = "Без регистри";
-
-/* No comment provided by engineer. */
 "No matches for \"%@\"" = "Не са намерени резултати за \"%@\"";
-
-/* No comment provided by engineer. */
-"No messages" = "Няма съобщения";
 
 /* No comment provided by engineer. */
 "No results found" = "Няма намерени резултати";
@@ -4139,9 +4160,6 @@
 "prompt.web-page-load-error.title" = "DuckDuckGo не може да зареди тази страница.";
 
 /* No comment provided by engineer. */
-"Recent Processing Logs" = "Последни регистри за обработка";
-
-/* No comment provided by engineer. */
 "Relatives: %@" = "Роднини: %@";
 
 /* No comment provided by engineer. */
@@ -4499,25 +4517,25 @@
 "settings.complete.setup" = "Завършете настройките";
 
 /* Explanation below the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.explanation" = "Ще се стремим да избираме само най-поверителните налични опции за бисквитки вместо Вас, след което ще затваряме тези изскачащи прозорци.";
+"settings.cookie.auto-manage.explanation" = "We’ll aim to reject as many cookies as possible for you, then close the pop-ups.";
 
 /* Title for the auto-manage cookie pop-ups toggle in settings */
-"settings.cookie.auto-manage.title" = "Автоматично управление на изскачащи прозорци за бисквитки";
+"settings.cookie.auto-manage.title" = "Reject optional cookies";
 
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Защита от изскачащи прозорци за бисквитки";
 
 /* Explanation in Settings how the cookie pop up protection feature works */
-"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo може автоматично да управлява предпочитанията за бисквитки, за да увеличи поверителността, да свежда до минимум бисквитките и да затваря тези изскачащи прозорци.\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGo can auto-manage cookie pop-ups to maximize privacy and minimize cookies before you even see them.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection)";
 
 /* Settings screen cell text for Cookie popups */
 "settings.cookie.popups" = "Управление на прозорци за бисквитки";
 
 /* Explanation below the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.explanation" = "Можете също така да разрешите на DuckDuckGo да Ви спести едно кликване, като приема бисквитки от Ваше име и затваря изскачащите прозорци без опция за отказ.";
+"settings.cookie.popups-without-opt-outs.explanation" = "If there’s no reject option, we’ll save you a click, accept these cookies for you, and close the pop-ups.";
 
 /* Title for the pop-ups without opt-outs toggle in settings */
-"settings.cookie.popups-without-opt-outs.title" = "Изскачащи прозорци без опция за отказ";
+"settings.cookie.popups-without-opt-outs.title" = "Accept cookies that can’t be rejected";
 
 /* Label for customizable toolbar button that deletes tabs and data */
 "settings.customizable.button.delete.tabs.and.data" = "Изтриване на раздели и данни";
@@ -4924,9 +4942,6 @@
 /* Settings cell title to show users the What’s New prompt */
 "settings.whats.new" = "Ново";
 
-/* No comment provided by engineer. */
-"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Показва регистрите от последната минута, за да помогне за диагностициране на проблеми веднага след обновяване.";
-
 /* Description on a report broken site page. */
 "site.not.working.description" = "Изберете опцията, която най-добре описва възникналия проблем.";
 
@@ -4971,9 +4986,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Status: Invalidated" = "Статус: Невалидно";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
@@ -5462,9 +5474,6 @@
 "theme.name.light" = "Светла";
 
 /* No comment provided by engineer. */
-"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Този списък съдържа съобщения, които са били показани, плюс още най-много 1 съобщение, което е планирано за показване. Може да има още съобщения в конфигурацията, които ще бъдат представени, но те все още не са обработени.";
-
-/* No comment provided by engineer. */
 "Title" = "Заглавие";
 
 /* Confirmation of an action - populated with a domain name */
@@ -5487,9 +5496,6 @@
 
 /* Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts */
 "vcard.contact-added" = "Контактът е добавен";
-
-/* No comment provided by engineer. */
-"Version: %@" = "Версия: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Търсене";
@@ -5887,20 +5893,3 @@
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Какво искате да импортирате?";
 
-/* Subtitle of the Duck.ai input footer card shown when the model that was switched away from supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.createImage.modelSwitch.privacyPreserving.subtitle" = "%@ не може да създава изображения. Нулевата видимост за доставчика няма да се прилага, докато не превключиш обратно.";
-
-/* Subtitle of the Duck.ai input footer card explaining why the model was switched. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.createImage.modelSwitch.subtitle" = "%@ не поддържа създаване на изображения.";
-
-/* Title of the Duck.ai input footer card shown after the app switched the model so the user can generate images. %@ is the short name of the model now in use, such as '5.6 Luna' */
-"aichat.createImage.modelSwitch.title" = "Сега се използва %@";
-
-/* Address bar Duck.ai menu option that opens the full chat history */
-"duckai.address.bar.menu.all.chats" = "Всички чатове";
-
-/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
-"aichat.attachment.privacy.notice.format" = "Файловете се сканират автоматично за незаконно съдържание. Отбелязаните с флаг чатове имат ограничено съхранение на данни. %@";
-
-/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
-"aichat.attachment.privacy.notice.learnMore" = "Научете повече";

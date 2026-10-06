@@ -122,6 +122,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var isFireWindowProvider: (() -> Bool)? { get set }
     var isSidebarProvider: (() -> Bool)? { get set }
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)? { get set }
+    var directNavigationFallback: AIChatConversationSource? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
@@ -219,6 +220,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var didConsumeConversationSource = false
     private let conversationSourceHandler: AIChatConversationSourceHandler
 
+    /// How this document was reached when it was a direct navigation to Duck.ai; used only when no
+    /// surface stamped the chat. The navigation can commit after the chat already loaded, so a late
+    /// value is still adopted.
+    var directNavigationFallback: AIChatConversationSource? {
+        didSet {
+            if didConsumeConversationSource, conversationSource == nil {
+                conversationSource = directNavigationFallback
+            }
+        }
+    }
+
     /// Set when a native composer hands this chat a prompt to send on its own, so the next prompt
     /// pixel reports that composer instead of the chat's own window.
     private var hasPendingNativePrompt = false
@@ -308,6 +320,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             if url == nil || url?.isDuckAIURL == true {
                 conversationSource = conversationSourceHandler.consumeData()
                     ?? (url?.isDuckAIOpenedFromHomepage == true ? .duckduckgoHomepage : nil)
+                    ?? directNavigationFallback
             }
         }
         let isFireWindow = isFireWindowProvider?() ?? false
@@ -324,6 +337,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func resetConversationSourceForNewDocument() {
         didConsumeConversationSource = false
         conversationSource = nil
+        directNavigationFallback = nil
         hasPendingNativePrompt = false
     }
 

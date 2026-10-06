@@ -181,6 +181,10 @@ extension MainViewController {
             daxDialogsManager.setAsChatFirstPath()
         }
         daxDialogsManager.setFireEducationMessageSeen()
+        OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: onboardingResumeStepStore,
+            fireEducationMessageSeen: true
+        )
         setDuckAIFireControlsLocked(false)
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
@@ -241,6 +245,13 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
+        if OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: onboardingResumeStepStore,
+            fireEducationMessageSeen: daxDialogsManager.fireEducationMessageSeen
+        ) {
+            return
+        }
+
         // `.duckAIAnswerStep` (default flow) and `.interludeDuckAI` (tailored flow) describe the same
         // physical state — the Fire onboarding is mid-flight and needs its AI tab + Fire dialog restored.
         guard

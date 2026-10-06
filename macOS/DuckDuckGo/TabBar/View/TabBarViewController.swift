@@ -1073,9 +1073,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         duckAIChromeTitleButton.horizontalPadding = 16
 
         if let chatsButton = duckAIChromeChatsButton {
-            chatsButton.backgroundColor = .clear
-            chatsButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-            chatsButton.mouseDownColor = colorsProvider.buttonMouseDownColor
+            chatsButton.backgroundColor = isFireWindow ? .clear : colorsProvider.buttonMouseOverColor
+            chatsButton.mouseOverColor = colorsProvider.buttonMouseDownColor
+            chatsButton.mouseDownColor = colorsProvider.buttonMouseDownPressedColor
             chatsButton.normalTintColor = colorsProvider.iconsColor
             chatsButton.mouseOverTintColor = colorsProvider.iconsColor
             chatsButton.mouseDownTintColor = colorsProvider.iconsColor

@@ -155,36 +155,30 @@ protocol TabTerminationErrorPageDetecting {
 @MainActor
 final class TabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
 
-    private let featureFlagger: FeatureFlagger
     private let settings: any TabTerminationErrorPageSettingsProviding
     private let formFactor: TabTerminationErrorPageSettings.FormFactor
     private let date: () -> Date
     private var terminationDatesByTabID: [String: [Date]] = [:]
 
-    convenience init(featureFlagger: FeatureFlagger,
-                     privacyConfigurationManager: PrivacyConfigurationManaging,
+    convenience init(privacyConfigurationManager: PrivacyConfigurationManaging,
                      date: @escaping () -> Date = Date.init) {
         let formFactor: TabTerminationErrorPageSettings.FormFactor = UIDevice.current.userInterfaceIdiom == .pad ? .tablet : .phone
         self.init(
-            featureFlagger: featureFlagger,
             settings: TabTerminationErrorPageSettings(privacyConfigurationManager: privacyConfigurationManager),
             formFactor: formFactor,
             date: date)
     }
 
-    init(featureFlagger: FeatureFlagger,
-         settings: any TabTerminationErrorPageSettingsProviding,
+    init(settings: any TabTerminationErrorPageSettingsProviding,
          formFactor: TabTerminationErrorPageSettings.FormFactor,
          date: @escaping () -> Date = Date.init) {
-        self.featureFlagger = featureFlagger
         self.settings = settings
         self.formFactor = formFactor
         self.date = date
     }
 
     func shouldShowErrorPage(forTabID tabID: String) -> Bool {
-        guard featureFlagger.isFeatureOn(.tabTerminationErrorPage),
-              settings.supportedFormFactors.contains(formFactor) else {
+        guard settings.supportedFormFactors.contains(formFactor) else {
             terminationDatesByTabID[tabID] = nil
             return false
         }

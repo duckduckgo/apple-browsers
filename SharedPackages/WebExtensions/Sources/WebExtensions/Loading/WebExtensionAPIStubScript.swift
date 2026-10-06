@@ -185,10 +185,11 @@ public enum WebExtensionAPIStubScript {
         // A callable, infinitely nestable placeholder: `chrome.privacy.services.passwordSavingEnabled.get()`
         // resolves through it without ever throwing, and any `onSomething` property is an event object.
         // `path` is the stub's API path, reported when it is called; reading a property is not a use.
-        function makeStub(path) {
+        // A namespace (`isNamespace`) is an object, like Chrome's, so only its members can be called.
+        function makeStub(path, isNamespace) {
             var children = Object.create(null);
 
-            return new Proxy(function() {}, {
+            return new Proxy(isNamespace ? {} : function() {}, {
                 get: function(target, property) {
                     if (property === "then") {
                         // Never look like a thenable: awaiting or resolving a namespace must not hang.
@@ -207,7 +208,7 @@ public enum WebExtensionAPIStubScript {
                     if (typeof property !== "string") {
                         return undefined;
                     }
-                    if (property === "call" || property === "apply" || property === "bind") {
+                    if (!isNamespace && (property === "call" || property === "apply" || property === "bind")) {
                         // `stub.call(...)` is a call of the stub itself: the function's own methods must
                         // not extend the API path, or `chrome.downloads.download.call(...)` would be
                         // reported as `chrome.downloads.download.call`.
@@ -296,7 +297,7 @@ public enum WebExtensionAPIStubScript {
                 if (api[namespace.name] !== undefined) {
                     return;
                 }
-                if (define(api, namespace.name, makeMember(namespace, namespace.name))) {
+                if (define(api, namespace.name, makeStub(namespace.name, true))) {
                     stubbedNamespaces.push(namespace.name);
                 }
             } catch (error) {

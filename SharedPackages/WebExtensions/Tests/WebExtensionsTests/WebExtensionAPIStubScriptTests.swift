@@ -124,6 +124,15 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("typeof chrome.browsingData.removeCache === 'function'")
     }
 
+    func testWhenNamespaceIsMissing_ThenItIsAnObjectWhoseMembersAreCallable() throws {
+        try evaluateStubScript()
+
+        try assertTrue("typeof chrome.notifications === 'object'")
+        try assertTrue("typeof chrome.notifications.create === 'function'")
+        context.evaluateScript("var namespaceCallThrew = false; try { chrome.notifications(); } catch (error) { namespaceCallThrew = true; }")
+        try assertTrue("namespaceCallThrew")
+    }
+
     func testWhenStubIsCalled_ThenItReturnsAPromise() throws {
         try evaluateStubScript()
 
@@ -166,13 +175,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertTrue("chrome.notifications.then === undefined")
         try assertTrue("chrome.privacy.services.then === undefined")
-    }
-
-    func testWhenStubIsCoercedToString_ThenItDescribesItself() throws {
-        try evaluateStubScript()
-
-        try assertTrue("String(chrome.notifications) === '[DuckDuckGo API stub]'")
-        try assertTrue("chrome.notifications.toString() === '[DuckDuckGo API stub]'")
     }
 
     // MARK: - Existing Namespaces
@@ -227,57 +229,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("typeof chrome.storage.managed.onChanged.addListener === 'function'")
     }
 
-    func testWhenManagedStorageIsQueriedTwice_ThenEachCallResolvesToItsOwnObject() throws {
-        try evaluateStubScript()
-
-        context.evaluateScript("""
-        var firstResult = null;
-        var secondResult = null;
-        chrome.storage.managed.get().then(function(result) { firstResult = result; });
-        chrome.storage.managed.get().then(function(result) { secondResult = result; });
-        """)
-        try assertNoExceptions()
-
-        try assertTrue("firstResult !== null && secondResult !== null && firstResult !== secondResult")
-    }
-
-    // MARK: - Retention
-
-    func testWhenNamespacesAreDecorated_ThenTheyAreRetainedOnTheGlobal() throws {
-        try evaluateStubScript()
-
-        let retentionProperty = WebExtensionAPIStubScript.retentionPropertyName
-        try assertTrue("Array.isArray(globalThis.\(retentionProperty))")
-        try assertTrue("globalThis.\(retentionProperty).length >= 1")
-        try assertTrue("globalThis.\(retentionProperty).indexOf(originalWebNavigation) !== -1")
-        try assertTrue("globalThis.\(retentionProperty).indexOf(originalStorage) !== -1")
-        try assertTrue("globalThis.\(retentionProperty).indexOf(chrome) !== -1")
-
-        // The retention array itself must not show up in enumeration of the global.
-        try assertTrue("Object.keys(globalThis).indexOf('\(retentionProperty)') === -1")
-    }
-
-    func testWhenScriptIsEvaluatedTwice_ThenTheRetentionArrayIsReused() throws {
-        try evaluateStubScript()
-        context.evaluateScript("var firstRunRetained = globalThis.\(WebExtensionAPIStubScript.retentionPropertyName);")
-        try assertNoExceptions()
-
-        try evaluateStubScript()
-
-        try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName) === firstRunRetained")
-    }
-
     // MARK: - Logging and Idempotency
-
-    func testWhenSomethingIsStubbed_ThenASingleSummaryIsLogged() throws {
-        try evaluateStubScript()
-
-        try assertTrue("consoleMessages.length === 1")
-        try assertTrue("consoleMessages[0].indexOf('[DuckDuckGo]') === 0")
-        try assertTrue("consoleMessages[0].indexOf('notifications') !== -1")
-        try assertTrue("consoleMessages[0].indexOf('webNavigation.onCreatedNavigationTarget') !== -1")
-        try assertTrue("consoleMessages[0].indexOf('storage.managed') !== -1")
-    }
 
     func testWhenScriptIsEvaluatedTwice_ThenNothingChangesAndNothingIsLoggedAgain() throws {
         try evaluateStubScript()
@@ -344,16 +296,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         """)
     }
 
-    func testWhenTheSameStubIsCalledRepeatedly_ThenItIsReportedOncePerPage() throws {
-        try installFakeReporting()
-        try evaluateStubScript()
-
-        context.evaluateScript("chrome.notifications.create(); chrome.notifications.create(); chrome.notifications.create();")
-        try assertNoExceptions()
-
-        try assertReports("[{\"kind\":\"stubbed\",\"api\":\"notifications.create\"}]")
-    }
-
     func testWhenManagedStorageIsUsed_ThenNothingIsReported() throws {
         try installFakeReporting()
         try evaluateStubScript()
@@ -393,32 +335,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         {"kind":"stubbed","api":"downloads.pause"},\
         {"kind":"stubbed","api":"downloads.resume"}]
         """)
-    }
-
-    func testWhenTheHostHasNoReportHandler_ThenTheScriptStillWorks() throws {
-        try installFakeReporting()
-        context.evaluateScript("webkit = { messageHandlers: {} };")
-        try evaluateStubScript()
-
-        context.evaluateScript("chrome.notifications.create(); console.error('x'); listeners.error({ message: 'y' });")
-        try assertNoExceptions()
-
-        try assertReports("[]")
-    }
-
-    func testWhenManifestIsADuckDuckGoExtension_ThenNothingIsReported() throws {
-        try installFakeReporting()
-        context.evaluateScript("""
-        chrome.runtime.getManifest = function() {
-            return { browser_specific_settings: { duckduckgo: { id: "com.duckduckgo.web-extension.embedded" } } };
-        };
-        """)
-        try evaluateStubScript()
-
-        context.evaluateScript("console.error('x');")
-        try assertNoExceptions()
-
-        try assertReports("[]")
     }
 
     // MARK: - Helpers

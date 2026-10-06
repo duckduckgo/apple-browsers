@@ -1,13 +1,13 @@
 {
     "aichat_unified_input_tab_picker_shown": {
-        "description": "Fires once when Add tabs picker is presented or the mention list changes from hidden to visible. Filtering while the mention list remains visible does not create another impression. Returning to matching results after the list was hidden starts a new impression. Recent tabs inline menu has no impression event.",
+        "description": "Fires once when Add tabs picker is presented or the mention list changes from hidden to visible. Filtering while the mention list remains visible does not create another impression. Returning to matching results after the list was hidden starts a new impression. Surface is captured when the picker or mention list becomes visible. Recent tabs inline menu has no impression event.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface", "aichat_tab_picker_source"]
     },
     "aichat_unified_input_tab_picker_canceled": {
-        "description": "Fires once when a presented picker closes without applying a selection change: close button, interactive dismissal, or confirmation with no accepted changes. For mentions, fires when a visible list is hidden without successfully accepting a tab, including when filtering leaves no matching tabs. Further dismissal or text selection while the list is already hidden does not fire again.",
+        "description": "Fires once when a presented picker closes without applying a selection change: close button, interactive dismissal, or confirmation with no accepted changes. For mentions, fires when a visible list is hidden without successfully accepting a tab, including when filtering leaves no matching tabs. Surface identifies where that visibility session began, including when dismissal follows a surface change. A disabled multi-tab feature suppresses this event. Further dismissal or text selection while the list is already hidden does not fire again.",
         "owners": ["pikorddg"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

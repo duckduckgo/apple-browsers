@@ -177,7 +177,7 @@ final class MultiTabMentionControllerTests: XCTestCase {
     func testWhenSuggestionsRefreshThenReportsOneImpressionAndNoCancellationOnSelection() async {
         let fixture = MentionFixture()
         var actions: [MultiTabAttachmentPixel.Action] = []
-        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.controller.onPickerEvent = { action, _ in actions.append(action) }
         fixture.setText("@wiki")
         await presentSuggestions(fixture)
         fixture.controller.refresh()
@@ -190,7 +190,7 @@ final class MultiTabMentionControllerTests: XCTestCase {
     func testWhenMentionClosesWithoutSelectionThenReportsOneCancellation() async {
         let fixture = MentionFixture()
         var actions: [MultiTabAttachmentPixel.Action] = []
-        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.controller.onPickerEvent = { action, _ in actions.append(action) }
         fixture.setText("@wiki")
         await presentSuggestions(fixture)
         fixture.controller.dismiss()
@@ -201,7 +201,7 @@ final class MultiTabMentionControllerTests: XCTestCase {
     func testWhenResultsDisappearThenCancelsOnceAndStartsNewSessionWhenResultsReturn() async {
         let fixture = MentionFixture()
         var actions: [MultiTabAttachmentPixel.Action] = []
-        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.controller.onPickerEvent = { action, _ in actions.append(action) }
         fixture.setText("@wiki")
         await presentSuggestions(fixture)
         XCTAssertEqual(actions, [.pickerShown])
@@ -230,7 +230,7 @@ final class MultiTabMentionControllerTests: XCTestCase {
     func testWhenResultsReturnWithoutLeavingMentionThenReportsNewImpression() async {
         let fixture = MentionFixture()
         var actions: [MultiTabAttachmentPixel.Action] = []
-        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.controller.onPickerEvent = { action, _ in actions.append(action) }
         fixture.setText("@wiki")
         await presentSuggestions(fixture)
 
@@ -247,7 +247,7 @@ final class MultiTabMentionControllerTests: XCTestCase {
     func testWhenMentionNeverHasResultsThenDoesNotReportShownOrCanceled() async {
         let fixture = MentionFixture()
         var actions: [MultiTabAttachmentPixel.Action] = []
-        fixture.controller.onPickerEvent = { actions.append($0) }
+        fixture.controller.onPickerEvent = { action, _ in actions.append(action) }
 
         await updateSuggestions(fixture, text: "@wikiblabla", selection: NSRange(location: 11, length: 0))
         XCTAssertNil(fixture.suggestions)
@@ -316,6 +316,7 @@ private final class MentionFixture {
                 return true
             }
         ))
+        controller.pixelSurfaceProvider = { .contextualChat }
         controller.onSuggestionsChanged = { [weak self] in
             self?.suggestions = $0
             self?.onUpdate?($0)

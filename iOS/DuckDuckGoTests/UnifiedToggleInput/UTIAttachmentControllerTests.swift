@@ -583,7 +583,9 @@ final class UTIAttachmentControllerTests: XCTestCase {
             firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
             context: { UTIPixelContext(surface: .contextualChat, isDuckAISurfaceForAttribution: true,
                                       inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) })
-        return MultiTabPickerPixelSession { reporter.reportTabAttachment($0, source: .tabPicker) }
+        return MultiTabPickerPixelSession(surfaceProvider: { .contextualChat }) {
+            reporter.reportTabAttachment($0, source: .tabPicker, surface: $1)
+        }
     }
 
     private func enableTabAttachments(limit: Int = 3, mode: BrowsingMode = .normal) {

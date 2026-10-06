@@ -43,7 +43,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let url: URL
     }
 
-    var onTabPickerEvent: ((MultiTabAttachmentPixel.Action) -> Void)?
+    var tabPickerPixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface?)?
+    var onTabPickerEvent: ((MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void)?
 
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
@@ -232,7 +233,9 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                   attachmentLimit: Int,
                                   isAvailable: @escaping () -> Bool,
                                   tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
-        let pixelSession = MultiTabPickerPixelSession { [weak self] in self?.onTabPickerEvent?($0) }
+        let pixelSession = MultiTabPickerPixelSession(
+            surfaceProvider: { [weak self] in self?.tabPickerPixelSurfaceProvider?() },
+            report: { [weak self] in self?.onTabPickerEvent?($0, $1) })
         let viewModel = MultiTabAttachmentPickerViewModel(
             candidates: attachableTabs,
             selectedTabIds: attachedTabIds,

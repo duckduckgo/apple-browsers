@@ -41,8 +41,11 @@ final class MultiTabMentionController: TextEntryMentionHandling {
         let isEnabled: Bool
     }
 
-    var onPickerEvent: ((MultiTabAttachmentPixel.Action) -> Void)?
-    private lazy var pixelSession = MultiTabPickerPixelSession { [weak self] in self?.onPickerEvent?($0) }
+    var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface?)?
+    var onPickerEvent: ((MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void)?
+    private lazy var pixelSession = MultiTabPickerPixelSession(
+        surfaceProvider: { [weak self] in self?.pixelSurfaceProvider?() },
+        report: { [weak self] in self?.onPickerEvent?($0, $1) })
 
     var onSuggestionsChanged: (([Suggestion]?) -> Void)?
     private let environment: Environment

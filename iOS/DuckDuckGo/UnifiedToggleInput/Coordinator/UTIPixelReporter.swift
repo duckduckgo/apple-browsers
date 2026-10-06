@@ -173,10 +173,10 @@ final class UTIPixelReporter {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
-    func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin) {
-        withContext {
-            firing.fire(MultiTabAttachmentPixel(action: action, source: source, surface: $0.surface), frequency: .dailyAndCount)
-        }
+    func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
+                             surface: UnifiedToggleInputPixelSurface? = nil) {
+        guard let surface = surface ?? context()?.surface else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, surface: surface), frequency: .dailyAndCount)
     }
 
     /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.

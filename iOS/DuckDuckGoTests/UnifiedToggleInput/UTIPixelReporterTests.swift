@@ -145,7 +145,7 @@ final class UTIPixelReporterTests: XCTestCase {
 
     func testWhenPickerSessionClosesThenReportsCancellationOnceOnlyWithoutChoice() {
         var actions: [MultiTabAttachmentPixel.Action] = []
-        let session = MultiTabPickerPixelSession { actions.append($0) }
+        let session = MultiTabPickerPixelSession(surfaceProvider: { .contextualChat }) { action, _ in actions.append(action) }
         session.finish()
         session.show()
         session.show()
@@ -157,6 +157,79 @@ final class UTIPixelReporterTests: XCTestCase {
         session.finish(didChoose: true)
         session.finish()
         XCTAssertEqual(actions, [.pickerShown, .pickerCanceled, .pickerShown])
+    }
+
+    func testWhenPickerSurfaceChangesThenCancellationKeepsShownSurfaceAndNextSessionRefreshesIt() {
+        for source in [TabAttachmentOrigin.mention, .tabPicker] {
+            var liveContext: UTIPixelContext? = context(surface: .addressBar)
+            let reporter = makeReporter { liveContext }
+            let session = MultiTabPickerPixelSession(surfaceProvider: { liveContext?.surface }) {
+                reporter.reportTabAttachment($0, source: source, surface: $1)
+            }
+            let fireCount = pixelKitMock.actualFireCalls.count
+
+            liveContext = context(surface: .contextualChat)
+            session.show()
+            liveContext = context(surface: .duckAI)
+            session.show()
+            session.finish()
+            session.finish()
+
+            session.show()
+            liveContext = nil
+            session.finish()
+
+            let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
+            XCTAssertEqual(calls.map(\.pixel.name), [
+                "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled",
+                "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"
+            ])
+            XCTAssertEqual(calls.compactMap { $0.pixel.parameters?["surface"] }, ["contextual_chat", "contextual_chat", "duck_ai", "duck_ai"])
+            for call in calls {
+                XCTAssertEqual(call.pixel.parameters?["source"], source == .mention ? "mention" : "tab_picker")
+                XCTAssertEqual(call.frequency, .dailyAndCount)
+            }
+        }
+    }
+
+    func testWhenPickerChoiceSucceedsThenNextSessionUsesNewSurface() {
+        var surface: UnifiedToggleInputPixelSurface = .contextualChat
+        let reporter = makeReporter { self.context(surface: surface) }
+        let session = MultiTabPickerPixelSession(surfaceProvider: { surface }) {
+            reporter.reportTabAttachment($0, source: .mention, surface: $1)
+        }
+
+        session.show()
+        session.finish(didChoose: true)
+        surface = .addressBar
+        session.show()
+        session.finish()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"
+        ])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.compactMap { $0.pixel.parameters?["surface"] }, ["contextual_chat", "address_bar", "address_bar"])
+    }
+
+    func testWhenPickerHasNoSurfaceAtShowThenDoesNotReportAnUnmatchedCancellation() {
+        var surface: UnifiedToggleInputPixelSurface?
+        let reporter = makeReporter { self.context(surface: .addressBar) }
+        let session = MultiTabPickerPixelSession(surfaceProvider: { surface }) {
+            reporter.reportTabAttachment($0, source: .mention, surface: $1)
+        }
+
+        session.show()
+        surface = .contextualChat
+        session.show()
+        session.finish()
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+
+        session.show()
+        session.finish()
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"
+        ])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.compactMap { $0.pixel.parameters?["surface"] }, ["contextual_chat", "contextual_chat"])
     }
 
     // MARK: - Omnibar surface shown (toggle visibility from live context)

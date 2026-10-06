@@ -178,7 +178,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         didDetectChallenge = false
         didReportChallengeClearance = false
 #if DEBUG
-        PIRLivePreview.shared.updateActivity("Opening page", operationID: livePreviewOperationID)
+        PIRLivePreview.shared.updateActivity("Opening the broker website", operationID: livePreviewOperationID)
 #endif
 #endif
         webView?.load(url)
@@ -237,9 +237,15 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         continuation?.resume(with: result)
     }
 
+#if os(macOS) && DEBUG
+    public func updateLivePreviewActivity(for actionType: ActionType, stepType: StepType?) {
+        PIRLivePreview.shared.updateActivity(actionType.livePreviewActivity(for: stepType), operationID: livePreviewOperationID)
+    }
+#endif
+
     public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
 #if os(macOS) && DEBUG
-        PIRLivePreview.shared.updateActivity(action.actionType.livePreviewActivity, operationID: livePreviewOperationID)
+        updateLivePreviewActivity(for: action.actionType, stepType: stepType)
 #endif
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
 
@@ -589,18 +595,22 @@ private class WebView: WKWebView {
 
 #if os(macOS) && DEBUG
 private extension ActionType {
-    var livePreviewActivity: String {
+    func livePreviewActivity(for stepType: StepType?) -> String {
         switch self {
-        case .navigate: return "Opening page"
-        case .extract: return "Checking for matches"
-        case .fillForm: return "Completing form"
-        case .click: return "Continuing on broker site"
-        case .expectation, .condition: return "Checking page"
-        case .executeScript: return "Processing page"
-        case .generateEmail: return "Preparing email address"
-        case .getEmailData, .emailConfirmation: return "Checking confirmation email"
-        case .getCaptchaInfo: return "Checking CAPTCHA"
-        case .solveCaptcha: return "Resolving CAPTCHA"
+        case .navigate: return "Opening the broker website"
+        case .extract: return "Searching for your information"
+        case .fillForm:
+            return stepType == .scan ? "Entering your search details" : "Filling out the removal form"
+        case .click:
+            return stepType == .scan ? "Continuing your search" : "Continuing your removal request"
+        case .expectation: return "Waiting for the page to be ready"
+        case .condition: return "Checking the next step"
+        case .executeScript: return "Working through the next step"
+        case .generateEmail: return "Preparing a private email address"
+        case .getEmailData: return "Waiting for the broker's email"
+        case .emailConfirmation: return "Confirming your removal request"
+        case .getCaptchaInfo: return "Checking the site's security challenge"
+        case .solveCaptcha: return "Working through the security challenge"
         }
     }
 }

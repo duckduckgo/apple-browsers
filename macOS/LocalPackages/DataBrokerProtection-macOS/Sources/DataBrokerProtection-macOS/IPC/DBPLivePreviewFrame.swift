@@ -28,12 +28,14 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
     public let operationID: String
     public let brokerName: String
     public let activity: String
+    public let faviconURL: URL?
 
     init(frame: PIRLivePreviewFrame) {
         imageData = frame.imageData
         operationID = frame.operationID.uuidString
         brokerName = frame.brokerName
         activity = frame.activity
+        faviconURL = frame.faviconURL
     }
 
     public init?(coder: NSCoder) {
@@ -45,6 +47,7 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
         self.operationID = operationID
         self.brokerName = brokerName
         self.activity = activity
+        faviconURL = coder.decodeObject(of: NSURL.self, forKey: "faviconURL") as URL?
     }
 
     public func encode(with coder: NSCoder) {
@@ -52,6 +55,7 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
         coder.encode(operationID as NSString, forKey: "operationID")
         coder.encode(brokerName as NSString, forKey: "brokerName")
         coder.encode(activity as NSString, forKey: "activity")
+        coder.encode(faviconURL as NSURL?, forKey: "faviconURL")
     }
 }
 #endif

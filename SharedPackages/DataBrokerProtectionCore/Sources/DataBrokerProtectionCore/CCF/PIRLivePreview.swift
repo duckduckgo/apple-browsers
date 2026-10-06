@@ -25,12 +25,14 @@ public struct PIRLivePreviewFrame: Sendable {
     public let operationID: UUID
     public let brokerName: String
     public let activity: String
+    public let faviconURL: URL?
 
-    public init(imageData: Data, operationID: UUID, brokerName: String, activity: String) {
+    public init(imageData: Data, operationID: UUID, brokerName: String, activity: String, faviconURL: URL? = nil) {
         self.imageData = imageData
         self.operationID = operationID
         self.brokerName = brokerName
         self.activity = activity
+        self.faviconURL = faviconURL
     }
 }
 
@@ -47,15 +49,18 @@ public final class PIRLivePreview {
         isCapturing = true
         defer { isCapturing = false }
         let activity = source.activity
+        let pageURL = webView.url
         let imageData = try await snapshot(webView)
+        let faviconValue = try? await webView.evaluateJavaScript("document.querySelector('link[rel~=\"icon\"]')?.href || new URL('/favicon.ico', location.href).href")
+        let faviconURL = (faviconValue as? String).flatMap { URL(string: $0) }
 
         // A page can finish while WebKit captures it. Never deliver its stale frame.
-        guard sources.contains(where: { $0 === source }) else { return nil }
+        guard sources.contains(where: { $0 === source }), webView.url == pageURL else { return nil }
         return PIRLivePreviewFrame(imageData: imageData, operationID: source.operationID,
-                                   brokerName: source.brokerName, activity: activity)
+                                   brokerName: source.brokerName, activity: activity, faviconURL: faviconURL)
     }
 
-    public func register(webView: WKWebView, operationID: UUID, brokerName: String, activity: String = "Opening page") {
+    public func register(webView: WKWebView, operationID: UUID, brokerName: String, activity: String = "Opening the broker website") {
         unregister(operationID: operationID)
         sources.append(Source(webView: webView, operationID: operationID, brokerName: brokerName, activity: activity))
     }
@@ -79,7 +84,7 @@ public final class PIRLivePreview {
     private static func snapshot(_ webView: WKWebView) async throws -> Data {
         let configuration = WKSnapshotConfiguration()
         configuration.rect = webView.bounds
-        configuration.snapshotWidth = 600
+        configuration.snapshotWidth = 1024
         let image = try await webView.takeSnapshot(configuration: configuration)
         guard let tiff = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiff),

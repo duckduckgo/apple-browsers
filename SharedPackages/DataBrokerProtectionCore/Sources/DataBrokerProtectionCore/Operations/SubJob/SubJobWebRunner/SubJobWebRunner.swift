@@ -117,6 +117,12 @@ public extension SubJobWebRunning {
     func runNextAction(_ action: Action) async {
         let stepType = actionsHandler?.stepType
 
+        #if os(macOS) && DEBUG
+        if let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
+            await handler.updateLivePreviewActivity(for: action.actionType, stepType: stepType)
+        }
+        #endif
+
         stageCalculator.setLastAction(action)
 
         switch action {

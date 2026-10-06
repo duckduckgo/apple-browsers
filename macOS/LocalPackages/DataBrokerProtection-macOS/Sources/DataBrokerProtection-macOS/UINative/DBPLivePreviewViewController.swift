@@ -32,7 +32,7 @@ public final class DBPLivePreviewViewController: NSViewController {
     }
 
     public override func loadView() {
-        // Muse-inspired compact card: a 56pt header and a 220pt page preview.
+        // Keep the card compact without changing the source page's aspect ratio.
         let card = PreviewCardView()
         card.material = .popover
         card.blendingMode = .withinWindow
@@ -40,15 +40,17 @@ public final class DBPLivePreviewViewController: NSViewController {
         card.wantsLayer = true
         card.layer?.cornerRadius = 16
         card.layer?.masksToBounds = true
+        card.alphaValue = 0
         view = card
 
-        let icon = NSImageView(image: NSImage(systemSymbolName: "globe", accessibilityDescription: nil) ?? NSImage())
+        icon.image = globeImage
+        icon.imageScaling = .scaleProportionallyUpOrDown
         icon.contentTintColor = .controlAccentColor
         icon.translatesAutoresizingMaskIntoConstraints = false
 
-        brokerLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        brokerLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         brokerLabel.lineBreakMode = .byTruncatingTail
-        activityLabel.font = .systemFont(ofSize: 11)
+        activityLabel.font = .systemFont(ofSize: 13)
         activityLabel.textColor = .secondaryLabelColor
         activityLabel.lineBreakMode = .byTruncatingTail
         let labels = NSStackView(views: [brokerLabel, activityLabel])
@@ -75,17 +77,19 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderLabel)
 
+        previewAspectRatioConstraint = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: previewAspectRatio)
+        previewAspectRatioConstraint?.isActive = true
+
         NSLayoutConstraint.activate([
-            icon.widthAnchor.constraint(equalToConstant: 24),
-            icon.heightAnchor.constraint(equalToConstant: 24),
+            icon.widthAnchor.constraint(equalToConstant: 28),
+            icon.heightAnchor.constraint(equalToConstant: 28),
             header.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
             header.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 14),
             header.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -14),
-            header.heightAnchor.constraint(equalToConstant: 32),
+            header.heightAnchor.constraint(equalToConstant: 40),
             imageView.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 12),
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            imageView.heightAnchor.constraint(equalToConstant: 220),
             imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
             placeholderLabel.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
             placeholderLabel.centerYAnchor.constraint(equalTo: imageView.centerYAnchor)
@@ -117,6 +121,14 @@ public final class DBPLivePreviewViewController: NSViewController {
     private let activityLabel = NSTextField(labelWithString: "Connecting to PIR agent")
     private let placeholderLabel = NSTextField(labelWithString: "Waiting for a broker page")
     private let imageView = NSImageView()
+    private let icon = NSImageView()
+    private let globeImage = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
+    private let faviconSession = URLSession(configuration: .ephemeral)
+    private var faviconURL: URL?
+    private var faviconTask: Task<Void, Never>?
+    private var faviconImages: [URL: NSImage] = [:]
+    private var previewAspectRatio: CGFloat = 1
+    private var previewAspectRatioConstraint: NSLayoutConstraint?
     private var timer: Timer?
     private var requestTask: Task<Void, Never>?
     private var requestStartedAt: Date?
@@ -159,17 +171,29 @@ public final class DBPLivePreviewViewController: NSViewController {
             clearFrame(message: "No active operation")
             return
         }
-        guard let image = NSImage(data: frame.imageData) else {
+        guard let image = NSImage(data: frame.imageData), image.size.width > 0, image.size.height > 0 else {
             clearFrame(message: "Preview unavailable")
             return
+        }
+        let aspectRatio = image.size.height / image.size.width
+        if aspectRatio != previewAspectRatio {
+            previewAspectRatioConstraint?.isActive = false
+            previewAspectRatioConstraint = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: aspectRatio)
+            previewAspectRatioConstraint?.isActive = true
+            previewAspectRatio = aspectRatio
         }
         brokerLabel.stringValue = frame.brokerName
         activityLabel.stringValue = frame.activity
         imageView.image = image
+        updateFavicon(frame.faviconURL)
         placeholderLabel.isHidden = true
+        view.alphaValue = 1
     }
 
     private func clearFrame(message: String) {
+        // Keep polling while the card is transparent so a new operation can reveal it.
+        view.alphaValue = 0
+        updateFavicon(nil)
         brokerLabel.stringValue = "PIR activity"
         activityLabel.stringValue = message
         imageView.image = nil
@@ -177,9 +201,38 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.isHidden = false
     }
 
+    private func updateFavicon(_ url: URL?) {
+        guard url != faviconURL else { return }
+        faviconTask?.cancel()
+        faviconTask = nil
+        faviconURL = url
+        icon.image = globeImage
+        icon.contentTintColor = .controlAccentColor
+        guard let url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
+        if let image = faviconImages[url] {
+            icon.image = image
+            icon.contentTintColor = nil
+            return
+        }
+
+        let session = faviconSession
+        faviconTask = Task { @MainActor [weak self] in
+            var request = URLRequest(url: url, timeoutInterval: 5)
+            request.attribution = .user
+            guard let (data, response) = try? await session.data(for: request),
+                  (response as? HTTPURLResponse)?.statusCode == 200,
+                  !Task.isCancelled, let self, self.faviconURL == url,
+                  let image = NSImage(data: data) else { return }
+            self.faviconImages[url] = image
+            self.icon.image = image
+            self.icon.contentTintColor = nil
+        }
+    }
+
     deinit {
         timer?.invalidate()
         requestTask?.cancel()
+        faviconTask?.cancel()
     }
 }
 

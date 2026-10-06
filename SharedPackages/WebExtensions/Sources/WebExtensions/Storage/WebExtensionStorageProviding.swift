@@ -106,8 +106,8 @@ public extension WebExtensionStorageProviding {
             return folderPath
         }
 
-        // Look for a subfolder containing manifest.json
-        for item in contents {
+        // Look for a subfolder containing manifest.json, other than the copy prepared for loading
+        for item in contents where item.lastPathComponent != WebExtensionBackgroundPagePatcher.loadableFolderName {
             var isDirectory: ObjCBool = false
             if fileManager.fileExists(atPath: item.path, isDirectory: &isDirectory),
                isDirectory.boolValue {

@@ -74,7 +74,7 @@ extension WebExtensionManager {
 
     @MainActor
     private func syncEmbeddedExtension(_ descriptor: EmbeddedWebExtensionDescriptor) async {
-        guard let bundledURL = descriptor.bundledURL else {
+        guard let bundledURL = bundledExtensionURL(descriptor) else {
             Logger.webExtensions.error("❌ Embedded extension not found in bundle: \(descriptor.resourceFilename)")
             return
         }
@@ -156,6 +156,8 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        permissionController?.trustedInstallations.insert(identifier)
+        defer { permissionController?.trustedInstallations.remove(identifier) }
         if requiresExtraction {
             // Unzipping on the main thread risks the watchdog (Dark Reader has ~140 files).
             let storageProvider = storageProvider

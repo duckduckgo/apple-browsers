@@ -295,6 +295,9 @@
 /* Error message displayed when the user has attached more images than are allowed in one message. Parameter is the backend-provided maximum number of images per message. */
 "aichat.attachment.image.turn.limit" = "Du kan kun vedhæfte %d billeder ad gangen.";
 
+/* attachment-menu option that opens the Choose Tabs picker */
+"aichat.attachment.option.add.tabs" = "Tilføj faner";
+
 /* Top-level attachment menu option to attach the current page content to an AI chat message */
 "aichat.attachment.option.ask.about.page" = "Spørg om siden";
 
@@ -310,6 +313,9 @@
 /* Alert message shown when an AI chat message exceeds the allowed length while attachments are included */
 "aichat.attachment.prompt.too.long" = "Beskeden er for lang til at blive sendt med vedhæftede filer.";
 
+/* attachment-menu section title for recently viewed tabs */
+"aichat.attachment.recent-tabs.section-title" = "Seneste faner";
+
 /* Generic fallback error message displayed when attachments cannot be validated because the backend-provided attachment limits are unavailable */
 "aichat.attachment.unavailable" = "Vedhæftede filer er midlertidigt utilgængelige. Prøv igen senere.";
 
@@ -321,6 +327,18 @@
 
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Denne filtype understøttes ikke. Vedhæft en %@-fil.";
+
+/* empty state shown when no tabs match the search query */
+"aichat.choose-tabs.no-matches" = "Ingen matchende faner";
+
+/* Instruction above the tab attachment list. Parameter is the configured maximum number of tabs. */
+"aichat.choose-tabs.prompt" = "Vælg op til %d faner";
+
+/* tab attachment selection count. First parameter is selected count; second is attachment limit. */
+"aichat.choose-tabs.selection-count" = "%1$d af %2$d";
+
+/* title of the tab attachment picker */
+"aichat.choose-tabs.title" = "Tilføj faner";
 
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Redigering vil erstatte svaret med et nyt.";
@@ -423,6 +441,12 @@
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Prøv gratis";
+
+/* Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized. */
+"aichat.multiTab.promotion" = "Ny · Skriv “@”, eller tryk på ikonet {attachment} for at tilføje en fane.";
+
+/* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
+"aichat.multiTab.promotion.attachment" = "vedhæftning";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Til analytiske opgaver";

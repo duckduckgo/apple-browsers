@@ -562,10 +562,15 @@ extension DefaultOmniBarViewController {
         )
         toolPickerController = toolController
         toolController.onToolsUpdated = { [weak self] in
-            self?.refreshModelPicker()
-            self?.refreshToolPicker()
-            self?.refreshReasoningPicker()
-            self?.refreshAttachButton()
+            guard let self else { return }
+            self.refreshModelPicker()
+            self.refreshToolPicker()
+            self.refreshReasoningPicker()
+            self.refreshAttachButton()
+            // The disclaimer names "Create" while Create Image is selected.
+            if self.isTermsOfServiceDisclaimerShown {
+                self.refreshFooterMessage(animated: true)
+            }
         }
         toolController.onModelSwitchNoticeUpdated = { [weak self] notice in
             guard let self else { return }
@@ -635,10 +640,11 @@ extension DefaultOmniBarViewController {
 
     /// The required disclaimer outranks the model switch notice, as it does in the iPhone input.
     private func refreshFooterMessage(animated: Bool) {
-        let message = termsOfServiceDisclaimer.message
+        let sendButton = DuckAiTermsOfServiceSendButton(selectedTool: toolPickerController?.selectedTool)
+        let message = termsOfServiceDisclaimer.message(sendButton: sendButton)
             ?? toolPickerController?.currentModelSwitchNotice.map { UTIFooterMessageMapper().message(for: $0) }
         omniBarView.setFooterMessage(message, animated: animated)
-        omniBarView.isTermsOfServiceDisclaimerShown = isTermsOfServiceDisclaimerShown
+        omniBarView.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? sendButton : nil
         let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
@@ -646,8 +652,7 @@ extension DefaultOmniBarViewController {
 
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.
     private var isTermsOfServiceDisclaimerShown: Bool {
-        guard let visibleMessage = omniBarView.visibleFooterMessage else { return false }
-        return visibleMessage == termsOfServiceDisclaimer.message
+        termsOfServiceDisclaimer.isDisclaimer(omniBarView.visibleFooterMessage)
     }
 
     private func refreshModelPicker() {

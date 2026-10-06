@@ -17,7 +17,9 @@
 //
 
 import AppKit
+import Combine
 import DDGSync
+import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
@@ -26,6 +28,25 @@ protocol SyncPromoManaging {
     func goToSyncSettings(for touchpoint: SyncPromoManager.Touchpoint)
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func resetPromos()
+}
+
+enum SyncPromoContent {
+    case bookmarks
+    case autofill
+
+    var promoFlag: FeatureFlag {
+        switch self {
+        case .bookmarks: .promoQueueSyncSetupBookmarksPromo
+        case .autofill: .promoQueueSyncSetupAutofillPromo
+        }
+    }
+
+    var promotionSubfeature: SyncPromotionSubfeature {
+        switch self {
+        case .bookmarks: .bookmarks
+        case .autofill: .passwords
+        }
+    }
 }
 
 final class SyncPromoManager: SyncPromoManaging {
@@ -52,8 +73,17 @@ final class SyncPromoManager: SyncPromoManaging {
         public static let syncPromoIdentitiesSource = "promotion_identities"
     }
 
+    /// `nil` for an instance built with the legacy initializer, which takes no part in the promo queue.
+    private let content: SyncPromoContent?
+    private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let contentCountProvider: () -> Int
+    private let isDuckDuckGoPasswordManager: () -> Bool
+    private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
+    /// Runs the refreshes this class starts itself, so counting content never blocks the main thread.
+    private let eligibilityQueue = DispatchQueue(label: "com.duckduckgo.syncPromoManager.eligibility", qos: .utility)
+    private var cancellables = Set<AnyCancellable>()
     private let autofillPrefs = AutofillPreferences()
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
@@ -62,10 +92,89 @@ final class SyncPromoManager: SyncPromoManaging {
     @UserDefaultsWrapper(key: .syncPromoPasswordsDismissed, defaultValue: nil)
     private var syncPromoPasswordsDismissed: Date?
 
+    /// Builds an instance that serves as the promo queue delegate for `content`.
+    /// - Parameters:
+    ///   - contentCountProvider: Number of items of `content` the user has. Must be synchronous and safe to call off the main thread.
+    ///   - isDuckDuckGoPasswordManager: Whether DuckDuckGo is the selected password manager. Only used for `.autofill`.
+    ///     Must be safe to call off the main thread.
+    ///
+    /// Eligibility isn't computed until `refreshEligibility()` is first called, which `PromoService` does before reading it.
+    init(content: SyncPromoContent,
+         featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         syncService: DDGSyncing?,
+         contentCountProvider: @escaping () -> Int,
+         isDuckDuckGoPasswordManager: @escaping () -> Bool) {
+        self.content = content
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.syncService = syncService
+        self.contentCountProvider = contentCountProvider
+        self.isDuckDuckGoPasswordManager = isDuckDuckGoPasswordManager
+
+        subscribeToEligibilityChanges()
+    }
+
     init(syncService: DDGSyncing? = NSApp.delegateTyped.syncService,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager) {
+        self.content = nil
+        self.featureFlagger = NSApp.delegateTyped.featureFlagger
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.contentCountProvider = { 0 }
+        self.isDuckDuckGoPasswordManager = { false }
+    }
+
+    // MARK: - Promo queue eligibility
+
+    var isEligible: Bool {
+        isEligibleSubject.value
+    }
+
+    var isEligiblePublisher: AnyPublisher<Bool, Never> {
+        isEligibleSubject.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    func refreshEligibility() {
+        isEligibleSubject.send(computeEligibility())
+    }
+
+    private func subscribeToEligibilityChanges() {
+        // The hop to another queue also means `syncService.authState` holds the new value when eligibility is recomputed.
+        syncService?.authStatePublisher
+            .dropFirst()
+            .receive(on: eligibilityQueue)
+            .sink { [weak self] _ in
+                self?.refreshEligibility()
+            }
+            .store(in: &cancellables)
+
+        featureFlagger.updatesPublisher
+            .merge(with: privacyConfigurationManager.updatesPublisher)
+            .receive(on: eligibilityQueue)
+            .sink { [weak self] in
+                self?.refreshEligibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func computeEligibility() -> Bool {
+        guard let content, featureFlagger.isFeatureOn(content.promoFlag) else { return false }
+
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        guard let syncService,
+              syncService.authState == .inactive,
+              privacyConfig.isSubfeatureEnabled(content.promotionSubfeature),
+              privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync) else {
+            return false
+        }
+
+        switch content {
+        case .bookmarks:
+            return contentCountProvider() > 0
+        case .autofill:
+            return isDuckDuckGoPasswordManager() && contentCountProvider() > 0
+        }
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint) -> Bool {

@@ -622,6 +622,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(instrumentation.promptDeliveryUpdates.isEmpty)
     }
 
+    func testWhenTheFirstContextualPromptIsSubmittedThenTheChipStateReportsPageContext() {
+        for isAttached in [true, false] {
+            let instrumentation = MockDuckAIWideEventInstrumentation()
+            sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                                duckAIWideEventInstrumentation: instrumentation,
+                                                duckAIWideEventFlowScope: .contextual(UUID()))
+            sut.delegate = mockDelegate
+            sut.hasPendingPageContextProvider = { isAttached }
+
+            sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first prompt", mode: .aiChat, trigger: .sendButton)
+
+            XCTAssertEqual(instrumentation.submissionStartedPageContextFlags, [isAttached])
+        }
+    }
+
     private func assertDeferredPromptReporting(expectedDelivery: Bool,
                                                invalidate: (AIChatUserScript) -> Void = { _ in }) async {
         let instrumentation = MockDuckAIWideEventInstrumentation()

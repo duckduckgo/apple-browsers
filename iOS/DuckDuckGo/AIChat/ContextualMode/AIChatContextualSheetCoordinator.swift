@@ -179,6 +179,7 @@ final class AIChatContextualSheetCoordinator {
               persistedChatIDs.contains(chatID) else { return }
         guard await isChatDeleted(chatID: chatID) else { return }
         Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
+        pixelHandler.fireSheetOpenedOnDeletedChat()
         persistedChatIDs.remove(chatID)
         clearActiveChat()
     }
@@ -934,6 +935,9 @@ private extension AIChatContextualSheetCoordinator {
                 self.promoteFloatingInputToSheet()
             }
             self.sheetViewController?.handleFirstUTISubmission()
+        }
+        host.onPromptSent = { [weak self] in
+            self?.sessionState.recordPromptSent()
         }
         host.onPromptDelivered = { [weak self] in
             self?.sessionState.markUTIContextDelivered()

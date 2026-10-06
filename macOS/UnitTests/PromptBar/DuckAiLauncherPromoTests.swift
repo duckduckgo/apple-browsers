@@ -64,6 +64,12 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         return promo
     }
 
+    private func drainMainQueue() {
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+    }
+
     private func isEligible(isFeatureOn: Bool = true,
                             shortcut: Bool = false,
                             menuBarIcon: Bool = false,
@@ -169,6 +175,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         promo.dismiss()
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
+        drainMainQueue()
 
         DuckAiLauncherPromo.resetOutcome(in: keyValueStore)
 
@@ -196,6 +203,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
         let promo = makePromo()
         let changed = expectation(description: "promo change published")
         promo.changesPublisher.sink { changed.fulfill() }.store(in: &cancellables)
+        drainMainQueue()
 
         promo.dismiss()
 

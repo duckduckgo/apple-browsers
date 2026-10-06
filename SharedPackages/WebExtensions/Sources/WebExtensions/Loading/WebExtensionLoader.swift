@@ -40,6 +40,7 @@ public protocol WebExtensionLoading: AnyObject {
     @discardableResult
     func loadWebExtension(identifier: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
+    @MainActor
     func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws
 
     /// Reloads an already-parsed extension into the controller, reusing the in-memory
@@ -55,16 +56,27 @@ public final class WebExtensionLoader: WebExtensionLoading {
         case failedToFindContextForIdentifier(identifier: String)
     }
 
+    /// Identifies consent/settings failures separately from bundle and WebKit load failures.
+    struct PermissionPreparationError: LocalizedError {
+        let underlyingError: Error
+
+        var errorDescription: String? { underlyingError.localizedDescription }
+    }
+
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
     private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
     /// The API stub script added for each loaded third-party extension, by identifier.
     private var stubScripts: [String: WKUserScript] = [:]
+    private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
-    public init(storageProvider: WebExtensionStorageProviding, isInspectable: Bool = false) {
+    public init(storageProvider: WebExtensionStorageProviding,
+                isInspectable: Bool = false,
+                permissionController: WebExtensionPermissionController? = nil) {
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
+        self.permissionController = permissionController
     }
 
     @MainActor
@@ -97,7 +109,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
 
-        let context = makeContext(for: webExtension, identifier: identifier)
+        let context = try await makeContext(for: webExtension, identifier: identifier)
 
         // Notify delegate before loading to allow handler registration
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
@@ -138,7 +150,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
     public func reloadWebExtension(_ webExtension: WKWebExtension,
                                    identifier: String,
                                    into controller: WKWebExtensionController) async throws {
-        let context = makeContext(for: webExtension, identifier: identifier)
+        let context = try await makeContext(for: webExtension, identifier: identifier)
 
         // Notify delegate before loading to allow handler registration.
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
@@ -156,6 +168,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
     /// shared by every extension, so the script is limited to this extension's base URL: our own
     /// extensions never run it. It must be added before the context loads, because a user script
     /// only reaches documents created after it was added.
+    @MainActor
     private func loadWithStubScript(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
         removeStubScript(for: identifier, from: controller)
 
@@ -167,6 +180,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
             try controller.load(context)
         } catch {
             removeStubScript(for: identifier, from: controller)
+            permissionController?.didUnload(identifier)
             throw error
         }
     }
@@ -192,6 +206,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         WebExtensionScopedUserScript.remove(script, from: controller.configuration.webViewConfiguration.userContentController)
     }
 
+    @MainActor
     public func unloadExtension(identifier: String, from controller: WKWebExtensionController) throws {
         let context = controller.extensionContexts.first {
             $0.uniqueIdentifier == identifier
@@ -203,12 +218,24 @@ public final class WebExtensionLoader: WebExtensionLoading {
 
         try controller.unload(context)
         removeStubScript(for: identifier, from: controller)
+        permissionController?.didUnload(identifier)
     }
 
-    private func makeContext(for webExtension: WKWebExtension, identifier: String) -> WKWebExtensionContext {
+    @MainActor
+    private func makeContext(for webExtension: WKWebExtension, identifier: String) async throws -> WKWebExtensionContext {
         let context = WKWebExtensionContext(for: webExtension)
 
         context.uniqueIdentifier = identifier
+        context.isInspectable = isInspectable
+
+        if let permissionController {
+            do {
+                try await permissionController.prepare(context)
+            } catch {
+                throw PermissionPreparationError(underlyingError: error)
+            }
+            return context
+        }
 
         let matchPatterns = webExtension.allRequestedMatchPatterns
         for pattern in matchPatterns {
@@ -219,7 +246,6 @@ public final class WebExtensionLoader: WebExtensionLoading {
             context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
-        context.isInspectable = isInspectable
         context.hasAccessToPrivateData = true
         return context
     }

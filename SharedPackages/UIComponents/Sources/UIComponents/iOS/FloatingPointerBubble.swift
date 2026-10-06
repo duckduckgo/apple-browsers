@@ -24,6 +24,10 @@ import DesignResourcesKit
 /// A pill with an up-arrow on top that gently bounces to point at the element beneath it.
 /// Styling is caller-configurable; the defaults use design-system colours so it can be dropped
 /// in anywhere without extra setup.
+///
+/// Removed from the production subscription onboarding flow (see `SubscriptionOnboardingVPNActivationView`)
+/// because the bounce animation is flaky on iOS 27. Kept here, and in `TapAllowHintOverlayPlaygroundView`,
+/// for reference and possible future re-adoption once that's resolved.
 public struct FloatingPointerBubble: View {
 
     private let text: String

@@ -57,6 +57,13 @@ final class BrowserTabViewController: NSViewController {
     private let newTabPageActionsManager: () -> NewTabPageActionsManager
 
     private var _newTabPageWebViewModel: NewTabPageWebViewModel?
+    private lazy var newTabPageRemoteMessageImpressionReporter = NewTabPageRemoteMessageImpressionReporter { [weak self] messageID in
+        guard let self else { return }
+        Task { await self.activeRemoteMessageModel.markRemoteMessageAsShown(withID: messageID, on: .newTabPage) }
+    }
+    private var preflightedNewTabPageRemoteMessageTabID: String?
+    private var remoteMessageWindowStateCancellable: AnyCancellable?
+    private var foregroundBrowserWindowObserver: ForegroundBrowserWindowObserver?
     var newTabPageWebViewModel: NewTabPageWebViewModel {
         if let newTabPageWebViewModel = _newTabPageWebViewModel {
             return newTabPageWebViewModel
@@ -65,7 +72,6 @@ final class BrowserTabViewController: NSViewController {
         let newTabPageWebViewModel = NewTabPageWebViewModel(
             featureFlagger: featureFlagger,
             actionsManager: newTabPageActionsManager(),
-            activeRemoteMessageModel: activeRemoteMessageModel,
             newTabPageLoadMetrics: newTabPageLoadMetrics
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
@@ -330,6 +336,13 @@ final class BrowserTabViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
 
+        activeRemoteMessageModel.$newTabPageRemoteMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                self?.newTabPageRemoteMessageImpressionReporter.updateMessage(message)
+            }
+            .store(in: &cancellables)
+
         subscribeToTabs()
         subscribeToSelectedTabViewModel()
         addMouseMonitors()
@@ -338,6 +351,10 @@ final class BrowserTabViewController: NSViewController {
     override func viewWillDisappear() {
         super.viewWillDisappear()
 
+        remoteMessageWindowStateCancellable?.cancel()
+        remoteMessageWindowStateCancellable = nil
+        foregroundBrowserWindowObserver = nil
+        newTabPageRemoteMessageImpressionReporter.updateVisibleTab(nil, message: nil)
         cancellables.removeAll()
     }
 
@@ -376,6 +393,17 @@ final class BrowserTabViewController: NSViewController {
         super.viewDidAppear()
 
         subscribeToNotifications()
+        guard let window = view.window else { return }
+        let foregroundBrowserWindowObserver = ForegroundBrowserWindowObserver(window: window)
+        self.foregroundBrowserWindowObserver = foregroundBrowserWindowObserver
+        remoteMessageWindowStateCancellable?.cancel()
+        remoteMessageWindowStateCancellable = foregroundBrowserWindowObserver.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                reconcileNewTabPageRemoteMessagePresentation(for: tabViewModel)
+            }
+        reconcileNewTabPageRemoteMessagePresentation(for: tabViewModel)
     }
 
     @objc
@@ -1335,6 +1363,11 @@ final class BrowserTabViewController: NSViewController {
                 }
                 addAndLayoutChildBesideSidebar(burnerHomePage)
             } else {
+                if newTabPageRemoteMessageImpressionReporter.visibleTabID != tabViewModel?.tab.uuid,
+                   isWindowEligibleForRemoteMessageImpression {
+                    activeRemoteMessageModel.refreshRemoteMessageForPresentation()
+                    preflightedNewTabPageRemoteMessageTabID = tabViewModel?.tab.uuid
+                }
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
 
@@ -1352,6 +1385,37 @@ final class BrowserTabViewController: NSViewController {
         default:
             removeAllTabContent()
         }
+
+        reconcileNewTabPageRemoteMessagePresentation(for: tabViewModel)
+    }
+
+    private var isWindowEligibleForRemoteMessageImpression: Bool {
+        if let foregroundBrowserWindowObserver {
+            return foregroundBrowserWindowObserver.isEligible
+        }
+        guard let window = view.window else { return false }
+        return ForegroundBrowserWindowObserver.isEligible(window: window)
+    }
+
+    private func reconcileNewTabPageRemoteMessagePresentation(for tabViewModel: TabViewModel?) {
+        let isVisibleNewTabPage = isWindowEligibleForRemoteMessageImpression
+            && !tabCollectionViewModel.isBurner
+            && tabViewModel?.tabContent == .newtab
+            && webView === newTabPageWebViewModel.webView
+            && webView?.tabContentView.superview != nil
+        let visibleTabID = isVisibleNewTabPage ? tabViewModel?.tab.uuid : nil
+        if visibleTabID != nil,
+           visibleTabID != newTabPageRemoteMessageImpressionReporter.visibleTabID,
+           visibleTabID != preflightedNewTabPageRemoteMessageTabID {
+            activeRemoteMessageModel.refreshRemoteMessageForPresentation()
+        }
+        if visibleTabID == preflightedNewTabPageRemoteMessageTabID {
+            preflightedNewTabPageRemoteMessageTabID = nil
+        }
+        newTabPageRemoteMessageImpressionReporter.updateVisibleTab(
+            visibleTabID,
+            message: activeRemoteMessageModel.newTabPageRemoteMessage
+        )
     }
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {

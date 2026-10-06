@@ -47,6 +47,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
 
     private let container: NSStackView
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let isPrivateWindow: Bool
     private var buttons = Set<MouseOverButton>()
     private var updateCancellable: AnyCancellable?
 
@@ -63,10 +64,12 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
 
     init(webExtensionManagerProvider: @escaping () -> WebExtensionManaging?,
          themeManager: ThemeManaging,
-         container: NSStackView) {
-        self.webExtensionManagerProvider = webExtensionManagerProvider
+         container: NSStackView,
+         isPrivateWindow: Bool = false) {
+         self.webExtensionManagerProvider = webExtensionManagerProvider
         self.themeManager = themeManager
         self.container = container
+        self.isPrivateWindow = isPrivateWindow
 
         super.init()
 
@@ -79,6 +82,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
 
         updateCancellable = NotificationCenter.default
             .publisher(for: .webExtensionsDidChangeLoadedExtensions)
+            .merge(with: NotificationCenter.default.publisher(for: .webExtensionPrivateAccessDidChange))
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateLoadedExtensions()
@@ -103,6 +107,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
         let loaded = webExtensionManagerProvider()?.loadedExtensions ?? []
         let contexts = loaded
             .filter(\.declaresToolbarAction)
+            .filter { !isPrivateWindow || $0.hasAccessToPrivateData }
             .sorted { $0.uniqueIdentifier < $1.uniqueIdentifier }
 
         logLoadedExtensions(loaded, withButtons: contexts)
@@ -232,7 +237,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
             context.uniqueIdentifier == identifier
         }
 
-        guard let context else {
+        guard let context, !isPrivateWindow || context.hasAccessToPrivateData else {
             assertionFailure("Navigation bar button for extension has no matching extension context")
             return
         }

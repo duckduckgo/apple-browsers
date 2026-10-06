@@ -130,22 +130,10 @@ final class WebExtensionsDebugMenu: NSMenu {
         }
     }
 
-    /// Downloads the latest Bitwarden from the Chrome Web Store and installs it, replacing any installed copy.
+    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
     @objc func installBitwarden() {
-        let installer = BitwardenExtensionInstaller(webExtensionManager: webExtensionManager)
-        Task { @MainActor in
-            let alert = NSAlert()
-            do {
-                try await installer.install()
-                alert.messageText = "Bitwarden installed"
-            } catch {
-                Logger.webExtensions.error("Failed to install Bitwarden: \(error.localizedDescription)")
-                alert.alertStyle = .warning
-                alert.messageText = "Failed to install Bitwarden"
-                alert.informativeText = error.localizedDescription
-            }
-            _ = await alert.runModal()
-        }
+        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {

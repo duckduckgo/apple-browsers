@@ -3569,6 +3569,13 @@
 			);
 			target = 84E341911E2F7EFB00BDBA6F /* DuckDuckGo */;
 		};
+		B0EF395B3074FB4C00585D8F /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Onboarding/OnboardingFlow/README.md,
+			);
+			target = 84E341911E2F7EFB00BDBA6F /* DuckDuckGo */;
+		};
 		FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -3626,7 +3633,7 @@
 		B0BBF12E30501D5A00BEC3C8 /* Autoconsent */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0BBF13630501D5B00BEC3C8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Autoconsent; sourceTree = "<group>"; };
 		B0BBF14930501D6600BEC3C8 /* DefaultBrowserPiPVideo */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DefaultBrowserPiPVideo; sourceTree = "<group>"; };
 		B0C6264A306EE43F0017B84E /* Bookmarks */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Bookmarks; sourceTree = "<group>"; };
-		B0EF38593074F8B300585D8F /* Tutorials */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tutorials; sourceTree = "<group>"; };
+		B0EF38593074F8B300585D8F /* Tutorials */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0EF395B3074FB4C00585D8F /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Tutorials; sourceTree = "<group>"; };
 		C9E9F82404DB4D0A9D6CA59F /* WebsiteData */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WebsiteData; sourceTree = "<group>"; };
 		E5DD6A2E95504643A9EF50AA /* UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = UITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */

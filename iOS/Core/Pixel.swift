@@ -98,6 +98,8 @@ public struct PixelParameters {
     public static let aiChatSuggestionScope = "suggestion_scope"
     public static let aiChatSuggestionsSurface = "surface"
     public static let aiChatFirstPromptNewInstall = "first_prompt_new_install"
+    public static let aiChatPageContextOfferReason = "offer_reason"
+    public static let aiChatPromptDepthBucket = "depth_bucket"
     public static let cookiePopupPreference = "cookie_popup_preference"
     public static let autoconsentEnabled = "autoconsent_enabled"
     public static let timeSinceShown = "time_since_shown"

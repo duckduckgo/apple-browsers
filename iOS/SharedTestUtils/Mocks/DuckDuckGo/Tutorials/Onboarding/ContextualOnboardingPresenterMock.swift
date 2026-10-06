@@ -63,6 +63,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var isShowingSubscriptionPromotion: Bool = false
 
     var shouldShowFireButtonPulse: Bool = false
+    var fireEducationMessageSeen: Bool = false
     var isAddFavoriteFlow: Bool = false
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
@@ -76,6 +77,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     func setFireEducationMessageSeen() {
         didCallSetFireEducationMessageSeen = true
+        fireEducationMessageSeen = true
     }
 
     func setDialogsPriorFinalSeen() {
@@ -198,7 +200,11 @@ class MockDaxDialogsManager: DaxDialogsManaging {
 
     func setSearchMessageSeen() {}
 
-    func setFireEducationMessageSeen() {}
+    var fireEducationMessageSeen: Bool = false
+
+    func setFireEducationMessageSeen() {
+        fireEducationMessageSeen = true
+    }
 
     func clearedBrowserData() {}
 

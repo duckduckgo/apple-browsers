@@ -24,6 +24,12 @@ import XCTest
 @MainActor
 final class UnifiedToggleInputToolbarViewTests: XCTestCase {
 
+    override func tearDown() {
+        window?.isHidden = true
+        window = nil
+        super.tearDown()
+    }
+
     func test_emptyInput_whenAIVoiceChatBecomesInactive_showsDisabledSubmitButton() {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = false
@@ -339,7 +345,258 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
     }
 
+    // MARK: - Fitting the row
+
+    func testWhenEveryControlFitsThenTheRowStaysFull() {
+        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 40, showsReturnKey: false)
+
+        XCTAssertEqual(fit.level(forToolbarWidth: fit.minimumToolbarWidth(at: .full)), .full)
+        XCTAssertEqual(fit.level(forToolbarWidth: 1000), .full)
+    }
+
+    func testWhenTheRowOverflowsThenThePillCollapsesBeforeTheToolsMerge() {
+        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 80, showsReturnKey: false)
+
+        XCTAssertGreaterThan(fit.minimumToolbarWidth(at: .full), fit.minimumToolbarWidth(at: .modelIcon))
+        XCTAssertGreaterThan(fit.minimumToolbarWidth(at: .modelIcon), fit.minimumToolbarWidth(at: .mergedTools))
+        XCTAssertEqual(fit.level(forToolbarWidth: fit.minimumToolbarWidth(at: .full) - 1), .modelIcon)
+        XCTAssertEqual(fit.level(forToolbarWidth: fit.minimumToolbarWidth(at: .modelIcon) - 1), .mergedTools)
+    }
+
+    func testWhenNothingFitsThenTheRowStopsAtMergedTools() {
+        let fit = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 120, showsReturnKey: true)
+
+        XCTAssertEqual(fit.level(forToolbarWidth: 100), .mergedTools)
+    }
+
+    func testWhenTheReservedSubmitLabelNarrowsThenTheLevelRelaxes() {
+        let arrow = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 40, showsReturnKey: false)
+        let label = UnifiedToggleInputToolbarView.RowFit(modelChipWidth: 120, submitButtonWidth: 100, showsReturnKey: false)
+        let width = arrow.minimumToolbarWidth(at: .full)
+
+        XCTAssertEqual(arrow.level(forToolbarWidth: width), .full)
+        XCTAssertGreaterThan(label.level(forToolbarWidth: width), .full)
+    }
+
+    func testWhenTheRowFitsThenThePillAndToolsLookAsBefore() throws {
+        let sut = makeFittingToolbar()
+        sut.selectedTool = .webSearch
+        layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full))
+
+        XCTAssertEqual(sut.compactLevel, .full)
+        let modelChip = try XCTUnwrap(findButton(accessibilityIdentifier: Self.modelChipIdentifier, in: sut))
+        XCTAssertEqual(modelChip.configuration?.title, "5.4 mini")
+        XCTAssertNil(modelChip.accessibilityLabel)
+        XCTAssertGreaterThan(modelChip.bounds.width, 40)
+        XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
+        XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut)).isHidden)
+        XCTAssertTrue(try XCTUnwrap(findButton(accessibilityIdentifier: Self.selectedToolMenuIdentifier, in: sut)).isHidden)
+    }
+
+    func testWhenThePillShowsItsLongestNameThenItTakesTheWidthTheRowReserved() throws {
+        let sut = makeFittingToolbar()
+        sut.modelName = "Sonnet 4.6"
+        layOut(sut, width: 1000)
+
+        let modelChip = try XCTUnwrap(findButton(accessibilityIdentifier: Self.modelChipIdentifier, in: sut))
+        XCTAssertEqual(modelChip.bounds.width, sut.rowFit.modelChipWidth, accuracy: 1)
+    }
+
+    func testWhenThePillCollapsesThenItShowsTheProviderIconInASquareThatOpensTheSameMenu() throws {
+        let sut = makeFittingToolbar()
+        let icon = try XCTUnwrap(UIImage(systemName: "star"))
+        sut.modelIcon = icon
+        sut.modelPickerMenu = UIMenu(children: [UIAction(title: "Model") { _ in }])
+        layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full) - 1)
+
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        let modelChip = try XCTUnwrap(findButton(accessibilityIdentifier: Self.modelChipIdentifier, in: sut))
+        XCTAssertNil(modelChip.configuration?.title)
+        XCTAssertEqual(modelChip.configuration?.image, icon)
+        XCTAssertEqual(modelChip.bounds.size, CGSize(width: 40, height: 40))
+        XCTAssertTrue(modelChip.showsMenuAsPrimaryAction)
+        XCTAssertEqual(modelChip.accessibilityLabel, "5.4 mini")
+    }
+
+    func testWhenTheToolsMergeThenTheModeChipOpensTheToolsMenuWithoutItsClearButton() throws {
+        let sut = makeFittingToolbar()
+        let toolsMenu = UIMenu(children: [UIAction(title: "Web search") { _ in }])
+        sut.toolsMenu = toolsMenu
+        sut.selectedTool = .webSearch
+        layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon) - 1)
+
+        XCTAssertEqual(sut.compactLevel, .mergedTools)
+        XCTAssertTrue(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
+        XCTAssertTrue(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut)).isHidden)
+        let chipMenuButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.selectedToolMenuIdentifier, in: sut))
+        XCTAssertFalse(chipMenuButton.isHidden)
+        XCTAssertEqual(chipMenuButton.menu?.children.map(\.title), ["Web search"])
+        XCTAssertTrue(chipMenuButton.showsMenuAsPrimaryAction)
+        XCTAssertEqual(chipMenuButton.accessibilityValue, UserText.aiChatToolbarWebSearchToolTitle)
+        XCTAssertGreaterThan(chipMenuButton.bounds.width, 0)
+    }
+
+    func testWhenTheToolsMergeWithoutAModeThenTheToolsButtonStays() throws {
+        let sut = makeFittingToolbar()
+        layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon) - 1)
+
+        XCTAssertEqual(sut.compactLevel, .mergedTools)
+        XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
+    }
+
+    func testWhenTheToolbarWidensThenTheModelNameComesBack() throws {
+        let sut = makeFittingToolbar()
+        sut.selectedTool = .webSearch
+        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon) - 1)
+        XCTAssertEqual(sut.compactLevel, .mergedTools)
+
+        container.frame.size.width = sut.rowFit.minimumToolbarWidth(at: .full)
+        container.layoutIfNeeded()
+
+        XCTAssertEqual(sut.compactLevel, .full)
+        XCTAssertEqual(try XCTUnwrap(findButton(accessibilityIdentifier: Self.modelChipIdentifier, in: sut)).configuration?.title, "5.4 mini")
+        XCTAssertFalse(try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarToolsButtonAccessibilityLabel, in: sut)).isHidden)
+    }
+
+    func testWhenAShortOrALongModelIsSelectedThenTheLevelIsTheSame() {
+        let sut = makeFittingToolbar()
+        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full) - 1)
+        XCTAssertEqual(sut.compactLevel, .modelIcon, "The short name alone would fit, but the longest one is reserved")
+
+        sut.modelName = "Sonnet 4.6"
+        container.layoutIfNeeded()
+
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+    }
+
+    func testWhenHiddenControlsAppearThenTheLevelIsTheSame() {
+        let sut = makeFittingToolbar()
+        sut.isReasoningButtonHidden = true
+        sut.isImageButtonHidden = true
+        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full) - 1)
+        XCTAssertEqual(sut.compactLevel, .modelIcon, "Hidden controls and the absent mode chip are still reserved")
+
+        sut.isReasoningButtonHidden = false
+        sut.isImageButtonHidden = false
+        sut.selectedTool = .webSearch
+        container.layoutIfNeeded()
+
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        assertNoControlsOverlap(in: sut)
+    }
+
+    func testWhenTextIsTypedWithTheTermsUnacceptedThenTheLevelIsTheSame() {
+        let sut = makeFittingToolbar()
+        sut.reservesTermsOfServiceSendButton = true
+        sut.isAIVoiceChatActive = true
+        sut.isSubmitEnabled = false
+        let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .modelIcon))
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+
+        sut.isSubmitEnabled = true
+        sut.termsOfServiceSendButton = .ask
+        container.layoutIfNeeded()
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+
+        sut.selectedTool = .imageGeneration
+        sut.termsOfServiceSendButton = .create
+        container.layoutIfNeeded()
+        XCTAssertEqual(sut.compactLevel, .modelIcon)
+        assertNoControlsOverlap(in: sut)
+    }
+
+    func testWhenTheTermsAreAcceptedThenTheFreedWidthGoesBackToThePill() {
+        let sut = makeFittingToolbar()
+        let widthWithArrow = sut.rowFit.minimumToolbarWidth(at: .full)
+        sut.reservesTermsOfServiceSendButton = true
+        sut.isSubmitEnabled = true
+        sut.termsOfServiceSendButton = .ask
+        let container = layOut(sut, width: widthWithArrow)
+        XCTAssertGreaterThan(sut.compactLevel, .full)
+
+        sut.termsOfServiceSendButton = nil
+        sut.reservesTermsOfServiceSendButton = false
+        container.layoutIfNeeded()
+
+        XCTAssertEqual(sut.compactLevel, .full)
+    }
+
+    func testWhenTheRowIsAtItsNarrowestThenTheSubmitLabelIsWholeAndNothingOverlaps() throws {
+        let sut = makeFittingToolbar()
+        sut.selectedTool = .webSearch
+        sut.reservesTermsOfServiceSendButton = true
+        sut.isSubmitEnabled = true
+        sut.termsOfServiceSendButton = .create
+        layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .mergedTools))
+
+        XCTAssertEqual(sut.compactLevel, .mergedTools)
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        let titleWidth = try XCTUnwrap(submitButton.titleLabel).intrinsicContentSize.width
+        XCTAssertGreaterThan(submitButton.bounds.width, titleWidth)
+        assertNoControlsOverlap(in: sut)
+    }
+
+    func testWhenEditingThenTheRowStaysFull() {
+        let sut = makeFittingToolbar()
+        sut.isEditing = true
+        layOut(sut, width: 200)
+
+        XCTAssertEqual(sut.compactLevel, .full)
+    }
+
     private static let submitButtonIdentifier = "AIChat.Toolbar.Button.Submit"
+    private static let modelChipIdentifier = "AIChat.Toolbar.Button.ModelChip"
+    private static let selectedToolMenuIdentifier = "AIChat.Toolbar.Button.SelectedToolMenu"
+
+    /// Every control on, with "5.4 mini" selected among names up to "Sonnet 4.6".
+    private func makeFittingToolbar() -> UnifiedToggleInputToolbarView {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.modelNames = ["5.4 mini", "Sonnet 4.6", "Mistral"]
+        sut.modelName = "5.4 mini"
+        sut.isReasoningButtonHidden = false
+        return sut
+    }
+
+    /// Stack views lay out a re-shown control only inside a window, so the row is hosted in one.
+    private var window: UIWindow?
+
+    @discardableResult
+    private func layOut(_ sut: UnifiedToggleInputToolbarView, width: CGFloat) -> UIView {
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1000, height: 56))
+        window.isHidden = false
+        self.window = window
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: 56))
+        window.addSubview(container)
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.layoutIfNeeded()
+        return container
+    }
+
+    private func assertNoControlsOverlap(in sut: UIView, file: StaticString = #filePath, line: UInt = #line) {
+        let frames = visibleButtons(in: sut).map { $0.convert($0.bounds, to: sut) }
+        XCTAssertFalse(frames.isEmpty, file: file, line: line)
+        for (index, frame) in frames.enumerated() {
+            XCTAssertGreaterThanOrEqual(frame.minX, sut.bounds.minX, file: file, line: line)
+            XCTAssertLessThanOrEqual(frame.maxX, sut.bounds.maxX, file: file, line: line)
+            for other in frames[(index + 1)...] {
+                XCTAssertFalse(frame.insetBy(dx: 0.5, dy: 0.5).intersects(other), "\(frame) overlaps \(other)", file: file, line: line)
+            }
+        }
+    }
+
+    private func visibleButtons(in view: UIView) -> [UIButton] {
+        view.subviews.filter { !$0.isHidden }.flatMap { subview -> [UIButton] in
+            if let button = subview as? UIButton { return [button] }
+            return visibleButtons(in: subview)
+        }
+    }
 
     private func makeContainer(for sut: UnifiedToggleInputToolbarView) -> UIView {
         sut.translatesAutoresizingMaskIntoConstraints = false

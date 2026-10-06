@@ -500,6 +500,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             pixelReporter: pixelReporter,
             view: .init(
                 setModelName: { [weak self] in self?.viewController.modelName = $0 },
+                setModelIcon: { [weak self] in self?.viewController.modelIcon = $0 },
+                setModelNames: { [weak self] in self?.viewController.modelNames = $0 },
                 setModelPickerMenu: { [weak self] in self?.viewController.modelPickerMenu = $0 },
                 setModelChipHidden: { [weak self] in self?.viewController.isModelChipHidden = $0 },
                 setModelChipMenuIndicatorHidden: { [weak self] in self?.viewController.isModelChipMenuIndicatorHidden = $0 },
@@ -2438,6 +2440,7 @@ private extension UnifiedToggleInputCoordinator {
 
     func syncTermsOfServiceSendButtonToHandler() {
         viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
+        viewController.handler.reservesTermsOfServiceSendButton = footerController?.isTermsOfServicePending == true
     }
 
     /// The disclaimer and the send button name the same button: "Create" while Create Image is selected.

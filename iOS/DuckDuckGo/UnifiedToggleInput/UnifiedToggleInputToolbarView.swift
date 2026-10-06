@@ -40,6 +40,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
         static let chipSpacing: CGFloat = 4
+        static let minimumGroupGap: CGFloat = 8
     }
 
     // MARK: - Callbacks
@@ -87,6 +88,15 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    /// The terms are unaccepted, so the submit button may read "Ask" or "Create" at any time. The row
+    /// reserves that width even before anything is typed, so typing never changes the layout.
+    var reservesTermsOfServiceSendButton: Bool = false {
+        didSet {
+            guard oldValue != reservesTermsOfServiceSendButton else { return }
+            setNeedsLayout()
+        }
+    }
+
     private var isFireTab: Bool = false
     private var preservesSubmitStyleDuringDismissal = false
     private var preservedTermsOfServiceSendButton: DuckAiTermsOfServiceSendButton?
@@ -124,8 +134,30 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var modelName: String = "4o-mini" {
+        didSet {
+            updateModelChipConfiguration()
+            guard oldValue != modelName else { return }
+            reservedModelChipWidthCache = nil
+            setNeedsLayout()
+        }
+    }
+
+    /// The selected model's provider icon, which the pill shows alone when the row is too narrow for its name.
+    var modelIcon: UIImage? {
         didSet { updateModelChipConfiguration() }
     }
+
+    /// Every name the pill may show. The row reserves the longest, so picking another model never changes the layout.
+    var modelNames: [String] = [] {
+        didSet {
+            guard oldValue != modelNames else { return }
+            reservedModelChipWidthCache = nil
+            setNeedsLayout()
+        }
+    }
+
+    /// How far the row has shrunk its controls to fit.
+    private(set) var compactLevel: UTIToolbarCompactLevel = .full
 
     var isModelChipMenuIndicatorHidden: Bool = false {
         didSet {
@@ -192,6 +224,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         set {
             toolsButton.menu = newValue
             toolsButton.showsMenuAsPrimaryAction = (newValue != nil)
+            selectedToolMenuButton.menu = newValue
+            selectedToolMenuButton.showsMenuAsPrimaryAction = (newValue != nil)
         }
     }
 
@@ -212,8 +246,11 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isToolsButtonHidden: Bool {
-        get { toolsButton.isHidden }
-        set { toolsButton.isHidden = newValue }
+        get { toolsButtonExplicitlyHidden }
+        set {
+            toolsButtonExplicitlyHidden = newValue
+            updateChipVisibility()
+        }
     }
 
     var isReasoningButtonHidden: Bool {
@@ -236,7 +273,10 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     var isReturnKeyHidden: Bool {
         get { returnKeyButton.isHidden }
-        set { returnKeyButton.isHidden = newValue }
+        set {
+            returnKeyButton.isHidden = newValue
+            setNeedsLayout()
+        }
     }
 
     var isEditing: Bool = false {
@@ -249,6 +289,8 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     private var modelChipExplicitlyHidden = false
+    private var toolsButtonExplicitlyHidden = false
+    private var reservedModelChipWidthCache: CGFloat?
 
     // MARK: - UI Components
 
@@ -286,28 +328,7 @@ final class UnifiedToggleInputToolbarView: UIView {
     }()
 
     private lazy var modelChipButton: UIButton = {
-        var config = UIButton.Configuration.plain()
-        config.title = modelName
-        config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
-        config.imagePlacement = .trailing
-        config.imagePadding = Constants.chipSpacing
-        config.titleLineBreakMode = .byTruncatingTail
-        config.contentInsets = NSDirectionalEdgeInsets(
-            top: 0,
-            leading: Constants.chipHorizontalPadding,
-            bottom: 0,
-            trailing: Constants.chipHorizontalPadding
-        )
-        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-            var updated = attributes
-            updated.font = .daxSubheadRegular()
-            return updated
-        }
-        config.background.strokeColor = UIColor(designSystemColor: .lines)
-        config.background.strokeWidth = 1
-        config.cornerStyle = .capsule
-
+        let config = Self.modelChipConfiguration(title: modelName, showsMenuIndicator: !isModelChipMenuIndicatorHidden)
         let button = UIButton(configuration: config)
         button.accessibilityIdentifier = "AIChat.Toolbar.Button.ModelChip"
         if #available(iOS 16.0, *) {
@@ -322,6 +343,16 @@ final class UnifiedToggleInputToolbarView: UIView {
 
         return button
     }()
+
+    /// Collapsed to its provider icon, the pill is a square the size of the other buttons.
+    private lazy var modelChipIconWidthConstraint: NSLayoutConstraint = {
+        let constraint = modelChipButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
+        constraint.priority = .required - 1
+        return constraint
+    }()
+
+    /// Never on screen: measures the pill showing names it isn't showing.
+    private lazy var modelChipSizingButton = UIButton(configuration: .plain())
 
     private lazy var selectedToolIconView: UIImageView = {
         let imageView = UIImageView()
@@ -363,15 +394,31 @@ final class UnifiedToggleInputToolbarView: UIView {
         stackView.spacing = Constants.chipSpacing
         view.addSubview(stackView)
 
+        view.addSubview(selectedToolMenuButton)
+
         NSLayoutConstraint.activate([
             view.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.chipHorizontalPadding),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.chipHorizontalPadding),
             stackView.topAnchor.constraint(equalTo: view.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            selectedToolMenuButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            selectedToolMenuButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            selectedToolMenuButton.topAnchor.constraint(equalTo: view.topAnchor),
+            selectedToolMenuButton.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         return view
+    }()
+
+    /// Covers the chip while it stands in for the tools button, so tapping it opens the tools menu.
+    private lazy var selectedToolMenuButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.accessibilityLabel = UserText.aiChatToolbarToolsButtonAccessibilityLabel
+        button.accessibilityIdentifier = "AIChat.Toolbar.Button.SelectedToolMenu"
+        button.isHidden = true
+        return button
     }()
 
     private lazy var returnKeyButton: CircularButton = {
@@ -468,6 +515,85 @@ final class UnifiedToggleInputToolbarView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: - Fitting the row
+
+    /// The row's worst case, from what each control that changes width may need rather than what it shows now.
+    var rowFit: RowFit {
+        RowFit(modelChipWidth: reservedModelChipWidth,
+               submitButtonWidth: reservedSubmitButtonWidth,
+               showsReturnKey: !returnKeyButton.isHidden)
+    }
+
+    override func layoutSubviews() {
+        // Editing hides every control that shrinks.
+        if isEditing {
+            applyCompactLevel(.full)
+        } else if bounds.width > 0 {
+            applyCompactLevel(rowFit.level(forToolbarWidth: bounds.width))
+        }
+        super.layoutSubviews()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard traitCollection.preferredContentSizeCategory != previousTraitCollection?.preferredContentSizeCategory else { return }
+        reservedModelChipWidthCache = nil
+        setNeedsLayout()
+    }
+}
+
+// MARK: - Compact levels
+
+/// How far the toolbar row shrinks its controls to fit, in the order they collapse.
+enum UTIToolbarCompactLevel: Int, CaseIterable, Comparable {
+    case full
+    /// The model pill shows only the selected model's provider icon.
+    case modelIcon
+    /// The active mode's chip stands in for the tools button: it loses its ✕ and opens the tools menu.
+    case mergedTools
+
+    static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+}
+
+extension UnifiedToggleInputToolbarView {
+
+    /// Picks the first compact level at which the row fits. Each control counts the most width it may take, shown
+    /// or not, so the layout never changes with the selected model, the typed text or an active mode.
+    struct RowFit {
+        /// The pill showing the longest name it may show.
+        let modelChipWidth: CGFloat
+        /// The submit button with the widest label it may show.
+        let submitButtonWidth: CGFloat
+        let showsReturnKey: Bool
+
+        func level(forToolbarWidth width: CGFloat) -> UTIToolbarCompactLevel {
+            UTIToolbarCompactLevel.allCases.first { minimumToolbarWidth(at: $0) <= width } ?? .mergedTools
+        }
+
+        /// The narrowest toolbar that holds the row at `level`.
+        func minimumToolbarWidth(at level: UTIToolbarCompactLevel) -> CGFloat {
+            let button = Constants.toolButtonSize
+            // Attach and reasoning count whether or not they show: both come and go with the selected model.
+            let attachAndTools = level >= .mergedTools
+                ? [button, max(button, Self.mergedToolChipWidth)]
+                : [button, button, Self.toolChipWidth]
+            let reasoningAndPill = [button, level >= .modelIcon ? button : modelChipWidth]
+            let leading = Self.stackWidth(attachAndTools, spacing: Constants.leftGroupSpacing)
+            let pickers = Self.stackWidth(reasoningAndPill, spacing: Constants.rightGroupSpacing)
+            let trailing = Self.stackWidth([pickers] + (showsReturnKey ? [button] : []) + [submitButtonWidth],
+                                           spacing: Constants.rightGroupSpacing)
+            return 2 * Constants.horizontalPadding + leading + Constants.minimumGroupGap + trailing
+        }
+
+        static let toolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
+            + Constants.chipSpacing + Constants.selectedToolClearButtonSize
+        static let mergedToolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
+
+        private static func stackWidth(_ widths: [CGFloat], spacing: CGFloat) -> CGFloat {
+            widths.reduce(0, +) + spacing * CGFloat(max(widths.count - 1, 0))
+        }
+    }
 }
 
 private extension UnifiedToggleInputToolbarView {
@@ -536,9 +662,76 @@ private extension UnifiedToggleInputToolbarView {
         UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
     )
 
+    static let modelChipContentInsets = NSDirectionalEdgeInsets(
+        top: 0,
+        leading: Constants.chipHorizontalPadding,
+        bottom: 0,
+        trailing: Constants.chipHorizontalPadding
+    )
+
+    static func modelChipConfiguration(title: String, showsMenuIndicator: Bool) -> UIButton.Configuration {
+        var config = UIButton.Configuration.plain()
+        config.title = title
+        config.image = showsMenuIndicator ? modelChipMenuIndicatorImage : nil
+        config.imagePlacement = .trailing
+        config.imagePadding = Constants.chipSpacing
+        config.titleLineBreakMode = .byTruncatingTail
+        config.contentInsets = modelChipContentInsets
+        config.baseForegroundColor = UIColor(designSystemColor: .textPrimary)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var updated = attributes
+            updated.font = .daxSubheadRegular()
+            return updated
+        }
+        config.background.strokeColor = UIColor(designSystemColor: .lines)
+        config.background.strokeWidth = 1
+        config.cornerStyle = .capsule
+        return config
+    }
+
     private func updateModelChipConfiguration() {
-        modelChipButton.configuration?.title = modelName
-        modelChipButton.configuration?.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
+        let showsProviderIcon = compactLevel >= .modelIcon
+        guard var config = modelChipButton.configuration else { return }
+        config.title = showsProviderIcon ? nil : modelName
+        if showsProviderIcon {
+            config.image = modelIcon ?? DesignSystemImages.Glyphs.Size16.aiModelOSS
+        } else {
+            config.image = isModelChipMenuIndicatorHidden ? nil : Self.modelChipMenuIndicatorImage
+        }
+        config.imagePadding = showsProviderIcon ? 0 : Constants.chipSpacing
+        config.contentInsets = showsProviderIcon ? .zero : Self.modelChipContentInsets
+        modelChipButton.configuration = config
+        modelChipButton.accessibilityLabel = showsProviderIcon ? modelName : nil
+        modelChipIconWidthConstraint.isActive = showsProviderIcon
+    }
+
+    private func applyCompactLevel(_ level: UTIToolbarCompactLevel) {
+        guard level != compactLevel else { return }
+        compactLevel = level
+        updateModelChipConfiguration()
+        updateChipVisibility()
+    }
+
+    /// The pill at its widest, showing the longest name it may show with its menu indicator.
+    private var reservedModelChipWidth: CGFloat {
+        if let reservedModelChipWidthCache { return reservedModelChipWidthCache }
+        let width = Set(modelNames + [modelName]).map { name in
+            modelChipSizingButton.configuration = Self.modelChipConfiguration(title: name, showsMenuIndicator: true)
+            return ceil(modelChipSizingButton.intrinsicContentSize.width)
+        }.max() ?? 0
+        reservedModelChipWidthCache = width
+        return width
+    }
+
+    /// The widest label the submit button may show while the terms are unaccepted, or the arrow once they are.
+    private var reservedSubmitButtonWidth: CGFloat {
+        let mayShowTitle = reservesTermsOfServiceSendButton
+            || termsOfServiceSendButton != nil
+            || preservedTermsOfServiceSendButton != nil
+        guard mayShowTitle else { return Constants.toolButtonSize }
+        return DuckAiTermsOfServiceSendButton.allCases
+            .map { AIChatSubmitButtonTitle.buttonWidth(for: $0.title, minimumWidth: Constants.toolButtonSize) }
+            .max() ?? Constants.toolButtonSize
     }
 
     private func updateModelPickerPrimaryAction() {
@@ -557,10 +750,15 @@ private extension UnifiedToggleInputToolbarView {
     }
 
     private func updateChipVisibility() {
+        let mergesTools = compactLevel >= .mergedTools && selectedTool != nil
         modelChipButton.isHidden = modelChipExplicitlyHidden
+        toolsButton.isHidden = toolsButtonExplicitlyHidden || mergesTools
         selectedToolChipView.isHidden = (selectedTool == nil)
+        selectedToolClearButton.isHidden = mergesTools
+        selectedToolMenuButton.isHidden = !mergesTools
         selectedToolIconView.image = selectedTool?.toolbarChipIcon
         selectedToolChipView.accessibilityLabel = selectedTool?.toolbarChipAccessibilityLabel
+        selectedToolMenuButton.accessibilityValue = selectedTool?.toolbarChipAccessibilityLabel
     }
 
     func updateSubmitButtonState() {
@@ -601,6 +799,8 @@ private extension UnifiedToggleInputToolbarView {
         } else {
             submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
         }
+        // The labels the row reserves come and go with the terms state, not with what the button shows.
+        setNeedsLayout()
     }
 
     func updateGeneratingVisibility() {
@@ -620,6 +820,7 @@ private extension UnifiedToggleInputToolbarView {
         reasoningButton.isEnabled = controlsAreEnabled
         modelChipButton.isEnabled = controlsAreEnabled
         selectedToolClearButton.isEnabled = controlsAreEnabled
+        selectedToolMenuButton.isEnabled = controlsAreEnabled
     }
 
     @objc private func selectedToolClearTapped() { onSelectedToolClearTapped?() }

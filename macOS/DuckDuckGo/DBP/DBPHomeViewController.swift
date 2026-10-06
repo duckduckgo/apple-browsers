@@ -32,9 +32,6 @@ public extension Notification.Name {
 }
 
 final class DBPHomeViewController: NSViewController {
-#if DEBUG
-    private lazy var livePreviewViewController = DBPLivePreviewViewController(agentInterface: dataBrokerProtectionManager.loginItemInterface)
-#endif
     private var presentedWindowController: NSWindowController?
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
     private let vpnBypassService: VPNBypassFeatureProvider
@@ -196,43 +193,7 @@ final class DBPHomeViewController: NSViewController {
 
         addAndLayoutChild(childViewController)
         self.currentChildViewController = childViewController
-#if DEBUG
-        if childViewController is DataBrokerProtectionViewController {
-            installLivePreviewIfNeeded()
-        } else if livePreviewViewController.parent != nil {
-            livePreviewViewController.removeCompletely()
-        }
-#endif
     }
-
-#if DEBUG
-    private func installLivePreviewIfNeeded() {
-        guard livePreviewViewController.parent == nil else {
-            let preview = livePreviewViewController.view
-            view.sortSubviews({ first, second, context in
-                guard let context else { return .orderedSame }
-                let preview = Unmanaged<NSView>.fromOpaque(context).takeUnretainedValue()
-                if first === preview { return .orderedDescending }
-                if second === preview { return .orderedAscending }
-                return .orderedSame
-            }, context: Unmanaged.passUnretained(preview).toOpaque())
-            return
-        }
-        addChild(livePreviewViewController)
-        let preview = livePreviewViewController.view
-        preview.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(preview)
-        let width = preview.widthAnchor.constraint(equalToConstant: 380)
-        width.priority = .defaultHigh
-        NSLayoutConstraint.activate([
-            width,
-            preview.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, constant: -40),
-            preview.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor, constant: -40),
-            preview.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            preview.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20)
-        ])
-    }
-#endif
 
     deinit {
 #if DEBUG

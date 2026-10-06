@@ -22,8 +22,9 @@ import AppKit
 /// A read-only preview of the original page in the PIR background agent.
 @MainActor
 public final class DBPLivePreviewViewController: NSViewController {
-    public init(agentInterface: DataBrokerProtectionAppToAgentInterface) {
+    public init(agentInterface: DataBrokerProtectionAppToAgentInterface, hidesWhenIdle: Bool = true) {
         self.agentInterface = agentInterface
+        self.hidesWhenIdle = hidesWhenIdle
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -32,7 +33,7 @@ public final class DBPLivePreviewViewController: NSViewController {
     }
 
     public override func loadView() {
-        // Keep the card compact without changing the source page's aspect ratio.
+        // The demo uses a 200pt square snapshot of the agent's square web view.
         let card = PreviewCardView()
         card.material = .popover
         card.blendingMode = .withinWindow
@@ -40,7 +41,7 @@ public final class DBPLivePreviewViewController: NSViewController {
         card.wantsLayer = true
         card.layer?.cornerRadius = 16
         card.layer?.masksToBounds = true
-        card.alphaValue = 0
+        card.alphaValue = hidesWhenIdle ? 0 : 1
         view = card
 
         icon.image = globeImage
@@ -48,9 +49,9 @@ public final class DBPLivePreviewViewController: NSViewController {
         icon.contentTintColor = .controlAccentColor
         icon.translatesAutoresizingMaskIntoConstraints = false
 
-        brokerLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        brokerLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         brokerLabel.lineBreakMode = .byTruncatingTail
-        activityLabel.font = .systemFont(ofSize: 12)
+        activityLabel.font = .systemFont(ofSize: 11)
         activityLabel.textColor = .secondaryLabelColor
         activityLabel.lineBreakMode = .byTruncatingTail
         let labels = NSStackView(views: [brokerLabel, activityLabel])
@@ -77,19 +78,18 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderLabel)
 
-        previewAspectRatioConstraint = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: previewAspectRatio)
-        previewAspectRatioConstraint?.isActive = true
-
         NSLayoutConstraint.activate([
             icon.widthAnchor.constraint(equalToConstant: 24),
             icon.heightAnchor.constraint(equalToConstant: 24),
             header.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
             header.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 14),
             header.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -14),
-            header.heightAnchor.constraint(equalToConstant: 34),
+            header.heightAnchor.constraint(equalToConstant: 32),
             imageView.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 12),
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            imageView.widthAnchor.constraint(equalToConstant: 200),
+            imageView.heightAnchor.constraint(equalToConstant: 200),
             imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
             placeholderLabel.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
             placeholderLabel.centerYAnchor.constraint(equalTo: imageView.centerYAnchor)
@@ -117,6 +117,7 @@ public final class DBPLivePreviewViewController: NSViewController {
     }
 
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
+    private let hidesWhenIdle: Bool
     private let brokerLabel = NSTextField(labelWithString: "PIR activity")
     private let activityLabel = NSTextField(labelWithString: "Connecting to PIR agent")
     private let placeholderLabel = NSTextField(labelWithString: "Waiting for a broker page")
@@ -127,8 +128,6 @@ public final class DBPLivePreviewViewController: NSViewController {
     private var faviconURL: URL?
     private var faviconTask: Task<Void, Never>?
     private var faviconImages: [URL: NSImage] = [:]
-    private var previewAspectRatio: CGFloat = 1
-    private var previewAspectRatioConstraint: NSLayoutConstraint?
     private var timer: Timer?
     private var requestTask: Task<Void, Never>?
     private var requestStartedAt: Date?
@@ -175,13 +174,6 @@ public final class DBPLivePreviewViewController: NSViewController {
             clearFrame(message: "Preview unavailable")
             return
         }
-        let aspectRatio = image.size.height / image.size.width
-        if aspectRatio != previewAspectRatio {
-            previewAspectRatioConstraint?.isActive = false
-            previewAspectRatioConstraint = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: aspectRatio)
-            previewAspectRatioConstraint?.isActive = true
-            previewAspectRatio = aspectRatio
-        }
         brokerLabel.stringValue = frame.brokerName
         activityLabel.stringValue = frame.activity
         imageView.image = image
@@ -192,7 +184,7 @@ public final class DBPLivePreviewViewController: NSViewController {
 
     private func clearFrame(message: String) {
         // Keep polling while the card is transparent so a new operation can reveal it.
-        view.alphaValue = 0
+        view.alphaValue = hidesWhenIdle ? 0 : 1
         updateFavicon(nil)
         brokerLabel.stringValue = "PIR activity"
         activityLabel.stringValue = message

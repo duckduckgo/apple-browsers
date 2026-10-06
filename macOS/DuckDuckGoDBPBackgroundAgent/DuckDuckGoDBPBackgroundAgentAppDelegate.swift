@@ -153,6 +153,13 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private func setupStatusBarMenu() {
         statusBarMenu = StatusBarMenu()
 
+        #if DEBUG
+        if let manager {
+            statusBarMenu?.setLivePreviewContent(agentInterface: manager)
+        }
+        settings.showInMenuBar = true
+        #endif
+
         if settings.showInMenuBar {
             statusBarMenu?.show()
         } else {

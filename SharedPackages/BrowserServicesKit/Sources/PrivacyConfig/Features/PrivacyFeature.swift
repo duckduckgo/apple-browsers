@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case webExtensions
     case chromeWebstorePatching
     case extensionManagement
+    case extensionsCatalog
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -983,5 +984,12 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
-    case curatedExtensions
+}
+
+public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionsCatalog }
+
+    case bitwarden
+    case onePassword
+    case lastPass
 }

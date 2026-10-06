@@ -167,22 +167,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
-        // WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a
-        // top-level reference to one aborts an extension's background script. The stub script
-        // defines them. A user script on the controller's configuration reaches every page the
-        // extension owns — the background page, the action popup, the options page and, with
-        // `forMainFrameOnly: false`, the offscreen iframe the stub script creates — where a
-        // `<script>` tag in a generated page reaches only that page. A user script is also
-        // exempt from the page's CSP, which such a tag is not. The stubs return early when
-        // neither `chrome` nor `browser` is defined, so a page that is not an extension page
-        // is left alone.
-        let stubScript = WKUserScript(source: WebExtensionAPIStubScript.source,
-                                      injectionTime: .atDocumentStart,
-                                      forMainFrameOnly: false)
-        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(stubScript)
-
-        // The stub script also reports which unsupported APIs an extension touches, for the
-        // API compatibility log.
+        // The stub script, which `WebExtensionLoader` adds for each third-party extension, reports
+        // which unsupported APIs the extension touches, for the API compatibility log.
         controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
                                                                                 name: WebExtensionAPIStubScript.compatibilityMessageHandlerName)
 

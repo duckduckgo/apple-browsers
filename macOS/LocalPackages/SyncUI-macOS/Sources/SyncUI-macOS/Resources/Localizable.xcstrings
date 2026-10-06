@@ -7743,10 +7743,58 @@
       "comment" : "First pairing instruction (V2). %@ is replaced by the emphasized DuckDuckGo product name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon after it.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne auf deinem Smartphone die %@"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "On your phone, open the %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el teléfono, abre la %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur votre téléphone, ouvrez l’%@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sul telefono, apri l’%@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open op je telefoon de %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na telefonie otwórz %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No teu telemóvel, abre a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На своем телефоне откройте %@"
           }
         }
       }
@@ -7776,7 +7824,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Application DuckDuckGo"
+            "value" : "application DuckDuckGo"
           }
         },
         "it" : {
@@ -7995,10 +8043,58 @@
       "comment" : "Second pairing instruction (V2). %@ is replaced by the emphasized Settings path (e.g. “Settings › Sync & Backup › Sync With Another Device”).",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gehe zu %@"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Go to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ir a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accéder à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai a %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ga naar %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejdź do %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceder a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перейди в %@"
           }
         }
       }

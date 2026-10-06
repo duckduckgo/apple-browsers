@@ -159,7 +159,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private var chromeMeasuredHeight: CGFloat = 0
     private var isSyncPromoCardVisible = false
 
-    private var notificationCancellable: AnyCancellable?
 
     private weak var contentAnimator: UIViewPropertyAnimator?
 
@@ -217,7 +216,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         setupView()
         installComponents()
         setupSubscriptions()
-        observeRemoteMessagesChanges()
         observeAddressBarPositionChanges()
 
         refreshSyncPromoIfActive()
@@ -259,8 +257,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         rebuildDuckAISuggestionsCoordinator()
 
         guard isContentActive,
-              let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
-              homePageMessagesConfiguration.mode == .coordinated else {
+              let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration else {
             return
         }
 
@@ -286,7 +283,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         markNeedsVisibleRefresh()
         if active {
             if let homePageMessagesConfiguration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
-               homePageMessagesConfiguration.mode == .coordinated,
                !switchBarHandler.isFireTab {
                 homePageMessagesConfiguration.prepareForNTP(openedAfterIdle: escapeHatchModel != nil)
             }
@@ -630,12 +626,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             .merge(with: activationResolveTrigger)
             .merge(with: customizationStore.favoritesVisibilityPublisher.dropFirst().map { _ in () }.receive(on: DispatchQueue.main))
             .eraseToAnyPublisher()
-        let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
-        if homePageMessagesConfiguration.mode == .coordinated {
-            searchStateChanged = searchStateChanged
-                .merge(with: homePageMessagesConfiguration.contentDidChangePublisher)
-                .eraseToAnyPublisher()
-        }
+        searchStateChanged = searchStateChanged
+            .merge(with: dependencies.newTabPageDependencies.homePageMessagesConfiguration.contentDidChangePublisher)
+            .eraseToAnyPublisher()
         let inputsPublisher = makeMergedInputsPublisher(hasFavorites: hasFavorites,
                                                         hasMessages: hasMessages,
                                                         searchStateChanged: searchStateChanged)
@@ -871,18 +864,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func onAddressBarPositionChanged() {
         isUsingTopBarPosition = !forceBottomBarLayout && (appSettings.currentAddressBarPosition == .top || isLandscapeOrientation)
         updateLayoutForCurrentOrientation()
-    }
-
-    private func observeRemoteMessagesChanges() {
-        guard let configuration = suggestionTrayDependencies?.newTabPageDependencies.homePageMessagesConfiguration,
-              configuration.mode == .legacy else { return }
-
-        notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.refreshVisibleContent(animateContentUpdates: false)
-            }
     }
 
     private func markNeedsVisibleRefresh() {

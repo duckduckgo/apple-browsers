@@ -1340,8 +1340,6 @@ class MainViewController: UIViewController {
     }
 
     private func observeHomePageMessageChanges() {
-        guard homePageConfiguration.mode == .coordinated else { return }
-
         homePageMessagesCancellable = homePageConfiguration.contentDidChangePublisher
             .sink { [weak self] _ in
                 self?.reevaluateSuggestionTrayAfterHomeMessagesChanged()
@@ -2363,7 +2361,7 @@ class MainViewController: UIViewController {
         }
 
         let hatch = buildEscapeHatch(openedAfterIdle: openedAfterIdle)
-        if homePageConfiguration.mode == .coordinated, !tabModel.fireTab {
+        if !tabModel.fireTab {
             homePageConfiguration.prepareForNTP(openedAfterIdle: hatch != nil)
         }
         
@@ -6035,7 +6033,6 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func prepareHomePageMessagesForOmniBar() {
-        guard homePageConfiguration.mode == .coordinated else { return }
         guard !isCurrentTabFireTab() else { return }
 
         homePageConfiguration.prepareForNTP(openedAfterIdle: escapeHatchForEditingState() != nil)

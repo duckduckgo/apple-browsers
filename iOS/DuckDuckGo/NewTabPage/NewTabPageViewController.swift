@@ -138,13 +138,11 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader,
                                             faviconsCache: faviconsCache)
-        let viewModel = newTabPageViewModel
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
                                                 messageActionHandler: remoteMessagingActionHandler,
                                                 imageLoader: remoteMessagingImageLoader,
-                                                pixelReporter: remoteMessagingPixelReporter,
-                                                isOpenedAfterIdle: { [weak viewModel] in viewModel?.openedAfterIdle ?? false })
+                                                pixelReporter: remoteMessagingPixelReporter)
 
         super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
                                             narrowLayoutInLandscape: narrowLayoutInLandscape,

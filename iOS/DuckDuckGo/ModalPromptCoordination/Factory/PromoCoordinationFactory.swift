@@ -36,7 +36,6 @@ enum PromoCoordinationFactory {
     ) -> PromoCoordinationService {
 
         let isIPad = DevicePlatform.isIpad
-        let mode: PromoCoordinationMode = dependency.featureFlagger.isFeatureOn(.promoPresentationCoordination) ? .coordinated : .legacy
 
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
@@ -64,7 +63,6 @@ enum PromoCoordinationFactory {
         let appRatingPromptCoordinator = AppRatingPromptCoordinator(
             appRatingPrompt: AppRatingPrompt(featureFlagger: dependency.featureFlagger),
             coordinationPolicy: AppRatingPromptCoordinationPolicy(
-                promoCoordinationMode: mode,
                 featureFlagger: dependency.featureFlagger,
                 privacyConfigurationManager: dependency.privacyConfigurationManager
             ),
@@ -105,7 +103,6 @@ enum PromoCoordinationFactory {
         return PromoCoordinationService(
             launchSourceManager: dependency.launchSourceManager,
             modalPromptCoordinationManager: modalPromptCoordinationManager,
-            mode: mode,
             promoQueueLeaseArbiter: dependency.promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
             appRatingPromptCoordinator: appRatingPromptCoordinator

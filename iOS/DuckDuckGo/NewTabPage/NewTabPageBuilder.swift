@@ -98,8 +98,7 @@ struct NewTabPageBuilder {
             subscriptionDataReporter: subscriptionDataReporting,
             messageActionHandler: remoteMessagingActionHandler,
             imageLoader: remoteMessagingImageLoader,
-            pixelReporter: remoteMessagingPixelReporter,
-            isOpenedAfterIdle: { [weak pageModel] in pageModel?.openedAfterIdle ?? false })
+            pixelReporter: remoteMessagingPixelReporter)
         messagesModel.onMessageInteraction = { interaction in
             guard let newTabPage else { return }
             newTabPage.delegate?.newTabPage(newTabPage, didInteractWithMessage: interaction)

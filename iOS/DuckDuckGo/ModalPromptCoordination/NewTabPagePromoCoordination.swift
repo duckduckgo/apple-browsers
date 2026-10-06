@@ -17,11 +17,6 @@
 //  limitations under the License.
 //
 
-enum PromoCoordinationMode: Equatable {
-    case legacy
-    case coordinated
-}
-
 /// Retains one raw arbiter acquisition and connects its first valid appearance to queue history.
 @MainActor
 final class PromoQueueRemoteMessageLease {
@@ -59,7 +54,5 @@ final class PromoQueueRemoteMessageLease {
 /// Renderers do not participate in promo ownership.
 @MainActor
 protocol PromoGating: AnyObject {
-    var mode: PromoCoordinationMode { get }
-
     func tryAcquireRemoteMessageLease(for messageID: String) -> PromoQueueRemoteMessageLease?
 }

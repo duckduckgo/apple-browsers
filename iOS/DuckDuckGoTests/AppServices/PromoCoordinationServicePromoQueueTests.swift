@@ -37,7 +37,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("Coordinated modal admission acquires before manager evaluation", .timeLimit(.minutes(1)))
     func coordinatedModalAdmission() {
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         service.presentModalPromptIfNeeded(from: presenter)
 
@@ -51,7 +51,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Remote-message ownership blocks modal evaluation", .timeLimit(.minutes(1)))
     func remoteMessageBlocksModalEvaluation() throws {
         let remoteMessageLease = try acquiredRemoteMessageLease(from: arbiter.acquireRemoteMessageLease(for: "message"))
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         service.presentModalPromptIfNeeded(from: presenter)
 
@@ -68,23 +68,9 @@ final class PromoCoordinationServicePromoQueueTests {
     }
 
     @available(iOS 16, *)
-    @Test("Legacy mode preserves the unarbitrated manager route", .timeLimit(.minutes(1)))
-    func legacyModeUsesLegacyManagerRoute() {
-        let service = makeService(mode: .legacy)
-
-        service.presentModalPromptIfNeeded(from: presenter)
-
-        #expect(manager.didCallPresentModalPromptIfNeeded)
-        #expect(manager.capturedModalLease == nil)
-        #expect(arbiter.snapshot.owner == nil)
-        #expect(manager.reconcilePresentedModalCallCount == 0)
-        #expect(cooldownPolicy.modalAdmissionCallCount == 0)
-    }
-
-    @available(iOS 16, *)
     @Test("The source gate reconciles modal attachment before RMF acquisition", .timeLimit(.minutes(1)))
     func sourceGateReconcilesBeforeAcquisition() throws {
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         let lease = try #require(service.tryAcquireRemoteMessageLease(for: "message"))
 
@@ -104,7 +90,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("RMF-to-modal cooldown releases before provider evaluation", .timeLimit(.minutes(1)))
     func remoteMessageCooldownBlocksModalEvaluation() {
         cooldownPolicy.modalAdmissionDecision = .blocked(until: .distantFuture)
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         service.presentModalPromptIfNeeded(from: presenter)
 
@@ -117,7 +103,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @Test("Incoming RMF cooldown releases its temporary acquisition", .timeLimit(.minutes(1)))
     func remoteMessageCooldownReleasesTemporaryLease() throws {
         cooldownPolicy.remoteMessageAdmissionDecision = .blocked(until: .distantFuture)
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         #expect(service.tryAcquireRemoteMessageLease(for: "message") == nil)
         #expect(arbiter.snapshot.owner == nil)
@@ -127,7 +113,7 @@ final class PromoCoordinationServicePromoQueueTests {
     @available(iOS 16, *)
     @Test("The service-owned RMF lease records only its first valid appearance", .timeLimit(.minutes(1)))
     func remoteMessageLeaseRecordsFirstAppearanceOnly() throws {
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
         let lease = try #require(service.tryAcquireRemoteMessageLease(for: "message"))
 
         #expect(lease.markShown())
@@ -139,11 +125,10 @@ final class PromoCoordinationServicePromoQueueTests {
         #expect(cooldownPolicy.recordConfirmedRemoteMessageAppearanceCallCount == 1)
     }
 
-    private func makeService(mode: PromoCoordinationMode) -> PromoCoordinationService {
+    private func makeService() -> PromoCoordinationService {
         PromoCoordinationService(
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: manager,
-            mode: mode,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
             appRatingPromptCoordinator: MockAppRatingPromptCoordinator()

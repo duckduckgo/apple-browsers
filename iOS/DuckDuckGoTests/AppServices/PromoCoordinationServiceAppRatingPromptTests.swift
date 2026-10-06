@@ -62,7 +62,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     @Test("Page loads are registered regardless of coordination", .timeLimit(.minutes(1)))
     func registersUsageRegardlessOfCoordination() {
         ratingCoordinator.isCoordinationEnabled = false
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         service.registerAppRatingPromptUsage()
 
@@ -78,7 +78,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     @Test("A search redeems a held slot", .timeLimit(.minutes(1)))
     func searchRedeemsHeldSlot() {
         manager.redeemDeferredModalResult = true
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         #expect(service.shouldRequestAppRatingPrompt())
         #expect(manager.redeemDeferredModalCallCount == 1)
@@ -91,7 +91,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     func searchWithoutHeldSlotDoesNothing() {
         manager.redeemDeferredModalResult = false
         ratingCoordinator.uncoordinatedDecision = true
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         #expect(!service.shouldRequestAppRatingPrompt())
         #expect(ratingCoordinator.didRequestRatingCallCount == 0)
@@ -104,7 +104,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     func coordinationOffRequestsDirectly() {
         ratingCoordinator.isCoordinationEnabled = false
         ratingCoordinator.uncoordinatedDecision = true
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         #expect(service.shouldRequestAppRatingPrompt())
         #expect(manager.redeemDeferredModalCallCount == 0)
@@ -115,7 +115,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     @Test("Asking on a search clears the unredeemed cap whatever the outcome", .timeLimit(.minutes(1)), arguments: [true, false])
     func searchClearsTheCap(_ isCoordinationEnabled: Bool) {
         ratingCoordinator.isCoordinationEnabled = isCoordinationEnabled
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         _ = service.shouldRequestAppRatingPrompt()
 
@@ -127,7 +127,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     @available(iOS 16, *)
     @Test("Backgrounding releases a held slot", .timeLimit(.minutes(1)))
     func backgroundingReleasesHeldSlot() {
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         service.handleAppBackgrounded()
 
@@ -139,7 +139,7 @@ final class PromoCoordinationServiceAppRatingPromptTests {
     @available(iOS 16, *)
     @Test("The debug reset frees the slot before clearing the count", .timeLimit(.minutes(1)))
     func debugResetFreesSlotBeforeClearingCount() {
-        let service = makeService(mode: .coordinated)
+        let service = makeService()
 
         service.resetAppRatingPrompt()
 
@@ -150,11 +150,10 @@ final class PromoCoordinationServiceAppRatingPromptTests {
         #expect(ratingCoordinator.unredeemedSlotCount == 0)
     }
 
-    private func makeService(mode: PromoCoordinationMode) -> PromoCoordinationService {
+    private func makeService() -> PromoCoordinationService {
         PromoCoordinationService(
             launchSourceManager: launchSourceManager,
             modalPromptCoordinationManager: manager,
-            mode: mode,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
             appRatingPromptCoordinator: ratingCoordinator

@@ -508,6 +508,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     private let connectionStatusBox: ConnectionStatusBox
 
     @MainActor @objc public init() {
+        let processStartedAt = Date()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider")
 #if NETP_SYSTEM_EXTENSION
         let defaults = UserDefaults.standard
@@ -532,6 +533,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: { Self.isAppex ? .app : .system }(),
+            processStartedAt: processStartedAt,
             isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
 
         // MARK: - Subscription configuration

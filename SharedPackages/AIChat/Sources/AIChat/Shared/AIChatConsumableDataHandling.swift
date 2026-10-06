@@ -114,12 +114,23 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case settings = "settings"
 
+    /// Duck.ai reached by navigating to it directly rather than from a Duck.ai surface: typed in the
+    /// address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link
+    /// from another app, or a link on a web page.
+    case directTyped = "direct-typed"
+    case directSuggestion = "direct-suggestion"
+    case directBookmark = "direct-bookmark"
+    case directFavorite = "direct-favorite"
+    case directHistory = "direct-history"
+    case directExternal = "direct-external"
+    case directLink = "direct-link"
+
     /// No native surface opens this one; it is read from the funnel marker duckduckgo.com puts on
     /// the chat URL when its homepage hands a prompt over (`URL.isDuckAIOpenedFromHomepage`).
     case duckduckgoHomepage = "duckduckgo-homepage"
 
-    /// Named for the attribution gap it measures, not "direct": the app cannot tell deliberate
-    /// direct navigation from an entry point nobody has instrumented yet.
+    /// Named for the attribution gap it measures: a chat no surface stamped and no direct navigation
+    /// explains, such as a session restored at startup or an entry point nobody has instrumented yet.
     case unattributed = "unattributed"
 
     /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept

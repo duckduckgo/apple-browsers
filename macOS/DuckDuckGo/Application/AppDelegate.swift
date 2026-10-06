@@ -284,7 +284,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
         promptHandler: AIChatPromptHandler.shared,
-        aiChatTabManaging: windowControllersManager
+        aiChatTabManaging: windowControllersManager,
+        entryPointReporter: AIChatEntryPointReporter(sourceHandler: aiChatConversationSourceHandler)
     )
     /// App-scoped mailbox that carries the surface that opened a Duck.ai chat to the conversation pixels.
     /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
@@ -1514,6 +1515,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
+
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: LocalStatisticsStore())
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()

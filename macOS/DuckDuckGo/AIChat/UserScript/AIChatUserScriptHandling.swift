@@ -18,6 +18,7 @@
 
 import AIChat
 import AppKit
+import BrowserServicesKit
 import Combine
 import Common
 import FoundationExtensions
@@ -94,7 +95,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
-    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func recordChat(params: Any, message: UserScriptMessage) -> Encodable?
@@ -118,6 +119,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var messageHandling: AIChatMessageHandling { get }
 
     var isFireWindowProvider: (() -> Bool)? { get set }
+    var isSidebarProvider: (() -> Bool)? { get set }
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)? { get set }
     var directNavigationFallback: AIChatConversationSource? { get set }
 
@@ -137,7 +139,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
     @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
-    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
@@ -205,8 +207,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let migrationStore = AIChatMigrationStore()
     private let voiceChatFailureHandler: DuckAiVoiceChatFailureHandling
     private let browserTools: AIChatBrowserToolsService
+    private let featureDiscovery: FeatureDiscovery
 
     var isFireWindowProvider: (() -> Bool)?
+    var isSidebarProvider: (() -> Bool)?
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
 
     /// Surface that opened this chat, consumed once per document and retained for its pixels.
@@ -224,6 +228,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
     }
+
+    /// Set when a native composer hands this chat a prompt to send on its own, so the next prompt
+    /// pixel reports that composer instead of the chat's own window.
+    private var hasPendingNativePrompt = false
 
     /// Whether page context with content is currently attached to this chat — set by the native
     /// auto-attach push and updated by the frontend's add/remove toggle. Read at prompt submit for
@@ -248,12 +256,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         notificationCenter: NotificationCenter = .default,
         voiceChatFailureHandler: DuckAiVoiceChatFailureHandling? = nil,
         conversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
-        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService
+        browserTools: AIChatBrowserToolsService = Application.appDelegate.aiChatBrowserToolsService,
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.browserTools = browserTools
+        self.featureDiscovery = featureDiscovery
         self.pixelFiring = pixelFiring
         self.aiChatUserScriptErrorEventMapper = aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(pixelFiring: pixelFiring)
         self.statisticsLoader = statisticsLoader
@@ -324,6 +334,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         didConsumeConversationSource = false
         conversationSource = nil
         directNavigationFallback = nil
+        hasPendingNativePrompt = false
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -350,8 +361,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    @MainActor
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
-        messageHandling.getDataForMessageType(.nativePrompt)
+        let prompt = messageHandling.getDataForMessageType(.nativePrompt)
+        notePendingNativePromptIfNeeded(prompt as? AIChatNativePrompt)
+        return prompt
     }
 
     @MainActor
@@ -499,7 +513,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        notePendingNativePromptIfNeeded(prompt)
         aiChatNativePromptSubject.send(prompt)
+    }
+
+    private func notePendingNativePromptIfNeeded(_ prompt: AIChatNativePrompt?) {
+        guard case .query(let query) = prompt?.tool, query.autoSubmit else { return }
+        hasPendingNativePrompt = true
     }
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
@@ -511,6 +531,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         selectionContextSubject.send(selection)
     }
 
+    /// Main-actor so the web view's window is read without suspending: a mid-body hop can stall the
+    /// reply to the page on older toolchains.
+    @MainActor
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
         guard let paramsDict = params as? [String: Any] else {
             aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
@@ -523,7 +546,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: paramsDict, options: [])
             let metric = try JSONDecoder().decode(AIChatMetric.self, from: jsonData)
-            didReportMetric(metric, completion: nil)
+            didReportMetric(metric, windowSurface: promptWindowSurface(for: message), completion: nil)
         } catch {
             Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(
@@ -1131,7 +1154,12 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         "unknown": .duckAIUnknown,
     ]
 
+    /// Without a message there is no web view to place the chat, so prompts count as a Duck.ai tab.
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
+        didReportMetric(metric, windowSurface: .duckAI, completion: completion)
+    }
+
+    private func didReportMetric(_ metric: AIChatMetric, windowSurface: AIChatPromptSurface, completion: (() -> Void)?) {
         if let funnel = Self.funnelMetrics[metric.metricName] {
             let pixel: AIChatPixel = funnel.isClick
                 ? .aiChatSubscriptionFunnelClick(origin: funnel.origin.rawValue)
@@ -1157,11 +1185,12 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(
+            firePromptPixel(windowSurface: windowSurface) { surface, isFirstPromptNewInstall in
                 AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
-                                                             hasPageContext: hasAttachedPageContext),
-                frequency: .standard
-            )
+                                                             hasPageContext: hasAttachedPageContext,
+                                                             surface: surface,
+                                                             firstPromptNewInstall: isFirstPromptNewInstall)
+            }
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1170,11 +1199,12 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            pixelFiring?.fire(
+            firePromptPixel(windowSurface: windowSurface) { surface, isFirstPromptNewInstall in
                 AIChatPixel.aiChatMetricSentPromptOngoingChat(source: pixelConversationSource,
-                                                              hasPageContext: hasAttachedPageContext),
-                frequency: .standard
-            )
+                                                              hasPageContext: hasAttachedPageContext,
+                                                              surface: surface,
+                                                              firstPromptNewInstall: isFirstPromptNewInstall)
+            }
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }
@@ -1225,6 +1255,35 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         statisticsLoader?.refreshRetentionAtbOnDuckAiPromptSubmition {
             completion?()
         }
+    }
+
+    /// Reads the install's first-prompt flag before marking it, so only the first prompt ever reports it.
+    private func firePromptPixel(windowSurface: AIChatPromptSurface,
+                                 _ makePixel: (AIChatPromptSurface, Bool) -> AIChatPixel) {
+        let surface = consumePendingNativePromptSurface() ?? windowSurface
+        let isFirstPromptNewInstall = !featureDiscovery.wasUsedBefore(.duckAIPrompt)
+        pixelFiring?.fire(makePixel(surface, isFirstPromptNewInstall), frequency: .standard)
+        featureDiscovery.setWasUsedBefore(.duckAIPrompt)
+    }
+
+    /// The chat's source is read here rather than when the prompt arrives: by the time a prompt is
+    /// sent, the chat has loaded and claimed its source.
+    private func consumePendingNativePromptSurface() -> AIChatPromptSurface? {
+        guard hasPendingNativePrompt else { return nil }
+        hasPendingNativePrompt = false
+        return conversationSource.flatMap(AIChatPromptSurface.init(nativeComposerSource:))
+    }
+
+    /// A detached sidebar keeps its sidebar placement, so the floating window is checked first.
+    @MainActor
+    private func promptWindowSurface(for message: UserScriptMessage) -> AIChatPromptSurface {
+        if message.messageWebView?.window is AIChatFloatingWindow {
+            return .floating
+        }
+        if isSidebarProvider?() == true {
+            return .sidebar
+        }
+        return .duckAI
     }
 
     private func markDuckAIActivatedIfNeeded(_ metric: AIChatMetric) {
@@ -1339,5 +1398,22 @@ extension AIChatUserScriptHandler {
     @MainActor
     private func ownerTabID(for message: UserScriptMessage) -> TabIdentifier? {
         AIChatTabPickerSource.ownerTabID(for: message.messageWebView, in: windowControllersManager)
+    }
+}
+
+private extension AIChatPromptSurface {
+
+    /// Native composers stamp the chat they hand a prompt to, so the stamp names the composer.
+    init?(nativeComposerSource source: AIChatConversationSource) {
+        switch source {
+        case .omnibar, .addressBar, .addressBarSuggestion, .addressBarContextMenu:
+            self = .addressBar
+        case .newTabPage:
+            self = .newTabPage
+        case .promptBar:
+            self = .promptBar
+        default:
+            return nil
+        }
     }
 }

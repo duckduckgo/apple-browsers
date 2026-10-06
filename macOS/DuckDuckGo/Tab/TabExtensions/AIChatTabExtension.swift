@@ -130,6 +130,7 @@ final class AIChatTabExtension {
                 if let isTabBurner = self?.isTabBurner {
                     self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
                 }
+                self?.aiChatUserScript?.handler.isSidebarProvider = { isLoadedInSidebar }
                 if let disclosureProvider = self?.attachmentPrivacyDisclosureProvider {
                     self?.aiChatUserScript?.handler.attachmentPrivacyDisclosureProvider = disclosureProvider
                 }

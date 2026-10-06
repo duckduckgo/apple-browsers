@@ -17,6 +17,7 @@
 //
 
 import FoundationExtensions
+import os.log
 import WebKit
 
 #if PRIVATE_PAGE_SIGNALS_ENABLED
@@ -35,7 +36,13 @@ public final class PageResourceLoadObserver: NSObject {
     }
 
     public func attach(to webView: WKWebView) {
-        guard webView.isResourceLoadDelegateSupported, webView.resourceLoadDelegate == nil else {
+        guard webView.isResourceLoadDelegateSupported else {
+            Logger.navigation.error("PageResourceLoadObserver: cannot attach, resource load delegate unsupported")
+            return
+        }
+
+        guard webView.resourceLoadDelegate == nil else {
+            Logger.navigation.error("PageResourceLoadObserver: cannot attach, resource load delegate already set")
             return
         }
 

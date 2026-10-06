@@ -193,12 +193,14 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.actionCancel,
                                       style: .cancel) { _ in })
 
-        alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
-                                      style: .destructive) { [weak self] _ in
+        let closeAction = UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
+                                        style: .destructive) { [weak self] _ in
             guard let self else { return }
             self.fireConfirmCloseTabsPixel()
             self.activePageController.deleteTabsAtIndexPaths(indexPaths)
-        })
+        }
+        closeAction.accessibilityIdentifier = "TabSwitcher.CloseTabs.Confirm"
+        alert.addAction(closeAction)
 
         present(alert, animated: true)
     }

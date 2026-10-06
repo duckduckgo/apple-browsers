@@ -23,7 +23,6 @@ import UIKit
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
 
-    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
@@ -106,7 +105,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let rootAttachmentChecker: ModalPromptRootAttachmentChecking
 
     private var attemptState = AttemptState.idle
-    private var legacyActiveAttemptIDs = Set<UUID>()
 
     private(set) var didActuallyPresentModalPromptThisSession = false
 
@@ -120,9 +118,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// anything. This feeds `didPresentModalPromptThisSession`, read as "recently saw a prompt".
     var hasActiveOrPendingModalAttempt: Bool {
         if case .deferred = attemptState {
-            return !legacyActiveAttemptIDs.isEmpty
+            return false
         }
-        return !legacyActiveAttemptIDs.isEmpty || modalAttemptPhase != .idle
+        return modalAttemptPhase != .idle
     }
 
     var modalAttemptPhase: ModalPromptAttemptPhase {
@@ -163,27 +161,13 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     /// 4. Present the first eligible modal.
     /// 5. Save the modal presentation date.
     ///
-    /// - Parameter presenter: The view controller to present from.
-    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
-        // Deferred promos need the coordinated route, which owns the lease they hold. So they
-        // must report themselves ineligible here — see `AppRatingPromptCoordinationPolicy`.
-        guard case .modal(let configuration, let provider) = selectModalPrompt() else { return }
-
-        let scheduledAttemptID = UUID()
-        legacyActiveAttemptIDs.insert(scheduledAttemptID)
-        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Presenting modal from \(type(of: provider))")
-        presentLegacyModalPrompt(
-            modalPromptConfiguration: configuration,
-            from: presenter,
-            scheduledAttemptID: scheduledAttemptID
-        ) { [weak self] in
-            self?.legacyActiveAttemptIDs.remove(scheduledAttemptID)
-            self?.didActuallyPresentModalPromptThisSession = true
-            self?.saveModalPromptLastPresentationDate()
-            provider.didPresentModal()
-        }
-    }
-
+    /// A presented modal keeps the lease until it is dismissed (see `reconcilePresentedModal()`), and a
+    /// deferred promo keeps it until it is redeemed or released. With nothing eligible, the lease is
+    /// released straight away.
+    ///
+    /// - Parameters:
+    ///   - presenter: The view controller to present from.
+    ///   - lease: The promo queue slot this attempt owns.
     func presentModalPromptIfNeeded(
         from presenter: ModalPromptPresenter,
         with lease: PromoQueueModalLease
@@ -320,26 +304,6 @@ private extension ModalPromptCoordinationManager {
                 self?.saveModalPromptLastPresentationDate()
                 committedAttempt.provider.didPresentModal()
             }
-        }
-    }
-
-    func presentLegacyModalPrompt(
-        modalPromptConfiguration: ModalPromptConfiguration,
-        from presenter: ModalPromptPresenter,
-        scheduledAttemptID: UUID,
-        completion: @escaping (() -> Void)
-    ) {
-        scheduler.schedule(after: 0.1) { [weak self] in
-            guard let self,
-                  self.legacyActiveAttemptIDs.contains(scheduledAttemptID) else {
-                return
-            }
-
-            self.performPresentation(
-                modalPromptConfiguration: modalPromptConfiguration,
-                from: presenter,
-                completion: completion
-            )
         }
     }
 

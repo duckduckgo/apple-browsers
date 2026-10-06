@@ -197,40 +197,6 @@ final class ModalPromptCoordinationManagerDeferredTests {
         #expect(arbiter.snapshot.hasModalLease)
     }
 
-    // MARK: - Legacy route
-
-    /// Pins that the legacy route never holds a slot it cannot release. Says nothing about
-    /// providers behind an eligible deferred one, which that route currently suppresses.
-    @available(iOS 16, *)
-    @Test("The legacy route never holds a slot for a deferred provider", .timeLimit(.minutes(1)))
-    func legacyRouteNeverHoldsSlotForDeferredProvider() {
-        let provider = makeDeferredProvider(isEligible: true)
-        let sut = makeManager(providers: [provider])
-
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        #expect(!schedulerMock.didCallSchedule)
-        #expect(!presenterMock.didCallPresent)
-        #expect(sut.modalAttemptPhase == .idle)
-        #expect(!sut.redeemDeferredModal())
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
-    }
-
-    @available(iOS 16, *)
-    @Test("The legacy route still presents a modal provider behind an ineligible deferred one", .timeLimit(.minutes(1)))
-    func legacyRoutePresentsModalProviderBehindDeferredOne() {
-        let deferredProvider = makeDeferredProvider(isEligible: false)
-        let modalProvider = MockModalPromptProvider()
-        modalProvider.isEligibleToPresentResult = true
-        let sut = makeManager(providers: [deferredProvider, modalProvider])
-
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        #expect(presenterMock.didCallPresent)
-        #expect(modalProvider.didCallDidPresentModal)
-    }
-
     // MARK: - Helpers
 
     private func makeDeferredProvider(isEligible: Bool) -> MockModalPromptProvider {

@@ -134,33 +134,25 @@ struct WebExtensionBackgroundPagePatcher {
             return false
         }
 
-        // A module worker loads its chunks with `import()`, which a page supports natively, so
-        // neither the shim nor preloaded chunks are needed — or wanted — there.
+        // POC: keep the service worker, and point the manifest at a wrapper that loads the stubs first.
+        let wrapperFilename = "ddg-service-worker.js"
+        let stubsFilename = "ddg-api-stubs.js"
+        guard serviceWorkerPath != wrapperFilename else { return false }
+
         let isModule = background[ManifestKey.type] as? String == ManifestKey.moduleType
         let normalizedWorkerPath = Self.normalizedExtensionPath(serviceWorkerPath)
-        let chunkPaths = isModule ? [] : chunkScriptPaths(forWorkerAt: normalizedWorkerPath, in: manifestDirectory)
 
-        if !isModule {
-            let shimURL = manifestDirectory.appendingPathComponent(WebExtensionImportScriptsShim.filename)
-            try WebExtensionImportScriptsShim.source.write(to: shimURL, atomically: true, encoding: .utf8)
-        }
+        try WebExtensionAPIStubScript.source.write(to: manifestDirectory.appendingPathComponent(stubsFilename),
+                                                   atomically: true, encoding: .utf8)
+        let wrapper = isModule
+            ? "import \"/\(stubsFilename)\";\nimport \"/\(normalizedWorkerPath)\";\n"
+            : "importScripts(\"/\(stubsFilename)\", \"/\(normalizedWorkerPath)\");\n"
+        try wrapper.write(to: manifestDirectory.appendingPathComponent(wrapperFilename), atomically: true, encoding: .utf8)
 
-        let backgroundPage = Self.backgroundPage(loading: normalizedWorkerPath,
-                                                 asModule: isModule,
-                                                 preloadingChunksAt: chunkPaths)
-        let backgroundPageURL = manifestDirectory.appendingPathComponent(Self.backgroundPageFilename)
-        try backgroundPage.write(to: backgroundPageURL, atomically: true, encoding: .utf8)
-
-        background[ManifestKey.page] = Self.backgroundPageFilename
-        background[ManifestKey.serviceWorker] = nil
-        background[ManifestKey.type] = nil
+        background[ManifestKey.serviceWorker] = wrapperFilename
         manifest[ManifestKey.background] = background
 
-        Logger.webExtensions.info("""
-        🔧 Patched manifest in \(manifestDirectory.path): service worker background '\(serviceWorkerPath)' \
-        rewritten as background page '\(Self.backgroundPageFilename)' (module: \(isModule)), \
-        preloading \(chunkPaths.count) webpack chunk(s): [\(chunkPaths.joined(separator: ", "))]
-        """)
+        Logger.webExtensions.info("🧪 POC: service worker '\(serviceWorkerPath, privacy: .public)' wrapped by '\(wrapperFilename, privacy: .public)' (module: \(isModule))")
         return true
     }
 

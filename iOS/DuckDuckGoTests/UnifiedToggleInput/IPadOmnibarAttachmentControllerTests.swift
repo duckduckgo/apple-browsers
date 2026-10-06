@@ -224,6 +224,23 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
 @MainActor
 final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
 
+    func testAttachmentPickerReturnSelectsAIChatRegardlessOfPreviousMode() throws {
+        for previousMode in [TextEntryMode.search, .aiChat] {
+            let controller = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(), isFloatingUIEnabled: false)
+            controller.loadViewIfNeeded()
+            let view = try XCTUnwrap(controller.view as? DefaultOmniBarView)
+            view.setLayoutMode(.expandedPad)
+            controller.setSelectedTextEntryMode(previousMode)
+            view.setSearchAreaExpanded(false, animated: false)
+
+            controller.expandAIChatAfterAttachmentPicker()
+
+            XCTAssertEqual(controller.selectedTextEntryMode, .aiChat)
+            XCTAssertEqual(view.selectedModeToggleState, .aiChat)
+            XCTAssertTrue(view.isSearchAreaExpanded)
+        }
+    }
+
     func testIPadControllerUsesItsFlagAndClaimsVisibleDisclosureWithAddressBarPixel() throws {
         let flags = MockFeatureFlagger()
         flags.enabledFeatureFlags = [.unifiedToggleInputAttachmentPrivacy, .duckAINativeTermsOfService]

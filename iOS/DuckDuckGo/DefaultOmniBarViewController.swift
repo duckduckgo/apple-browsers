@@ -642,7 +642,7 @@ extension DefaultOmniBarViewController {
             self?.view.window?.windowScene?.keyWindow?.rootViewController
         }
         attachmentControllerInstance.onExpandRequested = { [weak self] in
-            self?.omniBarView.setSearchAreaExpanded(true, animated: false)
+            self?.expandAIChatAfterAttachmentPicker()
         }
 
         controller.onModelsUpdated = { [weak self] in
@@ -800,6 +800,11 @@ extension DefaultOmniBarViewController {
         if toolPickerController?.selectedToolHidesReasoningPicker == true { return nil }
         guard reasoningPickerController?.isReasoningPickerAvailable == true else { return nil }
         return reasoningPickerController?.currentReasoningMode
+    }
+
+    func expandAIChatAfterAttachmentPicker() {
+        setSelectedTextEntryMode(.aiChat)
+        omniBarView.setSearchAreaExpanded(true, animated: false)
     }
 
     /// Called when the strip's attachments change (add / remove / clear): rebuilds the attach menu

@@ -852,21 +852,13 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             return
         }
 
-        switch currentDialog {
-        case .prepareToSync, .waitForOtherDevice:
-            break
+        switch (currentDialog, status) {
+        case (.waitForOtherDevice, .waiting):
+            presentDialog(for: .prepareToSync(.twoDevicePairing))
+        case (.prepareToSync, .unknown):
+            presentDialog(for: .waitForOtherDevice)
         default:
-            return
-        }
-        switch status {
-        case .waiting:
-            if case .waitForOtherDevice = currentDialog {
-                presentDialog(for: .prepareToSync(.twoDevicePairing))
-            }
-        case .unknown:
-            if case .prepareToSync = currentDialog {
-                presentDialog(for: .waitForOtherDevice)
-            }
+            break
         }
     }
 

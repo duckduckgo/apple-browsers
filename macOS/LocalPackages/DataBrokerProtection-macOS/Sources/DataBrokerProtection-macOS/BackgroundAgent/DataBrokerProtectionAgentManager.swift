@@ -135,7 +135,12 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                    pixelHandler: pixelHandler,
                                                                    freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
+        #if DEBUG
+        var executionConfig = BrokerJobExecutionConfig()
+        executionConfig.allowedBrokerDomains = BrokerJobExecutionConfig.assistantDemoBrokerDomains
+        #else
         let executionConfig = BrokerJobExecutionConfig()
+        #endif
         let jobDependencies = BrokerProfileJobDependencies(
             database: dataManager.database,
             contentScopeProperties: contentScopeProperties,
@@ -578,6 +583,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     public func getLivePreviewScanProgress() throws -> DBPUIScanProgress {
         let queryData = try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)
             .excludingIneligibleBrokers(isAuthenticatedUser: currentRunIsFreeScan != true)
+            .filter { jobDependencies.executionConfig.includesBroker(at: $0.dataBroker.url) }
         return DBPUIInitialScanState(from: queryData).scanProgress
     }
 

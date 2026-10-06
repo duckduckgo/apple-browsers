@@ -33,6 +33,7 @@ public final class StatusBarMenu: NSObject {
     }
 
     @objc
+    @MainActor
     private func statusBarButtonTapped() {
         togglePopover()
     }
@@ -50,10 +51,12 @@ public final class StatusBarMenu: NSObject {
     @MainActor
     public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
         popover.setLivePreviewContent(agentInterface: agentInterface)
+        PIRLivePreview.shared.manualControlStarted = { [weak self] in self?.popover.close() }
         PIRLivePreview.shared.automationResumed = { [weak self] in self?.showPopover() }
     }
     #endif
 
+    @MainActor
     private func togglePopover() {
         if popover.isShown {
             popover.close()
@@ -62,7 +65,11 @@ public final class StatusBarMenu: NSObject {
         }
     }
 
+    @MainActor
     private func showPopover() {
+        #if DEBUG
+        guard !PIRLivePreview.shared.isManualControlActive else { return }
+        #endif
         guard !popover.isShown, let button = statusItem.button else { return }
         statusItem.isVisible = true
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)

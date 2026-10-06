@@ -20,6 +20,22 @@ import Foundation
 
 public struct BrokerJobExecutionConfig {
 
+    #if os(macOS) && DEBUG
+    public static let assistantDemoBrokerDomains: Set<String> = [
+        "veripages.com", "peoplefinders.com", "peoplewhiz.com", "spyfly.com",
+        "smartbackgroundchecks.com", "peoplesearchnow.com", "usa-people-search.com", "fastpeoplesearch.com"
+    ]
+    public var allowedBrokerDomains: Set<String>?
+
+    public func includesBroker(at url: String) -> Bool {
+        guard let allowedBrokerDomains else { return true }
+        let absoluteURL = url.contains("://") ? url : "https://\(url)"
+        guard let host = URL(string: absoluteURL)?.host?.lowercased() else { return false }
+        let domain = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+        return allowedBrokerDomains.contains(domain)
+    }
+    #endif
+
     public struct Constants {
         /// Minimum time interval between consecutive jobs for the same broker
         public static let defaultIntervalBetweenSameBrokerJobs: TimeInterval = .seconds(2)

@@ -53,7 +53,6 @@ public final class PIRLivePreview {
 
         isCapturing = true
         defer { isCapturing = false }
-        let activity = source.activity
         let pageURL = webView.url
         let imageData = try await snapshot(webView)
         let faviconValue = try? await webView.evaluateJavaScript("document.querySelector('link[rel~=\"icon\"]')?.href || new URL('/favicon.ico', location.href).href")
@@ -62,7 +61,7 @@ public final class PIRLivePreview {
         // A page can finish while WebKit captures it. Never deliver its stale frame.
         guard sources.contains(where: { $0 === source }), webView.url == pageURL else { return nil }
         return PIRLivePreviewFrame(imageData: imageData, operationID: source.operationID,
-                                   brokerName: source.brokerName, activity: activity, faviconURL: faviconURL,
+                                   brokerName: source.brokerName, activity: source.activity, faviconURL: faviconURL,
                                    canTakeControl: source.handler?.manualControl.canTakeControl ?? false,
                                    isManualControl: source.handler?.manualControl.isPaused ?? false)
     }
@@ -81,7 +80,12 @@ public final class PIRLivePreview {
     }
 
     public var manualControlChanged: ((UUID, Bool) -> Void)?
+    public var manualControlStarted: (() -> Void)?
     public var automationResumed: (() -> Void)?
+
+    public var isManualControlActive: Bool {
+        sources.contains { $0.handler?.manualControl.isPaused == true }
+    }
 
     func attach(handler: DataBrokerProtectionWebViewHandler, operationID: UUID) {
         sources.first { $0.operationID == operationID }?.handler = handler

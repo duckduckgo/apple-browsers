@@ -23,6 +23,26 @@ import XCTest
 
 @MainActor
 final class PIRLivePreviewTests: XCTestCase {
+    func testActivityChangeDuringCaptureUsesCurrentStatus() async throws {
+        let started = expectation(description: "Snapshot started")
+        var continuation: CheckedContinuation<Data, Error>?
+        let preview = PIRLivePreview(snapshot: { _ in
+            try await withCheckedThrowingContinuation {
+                continuation = $0
+                started.fulfill()
+            }
+        })
+        let webView = WKWebView()
+        let operationID = UUID()
+        preview.register(webView: webView, operationID: operationID, brokerName: "Broker", activity: "Paused for your assistance")
+        let capture = Task { try await preview.captureFrame() }
+        await fulfillment(of: [started], timeout: 1)
+        preview.updateActivity("Checking page", operationID: operationID)
+        continuation?.resume(returning: Data([1]))
+        let frame = try await capture.value
+        XCTAssertEqual(frame?.activity, "Checking page")
+    }
+
     func testPreviewKeepsFirstOperationUntilItFinishes() async throws {
         let expectedImage = Data([1, 2, 3])
         let preview = PIRLivePreview(snapshot: { _ in expectedImage })

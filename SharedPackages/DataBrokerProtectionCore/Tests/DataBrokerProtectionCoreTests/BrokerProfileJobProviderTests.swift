@@ -51,6 +51,28 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                                         applicationNameForUserAgentProvider: { nil })
     }
 
+    #if os(macOS) && DEBUG
+    func testDemoFilterExcludesOtherBrokersForEveryJobType() throws {
+        mockDependencies.executionConfig.allowedBrokerDomains = BrokerJobExecutionConfig.assistantDemoBrokerDomains
+        let brokers = BrokerJobExecutionConfig.assistantDemoBrokerDomains.sorted().enumerated().map { offset, domain in
+            DataBroker.mockWithDefaults(id: Int64(offset + 1), url: domain)
+        } + [
+            .mockWithDefaults(id: 9, url: "unlisted-broker.com"),
+            .mockWithDefaults(id: 10, url: "veripages.com.example.org"),
+            .mockWithDefaults(id: 11, url: "https://www.PEOPLEFINDERS.com/search")
+        ]
+        mockDatabase.brokerProfileQueryDataToReturn = brokers.map { broker in
+            BrokerProfileQueryData(dataBroker: broker, profileQuery: .mock, scanJobData: .mock(withBrokerId: broker.id!))
+        }
+        for jobType: JobType in [.manualScan, .scheduledScan, .optOut, .all] {
+            let jobs = try sut.createJobs(with: jobType, withPriorityDate: nil, showWebView: false,
+                                          statusReportingDelegate: MockBrokerProfileJobStatusReportingDelegate(),
+                                          isAuthenticatedUser: true, jobDependencies: mockDependencies)
+            XCTAssertEqual(jobs.count, 9, "Only the eight demo domains and their www URL variant should enter the queue")
+        }
+    }
+    #endif
+
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {
         // Given
         let dataBrokerProfileQueries: [BrokerProfileQueryData] = [

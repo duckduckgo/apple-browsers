@@ -63,6 +63,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var didReachManagedChallengeDestination = false
     private var expectedManagedChallengeURL: URL?
     private var resumeAfterManagedNavigation = false
+    private var automaticPreviewActivity = "Opening the broker website"
     private let previewBrokerName: String?
 #endif
     private var urlObservation: NSKeyValueObservation?
@@ -320,6 +321,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         manualWindow.standardWindowButton(.closeButton)?.isEnabled = false
         window = manualWindow
         manualWindow.center()
+        PIRLivePreview.shared.manualControlStarted?()
         manualWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         manualDeadline = Task { @MainActor [weak self] in
@@ -374,6 +376,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             self.manualControl.endPause()
             self.resumeActiveContinuation(with: .success(()))
             self.userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(false)
+            PIRLivePreview.shared.updateActivity(self.automaticPreviewActivity, operationID: self.livePreviewOperationID)
             PIRLivePreview.shared.manualControlChanged?(self.livePreviewOperationID, false)
             self.installTimer()
             PIRLivePreview.shared.automationResumed?()
@@ -424,7 +427,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func updateLivePreviewActivity(for actionType: ActionType, stepType: StepType?) {
-        PIRLivePreview.shared.updateActivity(actionType.livePreviewActivity(for: stepType), operationID: livePreviewOperationID)
+        automaticPreviewActivity = actionType.livePreviewActivity(for: stepType)
+        PIRLivePreview.shared.updateActivity(automaticPreviewActivity, operationID: livePreviewOperationID)
     }
 #endif
 

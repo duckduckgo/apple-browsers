@@ -46,6 +46,7 @@ class TabsBarCell: UICollectionViewCell {
     let removeButton = BrowserChromeButton(.tabSwitcher)
     private let faviconImage = UIImageView()
     private let separatorView = UIView()
+    private let openingHighlightView = UIView()
 
     private let titleStackView = UIStackView()
     private let faviconContainerView = UIView()
@@ -79,6 +80,7 @@ class TabsBarCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         contentView.layer.removeAnimation(forKey: Self.backgroundTabOpeningAnimationKey)
+        openingHighlightView.layer.removeAnimation(forKey: Self.backgroundTabOpeningAnimationKey)
         isPointerHovering = false
     }
 
@@ -89,17 +91,29 @@ class TabsBarCell: UICollectionViewCell {
 
         let animation = CAAnimationGroup()
         animation.animations = [fade]
-        animation.duration = 0.5
-        fade.duration = animation.duration
+        animation.duration = 0.85
+        fade.duration = 0.2
         animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
         if !UIAccessibility.isReduceMotionEnabled {
-            let rise = CABasicAnimation(keyPath: "transform.translation.y")
-            rise.fromValue = 8
-            rise.toValue = 0
+            let rise = CAKeyframeAnimation(keyPath: "transform.translation.y")
+            rise.values = [24, -4, 2, 0]
+            rise.keyTimes = [0, 0.5, 0.75, 1]
             rise.duration = animation.duration
             animation.animations?.append(rise)
+
+            let pop = CAKeyframeAnimation(keyPath: "transform.scale")
+            pop.values = [0.7, 1.1, 0.96, 1]
+            pop.keyTimes = rise.keyTimes
+            pop.duration = animation.duration
+            animation.animations?.append(pop)
         }
         contentView.layer.add(animation, forKey: Self.backgroundTabOpeningAnimationKey)
+
+        let highlight = CAKeyframeAnimation(keyPath: "opacity")
+        highlight.values = [0, 1, 0.6, 0]
+        highlight.keyTimes = [0, 0.2, 0.55, 1]
+        highlight.duration = 1.2
+        openingHighlightView.layer.add(highlight, forKey: Self.backgroundTabOpeningAnimationKey)
     }
 
     private func setUpSubviews() {
@@ -108,6 +122,14 @@ class TabsBarCell: UICollectionViewCell {
 
         contentView.layer.cornerRadius = Self.cornerRadius
         contentView.layer.cornerCurve = .circular
+
+        openingHighlightView.frame = contentView.bounds
+        openingHighlightView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        openingHighlightView.backgroundColor = UIColor(designSystemColor: .accentPrimary).withAlphaComponent(0.25)
+        openingHighlightView.alpha = 0
+        openingHighlightView.isUserInteractionEnabled = false
+        openingHighlightView.accessibilityElementsHidden = true
+        contentView.insertSubview(openingHighlightView, at: 0)
 
         faviconContainerView.translatesAutoresizingMaskIntoConstraints = false
 

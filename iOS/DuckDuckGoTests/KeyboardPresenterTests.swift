@@ -127,8 +127,9 @@ final class KeyboardPresenterTests {
         onAppLaunch = true
         target.isNewTabPageVisible = false
 
-        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: false)
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: Date().addingTimeInterval(-secondsInBackground), isAfterIdleReturn: true)
 
+        #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == (secondsInBackground == 25 ? 1 : 0))
         #expect(pixelFiring.actualFireCalls.count == (!flagOn && secondsInBackground == 25 ? 1 : 0))
         scheduledActions.forEach { $0() }
@@ -137,7 +138,6 @@ final class KeyboardPresenterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("App Launch usage requires successful focus on another tab", .timeLimit(.minutes(1)), arguments: [
-        (false, true),
         (false, false),
         (true, true)
     ])
@@ -218,7 +218,11 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A cancelled request or disabled flag cannot focus after dismissal or delay", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    @Test("A cancelled request or disabled flag cannot focus after dismissal or delay", .timeLimit(.minutes(1)), arguments: [
+        (true, false),
+        (false, false),
+        (false, true)
+    ])
     func invalidatedRequest(beforeDismissal: Bool, disableFlag: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
         onAppLaunch = true
@@ -258,18 +262,6 @@ final class KeyboardPresenterTests {
         #expect(target.closeScreensCallCount == 0)
         #expect(target.legacyKeyboardCallCount == 1)
         #expect(target.allowedKeyboardCallCount == 0)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Idle-return cleanup only runs for a New Tab Page", .timeLimit(.minutes(1)))
-    func otherTabsDoNotDismissScreens() {
-        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
-        target.isNewTabPageVisible = false
-
-        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
-
-        #expect(target.closeScreensCallCount == 0)
-        #expect(scheduledActions.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)

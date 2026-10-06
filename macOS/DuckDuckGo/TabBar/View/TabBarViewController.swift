@@ -211,6 +211,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         get { UserDefaults.standard.bool(forKey: Self.askDuckAIOpensInSidebarKey) }
         set { UserDefaults.standard.set(newValue, forKey: Self.askDuckAIOpensInSidebarKey) }
     }
+    private static let chatsButtonHiddenKey = "askDuckAI.chatsButtonHidden"
+    private var isChatsButtonHidden: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.chatsButtonHiddenKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.chatsButtonHiddenKey) }
+    }
 
     private var isFireWindow: Bool {
         tabCollectionViewModel.isBurner
@@ -965,7 +970,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             updateDuckAIChromeVibrancyBackground()
             return
         }
-        duckAIChromeChatsButton?.isHidden = !isMenuButtonLayout || duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
+        duckAIChromeChatsButton?.isHidden = !isMenuButtonLayout || isChatsButtonHidden || duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
 
         enableDuckAIChromeContextMenuOnTabBar()
         container.menu = duckAIChromeContextMenu
@@ -3350,6 +3355,17 @@ extension TabBarViewController: NSMenuDelegate {
         duckAIItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.aiChat), visibleOnMacOS27: true)
         menu.addItem(duckAIItem)
 
+        if isMenuButtonLayout {
+            let chatsItem = NSMenuItem(
+                title: isChatsButtonHidden ? "Show Chats Button" : "Hide Chats Button",
+                action: #selector(toggleChatsButtonAction),
+                keyEquivalent: ""
+            )
+            chatsItem.target = self
+            chatsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.chats), visibleOnMacOS27: true)
+            menu.addItem(chatsItem)
+        }
+
         if !isMenuButtonLayout {
             let sidebarHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
             let sidebarItem = NSMenuItem(
@@ -3383,6 +3399,11 @@ extension TabBarViewController {
 
     @objc fileprivate func askDuckAIOpenInSidebarAction() {
         askDuckAIOpensInSidebar = true
+    }
+
+    @objc fileprivate func toggleChatsButtonAction() {
+        isChatsButtonHidden.toggle()
+        refreshDuckAIChromeButtonsVisibility()
     }
 
 }

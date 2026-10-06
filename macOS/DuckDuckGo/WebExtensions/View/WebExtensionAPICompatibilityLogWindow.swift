@@ -177,7 +177,7 @@ enum WebExtensionAPICompatibilityLogWindow {
     /// Opens the window, limited to the given extension (as the log names it) or showing all of them.
     static func show(extensionName: String? = nil, version: String? = nil) {
         let window = NSApp.windows.first { $0.identifier == identifier } ?? makeWindow()
-        guard let viewModel = (window.contentViewController as? NSHostingController<WebExtensionAPICompatibilityLogView>)?.rootView.viewModel else {
+        guard let viewModel = (window.contentViewController as? LogViewController)?.rootView.viewModel else {
             return
         }
 
@@ -191,13 +191,21 @@ enum WebExtensionAPICompatibilityLogWindow {
     }
 
     private static func makeWindow() -> NSWindow {
-        let window = NSWindow(contentViewController: NSHostingController(
+        let window = NSWindow(contentViewController: LogViewController(
             rootView: WebExtensionAPICompatibilityLogView(viewModel: WebExtensionAPICompatibilityLogViewModel())))
         window.identifier = identifier
         window.title = "JavaScript API Compatibility Log"
-        // Nothing else holds the window: AppKit keeps it until it is closed, then releases it.
-        window.isReleasedWhenClosed = true
+        window.isReleasedWhenClosed = false
         window.center()
         return window
+    }
+}
+
+/// Hosts the log view, and closes the window on ⌘W, which the main menu binds to Close Tab.
+@available(macOS 15.4, *)
+private final class LogViewController: NSHostingController<WebExtensionAPICompatibilityLogView> {
+
+    @objc func closeTab(_ sender: Any?) {
+        view.window?.performClose(sender)
     }
 }

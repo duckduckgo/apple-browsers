@@ -179,6 +179,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
                                                                                 name: WebExtensionAPICompatibilityScript.messageHandlerName)
 
+        // A popup page closes itself with `window.close()`. WebKit unloads the web view but tells
+        // nobody, so the page reports the call through a script message, and the window/tab
+        // provider takes down whatever it hosted the popup in.
+        let windowCloseScript = WKUserScript(source: WebExtensionWindowCloseScript.source,
+                                             injectionTime: .atDocumentStart,
+                                             forMainFrameOnly: true)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(windowCloseScript)
+        let windowCloseHandler = WebExtensionWindowCloseMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.add(windowCloseHandler,
+                                                                                name: WebExtensionWindowCloseScript.messageHandlerName)
+
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         self.windowTabProvider = windowTabProvider
@@ -202,6 +213,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        windowCloseHandler.onWindowClose = { [weak self] popupWebView in
+            self?.windowTabProvider.dismissPopup(for: popupWebView)
+        }
 
         apiCompatibilityHandler.resolveExtension = { [weak self] url in
             guard let webExtension = self?.extensionContext(for: url)?.webExtension else { return nil }

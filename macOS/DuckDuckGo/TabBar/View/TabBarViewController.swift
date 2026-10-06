@@ -203,6 +203,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var duckAIChromeTitleButton: MouseOverButton?
     private var duckAIChromeSidebarButton: MouseOverButton?
     private var duckAIChromeDivider: ColorView?
+    private var duckAIChromeChatsButton: MouseOverButton?
+
+    // Hack: default action for the Ask Duck.ai pill (new tab vs sidebar).
+    private static let askDuckAIOpensInSidebarKey = "askDuckAI.opensInSidebar"
+    private var askDuckAIOpensInSidebar: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.askDuckAIOpensInSidebarKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.askDuckAIOpensInSidebarKey) }
+    }
 
     private var isFireWindow: Bool {
         tabCollectionViewModel.isBurner
@@ -898,7 +906,26 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         } else {
             rightSideStackView.addArrangedSubview(container)
         }
-        rightSideStackView.setCustomSpacing(rightSideStackView.spacing + Constants.duckAIControlSpacingBeforeFireButton, after: container)
+        let chatsButton = MouseOverButton(frame: .zero)
+        chatsButton.translatesAutoresizingMaskIntoConstraints = false
+        chatsButton.isBordered = false
+        chatsButton.target = self
+        chatsButton.action = #selector(duckAIMenuChatsAction)
+        chatsButton.sendAction(on: .leftMouseDown)
+        chatsButton.image = DesignSystemImages.Glyphs.Size16.chats
+        chatsButton.toolTip = UserText.actionChats
+        chatsButton.setAccessibilityTitle(UserText.actionChats)
+        chatsButton.setAccessibilityIdentifier("TabBarViewController.duckAIChromeChatsButton")
+        chatsButton.menu = duckAIChromeContextMenu
+        NSLayoutConstraint.activate([
+            chatsButton.widthAnchor.constraint(equalToConstant: theme.tabBarButtonSize),
+            chatsButton.heightAnchor.constraint(equalToConstant: theme.tabBarButtonSize)
+        ])
+        if let index = rightSideStackView.arrangedSubviews.firstIndex(of: container) {
+            rightSideStackView.insertArrangedSubview(chatsButton, at: index + 1)
+        }
+        duckAIChromeChatsButton = chatsButton
+        rightSideStackView.setCustomSpacing(rightSideStackView.spacing + Constants.duckAIControlSpacingBeforeFireButton, after: chatsButton)
 
         duckAIChromeControlContainer = container
         duckAIChromeTitleButton = titleButton
@@ -934,9 +961,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             sidebarButton.isHidden = true
             divider.isHidden = true
             container.isHidden = true
+            duckAIChromeChatsButton?.isHidden = true
             updateDuckAIChromeVibrancyBackground()
             return
         }
+        duckAIChromeChatsButton?.isHidden = !isMenuButtonLayout || duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
 
         enableDuckAIChromeContextMenuOnTabBar()
         container.menu = duckAIChromeContextMenu
@@ -1042,6 +1071,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         duckAIChromeTitleButton.mouseDownColor = colorsProvider.buttonMouseDownPressedColor
         duckAIChromeTitleButton.setCornerRadius(cornerRadius)
         duckAIChromeTitleButton.horizontalPadding = 16
+
+        if let chatsButton = duckAIChromeChatsButton {
+            chatsButton.backgroundColor = .clear
+            chatsButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+            chatsButton.mouseDownColor = colorsProvider.buttonMouseDownColor
+            chatsButton.normalTintColor = colorsProvider.iconsColor
+            chatsButton.mouseOverTintColor = colorsProvider.iconsColor
+            chatsButton.mouseDownTintColor = colorsProvider.iconsColor
+            chatsButton.setCornerRadius(cornerRadius)
+        }
 
         duckAIChromeSidebarButton.backgroundColor = .clear
         duckAIChromeSidebarButton.mouseOverColor = colorsProvider.buttonMouseDownColor
@@ -1325,10 +1364,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
         // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {
-            if NSApp.currentEvent?.type == .otherMouseUp || NSApp.isCommandPressed {
-                duckAIMenuNewChatAction()
+            if askDuckAIOpensInSidebar && NSApp.currentEvent?.type != .otherMouseUp && !NSApp.isCommandPressed {
+                duckAIMenuSidebarAction()
             } else {
-                presentDuckAIMenuButtonMenu(from: sender)
+                duckAIMenuNewChatAction()
             }
             return
         }
@@ -3284,6 +3323,20 @@ extension TabBarViewController: NSMenuDelegate {
 
         let duckAIHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
 
+        if isMenuButtonLayout {
+            let newTabItem = NSMenuItem(title: "Open Duck.ai in a New Tab", action: #selector(askDuckAIOpenInNewTabAction), keyEquivalent: "")
+            newTabItem.target = self
+            newTabItem.state = askDuckAIOpensInSidebar ? .off : .on
+            menu.addItem(newTabItem)
+
+            let sidebarItem = NSMenuItem(title: "Open Duck.ai in the Sidebar", action: #selector(askDuckAIOpenInSidebarAction), keyEquivalent: "")
+            sidebarItem.target = self
+            sidebarItem.state = askDuckAIOpensInSidebar ? .on : .off
+            menu.addItem(sidebarItem)
+
+            menu.addItem(.separator())
+        }
+
         // Menu-button layout: single "Ask Duck.ai" pill, so the hide item uses the "Ask Duck.ai"
         // wording and there's no separate sidebar-button toggle.
         let duckAIItem = NSMenuItem(
@@ -3318,6 +3371,18 @@ extension TabBarViewController: NSMenuDelegate {
         settingsItem.target = self
         settingsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.settingsAiChat), visibleOnMacOS27: true)
         menu.addItem(settingsItem)
+    }
+
+}
+
+extension TabBarViewController {
+
+    @objc fileprivate func askDuckAIOpenInNewTabAction() {
+        askDuckAIOpensInSidebar = false
+    }
+
+    @objc fileprivate func askDuckAIOpenInSidebarAction() {
+        askDuckAIOpensInSidebar = true
     }
 
 }

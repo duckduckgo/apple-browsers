@@ -2868,7 +2868,15 @@ class MainViewController: UIViewController {
         // The page is already on screen, so this is its own dialog. The last onboarding dialog counts
         // itself as seen as soon as it appears, so the onboarding check alone misses it.
         if onNewTabPage, daxDialogsManager.isShowingContextualOnboardingDialog { return false }
-        enterSearchOnAppOpen()
+        if onNewTabPage, let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
+            if isNewTabPageVisible {
+                newTabPageSessionInstrumentation.keyboardRaisedOnArrival()
+            }
+            showBars()
+            defaultOmniBar.beginEditingOnNewTabPageAppOpen()
+        } else {
+            enterSearchOnAppOpen()
+        }
         let didShowKeyboard = viewCoordinator.omniBar.isTextFieldEditing
         if didShowKeyboard {
             postIdleSessionInstrumentation.keyboardRaisedOnArrival()

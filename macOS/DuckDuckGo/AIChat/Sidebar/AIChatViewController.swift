@@ -150,6 +150,11 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.chatRestorationDataPublisher
     }
 
+    /// `nil` until the view loads, so asking doesn't create the sidebar tab.
+    var aiTabUUID: String? {
+        isViewLoaded ? aiTab.uuid : nil
+    }
+
     override func loadView() {
         let colorsProvider = themeManager.theme.colorsProvider
         let container = ColorView(frame: .zero, backgroundColor: colorsProvider.navigationBackgroundColor)

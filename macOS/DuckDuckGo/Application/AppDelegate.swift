@@ -349,6 +349,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
+    private lazy var duckAIResponseNotificationClickHandler = DuckAIResponseNotificationClickHandler(tabFinder: windowControllersManager,
+                                                                                                    sessionStore: aiChatSessionStore)
     private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
@@ -2725,8 +2727,12 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
 
-        // Handle web notification clicks
         let userInfo = response.notification.request.content.userInfo
+        if await duckAIResponseNotificationClickHandler.handleClick(userInfo: userInfo) {
+            return
+        }
+
+        // Handle web notification clicks
         if let tabUUID = userInfo[WebNotificationsHandler.UserInfoKey.tabUUID] as? String,
            let notificationId = userInfo[WebNotificationsHandler.UserInfoKey.notificationId] as? String {
             await webNotificationClickHandler.handleClick(tabUUID: tabUUID, notificationId: notificationId)

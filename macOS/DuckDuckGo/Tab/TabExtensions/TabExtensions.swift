@@ -197,6 +197,18 @@ extension TabExtensionsBuilder {
             }
         }
 
+        if dependencies.featureFlagger.isFeatureOn(.aiChatResponseNotifications), !args.isTabBurner {
+            add {
+                DuckAIResponseNotificationTabExtension(
+                    tabID: args.tabID,
+                    isLoadedInSidebar: args.isTabLoadedInSidebar,
+                    nativeStorageUserScriptPublisher: userScripts.map(\.?.duckAiNativeStorageUserScript),
+                    webViewPublisher: args.webViewFuture,
+                    presenter: DuckAIResponseNotificationPresenter.shared
+                )
+            }
+        }
+
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,

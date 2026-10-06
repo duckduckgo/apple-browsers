@@ -179,4 +179,27 @@ final class SyncPromoManagerTests: XCTestCase {
 
         XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords))
     }
+
+    // MARK: - Trigger wiring
+
+    func testWhenSurfaceOpenedNotificationPostedThenPromoTriggerFires() {
+        let notificationTriggers: [(Notification.Name, PromoTrigger)] = [
+            (.bookmarksPanelOpened, .bookmarksPanelOpened),
+            (.bookmarksManagerOpened, .bookmarksManagerOpened),
+            (.passwordsPanelOpened, .passwordsPanelOpened),
+            (.autofillSettingsOpened, .autofillSettingsOpened)
+        ]
+
+        for (name, trigger) in notificationTriggers {
+            let triggerExpectation = expectation(description: "\(trigger) fired")
+            let cancellable = PromoTrigger.triggerPublisher
+                .filter { $0 == trigger }
+                .sink { _ in triggerExpectation.fulfill() }
+
+            NotificationCenter.default.post(name: name, object: nil)
+
+            wait(for: [triggerExpectation], timeout: 1)
+            cancellable.cancel()
+        }
+    }
 }

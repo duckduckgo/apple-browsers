@@ -36,7 +36,7 @@
             "appVersion",
             "unified_input_surface",
             {
-                "key": "tab_count",
+                "key": "payload_tab_count",
                 "description": "Number of tab contexts in the dispatched payload: one is 1, some is 2–3, many is 4 or more.",
                 "type": "string",
                 "enum": ["one", "some", "many"]

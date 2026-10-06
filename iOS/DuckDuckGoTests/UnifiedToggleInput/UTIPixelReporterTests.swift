@@ -88,7 +88,7 @@ final class UTIPixelReporterTests: XCTestCase {
             reporter.makeTabSubmissionReporter(requestedTabCount: count)(.init(totalTabCount: count, additionalTabCount: count))
             let call = pixelKitMock.actualFireCalls.last
             XCTAssertEqual(call?.pixel.name, "aichat_unified_input_tabs_sent")
-            XCTAssertEqual(call?.pixel.parameters, ["surface": "contextual_chat", "tab_count": bucket])
+            XCTAssertEqual(call?.pixel.parameters, ["surface": "contextual_chat", "payload_tab_count": bucket])
             XCTAssertEqual(call?.frequency, .dailyAndCount)
         }
     }
@@ -106,7 +106,7 @@ final class UTIPixelReporterTests: XCTestCase {
         report(.init(totalTabCount: 2, additionalTabCount: 1))
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "tab_count": "some"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "payload_tab_count": "some"])
     }
 
     func testWhenSomeRequestedTabsAreMissingThenReportsPartialFailureAndSentCount() {

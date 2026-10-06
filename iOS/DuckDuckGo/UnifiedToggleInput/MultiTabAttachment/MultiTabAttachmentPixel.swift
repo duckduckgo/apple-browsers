@@ -52,7 +52,7 @@ struct MultiTabSentPixel: PixelKit.Event {
 
     var name: String { "aichat_unified_input_tabs_sent" }
     var parameters: [String: String]? {
-        ["surface": surface.rawValue, "tab_count": count == 1 ? "one" : count < 4 ? "some" : "many"]
+        ["surface": surface.rawValue, "payload_tab_count": count == 1 ? "one" : count < 4 ? "some" : "many"]
     }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }

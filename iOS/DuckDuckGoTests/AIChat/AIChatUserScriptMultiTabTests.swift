@@ -448,7 +448,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         }
         _ = await dispatch(script)
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 2)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "tab_count": "some"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "payload_tab_count": "some"])
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["surface": "contextual_chat", "outcome": "partial"])
     }
 

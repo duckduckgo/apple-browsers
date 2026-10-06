@@ -116,6 +116,10 @@ struct AIChatEntryPointSourceTests {
         #expect(AIChatEntryPointSource.returnToChatCard.rawValue == "return_to_chat_card")
         #expect(AIChatEntryPointSource.tabSwitcherExistingChat.rawValue == "tab_switcher_existing_chat")
         #expect(AIChatEntryPointSource.ddgHomepage.rawValue == "ddg_homepage")
+        #expect(AIChatEntryPointSource.browsingMenuNTP.rawValue == "browsing_menu_ntp")
+        #expect(AIChatEntryPointSource.browsingMenuWebpage.rawValue == "browsing_menu_webpage")
+        #expect(AIChatEntryPointSource.browsingMenuDuckAI.rawValue == "browsing_menu_duckai")
+        #expect(AIChatEntryPointSource.duckAINewChat.rawValue == "duck_ai_new_chat")
     }
 
     // MARK: - In-page navigations

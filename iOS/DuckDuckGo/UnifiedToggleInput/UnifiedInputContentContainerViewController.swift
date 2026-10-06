@@ -88,6 +88,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
     private let isFloatingUIEnabled: Bool
+    private let floatingUIManager: FloatingUIManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let aiChatSettings: AIChatSettingsProvider
     private let aiChatSyncCleaner: AIChatSyncCleaning?
@@ -173,11 +174,16 @@ final class UnifiedInputContentContainerViewController: UIViewController {
          syncService: DDGSyncing? = nil,
          aiChatSyncCleaner: AIChatSyncCleaning? = nil,
          recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         floatingUIManager: FloatingUIManaging? = nil) {
+        let floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
+        )
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        self.isFloatingUIEnabled = FloatingUIManager(featureFlagger: featureFlagger).isFloatingUIEnabled
+        self.floatingUIManager = floatingUIManager
+        self.isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatSettings = aiChatSettings
         self.aiChatSyncCleaner = aiChatSyncCleaner
@@ -286,7 +292,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
             unifiedSuggestionsHost?.setIsFireTab(switchBarHandler.isFireTab)
             unifiedSuggestionsHost?.setLandscape(isLandscapeOrientation)
-            unifiedSuggestionsHost?.prepareForActivation()
+            unifiedSuggestionsHost?.prepareForActivation(
+                favoritesExpansionState: suggestionTrayDependencies?.tabsModelProvider().currentTab?.favoritesExpansionState)
             // Re-resolve now (synchronously, before the host is shown) so the prior session's stale
             // content isn't flashed. Runs after `prepareForActivation` clears the dismiss freeze.
             activationResolveTrigger.send(())
@@ -358,8 +365,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         let hatchPresenceChanged = (escapeHatchModel != nil) != (model != nil)
         escapeHatchModel = model
+        unifiedSuggestionsHost?.setEscapeHatch(model)
         unifiedSuggestionsHost?.updateOpenedAfterIdle(sessionOpenedAfterIdle)
-        // The chrome (hatch + sync-promo) is pinned to the bar (see below), not rendered in the host.
+        // Redesigned Search renders the hatch after favorites; other states keep it pinned to the bar.
         updatePinnedChrome()
         updateSingleHostTopOffset()
         // The sync-promo sits below the hatch, so its layout changes when the hatch is added/removed.
@@ -437,6 +445,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// resolver so it never diverges from the host's content (e.g. a pre-filled, unedited URL).
     private var shouldShowPinnedHatch: Bool {
         escapeHatchModel != nil
+            && !(unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false)
             && !switchBarHandler.isFireTab
             && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                         hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
@@ -449,7 +458,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         if isSyncPromoCardVisible {
             return chromeMeasuredHeight
         } else if shouldShowPinnedHatch {
-            let cardPadding = usesRedesignedNewTabPageLayout ? FocusedChromeView.Metrics.raisedHatchPadding * 2 : 0
+            let cardPadding = usesRedesignedNewTabPageLayout ? EscapeHatchView.materialPadding * 2 : 0
             return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
         } else {
             return 0
@@ -602,8 +611,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             showAskAIChat: aiChatSettings.isAIChatEnabled
         )
 
-        let hasFavorites: () -> Bool = {
-            !dependencies.favoritesViewModel.favorites.isEmpty
+        let customizationStore = NewTabPageCustomizationStore()
+        let hasFavorites: () -> Bool = { [weak self] in
+            let isVisible = self?.usesRedesignedNewTabPageLayout != true || customizationStore.isFavoritesSectionVisible
+            return isVisible && !dependencies.favoritesViewModel.favorites.isEmpty
         }
         let hasMessages: () -> Bool = {
             !dependencies.newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
@@ -617,6 +628,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             // The activation trigger is already on main (fired from `setActive`) — kept after the hop
             // so the re-resolve it drives stays synchronous, landing before the host becomes visible.
             .merge(with: activationResolveTrigger)
+            .merge(with: customizationStore.favoritesVisibilityPublisher.dropFirst().map { _ in () }.receive(on: DispatchQueue.main))
             .eraseToAnyPublisher()
         let homePageMessagesConfiguration = dependencies.newTabPageDependencies.homePageMessagesConfiguration
         if homePageMessagesConfiguration.mode == .coordinated {
@@ -660,8 +672,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         )
 
         let host = UnifiedSuggestionsHost(config: config)
+        host.setEscapeHatch(escapeHatchModel)
         host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in
+            self?.updatePinnedChrome()
             self?.refreshVisibleContent(animateContentUpdates: true)
         }
 
@@ -802,8 +816,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             appSettings: ntpDeps.appSettings,
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
-            internalUserCommands: ntpDeps.internalUserCommands
+            internalUserCommands: ntpDeps.internalUserCommands,
+            floatingUIManager: floatingUIManager
         )
+        if let tab = dependencies.tabsModelProvider().currentTab {
+            controller.favoritesModel.expansionState = tab.favoritesExpansionState
+        }
         controller.hideBorderView()
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).

@@ -95,6 +95,7 @@ struct RedesignedFavoriteIconView: View {
             .frame(width: Metrics.tileSize, height: Metrics.tileSize)
             .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
             .contentShape(Circle())
+            .contentShape([.contextMenuPreview, .dragPreview], Circle())
     }
 }
 

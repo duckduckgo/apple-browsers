@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Core
 import Foundation
 import Persistence
@@ -39,6 +40,8 @@ private struct NewTabPageCustomizationKeys: StoringKeys {
 
 struct NewTabPageCustomizationStore: NewTabPageCustomizationPersisting {
 
+    private static let favoritesVisibilityDidChange = Notification.Name("NewTabPageCustomizationStore.favoritesVisibilityDidChange")
+
     private let keyValueStore: KeyValueStoring
 
     init(keyValueStore: KeyValueStoring = UserDefaults.app) {
@@ -51,7 +54,22 @@ struct NewTabPageCustomizationStore: NewTabPageCustomizationPersisting {
 
     var isFavoritesSectionVisible: Bool {
         get { storage.isFavoritesSectionVisible ?? true }
-        set { storage.isFavoritesSectionVisible = newValue }
+        set {
+            guard isFavoritesSectionVisible != newValue else { return }
+            storage.isFavoritesSectionVisible = newValue
+            NotificationCenter.default.post(name: Self.favoritesVisibilityDidChange, object: nil)
+        }
+    }
+
+    /// Every retained page observes the same persisted preference, including pages in other tabs.
+    var favoritesVisibilityPublisher: AnyPublisher<Bool, Never> {
+        Deferred {
+            NotificationCenter.default.publisher(for: Self.favoritesVisibilityDidChange)
+                .map { _ in self.isFavoritesSectionVisible }
+                .prepend(self.isFavoritesSectionVisible)
+                .removeDuplicates()
+        }
+        .eraseToAnyPublisher()
     }
 
     var isMessagesSectionVisible: Bool {

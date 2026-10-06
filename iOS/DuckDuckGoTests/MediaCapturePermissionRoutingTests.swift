@@ -32,6 +32,64 @@ import XCTest
 @MainActor
 final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
+    func testWhenSitePermissionsAreEnabledThenFireCameraUsesSitePrompt() async {
+        let sut = makeSUT(fireTab: true)
+        defer { sut.closeSitePermissions() }
+        XCTAssertTrue(sut.isMediaCapturePermissionHandlingEnabled)
+        var receivedPrompt: SitePermissionPrompt?
+        sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+            receivedPrompt = prompt
+            completion(.denyOnce)
+        }
+
+        let decision = await requestPermissionThroughBridge(on: sut,
+                                                            originHost: "top-level.example",
+                                                            captureType: .camera)
+
+        XCTAssertEqual(receivedPrompt?.site.host, "top-level.example")
+        XCTAssertEqual(receivedPrompt?.permissionTypes, [.camera])
+        XCTAssertEqual(receivedPrompt?.isFireMode, true)
+        XCTAssertEqual(decision, .deny)
+    }
+
+    func testWhenSitePermissionsAreDisabledThenFireCameraUsesLegacyRouting() async {
+        let sut = makeSUT(featureEnabled: false, fireTab: true)
+        defer { sut.closeSitePermissions() }
+        XCTAssertFalse(sut.isMediaCapturePermissionHandlingEnabled)
+        var didPrompt = false
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            didPrompt = true
+            completion(.denyOnce)
+        }
+
+        let bridgeDecision = await requestPermissionThroughBridge(on: sut,
+                                                                  originHost: "top-level.example",
+                                                                  captureType: .camera)
+        var nativeDecision: WKPermissionDecision?
+        requestPermission(on: sut, originHost: "top-level.example", captureType: .camera) { nativeDecision = $0 }
+
+        XCTAssertEqual(bridgeDecision, .bypass)
+        XCTAssertEqual(nativeDecision, .prompt)
+        XCTAssertFalse(didPrompt)
+        XCTAssertNil(sut.sitePermissionsState.coordinator)
+    }
+
+    func testWhenFlagChangesAfterLaunchThenGeolocationSetupUsesLaunchAvailability() {
+        for featureEnabled in [false, true] {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
+            let sut = makeSUT(featureFlagger: featureFlagger)
+            defer { sut.closeSitePermissions() }
+            featureFlagger.enabledFeatureFlags = featureEnabled ? [] : [.sitePermissions]
+            featureFlagger.triggerUpdate()
+            let userScript = GeolocationUserScript(installImmediately: true)
+
+            sut.configureSitePermissionsGeolocation(with: userScript)
+
+            XCTAssertEqual(userScript.delegate is GeolocationProvider, featureEnabled)
+            XCTAssertEqual(sut.sitePermissionsState.coordinator != nil, featureEnabled)
+        }
+    }
+
     func testWhenPermissionRemovalUndoOutlivesPageThenOnlySavedDecisionsAreRestored() throws {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for fireTab in [false, true] {

@@ -20,6 +20,7 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import ConcurrencyExtensions
 import os.log
 import Persistence
 
@@ -29,6 +30,28 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
+    @MainActor
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure {
+        AttachmentPrivacyDisclosure(
+            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
+        )
+    }
+
+    private lazy var attachmentPrivacyMenuItem = NSMenuItem(
+        title: "",
+        action: #selector(resetAttachmentPrivacyDisclosure),
+        target: self
+    )
+
+    /// Stands in for the web app until the front end writes this itself.
+    private lazy var attachmentPrivacyWebFlagMenuItem = NSMenuItem(
+        title: "Set Duck.ai's Attachment Privacy Flag",
+        action: #selector(setAttachmentPrivacyWebFlag),
+        target: self
+    )
+
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
@@ -59,51 +82,34 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
-            storageServerMenuItem
+            attachmentPrivacyMenuItem
 
-#if DEBUG
+            attachmentPrivacyWebFlagMenuItem
+
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Browser Tools Panel…", action: #selector(openBrowserToolsPanel))
+            storageServerMenuItem
+
+#if DEBUG || REVIEW
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
                 .targetting(self)
-            browserToolPermissionsMenuItem
 #endif
         }
     }
 
-#if DEBUG
+#if DEBUG || REVIEW
 
     // MARK: - Browser Tools
 
-    private var browserToolsPanel: BrowserToolsDebugPanel?
-
+    /// Opens the sidebar on the current tab with the browser tools panel in place of the chat.
+    /// Closing the sidebar brings the chat back next time; there is no persisted mode.
     @MainActor
-    @objc func openBrowserToolsPanel() {
-        let panel = browserToolsPanel
-            ?? BrowserToolsDebugPanel(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
-        browserToolsPanel = panel
-        panel.showWindow(nil)
-        panel.window?.makeKeyAndOrderFront(nil)
-    }
-
-    private lazy var browserToolPermissionsMenuItem: NSMenuItem = {
-        let item = NSMenuItem(title: "Browser Tool Permissions")
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        menu.delegate = self
-        item.submenu = menu
-        return item
-    }()
-
-    @MainActor
-    @objc private func resetBrowserToolPermission(_ sender: NSMenuItem) {
-        guard let toolName = sender.representedObject as? String else { return }
-        NSApp.delegateTyped.aiChatBrowserToolsService.permissions.setState(.ask, forToolNamed: toolName)
-    }
-
-    @MainActor
-    @objc private func resetAllBrowserToolPermissions() {
-        NSApp.delegateTyped.aiChatBrowserToolsService.permissions.clearAll()
+    @objc private func showBrowserToolsPanel() {
+        let coordinator = NSApp.delegateTyped.windowControllersManager
+            .lastKeyMainWindowController?.mainViewController.aiChatCoordinator as? AIChatCoordinator
+        coordinator?.showBrowserToolsDebugPanel()
     }
 
 #endif
@@ -136,6 +142,26 @@ final class AIChatDebugMenu: NSMenu {
             item.toolTip = seed.expectation
             menu.addItem(item)
         }
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    @MainActor
+    @objc private func resetAttachmentPrivacyDisclosure() {
+        attachmentPrivacyDisclosure.reset()
+        updateAttachmentPrivacyMenuItemTitle()
+    }
+
+    @MainActor
+    @objc private func setAttachmentPrivacyWebFlag() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey,
+                                                                      value: true)
+    }
+
+    @MainActor
+    private func updateAttachmentPrivacyMenuItemTitle() {
+        attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
+            + (attachmentPrivacyDisclosure.hasShown ? "(shown)" : "(not shown)")
     }
 
     private func sectionHeader(_ title: String) -> NSMenuItem {
@@ -243,6 +269,10 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        // Main thread only, and the title must be right before the menu draws, so not a Task.
+        MainActor.assumeMainThread {
+            updateAttachmentPrivacyMenuItemTitle()
+        }
     }
 
     @objc func setCustomURL() {
@@ -347,35 +377,3 @@ final class AIChatDebugMenu: NSMenu {
         }
     }
 }
-
-#if DEBUG
-extension AIChatDebugMenu: NSMenuDelegate {
-
-    /// Rebuilt on every open so it always shows the decisions currently stored.
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        guard menu === browserToolPermissionsMenuItem.submenu else { return }
-        menu.removeAllItems()
-
-        let decisions = NSApp.delegateTyped.aiChatBrowserToolsService.permissions.storedDecisions
-        if decisions.isEmpty {
-            let none = NSMenuItem(title: "No stored decisions")
-            none.isEnabled = false
-            menu.addItem(none)
-        }
-        for (toolName, state) in decisions.sorted(by: { $0.key < $1.key }) {
-            let item = NSMenuItem(title: "Reset \(toolName) (\(state.rawValue))",
-                                  action: #selector(resetBrowserToolPermission(_:)),
-                                  keyEquivalent: "")
-            item.target = self
-            item.representedObject = toolName
-            menu.addItem(item)
-        }
-
-        menu.addItem(.separator())
-        let resetAll = NSMenuItem(title: "Reset All", action: #selector(resetAllBrowserToolPermissions), keyEquivalent: "")
-        resetAll.target = self
-        resetAll.isEnabled = !decisions.isEmpty
-        menu.addItem(resetAll)
-    }
-}
-#endif

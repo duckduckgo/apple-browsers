@@ -84,6 +84,8 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case pageContext
     case webExtensions
+    case chromeWebstorePatching
+    case extensionManagement
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -220,7 +222,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case onboardingAsync
 
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlocking
+    case onboardingNonBlockingV2
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
@@ -230,6 +232,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// "Sort by name permanently" — permanently reorders a bookmark folder's direct children alphabetically.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
     case bookmarksReorderByName
+
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -286,7 +292,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
@@ -317,6 +322,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
+
+    /// Kill switch for the privacy disclosure shown while a file or image attachment is staged.
+    case attachmentPrivacyDisclosure
 
     /// Adds support for passing currently visible website context to the sidebar
     case pageContext
@@ -698,8 +706,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForExistingUsers
     case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
-    case subscriptionOnboardingFreeTrialsSep2026
-    case subscriptionOnboardingPaidSubsSep2026
+    case subscriptionOnboardingFreeTrialsOct2026
+    case subscriptionOnboardingPaidSubsOct2026
     case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
@@ -841,6 +849,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Controls permission prompts and persistence on macOS.
+    case permissions
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
@@ -853,6 +863,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Failsafe kill switch for the CPM background-view graveyard treatment.
+    case cpmBackgroundGraveyardTreatment
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -910,6 +922,9 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the "Browser updated" promo.
     case browserUpdatedPromo
+
+    /// Kill switch for the VPN toolbar upsell button and dot badge promos.
+    case vpnUpsellPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
@@ -958,4 +973,11 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
 
     case featureEnabled
+}
+
+public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionManagement }
+
+    case isLaunchedExtensions
+    case curatedExtensions
 }

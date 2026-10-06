@@ -33,6 +33,38 @@ struct UserText {
     static let none = NSLocalizedString("none", value: "None", comment: "Generic 'None' label")
     static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")
 
+    // MARK: - Web Extensions
+    static let chromeWebStoreDownloadTitle = NotLocalizedString("webExtensions.store.download.title", value: "Add Extension", comment: "Extension download window title")
+    static let chromeWebStoreDownloadMessage = NotLocalizedString("webExtensions.store.download.message", value: "Downloading and verifying extension…", comment: "Extension download progress message")
+    static let chromeWebStoreRemoveTitle = NotLocalizedString("webExtensions.store.remove.title", value: "Remove “%@”?", comment: "Remove extension title; placeholder is the name")
+    static let chromeWebStoreRemoveMessage = NotLocalizedString("webExtensions.store.remove.message", value: "The extension and its saved permissions will be removed.", comment: "Remove extension confirmation")
+    static let chromeWebStoreRemoveButton = NotLocalizedString("webExtensions.store.remove.button", value: "Remove Extension", comment: "Confirm removing an extension")
+    static let chromeWebStoreErrorTitle = NotLocalizedString("webExtensions.store.error.title", value: "Couldn’t Complete Extension Request", comment: "Extension operation error title")
+    static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
+    static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
+    static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
+    static let webExtensionInstallTitle = NotLocalizedString("webExtensions.install.title", value: "Add “%@”?", comment: "Extension installation title; placeholder is the extension name")
+    static let webExtensionPermissionTitle = NotLocalizedString("webExtensions.permissions.title", value: "Allow “%@” additional access?", comment: "Extension permissions title; placeholder is the extension name")
+    static let webExtensionUnnamedExtension = NotLocalizedString("webExtensions.unnamed", value: "Extension", comment: "Fallback for an unnamed web extension")
+    static let webExtensionPermissionExplanation = NotLocalizedString("webExtensions.permissions.explanation", value: "It can:", comment: "Introduction to extension permission list")
+    static let webExtensionNoPermissions = NotLocalizedString("webExtensions.permissions.none", value: "No additional permissions requested.", comment: "Extension requests no permissions")
+    static let webExtensionInstall = NotLocalizedString("webExtensions.install.button", value: "Add Extension", comment: "Approve extension installation")
+    static let webExtensionAllow = NotLocalizedString("webExtensions.permissions.allow", value: "Allow", comment: "Approve additional extension permissions")
+    static let webExtensionAllowFireWindows = NotLocalizedString("webExtensions.permissions.fireWindows", value: "Allow in Fire Windows", comment: "Opt in to extension access to private browsing")
+    static let webExtensionPrivateAccessExplanation = NotLocalizedString("webExtensions.permissions.fireWindowsExplanation", value: "The extension may save your browsing activity, including activity in Fire Windows.", comment: "Warning shown beside private browsing access option")
+    static let webExtensionWebsiteAccess = NotLocalizedString("webExtensions.permissions.website", value: "Read and change data on: %@", comment: "Extension website permission; placeholder is a URL or match pattern")
+    static let webExtensionOtherPermission = NotLocalizedString("webExtensions.permissions.other", value: "Use the “%@” permission", comment: "Fallback extension permission description; placeholder is the API permission name")
+    static let webExtensionTabsPermission = NotLocalizedString("webExtensions.permissions.tabs", value: "Read information about your open tabs", comment: "Extension tabs permission")
+    static let webExtensionActiveTabPermission = NotLocalizedString("webExtensions.permissions.activeTab", value: "Access the current tab when you activate the extension", comment: "Extension activeTab permission")
+    static let webExtensionClipboardReadPermission = NotLocalizedString("webExtensions.permissions.clipboardRead", value: "Read your clipboard", comment: "Extension clipboardRead permission")
+    static let webExtensionClipboardWritePermission = NotLocalizedString("webExtensions.permissions.clipboardWrite", value: "Change your clipboard", comment: "Extension clipboardWrite permission")
+    static let webExtensionCookiesPermission = NotLocalizedString("webExtensions.permissions.cookies", value: "Read and change cookies on permitted websites", comment: "Extension cookies permission")
+    static let webExtensionDownloadsPermission = NotLocalizedString("webExtensions.permissions.downloads", value: "Manage your downloads", comment: "Extension downloads permission")
+    static let webExtensionHistoryPermission = NotLocalizedString("webExtensions.permissions.history", value: "Read and change your browsing history", comment: "Extension history permission")
+    static let webExtensionNavigationPermission = NotLocalizedString("webExtensions.permissions.navigation", value: "Observe your browsing activity", comment: "Extension webNavigation permission")
+    static let webExtensionStoragePermission = NotLocalizedString("webExtensions.permissions.storage", value: "Store extension data on your device", comment: "Extension storage permission")
+    static let webExtensionNativeMessagingPermission = NotLocalizedString("webExtensions.permissions.nativeMessaging", value: "Communicate with native applications", comment: "Extension nativeMessaging permission")
+
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")
     static let fireDialogTabsAndWindows = NSLocalizedString("fire.dialog.tabs.and.windows", value: "Tabs and windows", comment: "Section title. Refers to the scope option that affects open tabs and/or browser windows; keep short and title-cased.")
@@ -976,6 +1008,9 @@ struct UserText {
         let message = NSLocalizedString("aichat.usageWarnings.high-usage-model", value: "%@ reaches usage limits 2-5x sooner than basic models.", comment: "Duck.ai usage card notice shown while a model that spends the allowance quickly is selected. Parameter is the model's short name, e.g. \"Opus 4.8\".")
         return String(format: message, modelShortName)
     }
+    // Copy, keys and translations shared with iOS, which shipped this disclosure first.
+    static let aiChatAttachmentPrivacyDisclosureFormat = NSLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
+    static let aiChatAttachmentPrivacyLearnMore = NSLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")
     static func aiChatUsageWarningsResetsIn(_ interval: String) -> String {
         let message = NSLocalizedString("aichat.usageWarnings.resets-in", value: "Resets in %@", comment: "Trailing detail on the Duck.ai usage card saying when the limit resets. Parameter is a short interval such as \"7d\" or \"12h\".")
         return String(format: message, interval)

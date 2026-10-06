@@ -79,8 +79,7 @@ default.profraw
 .claude/settings.local.json
 
 # Cursor
-.cursor/*
-!.cursor/rules/
+.cursor/
 
 # AI assistants
 .github/copilot-instructions.md
@@ -104,3 +103,6 @@ privacy-configuration/
 **/__Snapshots__/
 !macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/
 !macOS/UnitTests/URLDragPreviewProvider/__Snapshots__/**
+
+# Codex will sometimes create artifacts, e.g. screenshots and videos in this location.
+.codex-artifacts/

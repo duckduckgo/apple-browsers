@@ -1,0 +1,137 @@
+/* Button that temporarily grants a website permission for the current page. */
+"sitePermissions.dialog.allow-once" = "Atļaut vienreiz";
+
+/* Button that saves approval for this website. DuckDuckGo's iOS app permission is separate. */
+"sitePermissions.dialog.allow-while-using-site" = "Atļaut vietnes lietošanas laikā";
+
+/* Combined website camera and microphone permission prompt title. %@ is the website domain; iOS app permissions are separate. */
+"sitePermissions.dialog.camera-and-microphone.title" = "Vietne „%@” vēlas piekļūt tavai kamerai un mikrofonam";
+
+/* Website camera permission prompt title. %@ is the website domain; this is separate from iOS camera permission. */
+"sitePermissions.dialog.camera.title" = "Vietne „%@” vēlas piekļūt tavai kamerai";
+
+/* Fire-tab button that denies a website permission for this tab session without saving it. */
+"sitePermissions.dialog.deny" = "Liegt";
+
+/* Explanation shown when DuckDuckGo search results ask to use location. Copy requires review. */
+"sitePermissions.dialog.location.duckduckgo-serp.body" = "Mēs anonimizēsim tavu atrašanās vietu un izmantosim to, lai sniegtu labākus rezultātus tuvāk tev.";
+
+/* Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review. */
+"sitePermissions.dialog.location.duckduckgo-serp.title" = "„duckduckgo.com” vēlas piekļūt tavai atrašanās vietai";
+
+/* Website location permission prompt title. %@ is the website domain; this is separate from iOS location permission. */
+"sitePermissions.dialog.location.title" = "Vietne „%@” vēlas piekļūt tavai atrašanās vietai";
+
+/* Website microphone permission prompt title. %@ is the website domain; this is separate from iOS microphone permission. */
+"sitePermissions.dialog.microphone.title" = "Vietne „%@” vēlas piekļūt tavam mikrofonam";
+
+/* Button that saves denial for this website until the user changes it. */
+"sitePermissions.dialog.never-allow" = "Nekad neatļaut";
+
+/* VoiceOver value for a website permission currently in use. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.in-use" = "%@, tiek lietots";
+
+/* VoiceOver value for a paused website permission. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.paused" = "%@, pārtraukts";
+
+/* Website permission picker option that saves approval for this site; iOS app permission is separate. */
+"sitePermissions.management.always-allow" = "Vienmēr atļaut";
+
+/* Permission picker option that asks again when a site requests access. */
+"sitePermissions.management.ask-each-time" = "Jautāt katru reizi";
+
+/* Camera permission row label. */
+"sitePermissions.management.camera" = "Kamera";
+
+/* Accessibility label for the on-site permission sheet close button. */
+"sitePermissions.management.close" = "Aizvērt";
+
+/* Action that opens DuckDuckGo's page in iOS Settings. */
+"sitePermissions.management.go-to-system-settings" = "Doties uz Sistēmas iestatījumiem";
+
+/* Location permission row label. */
+"sitePermissions.management.location" = "Atrašanās vieta";
+
+/* Microphone permission row label. */
+"sitePermissions.management.microphone" = "Mikrofons";
+
+/* Website permission picker option that saves denial for this site until the user changes it. */
+"sitePermissions.management.never-allow" = "Nekad neatļaut";
+
+/* Caption below on-site permission rows explaining when changes apply. */
+"sitePermissions.management.reload-caption" = "Lai izmaiņas stātos spēkā, pārlādē lapu.";
+
+/* Reminder shown when iOS blocks permissions a website is allowed to use. %@ is a localized list of camera, location, or microphone names. Copy requires review. */
+"sitePermissions.management.reminder" = "DuckDuckGo ir nepieciešama piekļuve %@, ja vēlies izmantot saistītās funkcijas šajā vietnē.";
+
+/* Lowercase camera name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.camera" = "kamera";
+
+/* Lowercase location name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.location" = "atrašanās vieta";
+
+/* Lowercase microphone name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.microphone" = "mikrofons";
+
+/* Action that removes all stored permissions for the current site. */
+"sitePermissions.management.remove-permissions" = "Noņemt atļaujas";
+
+/* Visible and VoiceOver title of the website permission sheet. %@ is the website domain; translators may move it within the sentence. */
+"sitePermissions.management.title" = "Atļaujas vietnei „%@”";
+
+/* Body of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.body" = "Ja šajā vietnē vēlies izmantot saistītās funkcijas, ir nepieciešamas kameras un mikrofona atļaujas.";
+
+/* Title of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.title" = "DuckDuckGo ir nepieciešama piekļuve tavai kamerai un mikrofonam";
+
+/* Body of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.body" = "Ja vēlies izmantot kameras funkcijas šajā vietnē, ir nepieciešamas kameras atļaujas.";
+
+/* Title of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.title" = "DuckDuckGo ir nepieciešama piekļuve tavai kamerai";
+
+/* Button that closes a permission reminder without changing anything. */
+"sitePermissions.recovery.reminder.cancel" = "Atcelt";
+
+/* Button that opens the DuckDuckGo page in iOS Settings. */
+"sitePermissions.recovery.reminder.change-permissions" = "Mainīt atļaujas";
+
+/* Body of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.body" = "Ja vēlies izmantot atrašanās vietas funkcijas šajā vietnē, ir nepieciešamas atrašanās vietas atļaujas.";
+
+/* Title of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.title" = "DuckDuckGo ir nepieciešama piekļuve tavai atrašanās vietai";
+
+/* Body of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.body" = "Ja vēlies izmantot mikrofona funkcijas šajā vietnē, ir nepieciešamas mikrofona atļaujas.";
+
+/* Title of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.title" = "DuckDuckGo ir nepieciešama piekļuve mikrofonam";
+
+/* Toast shown when a website was allowed camera access but the iOS camera prompt was denied. */
+"sitePermissions.recovery.toast.camera" = "DuckDuckGo nevarēja piešķirt šai vietnei piekļuvi kamerai";
+
+/* Toast shown when both fresh iOS permission prompts were denied. The combined wording requires copy review. */
+"sitePermissions.recovery.toast.camera-and-microphone" = "DuckDuckGo nevarēja piešķirt šai vietnei piekļuvi kamerai un mikrofonam";
+
+/* Toast shown when a website was allowed location access but the iOS location prompt was denied. */
+"sitePermissions.recovery.toast.location" = "DuckDuckGo nevarēja kopīgot atrašanās vietu ar šo vietni";
+
+/* Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied. */
+"sitePermissions.recovery.toast.microphone" = "DuckDuckGo nevarēja piešķirt šai vietnei piekļuvi mikrofonam";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Ja vēlies izmantot balss tērzēšanu vietnē Duck.ai, ir nepieciešamas mikrofona atļaujas.";
+
+/* Body of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.body" = "Ja vēlies izmantot mūsu privāto meklēšanu ar balsi, ir nepieciešamas mikrofona atļaujas.";
+
+/* Button that turns off Voice Search in DuckDuckGo. */
+"sitePermissions.voice-search.reminder.hide" = "Paslēpt meklēšanu ar balsi";
+
+/* Title of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.title" = "DuckDuckGo ir nepieciešama piekļuve mikrofonam";
+
+/* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
+"sitePermissions.voice-search.settings-reminder.body" = "Ja vēlies izmantot mūsu privātās balss funkcijas, ir nepieciešamas mikrofona atļaujas.";

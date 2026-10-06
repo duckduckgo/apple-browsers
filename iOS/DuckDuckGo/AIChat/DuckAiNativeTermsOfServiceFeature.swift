@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import Common
 import FeatureFlags_iOS
 import PrivacyConfig
 
@@ -25,19 +24,17 @@ protocol DuckAiNativeTermsOfServiceFeatureProviding {
     var isAvailable: Bool { get }
 }
 
-/// iPhone only for now: the iPad inputs don't show the disclaimer yet, so they must not claim to.
+/// Every native input shows the disclaimer: the UTI on iPhone, and the address bar and the contextual
+/// sheet's input on iPad.
 struct DuckAiNativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding {
 
     private let featureFlagger: any FeatureFlagger
-    private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.featureFlagger = featureFlagger
-        self.devicePlatform = devicePlatform
     }
 
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.duckAINativeTermsOfService) && devicePlatform.isIphone
+        featureFlagger.isFeatureOn(.duckAINativeTermsOfService)
     }
 }

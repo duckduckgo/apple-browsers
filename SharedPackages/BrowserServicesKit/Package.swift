@@ -58,7 +58,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.0"),
         // Keep the reporting graph consistent across Xcode 26 and 27.
-        .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", exact: "1.11.0"),
+        .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", exact: "1.13.1"),
         .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.20.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),

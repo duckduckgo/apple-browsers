@@ -19,7 +19,7 @@
 import Foundation
 
 /// JavaScript injected at document start into every page an extension owns, ahead of the
-/// extension's own scripts (see the user script `WebExtensionManager` installs).
+/// extension's own scripts (see `WebExtensionLoader`, which adds it for third-party extensions).
 ///
 /// WebKit implements a subset of the `chrome.*` extension API. In a background page these
 /// namespaces are undefined even when the matching permission is declared *and* granted:
@@ -39,49 +39,6 @@ import Foundation
 /// `undefined`; where callers read straight off the result — `storage.managed.get()` — the stub is
 /// shaped to answer with the empty value Chrome would return.
 ///
-/// `chrome.offscreen` goes one step further and actually works. Bitwarden copies to the clipboard by
-/// opening an offscreen document, messaging it and closing it again, so a no-op `createDocument`
-/// turns "copy password" into silence. An extension iframe inside the background page is itself an
-/// extension page with the full `chrome.*` API, so the offscreen page's `runtime.onMessage`
-/// listeners run and messages sent from the background page reach it — the stub therefore creates a
-/// hidden iframe pointing at the requested document. Whether a clipboard write from that hidden
-/// frame succeeds under WebKit is not measured yet; this turns a silent no-op into a real attempt,
-/// and the outcome shows up in the extension's own logs.
-///
-/// `chrome.permissions` is the mirror image of a missing namespace: WebKit defines it, but it
-/// validates permission names against the set it implements and *throws* for every other name —
-/// `permissions.contains({permissions: ["privacy"]})` fails with "'privacy' is not a valid
-/// permission" where Chrome simply answers `false`. Extensions probe their optional permissions at
-/// startup and do not wrap the probe in a try block: Bitwarden's popup calls
-/// `permissionsGranted(["privacy"])` during Angular bootstrap, and the throw takes the whole popup
-/// down. The script therefore wraps `contains`, `request` and `remove` so they answer the Chrome
-/// way — see makePermissionsMethod below — while leaving `getAll` and the events alone.
-///
-/// `chrome.privacy` is the one missing namespace that has to *answer*, not just exist. Bitwarden's
-/// "Make Bitwarden your default password manager" toggle turns off the browser's own password saving
-/// and autofill through `privacy.services.passwordSavingEnabled` and its two autofill siblings, and it
-/// guards every call with `permissions.contains({permissions: ["privacy"]})`, falling back to
-/// `permissions.request` from the click handler. `privacy` is an optional permission in its manifest;
-/// WebKit rejects a grant or request for a name it does not implement, so both
-/// calls answer `false` and the toggle fails with an error dialog. Since this script is what actually
-/// provides `privacy`, the permissions wrappers treat it as a *virtual* permission that is always
-/// granted: they strip it from the descriptor before asking the host and answer for the rest. The
-/// `privacy.services` settings are then shaped like Chrome's `ChromeSetting` — `get` answers
-/// `{value, levelOfControl}` and reports `controlled_by_this_extension` once the extension has set a
-/// value — and persisted in `storage.local` under one reserved key, because the popup is a fresh page on
-/// every open and re-reads them to draw its checkbox, and the background page reads them too. Nothing
-/// in the app reads these values; they record the extension's choice so it reads back consistently.
-///
-/// Chrome also exposes enum-like constant objects on its namespaces — `scripting.ExecutionWorld`,
-/// `tabs.TAB_ID_NONE` and the `windows.WINDOW_ID_*` values — and extension code dereferences them
-/// right where it passes them, as call arguments. WebKit implements the calls but not the
-/// constants, so the dereference throws before the call is ever made: Bitwarden injects its autofill
-/// scripts with `world: chrome.scripting.ExecutionWorld.ISOLATED`, which WebKit would have accepted
-/// as the string `"ISOLATED"`, and instead of injecting anything the statement fails with a
-/// `TypeError`. Defining the missing constants with Chrome's documented values makes those call
-/// sites work as written. The list holds only the constants the supported extensions actually read,
-/// rather than everything Chrome documents.
-///
 /// One behavior of the host is worth calling out, established by measurement on macOS 26.6.2:
 /// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
 ///   discards once JavaScript stops referencing them, taking any property we added with them: an
@@ -92,8 +49,8 @@ import Foundation
 /// Note that stubs are only installed for names that are actually missing, so a future WebKit that
 /// implements one of them wins automatically.
 ///
-/// The script also reports its stub calls and the permissions the host does not implement to the API
-/// compatibility log, through `WebExtensionAPICompatibilityScript`.
+/// The script also reports its stub calls to the API compatibility log, through
+/// `WebExtensionAPICompatibilityScript`.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -141,67 +98,27 @@ public enum WebExtensionAPIStubScript {
             // A page that cannot read its manifest is treated like any other extension page.
         }
 
-        // `Symbol.dispose` and `Symbol.asyncDispose` (explicit resource management, `using`
-        // declarations) ship in Chrome but not in this WebKit. TypeScript's `using` helpers throw
-        // "Symbol.dispose is not defined." without them, which stops Bitwarden's SDK from unlocking
-        // the vault. Defining them here, before any extension code runs, also lets generated code
-        // that only attaches `[Symbol.dispose]` methods when the symbol exists do so. Only the
-        // symbols are needed: the helpers do the disposing themselves.
-        ["dispose", "asyncDispose"].forEach(function(name) {
-            try {
-                if (typeof Symbol[name] !== "symbol") {
-                    Object.defineProperty(Symbol, name, {
-                        value: Symbol("Symbol." + name),
-                        writable: false, enumerable: false, configurable: false
-                    });
-                }
-            } catch (error) {
-                console.info("[DuckDuckGo] Could not define Symbol." + name + ": " + error);
-            }
-        });
-
-        // Namespaces WebKit does not define at all. Without a "kind" the namespace becomes a
-        // generic nestable stub; "offscreen" and "privacy" are purpose-shaped (see makeOffscreen and
-        // makePrivacy below).
+        // Namespaces WebKit does not define at all. Each becomes a generic nestable stub.
         var missingNamespaces = [
             { name: "notifications" },
-            { name: "offscreen", kind: "offscreen" },
+            { name: "offscreen" },
             { name: "downloads" },
             { name: "idle" },
             { name: "management" },
-            { name: "privacy", kind: "privacy" },
+            { name: "privacy" },
             { name: "browsingData" },
             { name: "topSites" },
             { name: "sidePanel" }
         ];
 
         // Members missing from namespaces that WebKit does implement, addressed by dotted path.
-        // A "namespace" member becomes a nestable stub, an "event" member an addListener object,
-        // "managedStorage" a purpose-shaped stub (see makeManagedStorage below), and "constants" the
-        // literal value carried by the entry.
+        // A "namespace" member becomes a nestable stub, an "event" member an addListener object, and
+        // "managedStorage" a purpose-shaped stub (see makeManagedStorage below).
         var missingMembers = [
             { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
             { path: "runtime.onSuspend", kind: "event" }
         ];
-
-        // The enum-like constants Chrome hangs off its namespaces, with Chrome's documented values.
-        // Extension code dereferences these as call arguments — Bitwarden passes
-        // `world: chrome.scripting.ExecutionWorld.ISOLATED` to `scripting.executeScript` — and WebKit
-        // implements the call but not the constant, so the argument throws before the call happens.
-        // Only the constants the supported extensions actually read are listed here.
-        var missingConstants = [
-            { path: "scripting.ExecutionWorld", value: { ISOLATED: "ISOLATED", MAIN: "MAIN" } },
-            { path: "tabs.TAB_ID_NONE", value: -1 },
-            { path: "windows.WINDOW_ID_NONE", value: -1 },
-            { path: "windows.WINDOW_ID_CURRENT", value: -2 }
-        ];
-
-        // Constants are installed exactly like the members above — same "is it missing?" check, same
-        // `define` — so they join that list rather than getting a loop of their own.
-        missingConstants.forEach(function(constant) {
-            missingMembers.push({ path: constant.path, kind: "constants", value: constant.value });
-        });
 
         var retentionPropertyName = "\(Self.retentionPropertyName)";
         var eventNamePattern = /^on[A-Z]/;
@@ -354,306 +271,12 @@ public enum WebExtensionAPIStubScript {
             };
         }
 
-        // Resolves a document URL against the background page, the way the page itself would.
-        function resolveDocumentURL(url) {
-            return new URL(url === undefined || url === null ? "" : String(url), globalThis.location.href).href;
-        }
-
-        var offscreenReasonNames = [
-            "TESTING", "AUDIO_PLAYBACK", "IFRAME_SCRIPTING", "DOM_SCRAPING", "BLOBS", "DOM_PARSER",
-            "USER_MEDIA", "DISPLAY_MEDIA", "WEB_RTC", "CLIPBOARD", "LOCAL_STORAGE", "WORKERS",
-            "BATTERY_STATUS", "MATCH_MEDIA", "GEOLOCATION"
-        ];
-
-        // `chrome.offscreen` is the one stub that does real work. Bitwarden copies to the clipboard
-        // by opening an offscreen document, sending it a message and closing it again, so a no-op
-        // `createDocument` makes "copy password" do nothing at all. An extension iframe inside the
-        // background page is itself an extension page with the full API: the offscreen page's
-        // `runtime.onMessage` listeners run there and messages from the background page reach them.
-        // Whether the clipboard write from that hidden frame is allowed under WebKit has not been
-        // measured — this turns a silent no-op into a real attempt whose outcome shows up in the
-        // extension's own logs.
-        function makeOffscreen() {
-            var documentFrame = null;
-            var loadTimeoutInMilliseconds = 5000;
-
-            var reason = {};
-            offscreenReasonNames.forEach(function(name) {
-                reason[name] = name;
-            });
-
-            var offscreen = {
-                Reason: Object.freeze(reason),
-                hasDocument: makeResolver(function() {
-                    return documentFrame !== null;
-                }),
-                createDocument: function(parameters) {
-                    var callback = arguments.length > 1 ? arguments[arguments.length - 1] : undefined;
-                    if (documentFrame !== null) {
-                        // Chrome's own wording, so an extension matching on the message still matches.
-                        return Promise.reject(new Error("Only a single offscreen document may be created."));
-                    }
-
-                    var frame = document.createElement("iframe");
-                    frame.setAttribute("hidden", "hidden");
-                    frame.setAttribute("aria-hidden", "true");
-                    frame.style.width = "0";
-                    frame.style.height = "0";
-                    frame.style.border = "0";
-                    frame.src = resolveDocumentURL(parameters ? parameters.url : undefined);
-                    documentFrame = frame;
-                    (document.body || document.documentElement).appendChild(frame);
-
-                    return new Promise(function(resolve) {
-                        var isSettled = false;
-                        function finish() {
-                            if (isSettled) {
-                                return;
-                            }
-                            isSettled = true;
-                            if (typeof callback === "function") {
-                                invokeCallback(callback, undefined);
-                            }
-                            resolve(undefined);
-                        }
-                        frame.addEventListener("load", finish);
-                        // A document that never loads must not leave the caller awaiting forever.
-                        setTimeout(finish, loadTimeoutInMilliseconds);
-                    });
-                },
-                closeDocument: function() {
-                    var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
-                    if (documentFrame === null) {
-                        return Promise.reject(new Error("No current offscreen document."));
-                    }
-                    var frame = documentFrame;
-                    documentFrame = null;
-                    if (typeof frame.remove === "function") {
-                        frame.remove();
-                    } else if (frame.parentNode) {
-                        frame.parentNode.removeChild(frame);
-                    }
-                    if (typeof callback === "function") {
-                        invokeCallback(callback, undefined);
-                    }
-                    return Promise.resolve(undefined);
-                }
-            };
-
-            // The namespace owns the open document, so it has to outlive the wrapper it hangs off.
-            retain(offscreen);
-            return offscreen;
-        }
-
-        // The `privacy.services` settings the stub answers for — the three Bitwarden turns off to
-        // become the default password manager — and the one `storage.local` key holding the values
-        // the extension has set, as `{ passwordSavingEnabled: false, ... }`. A setting that was never
-        // set, or was cleared, is absent from that object.
-        var privacySettingNames = ["passwordSavingEnabled", "autofillAddressEnabled", "autofillCreditCardEnabled"];
-        var privacySettingsStorageKey = "__ddgPrivacySettings";
-
-        // Keeps only the known settings, as booleans, so whatever sits under the key cannot reshape
-        // the answers.
-        function sanitizePrivacySettings(stored) {
-            var settings = {};
-            if (stored === null || typeof stored !== "object") {
-                return settings;
-            }
-            privacySettingNames.forEach(function(name) {
-                if (Object.prototype.hasOwnProperty.call(stored, name)) {
-                    settings[name] = stored[name] === true;
-                }
-            });
-            return settings;
-        }
-
-        // Calls a `storage.local` method and settles once, whichever way the host answers: through the
-        // trailing callback, through a returned promise, or both.
-        function callStorageArea(area, methodName, argument) {
-            return new Promise(function(resolve, reject) {
-                var isSettled = false;
-                function finish(value) {
-                    if (!isSettled) {
-                        isSettled = true;
-                        resolve(value);
-                    }
-                }
-                function fail(error) {
-                    if (!isSettled) {
-                        isSettled = true;
-                        reject(error);
-                    }
-                }
-                try {
-                    var result = area[methodName](argument, finish);
-                    if (result && typeof result.then === "function") {
-                        result.then(finish, fail);
-                    }
-                } catch (error) {
-                    fail(error);
-                }
-            });
-        }
-
-        // The state shared by the three settings. `storage.local` is shared by every page of the
-        // extension and survives a restart, like the browser setting it stands in for; when it is
-        // unavailable, or a call to it fails, the settings live in memory for this page instead so
-        // nothing ever throws. Operations run one after another, so a `set` that follows another
-        // `set` reads the state the first one wrote rather than racing it.
-        function makePrivacySettingsStore() {
-            var memory = {};
-            var queue = Promise.resolve();
-
-            function storageArea() {
-                var storage = api.storage;
-                var local = storage ? storage.local : undefined;
-                if (!local || typeof local.get !== "function" || typeof local.set !== "function") {
-                    return null;
-                }
-                return local;
-            }
-
-            function enqueue(operation) {
-                var result = queue.then(operation);
-                queue = result.catch(function() {});
-                return result;
-            }
-
-            function readSettings() {
-                var area = storageArea();
-                if (area === null) {
-                    return Promise.resolve(sanitizePrivacySettings(memory));
-                }
-                return callStorageArea(area, "get", privacySettingsStorageKey).then(function(items) {
-                    if (items === null || typeof items !== "object") {
-                        // A failed callback-style read answers `undefined`; keep what this page knows.
-                        return sanitizePrivacySettings(memory);
-                    }
-                    return sanitizePrivacySettings(items[privacySettingsStorageKey]);
-                }, function(error) {
-                    console.info("[DuckDuckGo] Could not read the privacy settings: " + error);
-                    return sanitizePrivacySettings(memory);
-                });
-            }
-
-            function writeSettings(settings) {
-                memory = sanitizePrivacySettings(settings);
-                var area = storageArea();
-                if (area === null) {
-                    return Promise.resolve(undefined);
-                }
-                var items = {};
-                items[privacySettingsStorageKey] = sanitizePrivacySettings(settings);
-                return callStorageArea(area, "set", items).then(function() {
-                    return undefined;
-                }, function(error) {
-                    console.info("[DuckDuckGo] Could not store the privacy settings: " + error);
-                    return undefined;
-                });
-            }
-
-            return {
-                read: function() {
-                    return enqueue(readSettings);
-                },
-                update: function(mutate) {
-                    return enqueue(function() {
-                        return readSettings().then(function(settings) {
-                            mutate(settings);
-                            return writeSettings(settings);
-                        });
-                    });
-                }
-            };
-        }
-
-        // Hands a trailing callback the value the promise settles with, and returns the promise, the
-        // way Chrome's dual-style APIs behave. The callback stays silent if the promise rejects.
-        function answerBothStyles(promise, callback) {
-            if (typeof callback === "function") {
-                promise.then(function(value) {
-                    invokeCallback(callback, value);
-                }, function() {});
-            }
-            return promise;
-        }
-
-        // One `ChromeSetting`. Nothing stored means the browser default: enabled, and the extension
-        // could take control of it. Once the extension sets a value it controls the setting, which
-        // is what Bitwarden checks for — `controlled_by_this_extension` with `value === false`.
-        function makeChromeSetting(store, name) {
-            function trailingCallback(argumentsList) {
-                var last = argumentsList.length > 0 ? argumentsList[argumentsList.length - 1] : undefined;
-                return typeof last === "function" ? last : undefined;
-            }
-
-            return {
-                get: function() {
-                    var answer = store.read().then(function(settings) {
-                        if (Object.prototype.hasOwnProperty.call(settings, name)) {
-                            return { value: settings[name], levelOfControl: "controlled_by_this_extension" };
-                        }
-                        return { value: true, levelOfControl: "controllable_by_this_extension" };
-                    });
-                    return answerBothStyles(answer, trailingCallback(arguments));
-                },
-                set: function(details) {
-                    var value = details !== null && typeof details === "object" ? Boolean(details.value) : false;
-                    var answer = store.update(function(settings) {
-                        settings[name] = value;
-                    });
-                    return answerBothStyles(answer, trailingCallback(arguments));
-                },
-                clear: function() {
-                    var answer = store.update(function(settings) {
-                        delete settings[name];
-                    });
-                    return answerBothStyles(answer, trailingCallback(arguments));
-                },
-                onChange: makeEvent()
-            };
-        }
-
-        // `chrome.privacy` with working `services` settings; `network` and `websites` stay generic
-        // stubs so other code paths that touch them keep running.
-        function makePrivacy() {
-            var store = makePrivacySettingsStore();
-            var services = {};
-            privacySettingNames.forEach(function(name) {
-                services[name] = makeChromeSetting(store, name);
-            });
-
-            var privacy = {
-                services: services,
-                network: makeStub("privacy.network"),
-                websites: makeStub("privacy.websites")
-            };
-
-            retain(privacy);
-            return privacy;
-        }
-
-        // Constants are handed out frozen, so an extension that walks one cannot reshape what the
-        // next reader sees. Primitives — `tabs.TAB_ID_NONE` is just `-1` — pass straight through.
-        function makeConstants(value) {
-            return value !== null && typeof value === "object" ? Object.freeze(value) : value;
-        }
-
         function makeMember(entry, path) {
             if (entry.kind === "event") {
                 return makeEvent(path);
             }
             if (entry.kind === "managedStorage") {
                 return makeManagedStorage();
-            }
-            if (entry.kind === "offscreen") {
-                return makeOffscreen();
-            }
-            if (entry.kind === "privacy") {
-                return makePrivacy();
-            }
-            if (entry.kind === "constants") {
-                return makeConstants(entry.value);
             }
             return makeStub(path);
         }
@@ -685,183 +308,8 @@ public enum WebExtensionAPIStubScript {
             }
         }
 
-        // WebKit checks every name handed to `chrome.permissions` against the permissions it
-        // implements and rejects the whole call for one it does not recognize, where Chrome answers
-        // `false`. The wrappers below ask the host for the descriptor as given first — so a host that
-        // knows every name behaves exactly as before — and only translate when that call comes back
-        // with the validation error, which they recognize by message since no error code is exposed.
-        var invalidPermissionPattern = /is not a valid permission|invalid.*permission/i;
-        var reportedUnknownPermissions = Object.create(null);
-        var wrappedMarkerName = "__ddgWrapped";
-        // `answerWithoutHost` is the answer for a descriptor that named only virtual permissions (see
-        // below): they are always held, so `contains` and `request` succeed, and they cannot be
-        // taken away, so `remove` reports that nothing was removed.
-        var wrappedPermissionsMethods = [
-            { name: "contains", unknownNameFails: true, answerWithoutHost: true },
-            { name: "request", unknownNameFails: true, answerWithoutHost: true },
-            { name: "remove", unknownNameFails: false, answerWithoutHost: false }
-        ];
-
-        // Permissions WebKit rejects but this script provides itself, so they count as granted.
-        // WebKit does not know these names, so the host would answer `false` (or throw) for these
-        // forever. `privacy` is backed by makePrivacy above; Bitwarden will not touch it until
-        // `contains` or `request` says it holds the permission. `permissions.onAdded` is not fired
-        // for them: WebKit owns that event, and Bitwarden's Chrome path does not wait for it.
-        var virtualPermissionNames = ["privacy"];
-
-        function isVirtualPermission(name) {
-            return virtualPermissionNames.indexOf(name) !== -1;
-        }
-
-        // The descriptor to hand the host with the virtual names taken out, or the descriptor itself
-        // when it names none, so a call without them reaches the host exactly as the caller made it.
-        // `isEmpty` means nothing is left to ask the host about.
-        function stripVirtualPermissions(descriptor) {
-            var names = descriptor && Array.isArray(descriptor.permissions) ? descriptor.permissions : null;
-            if (names === null || !names.some(isVirtualPermission)) {
-                return { descriptor: descriptor, isEmpty: false };
-            }
-            var stripped = {};
-            Object.keys(descriptor).forEach(function(key) {
-                stripped[key] = descriptor[key];
-            });
-            stripped.permissions = names.filter(function(name) {
-                return !isVirtualPermission(name);
-            });
-            var origins = Array.isArray(descriptor.origins) ? descriptor.origins : [];
-            return { descriptor: stripped, isEmpty: stripped.permissions.length === 0 && origins.length === 0 };
-        }
-
-        function isInvalidPermissionError(error) {
-            if (error === undefined || error === null) {
-                return false;
-            }
-            var message = error.message === undefined || error.message === null ? String(error) : String(error.message);
-            return invalidPermissionPattern.test(message);
-        }
-
-        function reportUnknownPermission(name) {
-            if (reportedUnknownPermissions[name]) {
-                return;
-            }
-            reportedUnknownPermissions[name] = true;
-            if (typeof name === "string") {
-                reportAPI("missing", "permission:" + name);
-            }
-            console.info("[DuckDuckGo] The host does not implement the '" + name
-                + "' permission; answering the way Chrome would instead of throwing");
-        }
-
-        // Always hands back a promise, so a host that throws synchronously and one that rejects take
-        // the same path through the wrapper.
-        function callPermissionsMethod(method, owner, descriptor) {
-            try {
-                return Promise.resolve(method.call(owner, descriptor));
-            } catch (error) {
-                return Promise.reject(error);
-            }
-        }
-
-        // Asks about a single descriptor, reporting whether the host recognized it rather than
-        // letting one unrecognized name take the surrounding query down. Errors that are not the
-        // validation error are real failures and travel on untouched.
-        function probePermissionsDescriptor(method, owner, descriptor, name) {
-            return callPermissionsMethod(method, owner, descriptor).then(function(result) {
-                return { isKnown: true, isSatisfied: result === true };
-            }, function(error) {
-                if (!isInvalidPermissionError(error)) {
-                    throw error;
-                }
-                if (name !== undefined) {
-                    reportUnknownPermission(name);
-                }
-                return { isKnown: false, isSatisfied: false };
-            });
-        }
-
-        function probePermissionsIndividually(method, owner, descriptor) {
-            var names = descriptor && Array.isArray(descriptor.permissions) ? descriptor.permissions : [];
-            var origins = descriptor && Array.isArray(descriptor.origins) ? descriptor.origins : [];
-            var probes = names.map(function(name) {
-                return probePermissionsDescriptor(method, owner, { permissions: [name] }, name);
-            });
-            if (origins.length > 0) {
-                // Origins are never the reason for the validation error, so they stay one call.
-                probes.push(probePermissionsDescriptor(method, owner, { origins: origins }, undefined));
-            }
-            return Promise.all(probes);
-        }
-
-        // `contains` and `request` cannot honestly answer `true` for a name the host does not know —
-        // it can neither hold nor grant such a permission — so an unknown name makes the whole answer
-        // `false`. `remove` has nothing to remove for one, so it ignores it and reports on the rest.
-        function combinePermissionOutcomes(outcomes, unknownNameFails) {
-            var isSatisfied = true;
-            for (var index = 0; index < outcomes.length; index++) {
-                if (!outcomes[index].isKnown) {
-                    if (unknownNameFails) {
-                        return false;
-                    }
-                } else if (!outcomes[index].isSatisfied) {
-                    isSatisfied = false;
-                }
-            }
-            return isSatisfied;
-        }
-
-        // The wrapper binds its owner, so destructured calls — `const {contains} = chrome.permissions`
-        // — keep working, and it answers both API styles the way the method it replaces did.
-        // Virtual permissions are taken out first; whatever remains goes to the host, and the answer
-        // for the remainder is the answer for the whole descriptor.
-        function makePermissionsMethod(owner, methodName, unknownNameFails, answerWithoutHost) {
-            var original = owner[methodName];
-            if (typeof original !== "function" || original[wrappedMarkerName] === true) {
-                return null;
-            }
-
-            var wrapper = function(descriptor) {
-                var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
-                var hostQuery = stripVirtualPermissions(descriptor);
-                var promise;
-                if (hostQuery.isEmpty) {
-                    promise = Promise.resolve(answerWithoutHost);
-                } else {
-                    promise = callPermissionsMethod(original, owner, hostQuery.descriptor).catch(function(error) {
-                        if (!isInvalidPermissionError(error)) {
-                            throw error;
-                        }
-                        return probePermissionsIndividually(original, owner, hostQuery.descriptor).then(function(outcomes) {
-                            return combinePermissionOutcomes(outcomes, unknownNameFails);
-                        });
-                    });
-                }
-                if (typeof callback === "function") {
-                    promise.then(function(value) {
-                        invokeCallback(callback, value);
-                    }, function() {
-                        // A real failure is reported through the returned promise; Chrome's callback
-                        // form stays silent for it, so there is nothing to hand the callback here.
-                    });
-                }
-                return promise;
-            };
-
-            try {
-                Object.defineProperty(wrapper, wrappedMarkerName, {
-                    value: true,
-                    writable: false,
-                    enumerable: false,
-                    configurable: true
-                });
-            } catch (error) {
-                console.info("[DuckDuckGo] Could not mark the chrome.permissions." + methodName + " wrapper: " + error);
-            }
-            return wrapper;
-        }
-
         var stubbedNamespaces = [];
         var stubbedMembers = [];
-        var wrappedNamespaces = [];
 
         missingNamespaces.forEach(function(namespace) {
             try {
@@ -898,33 +346,9 @@ public enum WebExtensionAPIStubScript {
             }
         });
 
-        // `chrome.permissions` exists; only the three methods that validate names are replaced, so
-        // `getAll` and the `onAdded`/`onRemoved` events stay exactly as the host defined them.
-        try {
-            var permissions = api.permissions;
-            if (permissions !== undefined && permissions !== null) {
-                var wrappedMethodNames = [];
-                wrappedPermissionsMethods.forEach(function(method) {
-                    var wrapper = makePermissionsMethod(permissions, method.name, method.unknownNameFails,
-                        method.answerWithoutHost);
-                    if (wrapper !== null && define(permissions, method.name, wrapper)) {
-                        wrappedMethodNames.push(method.name);
-                    }
-                });
-                if (wrappedMethodNames.length > 0) {
-                    wrappedNamespaces.push("permissions");
-                }
-            }
-        } catch (error) {
-            console.info("[DuckDuckGo] Could not wrap chrome.permissions: " + error);
-        }
-
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0
-            || wrappedNamespaces.length > 0) {
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
-                + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], wrapped: ["
-                + wrappedNamespaces.join(", ") + "]");
+                + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ") + "]");
         }
     })();
 

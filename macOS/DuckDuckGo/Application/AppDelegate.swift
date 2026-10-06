@@ -1705,6 +1705,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
         fireDailyAIChatEnabledPixel()
+        fireDailyAIChatSettingsStatePixel()
         fireDailyAIFeaturesStatePixel()
         fireDailyPromptBarStatePixel()
         fireDailyAdBlockingPixel()
@@ -1757,6 +1758,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireDailyAIChatEnabledPixel() {
         PixelKit.fire(AIChatPixel.aiChatIsEnabled(isEnabled: aiChatPreferences.isAIFeaturesEnabled), frequency: .daily)
+    }
+
+    private func fireDailyAIChatSettingsStatePixel() {
+        AIChatSettingsStatePixelSender(
+            preferencesStorage: DefaultAIChatPreferencesStorage(),
+            menuConfiguration: aiChatMenuConfiguration,
+            chromeButtonsVisibilityManager: LocalDuckAIChromeButtonsVisibilityManager(),
+            featureFlagger: featureFlagger,
+            isGlobalShortcutEnabled: { [promptBarPreferences] in promptBarPreferences.isKeyboardShortcutEnabled },
+            isMenuBarIconVisible: { [promptBarPreferences] in promptBarPreferences.isMenuBarIconVisible },
+            isNewTabPageSearchBoxVisible: { [appearancePreferences] in appearancePreferences.isOmnibarVisible },
+            newTabPageOmnibarMode: { [keyValueStore] in NewTabPageOmnibarConfigProvider.storedMode(in: keyValueStore) }
+        ).firePixel()
     }
 
     /// The settings toggles only cover users who touch a setting; this sizes the enabled base.

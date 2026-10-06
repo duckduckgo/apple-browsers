@@ -110,6 +110,7 @@ final class AIChatCoordinator: AIChatCoordinating {
     private let featureFlagger: FeatureFlagger
     private var preferencesStorage: AIChatPreferencesStorage
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
+    private let entryPointReporter: AIChatEntryPointReporting
     private let sidebarPresenceDidChangeSubject = PassthroughSubject<AIChatPresenceChange, Never>()
     private let chatFloatingStateDidChangeSubject = PassthroughSubject<TabIdentifier, Never>()
 
@@ -146,7 +147,8 @@ final class AIChatCoordinator: AIChatCoordinating {
         pixelFiring: PixelFiring?,
         featureFlagger: FeatureFlagger,
         preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler,
+        entryPointReporter: AIChatEntryPointReporting? = nil
     ) {
         self.sidebarHost = sidebarHost
         self.sessionStore = sessionStore
@@ -157,6 +159,8 @@ final class AIChatCoordinator: AIChatCoordinating {
         self.featureFlagger = featureFlagger
         self.preferencesStorage = preferencesStorage
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
+        self.entryPointReporter = entryPointReporter ?? AIChatEntryPointReporter(sourceHandler: aiChatConversationSourceHandler,
+                                                                                 pixelFiring: pixelFiring)
 
         if let stored = preferencesStorage.lastUsedSidebarWidth, stored > 0 {
             self.windowDefaultWidth = Swift.min(Constants.maxSidebarWidth, Swift.max(Constants.minSidebarWidth, CGFloat(stored)))
@@ -206,6 +210,8 @@ final class AIChatCoordinator: AIChatCoordinating {
         guard !isAnimatingSidebarTransition,
               let currentTabID = sidebarHost.currentTabID,
               !isChatFloating(for: currentTabID) else {
+            // Nothing opened, so the caller's entry must not be reported by a later open.
+            entryPointReporter.reportEntry(to: nil)
             return
         }
 
@@ -213,6 +219,7 @@ final class AIChatCoordinator: AIChatCoordinating {
             hideSidebar(for: currentTabID, animated: true)
         } else {
             showSidebar(for: currentTabID, animated: true)
+            entryPointReporter.reportEntry(to: .sidebar)
         }
     }
 
@@ -269,21 +276,30 @@ final class AIChatCoordinator: AIChatCoordinating {
 
     private func presentSidebar(for prompt: AIChatNativePrompt) {
         guard let currentTabID = sidebarHost.currentTabID,
-              !isChatFloating(for: currentTabID) else { return }
+              !isChatFloating(for: currentTabID) else {
+            entryPointReporter.reportEntry(to: nil)
+            return
+        }
 
         if let chatViewController = sessionStore.sessions[currentTabID]?.chatViewController {
             chatViewController.setAIChatPrompt(prompt)
+            entryPointReporter.reportEntry(to: nil)
         } else {
             AIChatPromptHandler.shared.setData(prompt)
             showSidebar(for: currentTabID, animated: true)
+            entryPointReporter.reportEntry(to: .sidebar)
         }
     }
 
     func revealChat(for prompt: AIChatNativePrompt) {
-        guard let currentTabID = sidebarHost.currentTabID else { return }
+        guard let currentTabID = sidebarHost.currentTabID else {
+            entryPointReporter.reportEntry(to: nil)
+            return
+        }
         if isChatFloating(for: currentTabID) {
             sessionStore.sessions[currentTabID]?.chatViewController?.setAIChatPrompt(prompt)
             focusFloatingWindow(for: currentTabID)
+            entryPointReporter.reportEntry(to: nil)
             return
         }
 
@@ -291,16 +307,22 @@ final class AIChatCoordinator: AIChatCoordinating {
     }
 
     func revealChat() {
-        guard let currentTabID = sidebarHost.currentTabID else { return }
+        guard let currentTabID = sidebarHost.currentTabID else {
+            entryPointReporter.reportEntry(to: nil)
+            return
+        }
         if isChatFloating(for: currentTabID) {
             focusFloatingWindow(for: currentTabID)
+            entryPointReporter.reportEntry(to: nil)
             return
         }
         guard !isSidebarOpen(for: currentTabID) else {
             sessionStore.sessions[currentTabID]?.chatViewController?.focusChatWebView()
+            entryPointReporter.reportEntry(to: nil)
             return
         }
         showSidebar(for: currentTabID, animated: true)
+        entryPointReporter.reportEntry(to: .sidebar)
     }
 
     // MARK: - Show / Hide / Collapse
@@ -399,6 +421,7 @@ final class AIChatCoordinator: AIChatCoordinating {
             let chatViewController = session.makeChatViewController(tabID: currentTabID)
             chatViewController.aiChatPayload = payload
             showSidebar(for: currentTabID, animated: true)
+            entryPointReporter.reportEntry(to: .sidebar)
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
                     source: .serp,

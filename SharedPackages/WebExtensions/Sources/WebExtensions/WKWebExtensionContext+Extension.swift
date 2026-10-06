@@ -48,6 +48,16 @@ public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable, Sendable 
     }
 }
 
+/// Returns whether a raw manifest dictionary declares `browser_specific_settings.duckduckgo`, which only our own
+/// extensions do. Any such extension is ours, even one whose id `DuckDuckGoWebExtensionType` does not know yet.
+///
+/// Shared by everything that must decide whether an extension gets the Chrome-compatibility shims, including code
+/// that runs before a `WKWebExtension` exists (see `WebExtensionBackgroundPagePatcher`).
+func declaresDuckDuckGoSettings(inManifest manifest: [String: Any]) -> Bool {
+    let browserSpecific = manifest[browserSpecificSettingsKey] as? [String: Any]
+    return browserSpecific?[duckduckgoKey] is [String: Any]
+}
+
 /// Metadata extracted from a web extension without loading it into a controller.
 @available(macOS 15.4, iOS 18.4, *)
 public struct WebExtensionMetadata: Sendable {

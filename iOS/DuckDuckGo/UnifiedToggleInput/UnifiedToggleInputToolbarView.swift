@@ -79,17 +79,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
-    /// Swaps the arrow for an "Ask" label while the Terms of Service disclaimer shows.
-    var usesAskSubmitButton: Bool = false {
+    /// Swaps the arrow for the label the Terms of Service disclaimer names ("Ask" or "Create") while it shows.
+    var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton? {
         didSet {
-            guard oldValue != usesAskSubmitButton else { return }
+            guard oldValue != termsOfServiceSendButton else { return }
             updateSubmitButtonAppearance()
         }
     }
 
     private var isFireTab: Bool = false
     private var preservesSubmitStyleDuringDismissal = false
-    private var preservesAskTitleDuringDismissal = false
+    private var preservedTermsOfServiceSendButton: DuckAiTermsOfServiceSendButton?
     private var isImageButtonAvailable = true
 
     func refreshFireMode(fireMode: Bool) {
@@ -108,18 +108,18 @@ final class UnifiedToggleInputToolbarView: UIView {
     func prepareForToolbarVisibilityChange(showToolbar: Bool) {
         if showToolbar {
             preservesSubmitStyleDuringDismissal = false
-            preservesAskTitleDuringDismissal = false
+            preservedTermsOfServiceSendButton = nil
         } else {
             preservesSubmitStyleDuringDismissal = preservesSubmitStyleDuringDismissal || usesNewPromptSubmitStyle
-            preservesAskTitleDuringDismissal = preservesAskTitleDuringDismissal || usesAskSubmitButton
+            preservedTermsOfServiceSendButton = preservedTermsOfServiceSendButton ?? termsOfServiceSendButton
         }
         updateSubmitButtonAppearance()
     }
 
     func finalizeToolbarShown() {
-        guard preservesSubmitStyleDuringDismissal || preservesAskTitleDuringDismissal else { return }
+        guard preservesSubmitStyleDuringDismissal || preservedTermsOfServiceSendButton != nil else { return }
         preservesSubmitStyleDuringDismissal = false
-        preservesAskTitleDuringDismissal = false
+        preservedTermsOfServiceSendButton = nil
         updateSubmitButtonAppearance()
     }
 
@@ -569,7 +569,6 @@ private extension UnifiedToggleInputToolbarView {
 
     func updateSubmitButtonAppearance() {
         let showVoice = isAIVoiceChatActive && !isSubmitEnabled && !isEditing
-        let showsAskTitle = (usesAskSubmitButton || preservesAskTitleDuringDismissal) && !showVoice
         let usesReturnKeyStyle = usesNewPromptSubmitStyle || preservesSubmitStyleDuringDismissal
         let icon: UIImage? = {
             if showVoice {
@@ -580,11 +579,12 @@ private extension UnifiedToggleInputToolbarView {
                 return DesignSystemImages.Glyphs.Size24.arrowUp
             }
         }()
-        let askTitle = showsAskTitle ? UserText.duckAIAskButtonTitle : nil
-        submitButton.setImage(askTitle == nil ? icon : nil, for: .normal)
-        submitButton.setTitle(askTitle, for: .normal)
-        submitButton.accessibilityLabel = askTitle ?? UserText.aiChatToolbarSubmitButtonAccessibilityLabel
-        submitButtonWidthConstraint.constant = askTitle.map {
+        // Kept through the dismissal: the submit that starts it also clears the tool the label names.
+        let labelTitle = showVoice ? nil : (preservedTermsOfServiceSendButton ?? termsOfServiceSendButton)?.title
+        submitButton.setImage(labelTitle == nil ? icon : nil, for: .normal)
+        submitButton.setTitle(labelTitle, for: .normal)
+        submitButton.accessibilityLabel = labelTitle ?? UserText.aiChatToolbarSubmitButtonAccessibilityLabel
+        submitButtonWidthConstraint.constant = labelTitle.map {
             AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.toolButtonSize)
         } ?? Constants.toolButtonSize
         let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard

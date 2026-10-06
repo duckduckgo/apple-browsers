@@ -181,13 +181,13 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertFalse(submitButton?.isEnabled ?? true)
     }
 
-    // MARK: - Ask submit button
+    // MARK: - Terms of Service submit button
 
-    func test_usesAskSubmitButton_showsTheAskTitleInsteadOfTheArrow() throws {
+    func test_termsOfServiceSendButton_showsTheAskTitleInsteadOfTheArrow() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = true
 
-        sut.usesAskSubmitButton = true
+        sut.termsOfServiceSendButton = .ask
 
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
         XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
@@ -196,12 +196,41 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(submitButton.isEnabled)
     }
 
-    func test_usesAskSubmitButton_keepsTheVoiceButtonOnAnEmptyInput() throws {
+    func test_termsOfServiceSendButton_whenCreate_showsTheCreateTitle() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.termsOfServiceSendButton = .ask
+
+        sut.termsOfServiceSendButton = .create
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+        XCTAssertNil(submitButton.image(for: .normal))
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.duckAICreateButtonTitle)
+    }
+
+    func test_termsOfServiceSendButton_dismissalKeepsTheLabelTheUserTapped() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        sut.termsOfServiceSendButton = .create
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+
+        sut.prepareForToolbarVisibilityChange(showToolbar: false)
+        // The submit clears Create Image and accepts the terms while the toolbar is still leaving.
+        sut.termsOfServiceSendButton = .ask
+        sut.termsOfServiceSendButton = nil
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+
+        sut.finalizeToolbarShown()
+        XCTAssertNil(submitButton.title(for: .normal))
+    }
+
+    func test_termsOfServiceSendButton_keepsTheVoiceButtonOnAnEmptyInput() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = false
         sut.isAIVoiceChatActive = true
 
-        sut.usesAskSubmitButton = true
+        sut.termsOfServiceSendButton = .ask
 
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
         XCTAssertNil(submitButton.title(for: .normal))
@@ -209,12 +238,12 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
     }
 
-    func test_usesAskSubmitButton_widensTheButtonToFitTheTitleAndKeepsItTappable() throws {
+    func test_termsOfServiceSendButton_widensTheButtonToFitTheTitleAndKeepsItTappable() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = true
         let container = makeContainer(for: sut)
 
-        sut.usesAskSubmitButton = true
+        sut.termsOfServiceSendButton = .ask
         container.layoutIfNeeded()
 
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
@@ -225,14 +254,14 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertTrue(submitButton.hitTest(trailingEdge, with: nil) === submitButton)
     }
 
-    func test_usesAskSubmitButton_whenTurnedOff_restoresTheCircularArrow() throws {
+    func test_termsOfServiceSendButton_whenTurnedOff_restoresTheCircularArrow() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = true
         let container = makeContainer(for: sut)
-        sut.usesAskSubmitButton = true
+        sut.termsOfServiceSendButton = .ask
         container.layoutIfNeeded()
 
-        sut.usesAskSubmitButton = false
+        sut.termsOfServiceSendButton = nil
         container.layoutIfNeeded()
 
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))

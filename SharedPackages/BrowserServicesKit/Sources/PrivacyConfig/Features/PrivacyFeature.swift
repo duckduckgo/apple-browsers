@@ -549,6 +549,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
+
+    /// Posts a system notification when a Duck.ai response finishes while the chat isn't on screen.
+    case responseNotifications
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

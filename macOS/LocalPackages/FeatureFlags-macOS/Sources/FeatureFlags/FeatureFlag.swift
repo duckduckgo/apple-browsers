@@ -567,6 +567,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
 
+    /// Posts a system notification with a preview of the answer when a Duck.ai response finishes
+    /// while the chat isn't on screen. Internal-only proof of concept.
+    case aiChatResponseNotifications
+
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
@@ -984,6 +988,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatResponseNotifications:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.responseNotifications), category: .duckAI)
         case .aiChatAttachmentPrivacyDisclosure:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:

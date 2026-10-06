@@ -18,9 +18,8 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import SubscriptionTestingUtilities
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
+@_spi(Testing) import SubscriptionTestingUtilities
 import Common
 
 final class SubscriptionEndpointServiceTests: XCTestCase {
@@ -131,13 +130,66 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         )
         let confirmData = try encoder.encode(confirmResponse)
         let apiResponse = createAPIResponse(statusCode: 200, data: confirmData)
-        let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL, accessToken: "token", signature: "signature", additionalParams: nil)!.apiRequest
+        let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL,
+                                                          accessToken: "token",
+                                                          signature: "signature",
+                                                          experimentAttribution: nil)!.apiRequest
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let purchaseResponse = try await endpointService.confirmPurchase(accessToken: "token", signature: "signature", additionalParams: nil)
+        let purchaseResponse = try await endpointService.confirmPurchase(accessToken: "token",
+                                                                         signature: "signature",
+                                                                         experimentAttribution: nil)
         XCTAssertEqual(purchaseResponse.email, confirmResponse.email)
         XCTAssertEqual(purchaseResponse.subscription, confirmResponse.subscription)
+    }
+
+    func testWhenConfirmPurchaseHasMultipleExperimentsThenRequestContainsExperimentsArrayAndNoLegacyFields() throws {
+        let experiments = [
+            SubscriptionExperiment(experimentName: "first", experimentCohort: "control"),
+            SubscriptionExperiment(experimentName: "second", experimentCohort: "treatment")
+        ]
+
+        let body = try confirmationRequestBody(experimentAttribution: .multiple(experiments))
+        let encodedExperiments = try XCTUnwrap(body["experiments"] as? [[String: String]])
+
+        XCTAssertEqual(encodedExperiments.count, 2)
+        XCTAssertEqual(encodedExperiments[0]["experimentName"], "first")
+        XCTAssertEqual(encodedExperiments[0]["experimentCohort"], "control")
+        XCTAssertEqual(encodedExperiments[1]["experimentName"], "second")
+        XCTAssertEqual(encodedExperiments[1]["experimentCohort"], "treatment")
+        XCTAssertNil(body["experimentName"])
+        XCTAssertNil(body["experimentCohort"])
+    }
+
+    func testWhenConfirmPurchaseHasLegacyExperimentThenRequestContainsLegacyFieldsAndNoExperimentsArray() throws {
+        let experiment = SubscriptionExperiment(experimentName: "legacy", experimentCohort: "treatment")
+
+        let body = try confirmationRequestBody(experimentAttribution: .legacy(experiment))
+
+        XCTAssertEqual(body["experimentName"] as? String, "legacy")
+        XCTAssertEqual(body["experimentCohort"] as? String, "treatment")
+        XCTAssertNil(body["experiments"])
+    }
+
+    func testWhenConfirmPurchaseHasNoExperimentsThenRequestOmitsAllExperimentFields() throws {
+        let bodyWithoutAttribution = try confirmationRequestBody(experimentAttribution: nil)
+        let bodyWithEmptyMultipleAttribution = try confirmationRequestBody(experimentAttribution: .multiple([]))
+
+        for body in [bodyWithoutAttribution, bodyWithEmptyMultipleAttribution] {
+            XCTAssertNil(body["experiments"])
+            XCTAssertNil(body["experimentName"])
+            XCTAssertNil(body["experimentCohort"])
+        }
+    }
+
+    private func confirmationRequestBody(experimentAttribution: PurchaseExperimentAttribution?) throws -> [String: Any] {
+        let request = try XCTUnwrap(SubscriptionRequest.confirmPurchase(baseURL: baseURL,
+                                                                       accessToken: "token",
+                                                                       signature: "signature",
+                                                                       experimentAttribution: experimentAttribution))
+        let bodyData = try XCTUnwrap(request.apiRequest.urlRequest.httpBody)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
     }
 
     // MARK: - getTierProducts Tests

@@ -77,7 +77,45 @@ final class ReleaseNotesParserTests: XCTestCase {
         XCTAssertEqual(subscription, ["Exclusive feature X", "Exclusive improvement Y"])
     }
 
-    func testParseReleaseNotes_withInvalidHTML() {
+    /// The section header carries a `style` attribute in real appcast payloads (see the real-data
+    /// fixtures below). Matching must be on the header text, not an exact tag.
+    func testParseReleaseNotes_withStyledHeader() {
+        let description = """
+        <h3 style="font-size:14px">What's new</h3>
+        <ul>
+            <li>New feature A</li>
+        </ul>
+        """
+        let (standard, _) = ReleaseNotesParser.parseReleaseNotes(from: description)
+
+        XCTAssertEqual(standard, ["New feature A"])
+    }
+
+    /// Multi-byte characters (e.g. `⌘`) and HTML entities (e.g. `&amp;`) must survive parsing.
+    /// This guards against libxml2's HTML parser defaulting to ISO-8859-1 for the byte stream.
+    func testParseReleaseNotes_preservesUnicodeAndEntities() {
+        let description = """
+        <h3>What's new</h3>
+        <ul>
+            <li>Open Duck.ai with the ⌘+E shortcut &amp; enjoy it.</li>
+        </ul>
+        """
+        let (standard, _) = ReleaseNotesParser.parseReleaseNotes(from: description)
+
+        XCTAssertEqual(standard, ["Open Duck.ai with the ⌘+E shortcut & enjoy it."])
+    }
+
+    func testParseReleaseNotes_withMissingSectionsReturnsEmpty() {
+        let description = "<p>No release notes here.</p>"
+        let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
+
+        XCTAssertTrue(standard.isEmpty)
+        XCTAssertTrue(subscription.isEmpty)
+    }
+
+    /// An unterminated `<li>` item is recovered rather than dropped, because libxml2 closes the tag
+    /// while parsing.
+    func testParseReleaseNotes_recoversUnterminatedListItem() {
         let description = """
         <h3>What's new</h3>
         <ul>
@@ -92,8 +130,47 @@ final class ReleaseNotesParserTests: XCTestCase {
         """
         let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
 
-        XCTAssertEqual(standard, ["New feature A"])
+        XCTAssertEqual(standard, ["New feature A", "Improvement B"])
         XCTAssertEqual(subscription, ["Exclusive feature X", "Exclusive improvement Y"])
     }
 
+    // MARK: - Real appcast fixtures
+
+    func testParseReleaseNotes_realAppcastSingleItem() {
+        let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: Self.realStandardOnly)
+
+        XCTAssertEqual(standard, ["Bug fixes and improvements."])
+        XCTAssertTrue(subscription.isEmpty)
+    }
+
+    func testParseReleaseNotes_realAppcastMultipleItems() {
+        let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: Self.realMultiItem)
+
+        XCTAssertEqual(standard, [
+            "You can now open and close the Duck.ai sidebar with the ⌘+E keyboard shortcut. If you have text selected when using the shortcut to open Duck.ai, it will automatically be pasted into the sidebar.",
+            "We fixed a bug that caused the website permission dialog to appear in the middle of the page instead of up in the left side of the address bar where it should be.",
+            "Any issues you may have experienced with autocomplete when the browser update reminder was visible have also been fixed.",
+            "As usual, this update includes other bug fixes and improvements."
+        ])
+        XCTAssertTrue(subscription.isEmpty)
+    }
+
+    // MARK: - Fixtures
+
+    private static let realStandardOnly = """
+    <h3 style="font-size:14px">What's new</h3>
+    <ul>
+    <li>Bug fixes and improvements.</li>
+    </ul>
+    """
+
+    private static let realMultiItem = """
+    <h3 style="font-size:14px">What's new</h3>
+    <ul>
+    <li>You can now open and close the Duck.ai sidebar with the ⌘+E keyboard shortcut. If you have text selected when using the shortcut to open Duck.ai, it will automatically be pasted into the sidebar.</li>
+    <li>We fixed a bug that caused the website permission dialog to appear in the middle of the page instead of up in the left side of the address bar where it should be.</li>
+    <li>Any issues you may have experienced with autocomplete when the browser update reminder was visible have also been fixed.</li>
+    <li>As usual, this update includes other bug fixes and improvements.</li>
+    </ul>
+    """
 }

@@ -19,7 +19,7 @@
 import PixelKit
 import DDGSync
 
-enum SyncFeatureUsagePixels: PixelKitEvent {
+enum SyncFeatureUsagePixels: PixelKit.Event {
     private enum ParameterKeys {
         static let connectedDevices = "connected_devices"
     }
@@ -52,7 +52,95 @@ enum SyncFeatureUsagePixels: PixelKitEvent {
     }
 }
 
-enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
+enum SyncSettingsPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let syncPromptOption = "option"
+        static let isEnabled = "is_enabled"
+    }
+
+    enum AnotherDevicePromptOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
+    }
+
+    case settingsScreenShown(isSyncEnabled: Bool)
+    case backUpThisDeviceTapped
+    case recoverSyncedDataTapped
+    case recoveryConfirmedTapped
+    case anotherDevicePromptShown
+    case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case authenticationCancelledPromptShown
+    case authenticationCancelledPromptRetryTapped
+    case authenticationCancelledPromptDismissed
+    case authenticationCancelledPromptRetrySucceeded
+    case authenticationCancelledPromptRetryFailed
+    case successScreenShown
+    case successScreenCopyCodeTapped
+    case successScreenDownloadRecoveryPDFTapped
+    case successScreenDoneTapped
+    case thisDeviceDetailsScreenShown
+    case thisDeviceDetailsNameUpdated
+    case thisDeviceDetailsTurnOffSyncTapped
+    case otherDeviceDetailsScreenShown
+    case otherDeviceDetailsRemoveDeviceTapped
+
+    var name: String {
+        switch self {
+        case .settingsScreenShown: return "sync_settings_open_mac"
+        case .backUpThisDeviceTapped: return "sync_settings_back_up_this_device_tapped_mac"
+        case .recoverSyncedDataTapped: return "sync_settings_recover_synced_data_tapped_mac"
+        case .recoveryConfirmedTapped: return "sync_settings_recovery_confirmed_tapped_mac"
+        case .anotherDevicePromptShown: return "sync_settings_another_device_prompt_shown_mac"
+        case .anotherDevicePromptOptionTapped: return "sync_settings_another_device_prompt_option_tapped_mac"
+        case .authenticationCancelledPromptShown: return "sync_settings_authentication_cancelled_prompt_shown_mac"
+        case .authenticationCancelledPromptRetryTapped: return "sync_settings_authentication_cancelled_prompt_retry_tapped_mac"
+        case .authenticationCancelledPromptDismissed: return "sync_settings_authentication_cancelled_prompt_dismissed_mac"
+        case .authenticationCancelledPromptRetrySucceeded: return "sync_settings_authentication_cancelled_prompt_retry_succeeded_mac"
+        case .authenticationCancelledPromptRetryFailed: return "sync_settings_authentication_cancelled_prompt_retry_failed_mac"
+        case .successScreenShown: return "sync_settings_success_screen_shown_mac"
+        case .successScreenCopyCodeTapped: return "sync_settings_success_screen_copy_code_tapped_mac"
+        case .successScreenDownloadRecoveryPDFTapped: return "sync_settings_success_screen_download_recovery_pdf_tapped_mac"
+        case .successScreenDoneTapped: return "sync_settings_success_screen_done_tapped_mac"
+        case .thisDeviceDetailsScreenShown: return "sync_settings_this_device_details_screen_shown_mac"
+        case .thisDeviceDetailsNameUpdated: return "sync_settings_this_device_details_name_updated_mac"
+        case .thisDeviceDetailsTurnOffSyncTapped: return "sync_settings_this_device_details_turn_off_sync_tapped_mac"
+        case .otherDeviceDetailsScreenShown: return "sync_settings_other_device_details_screen_shown_mac"
+        case .otherDeviceDetailsRemoveDeviceTapped: return "sync_settings_other_device_details_remove_device_tapped_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .settingsScreenShown(let isSyncEnabled):
+            return [ParameterKey.isEnabled: isSyncEnabled ? "1" : "0"]
+        case .anotherDevicePromptOptionTapped(let option):
+            return [ParameterKey.syncPromptOption: option.rawValue]
+        default:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
+enum SyncDeviceNamePixel: PixelKit.Event {
+    case computerNameUnavailable
+
+    var namePrefix: PixelKitNamePrefix { .none }
+    var name: String { "sync_computer_name_unavailable_mac" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
+enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount
     case syncUserCancelledSwitchingAccount
@@ -88,7 +176,10 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
     }
 }
 
-enum SyncSetupPixelKitEvent: PixelKitEvent {
+enum SyncSetupPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
 
     enum ParameterKey {
         static let source = "source"
@@ -98,8 +189,11 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let codeVersion = "code_version"
         static let path = "path"
         static let reason = "reason"
+        static let timeoutStage = "timeout_stage"
         static let peerKind = "peer_kind"
         static let myRole = "my_role"
+        static let pairingFailureStage = "pairing_failure_stage"
+        static let pairingFailureKind = "pairing_failure_kind"
     }
 
     enum ParameterValue {
@@ -110,16 +204,6 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         static let v1 = "v1"
         static let v2 = "v2"
         static let alreadyPaired = "already_paired"
-        static let accountCreationFailed = "account_creation_failed"
-        static let accountUpgradeFailed = "account_upgrade_failed"
-        static let protocolError = "protocol_error"
-        static let invalidCredentials = "invalid_credentials"
-        static let transportFailure = "transport_failure"
-        static let sessionTimeout = "session_timeout"
-        static let needsUpgrade = "needs_upgrade"
-        static let incompatibleCode = "incompatible_code"
-        static let alreadyUpgraded = "already_upgraded"
-        static let unrecognizedCode = "unrecognized_code"
         static let scanningCancelled = "scanning_cancelled"
         static let syncConfirmationDenied = "sync_confirmation_denied"
         static let host = "host"
@@ -132,19 +216,25 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     case syncSetupManualCodeEnteredSuccess(SyncSetupSource, flowVersion: String?, codeVersion: String?)
     case syncSetupManualCodeEnteredFailed(SyncSetupSource?, flowVersion: String?, reason: String?)
     case syncSetupEndedAbandoned(SyncSetupSource, flowVersion: String?, reason: String? = nil)
-    case syncSetupEndedFailed(SyncSetupSource?, flowVersion: String?, peerKind: String?, myRole: String?, reason: String?)
+    case syncSetupEndedFailed(SyncSetupSource?,
+                              flowVersion: String?,
+                              peerKind: String?,
+                              myRole: String?,
+                              reason: String?,
+                              timeoutStage: String?,
+                              pairingV2FailureContext: PairingV2FailureContext?)
     case syncSetupEndedSuccessful(SyncSetupSource, flowVersion: String?, peerKind: String?, myRole: String?)
 
     var name: String {
         switch self {
-        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
-        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
-        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
-        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
-        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
-        case .syncSetupEndedFailed: return "sync_setup_ended_failed"
-        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown_mac"
+        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied_mac"
+        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown_mac"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success_mac"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed_mac"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned_mac"
+        case .syncSetupEndedFailed: return "sync_setup_ended_failed_mac"
+        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful_mac"
         }
     }
 
@@ -156,8 +246,11 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         parameters[ParameterKey.codeVersion] = codeVersion
         parameters[ParameterKey.path] = path
         parameters[ParameterKey.reason] = reason
+        parameters[ParameterKey.timeoutStage] = timeoutStage
         parameters[ParameterKey.peerKind] = peerKind
         parameters[ParameterKey.myRole] = myRole
+        parameters[ParameterKey.pairingFailureStage] = pairingV2FailureContext?.stage.rawValue
+        parameters[ParameterKey.pairingFailureKind] = pairingV2FailureContext?.kind?.rawValue
         return parameters
     }
 
@@ -172,7 +265,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
             return source
         case
             .syncSetupManualCodeEnteredFailed(let source, _, _),
-            .syncSetupEndedFailed(let source, _, _, _, _):
+            .syncSetupEndedFailed(let source, _, _, _, _, _, _):
             return source
         case
             .syncSetupManualCodeEntryScreenShown:
@@ -188,7 +281,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
                 .syncSetupManualCodeEnteredSuccess(_, let flowVersion, _),
                 .syncSetupManualCodeEnteredFailed(_, let flowVersion, _),
                 .syncSetupEndedAbandoned(_, let flowVersion, _),
-                .syncSetupEndedFailed(_, let flowVersion, _, _, _),
+                .syncSetupEndedFailed(_, let flowVersion, _, _, _, _, _),
                 .syncSetupEndedSuccessful(_, let flowVersion, _, _):
             return flowVersion
         }
@@ -216,7 +309,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         switch self {
         case .syncSetupEndedSuccessful(let source, _, _, _):
             return source.syncSetupPath
-        case .syncSetupEndedFailed(let source, _, _, _, _):
+        case .syncSetupEndedFailed(let source, _, _, _, _, _, _):
             return source?.syncSetupPath
         default:
             return nil
@@ -227,7 +320,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
         switch self {
         case .syncSetupManualCodeEnteredFailed(_, _, let reason),
                 .syncSetupEndedAbandoned(_, _, let reason),
-                .syncSetupEndedFailed(_, _, _, _, let reason):
+                .syncSetupEndedFailed(_, _, _, _, let reason, _, _):
             return reason
         default:
             return nil
@@ -237,7 +330,7 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     private var peerKind: String? {
         switch self {
         case .syncSetupEndedSuccessful(_, _, let peerKind, _),
-                .syncSetupEndedFailed(_, _, let peerKind, _, _):
+                .syncSetupEndedFailed(_, _, let peerKind, _, _, _, _):
             return peerKind
         default:
             return nil
@@ -247,8 +340,26 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
     private var myRole: String? {
         switch self {
         case .syncSetupEndedSuccessful(_, _, _, let myRole),
-                .syncSetupEndedFailed(_, _, _, let myRole, _):
+                .syncSetupEndedFailed(_, _, _, let myRole, _, _, _):
             return myRole
+        default:
+            return nil
+        }
+    }
+
+    private var timeoutStage: String? {
+        switch self {
+        case .syncSetupEndedFailed(_, _, _, _, _, let timeoutStage, _):
+            return timeoutStage
+        default:
+            return nil
+        }
+    }
+
+    private var pairingV2FailureContext: PairingV2FailureContext? {
+        switch self {
+        case .syncSetupEndedFailed(_, _, _, _, _, _, let pairingV2FailureContext):
+            return pairingV2FailureContext
         default:
             return nil
         }
@@ -313,40 +424,5 @@ extension PairingV2DeviceKind {
 
     var syncSetupPeerKind: String {
         rawValue
-    }
-}
-
-extension SyncConnectionError {
-
-    var syncSetupFailureReason: String? {
-        switch self {
-        case .failedToLogIn:
-            return SyncSetupPixelKitEvent.ParameterValue.invalidCredentials
-        case .failedToFetchPublicKey,
-                .failedToTransmitExchangeRecoveryKey,
-                .failedToFetchConnectRecoveryKey,
-                .failedToTransmitExchangeKey,
-                .failedToFetchExchangeRecoveryKey,
-                .failedToTransmitConnectRecoveryKey:
-            return SyncSetupPixelKitEvent.ParameterValue.transportFailure
-        case .pollingForRecoveryKeyTimedOut:
-            return SyncSetupPixelKitEvent.ParameterValue.sessionTimeout
-        case .updateRequired:
-            return SyncSetupPixelKitEvent.ParameterValue.needsUpgrade
-        case .unsupportedThirdPartyRecoveryCode:
-            return SyncSetupPixelKitEvent.ParameterValue.incompatibleCode
-        case .thirdPartyAccountAlreadyUpgraded:
-            return SyncSetupPixelKitEvent.ParameterValue.alreadyUpgraded
-        case .unableToRecognizeCode:
-            return SyncSetupPixelKitEvent.ParameterValue.unrecognizedCode
-        case .failedToCreateAccount:
-            return SyncSetupPixelKitEvent.ParameterValue.accountCreationFailed
-        case .accountUpgradeFailed:
-            return SyncSetupPixelKitEvent.ParameterValue.accountUpgradeFailed
-        case .protocolError:
-            return SyncSetupPixelKitEvent.ParameterValue.protocolError
-        case .syncCancelledFromOtherDevice:
-            return nil
-        }
     }
 }

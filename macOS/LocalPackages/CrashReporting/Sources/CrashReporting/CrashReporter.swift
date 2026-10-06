@@ -83,7 +83,8 @@ public final class CrashReporter: CrashReporting {
             return
         }
 
-        for crash in crashReports {
+        // Only fire crash pixels for reports within the age limit; stale reports are still uploaded below.
+        for crash in Self.crashReportsEligibleForPixelReporting(crashReports, now: Date()) {
             if let appVersion = crash.appVersion {
                 fireCrashPixel(crash.bundleID, appVersion, /*failedToReadCrashVersion:*/ false)
             } else {
@@ -93,7 +94,6 @@ public final class CrashReporter: CrashReporting {
 
         if internalUserDecider.isInternalUser {
             await send(crashReports)
-            return
         } else if await promptForConsent(latest) {
             await send(crashReports)
         }
@@ -108,6 +108,17 @@ public final class CrashReporter: CrashReporting {
             }
             let result = await sender.send(contentData, crcid: crcidManager.crcid)
             crcidManager.handleCrashSenderResult(result: result.result, response: result.response)
+        }
+    }
+
+    /// Filters out crash reports older than `CrashCollection.maxCrashReportAgeForPixels` so that stale
+    /// crashes (for example ones the collector picks up long after they happened) don't skew crash
+    /// metrics. Crashes without a creation date are reported by default.
+    static func crashReportsEligibleForPixelReporting(_ crashReports: [CrashReport], now: Date) -> [CrashReport] {
+        let cutoffDate = now.addingTimeInterval(-CrashCollection.maxCrashReportAgeForPixels)
+        return crashReports.filter { crashReport in
+            guard let creationDate = crashReport.creationDate else { return true }
+            return creationDate >= cutoffDate
         }
     }
 

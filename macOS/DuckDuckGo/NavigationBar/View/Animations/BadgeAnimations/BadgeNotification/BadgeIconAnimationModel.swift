@@ -34,11 +34,13 @@ final class BadgeIconAnimationModel: ObservableObject {
     let addressBarIconsProvider: AddressBarCookiesIconsProviding
 
     init(duration: CGFloat = AnimationDefaultConsts.totalDuration,
-         theme: ThemeStyleProviding = NSApp.delegateTyped.themeManager.theme) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager)
+    {
+        let iconsProvider = themeManager.theme.iconsProvider
         self.duration = duration
         self.halfDuration = duration / 2.0
         self.secondPhaseDelay = self.halfDuration
-        self.addressBarIconsProvider = theme.iconsProvider.addressBarCookiesIconsProvider
+        self.addressBarIconsProvider = iconsProvider.addressBarCookiesIconsProvider
     }
 }
 

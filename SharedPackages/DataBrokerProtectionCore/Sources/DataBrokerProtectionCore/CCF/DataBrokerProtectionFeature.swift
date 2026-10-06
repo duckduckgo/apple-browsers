@@ -132,7 +132,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.captchaInformation(captchaInfo: captchaInfo)
         case .solveCaptcha(let response):
             await delegate?.solveCaptcha(with: response)
-        case .fillForm, .click, .expectation:
+        case .fillForm, .click, .expectation, .executeScript:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
         case .conditionSuccess(let response):
             await delegate?.conditionSuccess(actions: response.actions)
@@ -163,7 +163,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         }
 
         guard shouldContinueAction() else {
-            handleJobTimeout()
+            handleJobCancellation()
             return
         }
 
@@ -202,7 +202,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             MainActor.assumeMainThread {
                 guard let self else { return }
                 if !self.shouldContinueAction() {
-                    self.handleJobTimeout()
+                    self.handleJobCancellation()
                 }
             }
         }
@@ -223,12 +223,12 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     @MainActor
-    private func handleJobTimeout() {
-        Logger.action.log("Job timeout")
+    private func handleJobCancellation() {
+        Logger.action.log("Job cancelled")
 
         removeTimers()
         Task {
-            await delegate?.onError(error: DataBrokerProtectionError.jobTimeout)
+            await delegate?.onError(error: DataBrokerProtectionError.cancelled)
         }
     }
 

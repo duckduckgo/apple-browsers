@@ -31,7 +31,7 @@ final class ConfigurationManagerTests: XCTestCase {
     private var operationLog: OperationLog!
     private var configManager: ConfigurationManager!
     private var mockFetcher: MockConfigurationFetcher!
-    private var mockStore: MockConfigurationStoring!
+    private var mockStore: RecordingConfigurationStore!
     private var mockTrackerDataManager: MockTrackerDataManager!
     private var mockPrivacyConfigManager: MockPrivacyConfigurationManagerWithLogs!
 
@@ -40,7 +40,7 @@ final class ConfigurationManagerTests: XCTestCase {
         let userDefaults = UserDefaults(suiteName: "ConfigurationManagerTests")!
         userDefaults.removePersistentDomain(forName: "ConfigurationManagerTests")
         mockFetcher = MockConfigurationFetcher(operationLog: operationLog)
-        mockStore = MockConfigurationStoring()
+        mockStore = RecordingConfigurationStore()
         mockPrivacyConfigManager = MockPrivacyConfigurationManagerWithLogs(operationLog: operationLog, fetchedETag: nil, fetchedData: nil, embeddedDataProvider: MockEmbeddedDataProvider(data: Data(), etag: "etag"), localProtection: MockDomainsProtectionStore(), internalUserDecider: MockInternalUserDecider())
         mockPrivacyConfigManager.operationLog = operationLog
         mockTrackerDataManager = MockTrackerDataManager(operationLog: operationLog, etag: nil, data: nil, embeddedDataProvider: MockEmbeddedDataProvider(data: Data(), etag: "etag"))
@@ -98,6 +98,35 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedRemainingStepsOrder, "Steps do not match the expected order.")
     }
 
+    func test_WhenNoConfigurationHasChanged_ThenUpdateReturnsNoData() async {
+        mockFetcher.fetchResults = Dictionary(uniqueKeysWithValues: Configuration.allCases.map { ($0, .notModified) })
+        mockFetcher.fetchAllResult = []
+
+        let result = await configManager.update()
+
+        guard case .noData = result else {
+            XCTFail("Expected noData when every request returns not modified")
+            return
+        }
+    }
+
+    func test_WhenExcludedDomainsAreNotModified_ThenTheyAreNotReapplied() async {
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .notModified
+
+        let didUpdate = await configManager.fetchAndUpdateBloomFilterExcludedDomains()
+
+        XCTAssertFalse(didUpdate)
+        XCTAssertFalse(mockStore.loadedConfigurations.contains(.bloomFilterExcludedDomains))
+    }
+
+    func test_WhenExcludedDomainsAreUpdated_ThenApplicationIsAttempted() async {
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .updated
+
+        await configManager.fetchAndUpdateBloomFilterExcludedDomains()
+
+        XCTAssertEqual(mockStore.loadedConfigurations, [.bloomFilterExcludedDomains])
+    }
+
 }
 
 // Step enum to track operations
@@ -112,12 +141,14 @@ private enum ConfigurationStep: String, Equatable {
 private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
+    var fetchResults = [Configuration: ConfigurationFetchResult]()
+    var fetchAllResult: Set<Configuration>?
 
     init(operationLog: OperationLog) {
         self.operationLog = operationLog
     }
 
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
         switch configuration {
         case .bloomFilterBinary:
             break
@@ -138,9 +169,12 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .remoteMessagingConfig:
             break
         }
+        return fetchResults[configuration] ?? .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {}
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        fetchAllResult ?? Set(configurations)
+    }
 }
 
 private class MockPrivacyConfigurationManagerWithLogs: PrivacyConfigurationManager {
@@ -168,6 +202,15 @@ private class MockTrackerDataManager: TrackerDataManager {
     public override func reload(etag: String?, data: Data?) -> ReloadResult {
         operationLog.steps.append(.reloadTrackerDataSet)
         return .embedded
+    }
+}
+
+private final class RecordingConfigurationStore: MockConfigurationStoring {
+    private(set) var loadedConfigurations: [Configuration] = []
+
+    override func loadData(for configuration: Configuration) -> Data? {
+        loadedConfigurations.append(configuration)
+        return super.loadData(for: configuration)
     }
 }
 

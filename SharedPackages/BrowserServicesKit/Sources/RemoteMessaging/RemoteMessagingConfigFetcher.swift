@@ -18,7 +18,6 @@
 
 import Configuration
 import Foundation
-import Networking
 import OSLog
 
 /**
@@ -46,9 +45,7 @@ public struct RemoteMessagingConfigFetcher: RemoteMessagingConfigFetching {
             false
 #endif
         }()
-        do {
-            try await configurationFetcher.fetch(.remoteMessagingConfig, isDebug: isDebug)
-        } catch APIRequest.Error.invalidStatusCode(304) {}
+        try await configurationFetcher.fetch(.remoteMessagingConfig, isDebug: isDebug)
 
         guard let responseData = configurationStore.loadData(for: .remoteMessagingConfig) else {
             throw RemoteMessageResponse.StatusError.noData

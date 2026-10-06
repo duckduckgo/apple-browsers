@@ -17,18 +17,14 @@
 //  limitations under the License.
 //
 
+import AppRouting
 import Foundation
 import JavaScriptCore
 import BrowserServicesKit
-import Network
 import Common
 import FoundationExtensions
 
 extension URL {
-    
-    enum Host: String {
-        case localhost
-    }
 
     public func toDesktopUrl() -> URL {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
@@ -38,49 +34,20 @@ extension URL {
     }
 
     public func isCustomURLScheme() -> Bool {
-        return scheme != nil && !absoluteString.hasPrefix(URLProtocol.http.scheme) && !absoluteString.hasPrefix(URLProtocol.https.scheme)
+        guard let navigationalScheme else { return false }
+        return !NavigationalScheme.hypertextSchemes.contains(navigationalScheme)
     }
 
     // MARK: static
 
     public static func webUrl(from text: String) -> URL? {
-        guard var url = URL(string: text) else { return nil }
-
-        switch url.scheme {
-        case URLProtocol.http.rawValue,
-            URLProtocol.https.rawValue,
-            NavigationalScheme.duck.rawValue: // duck:// internal scheme
-            break
-        case .none:
-            // assume http by default
-            guard let urlWithScheme = URL(string: URLProtocol.http.scheme + text), let host = urlWithScheme.host else {
-                return nil
-            }
-            // only allow 2nd+ level domains or "localhost" without scheme
-            guard host.contains(".") == true || host == .localhost else {
-                return nil
-            }
-            if IPv4Address(host) != nil {
-                // Require 4 octets specified explicitly for an IPv4 address (avoid 1.4 -> 1.0.0.4 expansion)
-                guard host.split(separator: ".").count == 4 else {
-                    return nil
-                }
-            }
-            url = urlWithScheme
-
-        default:
-            return nil
-        }
-
-        guard url.host?.isValidHost == true else { return nil }
-
-        return url
+        URLInputClassifier.webUrl(from: text)
     }
 
     /// Returns true when address bar text should be treated as a direct URL navigation input.
     /// This intentionally rejects whitespace-containing input to avoid converting search-like text into URLs.
     public static func isValidAddressBarURLInput(_ text: String) -> Bool {
-        !text.contains(where: { $0.isWhitespace }) && webUrl(from: text) != nil
+        URLInputClassifier.isValidAddressBarURLInput(text)
     }
 
     public static func decode(query: String) -> String? {

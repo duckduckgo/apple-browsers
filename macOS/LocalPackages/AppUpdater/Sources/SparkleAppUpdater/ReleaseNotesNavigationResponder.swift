@@ -23,7 +23,7 @@ import Common
 import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import WebKit
 
 public struct ReleaseNotesValues: Codable {
@@ -114,7 +114,7 @@ public final class ReleaseNotesNavigationResponder: NavigationResponder {
     @MainActor
     public func navigationDidFinish(_ navigation: Navigation) {
         guard AppVersion.runType != .uiTests, navigation.url == releaseNotesURL else { return }
-        if updateController.needsLatestReleaseNote {
+        if updateController.shouldAutoCheckOnReleaseNotesLoad, updateController.needsLatestReleaseNote {
             updateController.checkForUpdateSkippingRollout()
         }
     }

@@ -78,14 +78,44 @@ final class TitleDisplayPolicyTests: XCTestCase {
     // MARK: - Title Transitions
 
     func testTitleTransitionAnimatesWhenTitleChanges() {
-        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "Old Title") == true)
+        let url = URL(string: "https://www.example.com/")
+        let previousURL = URL(string: "https://www.different.com/")
+        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", url: url, previousTitle: "Old Title", previousURL: previousURL))
     }
 
     func testTitleTransitionDoesNotAnimateWhenIsTheSame() {
-        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "Same Title", previousTitle: "Same Title") == false)
+        let url = URL(string: "https://www.example.com/")
+        XCTAssertFalse(policy.mustAnimateTitleTransition(title: "Same Title", url: url, previousTitle: "Same Title", previousURL: url))
     }
 
     func testTitleTransitionDoesNotAnimateWhenPreviousTitleWasEmpty() {
-        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "") == false)
+        let url = URL(string: "https://www.example.com/")
+        let previousURL = URL(string: "https://www.different.com/")
+        XCTAssertFalse(policy.mustAnimateTitleTransition(title: "New Title", url: url, previousTitle: "", previousURL: previousURL))
+    }
+
+    func testTitleTransitionDoesNotAnimateWhenURLIsUnchanged() {
+        let url = URL(string: "https://www.example.com/")
+        XCTAssertFalse(policy.mustAnimateTitleTransition(title: "New Title", url: url, previousTitle: "Old Title", previousURL: url))
+    }
+
+    func testTitleTransitionDoesNotAnimateWhenURLIsNil() {
+        XCTAssertFalse(policy.mustAnimateTitleTransition(title: "New Title", url: nil, previousTitle: "Old Title", previousURL: nil))
+    }
+
+    func testTitleTransitionDoesNotAnimateWhenURLChangesButTitleIsTheSame() {
+        let url = URL(string: "https://www.example.com/")
+        let previousURL = URL(string: "https://www.different.com/")
+        XCTAssertFalse(policy.mustAnimateTitleTransition(title: "Same Title", url: url, previousTitle: "Same Title", previousURL: previousURL))
+    }
+
+    func testTitleTransitionAnimatesWhenPlaceholderIsReplacedByRealTitle() {
+        let url = URL(string: "https://www.example.com/")
+        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "Example Page", url: url, previousTitle: "example.com", previousURL: url))
+    }
+
+    func testTitleTransitionDoesNotAnimateWhenRealTitleIsReplacedByPlaceholder() {
+        let url = URL(string: "https://www.example.com/")
+        XCTAssertFalse(policy.mustAnimateTitleTransition(title: "example.com", url: url, previousTitle: "Example Page", previousURL: url))
     }
 }

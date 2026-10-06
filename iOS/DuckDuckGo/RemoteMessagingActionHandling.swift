@@ -44,18 +44,18 @@ protocol RemoteMessagingActionHandling {
 }
 
 final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
-    private let lastSearchStateRefresher: RemoteMessagingLastSearchStateRefresher
+    private let surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefreshing
     private let urlOpener: URLOpener
     private let browserTabUrlOpener: (_ urlPath: String) -> Void
 
     var messageNavigator: MessageNavigator?
 
     init(
-        lastSearchStateRefresher: RemoteMessagingLastSearchStateRefresher = RemoteMessagingSurveyLastSearchStateRefresher(),
+        surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefreshing = RemoteMessagingSurveyUsageStateRefresher(),
         urlOpener: URLOpener = UIApplication.shared,
         browserTabUrlOpener: @escaping (_ urlPath: String) -> Void = LaunchTabNotification.postLaunchTabNotification
     ) {
-        self.lastSearchStateRefresher = lastSearchStateRefresher
+        self.surveyUsageStateRefresher = surveyUsageStateRefresher
         self.urlOpener = urlOpener
         self.browserTabUrlOpener = browserTabUrlOpener
     }
@@ -76,7 +76,7 @@ final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
                 urlOpener.open(url)
             }
         case .survey(let value):
-            let refreshedURL = lastSearchStateRefresher.refreshLastSearchState(forURLPath: value)
+            let refreshedURL = surveyUsageStateRefresher.refreshSurveyUsageStates(forURLPath: value)
             browserTabUrlOpener(refreshedURL)
         case .navigation(let target):
             messageNavigator?.navigateTo(target, presentationStyle: context.presentationStyle)

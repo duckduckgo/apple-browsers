@@ -44,6 +44,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     private(set) var didCallSetTryAnonymousSearchMessageSeen = false
     private(set) var didCallSetTryVisitSiteMessageSeen = false
     private(set) var didCallSetFireEducationMessageSeen = false
+    private(set) var didCallSetDialogsPriorFinalSeen = false
     private(set) var didCallSetFinalOnboardingDialogSeen = false
     private(set) var didCallSetSearchMessageSeen = false
     private(set) var didCallEnableAddFavoriteFlow = false
@@ -62,6 +63,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var isShowingSubscriptionPromotion: Bool = false
 
     var shouldShowFireButtonPulse: Bool = false
+    var fireEducationMessageSeen: Bool = false
     var isAddFavoriteFlow: Bool = false
     var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
@@ -75,6 +77,11 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
     func setFireEducationMessageSeen() {
         didCallSetFireEducationMessageSeen = true
+        fireEducationMessageSeen = true
+    }
+
+    func setDialogsPriorFinalSeen() {
+        didCallSetDialogsPriorFinalSeen = true
     }
 
     func setFinalOnboardingDialogSeen() {
@@ -88,6 +95,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
         didCallSetChatPathVisitSiteSeen = true
     }
 
+    var tryAnonymousSearchMessageSeen: Bool = false
     var chatPathPhase: DaxDialogs.ChatPathPhase = .none
     var isChatFirstPath: Bool = false
     var isAIChatEnabled: Bool = true
@@ -155,9 +163,10 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     }
 }
 
-// Use to fill parameter list in injection.
-class DummyDaxDialogsManager: DaxDialogsManaging {
+class MockDaxDialogsManager: DaxDialogsManaging {
     var hasSeenOnboarding: Bool = false
+
+    var isShowingContextualOnboardingDialog: Bool = false
 
     var isShowingFireDialog: Bool = false
 
@@ -170,6 +179,12 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var shouldShowFireButtonPulse: Bool = false
 
     var isAddFavoriteFlow: Bool = false
+
+    var nextHomeScreenMessageCalled = false
+    var nextHomeScreenMessageNewCalled = false
+    var dismissCalled = false
+    var setFinalOnboardingDialogSeenCalled = false
+    var specToReturn: DaxDialogs.HomeScreenSpec?
 
     var isShowingSubscriptionPromotion: Bool = false
     var subscriptionPromotionDialogSeen: Bool = false
@@ -185,15 +200,20 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func setSearchMessageSeen() {}
 
-    func setFireEducationMessageSeen() {}
+    var fireEducationMessageSeen: Bool = false
+
+    func setFireEducationMessageSeen() {
+        fireEducationMessageSeen = true
+    }
 
     func clearedBrowserData() {}
 
-    func setFinalOnboardingDialogSeen() {}
+    func setDialogsPriorFinalSeen() {}
 
     func setChatPathVisitSiteSeen() {}
     func setAsChatFirstPath() {}
 
+    var tryAnonymousSearchMessageSeen: Bool { false }
     var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
     var isChatFirstPath: Bool { false }
     var isAIChatEnabled: Bool { true }
@@ -227,11 +247,23 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {}
 
-    func nextHomeScreenMessageNew() -> DuckDuckGo.DaxDialogs.HomeScreenSpec? {
-        nil
+    func disableContextualDaxDialogs() {}
+
+    func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
+        nextHomeScreenMessageCalled = true
+        return specToReturn
     }
 
-    func dismiss() {}
+    func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
+        nextHomeScreenMessageNewCalled = true
+        return specToReturn
+    }
 
-    func disableContextualDaxDialogs() {}
+    func setFinalOnboardingDialogSeen() {
+        setFinalOnboardingDialogSeenCalled = true
+    }
+
+    func dismiss() {
+        dismissCalled = true
+    }
 }

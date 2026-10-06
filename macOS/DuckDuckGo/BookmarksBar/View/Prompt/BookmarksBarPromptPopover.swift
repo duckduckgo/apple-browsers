@@ -52,13 +52,20 @@ final class BookmarksBarPromptPopover: NSPopover {
         contentViewController?.preferredContentSize = NSSize(width: 356, height: 292)
     }
 
+    /// Closes the popover as a forced retraction rather than a user choice — suppresses the
+    /// implicit "user rejected" side effect that `popoverDidClose` would otherwise apply.
+    func retract() {
+        viewController.rootView.model.userDidDismiss = true
+        close()
+    }
+
 }
 
 extension BookmarksBarPromptPopover: NSPopoverDelegate {
 
     func popoverDidClose(_ notification: Notification) {
         if !viewController.rootView.model.userDidDismiss {
-            viewController.rootView.model.rejectBookmarksBar()
+            viewController.rootView.model.rejectBookmarksBar(wasExplicit: false)
         }
     }
 
@@ -144,21 +151,24 @@ final class BookmarksBarPromptViewModel: ObservableObject {
 
     let prefs: AppearancePreferences
     var userDidDismiss = false
+    var onDismiss: ((PromoResult) -> Void)?
 
     init(prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.prefs = prefs
     }
 
-    func rejectBookmarksBar() {
+    func rejectBookmarksBar(wasExplicit: Bool = true) {
         userDidDismiss = true
         prefs.showBookmarksBar = false
         delegate?.dismiss()
+        onDismiss?(wasExplicit ? .actioned : .ignored())
     }
 
     func acceptBookmarksBar() {
         userDidDismiss = true
         prefs.showBookmarksBar = true
         delegate?.dismiss()
+        onDismiss?(.actioned)
     }
 
 }

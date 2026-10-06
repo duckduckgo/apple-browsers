@@ -328,24 +328,3 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
     }
 
 }
-
-private final class MockPromoHistoryProvider: PromoHistoryProviding {
-    private let subject: CurrentValueSubject<PromoHistoryRecord?, Never>
-
-    var record: PromoHistoryRecord? {
-        get { subject.value }
-        set { subject.send(newValue) }
-    }
-
-    init(record: PromoHistoryRecord? = nil) {
-        self.subject = CurrentValueSubject(record)
-    }
-
-    func historyPublisher(for promoId: String) -> AnyPublisher<PromoHistoryRecord?, Never> {
-        subject.eraseToAnyPublisher()
-    }
-
-    var allHistoryPublisher: AnyPublisher<[PromoHistoryRecord], Never> {
-        Empty().eraseToAnyPublisher()
-    }
-}

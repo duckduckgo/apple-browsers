@@ -27,9 +27,9 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
     // MARK: - validateRunPrerequisites
 
-    func testValidatePrerequisites_authenticatedWithEntitlement_returnsTrue() async {
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+    func testValidatePrerequisites_authenticatedWithEntitlement_returnsTrue() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
         dependencies.authenticationManager.hasValidEntitlementValue = true
 
@@ -38,9 +38,9 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testValidatePrerequisites_unauthenticatedNotActivated_returnsFalse() async {
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+    func testValidatePrerequisites_unauthenticatedNotActivated_returnsFalse() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = false
 
@@ -49,10 +49,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testValidatePrerequisites_unauthenticatedButActivated_returnsTrue() async {
+    func testValidatePrerequisites_unauthenticatedButActivated_returnsTrue() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -61,10 +61,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testValidatePrerequisites_unauthenticatedActivatedButFlagOff_returnsFalse() async {
+    func testValidatePrerequisites_unauthenticatedActivatedButFlagOff_returnsFalse() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: false)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -73,8 +73,8 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testValidatePrerequisites_noProfile_returnsFalse() async {
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
+    func testValidatePrerequisites_noProfile_returnsFalse() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
         dependencies.database.profile = nil
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -83,12 +83,46 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testValidatePrerequisitesUsingCachedProfileState_authenticatedWithEntitlementAndCachedProfile_returnsTrueWhenDatabaseProfileIsMissing() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = nil
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.hasValidEntitlementValue = true
+
+        let result = await sut.validateRunPrerequisites(usingCachedProfileState: .hasProfile)
+
+        XCTAssertTrue(result)
+    }
+
+    func testValidatePrerequisitesUsingCachedProfileState_noProfile_returnsFalse() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
+        dependencies.authenticationManager.isUserAuthenticatedValue = true
+        dependencies.authenticationManager.hasValidEntitlementValue = true
+
+        let result = await sut.validateRunPrerequisites(usingCachedProfileState: .noProfile)
+
+        XCTAssertFalse(result)
+    }
+
+    func testValidatePrerequisitesUsingCachedProfileState_unauthenticatedActivatedButFreemiumFlagOff_returnsFalse() async throws {
+        let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: false)
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = nil
+        dependencies.authenticationManager.isUserAuthenticatedValue = false
+        dependencies.freemiumDBPUserStateManager.didActivate = true
+
+        let result = await sut.validateRunPrerequisites(usingCachedProfileState: .hasProfile)
+
+        XCTAssertFalse(result)
+    }
+
     // MARK: - appDidBecomeActive
 
-    func testAppDidBecomeActive_authenticatedWithProfile_startsScanOperations() async {
+    func testAppDidBecomeActive_authenticatedWithProfile_startsScanOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
 
         await sut.appDidBecomeActive()
@@ -96,10 +130,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testAppDidBecomeActive_unauthenticatedNotActivated_doesNotStartOperations() async {
+    func testAppDidBecomeActive_unauthenticatedNotActivated_doesNotStartOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = false
 
@@ -108,11 +142,11 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(dependencies.queueManager.didCallStartImmediateScanOperationsIfPermitted)
     }
 
-    func testAppDidBecomeActive_unauthenticatedButActivated_startsScanOperations() async {
+    func testAppDidBecomeActive_unauthenticatedButActivated_startsScanOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: true,
                                                     isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -123,9 +157,9 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
     // MARK: - handleBGProcessingTask routing
 
-    func testHandleBGProcessingTask_authenticated_startsAllOperations() async {
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+    func testHandleBGProcessingTask_authenticated_startsAllOperations() async throws {
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
         dependencies.authenticationManager.hasValidEntitlementValue = true
 
@@ -140,10 +174,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
     }
 
-    func testHandleBGProcessingTask_freemiumActivated_startsScanOnlyOperations() async {
+    func testHandleBGProcessingTask_freemiumActivated_startsScanOnlyOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -157,10 +191,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
     }
 
-    func testHandleBGProcessingTask_freemiumActivatedWithinBackgroundScanWindow_startsScanOnlyOperations() async {
+    func testHandleBGProcessingTask_freemiumActivatedWithinBackgroundScanWindow_startsScanOnlyOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
         dependencies.freemiumDBPUserStateManager.firstProfileSavedTimestamp = Date()
@@ -176,10 +210,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
     }
 
-    func testHandleBGProcessingTask_freemiumActivatedAfterBackgroundScanWindow_doesNotStartOperations() async {
+    func testHandleBGProcessingTask_freemiumActivatedAfterBackgroundScanWindow_doesNotStartOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
         dependencies.freemiumDBPUserStateManager.firstProfileSavedTimestamp = Date()
@@ -203,10 +237,10 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
     // MARK: - dashboardDidOpen routing
 
-    func testDashboardDidOpen_authenticated_startsAllOperations() async {
+    func testDashboardDidOpen_authenticated_startsAllOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
 
         // Seed currentRunIsFreeScan by triggering appDidBecomeActive first
@@ -219,11 +253,11 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertTrue(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
     }
 
-    func testDashboardDidOpen_freemium_startsScanOnlyOperations() async {
+    func testDashboardDidOpen_freemium_startsScanOnlyOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
                                                     isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -240,8 +274,8 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
     // MARK: - makeContinuedProcessingOptOutPlan
 
     func testMakeContinuedProcessingOptOutPlan_authenticated_returnsRealPlan() async throws {
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager()
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager()
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = true
         dependencies.authenticationManager.hasValidEntitlementValue = true
 
@@ -250,7 +284,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
         // Set up opt-out data so the plan would be non-empty
         dependencies.database.brokerProfileQueryDataToReturn = [
-            DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(
+            DBPIOSManagerTestUtils.makeBrokerProfileQueryData(
                 brokerId: 1,
                 profileQueryId: 1,
                 optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate, brokerId: 1, profileQueryId: 1, preferredRunDate: .now)]
@@ -262,11 +296,11 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         XCTAssertGreaterThan(plan.optOutCount, 0)
     }
 
-    func testDashboardDidOpen_freemiumFlagOff_startsAllOperations() async {
+    func testDashboardDidOpen_freemiumFlagOff_doesNotStartOperations() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
                                                     isFreemiumPIREnabled: false)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -277,16 +311,15 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
         sut.dashboardDidOpen()
 
-        // With flag off, should NOT route to scan-only even though currentRunIsFreeScan is true
-        XCTAssertTrue(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
+        XCTAssertFalse(dependencies.queueManager.didCallStartScheduledAllOperationsIfPermitted)
         XCTAssertFalse(dependencies.queueManager.didCallStartScheduledScanOperationsIfPermitted)
     }
 
     func testMakeContinuedProcessingOptOutPlan_freemiumFlagOff_returnsRealPlan() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
                                                     isFreemiumPIREnabled: false)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -294,7 +327,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
         await sut.appDidBecomeActive()
 
         dependencies.database.brokerProfileQueryDataToReturn = [
-            DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(
+            DBPIOSManagerTestUtils.makeBrokerProfileQueryData(
                 brokerId: 1,
                 profileQueryId: 1,
                 optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate, brokerId: 1, profileQueryId: 1, preferredRunDate: .now)]
@@ -310,8 +343,8 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
     func testMakeContinuedProcessingOptOutPlan_freemium_returnsEmptyPlan() async throws {
         let featureFlagger = MockDBPFeatureFlagger(isForegroundRunningOnAppActiveFeatureOn: false,
                                                     isFreemiumPIREnabled: true)
-        let (sut, dependencies) = DBPContinuedProcessingTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
-        dependencies.database.profile = DBPContinuedProcessingTestUtils.makeProfile()
+        let (sut, dependencies) = try await DBPIOSManagerTestUtils.makeTestIOSManager(featureFlagger: featureFlagger)
+        dependencies.database.profile = DBPIOSManagerTestUtils.makeProfile()
         dependencies.authenticationManager.isUserAuthenticatedValue = false
         dependencies.freemiumDBPUserStateManager.didActivate = true
 
@@ -320,7 +353,7 @@ final class DataBrokerProtectionIOSManagerAuthGateTests: XCTestCase {
 
         // Set up opt-out data — should be ignored for free users
         dependencies.database.brokerProfileQueryDataToReturn = [
-            DBPContinuedProcessingTestUtils.makeBrokerProfileQueryData(
+            DBPIOSManagerTestUtils.makeBrokerProfileQueryData(
                 brokerId: 1,
                 profileQueryId: 1,
                 optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate, brokerId: 1, profileQueryId: 1, preferredRunDate: .now)]

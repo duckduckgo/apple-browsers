@@ -27,6 +27,7 @@ extension NetworkProtectionServerInfo {
                                                   ips: [AnyIPAddress("192.168.1.1")!],
                                                   internalIP: AnyIPAddress("10.11.12.1")!,
                                                   port: 443,
+                                                  ports: nil,
                                                   attributes: .init(city: "City", country: "Country", state: "State"))
 
     static let hostNameOnly = NetworkProtectionServerInfo(name: "Mock Server",
@@ -35,6 +36,7 @@ extension NetworkProtectionServerInfo {
                                                           ips: [],
                                                           internalIP: AnyIPAddress("10.11.12.1")!,
                                                           port: 443,
+                                                          ports: nil,
                                                           attributes: .init(city: "City", country: "Country", state: "State"))
 
     static let ipAddressOnly = NetworkProtectionServerInfo(name: "Mock Server",
@@ -43,6 +45,7 @@ extension NetworkProtectionServerInfo {
                                                            ips: [AnyIPAddress("192.168.1.1")!],
                                                            internalIP: AnyIPAddress("10.11.12.1")!,
                                                            port: 443,
+                                                           ports: nil,
                                                            attributes: .init(city: "City", country: "Country", state: "State"))
 
     static func make(named name: String, withPublicKey publicKey: String = "") -> Self {
@@ -52,6 +55,7 @@ extension NetworkProtectionServerInfo {
                                     ips: [AnyIPAddress("192.168.1.1")!],
                                     internalIP: AnyIPAddress("10.11.12.1")!,
                                     port: 443,
+                                    ports: nil,
                                     attributes: .init(city: "City", country: "Country", state: "State"))
     }
 

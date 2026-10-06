@@ -22,7 +22,7 @@ import FoundationExtensions
 import ContentBlocking
 import DuckPlayer
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import WebKit
 

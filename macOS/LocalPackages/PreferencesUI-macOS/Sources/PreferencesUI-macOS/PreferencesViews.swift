@@ -97,6 +97,7 @@ public struct ToggleMenuItem: View {
         Toggle(title, isOn: isOn)
             .fixMultilineScrollableText()
             .toggleStyle(.checkbox)
+            .rebrandedControlTint()
     }
 }
 
@@ -121,7 +122,9 @@ public struct ToggleMenuItemWithDescription: View {
 
                 TextMenuItemCaption(description)
             }
-        }.toggleStyle(.checkbox)
+        }
+        .toggleStyle(.checkbox)
+        .rebrandedControlTint()
     }
 }
 

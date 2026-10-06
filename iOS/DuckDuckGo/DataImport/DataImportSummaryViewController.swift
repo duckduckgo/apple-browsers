@@ -23,6 +23,7 @@ import SwiftUI
 import BrowserServicesKit
 import Core
 import DDGSync
+import PixelKit
 
 final class DataImportSummaryViewController: UIViewController {
 
@@ -71,9 +72,9 @@ final class DataImportSummaryViewController: UIViewController {
         if let importHubPixelContext {
             var parameters = importHubPixelContext.parameters
             parameters[PixelParameters.count] = "\(viewModel.importedDataTypesCount)"
-            Pixel.fire(pixel: .importHubResultDisplayed, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.importHubResultDisplayed, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: .importResultDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+            PixelKit.fire(Pixel.Event.importResultDisplayed, options: .parameters([PixelParameters.source: importScreen.rawValue]))
         }
     }
 

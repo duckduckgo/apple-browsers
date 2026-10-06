@@ -17,6 +17,7 @@
 //
 
 import Common
+import DDGError
 import FoundationExtensions
 
 public enum SubscriptionManagerError: DDGError {
@@ -31,6 +32,9 @@ public enum SubscriptionManagerError: DDGError {
     case invalidPortalURL
     /// No subscription is available locally (cache is empty) and the remote fetch failed
     case noLocalSubscription
+    /// Invalid-token recovery could not be attempted: no recovery handler was configured, or the
+    /// purchase platform cannot restore. Distinct from a recovery that ran and failed.
+    case tokenRecoveryNotAttempted
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
@@ -40,7 +44,8 @@ public enum SubscriptionManagerError: DDGError {
             (.noProductsFound, .noProductsFound),
             (.noTokenAvailable, .noTokenAvailable),
             (.invalidPortalURL, .invalidPortalURL),
-            (.noLocalSubscription, .noLocalSubscription):
+            (.noLocalSubscription, .noLocalSubscription),
+            (.tokenRecoveryNotAttempted, .tokenRecoveryNotAttempted):
             return true
         default:
             return false
@@ -55,6 +60,7 @@ public enum SubscriptionManagerError: DDGError {
         case .noProductsFound: "No products found"
         case .invalidPortalURL: "Invalid customer portal URL"
         case .noLocalSubscription: "No local subscription available"
+        case .tokenRecoveryNotAttempted: "Token recovery was not attempted"
         }
     }
 
@@ -68,6 +74,7 @@ public enum SubscriptionManagerError: DDGError {
         case .noProductsFound: 12003
         case .invalidPortalURL: 12004
         case .noLocalSubscription: 12005
+        case .tokenRecoveryNotAttempted: 12006
         }
     }
 

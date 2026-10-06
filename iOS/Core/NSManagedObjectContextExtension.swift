@@ -19,6 +19,7 @@
 
 import CoreData
 import Persistence
+import PixelKit
 
 public extension Array where Element == CoreDataErrorsParser.ErrorInfo {
 
@@ -46,9 +47,8 @@ public extension NSManagedObjectContext {
             let nsError = error as NSError
             let processedErrors = CoreDataErrorsParser.parse(error: nsError)
 
-            Pixel.fire(pixel: event,
-                       error: error,
-                       withAdditionalParameters: processedErrors.errorPixelParameters)
+            PixelKit.fire(event.withError(error),
+                          options: .parameters(processedErrors.errorPixelParameters))
 
             throw error
         }

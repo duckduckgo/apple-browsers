@@ -102,6 +102,8 @@ struct ActionRequest: Encodable {
             try container.encode(clickAction, forKey: .action)
         case let expectationAction as ExpectationAction:
             try container.encode(expectationAction, forKey: .action)
+        case let executeScriptAction as ExecuteScriptAction:
+            try container.encode(executeScriptAction, forKey: .action)
         case let getCaptchaInfo as GetCaptchaInfoAction:
             try container.encode(getCaptchaInfo, forKey: .action)
         case let solveCaptcha as SolveCaptchaAction:

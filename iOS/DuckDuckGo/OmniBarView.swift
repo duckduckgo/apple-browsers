@@ -22,6 +22,25 @@ import DesignResourcesKitIcons
 
 enum OmniBarMetrics {
     static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+
+    /// The size of the omnibar's controls and leading icon slot.
+    static let itemSize: CGFloat = 44
+    /// The space between the field edge and its content.
+    static let contentHorizontalInset: CGFloat = 2
+    /// The notification lozenge's equal top, leading, and bottom gaps from the field edge.
+    static let notificationLozengeInset: CGFloat = 3
+
+    static var leadingItemCenterFromFieldEdge: CGFloat {
+        contentHorizontalInset + itemSize / 2
+    }
+
+    static var notificationLozengeHeight: CGFloat {
+        itemSize - 2 * notificationLozengeInset
+    }
+
+    static func notificationIconLeadingPadding(forIconWidth width: CGFloat) -> CGFloat {
+        leadingItemCenterFromFieldEdge - notificationLozengeInset - width / 2
+    }
 }
 
 enum OmniBarLayoutMode {
@@ -100,11 +119,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onDismissPressed: (() -> Void)? { get set }
     var onFirePressed: (() -> Void)? { get set }
 
-    /// Callback triggered when the AI Chat left button is tapped
-    var onAIChatLeftButtonPressed: (() -> Void)? { get set }
-
-    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
-    var onAIChatBrandingPressed: (() -> Void)? { get set }
     var longPressMenuProvider: (() -> UIMenu?)? { get set }
     var onLongPressMenuDisplayed: (() -> Void)? { get set }
 
@@ -130,6 +144,32 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     /// Restores bar pill background, shadow, and text field. Idempotent.
     func restoreBarChrome()
+
+    func makeGlass()
+    func makeOpaque()
+
+    /// Re-asserts the field's resting appearance for the current position. No-op unless floating UI.
+    func restoreFloatingFieldAppearance()
+
+    /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface
+    /// on screen, or a chat to return to once it is gone.
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool)
+
+    /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
+    /// keeps its glass). Pass `false` to restore the standard per-position appearance.
+    func setFloatingMinimalChromeBar(_ enabled: Bool)
+}
+
+extension OmniBarView {
+    /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
+    /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
+    var restingSearchFieldSize: CGSize {
+        let size = searchContainer.bounds.size
+        if size.width > 0, size.height > 0 {
+            return size
+        }
+        return CGSize(width: frame.width, height: expectedHeight)
+    }
 }
 
 /// iPad-specific extension for the duck.ai mode toggle and expandable search area.
@@ -143,7 +183,7 @@ protocol ExpandableOmniBarView: OmniBarView {
     var selectedModeToggleState: TextEntryMode { get set }
     var isModeToggleHidden: Bool { get set }
     func setSearchAreaExpanded(_ expanded: Bool, animated: Bool)
-    var aiChatTextView: UITextView { get }
+    var aiChatTextView: ResignSuppressingTextView { get }
     var onAIChatSendPressed: (() -> Void)? { get set }
     func updateTextFieldPlaceholderVisibility(hasText: Bool)
     func updateAIChatSendButton(hasText: Bool)
@@ -168,7 +208,6 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
-    var isFullAIChatHidden: Bool { get set }
     var isFireButtonHidden: Bool { get set }
     var isTabSwitcherButtonHidden: Bool { get set }
     var layoutMode: OmniBarLayoutMode { get }

@@ -46,9 +46,13 @@ public struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
 
     public let database: DataBrokerProtectionRepository
     private let calculator = OperationPreferredDateCalculator()
+    private let featureFlagger: OptOutRetryErrorFeatureFlagging
+    private static let optOutRetryError96Hours = 96
 
-    public init(database: DataBrokerProtectionRepository) {
+    public init(database: DataBrokerProtectionRepository,
+                featureFlagger: OptOutRetryErrorFeatureFlagging) {
         self.database = database
+        self.featureFlagger = featureFlagger
     }
 
     func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
@@ -137,10 +141,11 @@ public struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         let optOutJob = brokerProfileQuery.optOutJobData.filter { $0.extractedProfile.id == extractedProfileId }.first
         let currentOptOutPreferredRunDate = optOutJob?.preferredRunDate
 
+        let effectiveSchedulingConfig = effectiveSchedulingConfig(for: origin, schedulingConfig: schedulingConfig)
         var newOptOutPreferredDate = try calculator.dateForOptOutOperation(currentPreferredRunDate: currentOptOutPreferredRunDate,
                                                                            optOutHistoryEvents: optOutJob?.historyEventsSortedEarliestFirst ?? [],
                                                                            extractedProfileID: extractedProfileId,
-                                                                           schedulingConfig: schedulingConfig,
+                                                                           schedulingConfig: effectiveSchedulingConfig,
                                                                            attemptCount: optOutJob?.attemptCount)
 
         if let newDate = newOptOutPreferredDate, origin == .scan {
@@ -169,6 +174,19 @@ public struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         guard let date2 = date2 else { return date1 }
 
         return min(date1, date2)
+    }
+
+    private func effectiveSchedulingConfig(for origin: OperationPreferredDateUpdaterOrigin,
+                                           schedulingConfig: DataBrokerScheduleConfig) -> DataBrokerScheduleConfig {
+        guard origin == .optOut,
+              featureFlagger.isOptOutRetryErrorFrequencyExperimentOn else {
+            return schedulingConfig
+        }
+
+        return DataBrokerScheduleConfig(retryError: Self.optOutRetryError96Hours,
+                                        confirmOptOutScan: schedulingConfig.confirmOptOutScan,
+                                        maintenanceScan: schedulingConfig.maintenanceScan,
+                                        maxAttempts: schedulingConfig.maxAttempts)
     }
 
     private func updatePreferredRunDate(_ date: Date?,

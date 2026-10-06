@@ -28,11 +28,13 @@ import WebKit
 
 private struct PageContextCollectionPayload: Codable {
     let serializedPageData: String?
+    /// Set (with no `serializedPageData`) when collection threw in the page.
+    let error: String?
 }
 
 final class PageContextUserScript: NSObject, Subfeature {
 
-    let collectionResultPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    let collectionResultPublisher: AnyPublisher<PageContextCollectionResult, Never>
 
     static let featureName: String = "pageContext"
     var featureName: String { Self.featureName }
@@ -41,7 +43,7 @@ final class PageContextUserScript: NSObject, Subfeature {
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
 
-    private let collectionResultSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let collectionResultSubject = PassthroughSubject<PageContextCollectionResult, Never>()
 
     private enum MessageName: String {
         case collect
@@ -79,19 +81,31 @@ final class PageContextUserScript: NSObject, Subfeature {
         }
     }
 
-    /// Receives collected page context
+    /// Receives collected page context. Every reply must publish a result, including failures —
+    /// otherwise the caller's pending collection is only cleared by its timeout.
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("[PageContextUserScript] collectionResult received")
-        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params),
-              let jsonString = payload.serializedPageData,
-              let jsonData = jsonString.data(using: .utf8) else {
+        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params) else {
             Logger.aiChat.debug("[PageContextUserScript] collectionResult - failed to decode payload")
+            collectionResultSubject.send(.decodeFailed)
             return nil
         }
 
-        let pageContextData: AIChatPageContextData? = DecodableHelper.decode(jsonData: jsonData)
-        Logger.aiChat.debug("[PageContextUserScript] collectionResult - decoded context: \(pageContextData != nil ? "success" : "nil")")
-        collectionResultSubject.send(pageContextData)
+        guard let jsonString = payload.serializedPageData,
+              let jsonData = jsonString.data(using: .utf8) else {
+            Logger.aiChat.debug("[PageContextUserScript] collectionResult - script error: \(payload.error ?? "unknown")")
+            collectionResultSubject.send(.scriptError)
+            return nil
+        }
+
+        guard let pageContextData: AIChatPageContextData = DecodableHelper.decode(jsonData: jsonData) else {
+            Logger.aiChat.debug("[PageContextUserScript] collectionResult - failed to decode context")
+            collectionResultSubject.send(.decodeFailed)
+            return nil
+        }
+
+        Logger.aiChat.debug("[PageContextUserScript] collectionResult - decoded context: success")
+        collectionResultSubject.send(.collected(pageContextData))
 
         return nil
     }

@@ -24,7 +24,7 @@ import AppKit
 
 protocol DataImportStatusProviding {
     var didImport: Bool { get }
-    func showImportWindow(customTitle: String?, completion: (() -> Void)?)
+    func showImportWindow(completion: (() -> Void)?)
 }
 
 final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding {
@@ -54,8 +54,8 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
     }
 
     @MainActor
-    func showImportWindow(customTitle: String?, completion: (() -> Void)?) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(title: customTitle ?? UserText.importDataTitle, isDataTypePickerExpanded: false, completion: completion)
+    func showImportWindow(completion: (() -> Void)?) {
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: completion)
     }
 
     // It only cover the case in which the user has imported bookmar AFTER already having some bookmarks

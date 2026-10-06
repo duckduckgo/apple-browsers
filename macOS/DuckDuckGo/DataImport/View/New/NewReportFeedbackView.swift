@@ -72,16 +72,16 @@ struct NewReportFeedbackView: View {
             }
             if isShowingDetail {
                 InfoItemView(model.osVersion) {
-                    Text("macOS version", comment: "Data import failure Report dialog description of a report field providing user‘s macOS version")
+                    Text("macOS version", bundle: #bundle, comment: "Data import failure Report dialog description of a report field providing user‘s macOS version")
                 }
                 InfoItemView(model.appVersion) {
-                    Text("DuckDuckGo browser version", comment: "Data import failure Report dialog description of a report field providing current DuckDuckGo Browser version")
+                    Text("DuckDuckGo browser version", bundle: #bundle, comment: "Data import failure Report dialog description of a report field providing current DuckDuckGo Browser version")
                 }
                 InfoItemView(model.importSourceDescription) {
-                    Text("The version of the browser you are trying to import from", comment: "Data import failure Report dialog description of a report field providing version of a browser user is trying to import data from")
+                    Text("The version of the browser you are trying to import from", bundle: #bundle, comment: "Data import failure Report dialog description of a report field providing version of a browser user is trying to import data from")
                 }
                 InfoItemView(model.error.localizedDescription) {
-                    Text("Error message & code", comment: "Title of the section of a dialog (form where the user can report feedback) where the error message and the error code are shown")
+                    Text("Error message & code", bundle: #bundle, comment: "Title of the section of a dialog (form where the user can report feedback) where the error message and the error code are shown")
                 }
             }
         }

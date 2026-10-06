@@ -22,6 +22,7 @@ import Foundation
 import Persistence
 import UIKit
 import os.log
+import PixelKit
 
 /// One-time move of a Duck.ai container from the shared App Group into the
 /// app's Application Support directory.
@@ -80,12 +81,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
 
     @discardableResult
     func run() -> DuckAiNativeStorageContainerMigrationOutcome {
-        guard isProtectedDataAvailable() else {
-            Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
-            pixelFiring.fire(.protectedDataUnavailable(label: label))
-            return .skip
-        }
-
         do {
             return try performMigration()
         } catch let kvError as MigrationStateStore.ReadError {
@@ -99,6 +94,13 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
         }
     }
 
+    private func deferIfProtectedDataUnavailable() -> DuckAiNativeStorageContainerMigrationOutcome? {
+        guard !isProtectedDataAvailable() else { return nil }
+        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] protected data unavailable; deferring")
+        pixelFiring.fire(.protectedDataUnavailable(label: label))
+        return .skip
+    }
+
     private func performMigration() throws -> DuckAiNativeStorageContainerMigrationOutcome {
         var state = try stateStore.load()
         resetExhaustedAttemptsIfNeeded(&state)
@@ -108,8 +110,6 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             return .proceed
         }
 
-        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] starting (prior attempts: \(state.attempts)); old=\(oldURL.path, privacy: .public) new=\(newURL.path, privacy: .public)")
-
         guard fileManager.fileExists(atPath: oldURL.path) else {
             Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] no old directory; marking done")
             stateStore.markMigrated()
@@ -117,6 +117,12 @@ struct DuckAiNativeStorageContainerMigration: DuckAiNativeStorageContainerMigrat
             ensureProtection(priorAttempts: state.protectionAttempts)
             return .proceed
         }
+
+        if let deferred = deferIfProtectedDataUnavailable() {
+            return deferred
+        }
+
+        Self.logger.info("[NativeStorage] [\(label.rawValue, privacy: .public)] starting (prior attempts: \(state.attempts)); old=\(oldURL.path, privacy: .public) new=\(newURL.path, privacy: .public)")
 
         if fileManager.fileExists(atPath: newURL.path) {
             // Destination exists without `migrated`. If data is present, treat
@@ -314,23 +320,23 @@ struct DuckAiNativeStorageContainerMigrationPixelAdapter: DuckAiNativeStorageCon
     func fire(_ event: DuckAiNativeStorageContainerMigrationEvent) {
         switch event {
         case .notNeeded(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationNotNeeded(label: label.rawValue))
         case .success(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationSuccess(label: label.rawValue))
         case .attemptFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationAttemptFailed(label: label.rawValue).withError(error))
         case .gaveUp(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationGaveUp(label: label.rawValue).withError(error))
         case .protectionFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationProtectionFailed(label: label.rawValue).withError(error))
         case .destinationConflict(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationDestinationConflict(label: label.rawValue))
         case .excludeFromBackupFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationExcludeFromBackupFailed(label: label.rawValue).withError(error))
         case .protectedDataUnavailable(let label):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationProtectedDataUnavailable(label: label.rawValue))
         case .keyValueStoreReadFailed(let label, let error):
-            Pixel.fire(pixel: .duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue), error: error)
+            PixelKit.fire(Pixel.Event.duckAiNativeStorageContainerMigrationKeyValueStoreReadFailed(label: label.rawValue).withError(error))
         }
     }
 }

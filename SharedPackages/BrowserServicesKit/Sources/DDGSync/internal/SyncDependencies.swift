@@ -32,6 +32,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var endpoints: Endpoints { get }
     var account: AccountManaging { get }
     var scopedAccess: ScopedAccessCredentialManaging { get }
+    var accountInfoKeys: AccountInfoKeyManaging { get }
     var api: RemoteAPIRequestCreating { get }
     var payloadCompressor: SyncPayloadCompressing { get }
     var keyValueStore: ThrowingKeyValueStoring { get }
@@ -41,6 +42,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var scheduler: SchedulingInternal { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var errorEvents: EventMapping<SyncError> { get }
+    var unifiedDeviceListEvents: EventMapping<UnifiedDeviceListEvent> { get }
     var shouldPreserveAccountWhenSyncDisabled: () -> Bool { get }
     var syncFeatureFlags: any SyncFeatureFlagProviding { get }
 
@@ -52,13 +54,14 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> ExchangeRecoveryKeyTransmitting
     func createPairingV2MessageExchanger() -> PairingV2MessageExchanging
     func createThirdPartyAccountUpgradeCoordinator() -> ThirdPartyAccountUpgradeCoordinating
+    func createDeviceInfoMigrationCoordinator() -> DeviceInfoMigrationCoordinating
     func createTokenRescope() -> TokenRescoping
     func createAIChats() -> AIChatsHandling
 }
 
 protocol AccountManaging {
 
-    func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount
+    func createAccount(deviceName: String, deviceType: String) async throws -> AccountCreationResult
     func deleteAccount(_ account: SyncAccount) async throws
 
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult
@@ -66,7 +69,13 @@ protocol AccountManaging {
 
     func logout(deviceId: String, token: String) async throws
 
-    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> [RegisteredDevice]
+    func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult
+    func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice]
+}
+
+struct AccountCreationResult {
+    let account: SyncAccount
+    let didPublishDeviceInfo: Bool
 }
 
 /// Manages the scoped ("3party") access credential: recovering, creating, and fetching its password and protected keys.
@@ -75,18 +84,21 @@ protocol ScopedAccessCredentialManaging {
     func recoverScopedPassword(from accessCredentials: [AccessCredential]?,
                                primaryKey: Data,
                                userID: String) throws -> Data?
-    /// Returns the account's scoped password, creating and uploading the 3party credential (and its protected keys) if absent; reuses `cachedScopedPassword` when creating.
+    /// Returns the account's scoped password, creating the credential and rewrapping existing protected keys when absent.
+    /// Reconciliation after credential creation remains gated by unified-device writes.
     func ensureThirdPartyScopedPassword(for account: SyncAccount,
                                         purpose: String,
                                         cachedScopedPassword: () throws -> Data?) async throws -> EnsuredThirdPartyCredential
+    /// Returns complete account_info wrappers, creating the key when absent and repairing wrappers missing for account credentials.
+    func ensureAccountInfoProtectedKeys(for account: SyncAccount) async throws -> [ProtectedKey]
     /// Builds the Base64URL recovery code that shares the account via the scoped password, or nil if the password is empty.
     func makeRecoveryCode(for account: SyncAccount, scopedPassword: Data) -> String?
     /// Fetches the account's access credentials (empty if none exist).
     func fetchAccessCredentials(_ account: SyncAccount) async throws -> [AccessCredential]
     /// Fetches the account's protected keys (empty if none exist).
     func fetchProtectedKeys(_ account: SyncAccount) async throws -> [ProtectedKey]
-    /// Uploads a protected key for the given purpose only if one isn't already stored, returning the stored key (existing or new).
-    func setKeyIfAbsent(purpose: String, key: ProtectedKey, for account: SyncAccount) async throws -> ProtectedKey?
+    /// Registers wrapper candidates without replacing existing key material, returning the wrappers stored by the server.
+    func setKeysIfAbsent(purpose: String, keys: [ProtectedKey], for account: SyncAccount) async throws -> [ProtectedKey]
 }
 
 protocol SecureStoring {
@@ -97,6 +109,7 @@ protocol SecureStoring {
     func scopedPassword() throws -> Data?
     func removeScopedPassword() throws
     func persistProtectedKeys(_ data: Data) throws
+    func protectedKeys() throws -> Data?
     func removeProtectedKeys() throws
 }
 

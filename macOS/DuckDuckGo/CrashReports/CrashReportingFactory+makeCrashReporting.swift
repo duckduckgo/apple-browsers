@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Crashes
 import CrashReportingShared
-import FeatureFlags
+import FeatureFlags_macOS
 import Persistence
 import PixelKit
 import PrivacyConfig

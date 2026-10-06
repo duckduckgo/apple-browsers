@@ -63,15 +63,15 @@ public struct AutofillDomainNameUrlMatcher: AutofillUrlMatcher {
     }
 
     public func normalizeSchemeForAutofill(_ rawUrl: String) -> URLComponents? {
-        if !rawUrl.starts(with: URL.URLProtocol.https.scheme) &&
-           !rawUrl.starts(with: URL.URLProtocol.http.scheme) &&
+        if !rawUrl.starts(with: URL.NavigationalScheme.https.separated()) &&
+           !rawUrl.starts(with: URL.NavigationalScheme.http.separated()) &&
            rawUrl.contains("://") {
             // Contains some other protocol, so don't mess with it
             return nil
         }
 
-        let noScheme = rawUrl.dropping(prefix: URL.URLProtocol.https.scheme).dropping(prefix: URL.URLProtocol.http.scheme)
-        return URLComponents(string: "\(URL.URLProtocol.https.scheme)\(noScheme)")
+        let noScheme = rawUrl.dropping(prefix: URL.NavigationalScheme.https.separated()).dropping(prefix: URL.NavigationalScheme.http.separated())
+        return URLComponents(string: "\(URL.NavigationalScheme.https.separated())\(noScheme)")
     }
 
     public func extractTLD(domain: String, tld: TLD) -> String? {

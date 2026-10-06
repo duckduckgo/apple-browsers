@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
@@ -56,7 +56,7 @@ final class NavigationPixelNavigationResponder {
         let type: WKSameDocumentNavigationType
 
         func isAnchorFollowingStatePop(_ previous: SameDocumentNavigation?) -> Bool {
-            previous?.url.isSameDocument(url) == true
+            previous?.url.equals(url, by: .sameDocument) == true
             && type == .anchorNavigation
             && previous?.type == .sessionStatePop
         }
@@ -185,6 +185,6 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             firstMeaningfulPaintMs: firstMeaningfulPaintMs,
             documentCompleteMs: documentCompleteMs,
             allResourcesCompleteMs: allResourcesCompleteMs
-        ), frequency: .standard, withAdditionalParameters: additionalParams)
+        ), frequency: .sample(percentage: SiteLoadingPixel.samplePercentage), options: .parameters(additionalParams))
     }
 }

@@ -97,6 +97,10 @@ private extension SubscriptionPromoPresenter {
 
     @available(iOS 16.0, *)
     func customDetentsHeightFor(context: UISheetPresentationControllerDetentResolutionContext) -> CGFloat? {
-        470
+        if context.containerTraitCollection.userInterfaceIdiom == .phone {
+            return 470
+        } else {
+            return 428
+        }
     }
 }

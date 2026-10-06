@@ -20,6 +20,7 @@
 import Foundation
 import Configuration
 import PixelExperimentKit
+import PixelKit
 
 public class FileStore {
 
@@ -36,7 +37,7 @@ public class FileStore {
             do {
                 try data.write(to: fileUrl, options: .atomic)
             } catch {
-                Pixel.fire(pixel: .fileStoreWriteFailed, error: error, withAdditionalParameters: ["config": configuration.rawValue])
+                PixelKit.fire(Pixel.Event.fileStoreWriteFailed.withError(error), options: .parameters(["config": configuration.rawValue]))
                 writeError = error
             }
         }
@@ -45,7 +46,7 @@ public class FileStore {
             throw writeError
         }
         if let coordinatorError {
-            Pixel.fire(pixel: .fileStoreCoordinatorFailed, error: coordinatorError, withAdditionalParameters: ["config": configuration.rawValue])
+            PixelKit.fire(Pixel.Event.fileStoreCoordinatorFailed.withError(coordinatorError), options: .parameters(["config": configuration.rawValue]))
             throw coordinatorError
         }
     }
@@ -83,19 +84,19 @@ public class FileStore {
                     let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: .app)
 
                     if configuration == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
-                        DailyPixel.fireDailyAndCount(pixel, error: error, withAdditionalParameters: [
+                        PixelKit.fire(pixel.withError(error), frequency: .dailyAndCount, options: .parameters([
                             "experimentName": experimentName,
                             "etag": UserDefaultsETagStorage().loadEtag(for: .trackerDataSet) ?? ""
-                        ])
+                        ]))
                     } else {
-                        DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
+                        PixelKit.fire(pixel.withError(error), frequency: .dailyAndCount)
                     }
                 }
             }
         }
 
         if let coordinatorError {
-            Pixel.fire(pixel: .fileStoreCoordinatorFailed, error: coordinatorError, withAdditionalParameters: ["config": configuration.rawValue])
+            PixelKit.fire(Pixel.Event.fileStoreCoordinatorFailed.withError(coordinatorError), options: .parameters(["config": configuration.rawValue]))
         }
 
         return data

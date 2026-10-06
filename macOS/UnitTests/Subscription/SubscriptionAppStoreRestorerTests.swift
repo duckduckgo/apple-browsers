@@ -20,8 +20,8 @@ import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
-@testable import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) @testable import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import enum StoreKit.StoreKitError
 

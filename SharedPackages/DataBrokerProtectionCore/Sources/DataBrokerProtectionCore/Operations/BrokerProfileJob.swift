@@ -154,11 +154,11 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func runJob() async {
-        let allBrokerProfileQueryData: [BrokerProfileQueryData]
+        let brokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(reason: .specificBrokerJobDispatch)
+            // Jobs for removed brokers are already prevented from being scheduled upstream.
+            brokerProfileQueryData = try jobDependencies.database.fetchBrokerProfileQueryData(forBrokerId: dataBrokerID)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
@@ -166,8 +166,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
         let isFreeScan = !isAuthenticatedUser
-        let brokerProfileQueriesData = allBrokerProfileQueryData
-            .filter { $0.dataBroker.id == dataBrokerID }
+        let brokerProfileQueriesData = brokerProfileQueryData
             .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
         let filteredAndSortedJobData = makeFilteredAndSortedJobData(brokerProfileQueriesData, isFreeScan: isFreeScan)
@@ -211,7 +210,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 var executed = false
 
                 if jobData is ScanJobData {
-                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
+                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout,
+                                                     throwing: DataBrokerProtectionError.jobTimeout) { [self] in
                         try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                             brokerProfileQueryData: brokerProfileData,
                             showWebView: showWebView,
@@ -222,7 +222,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
+                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout,
+                                                     throwing: DataBrokerProtectionError.jobTimeout) { [self] in
                         try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                             for: optOutJobData.extractedProfile,
                             brokerProfileQueryData: brokerProfileData,

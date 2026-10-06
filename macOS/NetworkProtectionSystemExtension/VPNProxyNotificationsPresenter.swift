@@ -35,6 +35,10 @@ final class VPNProxyNotificationsPresenter: VPNNotificationsPresenting {
         notificationCenter.post(.showConnectedNotification, object: serverLocation)
     }
 
+    func showStrictRoutingReminderNotification() {
+        notificationCenter.post(.showStrictRoutingReminderNotification)
+    }
+
     func showReconnectingNotification() {
         notificationCenter.post(.showIssuesStartedNotification)
     }

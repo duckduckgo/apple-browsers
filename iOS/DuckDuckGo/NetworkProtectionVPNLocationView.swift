@@ -62,7 +62,7 @@ struct NetworkProtectionVPNLocationView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 
     @ViewBuilder
@@ -90,7 +90,7 @@ struct NetworkProtectionVPNLocationView: View {
                 .foregroundStyle(Color(designSystemColor: .textPrimary))
         }
         .animation(.default, value: model.state.isLoading)
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
     }
 }
 

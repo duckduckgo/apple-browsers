@@ -32,6 +32,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageConfigurationClient.MessageName>!
     private var eventMapper: CapturingNewTabPageConfigurationEventHandler!
+    private var isRebrandEnabled = false
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -41,7 +42,13 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         stateProvider = MockNewTabPageStateProviding()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
-        client = NewTabPageConfigurationClient(
+        userScript = NewTabPageUserScript()
+        messageHelper = .init(userScript: userScript)
+        client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: false)
+    }
+
+    private func buildConfigurationClient(userScript: NewTabPageUserScript, isRebrandEnabled: Bool) -> NewTabPageConfigurationClient {
+        let client = NewTabPageConfigurationClient(
             environment: .development,
             sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
@@ -50,12 +57,11 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             contextMenuPresenter: contextMenuPresenter,
             linkOpener: CapturingNewTabPageLinkOpener(),
             eventMapper: eventMapper,
-            stateProvider: stateProvider
+            stateProvider: stateProvider,
+            isRebrandEnabled: isRebrandEnabled
         )
-
-        userScript = NewTabPageUserScript()
-        messageHelper = .init(userScript: userScript)
         client.registerMessageHandlers(for: userScript)
+        return client
     }
 
     // MARK: - contextMenu
@@ -143,6 +149,14 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
+        XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .disabled))
+    }
+
+    func testThatInitialSetupReturnsEnabledNewTabPageRebrandingSetting() async throws {
+        client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: true)
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .enabled))
     }
 
     func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {

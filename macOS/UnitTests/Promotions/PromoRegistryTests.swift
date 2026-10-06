@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import RemoteMessaging
 import RemoteMessagingTestsUtils
@@ -44,14 +44,64 @@ final class PromoRegistryTests: XCTestCase {
             isOnboardingCompletedProvider: { true },
             dockCustomization: DockCustomizerMock()
         )
+        let windowControllersManager = WindowControllersManagerMock()
         let dependencies = PromoDependencies(
             keyValueStore: InMemoryThrowingKeyValueStore(),
             isExternallyActivated: false,
+            isNewUserProvider: { false },
             isOnboardingCompletedProvider: { true },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
-            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate())
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
+            featureFlagger: MockFeatureFlagger(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: WindowControllersManagerMock(),
+            syncService: nil,
+            syncBookmarksAdapter: nil,
+            pinningManager: MockPinningManager(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            ),
+            duckPlayerOverlayObserver: {
+                let featureFlagger = MockFeatureFlagger()
+                return DuckPlayerOverlayObserver(
+                    duckPlayer: DuckPlayer(
+                        preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                        privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    ),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: featureFlagger
+                )
+            }(),
+            updateController: nil,
+            updateNotificationBridge: nil,
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver(),
+            vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState())
+        )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
 
         let ids = promoService.promos.map(\.id)

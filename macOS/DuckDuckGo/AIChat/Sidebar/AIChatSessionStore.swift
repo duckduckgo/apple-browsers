@@ -19,7 +19,7 @@
 import AIChat
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 typealias TabIdentifier = String

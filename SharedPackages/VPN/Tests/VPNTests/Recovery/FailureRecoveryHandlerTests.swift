@@ -290,6 +290,78 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         XCTAssertEqual(failedCount, 3)
     }
 
+    func testAttemptRecovery_configUpdateCancelled_doesNotSendTerminalEventOrRetry() async {
+        let retryConfig = FailureRecoveryHandler.RetryConfig(times: 3, initialDelay: 0.1, maxDelay: 1.0, factor: 2)
+        var failedCount = 0
+        var completedCount = 0
+        var updateConfigCount = 0
+        failureRecoveryHandler = FailureRecoveryHandler(deviceManager: deviceManager, reassertingControl: reassertingControl, retryConfig: retryConfig, eventHandler: { step in
+            if case .failed = step {
+                failedCount += 1
+            }
+            if case .completed = step {
+                completedCount += 1
+            }
+        })
+
+        let newServerName = "server2"
+        deviceManager.stubGenerateTunnelConfiguration = (
+            tunnelConfiguration: .make(named: newServerName),
+            server: .registeredServer(named: newServerName, allowedIPs: ["1.2.3.4/5"])
+        )
+
+        await failureRecoveryHandler.attemptRecovery(to: .mockRegisteredServer, excludeLocalNetworks: false, dnsSettings: .ddg(blockRiskyDomains: false)) { _ in
+            updateConfigCount += 1
+            throw CancellationError()
+        }
+
+        XCTAssertEqual(updateConfigCount, 1)
+        XCTAssertEqual(failedCount, 0)
+        XCTAssertEqual(completedCount, 0)
+    }
+
+    func testAttemptRecovery_whenStoppedAfterConfigGeneration_doesNotApplyConfigOrSendTerminalEvent() async {
+        let newServerName = "server2"
+        let deviceManager = DeviceManagementSpy(
+            result: (
+                tunnelConfiguration: .make(named: newServerName),
+                server: .registeredServer(named: newServerName, allowedIPs: ["1.2.3.4/5"])
+            )
+        )
+        var failedCount = 0
+        var completedCount = 0
+        var updateConfigCount = 0
+        failureRecoveryHandler = FailureRecoveryHandler(
+            deviceManager: deviceManager,
+            reassertingControl: reassertingControl,
+            retryConfig: Self.testConfig,
+            eventHandler: { step in
+                if case .failed = step {
+                    failedCount += 1
+                }
+                if case .completed = step {
+                    completedCount += 1
+                }
+            }
+        )
+        let handler = failureRecoveryHandler
+        deviceManager.beforeReturningResult = { [weak handler] in
+            await handler?.stop()
+        }
+
+        await failureRecoveryHandler.attemptRecovery(
+            to: .mockRegisteredServer,
+            excludeLocalNetworks: false,
+            dnsSettings: .ddg(blockRiskyDomains: false)
+        ) { _ in
+            updateConfigCount += 1
+        }
+
+        XCTAssertEqual(updateConfigCount, 0)
+        XCTAssertEqual(failedCount, 0)
+        XCTAssertEqual(completedCount, 0)
+    }
+
     func attemptRecoveryWithLastAndNewServerNamesAndAllowedIPsEqual() async {
         let lastAndNewServerName = "previousAndNewServerName"
         let lastAndNewAllowedIPs = ["1.2.3.4/5", "10.9.8.7/6"]
@@ -346,5 +418,26 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             newConfigResult = configResult
         }
         return newConfigResult
+    }
+}
+
+private final class DeviceManagementSpy: NetworkProtectionDeviceManagement {
+
+    var beforeReturningResult: (() async -> Void)?
+    private let result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult
+
+    init(result: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) {
+        self.result = result
+    }
+
+    func generateTunnelConfiguration(
+        resolvedSelectionMethod: NetworkProtectionServerSelectionMethod,
+        excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
+        dnsSettings: NetworkProtectionDNSSettings,
+        regenerateKey: Bool
+    ) async throws -> NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult {
+        await beforeReturningResult?()
+        return result
     }
 }

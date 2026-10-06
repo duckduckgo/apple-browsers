@@ -241,6 +241,30 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         ), .fail)
     }
 
+    func testWhenSubscriptionTierMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(
+            matchingAttribute: SubscriptionTierMatchingAttribute(
+                value: ["pro"], fallback: nil
+            )
+        ), .match)
+    }
+
+    func testWhenSubscriptionTierHasMultipleValuesAndOneMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(
+            matchingAttribute: SubscriptionTierMatchingAttribute(
+                value: ["plus", "pro"], fallback: nil
+            )
+        ), .match)
+    }
+
+    func testWhenSubscriptionTierDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(
+            matchingAttribute: SubscriptionTierMatchingAttribute(
+                value: ["plus"], fallback: nil
+            )
+        ), .fail)
+    }
+
     func testWhenSubscriptionStatusMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
             matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["active"], fallback: nil)
@@ -454,6 +478,7 @@ class CommonUserAttributeMatcherTests: XCTestCase {
             subscriptionDaysSinceSubscribed: 5,
             subscriptionDaysUntilExpiry: 25,
             subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,

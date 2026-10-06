@@ -25,6 +25,10 @@ public extension TimeInterval {
         TimeInterval(amount)
     }
 
+    static func milliseconds(_ amount: Double) -> TimeInterval {
+        amount / 1_000
+    }
+
     static func minutes(_ amount: Int) -> TimeInterval {
         .seconds(60) * TimeInterval(amount)
     }

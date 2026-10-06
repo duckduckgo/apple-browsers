@@ -28,21 +28,23 @@ let package = Package(
         .library(name: "AppStoreCrashCollection", targets: ["AppStoreCrashCollection"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/Persistence"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
-        .package(path: "../FeatureFlags"),
+        .package(path: "../FeatureFlags-macOS"),
     ],
     targets: [
         .target(
             name: "CrashReportingShared",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
@@ -53,12 +55,12 @@ let package = Package(
             name: "CrashReporting",
             dependencies: [
                 "CrashReportingShared",
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
@@ -70,12 +72,12 @@ let package = Package(
             dependencies: [
                 "CrashReportingShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Crashes", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [

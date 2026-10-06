@@ -60,6 +60,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         database: CoreDataDatabase,
         notificationCenter: NotificationCenter = .default,
         errorEvents: EventMapping<RemoteMessagingStoreError>?,
+        autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent>? = nil,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         duckPlayerStorage: DuckPlayerStorage,
@@ -68,6 +69,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         winBackOfferService: WinBackOfferService,
         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+        profileStateManager: DBPProfileStateManaging,
+        idleReturnEligibilityManager: IdleReturnEligibilityManaging,
         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
@@ -79,7 +82,9 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             winBackOfferService: winBackOfferService,
             dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate,
             freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
-            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),
@@ -89,6 +94,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             database: database,
             notificationCenter: notificationCenter,
             errorEvents: errorEvents,
+            autoDismissEvents: autoDismissEvents,
+            enforcesMaxImpressions: true,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
         )
         self.init(

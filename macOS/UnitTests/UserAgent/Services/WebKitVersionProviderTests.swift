@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DataBrokerProtection_macOS
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser

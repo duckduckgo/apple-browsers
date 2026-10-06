@@ -18,6 +18,14 @@
 //
 
 import Core
+import PixelKit
+
+/// Whether a coordinated launch modal was already shown earlier in this session, so the Duck.ai
+/// sync promo can yield to it. See Asana 1216108902675922.
+@MainActor
+protocol RecentModalPromptStatusProviding {
+    var wasModalPromptRecentlyPresented: Bool { get }
+}
 
 @MainActor
 final class AIChatSyncPromoViewModel {
@@ -27,17 +35,21 @@ final class AIChatSyncPromoViewModel {
     }
 
     private let syncPromoManager: SyncPromoManaging
-    private let pixelFiring: any PixelFiring.Type
+    private let recentModalPromptStatusProvider: RecentModalPromptStatusProviding?
+    private let pixelFiring: (any PixelKitFiring)?
     private var impressionRecorded = false
 
     init(syncPromoManager: SyncPromoManaging,
-         pixelFiring: any PixelFiring.Type = Pixel.self) {
+         recentModalPromptStatusProvider: RecentModalPromptStatusProviding? = nil,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.syncPromoManager = syncPromoManager
+        self.recentModalPromptStatusProvider = recentModalPromptStatusProvider
         self.pixelFiring = pixelFiring
     }
 
     func shouldShowPromo(isQueryActive: Bool, chatCount: Int) -> Bool {
         guard !isQueryActive else { return false }
+        guard recentModalPromptStatusProvider?.wasModalPromptRecentlyPresented != true else { return false }
         return syncPromoManager.shouldPresentPromoFor(.aiChat, count: chatCount)
     }
 
@@ -48,13 +60,13 @@ final class AIChatSyncPromoViewModel {
               !impressionRecorded else { return false }
 
         impressionRecorded = true
-        pixelFiring.fire(.syncPromoDisplayed, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.syncPromoDisplayed, options: .parameters(pixelParameters))
         syncPromoManager.recordImpressionFor(.aiChat)
         return true
     }
 
     func handleCTATap() -> Action {
-        pixelFiring.fire(.syncPromoConfirmed, withAdditionalParameters: pixelParameters)
+        pixelFiring?.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(pixelParameters))
         syncPromoManager.markPromoHandledFor(.aiChat)
         return .requestSyncSetup
     }

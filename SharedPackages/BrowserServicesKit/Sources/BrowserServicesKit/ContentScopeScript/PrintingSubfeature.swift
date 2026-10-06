@@ -18,7 +18,7 @@
 
 import Foundation
 #if os(macOS)
-import Navigation
+import DDGNavigation
 #endif
 import UserScript
 import WebKit

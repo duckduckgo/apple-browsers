@@ -17,7 +17,7 @@
 //
 import XCTest
 @testable import BrowserServicesKit
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 
 final class DefaultFeatureDiscoveryTests: XCTestCase {

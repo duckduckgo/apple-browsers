@@ -7,6 +7,10 @@
         "parameters": [
             "appVersion",
             "pixelSource",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "message",
                 "description": "The custom message describing the unexpected condition, e.g \"Failed to access Downloads folder\"",

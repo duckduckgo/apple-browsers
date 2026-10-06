@@ -47,14 +47,14 @@ protocol OnboardingFireReporting: AnyObject {
 final class OnboardingPixelReporter {
 
     private weak var onboardingStateProvider: (ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater)?
-    private let fire: (PixelKitEvent, PixelKit.Frequency) -> Void
+    private let fire: (PixelKit.Event, PixelKit.Frequency) -> Void
     private let userDefaults: UserDefaults
     private let sharedPixelHandler: OnboardingSharedPixelHandling
 
     init(onboardingStateProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
  = Application.appDelegate.onboardingContextualDialogsManager,
          userDefaults: UserDefaults = UserDefaults.standard,
-         fireAction: @escaping (PixelKitEvent, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) },
+         fireAction: @escaping (PixelKit.Event, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) },
          onboardingSharedPixelHandler: OnboardingSharedPixelHandling = OnboardingSharedPixelHandler(
             platform: .macOS,
             installTypeProvider: {
@@ -133,6 +133,9 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)
         case .highFive:
             fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
+        case .subscriptionUpsell:
+            // The upsell reports through the experiment's own metrics instead.
+            break
         }
     }
 
@@ -150,6 +153,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.dismiss)))
+        case .subscriptionUpsell:
+            break
         }
     }
 
@@ -175,6 +180,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.fireButton(.shown))
         case .highFive:
             sharedPixelHandler.fire(.end(.shown))
+        case .subscriptionUpsell:
+            break
         }
     }
 
@@ -194,7 +201,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.clicked(.engage)))
         case .tryASearch,
                 .tryASite,
-                .tryFireButton:
+                .tryFireButton,
+                .subscriptionUpsell:
             break
         }
     }

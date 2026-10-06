@@ -29,7 +29,7 @@ internal class AddressBarMenuButton: AddressBarButton, NotificationDotProviding 
 
     var notificationLayer: CALayer?
 
-    var notificationColor: NSColor = .updateIndicator {
+    var notificationColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
         didSet {
             updateNotificationLayer()
         }

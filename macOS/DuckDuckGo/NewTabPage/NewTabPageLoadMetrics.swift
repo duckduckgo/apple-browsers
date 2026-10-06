@@ -30,9 +30,9 @@ final class NewTabPageLoadMetrics {
     private var ntpStartTime: Date?
     private var ntpShownTime: Date?
     private var state: NTPState = .notLoading
-    private let firePixel: (PixelKitEvent) -> Void
+    private let firePixel: (PixelKit.Event) -> Void
 
-    init(firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .standard) }) {
+    init(firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .standard) }) {
         self.firePixel = firePixel
     }
 
@@ -72,8 +72,7 @@ final class NewTabPageLoadMetrics {
         guard loadTime <= 10 else {
             return
         }
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
-        firePixel(NewTabPagePixel.newTabPageLoadingTime(duration: loadTime, osMajorVersion: osVersion))
+        firePixel(NewTabPagePixel.newTabPageLoadingTime(duration: loadTime))
     }
 
 }

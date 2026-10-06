@@ -23,6 +23,13 @@
     {
       "target" : {
         "containerPath" : "container:LocalPackages\/BWIntegration",
+        "identifier" : "BWManagementTests",
+        "name" : "BWManagementTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/BWIntegration",
         "identifier" : "BWIntegrationTests",
         "name" : "BWIntegrationTests"
       }

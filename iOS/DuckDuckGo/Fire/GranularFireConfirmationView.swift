@@ -178,7 +178,7 @@ private struct ToggleRow: View {
                 .labelsHidden()
                 .disabled(isDisabled)
                 .padding(.trailing, Constants.toggleTrailingPadding)
-                .tint(Color(designSystemColor: .accent))
+                .tint(Color(designSystemColor: .accentPrimary))
         }
     }
     
@@ -231,6 +231,8 @@ private final class PreviewAIChatSettings: AIChatSettingsProvider {
     var aiChatURL: URL { URL(string: "https://duckduckgo.com")! }
     var isAIChatEnabled: Bool { true }
     var sessionTimerInMinutes: Int { 0 }
+    var aiChatAttachMoreTabsLimit: Int { 3 }
+    var aiChatAttachMoreTabsPromotionStartDate: Date?
     var isAIChatAddressBarUserSettingsEnabled: Bool { false }
     var isAIChatSearchInputUserSettingsEnabled: Bool { false }
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool { false }

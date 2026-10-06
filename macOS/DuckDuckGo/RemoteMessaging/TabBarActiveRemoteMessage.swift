@@ -22,7 +22,9 @@ import RemoteMessaging
 protocol TabBarRemoteMessageProviding {
     var remoteMessagePublisher: AnyPublisher<RemoteMessageModel?, Never> { get }
 
-    func markRemoteMessageAsShown() async
+    func refreshSurveyURL(_ urlString: String) -> String
+    func refreshRemoteMessageForPresentation()
+    func markRemoteMessageAsShown(withID id: String) async
     func onSurveyOpened() async
     func onMessageDismissed() async
 }
@@ -38,8 +40,16 @@ final class TabBarActiveRemoteMessage: TabBarRemoteMessageProviding  {
         self.activeRemoteMessageModel = activeRemoteMessageModel
     }
 
-    func markRemoteMessageAsShown() async {
-        await activeRemoteMessageModel.markRemoteMessageAsShown()
+    func refreshSurveyURL(_ urlString: String) -> String {
+        activeRemoteMessageModel.surveyURLRefresher(urlString)
+    }
+
+    func refreshRemoteMessageForPresentation() {
+        activeRemoteMessageModel.refreshRemoteMessageForPresentation()
+    }
+
+    func markRemoteMessageAsShown(withID id: String) async {
+        await activeRemoteMessageModel.markRemoteMessageAsShown(withID: id, on: .tabBar)
     }
 
     func onSurveyOpened() async {

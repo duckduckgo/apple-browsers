@@ -149,6 +149,19 @@ final class UserAgentTests: XCTestCase {
         XCTAssertEqual(ExpectedAgent.desktopFallback, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: privacyConfig))
     }
     
+    // The token is warmed against `.ddg` while the SERP interceptor pins `agent(forUrl: <serp url>)`.
+    // Both are the same host, and every URL-keyed branch (omit/default/fixed sites) is host-based, so
+    // the two must resolve to an identical UA — otherwise the warmed token's UA would not match the SERP's.
+    func testSameHostUrlsResolveToIdenticalUserAgent() {
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
+        let ddgHome = URL(string: "https://duckduckgo.com")!
+        let ddgSerp = URL(string: "https://duckduckgo.com/?q=test&ia=web")!
+        for isDesktop in [true, false] {
+            XCTAssertEqual(testee.agent(forUrl: ddgHome, isDesktop: isDesktop, privacyConfig: privacyConfig),
+                           testee.agent(forUrl: ddgSerp, isDesktop: isDesktop, privacyConfig: privacyConfig))
+        }
+    }
+
     func testWhenDomainDoesNotSupportApplicationComponentThenApplicationIsOmittedFromUa() {
         let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.mobileNoApplication, testee.agent(forUrl: Constants.noAppUrl, isDesktop: false, privacyConfig: privacyConfig))

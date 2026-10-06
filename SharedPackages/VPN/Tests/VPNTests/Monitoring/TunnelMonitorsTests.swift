@@ -93,6 +93,9 @@ final class TunnelMonitorsTests: XCTestCase {
             onConnectionTestResult: { result in
                 hooksBox.lastConnectionTestResult = result
             },
+            onTunnelFailureResult: { result in
+                hooksBox.tunnelFailureResults.append(result)
+            },
             onFailureRecoveryConfigUpdate: { result in
                 hooksBox.lastFailureRecoveryConfigUpdate = result
                 if let error = hooksBox.failureRecoveryConfigUpdateError {
@@ -129,6 +132,13 @@ final class TunnelMonitorsTests: XCTestCase {
         for _ in 0..<10 {
             await Task.yield()
         }
+    }
+
+    private func makeFailureRecoveryConfigResult() -> NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult {
+        (
+            tunnelConfiguration: .make(named: "replacement-server"),
+            server: .registeredServer(named: "replacement-server")
+        )
     }
 
     // MARK: - start()
@@ -270,7 +280,59 @@ final class TunnelMonitorsTests: XCTestCase {
         XCTAssertEqual(connectionStop, 1)
     }
 
+    func testStop_stopsFailureRecovery() async {
+        await monitors.stop()
+
+        XCTAssertEqual(failureRecoveryHandler.stopCount, 1)
+    }
+
+    func testStop_excludingFailureRecovery_stopsOtherMonitorsButLeavesRecoveryRunning() async {
+        await monitors.stop(includingFailureRecovery: false)
+
+        let failureStop = await tunnelFailureMonitor.stopCount
+        let latencyStop = await latencyMonitor.stopCount
+        let entitlementStop = await entitlementMonitor.stopCount
+        let serverStatusStop = await serverStatusMonitor.stopCount
+        let keyExpStop = await keyExpirationTester.stopCount
+        let connectionStop = connectionTester.stopCount
+
+        XCTAssertEqual(failureStop, 1)
+        XCTAssertEqual(latencyStop, 1)
+        XCTAssertEqual(entitlementStop, 1)
+        XCTAssertEqual(serverStatusStop, 1)
+        XCTAssertEqual(keyExpStop, 1)
+        XCTAssertEqual(connectionStop, 1)
+
+        // A reasserting config update is driven *by* failure recovery, so the
+        // reconfiguration stop must leave the in-flight recovery task alone;
+        // cancelling it here would truncate the recovery's retry loop.
+        XCTAssertEqual(failureRecoveryHandler.stopCount, 0)
+    }
+
     // MARK: - Tunnel-failure callback
+
+    func testTunnelFailureCallbackForwardsHealthTransitionsButNotPathChanges() async throws {
+        try await monitors.start(testImmediately: false)
+
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await tunnelFailureMonitor.fire(.failureRecovered)
+        await tunnelFailureMonitor.fire(.networkPathChanged("test"))
+
+        XCTAssertEqual(hooks.tunnelFailureResults.count, 2)
+
+        guard hooks.tunnelFailureResults.count == 2 else {
+            return
+        }
+
+        guard case .failureDetected = hooks.tunnelFailureResults[0] else {
+            return XCTFail("Expected failure detection first")
+        }
+        guard case .failureRecovered = hooks.tunnelFailureResults[1] else {
+            return XCTFail("Expected recovery second")
+        }
+
+        await waitForSpawnedTasks()
+    }
 
     func testTunnelFailureCallback_firesReportTunnelFailureEvent() async throws {
         try await monitors.start(testImmediately: false)
@@ -291,6 +353,34 @@ final class TunnelMonitorsTests: XCTestCase {
 
         XCTAssertEqual(failureRecoveryHandler.attemptCount, 1)
         XCTAssertEqual(failureRecoveryHandler.lastExcludeLocalNetworks, false)
+    }
+
+    func testTunnelFailureCallback_failureDetected_appliesRecoveryConfig() async throws {
+        let configResult = makeFailureRecoveryConfigResult()
+        failureRecoveryHandler.configResultToUpdate = configResult
+
+        try await monitors.start(testImmediately: false)
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await waitForSpawnedTasks()
+
+        XCTAssertEqual(hooks.lastFailureRecoveryConfigUpdate?.server.serverName, configResult.server.serverName)
+    }
+
+    func testTunnelFailureCallback_failureDetected_whenRecoveryAppliesConfig_firesOneUnhealthyCompletedEvent() async throws {
+        failureRecoveryHandler.configResultToUpdate = makeFailureRecoveryConfigResult()
+        failureRecoveryHandler.afterSuccessfulConfigUpdate = { [weak firedEvents] in
+            firedEvents?.events.append(.failureRecoveryAttempt(.completed(.unhealthy)))
+        }
+
+        try await monitors.start(testImmediately: false)
+        await tunnelFailureMonitor.fire(.failureDetected)
+        await waitForSpawnedTasks()
+
+        let unhealthyCompletionCount = firedEvents.events.filter { event in
+            if case .failureRecoveryAttempt(.completed(.unhealthy)) = event { return true }
+            return false
+        }.count
+        XCTAssertEqual(unhealthyCompletionCount, 1)
     }
 
     func testTunnelFailureCallback_failureRecovered_stopsFailureRecovery() async throws {
@@ -438,6 +528,7 @@ private final class TunablesBox: @unchecked Sendable {
 private final class HooksBox: @unchecked Sendable {
     var reconfigureForMigrationCount = 0
     var reconfigureForMigrationError: Error?
+    var tunnelFailureResults: [NetworkProtectionTunnelFailureMonitor.Result] = []
     var lastConnectionTestResult: ConnectionTestingResult?
     var lastFailureRecoveryConfigUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
     var failureRecoveryConfigUpdateError: Error?
@@ -605,18 +696,32 @@ private final class MockFailureRecoveryHandler: FailureRecoveryHandling, @unchec
     var stopCount = 0
     var lastServer: NetworkProtectionServer?
     var lastExcludeLocalNetworks: Bool?
+    var lastExcludeCGNAT: Bool?
     var lastDNSSettings: NetworkProtectionDNSSettings?
+    var configResultToUpdate: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
+    var afterSuccessfulConfigUpdate: (@MainActor () -> Void)?
 
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
         attemptCount += 1
         lastServer = lastConnectedServer
         lastExcludeLocalNetworks = excludeLocalNetworks
+        lastExcludeCGNAT = excludeCGNAT
         lastDNSSettings = dnsSettings
+
+        if let configResultToUpdate {
+            do {
+                try await updateConfig(configResultToUpdate)
+                await afterSuccessfulConfigUpdate?()
+            } catch {
+                // updateConfig is not expected to throw in these tests.
+            }
+        }
     }
 
     func stop() async {

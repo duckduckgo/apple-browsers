@@ -23,6 +23,7 @@ import Core
 import Combine
 import DataBrokerProtection_iOS
 import PrivacyConfig
+import VPN
 
 struct SubscriptionEmailView: View {
         
@@ -47,7 +48,9 @@ struct SubscriptionEmailView: View {
         
     var body: some View {
         // Hidden Navigation Links for Onboarding sections
-        NavigationLink(destination: LazyView(NetworkProtectionRootView().navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(
+            NetworkProtectionRootView(source: .subscriptionEmail)
+                .navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
         NavigationLink(destination: LazyView(SubscriptionITPView(viewModel:

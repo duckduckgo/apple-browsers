@@ -70,7 +70,7 @@ public extension NavigationResponse {
 extension NavigationResponse: CustomDebugStringConvertible {
     public var debugDescription: String {
         let statusCode = self.httpStatusCode.map { String($0) } ?? "-"
-        return "<Response: \((response.url ?? .empty).absoluteString) status:\(statusCode)\(self.isForMainFrame ? "" : " non-main-frame")\(shouldDownload ? " shouldDownload" : "")>"
+        return "<Response: \((response.url ?? .empty).shortDescription) status:\(statusCode)\(self.isForMainFrame ? "" : " non-main-frame")\(shouldDownload ? " shouldDownload" : "")>"
     }
 }
 

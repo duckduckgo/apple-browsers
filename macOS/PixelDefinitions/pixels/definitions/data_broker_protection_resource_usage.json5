@@ -1,0 +1,90 @@
+{
+    "m_mac_dbp_resource-usage_run": {
+        "description": "Fires when monitoring stops for a PIR queue run, reporting bucketed CPU and peak memory usage.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "cpu_time_seconds_bucket",
+                "type": "string",
+                "enum": ["0", "5", "10", "20", "40", "80", "160", "320", "640", "1280", "2560", "5120", "10240", "20480", "40960"],
+                "description": "Combined agent and web-process CPU seconds consumed during the run."
+            },
+            {
+                "key": "elapsed_seconds_bucket",
+                "type": "string",
+                "enum": ["0", "5", "10", "20", "40", "80", "160", "320", "640", "1280", "2560", "5120", "10240", "20480", "40960"],
+                "description": "Run duration in seconds. Measures time the system was awake, so a run spanning sleep reports less than its calendar duration."
+            },
+            {
+                "key": "core_utilization_percent_bucket",
+                "type": "string",
+                "enum": ["0", "3", "6", "12", "25", "50", "100", "200", "400"],
+                "description": "Run CPU time as a percentage of one core, so 100 means one core was fully occupied for the whole run."
+            },
+            {
+                "key": "agent_peak_footprint_mb_bucket",
+                "type": "string",
+                "enum": ["0", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"],
+                "description": "Peak agent physical footprint in MiB."
+            },
+            {
+                "key": "web_peak_footprint_mb_bucket",
+                "type": "string",
+                "enum": [
+                    "0",
+                    "8",
+                    "16",
+                    "32",
+                    "64",
+                    "128",
+                    "256",
+                    "512",
+                    "1024",
+                    "2048",
+                    "4096",
+                    "8192",
+                    "16384",
+                    "32768",
+                    "65536",
+                    "unknown"
+                ],
+                "description": "Peak summed footprint in MiB of the agent's web content, graphics, and networking processes; unknown when it could not be read."
+            },
+            {
+                "key": "had_critical_pressure",
+                "type": "boolean",
+                "description": "Whether macOS reported critical memory pressure at any point during the run. The pressure is machine-wide and not necessarily caused by PIR."
+            },
+            {
+                "key": "on_battery",
+                "type": "string",
+                "enum": ["true", "false", "unknown"],
+                "description": "Whether the Mac was on battery power when the run started; unknown on Macs that report no power source."
+            },
+            {
+                "key": "thermal_state",
+                "type": "string",
+                "enum": ["nominal", "fair", "serious", "critical", "unknown"],
+                "description": "Thermal state macOS reported when the run ended. The state is machine-wide and not necessarily caused by PIR."
+            },
+            {
+                "key": "architecture",
+                "type": "string",
+                "enum": ["ARM", "Intel"],
+                "description": "CPU architecture of the build"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_dbp_memory-pressure_critical": {
+        "description": "Fires once per PIR queue run when macOS first reports critical memory pressure during the run.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

@@ -29,7 +29,7 @@ enum DataBrokerPrerequisitesStatus {
 }
 
 protocol DataBrokerPrerequisitesStatusVerifier: AnyObject {
-    func checkStatus() -> DataBrokerPrerequisitesStatus
+    func checkStatus() async -> DataBrokerPrerequisitesStatus
 }
 
 final class DefaultDataBrokerPrerequisitesStatusVerifier: DataBrokerPrerequisitesStatusVerifier {
@@ -39,8 +39,8 @@ final class DefaultDataBrokerPrerequisitesStatusVerifier: DataBrokerPrerequisite
         self.statusChecker = statusChecker
     }
 
-    func checkStatus() -> DataBrokerPrerequisitesStatus {
-        if !statusChecker.doesHaveNecessaryPermissions() {
+    func checkStatus() async -> DataBrokerPrerequisitesStatus {
+        if !(await statusChecker.doesHaveNecessaryPermissions()) {
             Logger.dataBrokerProtection.log("Invalid system permissions")
             return .invalidSystemPermission
         } else if !statusChecker.isInCorrectDirectory() {

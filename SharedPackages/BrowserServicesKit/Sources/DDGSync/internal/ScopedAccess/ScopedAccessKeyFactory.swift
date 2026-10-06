@@ -32,7 +32,6 @@ enum ScopedAccessKeyFactoryError: Error {
 enum ScopedAccessKeyFactory {
 
     private static let scopedPasswordLength = 32
-    private static let rsaKeySizeInBits = 2048
 
     struct RSAKeyMaterial {
         let publicKeyJWK: ProtectedKeyPublicKey
@@ -43,8 +42,8 @@ enum ScopedAccessKeyFactory {
         try randomBytes(count: scopedPasswordLength)
     }
 
-    static func makeRSAKeyMaterial() throws -> RSAKeyMaterial {
-        let keyPair = try makeRSAKeyPair()
+    static func makeRSAKeyMaterial(keySizeInBits: Int = 2048) throws -> RSAKeyMaterial {
+        let keyPair = try makeRSAKeyPair(keySizeInBits: keySizeInBits)
         let publicKeyPKCS1 = try copyExternalRepresentation(for: keyPair.publicKey,
                                                             error: .publicKeyExportFailed)
         let privateKeyPKCS1 = try copyExternalRepresentation(for: keyPair.privateKey,
@@ -76,9 +75,9 @@ enum ScopedAccessKeyFactory {
                             purpose: purpose)
     }
 
-    private static func makeRSAKeyPair() throws -> RSAKeyPair {
+    private static func makeRSAKeyPair(keySizeInBits: Int) throws -> RSAKeyPair {
         do {
-            return try RSAKeyPairGenerator.makeKeyPair(keySizeInBits: rsaKeySizeInBits)
+            return try RSAKeyPairGenerator.makeKeyPair(keySizeInBits: keySizeInBits)
         } catch RSAKeyPairGeneratorError.keyGenerationFailed {
             throw ScopedAccessKeyFactoryError.keyGenerationFailed
         } catch RSAKeyPairGeneratorError.publicKeyExtractionFailed {

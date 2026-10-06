@@ -19,8 +19,7 @@
 import Common
 import FoundationExtensions
 import Foundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import WideEvent
 import SubscriptionTestingUtilities
 import XCTest
 
@@ -70,6 +69,31 @@ final class WideEventServiceTests: XCTestCase {
         let completedRestoreData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionRestoreWideEventData }
         XCTAssertEqual(completedPurchaseData.count, 1)
         XCTAssertEqual(completedRestoreData.count, 1)
+    }
+
+    func test_sendPendingEvents_recentAuthV2RefreshStaysPending() async {
+        let data = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        mockWideEvent.started.append(data)
+
+        await sut.sendPendingEvents()
+
+        XCTAssertFalse(mockWideEvent.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+    }
+
+    func test_sendPendingEvents_staleAuthV2RefreshCompletesWithUnknown() async {
+        let data = AuthV2TokenRefreshWideEventData(
+            failingStep: .recoverInvalidToken,
+            startedAt: Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
+        )
+        mockWideEvent.started.append(data)
+
+        await sut.sendPendingEvents()
+
+        let completion = mockWideEvent.completions.first { $0.0 is AuthV2TokenRefreshWideEventData }
+        XCTAssertNotNil(completion, "A stale refresh must be reconciled on launch")
+        guard case .unknown = completion?.1 else {
+            return XCTFail("Expected the stale refresh to complete as UNKNOWN")
+        }
     }
 
     // MARK: - processSubscriptionPurchasePixels - Happy Path
@@ -145,6 +169,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "test.subscription",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             createAccountDuration: WideEvent.MeasuredInterval(start: Date(), end: Date()),
             contextData: WideEventContextData()
         )
@@ -275,6 +300,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "subscription",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
     }
@@ -284,6 +310,7 @@ final class WideEventServiceTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "subscription",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             activateAccountDuration: WideEvent.MeasuredInterval(start: startDate, end: nil),
             contextData: WideEventContextData()
         )

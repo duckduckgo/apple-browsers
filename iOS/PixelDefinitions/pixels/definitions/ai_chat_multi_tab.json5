@@ -1,0 +1,77 @@
+{
+    "aichat_unified_input_tab_picker_shown": {
+        "description": "Fires once when Add tabs picker is presented or the mention list changes from hidden to visible. Filtering while the mention list remains visible does not create another impression. Returning to matching results after the list was hidden starts a new impression. Surface is captured when the picker or mention list becomes visible. Recent tabs inline menu has no impression event.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_picker_source"]
+    },
+    "aichat_unified_input_tab_picker_canceled": {
+        "description": "Fires once when a presented picker closes without applying a selection change: close button, interactive dismissal, or confirmation with no accepted changes. For mentions, fires when a visible list is hidden without successfully accepting a tab, including when filtering leaves no matching tabs. Surface identifies where that visibility session began, including when dismissal follows a surface change. A disabled multi-tab feature suppresses this event. Further dismissal or text selection while the list is already hidden does not fire again.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_picker_source"]
+    },
+    "aichat_unified_input_tab_attached": {
+        "description": "Fires when an additional tab is added to the draft through recent tabs, Add tabs picker, or a mention. Excludes the current page, duplicate choices, failed choices, and restored drafts. Attachment does not imply successful content extraction.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_attachment_source"]
+    },
+    "aichat_unified_input_tab_removed": {
+        "description": "Fires when the user removes an additional tab via its chip, recent tabs, or Add tabs picker. Source is the original attachment source. Excludes automatic removal and the current page, which keeps its existing page-context pixels.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface", "aichat_tab_attachment_source"]
+    },
+    "aichat_unified_input_tabs_sent": {
+        "description": "Fires after native dispatch of a prompt containing at least one validated additional tab context. Count includes the current page if included in the final payload. Excludes current-page-only prompts, empty results, canceled or rejected dispatches, and a disabled multi-tab feature. Dispatch is not a frontend or backend success acknowledgement.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "payload_tab_count",
+                "description": "Number of tab contexts in the dispatched payload: one is 1, some is 2–3, many is 4 or more.",
+                "type": "string",
+                "enum": ["one", "some", "many"]
+            }
+        ]
+    },
+    "aichat_contextual_tab_attachment_collection_wait_timeout": {
+        "description": "Fires once per failed additional-tab collection attempt when its timeout budget expires before extraction can start because the page handler is busy. Reason describes blockers at the last wait. Also includes budget exhaustion immediately after that wait finishes. Excludes page-loading, document-reading and extraction timeouts, and cancellation.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "Pending source-page collection, another cross-tab collection, or both blocking the last wait.",
+                "type": "string",
+                "enum": ["source_collection", "cross_tab_collection", "both"]
+            }
+        ]
+    },
+    "aichat_unified_input_tabs_submission_incomplete": {
+        "description": "Fires once after native dispatch of a prompt when at least one additional tab captured in its submission request is absent from the final payload, including collection failure, empty content, or validation rejection. Partial loss also fires tabs_sent for the contexts that survived. Excludes cancellation, disabled feature, rejected dispatch, tabs removed before submission, and frontend/backend errors.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "outcome",
+                "description": "Whether some (partial) or all requested additional tab contexts are missing. Current page context does not affect this classification.",
+                "type": "string",
+                "enum": ["partial", "all"]
+            }
+        ]
+    }
+}

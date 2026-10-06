@@ -34,16 +34,20 @@ class CoreDataEncryptionTests: XCTestCase {
         return transformer
     }()
 
-    var container: NSPersistentContainer! = CoreData.encryptionContainer()
+    var container: NSPersistentContainer!
     var context: NSManagedObjectContext { container.viewContext }
 
     override func setUp() {
+        super.setUp()
         mockValueTransformer.numberOfTransformations = 0
+        container = CoreData.encryptionContainer()
     }
 
     override func tearDown() {
-        mockValueTransformer = nil
         container = nil
+        ValueTransformer.setValueTransformer(nil, forName: NSValueTransformerName("MockValueTransformer"))
+        mockValueTransformer = nil
+        super.tearDown()
     }
 
     func testSavingEncryptedValues() {

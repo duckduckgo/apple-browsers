@@ -32,6 +32,7 @@ class MockHistoryManager: HistoryManaging {
     var tabHistoryCalls: [String] = []
     var removeTabHistoryCalls: [[String]] = []
     var tabHistoryResult: [URL] = []
+    var tabHistoryError: Error?
     var removeBrowsingHistoryCalls: [String] = []
     
     /// Expectation that is fulfilled when `removeTabHistory` is called
@@ -82,6 +83,9 @@ class MockHistoryManager: HistoryManaging {
     
     func tabHistory(tabID: String) async throws -> [URL] {
         tabHistoryCalls.append(tabID)
+        if let tabHistoryError {
+            throw tabHistoryError
+        }
         return tabHistoryResult
     }
     

@@ -20,7 +20,9 @@ import AVFoundation
 import Combine
 import CoreLocation
 import Foundation
-import Navigation
+import DDGNavigation
+import FeatureFlags_macOS
+import PrivacyConfig
 import UserNotifications
 import WebKit
 import os.log
@@ -37,6 +39,8 @@ final class PermissionModel {
     /// Fires when permission blocked due to system being disabled - view layer shows info popover
     let permissionBlockedBySystem = PassthroughSubject<(domain: String, permissionType: PermissionType), Never>()
 
+    let popupDecisionRemoved = PassthroughSubject<Void, Never>()
+
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
             authorizationQuery = authorizationQueries.last
@@ -46,9 +50,14 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
+
+    private var temporarilyAllowedExternalSchemes: [String: Set<PermissionType>] = [:]
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
+
+    private var deniedByCategoryDefault = Set<PermissionType>()
 
     weak var webView: WKWebView? {
         didSet {
@@ -69,11 +78,13 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()) {
+         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
+         featureFlagger: FeatureFlagger) {
 
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
         self.systemPermissionManager = systemPermissionManager
+        self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -106,9 +117,9 @@ final class PermissionModel {
             guard let permissionManager else { return }
 
             self?.permissionManager(permissionManager,
-                                    didChangePermanentDecisionFor: value.permissionType,
+                                    didChangePermission: value.permissionType,
                                     forDomain: value.domain,
-                                    to: value.decision)
+                                    change: value.change)
         }.store(in: &cancellables)
     }
 
@@ -120,7 +131,9 @@ final class PermissionModel {
             permissions[permission].willReload()
         }
         authorizationQueries = []
+        temporarilyAllowedExternalSchemes.removeAll()
         removedPermissions.removeAll()
+        deniedByCategoryDefault.removeAll()
         clearPermissionsNeedReload()
     }
 
@@ -172,6 +185,23 @@ final class PermissionModel {
         }
     }
 
+    private func shouldPersistDecision(remember: Bool?, for permission: PermissionType, domain: String) -> Bool {
+        switch remember {
+        case .some(let remember):
+            // Explicit choice: `true` for Always allow / Never allow (and the Allow / Deny prompt's
+            // Duck.ai microphone exception), `false` for Allow this visit.
+            return remember
+        case .none:
+            // No explicit choice (the Allow / Deny prompt): keep the legacy rule,
+            // which saves a site's first notification decision.
+            return persistsWhen(permission: permission, domain: domain)
+        }
+    }
+
+    private func shouldStoreTemporaryGrant(granted: Bool, remember: Bool?, for permission: PermissionType) -> Bool {
+        granted && remember == false && permission.isExternalScheme && featureFlagger.isFeatureOn(.websitePermissionsPrompts)
+    }
+
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
@@ -199,16 +229,22 @@ final class PermissionModel {
             if let self,
                let idx = self.authorizationQueries.firstIndex(where: { Unmanaged.passUnretained($0).toOpaque() == queryPtr }) {
 
-                self.authorizationQueries.remove(at: idx)
+                let completedQuery = self.authorizationQueries.remove(at: idx)
+
+                if case .failure = result {
+                    self.clearDismissedQuery(completedQuery)
+                }
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
-                        let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
-                        if isPersisting {
+                        if self.shouldStoreTemporaryGrant(granted: granted, remember: remember, for: permission) {
+                            self.temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix(), default: []].insert(permission)
+                        }
+                        if self.shouldPersistDecision(remember: remember, for: permission, domain: domain) {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
-                        } else {
-                            // Other permissions: one-time decisions store .ask for permission center visibility
+                        } else if remember == nil {
+                            // The legacy Allow / Deny prompt stores .ask for permission center visibility.
+                            // Allow this visit (`remember == false`) is temporary and is never stored.
                             self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
                     }
@@ -226,28 +262,47 @@ final class PermissionModel {
         authorizationQueries.append(query)
     }
 
-    private func permissionManager(_: PermissionManagerProtocol,
-                                   didChangePermanentDecisionFor permissionType: PermissionType,
-                                   forDomain domain: String,
-                                   to decision: PersistedPermissionDecision) {
-
-        // If Always Allow/Deny for the current host: Grant/Revoke the permission
-        guard webView?.url?.host?.droppingWwwPrefix() == domain else { return }
-
-        // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
-        if decision == .allow {
-            removedPermissions.remove(permissionType)
-        }
-
-        switch (decision, self.permissions[permissionType]) {
-        case (.deny, .some):
-            self.revoke(permissionType)
-            fallthrough
-        case (.allow, .requested):
-            while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
-                query.handleDecision(grant: decision == .allow)
+    private func clearDismissedQuery(_ query: PermissionAuthorizationQuery) {
+        // Only the new prompt marks explicit dismissals. Legacy cancellation keeps its existing state.
+        guard query.wasDismissed, featureFlagger.isFeatureOn(.websitePermissionsPrompts) else { return }
+        for permission in query.permissions {
+            if case .requested(let pendingQuery) = permissions[permission], pendingQuery === query {
+                permissions[permission] = nil
             }
-        default: break
+        }
+    }
+
+    private func permissionManager(_: PermissionManagerProtocol,
+                                   didChangePermission permissionType: PermissionType,
+                                   forDomain domain: String,
+                                   change: PermissionChange) {
+        temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix()]?.remove(permissionType)
+        guard currentDomain?.droppingWwwPrefix() == domain else { return }
+
+        switch change {
+        case .removed:
+            removePermissionFromCurrentPage(permissionType)
+            if permissionType == .popups {
+                popupDecisionRemoved.send()
+            }
+        case .decisionChanged(let decision):
+            // Allow updatePermissions() to track the permission again when access is restored.
+            if decision == .allow {
+                removedPermissions.remove(permissionType)
+            }
+
+            switch (decision, self.permissions[permissionType]) {
+            case (.ask, .denied):
+                self.permissions[permissionType] = nil
+            case (.deny, .some):
+                self.revoke(permissionType)
+                fallthrough
+            case (.allow, .requested):
+                while let query = self.authorizationQueries.first(where: { $0.permissions == [permissionType] }) {
+                    query.handleDecision(grant: decision == .allow)
+                }
+            default: break
+            }
         }
     }
 
@@ -266,6 +321,7 @@ final class PermissionModel {
     }
 
     func revoke(_ permission: PermissionType) {
+        clearTemporaryExternalSchemeGrant(for: permission)
         if let domain = currentDomain,
            case .allow = permissionManager.permission(forDomain: domain, permissionType: permission) {
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
@@ -282,8 +338,20 @@ final class PermissionModel {
 
     /// Removes a permission completely (revokes and removes from tracking)
     func remove(_ permission: PermissionType) {
+        removePermissionFromCurrentPage(permission)
+
+        // Remove from persisted storage
+        if let domain = currentDomain {
+            permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        } else {
+            assertionFailure("webView URL should not be nil when removing a permission")
+        }
+    }
+
+    private func removePermissionFromCurrentPage(_ permission: PermissionType) {
+        clearTemporaryExternalSchemeGrant(for: permission)
         // Track as explicitly removed to prevent re-adding via updatePermissions()
-        removedPermissions.insert(permission)
+        guard removedPermissions.insert(permission).inserted else { return }
 
         // First revoke the permission
         switch permission {
@@ -295,12 +363,11 @@ final class PermissionModel {
 
         // Remove from dictionary (will trigger @Published update)
         permissions[permission] = nil
+    }
 
-        // Remove from persisted storage
-        if let domain = currentDomain {
-            permissionManager.removePermission(forDomain: domain, permissionType: permission)
-        } else {
-            assertionFailure("webView URL should not be nil when removing a permission")
+    private func clearTemporaryExternalSchemeGrant(for permission: PermissionType) {
+        for domain in temporarilyAllowedExternalSchemes.keys {
+            temporarilyAllowedExternalSchemes[domain]?.remove(permission)
         }
     }
 
@@ -388,19 +455,38 @@ final class PermissionModel {
         }
     }
 
+    func isPopupBlockedByDefault(forDomain domain: String) -> Bool {
+        isBlockedByCategoryDefault(.popups, forDomain: domain)
+    }
+
+    private func isBlockedByCategoryDefault(_ permission: PermissionType, forDomain domain: String) -> Bool {
+        !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission)
+            && permissionManager.permission(forDomain: domain, permissionType: permission) == .deny
+    }
+
+    private func shouldApplyDenial(of permission: PermissionType, isPersistedForDomain: Bool) -> Bool {
+        let comesFromCategoryDefault = !isPersistedForDomain
+        return permission.canPersistDeniedDecision || comesFromCategoryDefault
+    }
+
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
+        var shouldAsk = false
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
+            let isPersistedForDomain = permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission)
             if case .allow = stored, permission.canPersistGrantedDecision {
                 grant = .allow
-            } else if case .deny = stored, permission.canPersistDeniedDecision {
+            } else if case .deny = stored, shouldApplyDenial(of: permission, isPersistedForDomain: isPersistedForDomain) {
                 grant = .deny
+            } else if featureFlagger.isFeatureOn(.websitePermissionsPrompts),
+                      temporarilyAllowedExternalSchemes[domain.droppingWwwPrefix()]?.contains(permission) == true {
+                grant = .allow
             } else if let state = self.permissions[permission] {
                 switch state {
                 // deny if already denied during current page being displayed
                 case .denied, .revoking:
-                    grant = .deny
+                    grant = deniedByCategoryDefault.contains(permission) ? .ask : .deny
                 // ask otherwise
                 case .disabled, .requested, .active, .inactive, .paused, .reloading:
                     grant = .ask
@@ -417,14 +503,14 @@ final class PermissionModel {
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
                 if isSystemPermissionDisabled(for: permission) {
-                    return nil
+                    shouldAsk = true
                 }
             case .ask:
-                // if at least one permission is not set: ask
-                return nil
+                // Check the remaining permissions for a denial before prompting.
+                shouldAsk = true
             }
         }
-        return true
+        return shouldAsk ? nil : true
     }
 
     /// Checks if system-level permission is disabled for the given permission type (uses cached state for sync access)
@@ -467,6 +553,7 @@ final class PermissionModel {
                 // Fire event for view layer to show informational popover
                 permissionBlockedBySystem.send((domain: domain, permissionType: permissions.first!))
             } else {
+                deniedByCategoryDefault.subtract(permissions)
                 self.queryAuthorization(for: permissions, domain: domain, url: url,
                                         isSystemPermissionDisabled: false,
                                         decisionHandler: wrappedDecisionHandler)
@@ -475,7 +562,12 @@ final class PermissionModel {
             wrappedDecisionHandler(true)
         case .some(false):
             wrappedDecisionHandler(false)
+            let isDeniedByCategoryDefault = permissions.contains { isBlockedByCategoryDefault($0, forDomain: domain) }
             for permission in permissions {
+                let wasDeniedEarlierOnPage = self.permissions[permission] == .denied
+                if isDeniedByCategoryDefault, !wasDeniedEarlierOnPage {
+                    deniedByCategoryDefault.insert(permission)
+                }
                 self.permissions[permission].denied()
             }
         }

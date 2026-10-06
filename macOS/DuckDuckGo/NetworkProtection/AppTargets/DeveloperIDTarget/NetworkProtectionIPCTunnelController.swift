@@ -23,6 +23,7 @@ import Foundation
 import VPN
 import NetworkProtectionIPC
 import PixelKit
+import WideEvent
 import UDSHelper
 import os.log
 import PrivacyConfig
@@ -111,7 +112,7 @@ final class NetworkProtectionIPCTunnelController {
     // MARK: - Login Items Manager
 
     private func enableLoginItems() async throws {
-        try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
+        try await loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 }
 
@@ -242,7 +243,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StartAttempt: PixelKitEvent {
+    enum StartAttempt: PixelKit.Event {
         case begin
         case success
         case failure(_ error: Error)
@@ -280,7 +281,7 @@ extension NetworkProtectionIPCTunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StopAttempt: PixelKitEvent {
+    enum StopAttempt: PixelKit.Event {
         case begin
         case success
         case failure(_ error: Error)

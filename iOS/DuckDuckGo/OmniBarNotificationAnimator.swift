@@ -66,6 +66,8 @@ final class OmniBarNotificationAnimator: NSObject {
                 // Create cancellable work item for completion
                 let completionWorkItem = DispatchWorkItem {
                     omniBar.notificationContainer.removePreviousNotification()
+                    // Re-assert the floating field appearance after the animation.
+                    omniBar.restoreFloatingFieldAppearance()
                     completion?()
                 }
 
@@ -96,6 +98,7 @@ final class OmniBarNotificationAnimator: NSObject {
         omniBar.notificationContainer.alpha = 0
         omniBar.textField.alpha = 1
         omniBar.privacyInfoContainer.alpha = 1
+        omniBar.restoreFloatingFieldAppearance()
     }
 }
 

@@ -146,14 +146,14 @@ struct UnifiedFeedbackCategoryView<Category: FeedbackCategoryProviding, Destinat
                                 .foregroundColor(.init(designSystemColor: .textPrimary))
                         }
                         .tag(option.rawValue)
-                        .listRowBackground(Color(designSystemColor: .surface))
+                        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
                     }
                 } header: {
                     Text(prompt)
                         .font(.caption)
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         }
         .applyInsetGroupedListStyle()
         .navigationTitle(title)
@@ -290,7 +290,7 @@ private struct IssueDescriptionFormView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .environment(\.openURL, OpenURLAction { _ in
                 Task {
                     await viewModel.process(action: .reportFAQClick)
@@ -310,7 +310,7 @@ private struct IssueDescriptionFormView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
-            .tint(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accentPrimary))
             .environment(\.openURL, OpenURLAction { _ in
                 Task {
                     await viewModel.process(action: .contactSupportClick)

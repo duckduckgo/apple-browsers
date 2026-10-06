@@ -36,29 +36,67 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenFetchMessagesReceives404ThenThrowsRelayChannelUnavailable() async throws {
+    func testWhenFetchMessagesReceives404ThenClassifiesUnavailable() async throws {
         api.request = makeRequest(statusCode: 404)
         let exchanger = makeExchanger()
 
-        do {
+        let error = await relayRequestError {
             _ = try await exchanger.fetchMessages(from: "channel", after: 0)
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable")
-        } catch PairingV2Error.relayChannelUnavailable {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable, got \(error)")
         }
+
+        XCTAssertEqual(error?.kind, .unavailable)
+        XCTAssertEqual(error?.underlyingError as? PairingV2Error, .relayChannelUnavailable)
     }
 
-    func testWhenFetchMessagesReceives410ThenThrowsRelayChannelExpired() async throws {
+    func testWhenFetchMessagesReceives410ThenClassifiesExpired() async throws {
         api.request = makeRequest(statusCode: 410)
+        let exchanger = makeExchanger()
+
+        let error = await relayRequestError {
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+        }
+
+        XCTAssertEqual(error?.kind, .expired)
+        XCTAssertEqual(error?.underlyingError as? PairingV2Error, .relayChannelExpired)
+    }
+
+    func testWhenFetchMessagesReceivesOtherHTTPErrorThenClassifiesHTTPError() async throws {
+        api.request = makeRequest(statusCode: 503)
+        let exchanger = makeExchanger()
+
+        let error = await relayRequestError {
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+        }
+
+        XCTAssertEqual(error?.kind, .httpError)
+        XCTAssertEqual(error?.underlyingError as? SyncError, .unexpectedStatusCode(503))
+    }
+
+    func testWhenFetchMessagesReceivesNoHTTPResponseThenClassifiesNetworkError() async throws {
+        let request = HTTPRequestingMock()
+        let underlyingError = URLError(.notConnectedToInternet)
+        request.error = underlyingError
+        api.request = request
+        let exchanger = makeExchanger()
+
+        let error = await relayRequestError {
+            _ = try await exchanger.fetchMessages(from: "channel", after: 0)
+        }
+
+        XCTAssertEqual(error?.kind, .networkError)
+        XCTAssertEqual((error?.underlyingError as? URLError)?.code, underlyingError.code)
+    }
+
+    func testWhenFetchMessagesReceivesMalformedSuccessfulResponseThenPreservesDecodingError() async throws {
+        api.request = makeRequest(statusCode: 200, body: "invalid")
         let exchanger = makeExchanger()
 
         do {
             _ = try await exchanger.fetchMessages(from: "channel", after: 0)
-            XCTFail("Expected PairingV2Error.relayChannelExpired")
-        } catch PairingV2Error.relayChannelExpired {
+            XCTFail("Expected decoding to fail")
         } catch {
-            XCTFail("Expected PairingV2Error.relayChannelExpired, got \(error)")
+            XCTAssertTrue(error is DecodingError)
+            XCTAssertFalse(error is PairingV2RelayRequestError)
         }
     }
 
@@ -77,7 +115,7 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         XCTAssertEqual(api.createRequestCallCount, 1)
     }
 
-    func testWhenFirstSendKeepsReceiving404ThenThrowsRelayChannelUnavailableAfterRetryBudget() async throws {
+    func testWhenFirstSendKeepsReceiving404ThenClassifiesUnavailableAfterRetryBudget() async throws {
         let request = SequencedHTTPRequestingMock(results: [
             .init(data: nil, response: makeHTTPURLResponse(statusCode: 404)),
             .init(data: nil, response: makeHTTPURLResponse(statusCode: 404)),
@@ -87,19 +125,16 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         api.request = request
         let exchanger = makeExchanger()
 
-        do {
+        let error = await relayRequestError {
             try await exchanger.send([.init(payload: "payload")], to: "channel")
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable")
-        } catch PairingV2Error.relayChannelUnavailable {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable, got \(error)")
         }
 
+        XCTAssertEqual(error?.kind, .unavailable)
         XCTAssertEqual(request.executeCallCount, 3)
         XCTAssertEqual(api.createRequestCallCount, 1)
     }
 
-    func testWhenSendReceives404AfterFirstSuccessfulMessagePostThenThrowsRelayChannelUnavailableWithoutRetrying() async throws {
+    func testWhenSendReceives404AfterFirstSuccessfulMessagePostThenClassifiesUnavailableWithoutRetrying() async throws {
         let request = SequencedHTTPRequestingMock(results: [
             .init(data: nil, response: makeHTTPURLResponse(statusCode: 204)),
             .init(data: nil, response: makeHTTPURLResponse(statusCode: 404)),
@@ -109,29 +144,24 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         let exchanger = makeExchanger()
 
         try await exchanger.send([.init(payload: "first-payload")], to: "channel")
-        do {
+        let error = await relayRequestError {
             try await exchanger.send([.init(payload: "second-payload")], to: "channel")
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable")
-        } catch PairingV2Error.relayChannelUnavailable {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelUnavailable, got \(error)")
         }
 
+        XCTAssertEqual(error?.kind, .unavailable)
         XCTAssertEqual(request.executeCallCount, 2)
         XCTAssertEqual(api.createRequestCallCount, 2)
     }
 
-    func testWhenSendReceives410ThenThrowsRelayChannelExpired() async throws {
+    func testWhenSendReceives410ThenClassifiesExpired() async throws {
         api.request = makeRequest(statusCode: 410)
         let exchanger = makeExchanger()
 
-        do {
+        let error = await relayRequestError {
             try await exchanger.send([.init(payload: "payload")], to: "channel")
-            XCTFail("Expected PairingV2Error.relayChannelExpired")
-        } catch PairingV2Error.relayChannelExpired {
-        } catch {
-            XCTFail("Expected PairingV2Error.relayChannelExpired, got \(error)")
         }
+
+        XCTAssertEqual(error?.kind, .expired)
     }
 
     func testWhenOpenChannelReceivesSuccessfulStatusThenSucceeds() async throws {
@@ -141,6 +171,26 @@ final class PairingV2MessageExchangerTests: XCTestCase {
         try await exchanger.openChannel("channel")
 
         XCTAssertEqual(api.createRequestCallCount, 1)
+    }
+
+    func testWhenOpenChannelReceives404ThenClassifiesUnavailable() async throws {
+        api.request = makeRequest(statusCode: 404)
+        let exchanger = makeExchanger()
+
+        let error = await relayRequestError {
+            try await exchanger.openChannel("channel")
+        }
+
+        XCTAssertEqual(error?.kind, .unavailable)
+    }
+
+    func testWhenCloseChannelReceivesMissingOrExpiredStatusThenSucceeds() async throws {
+        for statusCode in [404, 410] {
+            api.request = makeRequest(statusCode: statusCode)
+            let exchanger = makeExchanger()
+
+            try await exchanger.closeChannel("channel")
+        }
     }
 
     private func makeExchanger() -> PairingV2MessageExchanger {
@@ -157,5 +207,18 @@ final class PairingV2MessageExchangerTests: XCTestCase {
                         statusCode: statusCode,
                         httpVersion: nil,
                         headerFields: nil)!
+    }
+
+    private func relayRequestError(operation: () async throws -> Void) async -> PairingV2RelayRequestError? {
+        do {
+            try await operation()
+            XCTFail("Expected PairingV2RelayRequestError")
+            return nil
+        } catch let error as PairingV2RelayRequestError {
+            return error
+        } catch {
+            XCTFail("Expected PairingV2RelayRequestError, got \(error)")
+            return nil
+        }
     }
 }

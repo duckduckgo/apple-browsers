@@ -20,10 +20,7 @@
             },
             "platform",
             "form_factor",
-            {
-                "description": "Calendar month frequency marker",
-                "enum": ["monthly"]
-            }
+            "monthly"
         ]
     },
     "os_distribution_searches_major_version": {
@@ -46,7 +43,8 @@
                 "pattern": "^[0-9]{1,2}$"
             },
             "platform",
-            "form_factor"
+            "form_factor",
+            "monthly" // Legacy: present only to suppress pixel validation warnings for the deprecated monthly version of this pixel
         ]
     },
     "os_distribution_active_subscriptions_major_version": {
@@ -70,10 +68,7 @@
             },
             "platform",
             "form_factor",
-            {
-                "description": "Calendar month frequency marker",
-                "enum": ["monthly"]
-            }
+            "monthly"
         ]
     }
 }

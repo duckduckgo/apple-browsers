@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 /// Wide event data for subscription plan changes (upgrades, downgrades, crossgrades)
 public class SubscriptionPlanChangeWideEventData: WideEventData {

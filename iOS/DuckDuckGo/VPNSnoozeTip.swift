@@ -18,6 +18,7 @@
 //
 
 import TipKit
+import DesignResourcesKitIcons
 
 /// A tip to suggest to the user to use the snooze feature to momentarily disable the VPN
 ///
@@ -59,7 +60,7 @@ extension VPNSnoozeTip: Tip {
     }
 
     var image: Image? {
-        Image(.vpnUseSnoozeTipIcon)
+        Image(rebrandable: "Moon-24")
     }
 
     var actions: [Action] {

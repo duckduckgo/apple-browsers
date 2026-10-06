@@ -24,6 +24,7 @@ import AIChat
 enum TabType {
     case web
     case aiChat
+    case serp
 }
 
 protocol TabObserver: AnyObject {
@@ -54,17 +55,25 @@ public class Tab: NSObject, NSCoding {
         static let selectedModelID = "selectedModelID"
         static let selectedReasoningMode = "selectedReasoningMode"
         static let selectedTool = "selectedTool"
+        static let duckAIEntrySource = "duckAIEntrySource"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
-
-    /// The date last time this tab was displayed.
+    let favoritesExpansionState = FavoritesExpansionState()
+    /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
     ///
-    /// - Warning: This value **must not** be used for any other purpose than for inactive tabs buckets aggregation
-    /// into a daily pixel in `TabSwitcherOpenDailyPixel`. If you plan to do something else,
-    /// read through https://app.asana.com/0/69071770703008/1208795393823862/f and reopen if necessary.
+    /// Deliberately outlives the provisional load that starts it: a provisional load replaced before
+    /// it commits (link cleaning, HTTPS upgrade, a policy-driven reload) is still the same logical
+    /// restoration, and the replacement must be attributed to it too.
+    private(set) var hasPendingSessionRestoration = false
+
+    /// The date this tab was last displayed.
+    ///
+    /// Used for inactive-tab bucket aggregation in `TabSwitcherOpenDailyPixel` and the redesigned
+    /// New Tab Page's last-viewed caption. Before adding other uses, read through
+    /// https://app.asana.com/0/69071770703008/1208795393823862/f and reopen if necessary.
     private(set) var lastViewedDate: Date?
 
     var isDesktop: Bool = false {
@@ -140,10 +149,15 @@ public class Tab: NSObject, NSCoding {
     /// NSCoding so reopening the app restores the tab's selected AI settings.
     var unifiedInputState: UnifiedInputTabState
 
+    var duckAIEntrySource: AIChatEntryPointSource?
+
     /// Type of tab: web or AI Chat, derived from the current URL
-    private var type: TabType {
-        if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
+    var type: TabType {
+        guard let link else { return .web }
+        if link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
             return .aiChat
+        } else if link.url.isDuckDuckGoSearch {
+            return .serp
         }
         return .web
     }
@@ -162,6 +176,7 @@ public class Tab: NSObject, NSCoding {
                 isExternalLaunch: Bool = false,
                 shouldSuppressTrackerAnimationOnFirstLoad: Bool = false,
                 unifiedInputState: UnifiedInputTabState = UnifiedInputTabState(),
+                duckAIEntrySource: AIChatEntryPointSource? = nil,
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
@@ -175,6 +190,7 @@ public class Tab: NSObject, NSCoding {
         self.isExternalLaunch = isExternalLaunch
         self.shouldSuppressTrackerAnimationOnFirstLoad = shouldSuppressTrackerAnimationOnFirstLoad
         self.unifiedInputState = unifiedInputState
+        self.duckAIEntrySource = duckAIEntrySource
         self.aichatDebugSettings = aichatDebugSettings
     }
 
@@ -202,10 +218,18 @@ public class Tab: NSObject, NSCoding {
             selectedReasoningMode: selectedReasoningMode,
             selectedTool: selectedTool
         )
+        let duckAIEntrySourceRaw = decoder.decodeObject(forKey: NSCodingKeys.duckAIEntrySource) as? String
+        let duckAIEntrySource = duckAIEntrySourceRaw.flatMap(AIChatEntryPointSource.init(rawValue:))
 
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState)
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
+        hasPendingSessionRestoration = true
+    }
+
+    /// Ends session-restoration attribution for this tab, once a restoring navigation has committed.
+    func clearPendingSessionRestoration() {
+        hasPendingSessionRestoration = false
     }
 
     public func encode(with coder: NSCoder) {
@@ -223,6 +247,7 @@ public class Tab: NSObject, NSCoding {
         coder.encode(unifiedInputState.selectedModelID, forKey: NSCodingKeys.selectedModelID)
         coder.encode(unifiedInputState.selectedReasoningMode?.rawValue, forKey: NSCodingKeys.selectedReasoningMode)
         coder.encode(unifiedInputState.selectedTool?.rawValue, forKey: NSCodingKeys.selectedTool)
+        coder.encode(duckAIEntrySource?.rawValue, forKey: NSCodingKeys.duckAIEntrySource)
         // Note: isExternalLaunch and shouldSuppressTrackerAnimationOnFirstLoad are not encoded as they are transient flags
         // Note: type is not encoded as it's now a computed property based on the link URL
     }
@@ -238,7 +263,8 @@ public class Tab: NSObject, NSCoding {
             contextualChatURL: contextualChatURL,
             supportsTabHistory: supportsTabHistory,
             fireTab: fireTab,
-            unifiedInputState: unifiedInputState)
+            unifiedInputState: unifiedInputState,
+            duckAIEntrySource: duckAIEntrySource)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {
@@ -246,6 +272,10 @@ public class Tab: NSObject, NSCoding {
         return uid == other.uid
     }
     
+    public override var hash: Int {
+        return uid.hashValue
+    }
+
     func toggleDesktopMode() {
         isDesktop = !isDesktop
     }

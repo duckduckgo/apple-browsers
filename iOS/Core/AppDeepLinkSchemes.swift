@@ -17,53 +17,6 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppRouting
 
-public enum AppDeepLinkSchemes: String, CaseIterable {
-
-    case newSearch = "ddgNewSearch"
-    case voiceSearch = "ddgVoiceSearch"
-    case fireButton = "ddgFireButton"
-    case favorites = "ddgFavorites"
-    case newEmail = "ddgNewEmail"
-    case quickLink = "ddgQuickLink"
-    case addFavorite = "ddgAddFavorite"
-    case openVPN = "ddgOpenVPN"
-    case openPasswords = "ddgOpenPasswords"
-    case openAIChat = "ddgOpenAIChat"
-    case openAIVoiceChat = "ddgOpenAIVoiceChat"
-    case openBookmarks = "ddgOpenBookmarks"
-    case customProductPage = "ddgCPP"
-
-    public var url: URL {
-        URL(string: rawValue + "://")!
-    }
-
-    public func appending(_ string: String) -> String {
-        "\(rawValue)://\(string)"
-    }
-
-    public static func fromURL(_ url: URL) -> AppDeepLinkSchemes? {
-        guard let scheme = url.scheme else { return nil }
-        return allCases.first(where: { $0.rawValue.lowercased() == scheme.lowercased() })
-    }
-
-    public static func query(fromQuickLink url: URL) -> String {
-        let query = url.absoluteString
-            .replacingOccurrences(of: AppDeepLinkSchemes.quickLink.url.absoluteString,
-                                  with: "",
-                                  options: .caseInsensitive)
-
-        return AppDeepLinkSchemes.fixURLScheme(query)
-    }
-
-    private static func fixURLScheme(_ urlString: String) -> String {
-        let pattern = "^https?//"
-
-        if urlString.range(of: pattern, options: .regularExpression) != nil {
-            return urlString.replacingOccurrences(of: "//", with: "://")
-        } else {
-            return urlString
-        }
-    }
-}
+public typealias AppDeepLinkSchemes = AppRouting.AppDeepLinkSchemes

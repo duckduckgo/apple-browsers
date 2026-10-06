@@ -27,7 +27,50 @@ public typealias AppAttributeMatcher = MobileAppAttributeMatcher
 public typealias AppAttributeMatcher = DesktopAppAttributeMatcher
 #endif
 
-public typealias MobileAppAttributeMatcher = CommonAppAttributeMatcher
+public struct MobileAppAttributeMatcher: AttributeMatching {
+    private let canUpgradeOS: Bool
+
+    private let commonAppAttributeMatcher: CommonAppAttributeMatcher
+
+    public init(
+        statisticsStore: StatisticsStore,
+        variantManager: VariantManager,
+        isInternalUser: Bool = true,
+        canUpgradeOS: Bool = true
+    ) {
+        self.canUpgradeOS = canUpgradeOS
+
+        commonAppAttributeMatcher = .init(statisticsStore: statisticsStore, variantManager: variantManager, isInternalUser: isInternalUser)
+    }
+
+    public init(
+        bundleId: String,
+        appVersion: String,
+        isInternalUser: Bool,
+        statisticsStore: StatisticsStore,
+        variantManager: VariantManager,
+        canUpgradeOS: Bool = true
+    ) {
+        self.canUpgradeOS = canUpgradeOS
+
+        commonAppAttributeMatcher = .init(
+            bundleId: bundleId,
+            appVersion: appVersion,
+            isInternalUser: isInternalUser,
+            statisticsStore: statisticsStore,
+            variantManager: variantManager
+        )
+    }
+
+    public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
+        switch matchingAttribute {
+        case let matchingAttribute as OSUpgradeCapabilityMatchingAttribute:
+            return matchingAttribute.evaluate(for: canUpgradeOS)
+        default:
+            return commonAppAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
+        }
+    }
+}
 
 public struct DesktopAppAttributeMatcher: AttributeMatching {
     private let isInstalledMacAppStore: Bool

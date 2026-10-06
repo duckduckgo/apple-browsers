@@ -113,7 +113,7 @@ extension VPNUninstaller {
         case sysexInstallationRequiresAuthorization
     }
 
-    enum VPNUninstallAttempt: PixelKitEvent {
+    enum VPNUninstallAttempt: PixelKit.Event {
         case begin
         case cancelled(_ reason: UninstallCancellationReason)
         case success

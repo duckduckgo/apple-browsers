@@ -28,6 +28,7 @@ final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
     var isEligibleForNTPAfterIdleResult = true
     var effectiveAfterInactivityOptionResult: AfterInactivityOption = .newTab
     var idleThresholdSecondsResult = 300
+    var ntpAfterIdleStateResult: NTPAfterIdleState = .eligibleCardShown
 
     func isFeatureAvailable() -> Bool {
         isFeatureAvailableResult
@@ -43,6 +44,10 @@ final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
 
     func idleThresholdSeconds() -> Int {
         idleThresholdSecondsResult
+    }
+
+    func ntpAfterIdleState() -> NTPAfterIdleState {
+        ntpAfterIdleStateResult
     }
 }
 

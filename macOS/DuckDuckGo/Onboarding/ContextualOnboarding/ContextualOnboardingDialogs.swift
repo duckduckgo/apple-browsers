@@ -263,6 +263,45 @@ struct OnboardingFinalDialog: View {
     }
 }
 
+struct OnboardingSubscriptionUpsellDialogContent: View {
+    /// Figma stacks the two CTAs vertically, primary above secondary.
+    private enum Metrics {
+        static let buttonSpacing: CGFloat = 8
+    }
+
+    let acceptAction: () -> Void
+    let declineAction: () -> Void
+
+    var body: some View {
+        ContextualDaxDialogContent(orientation: .horizontalStack(alignment: .center),
+                                   title: UserText.ContextualOnboarding.onboardingSubscriptionUpsellTitle,
+                                   titleFont: OnboardingDialogsContants.titleFont,
+                                   message: NSMutableAttributedString.attributedString(
+                                    from: UserText.ContextualOnboarding.onboardingSubscriptionUpsellMessage,
+                                    fontSize: OnboardingDialogsContants.messageFontSize
+                                   ),
+                                   messageFont: OnboardingDialogsContants.messageFont,
+                                   customActionView: AnyView(
+                                    VStack(spacing: Metrics.buttonSpacing) {
+                                        OnboardingPrimaryCTAButton(title: UserText.ContextualOnboarding.onboardingSubscriptionUpsellAcceptButton, action: acceptAction)
+                                        OnboardingSecondaryCTAButton(title: UserText.ContextualOnboarding.onboardingSubscriptionUpsellDeclineButton, action: declineAction)
+                                    }
+                                   ))
+    }
+}
+
+struct OnboardingSubscriptionUpsellDialog: View {
+    let acceptAction: () -> Void
+    let declineAction: () -> Void
+    let onManualDismiss: () -> Void
+
+    var body: some View {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            OnboardingSubscriptionUpsellDialogContent(acceptAction: acceptAction, declineAction: declineAction)
+        }
+    }
+}
+
 struct OnboardingPrimaryCTAButton: View {
     let title: String
     let action: @MainActor () -> Void

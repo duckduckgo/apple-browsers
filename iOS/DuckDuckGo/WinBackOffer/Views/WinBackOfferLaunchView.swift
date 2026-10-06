@@ -84,7 +84,7 @@ private extension WinBackOfferLaunchView {
             VStack(spacing: SheetMetrics.contentSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(rebrandable: "SheetIcon")
+                Image(rebrandable: "Subscription-Clock-128")
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)

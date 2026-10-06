@@ -54,6 +54,8 @@ extension UserDefaults {
         case alwaysRequestDownloadLocationKey = "preferences.download-location.always-request"
         case openDownloadsPopupOnCompletionKey = "preferences.downloads.open.on.completion"
         case autoconsentEnabled = "preferences.autoconsent-enabled"
+        case cookiePopupPreference = "preferences.cookie-popup.preference"
+        case didMigrateCookiePopupPreference = "preferences.cookie-popup.preference.did-migrate"
         case duckPlayerMode = "preferences.duck-player"
         case youtubeOverlayInteracted = "preferences.youtube-overlay-interacted"
         case youtubeOverlayButtonsUsed = "preferences.youtube-overlay-user-used-buttons"
@@ -284,7 +286,7 @@ struct UserDefaultsWrapper<T> {
     }
 
     static var sharedDefaults: UserDefaults {
-#if DEBUG && !(NETP_SYSTEM_EXTENSION && NETWORK_EXTENSION) // Avoid looking up special user defaults when running inside the system extension
+#if DEBUG
         if case .normal = AppVersion.runType {
             return .standard
         } else {

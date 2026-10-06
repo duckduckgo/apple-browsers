@@ -494,8 +494,11 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         let excludedStrings = excludedRoutes.map { $0.description }
 
         // Should cover major internet address space
+        // (96.0.0.0/4 was split into 6 sub-blocks to carve out CGNAT 100.64/10)
         let majorPublicRanges = [
-            "1.0.0.0/8", "8.0.0.0/7", "64.0.0.0/3", "96.0.0.0/4", "128.0.0.0/3", "193.0.0.0/8"
+            "1.0.0.0/8", "8.0.0.0/7", "64.0.0.0/3",
+            "96.0.0.0/6", "100.0.0.0/10", "100.128.0.0/9", "101.0.0.0/8", "102.0.0.0/7", "104.0.0.0/5",
+            "128.0.0.0/3", "193.0.0.0/8"
         ]
 
         for range in majorPublicRanges {

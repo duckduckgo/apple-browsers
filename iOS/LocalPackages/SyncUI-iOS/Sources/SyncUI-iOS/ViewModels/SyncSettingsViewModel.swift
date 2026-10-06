@@ -30,10 +30,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func showRecoveringDataAutoRestore()
     func showRecoveryCodeEntry()
     func showSyncWithAnotherDevice()
-    func showRecoveryPDF()
     func shareRecoveryPDF()
-    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
-    func confirmAndDisableSync() async -> Bool
     func confirmAndDeleteAllData() async -> Bool
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool
     func removeDevice(_ device: SyncSettingsViewModel.Device)
@@ -53,8 +50,6 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func simplifiedConfirmAndDisableSync() async -> Bool
     func simplifiedCopyRecoveryCode()
-    func showSimplifiedSyncEnabledToast()
-    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool { get set }
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
@@ -131,16 +126,23 @@ public class SyncSettingsViewModel: ObservableObject {
         case readySkipRestoreTapped
     }
 
-    public enum SyncSetupPixelEvent {
+    public enum SyncSetupPixelEvent: Equatable {
         case backUpThisDeviceTapped
         case signupConfirmedTapped
         case signupAbandoned
         case recoverSyncedDataTapped
         case recoveryConfirmedTapped
+        case anotherDevicePromptShown
+        case anotherDevicePromptOptionTapped(SyncAnotherDeviceOption)
+        case anotherDevicePromptDismissed
+    }
+
+    public enum SyncAnotherDeviceOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
     }
 
     public enum SyncSetupEntryPoint: Equatable {
-        case backup
         case pairing
         case simplifiedToggle
     }
@@ -179,9 +181,24 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAccountRecoveryAvailable: Bool = true
     @Published public var isAIChatSyncEnabled: Bool = false
     @Published public var isAppVersionNotSupported: Bool = false
-    @Published public var isSyncWithSetUpSheetVisible: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
-    @Published public var isSyncWithAnotherDevicePromptVisible: Bool = false
+
+    public enum ConnectingSheetPhase: Equatable, Identifiable {
+        case connecting(isRecovery: Bool, isFinishing: Bool = false)
+        case syncAnotherDevice(isConnecting: Bool)
+        case success(isRecovery: Bool)
+
+        // Constant on purpose: `.sheet(item:)` re-presents whenever the item's identity changes, so a
+        // per-case id would dismiss and re-present the sheet on every phase change. A stable id keeps
+        // it the same presented sheet, letting the content morph in place; only nil ↔ non-nil presents/dismisses.
+        public var id: Int { 0 }
+    }
+
+    @Published public var connectingSheetPhase: ConnectingSheetPhase?
+
+    public var isConnectingThisDeviceOnly: Bool {
+        connectingSheetPhase == .syncAnotherDevice(isConnecting: true)
+    }
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -198,8 +215,7 @@ public class SyncSettingsViewModel: ObservableObject {
     private(set) var switchToProdEnvironment: () -> Void = {}
     private var cancellables = Set<AnyCancellable>()
     private var pendingPreservedAccountContinuation: PreservedAccountContinuation?
-    private var shouldFireSignupAbandonedOnSheetDismissal = false
-    private var shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
+    private var postConnectingSheetDismissAction: (() -> Void)?
 
     private let autoRestoreProvider: SyncAutoRestoreProviding
 
@@ -278,23 +294,16 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.fireAutoRestorePixel(event: .manualRecoveryShown)
     }
 
-    func disableSync() {
+    func deleteAllData(requireAuthentication: Bool = false) {
         isBusy = true
         Task { @MainActor in
-            if await delegate!.confirmAndDisableSync() {
-                isSyncEnabled = false
+            defer { isBusy = false }
+            if requireAuthentication {
+                guard await commonAuthenticate() else { return }
             }
-            isBusy = false
-        }
-    }
-
-    func deleteAllData() {
-        isBusy = true
-        Task { @MainActor in
             if await delegate!.confirmAndDeleteAllData() {
                 isSyncEnabled = false
             }
-            isBusy = false
         }
     }
 
@@ -315,13 +324,6 @@ public class SyncSettingsViewModel: ObservableObject {
         guard isSyncEnabled || isAccountCreationAvailable else { return }
         Task { @MainActor in
             await beginFlow(for: .setup(.pairing))
-        }
-    }
-
-    public func beginBackupFlow() {
-        Task { @MainActor in
-            guard isAccountCreationAvailable else { return }
-            await beginFlow(for: .setup(.backup))
         }
     }
 
@@ -354,12 +356,11 @@ public class SyncSettingsViewModel: ObservableObject {
         switch continuation {
         case .setup(let entryPoint):
             switch entryPoint {
-            case .backup:
-                showSyncWithSetUpSheet()
             case .pairing:
                 delegate?.showSyncWithAnotherDevice()
             case .simplifiedToggle:
-                beginSimplifiedSyncSetup()
+                isBusy = false
+                connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
             }
         case .recover:
             isRecoverSyncedDataSheetVisible = true
@@ -382,28 +383,6 @@ public class SyncSettingsViewModel: ObservableObject {
         isBusy = false
         isSyncEnabled = true
         self.recoveryCode = recoveryCode
-    }
-
-    public func showSyncWithSetUpSheet() {
-        shouldFireSignupAbandonedOnSheetDismissal = true
-        isSyncWithSetUpSheetVisible = true
-    }
-
-    public func dismissSyncWithSetUpSheet() {
-        isSyncWithSetUpSheetVisible = false
-    }
-
-    public func syncWithSetUpSheetDidDismiss() {
-        guard shouldFireSignupAbandonedOnSheetDismissal else { return }
-
-        shouldFireSignupAbandonedOnSheetDismissal = false
-        delegate?.fireSyncSetupPixel(event: .signupAbandoned)
-    }
-
-    public func startSyncPressed() {
-        shouldFireSignupAbandonedOnSheetDismissal = false
-        isBusy = true
-        delegate?.createAccountAndStartSyncing(optionsViewModel: self)
     }
 
     public func enableSyncToggleTapped() {
@@ -433,36 +412,66 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
-    @discardableResult
-    public func checkAndShowSyncWithAnotherDevicePrompt() -> Bool {
-        guard !isBusy else { return false }
-        guard isSyncEnabled else { return false }
-        guard devices.count == 1 else { return false }
-        guard delegate?.hasShownSimplifiedSyncAnotherDevicePrompt == false else { return false }
-        isSyncWithAnotherDevicePromptVisible = true
-        delegate?.hasShownSimplifiedSyncAnotherDevicePrompt = true
-        return true
+    public var thisDeviceName: String? {
+        devices.first(where: { $0.isThisDevice })?.name
     }
 
-    public func dismissSyncWithAnotherDevicePrompt() {
-        isSyncWithAnotherDevicePromptVisible = false
+    public func anotherDevicePromptAppeared() {
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptShown)
     }
 
-    public func syncAnotherDeviceFromPromptTapped() {
-        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
-        dismissSyncWithAnotherDevicePrompt()
-        scanQRCode()
+    public func syncAnotherDeviceFromConnectingSheet() {
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.syncAnotherDevice))
+        postConnectingSheetDismissAction = { [weak self] in
+            guard let self else { return }
+            guard isConnectingDevicesAvailable else { return }
+            guard isSyncEnabled || isAccountCreationAvailable else { return }
+            delegate?.showSyncWithAnotherDevice()
+        }
+        connectingSheetPhase = nil
     }
 
-    public func scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal() {
-        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = true
+    @MainActor
+    public func syncThisDeviceOnlyFromConnectingSheet() {
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptOptionTapped(.thisDeviceOnly))
+        guard !isBusy else { return }
+        connectingSheetPhase = .syncAnotherDevice(isConnecting: true)
+        beginSimplifiedSyncSetup()
     }
 
-    public func syncWithAnotherDevicePromptDidDismiss() {
-        guard shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal else { return }
+    public func showSuccess(recoveryCode: String, isRecovery: Bool) {
+        self.recoveryCode = recoveryCode
+        if case .connecting = connectingSheetPhase {
+            connectingSheetPhase = .connecting(isRecovery: isRecovery, isFinishing: true)
+        } else {
+            connectingSheetPhase = .success(isRecovery: isRecovery)
+        }
+    }
 
-        shouldShowSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal = false
-        delegate?.showSimplifiedSyncEnabledToast()
+    public func connectingAnimationDidFinish() {
+        guard case .connecting(let isRecovery, true) = connectingSheetPhase else { return }
+        connectingSheetPhase = .success(isRecovery: isRecovery)
+    }
+
+    public func doneFromConnectingSheet() {
+        connectingSheetPhase = nil
+    }
+
+    public func dismissAnotherDevicePrompt() {
+        guard connectingSheetPhase == .syncAnotherDevice(isConnecting: false) else { return }
+        delegate?.fireSyncSetupPixel(event: .anotherDevicePromptDismissed)
+        dismissConnectingSheet()
+    }
+
+    public func dismissConnectingSheet(then action: (() -> Void)? = nil) {
+        postConnectingSheetDismissAction = action
+        connectingSheetPhase = nil
+    }
+
+    public func connectingSheetDidDismiss() {
+        let action = postConnectingSheetDismissAction
+        postConnectingSheetDismissAction = nil
+        action?()
     }
 
     public func copyCode() {
@@ -578,5 +587,4 @@ public extension SyncManagementViewModelDelegate {
     func fireAutoRestorePixel(event _: SyncSettingsViewModel.AutoRestorePixelEvent) {}
     func fireSyncSetupPixel(event _: SyncSettingsViewModel.SyncSetupPixelEvent) {}
     func simplifiedCopyRecoveryCode() {}
-    func showSimplifiedSyncEnabledToast() {}
 }

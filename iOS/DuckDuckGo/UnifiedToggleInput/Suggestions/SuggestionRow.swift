@@ -31,6 +31,7 @@ enum SuggestionRowIcon: Equatable {
     case openTab
     case search
     case aiChat
+    case aiChatPinned
     case pin
     /// Double speech-bubble glyph for the "View all chats" row.
     case chats

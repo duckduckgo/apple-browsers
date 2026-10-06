@@ -41,6 +41,7 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
     var switchToTabCalled: String?
     var newTabCalled = false
     var executeScriptCalled: (script: String, args: [String: Any])?
+    var clearWebsiteDataCalled = false
 
     // MARK: - Configurable Responses
 
@@ -48,6 +49,7 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
     var switchToTabResult: Bool = true
     var newTabResult: String? = "mock-new-tab"
     var executeScriptResult: Result<Any?, Error> = .success(nil)
+    var clearWebsiteDataResult = true
     var screenshotResult: Data?
 
     // MARK: - BrowserAutomationProvider
@@ -80,6 +82,11 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
         return executeScriptResult
     }
 
+    func clearWebsiteData() async -> Bool {
+        clearWebsiteDataCalled = true
+        return clearWebsiteDataResult
+    }
+
     func takeScreenshot(rect: CGRect?) async -> Data? {
         return screenshotResult
     }
@@ -92,5 +99,6 @@ final class MockBrowserAutomationProvider: BrowserAutomationProvider {
         switchToTabCalled = nil
         newTabCalled = false
         executeScriptCalled = nil
+        clearWebsiteDataCalled = false
     }
 }

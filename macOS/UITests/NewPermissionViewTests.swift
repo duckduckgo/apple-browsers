@@ -24,7 +24,6 @@ import XCTest
 /// Note: Restricted to macOS 26+ due to differences in system permission dialogs across macOS versions.
 class NewPermissionViewTests: UITestCase {
 
-    private var notificationCenter: XCUIApplication!
     private var addressBarTextField: XCUIElement!
     private var permissionsSiteURL: URL!
 
@@ -35,6 +34,9 @@ class NewPermissionViewTests: UITestCase {
     private var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
     private var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
 
+    // Disable auto-dismissal of TCC prompts
+    override var isSystemPermissionPromptPollingTimerEnabled: Bool { false }
+
     override func setUpWithError() throws {
         // Skip tests on macOS versions below 26 due to differences in system permission dialogs
         if #unavailable(macOS 26) {
@@ -42,18 +44,18 @@ class NewPermissionViewTests: UITestCase {
         }
 
         try super.setUpWithError()
-        continueAfterFailure = false
 
         permissionsSiteURL = try XCTUnwrap(URL(string: "https://permission.site"), "It wasn't possible to unwrap a URL that the tests depend on.")
-        notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
 
         // Reset permissions BEFORE app launch - this is critical for TCC dialogs to appear
         app = XCUIApplication()
         app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .microphone)
 
-        // Now set up and launch the app
-        app = XCUIApplication.setUp()
+        // Now set up and launch the app, keeping the Allow / Deny prompt these tests are written for
+        app = XCUIApplication.setUp(featureFlags: [
+            "websitePermissionsPrompts": false,
+        ])
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
@@ -77,7 +79,12 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Select "Everything" scope to clear all history
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (app.fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            app.fireDialogDetailsDisclosureButton.click()
+        }
 
         // Ensure toggles are enabled
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -110,16 +117,7 @@ class NewPermissionViewTests: UITestCase {
         cameraButton.clickAfterExistenceTestSucceeds()
 
         // TCC system dialog appears FIRST for camera/microphone
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
-        )
-        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
-            titled: "Allow",
-            "OK"
-        ))
-        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
-        allowButton.clickAfterExistenceTestSucceeds()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
 
         // THEN browser's SwiftUI permission authorization popover appears
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
@@ -177,22 +175,12 @@ class NewPermissionViewTests: UITestCase {
         cameraButton.clickAfterExistenceTestSucceeds()
 
         // TCC system dialog appears FIRST for camera/microphone - deny this time
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
-        )
-        // Use the more robust deny button finder that looks for the button that's NOT an allow button
-        let denyButtonIndex = try XCTUnwrap(
-            notificationCenter.indexOfDenyButtonOnSystemDialog(),
-            "Could not find deny button in TCC dialog. Available buttons: \(notificationCenter.buttons.allElementsBoundByIndex.map { $0.title })"
-        )
-        let denyButton = notificationCenter.buttons.element(boundBy: denyButtonIndex)
-        denyButton.clickAfterExistenceTestSucceeds() // Click system camera permissions dialog to deny
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: false)
 
         // Browser's permission popover should not appear when TCC is denied
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        XCTAssertTrue(
-            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The permissions popover in the browser should not appear when camera permission has been denied at system level."
         )
 
@@ -212,8 +200,8 @@ class NewPermissionViewTests: UITestCase {
 
         // The permission center button should not appear when system permission is denied
         let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
-        XCTAssertTrue(
-            permissionCenterButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionCenterButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The permission center button should not appear when camera permission has been denied at system level."
         )
     }
@@ -227,16 +215,7 @@ class NewPermissionViewTests: UITestCase {
         cameraButton.clickAfterExistenceTestSucceeds()
 
         // TCC system dialog appears FIRST for camera/microphone
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
-        )
-        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
-            titled: "Allow",
-            "OK"
-        ))
-        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
-        allowButton.clickAfterExistenceTestSucceeds()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
 
         // THEN browser's SwiftUI permission authorization popover appears
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
@@ -296,14 +275,14 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // TCC dialog should not appear
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            XCUIApplication.notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the TCC dialog permission alert will not be on the screen"
         )
 
         // Permission popover should not appear
-        XCTAssert(
-            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
@@ -319,16 +298,7 @@ class NewPermissionViewTests: UITestCase {
         microphoneButton.clickAfterExistenceTestSucceeds()
 
         // TCC system dialog appears FIRST for camera/microphone
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
-        )
-        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
-            titled: "Allow",
-            "OK"
-        ))
-        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
-        allowButton.clickAfterExistenceTestSucceeds()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
 
         // THEN browser's SwiftUI permission authorization popover appears
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
@@ -383,22 +353,12 @@ class NewPermissionViewTests: UITestCase {
         microphoneButton.clickAfterExistenceTestSucceeds()
 
         // TCC system dialog appears FIRST for camera/microphone - deny this time
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
-        )
-        // Use the more robust deny button finder that looks for the button that's NOT an allow button
-        let denyButtonIndex = try XCTUnwrap(
-            notificationCenter.indexOfDenyButtonOnSystemDialog(),
-            "Could not find deny button in TCC dialog. Available buttons: \(notificationCenter.buttons.allElementsBoundByIndex.map { $0.title })"
-        )
-        let denyButton = notificationCenter.buttons.element(boundBy: denyButtonIndex)
-        denyButton.clickAfterExistenceTestSucceeds()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: false)
 
         // Browser's permission popover should not appear when TCC is denied
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        XCTAssertTrue(
-            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The permissions popover in the browser should not appear when microphone permission has been denied at system level."
         )
 
@@ -418,8 +378,8 @@ class NewPermissionViewTests: UITestCase {
 
         // The permission center button should not appear when system permission is denied
         let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
-        XCTAssertTrue(
-            permissionCenterButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionCenterButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The permission center button should not appear when microphone permission has been denied at system level."
         )
     }
@@ -433,16 +393,7 @@ class NewPermissionViewTests: UITestCase {
         microphoneButton.clickAfterExistenceTestSucceeds()
 
         // TCC system dialog appears FIRST for camera/microphone
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
-        )
-        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
-            titled: "Allow",
-            "OK"
-        ))
-        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
-        allowButton.clickAfterExistenceTestSucceeds()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(allow: true)
 
         // THEN browser's SwiftUI permission authorization popover appears
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
@@ -502,14 +453,14 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // TCC dialog should not appear
-        XCTAssert(
-            notificationCenter.buttons.firstMatch.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            XCUIApplication.notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the TCC dialog permission alert will not be on the screen"
         )
 
         // Permission popover should not appear
-        XCTAssert(
-            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
@@ -627,8 +578,8 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Permission popover should not appear
-        XCTAssert(
-            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(
+            permissionsPopoverAllowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
@@ -700,7 +651,8 @@ class NewPermissionViewTests: UITestCase {
         )
 
         // Verify the external apps permission dropdown exists and shows "Always ask"
-        let externalAppsDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        // Query by identifier: video ads on the page can add an Autoplay row above External apps
+        let externalAppsDropdown = permissionCenterPopover.popUpButtons["PermissionCenterView.externalSchemeDecisionPopUp"]
         XCTAssertTrue(
             externalAppsDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "External apps permission dropdown didn't appear in the permission center."
@@ -731,7 +683,6 @@ final class NewPermissionViewPopupTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
 
         // Enable popup blocking feature with reduced timeout
         app = XCUIApplication.setUp(
@@ -740,6 +691,7 @@ final class NewPermissionViewPopupTests: UITestCase {
             ],
             featureFlags: [
                 "popupBlocking": true,
+                "websitePermissionsPrompts": false,
             ]
         )
 
@@ -751,7 +703,13 @@ final class NewPermissionViewPopupTests: UITestCase {
     override func tearDown() {
         // Burn all data to clear permissions between tests
         app.fireButton.click()
-        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        if (app.fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            app.fireDialogDetailsDisclosureButton.click()
+        }
+
         app.fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         app.fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         app.fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
@@ -782,24 +740,13 @@ final class NewPermissionViewPopupTests: UITestCase {
         beyondTimeoutButton.click()
 
         // The popup blocked popover should appear AUTOMATICALLY with the SwiftUI view
-        let popover = app.popovers.firstMatch
+        let popover = app.popovers
+            .containing(.staticText, where: .keyPath(\.value, contains: "Pop-Up Blocked"))
+            .containing(.button, identifier: "Open")
+            .firstMatch
         XCTAssertTrue(
             popover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Popup blocked popover should appear automatically when popup is blocked."
-        )
-
-        // Verify the popover contains the "Pop-Up Blocked" text
-        let blockedText = popover.staticTexts.containing(\.value, containing: "Pop-Up Blocked").firstMatch
-        XCTAssertTrue(
-            blockedText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Pop-Up Blocked text should appear in the popover."
-        )
-
-        // Verify the "Open" button exists in the SwiftUI popover
-        let openButton = popover.buttons["Open"]
-        XCTAssertTrue(
-            openButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Open button should appear in the popup blocked popover."
         )
     }
 
@@ -836,8 +783,8 @@ final class NewPermissionViewPopupTests: UITestCase {
         )
         openButton.click()
 
-        // Verify popup window opened
-        let popupWindow = app.windows["Example Domain"]
+        // Verify popup window opened (popup-delayed.html opens github.com)
+        let popupWindow = app.windows.containing(\.title, containing: "GitHub").firstMatch
         XCTAssertTrue(
             popupWindow.waitForExistence(timeout: UITests.Timeouts.navigation),
             "Popup should open after clicking 'Open' button."

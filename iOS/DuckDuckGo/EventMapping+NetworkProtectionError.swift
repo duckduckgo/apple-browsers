@@ -22,6 +22,7 @@ import VPN
 import Common
 import FoundationExtensions
 import Core
+import PixelKit
 
 extension EventMapping where Event == NetworkProtectionError {
     static var networkProtectionAppDebugEvents: EventMapping<NetworkProtectionError> = .init { event, _, _, _ in
@@ -96,9 +97,8 @@ extension EventMapping where Event == NetworkProtectionError {
             pixelError = error
         }
 
-        DailyPixel.fireDailyAndCount(pixel: pixelEvent,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                     error: pixelError,
-                                     withAdditionalParameters: params)
+        PixelKit.fire(pixelEvent.withError(pixelError),
+                      frequency: .legacyDailyAndCount,
+                      options: .parameters(params))
     }
 }

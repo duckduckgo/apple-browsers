@@ -180,10 +180,14 @@ public final class AutomationServerCore {
     private let authToken: String?
     private let maxRequestSize = 1_048_576 // 1MB
 
-    public init(provider: BrowserAutomationProvider, port: Int?) throws {
+    public init(
+        provider: BrowserAutomationProvider,
+        port: Int?,
+        authToken: String? = ProcessInfo.processInfo.environment["AUTOMATION_TOKEN"]
+    ) throws {
         let port = port ?? 8788
         self.provider = provider
-        self.authToken = ProcessInfo.processInfo.environment["AUTOMATION_TOKEN"]
+        self.authToken = authToken.flatMap { $0.isEmpty ? nil : $0 }
 
         // Validate port is in valid range before UInt16 conversion
         guard port.isValidPort else {
@@ -216,59 +220,66 @@ public final class AutomationServerCore {
             minimumIncompleteLength: 1,
             maximumLength: self.maxRequestSize
         ) { (content: Data?, _: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
-            // Ensure connection queue is cleaned up when request completes or fails
-            defer {
-                if isComplete || error != nil || connection.state != .ready {
-                    self.connectionQueues.removeValue(forKey: ObjectIdentifier(connection))
+            // The connection is started on the main queue (`connection.start(queue: .main)`), so this
+            // @Sendable handler is always delivered on the main thread. The compiler can't prove that
+            // from a Sendable closure, so assert the isolation synchronously with `assumeIsolated`.
+            // Deliberately not `Task { @MainActor in ... }`: hopping to a later main-actor turn would
+            // defer the `connection.state == .ready` guard, so bytes already delivered in this callback
+            // could be dropped if the connection left `.ready` before the task ran.
+            MainActor.assumeIsolated {
+                // Ensure connection queue is cleaned up when request completes or fails
+                defer {
+                    if isComplete || error != nil || connection.state != .ready {
+                        self.connectionQueues.removeValue(forKey: ObjectIdentifier(connection))
+                    }
                 }
-            }
 
-            guard connection.state == .ready else {
-                Logger.automationServer.debug("Receive aborted as connection is no longer ready.")
-                return
-            }
-            Logger.automationServer.debug("Received request - Content: \(String(describing: content)) isComplete: \(isComplete) Error: \(String(describing: error))")
-
-            if let error {
-                Logger.automationServer.error("Error in request: \(error)")
-                connection.cancel()
-                return
-            }
-
-            if let content {
-                Logger.automationServer.debug("Handling content")
-                let queue = self.connectionQueues[ObjectIdentifier(connection)] ?? PerConnectionQueue()
-                self.connectionQueues[ObjectIdentifier(connection)] = queue
-                Task { @MainActor in
-                    await queue.enqueue(
-                        content: content,
-                        processor: { data in
-                            return await self.processContentWhenReady(content: data)
-                        },
-                        responder: { connectionResultWithPath in
-                            self.respond(on: connection, connectionResultWithPath: connectionResultWithPath)
-                        })
+                guard connection.state == .ready else {
+                    Logger.automationServer.debug("Receive aborted as connection is no longer ready.")
+                    return
                 }
-            }
-            if isComplete {
-                Logger.automationServer.debug("Connection marked complete.")
-                // Only cancel immediately if there was no content to process.
-                // When content is present, respond() will cancel the connection
-                // after successfully sending the response.
-                if content == nil {
-                    Logger.automationServer.debug("No pending content - cancelling connection.")
+                Logger.automationServer.debug("Received request - Content: \(String(describing: content)) isComplete: \(isComplete) Error: \(String(describing: error))")
+
+                if let error {
+                    Logger.automationServer.error("Error in request: \(error)")
                     connection.cancel()
+                    return
                 }
-                return
-            }
 
-            if connection.state == .ready {
-                Logger.automationServer.debug("Handling not complete, continuing receive.")
-                Task { @MainActor in
-                    self.receive(from: connection)
+                if let content {
+                    Logger.automationServer.debug("Handling content")
+                    let queue = self.connectionQueues[ObjectIdentifier(connection)] ?? PerConnectionQueue()
+                    self.connectionQueues[ObjectIdentifier(connection)] = queue
+                    // Fire-and-forget: keep request processing off the receive loop so we can re-arm below.
+                    Task { @MainActor in
+                        await queue.enqueue(
+                            content: content,
+                            processor: { data in
+                                return await self.processContentWhenReady(content: data)
+                            },
+                            responder: { connectionResultWithPath in
+                                self.respond(on: connection, connectionResultWithPath: connectionResultWithPath)
+                            })
+                    }
                 }
-            } else {
-                Logger.automationServer.debug("Connection is no longer ready, stopping receive.")
+                if isComplete {
+                    Logger.automationServer.debug("Connection marked complete.")
+                    // Only cancel immediately if there was no content to process.
+                    // When content is present, respond() will cancel the connection
+                    // after successfully sending the response.
+                    if content == nil {
+                        Logger.automationServer.debug("No pending content - cancelling connection.")
+                        connection.cancel()
+                    }
+                    return
+                }
+
+                if connection.state == .ready {
+                    Logger.automationServer.debug("Handling not complete, continuing receive.")
+                    self.receive(from: connection)
+                } else {
+                    Logger.automationServer.debug("Connection is no longer ready, stopping receive.")
+                }
             }
         }
     }
@@ -294,18 +305,6 @@ public final class AutomationServerCore {
             Logger.automationServer.debug("First line: \(firstLine)")
         }
 
-        // Validate authentication token if configured
-        if let expectedToken = authToken {
-            let headers = extractHeaders(from: stringContent)
-            let authHeader = headers["authorization"] ?? ""
-            let expectedValue = "Bearer \(expectedToken)"
-
-            guard authHeader == expectedValue else {
-                Logger.automationServer.error("Unauthorized request - invalid or missing auth token")
-                return ("unauthorized", .failure(.unauthorized))
-            }
-        }
-
         guard let (method, pathString) = extractMethodAndPath(from: stringContent) else {
             return ("unknown", .failure(.unknownMethod))
         }
@@ -315,6 +314,21 @@ public final class AutomationServerCore {
             Logger.automationServer.error("Invalid URL: \(pathString)")
             return ("unknown", .failure(.invalidURL))
         }
+
+        if let expectedToken = authToken {
+            let headers = extractHeaders(from: stringContent)
+            let authHeader = headers["authorization"] ?? ""
+            let expectedValue = "Bearer \(expectedToken)"
+
+            guard authHeader == expectedValue else {
+                Logger.automationServer.error("Unauthorized request - invalid or missing auth token")
+                return ("unauthorized", .failure(.unauthorized))
+            }
+        } else if url.path == "/clearWebsiteData" {
+            Logger.automationServer.error("Unauthorized website data clearing request - automation token is not configured")
+            return ("unauthorized", .failure(.unauthorized))
+        }
+
         return (url.path, await handlePath(url, method: method))
     }
 
@@ -419,6 +433,9 @@ public final class AutomationServerCore {
         case "/contentBlockerReady":
             guard method == "GET" else { return .failure(.methodNotAllowed) }
             return contentBlockerReady()
+        case "/clearWebsiteData":
+            guard method == "POST" else { return .failure(.methodNotAllowed) }
+            return await clearWebsiteData()
         default:
             return .failure(.unknownMethod)
         }
@@ -565,6 +582,13 @@ public final class AutomationServerCore {
         let isReady = provider.isContentBlockerReady
         Logger.automationServer.debug("Content blocker ready: \(isReady)")
         return .success(isReady ? "true" : "false")
+    }
+
+    public func clearWebsiteData() async -> ConnectionResult {
+        guard await provider.clearWebsiteData() else {
+            return .failure(.websiteDataClearingFailed)
+        }
+        return .success("done")
     }
 
     public func executeScript(_ script: String, args: [String: Any]) async -> ConnectionResult {

@@ -24,8 +24,9 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 @testable import Core
 import PrivacyDashboard
+import FeatureFlags_iOS
 @testable import DuckDuckGo
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 final class BrokenSiteReportingTests: XCTestCase {
     private let data = JsonTestDataLoader()
@@ -72,6 +73,95 @@ final class BrokenSiteReportingTests: XCTestCase {
 
         try runReferenceTests(onTestExecuted: testsExecuted)
         waitForExpectations(timeout: 10, handler: nil)
+    }
+
+    func testBrokenSiteReportAppFeatureFlagsIncludesOnlyEnabledAllowlistedFlags() {
+        let scenarios: [(enabled: [FeatureFlag], expected: [String: String])] = [
+            ([], [:]),
+            ([.floatingUIiOS26], ["appFeatureFlags_floatingUIiOS26": "true"]),
+            ([.floatingUIiOS27], ["appFeatureFlags_floatingUIiOS27": "true"]),
+            ([.floatingUIiOS27, .floatingUIiOS26], ["appFeatureFlags_floatingUIiOS26": "true", "appFeatureFlags_floatingUIiOS27": "true"]),
+            ([.newTabPageRedesign], [:]),
+            ([.floatingUIiOS26, .newTabPageRedesign], ["appFeatureFlags_floatingUIiOS26": "true"])
+        ]
+
+        for scenario in scenarios {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: scenario.enabled)
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: ["siteUrl": "https://example.com"], featureFlagger: featureFlagger)
+
+            var expectedParameters = scenario.expected
+            expectedParameters["siteUrl"] = "https://example.com"
+            XCTAssertEqual(parameters, expectedParameters)
+        }
+    }
+
+    func testBrokenSiteReportAppFeatureFlagsReflectsChangesBetweenReports() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+        let firstReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(firstReport, ["appFeatureFlags_floatingUIiOS26": "true"])
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        let secondReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(secondReport, ["appFeatureFlags_floatingUIiOS27": "true"])
+
+        featureFlagger.enabledFeatureFlags = []
+        let thirdReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertTrue(thirdReport.isEmpty)
+    }
+
+    func testBrokenSiteReportIncludesCPMDiagnostics() {
+        let report = BrokenSiteReport(siteUrl: URL(string: "https://example.com")!,
+                                      category: "test",
+                                      description: nil,
+                                      osVersion: "18",
+                                      manufacturer: "Apple",
+                                      upgradedHttps: false,
+                                      tdsETag: "abc123",
+                                      configVersion: "123456789",
+                                      blockedTrackerDomains: [],
+                                      installedSurrogates: [],
+                                      isGPCEnabled: false,
+                                      ampURL: "",
+                                      urlParametersRemoved: false,
+                                      protectionsState: true,
+                                      reportFlow: .dashboard,
+                                      siteType: .mobile,
+                                      model: "iPhone",
+                                      errors: nil,
+                                      httpStatusCodes: nil,
+                                      openerContext: nil,
+                                      vpnOn: false,
+                                      jsPerformance: nil,
+                                      userRefreshCount: 0,
+                                      variant: "",
+                                      cookieConsentInfo: CookieConsentInfo(
+                                        consentManaged: true,
+                                        cosmetic: true,
+                                        optoutFailed: false,
+                                        selftestFailed: false,
+                                        consentReloadLoop: false,
+                                        consentRule: "test-cmp",
+                                        consentHeuristicEnabled: true,
+                                        cpmExtensionDroppedCallbacks: 3,
+                                        cpmExtensionLoaded: true,
+                                        cpmDashboardState: .applied,
+                                        cpmStage: .popupFound,
+                                        cpmErrors: "multiple_cmps,tab_refreshDashboardState",
+                                        cpmQueueSize: 2,
+                                        cpmConfigVersion: "123"),
+                                      debugFlags: "",
+                                      privacyExperiments: "",
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
+
+        let params = report.requestParameters
+        XCTAssertEqual(params["cpmExtensionDroppedCallbacks"], "3")
+        XCTAssertEqual(params["cpmExtensionLoaded"], "1")
+        XCTAssertEqual(params["cpmDashboardState"], "applied")
+        XCTAssertEqual(params["cpmStage"], "popup_found")
+        XCTAssertEqual(params["cpmErrors"], "multiple_cmps,tab_refreshDashboardState")
+        XCTAssertEqual(params["cpmQueueSize"], "2")
+        XCTAssertEqual(params["cpmConfigVersion"], "123")
     }
 
     private func runReferenceTests(onTestExecuted: XCTestExpectation) throws {

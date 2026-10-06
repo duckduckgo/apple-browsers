@@ -135,6 +135,7 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let runTypeProvider: AppRunTypeProviding
     private let isAuthenticatedUser: () async -> Bool
+    public let optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging
 
     public init(repository: BrokerUpdaterRepository = BrokerUpdaterUserDefaults(),
                 resources: ResourcesRepository,
@@ -142,7 +143,8 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
                 appVersion: AppVersionNumberProvider = AppVersionNumber(),
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 runTypeProvider: AppRunTypeProviding,
-                isAuthenticatedUser: @escaping () async -> Bool) {
+                isAuthenticatedUser: @escaping () async -> Bool,
+                optOutRetryErrorFeatureFlagger: OptOutRetryErrorFeatureFlagging) {
         self.repository = repository
         self.resources = resources
         self.vault = vault
@@ -150,6 +152,7 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
         self.pixelHandler = pixelHandler
         self.runTypeProvider = runTypeProvider
         self.isAuthenticatedUser = isAuthenticatedUser
+        self.optOutRetryErrorFeatureFlagger = optOutRetryErrorFeatureFlagger
     }
 
     public func bundledBrokers() throws -> [BrokerResource]? {

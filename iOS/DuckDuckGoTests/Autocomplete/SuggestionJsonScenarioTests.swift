@@ -25,7 +25,7 @@ import Core
 import CoreData
 import FoundationExtensions
 import History
-import InlineSnapshotTesting
+import SnapshotTestingSupport
 import os.log
 import Persistence
 import PixelKit

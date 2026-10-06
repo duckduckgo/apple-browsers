@@ -29,6 +29,244 @@ import UniformTypeIdentifiers
 
 final class UnifiedToggleInputViewTests: XCTestCase {
 
+    func testReplacingVisibleFooterReportsNewCardAppearance() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        sut.setFooterPresentationActive(true)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        var visibility: [[UTIFooterItem.ID]] = []
+        sut.onFooterVisibilityChanged = { visibility.append($0) }
+        let existing = UTIFooterMessage(icon: .info, title: "Existing notice", subtitle: nil,
+                                       primaryAction: nil, isDismissible: true, link: nil)
+
+        XCTAssertTrue(sut.setFooterMessages([.init(id: .usageWarning, message: existing)]))
+        XCTAssertTrue(sut.setFooterMessages([.init(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())]))
+
+        XCTAssertEqual(visibility, [[.usageWarning], [.attachmentPrivacy]])
+    }
+
+    func testRetainedOffscreenFooterDoesNotReportDisplaysUntilPresentedAgain() {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let item = UTIFooterItem(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())
+        var visibility: [[UTIFooterItem.ID]] = []
+        sut.onFooterVisibilityChanged = { visibility.append($0) }
+        sut.setFooterMessages([item])
+        XCTAssertTrue(visibility.isEmpty)
+
+        sut.setFooterPresentationActive(true)
+        sut.setFooterMessages([item])
+        XCTAssertEqual(visibility, [[.attachmentPrivacy]])
+        sut.setFooterPresentationActive(false)
+        sut.setFooterMessages([])
+        sut.setFooterMessages([item])
+        XCTAssertEqual(visibility, [[.attachmentPrivacy], []])
+
+        sut.setFooterPresentationActive(true)
+        XCTAssertEqual(visibility, [[.attachmentPrivacy], [], [.attachmentPrivacy]])
+        sut.removeFromSuperview()
+        XCTAssertEqual(visibility.last, [])
+        sut.setFooterMessages([])
+        sut.setFooterMessages([item])
+        XCTAssertEqual(visibility.count, 4)
+    }
+
+    func testTwoCardsAddHeightAndRouteSecondCardLinkByIdentity() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        let first = UTIFooterItem(id: .outOfUsage, message: message)
+        let second = UTIFooterItem(id: .attachmentPrivacy, message: message)
+        prepareForFitting(sut)
+        sut.setFooterMessages([first])
+        let oneCardHeight = applyFittingHeight(to: sut)
+        sut.setFooterMessages([first, second])
+        let twoCardHeight = applyFittingHeight(to: sut)
+        XCTAssertGreaterThan(twoCardHeight, oneCardHeight)
+
+        let stack = try XCTUnwrap(sut.subviews.compactMap { $0 as? UIStackView }.first {
+            $0.arrangedSubviews.contains { $0 is UTIFooterCardView }
+        })
+        let secondCard = try XCTUnwrap(stack.arrangedSubviews.last as? UTIFooterCardView)
+        var linked: UTIFooterItem.ID?
+        sut.onFooterLinkTapped = { id, _ in linked = id }
+        secondCard.onLinkTap?(try XCTUnwrap(message.link?.url))
+        XCTAssertEqual(linked, .attachmentPrivacy)
+
+        sut.setFooterMessages([first])
+        XCTAssertEqual(applyFittingHeight(to: sut), oneCardHeight, accuracy: 1)
+    }
+
+    func testPrivacyCopyStaysBelowInputOverlapAfterReopeningAtDifferentWidths() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 402, height: 800))
+        sut.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        let privacy = UTIFooterItem(id: .attachmentPrivacy, message: message)
+        let preceding = UTIFooterItem(id: .termsConsent, message: message)
+        sut.setInputMode(.aiChat, animated: false)
+        sut.addAttachment(makeFileAttachment())
+
+        for messages in [[privacy], [preceding, privacy]] {
+            for width: CGFloat in [402, 280, 390] {
+                sut.applyCardLayout(.collapsed, animated: false)
+                container.frame.size.width = width
+                container.layoutIfNeeded()
+                sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: true), animated: false)
+                sut.setFooterMessages(messages)
+                container.layoutIfNeeded()
+
+                let stack = try XCTUnwrap(sut.subviews.compactMap { $0 as? UIStackView }.first {
+                    $0.arrangedSubviews.contains { $0 is UTIFooterCardView }
+                })
+                for (index, card) in stack.arrangedSubviews.compactMap({ $0 as? UTIFooterCardView }).enumerated() {
+                    let text = try XCTUnwrap(firstDescendant(of: UTIFooterLinkTextView.self, in: card))
+                    let textFrame = card.convert(text.bounds, from: text)
+                    let topGap: CGFloat = index == 0 ? 12 : 0
+                    XCTAssertGreaterThanOrEqual(textFrame.minY, UTIFooterCardView.overlap + topGap - 0.5)
+                    XCTAssertLessThanOrEqual(textFrame.minY, UTIFooterCardView.overlap + topGap + 0.5)
+                    XCTAssertGreaterThanOrEqual(text.bounds.height + 0.5,
+                                               text.sizeThatFits(CGSize(width: text.bounds.width, height: CGFloat.greatestFiniteMagnitude)).height)
+                    XCTAssertLessThanOrEqual(textFrame.maxY, card.bounds.height - 12 + 0.5)
+                }
+            }
+        }
+    }
+
+    func testEditDisclaimerUsesMessagesSelectedByController() {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        sut.setFooterPresentationActive(true)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        var visible: [UTIFooterItem.ID] = []
+        sut.onFooterVisibilityChanged = { visible = $0 }
+        sut.setFooterMessages([.init(id: .attachmentPrivacy, message: message)])
+        sut.setEditMode(true, showsReplaceDisclaimer: true)
+        sut.setFooterMessages([])
+        XCTAssertTrue(visible.isEmpty)
+
+        sut.setEditMode(false, showsReplaceDisclaimer: false)
+        sut.setFooterMessages([.init(id: .usageWarning, message: message)])
+        XCTAssertEqual(visible, [.usageWarning])
+    }
+
+    func testWhenTheHandlerAsksForTheAskButtonThenSubmitReadsAsk() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Submit", in: sut))
+
+        handler.termsOfServiceSendButton = .ask
+        flushMainQueue()
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+
+        handler.termsOfServiceSendButton = .create
+        flushMainQueue()
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+
+        handler.termsOfServiceSendButton = nil
+        flushMainQueue()
+        XCTAssertNil(submitButton.title(for: .normal))
+    }
+
+    func testWhenExpandedInputSwitchesToSearchThenCardKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.setInputMode(.aiChat, animated: false)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenExpandedSearchOnlyInputIsShownThenCardHasNoOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testWhenExpandedInputHidesToggleThenModeSyncDoesNotShowOutline() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.setInputMode(.aiChat, animated: false)
+
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
+    func testWhenTopInputRevealsToggleThenModeSwitchKeepsOutline() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.setInputMode(.aiChat, animated: false)
+        sut.prepareForOmnibarEditingShow()
+        XCTAssertFalse(sut.subviews.contains { $0.layer.borderWidth > 0 })
+
+        sut.applyOmnibarEditingShowPose()
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+        sut.setInputMode(.search, animated: false)
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0.5)
+    }
+
+    func testWhenTopInputHidesToggleThenOutlineIsRemoved() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        let outlinedCard = try XCTUnwrap(sut.subviews.first { $0.layer.borderWidth > 0 })
+
+        sut.applyToggleHideChanges()
+
+        XCTAssertEqual(outlinedCard.layer.borderWidth, 0)
+    }
+
+    func testWhenFocusedInSplitOmnibarSessionThenCardMatchesRestingAddressBarInset() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.cardPosition = .top
+        sut.usesOmnibarMargins = true
+        sut.prepareForOmnibarEditingShow()
+        sut.applyOmnibarEditingShowPose()
+        prepareForFitting(sut, width: 402, height: 192)
+        applyFittingHeight(to: sut, width: 402)
+
+        let inset = try XCTUnwrap(activeCardHorizontalInset(in: sut))
+
+        XCTAssertEqual(inset, 16)
+    }
+
+    func testWhenToggleIsEnabledOnExpandedSearchInputThenOutlineAppears() {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler, isToggleEnabled: false)
+        sut.applyCardLayout(.expanded(showsToggle: false, showsToolbar: false), animated: false)
+
+        sut.updateToggleEnabled(true, showsToolbar: false)
+
+        XCTAssertTrue(sut.subviews.contains { $0.layer.borderWidth > 0 })
+    }
+
     func test_searchModeTextSubmitStaysEnabledWhenInvalidDuckAIAttachmentIsHidden() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -54,6 +292,22 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
+    func test_flankedPillCentresTrailingButtonsOnItsTallerCard() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: 120)
+
+        let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+
+        sut.applyCardLayout(.collapsed, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 22, accuracy: 0.5)
+
+        sut.applyCardLayout(.flanked, animated: false)
+        sut.layoutIfNeeded()
+        XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
+    }
+
     func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -70,6 +324,254 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.applyToggleHideChanges()
 
         XCTAssertEqual(strip.alpha, 0, accuracy: 0.001)
+    }
+
+    func testWhenCompactLayoutIsDisabledThenAttachmentStripPreservesFixedWidthsAndSpacing() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 320, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+        sut.setPageContextChipState(.attached(title: "Current page", favicon: nil))
+        sut.setPageContextChipVisible(true)
+        sut.setSelectionContextChips([(id: "selection", title: "Selected text", favicon: nil)])
+        sut.addAttachment(makeFileAttachment(fileName: "A long document name.pdf"))
+        sut.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")))
+        sut.layoutIfNeeded()
+
+        let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
+        let scrollView = try XCTUnwrap(firstDescendant(of: UIScrollView.self, in: sut))
+        XCTAssertEqual(stack.spacing, 10)
+        XCTAssertTrue(scrollView.alwaysBounceHorizontal)
+        XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
+        XCTAssertGreaterThan(scrollView.contentSize.width, scrollView.bounds.width)
+
+        for chip in stack.arrangedSubviews.prefix(2) {
+            let icon = try XCTUnwrap(firstDescendant(of: UIImageView.self, in: chip))
+            let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: chip))
+            XCTAssertEqual(icon.bounds.size, CGSize(width: 28, height: 28))
+            XCTAssertEqual(remove.bounds.size, CGSize(width: 32, height: 32))
+            XCTAssertEqual(remove.backgroundColor, .clear)
+        }
+
+        let fileChip = stack.arrangedSubviews[2]
+        let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: fileChip))
+        let icon = try XCTUnwrap(fileChip.subviews.first?.subviews.compactMap { $0 as? UIImageView }.first(where: { !$0.isHidden }))
+        let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: fileChip))
+        XCTAssertEqual(label.lineBreakMode, .byTruncatingMiddle)
+        XCTAssertEqual(icon.bounds.size, CGSize(width: 28, height: 28))
+        XCTAssertEqual(remove.bounds.size, CGSize(width: 32, height: 32))
+        XCTAssertEqual(remove.backgroundColor, .clear)
+
+        sut.frame.size.width = 1024
+        sut.layoutIfNeeded()
+        XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
+    }
+
+    func testWhenCompactLayoutIsDisabledThenImageRemainsThumbnailBesideRemoveButton() throws {
+        let sut = UnifiedToggleInputAttachmentThumbnailView(
+            attachment: .image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")),
+            usesCompactLayout: false)
+        sut.frame = CGRect(x: 0, y: 0, width: 82, height: 44)
+        sut.layoutIfNeeded()
+
+        let imageView = try XCTUnwrap(firstDescendant(of: UIImageView.self, in: sut))
+        let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut))
+        XCTAssertEqual(imageView.frame, CGRect(x: 10, y: 8, width: 28, height: 28))
+        XCTAssertEqual(imageView.layer.cornerRadius, 6)
+        XCTAssertEqual(remove.frame, CGRect(x: 40, y: 6, width: 32, height: 32))
+        XCTAssertEqual(remove.backgroundColor, .clear)
+        XCTAssertFalse(remove.point(inside: CGPoint(x: -1, y: 16), with: nil))
+    }
+
+    func testChipWidthsRespectPerKindLimitsAndShrinkBeforeScrolling() {
+        typealias Limits = UnifiedToggleInputAttachmentsStripView.ChipWidthLimits
+        let page = Limits(maximumWidth: 240, minimumContentWidth: 88)
+        let file = Limits(maximumWidth: 196, minimumContentWidth: 88)
+        let image = Limits(maximumWidth: 82, minimumContentWidth: 44)
+        let expectedWidths: [CGFloat] = [240, 186, 368 / 3, 91, 91]
+
+        for (index, expectedWidth) in expectedWidths.enumerated() {
+            let widths = UnifiedToggleInputAttachmentsStripView.chipWidths(
+                visibleWidth: 400, chips: Array(repeating: page, count: index + 1))
+            XCTAssertEqual(widths.count, index + 1)
+            for width in widths {
+                XCTAssertEqual(width, expectedWidth, accuracy: 0.001)
+            }
+        }
+
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 1024, chips: [page, file, image]), [240, 196, 82])
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 500, chips: [page, file, image]), [193, 193, 82])
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 400, chips: [page, file, image]), [143, 143, 82])
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 480, chips: Array(repeating: image, count: 5)),
+                       [82, 82, 82, 82, 82])
+        let wideTitle = Limits(maximumWidth: 240, minimumContentWidth: 170)
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 400, chips: [wideTitle, file, image]), [170, 116, 82])
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 320, chips: Array(repeating: page, count: 4)),
+                       [88, 88, 88, 88])
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 400, chips: []), [])
+        XCTAssertEqual(UnifiedToggleInputAttachmentsStripView.chipWidths(visibleWidth: 0, chips: [page]), [])
+    }
+
+    func testWhenOnlyPageContextIsVisibleThenChipDoesNotFillStrip() throws {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 1024, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
+        let sut = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
+        container.addSubview(sut)
+        let stripWidth = sut.widthAnchor.constraint(equalToConstant: 1024)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight),
+            stripWidth
+        ])
+        sut.setPageContextChipState(.attached(title: "Carlos Niño - Wikipedia", favicon: nil))
+        sut.setPageContextChipVisible(true)
+        container.layoutIfNeeded()
+        sut.layoutIfNeeded()
+
+        let chip = try XCTUnwrap(firstDescendant(of: AIChatContextChipView.self, in: sut))
+        XCTAssertEqual(sut.bounds.width, 1024, accuracy: 0.5)
+        XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
+
+        sut.setSelectionContextChips([(id: "selection", title: "Selected words", favicon: nil)])
+        sut.layoutIfNeeded()
+        XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
+
+        stripWidth.constant = 400
+        container.layoutIfNeeded()
+        XCTAssertEqual(sut.bounds.width, 400, accuracy: 0.5)
+        XCTAssertEqual(chip.bounds.width, 186, accuracy: 0.5)
+
+        sut.setSelectionContextChips([])
+        sut.layoutIfNeeded()
+        XCTAssertEqual(chip.bounds.width, 240, accuracy: 0.5)
+    }
+
+    func testWhenFourReadableChipsCannotFitThenStripScrollsInsteadOfHidingFirstCharacter() throws {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 360, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
+        let sut = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
+        container.addSubview(sut)
+        NSLayoutConstraint.activate([
+            sut.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sut.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sut.topAnchor.constraint(equalTo: container.topAnchor),
+            sut.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+        ])
+        sut.setPageContextChipState(.attached(title: "Wikipedia page title", favicon: nil))
+        sut.setPageContextChipVisible(true)
+        sut.setSelectionContextChips([(id: "selection", title: "Another page title", favicon: nil)])
+        sut.addAttachment(makeFileAttachment(fileName: "Wide document name.pdf"))
+        sut.addAttachment(.image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")))
+        container.layoutIfNeeded()
+        sut.layoutIfNeeded()
+
+        let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
+        let scrollView = try XCTUnwrap(firstDescendant(of: UIScrollView.self, in: sut))
+        XCTAssertEqual(sut.bounds.width, 360, accuracy: 0.5)
+        XCTAssertEqual(scrollView.bounds.width, 360, accuracy: 0.5)
+        XCTAssertEqual(stack.arrangedSubviews.count, 4)
+        XCTAssertGreaterThan(scrollView.contentSize.width, scrollView.bounds.width)
+        for chip in stack.arrangedSubviews.dropLast() {
+            let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: chip))
+            let font = try XCTUnwrap(label.font)
+            let text = try XCTUnwrap(label.text)
+            let icon = try XCTUnwrap(label.superview?.subviews.compactMap { $0 as? UIImageView }.first(where: { !$0.isHidden }))
+            let requiredText = String(text.prefix(1)) + "…"
+            XCTAssertGreaterThanOrEqual(label.bounds.width, ceil((requiredText as NSString).size(withAttributes: [.font: font]).width))
+            XCTAssertGreaterThanOrEqual(label.frame.minX - icon.frame.maxX, 4 - 0.5)
+        }
+    }
+
+    func testWhenImageChipWidthChangesThenImageFillsChipBehindRemoveButton() throws {
+        let sut = UnifiedToggleInputAttachmentThumbnailView(
+            attachment: .image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")),
+            usesCompactLayout: true)
+        let imageView = try XCTUnwrap(firstDescendant(of: UIImageView.self, in: sut))
+        let remove = try XCTUnwrap(firstDescendant(of: UIButton.self, in: sut))
+
+        XCTAssertEqual(imageView.contentMode, .scaleAspectFill)
+        for width: CGFloat in [44, 200] {
+            sut.setWidth(width)
+            sut.frame = CGRect(x: 0, y: 0, width: width, height: 44)
+            sut.layoutIfNeeded()
+
+            XCTAssertEqual(imageView.convert(imageView.bounds, to: sut), sut.bounds)
+            XCTAssertTrue(imageView.frame.contains(remove.frame))
+            let hitPoint = remove.convert(CGPoint(x: -7, y: -7), to: sut)
+            XCTAssertTrue(sut.hitTest(hitPoint, with: nil) === remove)
+        }
+    }
+
+    // Loading reads localized AIChat resources, so exercise it in the app-hosted test target.
+    func testWhenNoPreferredWidthIsSetThenLoadingHugsDotsAndRestoresDefaultPill() {
+        let sut = AIChatContextChipView()
+        sut.configure(state: .loading)
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width, 59, accuracy: 0.5)
+
+        sut.configure(state: .attached(title: "Page", favicon: nil))
+        XCTAssertEqual(sut.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width, 240, accuracy: 0.5)
+    }
+
+    func testWhenStripIsCreatedAtEachContentSizeCategoryThenFontsAndMinimumWidthsScaleWithoutCap() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 240, height: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight))
+        let parent = UIViewController()
+        window.rootViewController = parent
+        // Trait propagation requires a window-backed hierarchy on iOS 17 and later.
+        window.isHidden = false
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+        window.layoutIfNeeded()
+        let child = UIViewController()
+        parent.addChild(child)
+        parent.view.addSubview(child.view)
+        child.view.frame = parent.view.bounds
+        child.didMove(toParent: parent)
+
+        for category: UIContentSizeCategory in [.large, .accessibilityExtraExtraExtraLarge] {
+            let traits = UITraitCollection(preferredContentSizeCategory: category)
+            parent.setOverrideTraitCollection(traits, forChild: child)
+            child.view.setNeedsLayout()
+            child.view.layoutIfNeeded()
+            guard child.view.traitCollection.preferredContentSizeCategory == category else {
+                XCTFail("Test host did not inherit requested content size category: \(category)")
+                return
+            }
+
+            // Font factories read current traits; a controller override alone does not change those.
+            var createdStrip: UnifiedToggleInputAttachmentsStripView?
+            traits.performAsCurrent {
+                let strip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
+                strip.setPageContextChipState(.attached(title: "Wikipedia", favicon: nil))
+                strip.setPageContextChipVisible(true)
+                strip.addAttachment(makeFileAttachment(fileName: "Wide document.pdf"))
+                createdStrip = strip
+            }
+            let sut = try XCTUnwrap(createdStrip)
+            child.view.addSubview(sut)
+            defer { sut.removeFromSuperview() }
+            NSLayoutConstraint.activate([
+                sut.leadingAnchor.constraint(equalTo: child.view.leadingAnchor),
+                sut.trailingAnchor.constraint(equalTo: child.view.trailingAnchor),
+                sut.topAnchor.constraint(equalTo: child.view.topAnchor),
+                sut.heightAnchor.constraint(equalToConstant: UnifiedToggleInputAttachmentsStripView.Constants.stripHeight)
+            ])
+            flushMainQueue()
+            child.view.layoutIfNeeded()
+            sut.layoutIfNeeded()
+
+            XCTAssertEqual(sut.bounds.width, 240, accuracy: 0.5)
+            let stack = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: sut))
+            XCTAssertEqual(stack.arrangedSubviews.count, 2)
+            let expectedSize = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traits).pointSize
+            for chip in stack.arrangedSubviews {
+                let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: chip))
+                let font = try XCTUnwrap(label.font)
+                XCTAssertEqual(label.traitCollection.preferredContentSizeCategory, category)
+                XCTAssertTrue(label.adjustsFontForContentSizeCategory)
+                XCTAssertEqual(font.pointSize, expectedSize, accuracy: 0.01)
+                let compactTitleWidth = ceil(("W…" as NSString).size(withAttributes: [.font: font]).width)
+                XCTAssertGreaterThanOrEqual(label.bounds.width, compactTitleWidth)
+            }
+        }
     }
 
     func test_attachmentStripScrollsToTrailingEdgeAfterAttachmentLayoutChange() throws {
@@ -119,6 +621,55 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertEqual(scrollView.contentOffset.x, 0, accuracy: 1)
+    }
+
+    func test_attachmentStripShowsPageContextChipWithoutAddingAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        XCTAssertTrue(sut.attachments.isEmpty)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+        XCTAssertNotNil(firstDescendant(of: AIChatContextChipView.self, in: sut))
+    }
+
+    func test_attachmentStripPageContextRemoveDoesNotRemoveFileAttachment() throws {
+        let sut = UnifiedToggleInputAttachmentsStripView()
+        var removeCount = 0
+        sut.onPageContextRemove = { removeCount += 1 }
+        sut.addAttachment(makeFileAttachment())
+        sut.setPageContextChipState(.attached(title: "DuckDuckGo", favicon: nil))
+        sut.setPageContextChipVisible(true)
+
+        let removeButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.ContextChip.RemoveButton", in: sut))
+        removeButton.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(removeCount, 1)
+        XCTAssertEqual(sut.attachments.count, 1)
+        XCTAssertTrue(sut.hasVisiblePageContext)
+    }
+
+    @MainActor
+    func test_visiblePageContextShowsAttachmentStripButDoesNotEnableAttachmentOnlySubmit() throws {
+        let originatingURL = CurrentValueSubject<URL?, Never>(URL(string: "https://duckduckgo.com"))
+        let viewModel = UnifiedToggleInputPageContextChipViewModel(
+            originatingURLPublisher: originatingURL.eraseToAnyPublisher(),
+            initialAttachedContext: nil,
+            isAutoAttachEnabled: { true }
+        )
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = UnifiedToggleInputView(handler: handler)
+        sut.bindPageContextChip(to: viewModel)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+
+        viewModel.setAttached(makePageContext(title: "DuckDuckGo", url: "https://duckduckgo.com"))
+        flushMainQueue()
+
+        let strip = try XCTUnwrap(firstDescendant(of: UnifiedToggleInputAttachmentsStripView.self, in: sut))
+        XCTAssertEqual(strip.alpha, 1, accuracy: 0.001)
+        XCTAssertTrue(sut.currentAttachments.isEmpty)
+        XCTAssertFalse(sut.isToolbarSubmitEnabled)
     }
 
     @MainActor
@@ -311,10 +862,14 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(handler.currentText, "he\nllo")
     }
 
-    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewline() {
+    func test_topAIChatTextEntryDoesNotGrowOnFirstFloatingReturnNewlineAndLegacyUXIsEnabled() {
         let expectedTopAIChatMinimumHeight: CGFloat = 68
-        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
-        handler.updateBarPosition(isTop: true)
+        let handler = LegacyTextEntryMockHandler(
+            currentToggleState: .aiChat,
+            isTopBarPosition: true,
+            isUsingFadeOutAnimation: false,
+            usesExpandedAIChatTextEntryLayout: true
+        )
         let sut = SwitchBarTextEntryView(handler: handler)
         sut.isExpandable = true
         prepareForFitting(sut)
@@ -342,6 +897,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+        XCTAssertEqual(textView.textContainerInset.left, 16, accuracy: 1)
     }
 
     func test_collapsedAIChatPlaceholderStaysVerticallyCenteredInPill() throws {
@@ -425,6 +981,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(height, 68, accuracy: 1)
         XCTAssertFalse(placeholderLabel.isHidden)
         XCTAssertEqual(placeholderLabel.frame.minY, expectedPlaceholderMinY, accuracy: 1)
+        XCTAssertEqual(textView.textContainerInset.left, 12, accuracy: 1)
     }
 
     func test_barPositionChangeRefreshesExpandedAIChatPose() {
@@ -439,7 +996,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         handler.updateBarPosition(isTop: true)
         sut.updatePoseForCurrentState()
 
-        XCTAssertEqual(applyFittingHeight(to: sut), 68, accuracy: 1)
+        XCTAssertEqual(applyFittingHeight(to: sut), 51, accuracy: 1)
     }
 
     func test_expandedPlaceholderAlignmentUpdatesWhenToggleSwitchesMode() throws {
@@ -552,6 +1109,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.setToggleState(.search)
         let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for search mode
         sut.isExpandable = true
         prepareForFitting(sut)
         sut.setQueryText(longURL)
@@ -587,6 +1145,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     func test_urlExpandsHeightInSearchOnlyModeAfterUserTap() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isToggleEnabled: false)
         let sut = SwitchBarTextEntryView(handler: handler)
+        sut.style = .singleLine // UnifiedToggleInputView sets singleLine for toggle-disabled mode
         sut.isExpandable = true
         prepareForFitting(sut)
         sut.setQueryText(longURL)
@@ -605,6 +1164,16 @@ final class UnifiedToggleInputViewTests: XCTestCase {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1)
+    }
+
+    private func activeCardHorizontalInset(in view: UnifiedToggleInputView) -> CGFloat? {
+        view.constraints.first { constraint in
+            constraint.isActive
+                && constraint.firstAttribute == .leading
+                && constraint.secondAttribute == .leading
+                && constraint.secondItem === view
+                && (constraint.firstItem as? UIView)?.isUserInteractionEnabled == false
+        }?.constant
     }
 
     private func prepareForFitting(_ view: UIView, width: CGFloat = 320, height: CGFloat = 68) {
@@ -650,6 +1219,11 @@ final class UnifiedToggleInputViewTests: XCTestCase {
                 pageCount: 1
             )
         )
+    }
+
+    private func makePageContext(title: String, url: String) -> AIChatPageContext {
+        let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
+        return AIChatPageContext(contextData: data, favicon: nil)
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {
@@ -725,7 +1299,6 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var currentText: String = ""
     var currentToggleState: TextEntryMode
     var isVoiceSearchEnabled: Bool = false
-    var isAIVoiceChatEnabled: Bool = false
     var hasUserInteractedWithText: Bool = false
     var isCurrentTextValidURL: Bool = false
     var buttonState: SwitchBarButtonState = .noButtons
@@ -735,6 +1308,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var isUsingExpandedBottomBarHeight: Bool = false
     var isUsingFadeOutAnimation: Bool
     var usesExpandedAIChatTextEntryLayout: Bool
+    var usesLegacyLayoutMetrics: Bool
     var shouldDisableAutocorrectOnEmpty: Bool = false
     var hidesVoiceButton: Bool = false
     var hasSubmittedPrompt: Bool = false
@@ -743,7 +1317,7 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var currentTextPublisher: AnyPublisher<String, Never> { Empty().eraseToAnyPublisher() }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { Empty().eraseToAnyPublisher() }
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { Empty().eraseToAnyPublisher() }
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> { Empty().eraseToAnyPublisher() }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { Empty().eraseToAnyPublisher() }
@@ -753,11 +1327,13 @@ private final class LegacyTextEntryMockHandler: SwitchBarHandling {
     init(currentToggleState: TextEntryMode,
          isTopBarPosition: Bool,
          isUsingFadeOutAnimation: Bool,
-         usesExpandedAIChatTextEntryLayout: Bool = false) {
+         usesExpandedAIChatTextEntryLayout: Bool = false,
+         usesLegacyLayoutMetrics: Bool = true) {
         self.currentToggleState = currentToggleState
         self.isTopBarPosition = isTopBarPosition
         self.isUsingFadeOutAnimation = isUsingFadeOutAnimation
         self.usesExpandedAIChatTextEntryLayout = usesExpandedAIChatTextEntryLayout
+        self.usesLegacyLayoutMetrics = usesLegacyLayoutMetrics
     }
 
     func updateCurrentText(_ text: String) {

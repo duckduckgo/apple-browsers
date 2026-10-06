@@ -79,6 +79,14 @@ extension NSAlert {
         return alert
     }
 
+    static func passwordManagerNoteRequiresDomain() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.passwordManagerAlertNoteRequiresDomainTitle
+        alert.informativeText = UserText.passwordManagerAlertNoteRequiresDomainDescription
+        alert.addButton(withTitle: UserText.ok)
+        return alert
+    }
+
     static func passwordManagerConfirmDeleteNote() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.passwordManagerAlertRemoveNoteConfirmation

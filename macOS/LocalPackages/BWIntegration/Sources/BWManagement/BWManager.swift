@@ -35,6 +35,7 @@ final class BWManager: BWManagement, ObservableObject {
 
     private let pixelFiring: PixelFiring?
     private let isBitwardenPasswordManagerProvider: () -> Bool
+    private let isConnectionHardeningEnabled: () -> Bool
     private let showRestartBitwardenAlert: (@escaping () -> Void) -> Void
 
     private let communicator: NativeMessagingCommunication
@@ -42,22 +43,29 @@ final class BWManager: BWManagement, ObservableObject {
     init(communicator: NativeMessagingCommunication? = nil,
          pixelFiring: PixelFiring? = PixelKit.shared,
          isBitwardenPasswordManagerProvider: @escaping () -> Bool = { false },
+         isConnectionHardeningEnabled: @escaping () -> Bool = { true },
          showRestartBitwardenAlert: @escaping (@escaping () -> Void) -> Void = { _ in }) {
-        self.communicator = communicator ?? NativeMessagingCommunicator(appPath: Self.applicationPath, arguments: Self.arguments)
+        self.communicator = communicator ?? NativeMessagingCommunicator(
+            appPath: Self.applicationPath,
+            arguments: Self.arguments,
+            stopsMonitoringAtEOF: isConnectionHardeningEnabled)
         self.pixelFiring = pixelFiring
         self.isBitwardenPasswordManagerProvider = isBitwardenPasswordManagerProvider
+        self.isConnectionHardeningEnabled = isConnectionHardeningEnabled
         self.showRestartBitwardenAlert = showRestartBitwardenAlert
     }
 
     func initCommunication() {
         communicator.delegate = self
 
+        lastScheduledConnectionStatus = nil
         connectToBitwardenProcess()
     }
 
     func cancelCommunication() {
         connectionAttemptTimer?.invalidate()
         connectionAttemptTimer = nil
+        lastScheduledConnectionStatus = nil
         status = .disabled
         communicator.terminateProxyProcess()
         try? keyStorage.cleanSharedKey()
@@ -69,6 +77,7 @@ final class BWManager: BWManagement, ObservableObject {
     let installationService: BWInstallationService = LocalBitwardenInstallationService()
 
     func openBitwarden() {
+        expediteConnectionRetry()
         installationService.openBitwarden()
     }
 
@@ -162,6 +171,8 @@ final class BWManager: BWManagement, ObservableObject {
     }
 
     private var connectionAttemptTimer: Timer?
+    private var connectionRetryInterval = BWRetryInterval()
+    private var lastScheduledConnectionStatus: BWStatus?
 
     // Disables communicator (kills the proxy process)
     // and schedules future attempt to connect
@@ -171,7 +182,18 @@ final class BWManager: BWManagement, ObservableObject {
             return
         }
 
-        connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
+        // Back off while the same failure keeps repeating. A different status means
+        // the situation changed (app installed, launched, integration approved, …)
+        // and the next attempt should happen quickly again.
+        if status != lastScheduledConnectionStatus {
+            connectionRetryInterval.reset()
+        }
+        lastScheduledConnectionStatus = status
+
+        // Kill switch: fall back to the legacy fixed 1s retry when hardening is remotely disabled
+        let interval = isConnectionHardeningEnabled() ? connectionRetryInterval.next() : BWRetryInterval.initialInterval
+        Logger.bitWarden.log("BWManager: Scheduling connection attempt in \(interval, privacy: .public)s (status: \(String(describing: self.status), privacy: .public))")
+        connectionAttemptTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             self?.connectionAttemptTimer?.invalidate()
             self?.connectionAttemptTimer = nil
 
@@ -183,6 +205,20 @@ final class BWManager: BWManagement, ObservableObject {
         // Kill the proxy process and schedule the next attempt
         communicator.terminateProxyProcess()
         scheduleConnectionAttempt()
+    }
+
+    // Restarts the backoff and replaces a pending long retry with a quick one.
+    // Called on user actions (setup flow, status UI) where a stale backed-off
+    // timer would make the integration look broken.
+    private func expediteConnectionRetry() {
+        lastScheduledConnectionStatus = nil
+        connectionRetryInterval.reset()
+
+        if connectionAttemptTimer != nil {
+            connectionAttemptTimer?.invalidate()
+            connectionAttemptTimer = nil
+            scheduleConnectionAttempt()
+        }
     }
 
     // MARK: - Status Refreshing
@@ -210,6 +246,7 @@ final class BWManager: BWManagement, ObservableObject {
     // MARK: - Handling Incoming Messages
 
     private func handleCommand(_ command: BWCommand) {
+        Logger.bitWarden.log("BWManager: Received command: \(String(describing: command), privacy: .public)")
         switch command {
         case .connected:
             let sharedKey: Base64EncodedString?
@@ -238,11 +275,13 @@ final class BWManager: BWManagement, ObservableObject {
                 // Other part of the code is responsible for sending the handshake message
             }
         case .disconnected:
-            // Bitwarden application isn't running
-            cancelConnectionAndScheduleNextAttempt()
+            // Bitwarden application isn't running.
+            // Status is set first so the connection attempt is scheduled
+            // (and backed off) against the actual failure state.
             if status != .disabled {
                 status = .notRunning
             }
+            cancelConnectionAndScheduleNextAttempt()
         default:
             Logger.bitWarden.fault("BWManager: Wrong handler")
             assertionFailure("BWManager: Wrong handler")
@@ -451,6 +490,8 @@ final class BWManager: BWManagement, ObservableObject {
     lazy var messageIdGenerator = BWMessageIdGenerator()
 
     func sendHandshake() {
+        expediteConnectionRetry()
+
         guard let publicKey = generateKeyPair() else {
             Logger.bitWarden.fault("BWManager: Public key is missing")
             assertionFailure("BWManager: Public key is missing")
@@ -598,11 +639,19 @@ final class BWManager: BWManagement, ObservableObject {
             return
         }
 
+        // A full encrypted round-trip succeeded, so future failures should retry
+        // quickly rather than continue any backoff. Deliberately not keyed on the
+        // initial `connected` frame, which a crash-looping proxy can still emit.
+        lastScheduledConnectionStatus = nil
+
         let vault = BWVault(id: id, email: email, status: status, active: true)
         self.status = .connected(vault: vault)
     }
 
     func refreshStatusIfNeeded() {
+        // The user is looking at status UI, so make any pending retry quick again
+        expediteConnectionRetry()
+
         switch status {
         case .connected, .error: sendStatus()
         default: return
@@ -694,9 +743,11 @@ extension BWManager: NativeMessagingCommunicatorDelegate {
 extension BWIntegrationFactory: BWManagementFactory {
 
     public static func makeManager(isBitwardenPasswordManagerProvider: @escaping () -> Bool,
+                                   isConnectionHardeningEnabled: @escaping () -> Bool,
                                    showRestartBitwardenAlert: @escaping (@escaping () -> Void) -> Void) -> BWManagement {
         BWManager(pixelFiring: PixelKit.shared,
                   isBitwardenPasswordManagerProvider: isBitwardenPasswordManagerProvider,
+                  isConnectionHardeningEnabled: isConnectionHardeningEnabled,
                   showRestartBitwardenAlert: showRestartBitwardenAlert)
     }
 

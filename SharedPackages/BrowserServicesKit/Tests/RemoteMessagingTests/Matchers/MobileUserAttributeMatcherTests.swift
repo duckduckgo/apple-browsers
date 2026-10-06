@@ -101,6 +101,32 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - NTPAfterIdleState
+
+    func testWhenNTPAfterIdleStateMatchesSingleValueThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardShown")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleStateDoesNotMatchSingleValueThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown"], fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenNTPAfterIdleStateMatchesAnyOfMultipleValuesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "eligibleCardHidden")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNTPAfterIdleStateNotEligibleDoesNotMatchEligibleValuesThenReturnFail() throws {
+        setUpUserAttributeMatcher(ntpAfterIdleState: "notEligible")
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: NTPAfterIdleStateMatchingAttribute(value: ["eligibleCardShown", "eligibleCardHidden"], fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - FreemiumPIREligible
 
     func testWhenIsFreemiumPIREligibleMatchesThenReturnMatch() throws {
@@ -187,12 +213,25 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    func testWhenIsCurrentPIRUserIsUnknownThenTrueTargetReturnsFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsCurrentPIRUserIsUnknownThenFalseTargetReturnsFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
                                            isSyncEnabled: Bool = false,
                                            isFreemiumPIREligible: Bool = false,
                                            isFreemiumPIRActivated: Bool = false,
                                            freemiumPIRFirstScanResult: String? = nil,
-                                           isCurrentPIRUser: Bool = false) {
+                                           isCurrentPIRUser: Bool? = false,
+                                           ntpAfterIdleState: String = "") {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -208,6 +247,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             subscriptionDaysSinceSubscribed: 5,
             subscriptionDaysUntilExpiry: 25,
             subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,
@@ -222,7 +262,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isFreemiumPIREligible: isFreemiumPIREligible,
             isFreemiumPIRActivated: isFreemiumPIRActivated,
             freemiumPIRFirstScanResult: freemiumPIRFirstScanResult,
-            isCurrentPIRUser: isCurrentPIRUser
+            isCurrentPIRUser: isCurrentPIRUser,
+            ntpAfterIdleState: ntpAfterIdleState
         )
     }
 }

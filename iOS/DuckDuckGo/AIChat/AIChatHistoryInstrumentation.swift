@@ -18,6 +18,7 @@
 //
 
 import Core
+import PixelKit
 
 /// Where the chat history screen was opened from. Sent as the `source` parameter on the
 /// screen-shown impression pixel.
@@ -38,22 +39,29 @@ protocol AIChatHistoryInstrumentation {
     func pinAdded()
     func pinRemoved()
     func downloadStarted()
+    func downloadSucceeded()
+    func selectionDeleteConfirmed()
+    func selectionDownloadStarted()
+    func chatProtectionTapped()
     func editModeEntered()
     func newChatTapped()
+    func loadFailed(error: Error)
+    func pinToggleFailed(error: Error)
+    func downloadFailed(error: Error)
 }
 
 final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
 
-    private let dailyPixelFiring: DailyPixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
-        self.dailyPixelFiring = dailyPixelFiring
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
     }
 
     func screenShown(source: AIChatHistorySource) {
-        dailyPixelFiring.fireDailyAndCount(.aiChatHistoryScreenShown,
-                                           error: nil,
-                                           withAdditionalParameters: [PixelParameters.source: source.rawValue])
+        pixelFiring?.fire(Pixel.Event.aiChatHistoryScreenShown,
+                          frequency: .dailyAndCount,
+                          options: .parameters([PixelParameters.source: source.rawValue]))
     }
 
     func chatOpened() {
@@ -92,6 +100,22 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
         fire(.aiChatHistoryDownloadStarted)
     }
 
+    func downloadSucceeded() {
+        fire(.aiChatHistoryDownloadSuccessful)
+    }
+
+    func selectionDeleteConfirmed() {
+        fire(.aiChatHistorySelectionDeleteConfirmed)
+    }
+
+    func selectionDownloadStarted() {
+        fire(.aiChatHistorySelectionDownloadStarted)
+    }
+
+    func chatProtectionTapped() {
+        fire(.aiChatHistoryChatProtectionTapped)
+    }
+
     func editModeEntered() {
         fire(.aiChatHistoryEditModeEntered)
     }
@@ -100,7 +124,19 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
         fire(.aiChatHistoryNewChatTapped)
     }
 
-    private func fire(_ pixel: Pixel.Event) {
-        dailyPixelFiring.fireDailyAndCount(pixel, error: nil, withAdditionalParameters: [:])
+    func loadFailed(error: Error) {
+        fire(.aiChatHistoryLoadFailed, error: error)
+    }
+
+    func pinToggleFailed(error: Error) {
+        fire(.aiChatHistoryPinToggleFailed, error: error)
+    }
+
+    func downloadFailed(error: Error) {
+        fire(.aiChatHistoryDownloadFailed, error: error)
+    }
+
+    private func fire(_ pixel: Pixel.Event, error: Error? = nil) {
+        pixelFiring?.fire(pixel.withError(error), frequency: .dailyAndCount)
     }
 }

@@ -29,6 +29,11 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         XCTAssertNil(button.text)
     }
 
+    func testWhenInitializedThenAccessibilityLabelIsTabSwitcher() {
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        XCTAssertEqual(UserText.tabSwitcherAccessibilityLabel, button.accessibilityLabel)
+    }
+
     func testWhenAnimateCalledThenCountIsNotIncremented() {
         let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
         button.animateUpdate { }

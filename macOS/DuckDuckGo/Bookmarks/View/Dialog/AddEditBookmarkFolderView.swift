@@ -45,7 +45,7 @@ struct AddEditBookmarkFolderView: View {
                 BookmarkDialogStackedContentView(
                     .init(
                         title: UserText.Bookmarks.Dialog.Field.name,
-                        content: TextField("", text: $folderName)
+                        content: TextField("" as String, text: $folderName)
                             .focusedOnAppear()
                             .accessibilityIdentifier("bookmark.add.name.textfield")
                             .textFieldStyle(.themed)

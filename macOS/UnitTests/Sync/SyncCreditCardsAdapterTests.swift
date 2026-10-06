@@ -20,7 +20,7 @@ import XCTest
 import BrowserServicesKit
 import Combine
 import DDGSync
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SyncCreditCardsAdapterTests: XCTestCase {

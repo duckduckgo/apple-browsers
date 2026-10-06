@@ -189,13 +189,11 @@ extension WKNavigationAction: WebViewNavigationAction {
 
         switch navigationType {
         case .linkActivated, .other:
-            let isSameDocumentNavigation = self.isRedirect != true
-            && newURL.absoluteString.hashedSuffix != nil
-            && currentURL.isSameDocument(newURL)
-
-            return isSameDocumentNavigation
+            return self.isRedirect != true
+                && newURL.hasFragment
+                && currentURL.equals(newURL, by: .sameDocument)
         case .backForward:
-            return (newURL.absoluteString.hashedSuffix != nil || currentURL.absoluteString.hashedSuffix != nil) && currentURL.isSameDocument(newURL)
+            return (newURL.hasFragment || currentURL.hasFragment) && currentURL.equals(newURL, by: .sameDocument)
         case .reload, .formSubmitted, .formResubmitted:
             return false
         @unknown default:

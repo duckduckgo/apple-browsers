@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BrowserServicesKit
 import Core
 import DesignResourcesKit
 

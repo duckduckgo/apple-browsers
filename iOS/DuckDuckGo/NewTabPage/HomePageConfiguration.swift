@@ -1,0 +1,484 @@
+//
+//  HomePageConfiguration.swift
+//  DuckDuckGo
+//
+//  Copyright © 2018 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import BrowserServicesKit
+import Combine
+import Common
+import Core
+import Foundation
+import FoundationExtensions
+import RemoteMessaging
+import os.log
+import PixelKit
+
+@MainActor
+final class HomePageConfiguration: HomePageMessagesConfiguration {
+
+    private enum PreparationPolicy {
+        case noTrigger
+        case afterIdleThenNoTrigger
+
+        init(openedAfterIdle: Bool) {
+            self = openedAfterIdle ? .afterIdleThenNoTrigger : .noTrigger
+        }
+    }
+
+    private enum ReconciliationReason {
+        case preparation(PreparationPolicy)
+        case storeChanged
+        case foregroundValidation
+    }
+
+    private struct SelectedRemoteMessage {
+        let message: RemoteMessageModel
+        let triggerFilter: TriggerFilter
+    }
+
+    private struct RMFOwnership {
+        let message: RemoteMessageModel
+        let lease: PromoQueueRemoteMessageLease
+        let selectedTriggerFilter: TriggerFilter
+        let presentationContext: HomeMessagePresentationContext
+    }
+
+    private struct VisibleRemoteMessage {
+        let id: String
+        var hasReachedImpressionCap = false
+    }
+
+    private let homeMessageStorage: HomeMessageStorage
+    private let remoteMessagingStore: RemoteMessagingStoring
+    private let subscriptionDataReporter: SubscriptionDataReporting
+    private let isStillOnboarding: () -> Bool
+    private let promoGate: PromoGating?
+    private let notificationCenter: NotificationCenter
+    private let contentDidChangeSubject = PassthroughSubject<Void, Never>()
+
+    private var remoteMessagesCancellable: AnyCancellable?
+    private var rmfOwnership: RMFOwnership?
+    private var isRMFAdmissionEnabled: Bool
+    private var legacyOpenedAfterIdle = false
+    private var legacySelectedTriggerFilter: TriggerFilter?
+    private var visibleRemoteMessage: VisibleRemoteMessage?
+
+    var homeMessages: [HomeMessage] = []
+    let mode: PromoCoordinationMode
+
+    var contentDidChangePublisher: AnyPublisher<Void, Never> {
+        contentDidChangeSubject.eraseToAnyPublisher()
+    }
+
+    var currentRemoteMessageID: String? {
+        homeMessages.lazy.compactMap { homeMessage in
+            guard case .remoteMessage(let remoteMessage) = homeMessage,
+            HomeMessageViewModelBuilder.canBuild(for: remoteMessage) else { return nil }
+            return remoteMessage.id
+        }.first
+    }
+
+    init(variantManager: VariantManager? = nil,
+         remoteMessagingStore: RemoteMessagingStoring,
+         subscriptionDataReporter: SubscriptionDataReporting,
+         isStillOnboarding: @escaping () -> Bool,
+         promoGate: PromoGating? = nil,
+         isRMFAdmissionEnabled: Bool = true,
+         notificationCenter: NotificationCenter = .default
+    ) {
+        homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
+        self.remoteMessagingStore = remoteMessagingStore
+        self.subscriptionDataReporter = subscriptionDataReporter
+        self.isStillOnboarding = isStillOnboarding
+        self.promoGate = promoGate
+        self.notificationCenter = notificationCenter
+        mode = promoGate?.mode ?? .legacy
+        self.isRMFAdmissionEnabled = isRMFAdmissionEnabled
+
+        switch mode {
+        case .legacy:
+            homeMessages = buildLegacyHomeMessages(openedAfterIdle: false)
+        case .coordinated:
+            homeMessages = nonRemoteHomeMessages
+            observeRemoteMessagesChanges()
+        }
+    }
+
+    func refresh(openedAfterIdle: Bool = false) {
+        switch mode {
+        case .legacy:
+            homeMessages = buildLegacyHomeMessages(openedAfterIdle: openedAfterIdle)
+        case .coordinated:
+            prepareForNTP(openedAfterIdle: openedAfterIdle)
+        }
+    }
+
+    func prepareForNTP(openedAfterIdle: Bool) {
+        guard mode == .coordinated else { return }
+        guard isRMFAdmissionEnabled else {
+            return
+        }
+
+        let preparationPolicy = PreparationPolicy(openedAfterIdle: openedAfterIdle)
+        reconcileCoordinatedMessages(reason: .preparation(preparationPolicy))
+    }
+
+    func handleAppBackgrounded() {
+        guard mode == .coordinated else {
+            return
+        }
+
+        isRMFAdmissionEnabled = false
+    }
+
+    func handleAppForegrounded() {
+        guard mode == .coordinated else {
+            return
+        }
+
+        isRMFAdmissionEnabled = true
+        reconcileCoordinatedMessages(reason: .foregroundValidation)
+    }
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage) async {
+        await dismissHomeMessage(homeMessage, presentationContext: nil)
+    }
+
+    func didAppear(_ homeMessage: HomeMessage) {
+        didAppear(homeMessage, presentationContext: nil)
+    }
+
+    func presentationContext(for homeMessage: HomeMessage) -> HomeMessagePresentationContext? {
+        guard mode == .coordinated,
+              case .remoteMessage(let remoteMessage) = homeMessage,
+              let rmfOwnership,
+              rmfOwnership.presentationContext.messageID == remoteMessage.id else {
+            return nil
+        }
+        return rmfOwnership.presentationContext
+    }
+
+    func dismissHomeMessage(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) async {
+        guard case .remoteMessage(let remoteMessage) = homeMessage else {
+            return
+        }
+
+        guard mode == .coordinated else {
+            await dismissLegacyRemoteMessage(remoteMessage, homeMessage: homeMessage)
+            return
+        }
+
+        guard let presentationContext,
+              isCurrent(presentationContext, for: remoteMessage.id) else {
+            return
+        }
+
+        Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
+        await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
+
+        if isCurrent(presentationContext, for: remoteMessage.id) {
+            endCurrentRMFOwnership(replacingWith: nonRemoteHomeMessages)
+        }
+
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+    }
+
+    func didAppear(_ homeMessage: HomeMessage, presentationContext: HomeMessagePresentationContext?) {
+        guard case .remoteMessage(let remoteMessage) = homeMessage else {
+            return
+        }
+
+        guard mode == .coordinated else {
+            reportRemoteMessageShown(remoteMessage)
+            return
+        }
+
+        guard let presentationContext,
+              isCurrent(presentationContext, for: remoteMessage.id),
+              let rmfOwnership else {
+            return
+        }
+
+        // Queue history is recorded once per ownership lease. The appearance itself is a
+        // separate impression and must continue to be reported on every confirmed appearance.
+        _ = rmfOwnership.lease.markShown()
+        reportRemoteMessageShown(remoteMessage)
+    }
+
+    /// Reports the currently published remote message after revalidating that it remains eligible.
+    /// The caller invokes this when the NTP becomes visible, so each invocation represents a new
+    /// confirmed showing of the card.
+    @discardableResult
+    func reportVisibleRemoteMessage(expectedMessageID: String) -> Bool {
+        guard let homeMessage = homeMessages.first(where: { homeMessage in
+            if case .remoteMessage = homeMessage { return true }
+            return false
+        }), case .remoteMessage(let publishedRemoteMessage) = homeMessage else {
+            return false
+        }
+
+        guard publishedRemoteMessage.id == expectedMessageID else {
+            return false
+        }
+
+        switch mode {
+        case .legacy:
+            guard let triggerFilter = legacySelectedTriggerFilter,
+                  let currentCandidate = self.remoteMessage(triggerFilter: triggerFilter),
+                  currentCandidate.id == publishedRemoteMessage.id,
+                  HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
+                revalidatePublishedRemoteMessage()
+                return false
+            }
+
+            visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
+            didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: nil)
+            return true
+
+        case .coordinated:
+            guard let rmfOwnership,
+                  isCurrent(rmfOwnership.presentationContext, for: publishedRemoteMessage.id),
+                  let currentCandidate = self.remoteMessage(triggerFilter: rmfOwnership.selectedTriggerFilter),
+                  currentCandidate.id == publishedRemoteMessage.id,
+                  HomeMessageViewModelBuilder.canBuild(for: currentCandidate) else {
+                revalidatePublishedRemoteMessage()
+                return false
+            }
+
+            visibleRemoteMessage = VisibleRemoteMessage(id: currentCandidate.id)
+            didAppear(.remoteMessage(remoteMessage: currentCandidate), presentationContext: rmfOwnership.presentationContext)
+            return true
+        }
+    }
+
+    func remoteMessageDidStopBeingVisible(messageID: String) {
+        guard let visibleRemoteMessage, visibleRemoteMessage.id == messageID else { return }
+        self.visibleRemoteMessage = nil
+        if visibleRemoteMessage.hasReachedImpressionCap, currentRemoteMessageID == messageID {
+            revalidatePublishedRemoteMessage()
+        }
+    }
+
+    private var nonRemoteHomeMessages: [HomeMessage] {
+        homeMessageStorage.messagesToBeShown
+    }
+
+    private func buildLegacyHomeMessages(openedAfterIdle: Bool) -> [HomeMessage] {
+        legacyOpenedAfterIdle = openedAfterIdle
+        legacySelectedTriggerFilter = nil
+        var messages = nonRemoteHomeMessages
+        guard !isStillOnboarding(),
+              let selectedRemoteMessage = selectedRemoteMessage(using: PreparationPolicy(openedAfterIdle: openedAfterIdle)) else {
+            return messages
+        }
+
+        legacySelectedTriggerFilter = selectedRemoteMessage.triggerFilter
+        messages.append(.remoteMessage(remoteMessage: selectedRemoteMessage.message))
+        return messages
+    }
+
+    private func observeRemoteMessagesChanges() {
+        remoteMessagesCancellable = notificationCenter.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.handleRemoteMessagesChanged()
+                }
+            }
+    }
+
+    private func handleRemoteMessagesChanged() {
+        guard mode == .coordinated else {
+            return
+        }
+
+        reconcileCoordinatedMessages(reason: .storeChanged)
+    }
+
+    /// Reconciles every coordinated RMF input into the single shared NTP message source.
+    /// Existing ownership remains authoritative while its pinned candidate is valid. Store changes and foreground validation may
+    /// retain or end that ownership, but only an explicit NTP preparation may acquire and publish a new RMF.
+    private func reconcileCoordinatedMessages(reason: ReconciliationReason) {
+        let nonRemoteMessages = nonRemoteHomeMessages
+
+        // Onboarding makes RMF ineligible regardless of the reconciliation trigger, so remove any publication before releasing its lease.
+        guard !isStillOnboarding() else {
+            endCurrentRMFOwnership(replacingWith: nonRemoteMessages)
+            return
+        }
+
+        // Revalidate the current message using the trigger filter that originally selected it. Keeping the same lease and presentation
+        // context preserves ownership and SwiftUI identity across content refreshes and foreground transitions.
+        if let rmfOwnership {
+            let currentCandidate = remoteMessage(triggerFilter: rmfOwnership.selectedTriggerFilter)
+            if let currentCandidate,
+               currentCandidate.id == rmfOwnership.lease.messageID,
+               HomeMessageViewModelBuilder.canBuild(for: currentCandidate) {
+                self.rmfOwnership = RMFOwnership(
+                    message: currentCandidate,
+                    lease: rmfOwnership.lease,
+                    selectedTriggerFilter: rmfOwnership.selectedTriggerFilter,
+                    presentationContext: rmfOwnership.presentationContext
+                )
+                publishCoordinatedMessages(nonRemoteMessages + [.remoteMessage(remoteMessage: currentCandidate)])
+                return
+            }
+
+            endCurrentRMFOwnership(replacingWith: nonRemoteMessages)
+
+            // Store and foreground events only reconcile authoritative state. They must not replace an invalid owner with an RMF that
+            // no active NTP requested, so fresh selection continues only from an explicit preparation checkpoint.
+            guard case .preparation = reason else {
+                return
+            }
+        }
+
+        // Select a renderable candidate and acquire the queue lease before publishing it. This ordering prevents an RMF from flashing
+        // while another promo owns the queue and keeps background or otherwise inactive NTPs from acquiring.
+        guard case .preparation(let preparationPolicy) = reason,
+              isRMFAdmissionEnabled,
+              let selectedRemoteMessage = selectedRemoteMessage(using: preparationPolicy),
+              HomeMessageViewModelBuilder.canBuild(for: selectedRemoteMessage.message),
+              let promoGate,
+              let lease = promoGate.tryAcquireRemoteMessageLease(for: selectedRemoteMessage.message.id) else {
+            publishCoordinatedMessages(nonRemoteMessages)
+            return
+        }
+
+        let presentationContext = HomeMessagePresentationContext(
+            messageID: selectedRemoteMessage.message.id,
+            acquisitionIdentity: lease.acquisitionIdentity
+        )
+        rmfOwnership = RMFOwnership(
+            message: selectedRemoteMessage.message,
+            lease: lease,
+            selectedTriggerFilter: selectedRemoteMessage.triggerFilter,
+            presentationContext: presentationContext
+        )
+        publishCoordinatedMessages(nonRemoteMessages + [.remoteMessage(remoteMessage: selectedRemoteMessage.message)])
+    }
+
+    private func selectedRemoteMessage(using preparationPolicy: PreparationPolicy) -> SelectedRemoteMessage? {
+        switch preparationPolicy {
+        case .noTrigger:
+            return remoteMessage(triggerFilter: .noTrigger).map {
+                SelectedRemoteMessage(message: $0, triggerFilter: .noTrigger)
+            }
+        case .afterIdleThenNoTrigger:
+            if let afterIdleMessage = remoteMessage(triggerFilter: .specific(.afterIdle)) {
+                return SelectedRemoteMessage(message: afterIdleMessage, triggerFilter: .specific(.afterIdle))
+            }
+            return remoteMessage(triggerFilter: .noTrigger).map {
+                SelectedRemoteMessage(message: $0, triggerFilter: .noTrigger)
+            }
+        }
+    }
+
+    private func remoteMessage(triggerFilter: TriggerFilter) -> RemoteMessageModel? {
+        let remoteMessage = remoteMessagingStore.fetchScheduledRemoteMessage(
+            surfaces: .newTabPage,
+            triggerFilter: triggerFilter
+        )
+        if let remoteMessage {
+            Logger.remoteMessaging.info("Remote message to show: \(remoteMessage.id, privacy: .public)")
+        }
+        return remoteMessage
+    }
+
+    private func publishCoordinatedMessages(_ messages: [HomeMessage]) {
+        guard homeMessages != messages else {
+            return
+        }
+
+        homeMessages = messages
+        contentDidChangeSubject.send(())
+    }
+
+    private func endCurrentRMFOwnership(replacingWith messages: [HomeMessage]) {
+        let ownership = rmfOwnership
+        publishCoordinatedMessages(messages)
+        ownership?.lease.release()
+        rmfOwnership = nil
+    }
+
+    private func isCurrent(_ presentationContext: HomeMessagePresentationContext, for messageID: String) -> Bool {
+        guard let rmfOwnership else {
+            return false
+        }
+        return presentationContext.messageID == messageID &&
+            rmfOwnership.presentationContext == presentationContext
+    }
+
+    private func dismissLegacyRemoteMessage(_ remoteMessage: RemoteMessageModel, homeMessage: HomeMessage) async {
+        Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
+        await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
+        if let index = homeMessages.firstIndex(of: homeMessage) {
+            homeMessages.remove(at: index)
+        }
+        notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+    }
+
+    private func reportRemoteMessageShown(_ remoteMessage: RemoteMessageModel) {
+        Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
+        if remoteMessage.isMetricsEnabled {
+            PixelKit.fire(Pixel.Event.remoteMessageShown,
+                          options: .parameters(additionalParameters(for: remoteMessage.id)))
+        }
+
+        // The shown pixel fires for each confirmed NTP showing, not once per ownership lease.
+        // Count every showing too, even when metrics are disabled; the cap is local display state.
+        Task {
+            let result = await remoteMessagingStore.recordRemoteMessageImpression(withID: remoteMessage.id)
+            guard case .recorded(let isFirstImpression, let impressionCount) = result else { return }
+
+            if let maxImpressions = remoteMessage.displayConditions?.maxImpressions,
+               maxImpressions > 0,
+               let impressionCount,
+               impressionCount >= Int64(maxImpressions) {
+                if visibleRemoteMessage?.id == remoteMessage.id {
+                    visibleRemoteMessage?.hasReachedImpressionCap = true
+                } else if currentRemoteMessageID == remoteMessage.id {
+                    revalidatePublishedRemoteMessage()
+                }
+            }
+
+            guard isFirstImpression else { return }
+            Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
+            if remoteMessage.isMetricsEnabled {
+                PixelKit.fire(Pixel.Event.remoteMessageShownUnique,
+                              options: .parameters(additionalParameters(for: remoteMessage.id)))
+            }
+        }
+    }
+
+    private func revalidatePublishedRemoteMessage() {
+        switch mode {
+        case .legacy:
+            let previousHomeMessages = homeMessages
+            refresh(openedAfterIdle: legacyOpenedAfterIdle)
+            if homeMessages != previousHomeMessages {
+                notificationCenter.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
+            }
+        case .coordinated:
+            reconcileCoordinatedMessages(reason: .storeChanged)
+        }
+    }
+
+    private func additionalParameters(for messageID: String) -> [String: String] {
+        subscriptionDataReporter.mergeRandomizedParameters(for: .messageID(messageID),
+                                                         with: [PixelParameters.message: "\(messageID)"])
+    }
+}

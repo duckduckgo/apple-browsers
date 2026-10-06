@@ -18,25 +18,33 @@
 //
 
 import Foundation
+import Core
 
 public class PrivacyUserDefaults: PrivacyStore {
+
+    public enum Notifications {
+        public static let authenticationEnabledChanged = Notification.Name("com.duckduckgo.privacy.authenticationEnabledChanged")
+    }
 
     private struct Keys {
         static let authentication = "com.duckduckgo.privacy.authentication"
     }
 
-    private var userDefaults: UserDefaults {
-        return UserDefaults.app
-    }
+    private let userDefaults: UserDefaults
 
-    public init() {}
+    public init(userDefaults: UserDefaults = .app) {
+        self.userDefaults = userDefaults
+    }
 
     public var authenticationEnabled: Bool {
         get {
             return userDefaults.bool(forKey: Keys.authentication, defaultValue: false)
         }
         set(newValue) {
+            let oldValue = authenticationEnabled
             userDefaults.set(newValue, forKey: Keys.authentication)
+            guard oldValue != newValue else { return }
+            NotificationCenter.default.post(name: Notifications.authenticationEnabledChanged, object: newValue)
         }
     }
 }

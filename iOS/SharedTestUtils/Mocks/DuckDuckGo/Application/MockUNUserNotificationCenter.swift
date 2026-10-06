@@ -31,6 +31,7 @@ final class MockUNUserNotificationCenter: UNUserNotificationCenterRepresentable 
     var authorizationStatus: UNAuthorizationStatus = .notDetermined
     var addRequestError: MockPushNotificationError?
     var requestAuthError: MockPushNotificationError?
+    var requestAuthorizationResult: Bool = true
     
     // Spies
     private(set) var addedRequests: [UNNotificationRequest] = []
@@ -38,6 +39,7 @@ final class MockUNUserNotificationCenter: UNUserNotificationCenterRepresentable 
     private(set) var didCheckAuthorizationStatus = false
     private(set) var didRequestAuthorization = false
     private(set) var requestedAuthorizationOptions: UNAuthorizationOptions = []
+    private(set) var registeredCategories: Set<UNNotificationCategory> = []
     
     func authorizationStatus() async -> UNAuthorizationStatus {
         didCheckAuthorizationStatus = true
@@ -51,7 +53,7 @@ final class MockUNUserNotificationCenter: UNUserNotificationCenterRepresentable 
         if options.contains(.provisional) {
             authorizationStatus = .provisional
         }
-        return true
+        return requestAuthorizationResult
     }
 
     func add(_ request: UNNotificationRequest) async throws {
@@ -59,9 +61,17 @@ final class MockUNUserNotificationCenter: UNUserNotificationCenterRepresentable 
         addedRequests.append(request)
     }
 
+    func pendingNotificationRequests() async -> [UNNotificationRequest] {
+        addedRequests
+    }
+
     func removePendingNotificationRequests(withIdentifiers identifiers: [String]) {
         removedIdentifiers.append(identifiers)
         let set = Set(identifiers)
         addedRequests.removeAll { set.contains($0.identifier) }
+    }
+
+    func setNotificationCategories(_ categories: Set<UNNotificationCategory>) {
+        registeredCategories = categories
     }
 }

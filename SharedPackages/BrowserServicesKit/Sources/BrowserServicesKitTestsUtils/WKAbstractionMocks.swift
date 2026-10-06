@@ -33,6 +33,7 @@ public class MockWebsiteDataStore: DDGWebsiteDataStore {
 
     public var removedDataOfTypesForRecords = [TypesAndRecords]()
     public var removedDataOfTypesModifiedSince = [TypesModifiedSince]()
+    public var requestedDataRecordTypes = [Set<String>]()
 
     public var dataRecordsOfTypesReturnValue: [MockWebsiteDataRecord]
     public var httpCookieStore: any DDGHTTPCookieStore
@@ -52,6 +53,7 @@ public class MockWebsiteDataStore: DDGWebsiteDataStore {
     }
 
     public func dataRecords(ofTypes types: Set<String>) async -> [MockWebsiteDataRecord] {
+        requestedDataRecordTypes.append(types)
         return dataRecordsOfTypesReturnValue
     }
 

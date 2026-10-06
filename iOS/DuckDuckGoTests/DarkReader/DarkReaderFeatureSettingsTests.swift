@@ -20,8 +20,7 @@
 import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Combine
 
 class DarkReaderFeatureSettingsTests: XCTestCase {

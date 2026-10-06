@@ -29,7 +29,7 @@ final class TabCrashIndicatorModelTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
 
     var firePixelCallCount: Int = 0
-    var firePixelHandler: (PixelKitEvent) -> Void = { _ in }
+    var firePixelHandler: (PixelKit.Event) -> Void = { _ in }
 
     override func setUp() async throws {
         crashPublisher = PassthroughSubject()

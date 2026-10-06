@@ -1,0 +1,480 @@
+//
+//  RemoteMessagingDebugViewController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import SwiftUI
+import RemoteMessaging
+import Core
+import CoreData
+import Combine
+import Persistence
+import OSLog
+import FoundationExtensions
+
+class RemoteMessagingDebugViewController: UIHostingController<RemoteMessagingDebugRootView> {
+
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder, rootView: RemoteMessagingDebugRootView())
+    }
+
+}
+
+struct RemoteMessagingDebugRootView: View {
+
+    @ObservedObject var model: RemoteMessagingDebugViewModel
+    
+    init(remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
+        self.model = RemoteMessagingDebugViewModel(remoteMessagingDebugHandler: remoteMessagingDebugHandler)
+    }
+    @State private var shareItem: ShareItem?
+    @State private var isShowingDaysAlert = false
+    @State private var daysInput = ""
+
+    var body: some View {
+        List {
+            Section {
+                HStack {
+                    Text(verbatim: "Days Since Installed")
+                        .font(.system(size: 15))
+                    Spacer()
+                    Text(verbatim: model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                }
+                Button {
+                    daysInput = model.currentDaysSinceInstalled.map(String.init) ?? ""
+                    isShowingDaysAlert = true
+                } label: {
+                    Text(verbatim: "Set Days Since Installed…")
+                }
+            } header: {
+                Text(verbatim: "Install Date")
+            } footer: {
+                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Delete All”, then “Refresh Config” to re-evaluate.")
+            }
+
+            Section {
+                if let configInfo = model.configInfo {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(verbatim: "Version: \(configInfo.version)")
+                            .font(.system(size: 15))
+                        Text(verbatim: "Last Processed: \(configInfo.lastProcessedFormatted)")
+                            .font(.system(size: 15))
+                        if configInfo.invalidate {
+                            Text(verbatim: "Status: Invalidated")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+                Button(action: model.refreshConfig) {
+                    Text(verbatim: "Refresh Config")
+                }
+            } header: {
+                Text(verbatim: "Configuration")
+            }
+
+            Section {
+                if model.messages.isEmpty {
+                    Text(verbatim: "No messages")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                } else {
+                    ForEach(model.messages, id: \.id) { message in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(verbatim: "ID: \(message.id) | \(message.shown) | \(message.status) | impressions: \(message.impressionCount)")
+                                .font(.system(size: 15))
+                            Text(verbatim: message.json ?? "")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(baseColor: .gray70))
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text(verbatim: "Messages")
+                    Spacer()
+                    Button(action: model.fetchMessages) {
+                        Text(verbatim: "Refresh")
+                    }
+                    .font(.system(size: 14))
+                }
+            } footer: {
+                Text(verbatim: "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
+            }
+
+            Section {
+                if model.isLoadingLogs {
+                    HStack {
+                        Spacer()
+                        SwiftUI.ProgressView()
+                        Spacer()
+                    }
+                } else if model.recentLogs.isEmpty {
+                    Text(verbatim: "No Logs")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                } else {
+                    ForEach(model.recentLogs.indices, id: \.self) { index in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(verbatim: model.recentLogs[index].timestamp)
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(baseColor: .gray50))
+                            Text(verbatim: model.recentLogs[index].message)
+                                .font(.system(size: 12, design: .monospaced))
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            } header: {
+                HStack {
+                    Text(verbatim: "Recent Processing Logs")
+                    Spacer()
+                    Button {
+                        shareItem = ShareItem(logs: model.getLogsText())
+                    } label: {
+                        Text(verbatim: "Export")
+                    }
+                    .font(.system(size: 14))
+                    .disabled(model.recentLogs.isEmpty || model.isLoadingLogs)
+
+                    Button {
+                        Task {
+                            await model.fetchLogs()
+                        }
+                    } label: {
+                        Text(verbatim: "Refresh")
+                    }
+                    .font(.system(size: 14))
+                    .disabled(model.isLoadingLogs)
+                }
+            } footer: {
+                Text(verbatim: "Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
+            }
+
+            Section {
+                NavigationLink(destination: RemoteMessagingUIPreviewsDebugView()) {
+                    Text(verbatim: "RMF UI previews")
+                        .font(.system(size: 15))
+                }
+            } header: {
+                Text(verbatim: "Previews")
+            } footer: {
+                Text(verbatim: "Renders a UI preview of each remote message type.")
+            }
+
+            Section {
+                HStack {
+                    Text(verbatim: "Hardware Check")
+                        .font(.system(size: 15))
+                    Spacer()
+                    Text(verbatim: model.hardwareOSUpgradeCapability.rawValue)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                }
+                Picker(selection: $model.osUpgradeCapabilityOverride) {
+                    ForEach(OSUpgradeCapabilityOverride.allCases, id: \.self) { override in
+                        Text(verbatim: override.title).tag(override)
+                    }
+                } label: {
+                    Text(verbatim: "Override")
+                }
+            } header: {
+                Text(verbatim: "OS Upgrade Capability")
+            } footer: {
+                Text(verbatim: "Overrides canUpgradeOS for message matching. Only honoured in debug builds. Tap “Delete All”, then “Refresh Config” to re-evaluate.")
+            }
+        }
+        .navigationTitle(Text(verbatim: "Remote Messaging Debug"))
+        .toolbar {
+            Button(role: .destructive, action: model.deleteAll) {
+                Text(verbatim: "Delete All")
+            }
+            .disabled(model.messages.isEmpty && model.configInfo == nil)
+        }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.fileURL])
+        }
+        .alert(Text(verbatim: "Set Days Since Installed"), isPresented: $isShowingDaysAlert) {
+            TextField(text: $daysInput) {
+                Text(verbatim: "Days")
+            }
+            .keyboardType(.numberPad)
+            Button(role: .cancel) {} label: {
+                Text(verbatim: "Cancel")
+            }
+            Button {
+                if let days = Int(daysInput.trimmingCharacters(in: .whitespaces)), days >= 0 {
+                    model.setDaysSinceInstalled(days)
+                }
+            } label: {
+                Text(verbatim: "Set")
+            }
+        } message: {
+            Text(verbatim: "Enter a non-negative number of days. The install date will be set to that many days ago.")
+        }
+    }
+}
+
+struct ShareItem: Identifiable {
+    let id = UUID()
+    let fileURL: URL
+
+    init(logs: String) {
+        let fileName = "remote-messaging-logs-\(Date().timeIntervalSince1970).txt"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        do {
+            try logs.write(to: tempURL, atomically: true, encoding: .utf8)
+            self.fileURL = tempURL
+        } catch {
+            // Fallback to a minimal file if writing fails
+            self.fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("error.txt")
+        }
+    }
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct ConfigDebugModel {
+    var version: Int64
+    var lastProcessed: Date
+    var invalidate: Bool
+
+    var lastProcessedFormatted: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        return dateFormatter.string(from: lastProcessed)
+    }
+
+    init?(_ config: RemoteMessagingConfigManagedObject) {
+        guard let version = config.version?.int64Value,
+              let evaluationTimestamp = config.evaluationTimestamp else {
+            return nil
+        }
+        self.version = version
+        self.lastProcessed = evaluationTimestamp
+        self.invalidate = config.invalidate?.boolValue ?? false
+    }
+}
+
+struct MessageDebugModel {
+    var id: String
+    var shown: String
+    var status: String
+    var impressionCount: Int64
+    var json: String?
+
+    init(_ message: RemoteMessageManagedObject) {
+        id = message.id ?? "?"
+        shown = message.shown ? "shown" : "not shown"
+        status = Self.statusString(for: message.status)
+        impressionCount = message.impressionCount
+        json = message.message
+    }
+
+    /// This should be kept in sync with `RemoteMessageStatus` private enum from BSK
+    private static func statusString(for status: NSNumber?) -> String {
+        switch status?.int16Value {
+        case 0:
+            return "scheduled"
+        case 1:
+            return "dismissed"
+        case 2:
+            return "done"
+        default:
+            return "unknown"
+        }
+    }
+}
+
+struct LogEntry {
+    let timestamp: String
+    let message: String
+}
+
+class RemoteMessagingDebugViewModel: ObservableObject {
+
+    @Published var messages: [MessageDebugModel] = []
+    @Published var configInfo: ConfigDebugModel?
+    @Published var recentLogs: [LogEntry] = []
+    @Published var isLoadingLogs: Bool = false
+    @Published var currentDaysSinceInstalled: Int?
+    @Published var osUpgradeCapabilityOverride = OSUpgradeCapabilityOverridePersistor().current {
+        didSet {
+            osUpgradeCapabilityOverridePersistor.current = osUpgradeCapabilityOverride
+        }
+    }
+
+    let hardwareOSUpgradeCapability = SupportedOSChecker().osUpgradeCapability
+    private let osUpgradeCapabilityOverridePersistor = OSUpgradeCapabilityOverridePersistor()
+
+    let database: CoreDataDatabase
+    private let remoteMessagingDebugHandler: RemoteMessagingDebugHandling?
+
+    init(remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
+        database = Database.shared
+        fetchMessages()
+        fetchConfigInfo()
+        fetchInstallDateInfo()
+        Task {
+            await fetchLogs()
+        }
+
+        notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.fetchMessages()
+                self?.fetchConfigInfo()
+                Task {
+                    await self?.fetchLogs()
+                }
+            }
+    }
+
+    func deleteAll() {
+        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        context.refreshAllObjects()
+        context.deleteAll(entityDescriptions: [
+            RemoteMessageManagedObject.entity(in: context),
+            RemoteMessagingConfigManagedObject.entity(in: context)
+        ])
+
+        do {
+            try context.save()
+        } catch {
+            assertionFailure("Failed to save after delete all")
+        }
+        fetchMessages()
+        fetchConfigInfo()
+    }
+
+    func refreshConfig() {
+        remoteMessagingDebugHandler?.refreshRemoteMessages()
+    }
+
+    func fetchInstallDateInfo() {
+        guard let installDate = StatisticsUserDefaults().installDate else {
+            currentDaysSinceInstalled = nil
+            return
+        }
+        currentDaysSinceInstalled = Calendar.current.numberOfDaysBetween(installDate, and: Date())
+    }
+
+    func setDaysSinceInstalled(_ days: Int) {
+        StatisticsUserDefaults().installDate = Calendar.current.date(byAdding: .day, value: -days, to: Date())
+        fetchInstallDateInfo()
+    }
+
+    func fetchMessages() {
+        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        context.refreshAllObjects()
+        let fetchRequest = RemoteMessageManagedObject.fetchRequest()
+        fetchRequest.returnsObjectsAsFaults = false
+        messages = ((try? context.fetch(fetchRequest)) ?? []).map(MessageDebugModel.init)
+    }
+
+    func fetchConfigInfo() {
+        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        context.refreshAllObjects()
+        let fetchRequest = RemoteMessagingConfigManagedObject.fetchRequest()
+        fetchRequest.fetchLimit = 1
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "version", ascending: false)]
+        fetchRequest.returnsObjectsAsFaults = false
+
+        guard let configs = try? context.fetch(fetchRequest),
+              let latestConfig = configs.first else {
+            configInfo = nil
+            return
+        }
+
+        configInfo = ConfigDebugModel(latestConfig)
+    }
+
+    @MainActor
+    func fetchLogs() async {
+        guard #available(iOS 15.0, *) else {
+            recentLogs = []
+            return
+        }
+
+        isLoadingLogs = true
+
+        let logs = await Task.detached {
+            do {
+                // Only pull the last minute of logs, since the idea is to refresh the config from the menu and see
+                // the logs from that refresh - if you want to check logs further back then you can use the dedicated
+                // Log Viewer debug menu.
+                let logStore = try OSLogStore(scope: .currentProcessIdentifier)
+                let predicate = NSPredicate(format: "subsystem == 'Remote Messaging'")
+
+                let startDate = Date().addingTimeInterval(-TimeInterval.minutes(1))
+                let position = logStore.position(date: startDate)
+                let entries = try logStore.getEntries(at: position, matching: predicate)
+
+                let formatter = DateFormatter()
+                formatter.dateFormat = "HH:mm:ss"
+
+                var logs: [LogEntry] = []
+                for entry in entries {
+                    if let logEntry = entry as? OSLogEntryLog, logEntry.level != .debug {
+                        let timestamp = formatter.string(from: logEntry.date)
+                        logs.append(LogEntry(timestamp: timestamp, message: logEntry.composedMessage))
+                    }
+                }
+
+                return Array(logs.reversed())
+            } catch {
+                return []
+            }
+        }.value
+
+        recentLogs = logs
+        isLoadingLogs = false
+    }
+
+    func getLogsText() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        let exportDate = dateFormatter.string(from: Date())
+
+        var output = "Remote Messaging Debug Logs\n"
+        output += "Exported: \(exportDate)\n"
+        output += String(repeating: "=", count: 50) + "\n\n"
+
+        for log in recentLogs {
+            output += "[\(log.timestamp)] \(log.message)\n"
+        }
+
+        return output
+    }
+
+    private var notificationCancellable: AnyCancellable?
+}

@@ -1,0 +1,658 @@
+name: "macOS - LCP: Safari"
+run-name: "macOS - LCP: Safari"
+
+# Measures Safari navigation-to-LCP against validated WPR archives through the
+# US-broadband shaping profile. ClickHouse upload is scheduled or opt-in.
+#
+# Safari-specific behavior:
+#   - Safari's per-app proxy preferences route it through a local HTTP proxy,
+#     tsproxy and WPR. The original preferences are restored on exit.
+#   - LCP is read from the page via a buffered PerformanceObserver over
+#     WebDriver, with acceptInsecureCerts=true.
+#
+# Manual and monthly only; pull requests and pushes do not trigger it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: "Comma-separated sites (blank = full 22-site list)"
+        required: false
+        default: ""
+      reps:
+        description: "Measured loads per site"
+        required: false
+        default: "10"
+      upload-to-clickhouse:
+        description: "Upload aggregated per-domain results to ClickHouse"
+        type: boolean
+        required: false
+        default: false
+      alert-asana:
+        description: "Create Asana subtasks for WPR validation or Safari measurement errors"
+        type: boolean
+        required: false
+        default: true
+      safaridriver-diagnose:
+        description: "Log safaridriver's own session diagnostics (investigation only; perturbs timings)"
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    # Scheduled workflows run only from the default branch. Blank sites use the
+    # full list, and the upload job below sends scheduled results to ClickHouse.
+    # 01:47 UTC avoids the repository's busiest scheduled CI window, starts
+    # away from the top of the hour, and follows Chrome by 90 minutes.
+    - cron: "47 1 1 * *"
+
+permissions:
+  contents: read
+  # actions: read lets the aggregate step read this run's metadata via
+  # `gh api .../actions/runs/{id}`. Not strictly needed while the repo is
+  # public (run metadata is world-readable), but required if it ever goes
+  # private, and it documents the dependency.
+  actions: read
+
+concurrency:
+  group: macos-browser-lcp-performance
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: macOS/scripts/crossbench
+
+jobs:
+  validate-wpr:
+    uses: ./.github/workflows/wpr_archive_validation.yml
+    with:
+      sites: ${{ inputs.sites || '' }}
+      alert-asana: ${{ github.event_name != 'workflow_dispatch' || inputs.alert-asana }}
+    secrets:
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
+  safari-lcp:
+    name: Safari LCP
+    needs: validate-wpr
+    # Match the Chrome workflow's self-hosted Apple Silicon runner for
+    # comparability.
+    runs-on: [self-hosted, macOS, ARM64]
+    # Ten measured loads per site with no replay warm-up. The cap leaves room
+    # for provisioning and slow/failing navigations.
+    timeout-minutes: 200
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Print macOS version
+        run: sw_vers
+
+      - name: Download validated WPR archives
+        uses: actions/download-artifact@v7
+        with:
+          name: validated-wpr-archives
+          path: ${{ runner.temp }}/wpr-archives
+
+      - name: Provision WPR and traffic shaping (no Chrome)
+        # INSTALL_CHROME=0 retains the pinned WPR build and checksum-verified
+        # tsproxy, while skipping the browser this job does not use.
+        env:
+          INSTALL_CHROME: "0"
+        run: ./provision-macos.sh
+
+      - name: Authorize safaridriver for Remote Automation
+        # safaridriver evaluates the `com.apple.safaridriver.allow` right when it
+        # starts, and deliberately evaluates it without allowing interaction.
+        # The shipped rule is k-of-n 1 over is-admin, is-webdeveloper and an
+        # interactive prompt. The two group rules resolve "the user asking" from
+        # the audit session owner rather than from the calling process's uid, and
+        # this runner has no audit session owner — launchctl procinfo reports an
+        # audit uid of 4294967295, unset. So authd rejects both group rules with
+        # "session owner -3 invalid" however the user's groups are configured,
+        # then fails outright because it cannot prompt. Replacing the rule with
+        # an unconditional allow takes the session owner out of the decision.
+        #
+        # The cost is that any local process can then drive Safari, which is
+        # acceptable on a box whose only job is measurement. The alternative is
+        # to relaunch the runner from a real login session so that it acquires
+        # an audit session owner, which only the runner's owner can do.
+        run: |
+          # --enable reinstalls the shipped definition of that right, so it has
+          # to run before the rule is rewritten rather than after. Run the other
+          # way around it silently undoes the line above it.
+          sudo safaridriver --enable
+
+          sudo security authorizationdb write com.apple.safaridriver.allow allow
+          security authorizationdb read com.apple.safaridriver.allow 2>/dev/null \
+            | plutil -p - 2>&1 || true
+
+          # The per-user flag lives outside the authorization system, so it has
+          # to be written as the runner user rather than as root.
+          mkdir -p ~/Library/WebDriver
+          /usr/libexec/PlistBuddy -c 'delete AllowRemoteAutomation' \
+            ~/Library/WebDriver/com.apple.Safari.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'add AllowRemoteAutomation bool true' \
+            ~/Library/WebDriver/com.apple.Safari.plist
+          plutil -p ~/Library/WebDriver/com.apple.Safari.plist
+
+      - name: Verify safaridriver can start
+        # Fails here, with the denial reason attached, rather than opaquely
+        # inside the harness twenty minutes later. If the runner user is already
+        # an admin and the start still fails, group membership is not being
+        # evaluated at all, and the audit session dump below is what the runner
+        # owner needs to see.
+        run: |
+          safaridriver -p 0 &
+          sd_pid=$!
+          sleep 3
+          if kill -0 "$sd_pid" 2>/dev/null; then
+            echo "safaridriver started"
+            kill "$sd_pid"
+            exit 0
+          fi
+          echo "ERROR: safaridriver still cannot start" >&2
+          echo "--- audit session of this shell ---" >&2
+          sudo launchctl procinfo $$ 2>&1 \
+            | grep -iE 'uid|asid|session|audit' >&2 || true
+          echo "--- what authd decided ---" >&2
+          sudo log show --last 3m --style compact --info --debug \
+            --predicate 'process == "authd" OR process == "safaridriver"' 2>&1 \
+            | tail -60 >&2 || true
+          exit 1
+
+      - name: Quit any Safari left behind by an earlier run
+        # The harness must be the only Safari on the machine, since it quits
+        # Safari between repetitions, so it refuses to start while another one
+        # is running. That refusal protects a developer's own browser, but on
+        # this runner it means one cancelled run leaves every later run failing
+        # at the same check until someone logs in and quits it by hand. Nothing
+        # here browses, so any Safari alive before the harness starts is debris.
+        run: |
+          if ! pgrep -x Safari >/dev/null 2>&1; then
+            echo "no Safari running"
+            exit 0
+          fi
+          echo "::warning title=Stray browser::Quitting a Safari left by an earlier run"
+          pgrep -xl Safari
+          pkill -x Safari || true
+          for _ in 1 2 3 4 5 6 7 8 9 10; do
+            pgrep -x Safari >/dev/null 2>&1 || break
+            sleep 1
+          done
+          if pgrep -x Safari >/dev/null 2>&1; then
+            pkill -9 -x Safari || true
+            sleep 2
+          fi
+          # Fail here rather than let the harness fail on the same condition
+          # thirty seconds later, where the reason is less obvious.
+          if pgrep -x Safari >/dev/null 2>&1; then
+            echo "ERROR: a Safari process survived both signals." >&2
+            pgrep -xl Safari >&2
+            exit 1
+          fi
+          echo "stray Safari quit"
+
+      - name: Run Safari LCP suite
+        # Inputs passed via env, not interpolated into the script, to avoid shell injection.
+        env:
+          SITES: ${{ inputs.sites }}
+          REPS: ${{ inputs.reps }}
+          WPR_DIR: ${{ runner.temp }}/wpr-archives
+          WPR_ARCHIVES_PREPARED: "1"
+          BROWSER_WINDOW_WIDTH: "800"
+          BROWSER_WINDOW_HEIGHT: "600"
+          # Off by default on purpose: it writes driver logs while the page is
+          # loading, inside the window being timed. For investigating a site,
+          # not for producing numbers.
+          SAFARIDRIVER_DIAGNOSE: ${{ inputs.safaridriver-diagnose && '1' || '' }}
+        run: |
+          args=(--yes)
+          if [ -n "$SITES" ]; then
+            args+=(--sites "$SITES")
+          fi
+          if [ -n "$REPS" ]; then
+            args+=(--reps "$REPS")
+          fi
+          ulimit -n 4096
+          status_file="$RUNNER_TEMP/safari-harness-watchdog.tsv"
+          set +e
+          python3 ./run-with-watchdog.py \
+            --timeout-seconds 9600 \
+            --term-grace-seconds 30 \
+            --status-file "$status_file" \
+            -- ./test-safari.sh "${args[@]}"
+          harness_status=$?
+          set -e
+          if [ -f "$status_file" ]; then
+            cat "$status_file"
+          fi
+          exit "$harness_status"
+
+      - name: Upload results TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-results
+          # Path is workspace-relative (not affected by defaults.working-directory).
+          path: macOS/scripts/crossbench/crossbench-results/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload per-site dispositions TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-dispositions
+          # Separate directory from crossbench-results/ on purpose: the aggregate
+          # step below globs that directory for *.tsv and feeds the first match to
+          # aggregate-lcp.py, so a second TSV there would be read as measurements.
+          path: macOS/scripts/crossbench/crossbench-dispositions/*.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload Safari diagnostics
+        # Site-level failures are reported without failing the job, so upload
+        # the bounded diagnostics regardless of the job conclusion.
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-diagnostics
+          path: macOS/scripts/crossbench/safari-diagnostics/**
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Aggregate results for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # run_started_at is per-ATTEMPT (it becomes the ReplacingMergeTree
+          # version column, so a re-run supersedes the rows of the attempt it
+          # replaces); created_at is stable across attempts and keeps
+          # start_time — and the date partition derived from it — identical
+          # for every attempt of the run.
+          #
+          shopt -s nullglob
+          in_tsv=(crossbench-results/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no metrics TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one metrics TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          ./aggregate-lcp.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-rows.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type safari
+          cat clickhouse-rows.tsv
+
+      - name: Upload ClickHouse rows TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-clickhouse-rows
+          path: macOS/scripts/crossbench/clickhouse-rows.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Aggregate dispositions for ClickHouse
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Same run metadata as the metrics aggregation above, so a domain's
+          # metrics row and its attempts row share run_id, start_time and the
+          # ReplacingMergeTree version.
+          shopt -s nullglob
+          in_tsv=(crossbench-dispositions/*.tsv)
+          if [ "${#in_tsv[@]}" -eq 0 ]; then
+            echo "no dispositions TSV to aggregate"
+            exit 0
+          fi
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            echo "ERROR: expected one dispositions TSV, found ${#in_tsv[@]}" >&2
+            exit 1
+          fi
+          if [ "$(wc -l < "${in_tsv[0]}")" -le 1 ]; then
+            echo "no disposition rows to aggregate"
+            exit 0
+          fi
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+          ./aggregate-dispositions.py \
+            --input "${in_tsv[0]}" \
+            --output clickhouse-attempts.tsv \
+            --run-id "$GITHUB_RUN_ID" \
+            --start-time "$(jq -r '.created_at' <<< "$run_json")" \
+            --gh-run-started-at "$(jq -r '.run_started_at' <<< "$run_json")" \
+            --webview-type safari
+          cat clickhouse-attempts.tsv
+
+      - name: Upload ClickHouse attempts TSV
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-lcp-attempts-rows
+          path: macOS/scripts/crossbench/clickhouse-attempts.tsv
+          if-no-files-found: warn
+          retention-days: 7
+
+  upload-to-clickhouse:
+    name: Upload to ClickHouse
+    needs: [validate-wpr, safari-lcp]
+    # Hosted runners can't reach the ClickHouse host, hence this separate
+    # self-hosted job.
+    #
+    # always() on purpose: without it the implicit success() means a benchmark
+    # job that fails or times out uploads NOTHING — including the disposition
+    # record, which is exactly what you need for the runs that went wrong. Each
+    # insert below is guarded on its file existing instead, so a partial run
+    # uploads whatever it did produce.
+    if: >-
+      always() &&
+      needs.validate-wpr.result == 'success' &&
+      (github.event_name == 'schedule' || inputs.upload-to-clickhouse)
+    # `apple` names the owning team, not a platform: the label covers both a
+    # Linux utility runner and the bare-metal measurement mac, and only the
+    # former has clickhouse-client. Without the platform label this job lands on
+    # either, so roughly half of its runs fail on a missing binary. Asking for
+    # Linux keeps it off the measurement mac without naming a machine.
+    runs-on: [ self-hosted, apple, Linux ]
+    # 60 minutes, deliberately loose: this job can queue behind a multi-hour
+    # measurement job whenever the runner it wants is busy.
+    timeout-minutes: 60
+
+    steps:
+      - name: Download ClickHouse rows TSV
+        # A cancelled or early-failed benchmark job may never have uploaded this;
+        # that is not a reason to skip the attempts insert below.
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: safari-lcp-clickhouse-rows
+
+      - name: Download ClickHouse attempts TSV
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: safari-lcp-attempts-rows
+
+      - name: Insert rows into ClickHouse
+        # Workspace root: the repo isn't checked out in this job, so the
+        # workflow-level working-directory doesn't exist here, and
+        # download-artifact lands files at the root.
+        working-directory: .
+        env:
+          GH_RUN_CONCLUSION: ${{ needs.safari-lcp.result }}
+        run: |
+          inserted=0
+          failed=0
+
+          # gh_run_conclusion is appended here rather than in the aggregation
+          # step: a job can't know its own conclusion while still running.
+          if [ -s clickhouse-rows.tsv ]; then
+            if awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-rows.tsv > clickhouse-rows-final.tsv &&
+                cat clickhouse-rows-final.tsv &&
+                clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp (run_id, start_time, domain, webview_type, webview_channel, webview_version, samples, min_ms, max_ms, mean_ms, p25_ms, p50_ms, p75_ms, p95_ms, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-rows-final.tsv; then
+              inserted=$((inserted + 1))
+            else
+              echo "ERROR: metrics rows could not be inserted." >&2
+              failed=$((failed + 1))
+            fi
+          else
+            echo "no metrics rows to insert (benchmark job produced none)"
+          fi
+
+          if [ -s clickhouse-attempts.tsv ]; then
+            if awk -v c="$GH_RUN_CONCLUSION" '{ print $0 "\t" c }' clickhouse-attempts.tsv > clickhouse-attempts-final.tsv &&
+                cat clickhouse-attempts-final.tsv &&
+                clickhouse-client --no-warnings --user dev-rw -h clickhouse.duckduckgo.com --query "INSERT INTO native_apps.macos_browser_health_nav_to_lcp_attempts (run_id, start_time, domain, webview_type, webview_channel, webview_version, outcome, validation_status, validation_reason, validation_http_status, validation_detail, archive_sha256, failure_stage, failure_reason, failure_detail, requested_repetitions, observed_repetitions, recorded_samples, dropped_unfinalized, dropped_no_metric, load_window_ms, runner_image, gh_run_started_at, gh_run_conclusion) FORMAT TSV" < clickhouse-attempts-final.tsv; then
+              inserted=$((inserted + 1))
+            else
+              echo "ERROR: attempts rows could not be inserted." >&2
+              failed=$((failed + 1))
+            fi
+          else
+            echo "no attempts rows to insert"
+          fi
+
+          if [ "$inserted" -eq 0 ] && [ "$failed" -eq 0 ]; then
+            echo "ERROR: neither artifact was present — nothing was uploaded." >&2
+            exit 1
+          fi
+          if [ "$failed" -gt 0 ]; then
+            exit 1
+          fi
+
+  notify-runtime-failures:
+    name: Report Safari measurement errors
+    needs: [safari-lcp, upload-to-clickhouse]
+    if: >-
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.alert-asana) &&
+      vars.CROSSBENCH_RUNTIME_ASANA_ALERTS_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out notification helper
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Download per-site dispositions
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: safari-lcp-dispositions
+          path: runtime-dispositions
+
+      - name: Prepare runtime failure report
+        id: report
+        continue-on-error: true
+        working-directory: .
+        env:
+          BENCHMARK_RESULT: ${{ needs.safari-lcp.result }}
+        run: |
+          write_run_failure_report() {
+            local summary="$1"
+            mkdir -p runtime-report
+            cat > runtime-report/report.txt <<EOF
+          [RUN ERROR] $summary
+          Result: $BENCHMARK_RESULT
+          Action: inspect the failed workflow step and preserved diagnostics
+          EOF
+            echo "has-errors=true" >> "$GITHUB_OUTPUT"
+            echo "issue-count=1" >> "$GITHUB_OUTPUT"
+          }
+
+          shopt -s nullglob
+          in_tsv=(runtime-dispositions/*.tsv)
+          if [ "${#in_tsv[@]}" -ne 1 ]; then
+            if [ "$BENCHMARK_RESULT" = "skipped" ]; then
+              echo "has-errors=false" >> "$GITHUB_OUTPUT"
+            else
+              write_run_failure_report "Safari disposition artifact was unavailable"
+            fi
+            exit 0
+          fi
+          if ! python3 macOS/scripts/crossbench/runtime-failure-report.py \
+              --input "${in_tsv[0]}" \
+              --report runtime-report/report.txt \
+              --github-output "$GITHUB_OUTPUT" \
+              --job-result "$BENCHMARK_RESULT" \
+              --browser-label Safari; then
+            write_run_failure_report "Safari disposition report could not be prepared"
+            exit 0
+          fi
+
+      - name: Check ClickHouse upload result
+        # A green safari-lcp job tells you nothing about whether the aggregated
+        # rows actually reached ClickHouse — that's a separate, self-hosted job.
+        # Runs after "Prepare runtime failure report" on purpose: that step's
+        # python helper also writes has-errors/report.txt, and running before
+        # it would let this step's write of the file (or has-errors) get
+        # clobbered by that one.
+        id: upload-check
+        continue-on-error: true
+        working-directory: .
+        env:
+          UPLOAD_RESULT: ${{ needs.upload-to-clickhouse.result }}
+        run: |
+          if [ "$UPLOAD_RESULT" = "failure" ] || [ "$UPLOAD_RESULT" = "cancelled" ]; then
+            mkdir -p runtime-report
+            cat >> runtime-report/report.txt <<EOF
+
+          [UPLOAD ERROR] ClickHouse insert did not complete.
+          Result: $UPLOAD_RESULT
+          Action: inspect the upload-to-clickhouse job logs.
+          EOF
+            echo "upload-failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload-failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload runtime failure report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-runtime-failure-report
+          path: runtime-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Check run alert marker
+        if: >-
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true')
+        id: alert-marker
+        continue-on-error: true
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Up to 3 attempts, 5s apart: a transient API failure should not lose
+          # an alert. exists=unknown (and skipping task creation) is still the
+          # outcome after 3 consecutive failures — treating unknown as "false"
+          # would risk duplicate tasks, which is worse than a delayed alert.
+          marker_count=""
+          for attempt in 1 2 3; do
+            if marker_count="$(
+                gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=safari-runtime-failure-run-$GITHUB_RUN_ID&per_page=100" \
+                  --jq '[.artifacts[] | select(.expired == false)] | length'
+              )"; then
+              break
+            fi
+            marker_count=""
+            [ "$attempt" -lt 3 ] && sleep 5
+          done
+          if [ -z "$marker_count" ]; then
+            echo "::warning title=Asana notification skipped::Could not check the run alert marker after 3 attempts; skipping task creation to avoid duplicates."
+            echo "exists=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$marker_count" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Asana subtask
+        if: >-
+          always() &&
+          (steps.report.outputs.has-errors == 'true' ||
+           steps.upload-check.outputs.upload-failed == 'true') &&
+          steps.alert-marker.outputs.exists == 'false'
+        id: asana
+        continue-on-error: true
+        working-directory: .
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_FOLLOWERS: ${{ vars.CROSSBENCH_ALERT_FOLLOWERS }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$ASANA_ACCESS_TOKEN" ]; then
+            echo "::warning title=Asana notification skipped::ASANA_ACCESS_TOKEN is not available."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          helper="macOS/scripts/crossbench/create-asana-subtask.sh"
+          report="runtime-report/report.txt"
+          if [ ! -x "$helper" ] || [ ! -s "$report" ]; then
+            echo "::warning title=Asana notification skipped::Runtime report or notification helper is unavailable."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          notes_file="$RUNNER_TEMP/asana-browser-measurement-notes.txt"
+          {
+            echo "Workflow: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+            echo
+            cat "$report"
+          } > "$notes_file"
+          diagnostics_zip=""
+          diagnostics_artifact_id="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=safari-lcp-diagnostics" \
+              --jq '.artifacts[0].id // empty'
+          )"
+          if [ -n "$diagnostics_artifact_id" ]; then
+            diagnostics_zip="$RUNNER_TEMP/safari-lcp-diagnostics.zip"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$diagnostics_artifact_id/zip" \
+              > "$diagnostics_zip"
+          fi
+          run_started_at="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+              --jq '.run_started_at'
+          )"
+          start_date="${run_started_at%%T*}"
+          due_date="$start_date"
+          working_days=0
+          while [ "$working_days" -lt 5 ]; do
+            due_date="$(date --utc --date "$due_date + 1 day" +%F)"
+            day_of_week="$(date --utc --date "$due_date" +%u)"
+            if [ "$day_of_week" -le 5 ]; then
+              working_days=$((working_days + 1))
+            fi
+          done
+
+          "$helper" \
+            1217628708169653 \
+            1217628708169657 \
+            "Browser Measurement Failure: Safari LCP" \
+            "$notes_file" \
+            "$start_date" \
+            "$due_date" \
+            "$diagnostics_zip"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          mkdir -p runtime-report
+          echo "reported by run $GITHUB_RUN_ID" > runtime-report/alert-marker.txt
+
+      - name: Fail loudly when the Asana alert could not be delivered
+        # No continue-on-error: create-asana-subtask.sh keeps it on the step
+        # above so the marker-saving step below still runs, but a failed
+        # notification must not leave the run green.
+        if: always() && steps.asana.outcome == 'failure'
+        working-directory: .
+        run: |
+          echo "::error title=Asana alert not delivered::Asana subtask creation failed for run https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          exit 1
+
+      - name: Save run alert marker
+        if: always() && steps.asana.outputs.created == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: safari-runtime-failure-run-${{ github.run_id }}
+          path: runtime-report/alert-marker.txt
+          if-no-files-found: error
+          retention-days: 90

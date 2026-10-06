@@ -26,7 +26,7 @@ import Foundation
 import FoundationExtensions
 import History
 import HistoryView
-import Navigation
+import DDGNavigation
 import WebKit
 
 protocol HistoryUserScriptProvider {

@@ -33,20 +33,6 @@ protocol NavigationToolbarIconsProviding {
     var aiChatButtonImage: NSImage { get }
 }
 
-final class LegacyNavigationToolbarIconsProvider: NavigationToolbarIconsProviding {
-    let backButtonImage: NSImage = .back
-    let forwardButtonImage: NSImage = .forward
-    let reloadButtonImage: NSImage = .refresh
-    let homeButtonImage: NSImage = .home16
-    let downloadsButtonImage: NSImage = .downloads
-    let shareButtonImage: NSImage = .share
-    let passwordManagerButtonImage: NSImage = .passwordManagement
-    let bookmarksButtonImage: NSImage = .bookmarks
-    let moreOptionsbuttonImage: NSImage = .settings
-    let overflowButtonImage: NSImage = .chevronDoubleRight16
-    let aiChatButtonImage: NSImage = .aiChat
-}
-
 final class CurrentNavigationToolbarIconsProvider: NavigationToolbarIconsProviding {
     let backButtonImage: NSImage = DesignSystemImages.Glyphs.Size16.arrowLeft
     let forwardButtonImage: NSImage = DesignSystemImages.Glyphs.Size16.arrowRight

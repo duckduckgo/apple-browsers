@@ -1,0 +1,26 @@
+{
+    "app-hangs_metrickit_hang-bucket": {
+        "description": "Fired once per non-empty MetricKit application-hang histogram bucket, for recent (<24h) data on the current app version. Carries the number of hangs that fell in that bucket, so pixel volume is bounded by the number of buckets rather than by how many hangs occurred. Numerator for the hangs SLO.",
+        "owners": ["THISISDINOSAUR"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "min_hang_duration_ms",
+                "type": "integer",
+                "description": "Lower edge of the MetricKit histogram bucket, in milliseconds"
+            },
+            {
+                "key": "max_hang_duration_ms",
+                "type": "integer",
+                "description": "Upper edge of the MetricKit histogram bucket, in milliseconds"
+            },
+            {
+                "key": "hang_count",
+                "type": "integer",
+                "description": "Number of hangs recorded in this histogram bucket over the reporting period."
+            }
+        ]
+    }
+}

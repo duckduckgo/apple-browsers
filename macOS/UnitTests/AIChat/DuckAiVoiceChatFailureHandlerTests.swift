@@ -17,8 +17,7 @@
 //
 
 import AVFoundation
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -162,6 +161,7 @@ private final class SpyPermissionCenterPresenter: DuckAiVoiceChatPermissionCente
     private(set) var isPresentedCalls: [WKWebView?] = []
     private(set) var presentCount: Int = 0
     private(set) var presentedFor: [WKWebView?] = []
+    private(set) var presentedSources: [DuckAiMicPermissionSource] = []
 
     @MainActor
     func isPermissionCenterPresented(for webView: WKWebView?) -> Bool {
@@ -170,8 +170,9 @@ private final class SpyPermissionCenterPresenter: DuckAiVoiceChatPermissionCente
     }
 
     @MainActor
-    func presentPermissionCenter(for webView: WKWebView?) {
+    func presentPermissionCenter(for webView: WKWebView?, source: DuckAiMicPermissionSource) {
         presentCount += 1
         presentedFor.append(webView)
+        presentedSources.append(source)
     }
 }

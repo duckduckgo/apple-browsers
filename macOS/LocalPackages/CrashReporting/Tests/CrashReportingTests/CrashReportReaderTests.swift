@@ -137,6 +137,50 @@ struct CrashReportReaderTests {
         #expect(reports.first?.url.lastPathComponent == "DuckDuckGo-valid.ips")
     }
 
+    @Test("When report is an ExcUserFault_ simulated diagnostic, it is ignored", .timeLimit(.minutes(1)))
+    func whenReportIsExcUserFaultItIsIgnored() throws {
+        let fileManager = MockFileManager()
+        let now = Date()
+
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60), fileManager: fileManager)
+        try writeReport(named: "ExcUserFault_DuckDuckGo-2026-07-29-154234.ips", contents: sampleSimulatedIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60), fileManager: fileManager)
+
+        let reader = makeReader(now: now, fileManager: fileManager)
+        let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
+
+        #expect(reports.count == 1)
+        #expect(reports.first?.url.lastPathComponent == "DuckDuckGo-valid.ips")
+    }
+
+    @Test("When report is flagged is_simulated, it is ignored regardless of filename", .timeLimit(.minutes(1)))
+    func whenReportIsFlaggedSimulatedItIsIgnored() throws {
+        let fileManager = MockFileManager()
+        let now = Date()
+
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60), fileManager: fileManager)
+        try writeReport(named: "DuckDuckGo-simulated.ips", contents: sampleSimulatedIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60), fileManager: fileManager)
+
+        let reader = makeReader(now: now, fileManager: fileManager)
+        let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
+
+        #expect(reports.count == 1)
+        #expect(reports.first?.url.lastPathComponent == "DuckDuckGo-valid.ips")
+    }
+
+    @Test("When only simulated reports exist, no report is surfaced for pixels, upload or prompt", .timeLimit(.minutes(1)))
+    func whenOnlySimulatedReportsExistNoneAreSurfaced() throws {
+        let fileManager = MockFileManager()
+        let now = Date()
+
+        try writeReport(named: "ExcUserFault_DuckDuckGo-2026-07-29-154234.ips", contents: sampleSimulatedIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60), fileManager: fileManager)
+        try writeReport(named: "DuckDuckGo-simulated.ips", contents: sampleSimulatedIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60), fileManager: fileManager)
+
+        let reader = makeReader(now: now, fileManager: fileManager)
+
+        #expect(reader.getCrashReports(since: now.addingTimeInterval(-120)).isEmpty)
+        #expect(reader.hasNewCrashReport(forBundleIdentifier: appBundleIdentifier, since: now.addingTimeInterval(-120)) == false)
+    }
+
     // MARK: - Helpers
 
     private func writeReport(named name: String,
@@ -165,6 +209,13 @@ struct CrashReportReaderTests {
 
     private func sampleLegacyReport() -> String {
         "Process: DuckDuckGo [123]"
+    }
+
+    /// Mirrors the header macOS writes for an `os_log_fault` diagnostic: same shape as a crash
+    /// report, plus `"is_simulated":1`.
+    private func sampleSimulatedIPSReport() throws -> String {
+        try sampleIPSReport()
+            .replacingOccurrences(of: "{\"app_name\"", with: "{\"is_simulated\":1,\"app_name\"")
     }
 
     private func loadExampleCrashReportContents() throws -> String {

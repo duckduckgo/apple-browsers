@@ -31,14 +31,14 @@ jobs:
 
     - name: Comment on the PR
       if: ${{ inputs.report != '' }}
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: marocchino/sticky-pull-request-comment@v3
       with:
         header: status
         path: message.txt
 
     - name: Delete comment on the PR
       if: ${{ inputs.report == '' }}
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: marocchino/sticky-pull-request-comment@v3
       with:
         header: status
         delete: true

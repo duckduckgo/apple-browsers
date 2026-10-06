@@ -20,7 +20,47 @@
 import Core
 import Common
 import FoundationExtensions
+import PixelKit
 import PrivacyConfig
+
+enum SafariRedirectPixel {
+    case loadURLRequested
+    case loopErrorPageShown
+    case reportBrokenSiteFromErrorPage
+
+    var name: String {
+        switch self {
+        case .loadURLRequested:
+            return "m_webview_external-scheme-navigation_safari-redirect_load-url-requested"
+        case .loopErrorPageShown:
+            return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown"
+        case .reportBrokenSiteFromErrorPage:
+            return "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site"
+        }
+    }
+
+    func fireDailyAndCount() {
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(countPixel)
+    }
+
+    var dailyPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_daily") }
+    var countPixel: SafariRedirectScheduledPixel { SafariRedirectScheduledPixel(name: name + "_count") }
+}
+
+struct SafariRedirectScheduledPixel: PixelKit.Event {
+
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
+    let name: String
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    var namePrefix: PixelKitNamePrefix { .none }
+}
 
 protocol SafariRedirectHandling: AnyObject {
     /// Whether the given URL was loaded after a suppressed x-safari redirect (for breakage reports).
@@ -31,7 +71,7 @@ protocol SafariRedirectHandling: AnyObject {
     @discardableResult
     func handleRedirect(to url: URL) -> Bool
 
-    /// Full reset including the redirect-detected flag. Called on new top-level navigation.
+    /// Full reset including converted load attempts. Called on new top-level navigation.
     func reset()
 }
 
@@ -44,11 +84,15 @@ final class SafariRedirectHandler: SafariRedirectHandling {
 
     private enum Constants {
         static let safariHTTPSRedirectScheme = "x-safari-https"
+        static let maximumConvertedLoadAttempts = 3
     }
 
     private struct HostState {
-        var isSafariRedirectSuppressed: Bool = false
-        var loopErrorPageShown: Bool = false
+        var convertedLoadAttemptCount: Int = 0
+
+        var isSafariRedirectSuppressed: Bool {
+            convertedLoadAttemptCount > 0
+        }
     }
 
     private let tld: TLD
@@ -71,14 +115,12 @@ final class SafariRedirectHandler: SafariRedirectHandling {
         guard let host = domain(for: url) else { return false }
         var state = hostStates[host, default: HostState()]
 
-        if state.isSafariRedirectSuppressed {
-            // Second time through we're obviously in a loop
+        if state.convertedLoadAttemptCount >= Constants.maximumConvertedLoadAttempts {
             delegate?.safariRedirectHandler(self, didRequestShowSafariRedirectLoopErrorForURL: url)
         } else {
-            state.isSafariRedirectSuppressed = true
+            state.convertedLoadAttemptCount += 1
             hostStates[host] = state
 
-            // First time through try to show the https version
             convertAndLoad(url: url)
         }
         

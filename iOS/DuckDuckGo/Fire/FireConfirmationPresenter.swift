@@ -33,11 +33,12 @@ struct FireConfirmationPresenter {
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
                                  fireContext: ScopedFireConfirmationViewModel.FireContext,
+                                 isSingleTab: Bool = false,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
-        presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+        presentScopeConfirmationSheet(on: viewController, from: source, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, isSingleTab: isSingleTab, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
     }
 
     @MainActor
@@ -46,6 +47,7 @@ struct FireConfirmationPresenter {
                                  tabViewModel: TabViewModel?,
                                  pixelSource: FireRequest.Source,
                                  fireContext: ScopedFireConfirmationViewModel.FireContext,
+                                 isSingleTab: Bool = false,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
                                  onCancel: @escaping () -> Void) {
@@ -53,7 +55,7 @@ struct FireConfirmationPresenter {
             assertionFailure("No key window available")
             return
         }
-        presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
+        presentScopeConfirmationSheet(on: viewController, from: window, sourceRect: sourceRect, tabViewModel: tabViewModel, pixelSource: pixelSource, fireContext: fireContext, isSingleTab: isSingleTab, browsingMode: browsingMode, onConfirm: onConfirm, onCancel: onCancel)
     }
 
     // MARK: - Scope-based Confirmation
@@ -65,12 +67,14 @@ struct FireConfirmationPresenter {
                                                tabViewModel: TabViewModel?,
                                                pixelSource: FireRequest.Source,
                                                fireContext: ScopedFireConfirmationViewModel.FireContext,
+                                               isSingleTab: Bool,
                                                browsingMode: BrowsingMode,
                                                onConfirm: @escaping (FireRequest) -> Void,
                                                onCancel: @escaping () -> Void) {
         let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                         source: pixelSource,
                                                         fireContext: fireContext,
+                                                        isSingleTab: isSingleTab,
                                                         browsingMode: browsingMode,
                                                         onConfirm: { [weak viewController] fireOptions in
                                                             viewController?.dismiss(animated: true) {
@@ -83,7 +87,10 @@ struct FireConfirmationPresenter {
                                                             }
                                                         })
 
+        // Capture the presenting context's true size class; it's reset to `.compact` inside the popover container.
+        let presentationSizeClass = UserInterfaceSizeClass(viewController.traitCollection.horizontalSizeClass)
         let confirmationView = ScopedFireConfirmationView(viewModel: viewModel)
+            .environment(\.presentationHorizontalSizeClass, presentationSizeClass)
         let hostingController = makeHostingController(with: confirmationView)
         // Prevent swipe-to-dismiss for the experiment flow: the user must make an
         // explicit choice (fire or cancel) to keep the locked-controls state consistent.

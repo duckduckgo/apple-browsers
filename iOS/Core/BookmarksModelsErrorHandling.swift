@@ -24,6 +24,7 @@ import FoundationExtensions
 import DDGSync
 import Persistence
 import CoreData
+import PixelKit
 
 public class BookmarksModelsErrorHandling: EventMapping<BookmarksModelError> {
 
@@ -61,9 +62,9 @@ public class BookmarksModelsErrorHandling: EventMapping<BookmarksModelError> {
 
             if let domainEvent {
                 if let error = error {
-                    Pixel.fire(pixel: domainEvent, error: error, withAdditionalParameters: params)
+                    PixelKit.fire(domainEvent.withError(error), options: .parameters(params))
                 } else {
-                    Pixel.fire(pixel: domainEvent)
+                    PixelKit.fire(domainEvent)
                 }
             }
         }

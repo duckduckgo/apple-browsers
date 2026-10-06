@@ -1,0 +1,165 @@
+//
+//  RemoteMessagingService.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import BrowserServicesKit
+import Common
+import Configuration
+import RemoteMessaging
+import Core
+import PixelKit
+import Persistence
+import PrivacyConfig
+import BackgroundTasks
+import DDGSync
+import DataBrokerProtection_iOS
+
+final class RemoteMessagingService: RemoteMessagingDebugHandling {
+
+    let remoteMessagingClient: RemoteMessagingClient
+    let remoteMessagingActionHandler: RemoteMessagingActionHandler
+    let remoteMessagingImageLoader: RemoteMessagingImageLoading
+    let pixelReporter: RemoteMessagingPixelReporting
+
+    var messageNavigator: MessageNavigator? {
+        didSet {
+            remoteMessagingActionHandler.messageNavigator = messageNavigator
+        }
+    }
+
+    init(bookmarksDatabase: CoreDataDatabase,
+         database: CoreDataDatabase,
+         appSettings: AppSettings,
+         internalUserDecider: InternalUserDecider,
+         configurationStore: ConfigurationStore,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         configurationURLProvider: ConfigurationURLProviding,
+         syncService: DDGSyncing,
+         winBackOfferService: WinBackOfferService,
+         freemiumPIREligibilityChecker: FreemiumPIREligibilityChecking,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         profileStateManager: DBPProfileStateManaging,
+         subscriptionDataReporter: SubscriptionDataReporting,
+         remoteMessagingImageLoader: RemoteMessagingImageLoading,
+         idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+    ) {
+        remoteMessagingActionHandler = RemoteMessagingActionHandler(
+            surveyUsageStateRefresher: RemoteMessagingSurveyUsageStateRefresher()
+        )
+
+        self.remoteMessagingImageLoader = remoteMessagingImageLoader
+
+        pixelReporter = RemoteMessagePixelReporter(
+            pixelFiring: pixelFiring,
+            parameterRandomiser: subscriptionDataReporter.mergeRandomizedParameters(for:with:)
+        )
+
+        remoteMessagingClient = RemoteMessagingClient(
+            bookmarksDatabase: bookmarksDatabase,
+            appSettings: appSettings,
+            internalUserDecider: internalUserDecider,
+            configurationStore: configurationStore,
+            database: database,
+            errorEvents: RemoteMessagingStoreErrorHandling(),
+            autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent> { event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    pixelFiring?.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
+                }
+            },
+            remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
+                privacyConfigurationManager: privacyConfigurationManager
+            ),
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
+            duckPlayerStorage: DefaultDuckPlayerStorage(),
+            configurationURLProvider: configurationURLProvider,
+            syncService: syncService,
+            winBackOfferService: winBackOfferService,
+            freemiumPIREligibilityChecker: freemiumPIREligibilityChecker,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
+        )
+        remoteMessagingClient.registerBackgroundRefreshTaskHandler()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleResumeNotification),
+            name: .remoteMessagesShouldRefresh,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: .remoteMessagesShouldRefresh, object: nil)
+    }
+    
+    // MARK: - Notification Handler
+    
+    @objc private func handleResumeNotification(_ notification: Notification) {
+        DispatchQueue.main.async {
+            self.resume()
+        }
+    }
+
+    // MARK: - Resume
+
+    func resume() {
+        scheduleBackgroundTask()
+        refreshRemoteMessages()
+    }
+
+    private func scheduleBackgroundTask() {
+        guard UIApplication.shared.backgroundRefreshStatus == .available else {
+            return
+        }
+        // BackgroundTasks will automatically replace an existing task in the queue if one with the same identifier is queued, so we should only
+        // schedule a task if there are none pending in order to avoid the config task getting perpetually replaced.
+        BGTaskScheduler.shared.getPendingTaskRequests { tasks in
+            let hasRemoteMessageFetchTask = tasks.contains { $0.identifier == RemoteMessagingClient.Constants.backgroundRefreshTaskIdentifier }
+            if !hasRemoteMessageFetchTask {
+                RemoteMessagingClient.scheduleBackgroundRefreshTask()
+            }
+        }
+    }
+
+    func refreshRemoteMessages() {
+        Task {
+            try? await remoteMessagingClient.fetchAndProcess(using: remoteMessagingClient.store)
+            prefetchRemoteMessageImages()
+        }
+    }
+
+    private func prefetchRemoteMessageImages() {
+        guard let message = remoteMessagingClient.store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any) else {
+            return
+        }
+        let imageUrls = message.content?.allImageUrls ?? []
+        guard !imageUrls.isEmpty else { return }
+        remoteMessagingImageLoader.prefetch(imageUrls)
+    }
+
+}
+
+extension NSNotification.Name {
+    static let remoteMessagesShouldRefresh: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.trigger-rmf-refresh")
+}

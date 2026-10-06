@@ -1,0 +1,42 @@
+/* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
+"2pp-PM-6rW.title" = "Клавиатура";
+
+/* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
+"13n-KI-KLq.text" = "Стартиране на приложение";
+
+/* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
+"bIg-0T-UWq.text" = "Питай дали да направиш сайтовете огнеустойчиви при вписване";
+
+/* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
+"cW7-OM-2oW.text" = "Глобален контрол на поверителността (GPC)";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
+"dud-qo-Ces.text" = "Етикет";
+
+/* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
+"fV3-86-QQj.title" = "Глобален контрол на поверителността (GPC)";
+
+/* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
+"OfP-Kw-IOk.text" = "Все още няма огнеустойчиви уебсайтове";
+
+/* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
+"tGh-di-rfq.headerTitle" = "Показване на клавиатура в";
+
+/* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
+"tWw-Lh-ZT1.title" = "Глобален контрол на поверителността (GPC)";
+
+/* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
+"UZx-52-aer.text" = "Премахване на всички огнеустойчиви сайтове";
+
+/* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
+"xUX-nF-HOl.title" = "Огнеустойчиви сайтове";
+
+/* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
+"Zpg-h0-rYv.text" = "Нов раздел";
+
+/* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
+"zWP-d3-nVc.title" = "Начален екран";
+
+/* Class = "UINavigationItem"; title = "Add Widget to Home Screen"; ObjectID = "zZa-pF-SHk"; */
+"zZa-pF-SHk.title" = "Добавяне на приспособлението към началния екран";
+

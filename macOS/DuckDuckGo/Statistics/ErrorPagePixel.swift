@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 import WebKit
 
-enum ErrorPagePixel: PixelKitEvent {
+enum ErrorPagePixel: PixelKit.Event {
     case errorPageShownOther(error: WKError)
     case errorPageShownWebkitTermination
 

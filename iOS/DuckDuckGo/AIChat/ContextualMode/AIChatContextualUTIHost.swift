@@ -22,39 +22,84 @@ import Combine
 import UIKit
 import os.log
 
-/// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface and
-/// embeds its view controller as a child of `AIChatContextualWebViewController`.
+/// Owns a `UnifiedToggleInputCoordinator` configured for the contextual chat surface.
 @MainActor
-final class AIChatContextualUTIHost {
+final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextualFloatingInputHosting {
 
     private let coordinator: UnifiedToggleInputCoordinator
-    private let pageContextHandler: AIChatPageContextHandling
     let chipViewModel: UnifiedToggleInputPageContextChipViewModel
-    private let isAutoAttachEnabled: () -> Bool
     private let hasActiveChat: () -> Bool
+    private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private weak var contextualChatViewController: AIChatContextualWebViewController?
-    private var pendingChipAttachCancellable: AnyCancellable?
-    private var suppressExternalContextUntilNextAttach = false
+    private weak var currentUserScript: AIChatUserScript?
+    private weak var pendingUserScriptToBind: AIChatUserScript?
     private var isBoundToUserScript = false
+    private var hasDeliveredFirstPrompt = false
+    private var tabMentionSuggestionsView: MultiTabMentionSuggestionsView?
+    var onTabMentionVisibilityChanged: ((Bool) -> Void)?
+
+    /// The input's bottom while it follows the keyboard, and the fixed pin that replaces it once frozen.
+    private var keyboardBottomConstraint: NSLayoutConstraint?
+    private var frozenBottomConstraint: NSLayoutConstraint?
+    private let startsPreSubmit: Bool
+    private var hasKeyboardAppeared = false
+    /// Launch-time snapshot: re-reading the feature costs a privacy-config evaluation each time.
+    private let usesFloatingInput: Bool
     private var cancellables = Set<AnyCancellable>()
     private let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     private let duckAIWideEventFlowScope = DuckAIWideEventFlowScope.contextual(UUID())
 
+    var onAttachRequested: (() -> Void)?
+    var onRemoveRequested: (() -> Void)?
+    /// The user accepted the offer to attach the page they navigated to.
+    var onSuggestionAccepted: (() -> Void)?
+    var onPromptSubmitted: (() -> Void)?
+    /// Counted once per prompt: the user script echoes the first one back as a second delivery.
+    var onPromptSent: (() -> Void)?
+    /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
+    var onPromptDelivered: (() -> Void)?
+    var onDuckAIPromptSubmitted: ((AIChatEntryPointSource?) -> Void)?
+    var onAIVoiceChatRequested: (() -> Void)?
+    var onEditModeChange: ((Bool) -> Void)?
+
+    var attachedTabContextsProvider: (() -> MultiTabAttachmentRequest?)?
+
+    /// Raised by the input's microphone, which dictates into the field rather than opening voice chat.
+    var onVoiceSearchRequested: (() -> Void)?
+
+    /// A link inside a footer message (e.g. the attachment privacy disclosure's "Learn more").
+    var onOpenInNewTabRequested: ((URL) -> Void)?
+
+    var attachedContextURL: URL? {
+        chipViewModel.attachedContext.flatMap { URL(string: $0.contextData.url) }
+    }
+
     init(
         originatingURLPublisher: AnyPublisher<URL?, Never>,
-        didFinishURLPublisher: AnyPublisher<URL?, Never>,
         initialAttachedContext: AIChatPageContext?,
         initialAttachmentDeliveryState: PageContextAttachmentDeliveryState = .delivered,
         hasActiveChat: @escaping () -> Bool,
         isAutoAttachEnabled: @escaping () -> Bool,
-        pageContextHandler: AIChatPageContextHandling,
+        isCurrentPageAttachable: @escaping () -> Bool = { true },
         isFireTab: Bool,
-        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil
+        lastUsedModelProvider: DuckAiLastUsedModelProviding? = nil,
+        unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+        floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+        attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding = AIChatContextualAttachMoreTabsFeature(),
+        start: ContextualInputStart = .expandedOnExistingChat,
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        floatingUIManager: FloatingUIManaging = FloatingUIManager(isFloatingUIFeatureEnabled: false),
+        tabAttachmentSource: MultiTabAttachmentSource? = nil,
+        duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation? = nil,
+        isCurrentPageAttachInProgress: @escaping () -> Bool = { false }
     ) {
-        self.pageContextHandler = pageContextHandler
-        self.isAutoAttachEnabled = isAutoAttachEnabled
+        let isFloatingInputAvailable = floatingInputFeature.isAvailable
         self.hasActiveChat = hasActiveChat
-        let wideEventInstrumentation = DefaultDuckAIWideEventInstrumentation(
+        self.attachMoreTabsFeature = attachMoreTabsFeature
+        self.startsPreSubmit = start.isPreSubmit
+        self.usesFloatingInput = isFloatingInputAvailable
+        self.hasDeliveredFirstPrompt = !start.isPreSubmit
+        let wideEventInstrumentation = duckAIWideEventInstrumentation ?? DefaultDuckAIWideEventInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent
         )
         self.duckAIWideEventInstrumentation = wideEventInstrumentation
@@ -64,7 +109,12 @@ final class AIChatContextualUTIHost {
             isFireTab: isFireTab,
             lastUsedModelProvider: lastUsedModelProvider,
             duckAIWideEventInstrumentation: wideEventInstrumentation,
-            duckAIWideEventFlowScope: duckAIWideEventFlowScope
+            duckAIWideEventFlowScope: duckAIWideEventFlowScope,
+            contextualStart: start,
+            attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            placesAttachmentsAboveInput: isFloatingInputAvailable,
+            usageLimitsStore: usageLimitsStore,
+            floatingUIManager: floatingUIManager
         )
         self.chipViewModel = UnifiedToggleInputPageContextChipViewModel(
             originatingURLPublisher: originatingURLPublisher,
@@ -72,12 +122,35 @@ final class AIChatContextualUTIHost {
             initialAttachmentDeliveryState: initialAttachmentDeliveryState,
             isAutoAttachEnabled: isAutoAttachEnabled
         )
+        coordinator.delegate = self
+        coordinator.onPageContextAttachRequested = { [weak chipViewModel] in
+            chipViewModel?.tapToAttach()
+        }
+        coordinator.isPageContextAttachable = isCurrentPageAttachable
+        coordinator.hasPendingPageContextProvider = { [weak chipViewModel] in
+            chipViewModel?.pendingAttachedContextData != nil
+        }
+        coordinator.isCurrentPageSelected = { [weak chipViewModel] in
+            chipViewModel?.pendingAttachedContextData != nil || isCurrentPageAttachInProgress()
+        }
+        coordinator.onPageContextRemoveRequested = { [weak chipViewModel] in
+            chipViewModel?.tapToRemove()
+        }
+        coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature, hasActiveChat: hasActiveChat)
+        coordinator.onTabMentionSuggestionsChanged = { [weak self] in self?.showTabMentionSuggestions($0) }
+        coordinator.didPressStopGeneratingButton
+            .sink { [weak self] in self?.contextualChatViewController?.cancelPendingTabAttachmentPrompt() }
+            .store(in: &cancellables)
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
-        chipViewModel.onAttachActionRequested = { [weak self] url in
-            self?.handleChipAttachRequest(originatingURL: url)
+        chipViewModel.onAttachActionRequested = { [weak self] in
+            self?.onAttachRequested?()
         }
         chipViewModel.onRemoveActionRequested = { [weak self] in
-            self?.handleChipRemoveRequest()
+            self?.onRemoveRequested?()
+            self?.refreshTabAttachmentMenuIfNeeded()
+        }
+        chipViewModel.onSuggestionAccepted = { [weak self] in
+            self?.onSuggestionAccepted?()
         }
 
         Logger.contextualUTI.debug("UTIHost init — carryOver=\(initialAttachedContext != nil, privacy: .public) auto=\(isAutoAttachEnabled(), privacy: .public)")
@@ -88,86 +161,92 @@ final class AIChatContextualUTIHost {
             }
             .store(in: &cancellables)
 
-        // Out-of-band context (BEFORECHAT manual attach, FE-driven flows) reaches the chip
-        // here; pick a delivery state from session timing — pre-chat = silent, active-chat =
-        // pending. `dropFirst` skips the cold-start replay. We step aside while a UTI-driven
-        // attach is in flight; that path has its own one-shot subscriber in `handleChipAttachRequest`.
-        pageContextHandler.contextPublisher
-            .dropFirst()
-            .sink { [weak self] context in
-                guard let self else { return }
-                guard self.pendingChipAttachCancellable == nil else { return }
-                guard context == nil || !self.suppressExternalContextUntilNextAttach else { return }
-                guard context != self.chipViewModel.attachedContext else { return }
-                Logger.contextualUTI.debug("UTIHost contextPublisher emission → \(context != nil ? "context" : "nil", privacy: .public) — syncing chip")
-                if let context {
-                    self.chipViewModel.setAttached(context, deliveryState: self.externalContextDeliveryState)
-                } else {
-                    self.chipViewModel.clearAttached()
-                }
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .sink { [weak self] _ in
+                self?.collapseForKeyboardDismissal()
             }
             .store(in: &cancellables)
 
-        // didFinish (not didCommit) so the new DOM is ready when JS reads it. `dropFirst`
-        // skips the synchronous replay of the URL the half-sheet was opened on — the
-        // half-sheet is the user's attach/skip decision point. Only subsequent in-chat
-        // navigations should trigger auto-attach.
-        didFinishURLPublisher
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] url in
-                guard let self else { return }
-                Logger.contextualUTI.debug("UTIHost didFinish (post-replay) → \(url?.absoluteString ?? "nil", privacy: .private)")
-                guard let url else { return }
-                guard self.isAutoAttachEnabled() else {
-                    Logger.contextualUTI.debug("UTIHost didFinish skip — auto disabled")
-                    return
-                }
-                if let attached = self.chipViewModel.attachedContext,
-                   URL(string: attached.contextData.url) == url {
-                    Logger.contextualUTI.debug("UTIHost didFinish skip — already attached to same URL")
-                    return
-                }
-                Logger.contextualUTI.info("Auto-attach on page load — triggering for \(url.absoluteString, privacy: .private)")
-                self.handleChipAttachRequest(originatingURL: url)
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .sink { [weak self] _ in
+                self?.hasKeyboardAppeared = true
             }
             .store(in: &cancellables)
     }
 
-    private func handleChipAttachRequest(originatingURL: URL) {
-        Logger.contextualUTI.info("Chip onAttach — triggering context collection")
-        guard pageContextHandler.triggerContextCollection() else {
-            Logger.contextualUTI.error("triggerContextCollection returned false")
-            return
-        }
-        suppressExternalContextUntilNextAttach = false
-        pendingChipAttachCancellable = pageContextHandler.contextPublisher
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] context in
-                guard let self else { return }
-                self.pendingChipAttachCancellable = nil
-                guard let context else {
-                    Logger.contextualUTI.error("Collection completed with nil context")
-                    return
-                }
-                Logger.contextualUTI.info("Pushing collected context to contextual chat for FE delivery")
-                self.contextualChatViewController?.pushPageContext(context.contextData)
-                self.chipViewModel.setAttached(context)
-            }
+    /// Only a keyboard that was really shown can be lost: a hardware keyboard hides on every keystroke.
+    private func collapseForKeyboardDismissal() {
+        guard hasKeyboardAppeared else { return }
+        hasKeyboardAppeared = false
+        // Backgrounding takes the keyboard too, and offscreen hosts were never above one.
+        guard UIApplication.shared.applicationState == .active,
+              !coordinator.isPresentingAttachmentModal,
+              coordinator.isInputOnScreen,
+              !coordinator.isContextualChatCollapsed else { return }
+        deactivateInput()
     }
 
-    private func handleChipRemoveRequest() {
-        Logger.contextualUTI.info("Chip onRemove — clearing attached context")
-        // Cancel any in-flight collection so a late-arriving result doesn't overwrite the clear.
-        pendingChipAttachCancellable = nil
-        suppressExternalContextUntilNextAttach = true
-        // Use `clear()` rather than `clearAttachedContext()` here because CHAT detach must also
-        // cancel the handler's active JS subscription; otherwise a late collection can still
-        // flow through the coordinator and re-push stale context to the frontend.
-        pageContextHandler.clear()
-        contextualChatViewController?.pushPageContext(nil)
+    /// Re-evaluates the attach button/menu for the current page (e.g. page-context attachability after navigation).
+    func refreshPageContextAttachability() {
+        coordinator.updateImageButtonVisibility()
+    }
+
+    func refreshTabAttachmentMenuIfNeeded() {
+        guard case .available = attachMoreTabsFeature.state else { return }
+        coordinator.updateImageButtonVisibility()
+    }
+
+    func setAttachedContext(_ context: AIChatPageContext, deliveryState: PageContextAttachmentDeliveryState = .pendingSubmit) {
+        chipViewModel.setAttached(context, deliveryState: deliveryState)
+        refreshTabAttachmentMenuIfNeeded()
+    }
+
+    func clearAttachedContext() {
         chipViewModel.clearAttached()
+        refreshTabAttachmentMenuIfNeeded()
+    }
+
+    func setSuggestedContext(_ context: AIChatPageContext) {
+        chipViewModel.setSuggested(context)
+    }
+
+    func clearSuggestedContext() {
+        chipViewModel.clearSuggested()
+    }
+
+    /// One chip per attached selection, alongside the page-context chip. An empty list removes them all.
+    func setSelectionChips(_ items: [(id: String, title: String, favicon: UIImage?)], onRemove: @escaping (String) -> Void) {
+        coordinator.viewController.setSelectionContextChips(items, onRemove: onRemove)
+    }
+
+    /// Uploads and explicit tab attachments currently in the input; the current-page chip is counted by the session.
+    var attachmentCount: Int {
+        coordinator.attachmentCount
+    }
+
+    var hasAttachedTabs: Bool {
+        coordinator.hasAttachedTabs
+    }
+
+    /// Fires when the input's attachments change.
+    var onAttachmentsChanged: (() -> Void)? {
+        get { coordinator.onAttachmentsChanged }
+        set { coordinator.onAttachmentsChanged = newValue }
+    }
+
+    func presentRejectionBanner(_ message: String) {
+        coordinator.presentRejectionBanner(message)
+    }
+
+    func clearRejectionBanner() {
+        coordinator.clearRejectionBanner()
+    }
+
+    private func takeTabAttachmentRequest() -> MultiTabAttachmentRequest? {
+        if let attachedTabContextsProvider {
+            return MultiTabAttachmentContext(feature: attachMoreTabsFeature).makeRequest(using: attachedTabContextsProvider)
+        }
+        return coordinator.takeTabAttachmentRequest()
     }
 
     /// Routes UTI-submitted prompts through the contextual chat's JS message channel (same as the FE).
@@ -175,61 +254,398 @@ final class AIChatContextualUTIHost {
     /// the chip says is currently attached — no duplicate state, single source of truth.
     func bindToUserScript(_ userScript: AIChatUserScript) {
         Logger.contextualUTI.info("Binding coordinator to AIChatUserScript")
-        isBoundToUserScript = true
-        let chatID = userScript.webView?.url?.duckAIChatID
-        coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
-        if let chatID {
-            coordinator.restoreLastUsedModel(forChatID: chatID)
-        }
+        currentUserScript = userScript
         userScript.attachedPageContextProvider = { [weak self] in
             self?.chipViewModel.pendingAttachedContextData
         }
-        userScript.onPromptSubmitted = { [weak self] in
-            self?.chipViewModel.markPromptSubmitted()
+        userScript.attachedTabContextsProvider = { [weak self] in
+            guard let self else { return nil }
+            return self.takeTabAttachmentRequest()
         }
+        userScript.onPromptSubmitted = { [weak self] in
+            self?.handlePromptSubmittedFromUserScript()
+        }
+
+        if startsPreSubmit, !hasDeliveredFirstPrompt {
+            pendingUserScriptToBind = userScript
+            return
+        }
+
+        bindCoordinator(to: userScript)
     }
 
     func observeChatUpdates(_ publisher: AnyPublisher<String, Never>) {
         coordinator.observeChatUpdates(publisher)
     }
 
-    func markPromptSubmitted() {
-        chipViewModel.markPromptSubmitted()
+    /// Called when a prompt carrying page context is delivered; routes to the session state via `onPromptDelivered`.
+    func notifyPromptDelivered() {
+        onPromptDelivered?()
     }
 
-    private var externalContextDeliveryState: PageContextAttachmentDeliveryState {
-        // These states can differ during preload/restore: the user script may be bound before
-        // `sessionState` records an active chat, while restored chats may be active before bind.
-        isBoundToUserScript || hasActiveChat() ? .pendingSubmit : .delivered
-    }
-
-    func install(in contextualChatViewController: AIChatContextualWebViewController) {
+    func setContextualChatViewController(_ contextualChatViewController: AIChatContextualWebViewController) {
         self.contextualChatViewController = contextualChatViewController
+    }
+
+    func installInWebView(_ contextualChatViewController: AIChatContextualWebViewController) {
+        setContextualChatViewController(contextualChatViewController)
         coordinator.attachmentPresentingViewController = contextualChatViewController
+
+        let viewController = coordinator.viewController
+        guard viewController.parent !== contextualChatViewController else {
+            return
+        }
+
+        UIView.performWithoutAnimation {
+            contextualChatViewController.addChild(viewController)
+            contextualChatViewController.view.addSubview(viewController.view)
+            viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
+                viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
+                viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
+            ])
+            contextualChatViewController.anchorWebViewBottom(to: viewController.view.topAnchor)
+            viewController.didMove(toParent: contextualChatViewController)
+            applyHostedExpansion(activatesInput: true)
+            applyCurrentRenderState()
+            contextualChatViewController.view.layoutIfNeeded()
+        }
+        Logger.contextualUTI.info("Installed at bottom of contextual web chat")
+    }
+
+    @discardableResult
+    func mount(in parent: UIViewController) -> UIView {
+        coordinator.attachmentPresentingViewController = parent
+
+        let viewController = coordinator.viewController
+        guard viewController.parent !== parent else {
+            return viewController.view
+        }
+
+        // A dismissal animating out may still hold the input, and a child can only have one parent.
+        detachInput()
+
         // Install + lay out without animation. Otherwise the half-sheet's slide-up animation
         // captures the UTI's first layout pass and interpolates from a zero-frame at (0,0),
         // making the bar fly in from the top-left.
         UIView.performWithoutAnimation {
-            contextualChatViewController.addChild(coordinator.viewController)
-            contextualChatViewController.view.addSubview(coordinator.viewController.view)
-            coordinator.viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            parent.addChild(viewController)
+            parent.view.addSubview(viewController.view)
+            viewController.view.translatesAutoresizingMaskIntoConstraints = false
+            let bottom: NSLayoutConstraint
+            if #available(iOS 16.0, *) {
+                bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.keyboardLayoutGuide.topAnchor)
+            } else {
+                // iOS 15 never drives the keyboard guide, so Auto Layout moves the guide to the input
+                // instead of the input to the keyboard. Pin to the bottom and follow the keyboard by hand.
+                bottom = viewController.view.bottomAnchor.constraint(equalTo: parent.view.bottomAnchor)
+                followKeyboardManually(parent: parent, pin: bottom)
+            }
+            keyboardBottomConstraint = bottom
             NSLayoutConstraint.activate([
-                coordinator.viewController.view.leadingAnchor.constraint(equalTo: contextualChatViewController.view.leadingAnchor),
-                coordinator.viewController.view.trailingAnchor.constraint(equalTo: contextualChatViewController.view.trailingAnchor),
-                coordinator.viewController.view.bottomAnchor.constraint(equalTo: contextualChatViewController.view.keyboardLayoutGuide.topAnchor),
+                viewController.view.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
+                viewController.view.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
+                bottom,
             ])
-            contextualChatViewController.anchorWebViewBottom(to: coordinator.viewController.view.topAnchor)
-            coordinator.viewController.didMove(toParent: contextualChatViewController)
-            coordinator.showExpanded()
+            viewController.didMove(toParent: parent)
+            applyHostedExpansion(activatesInput: false)
             applyCurrentRenderState()
-            contextualChatViewController.view.layoutIfNeeded()
+            parent.view.layoutIfNeeded()
         }
-        Logger.contextualUTI.info("Installed at bottom of contextual chat")
+        Logger.contextualUTI.info("Mounted above the keyboard")
+        return viewController.view
+    }
+
+    private var legacyKeyboardPinCancellables = Set<AnyCancellable>()
+
+    /// Keeps `pin` at the keyboard's overlap with `parent`, animated on the keyboard's own curve.
+    private func followKeyboardManually(parent: UIViewController, pin: NSLayoutConstraint) {
+        legacyKeyboardPinCancellables.removeAll()
+        let update: (Notification) -> Void = { [weak parent] notification in
+            // A freeze or a detach replaces this pin, and laying out the old one mid-dismissal fights the slide.
+            guard pin.isActive, let parentView = parent?.viewIfLoaded else { return }
+            let end = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? .zero
+            let overlap = max(0, parentView.bounds.maxY - parentView.convert(end, from: nil).minY)
+            pin.constant = -overlap
+            let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0
+            UIView.animate(withDuration: duration) { parentView.layoutIfNeeded() }
+        }
+        for name in [UIResponder.keyboardWillShowNotification,
+                     UIResponder.keyboardWillChangeFrameNotification,
+                     UIResponder.keyboardWillHideNotification] {
+            NotificationCenter.default.publisher(for: name)
+                .sink(receiveValue: update)
+                .store(in: &legacyKeyboardPinCancellables)
+        }
+    }
+
+    /// Mounting must not decide focus: the surface that opened this UTI already did.
+    private func applyHostedExpansion(activatesInput: Bool) {
+        if coordinator.isContextualChatCollapsed {
+            coordinator.showCollapsed()
+        } else {
+            coordinator.showExpanded(activatesInput: activatesInput)
+        }
+    }
+
+    /// Edges of the visible input card, for aligning content sitting around the bar.
+    var inputCardTopAnchor: NSLayoutYAxisAnchor { coordinator.viewController.inputCardTopAnchor }
+    var inputCardLeadingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardLeadingAnchor }
+    var inputCardTrailingAnchor: NSLayoutXAxisAnchor { coordinator.viewController.inputCardTrailingAnchor }
+
+    /// Pins the input where it currently sits, so a keyboard that moves or changes height afterwards cannot
+    /// drag it. For a surface animating itself out: its own motion is then the only thing moving it.
+    func freezeInputPosition() {
+        let view = coordinator.viewController.view
+        guard let parentView = view?.superview,
+              let view,
+              keyboardBottomConstraint?.isActive == true else { return }
+
+        // From `center` and `bounds` rather than `frame`, which carries any transform the animation applies.
+        let restingBottom = view.center.y + view.bounds.height / 2
+        keyboardBottomConstraint?.isActive = false
+        let frozen = view.bottomAnchor.constraint(equalTo: parentView.bottomAnchor,
+                                                 constant: restingBottom - parentView.bounds.maxY)
+        frozen.isActive = true
+        frozenBottomConstraint = frozen
+    }
+
+    /// Surfaces borrow this one input from each other, so having mounted it is no guarantee of holding it.
+    func isMounted(in parent: UIViewController) -> Bool {
+        coordinator.viewController.parent === parent
+    }
+
+    /// Detaches the input so it can be mounted elsewhere, but only if `parent` still holds it: a surface
+    /// animating out finishes after the next one may already have mounted it.
+    func unmount(from parent: UIViewController) {
+        guard isMounted(in: parent) else { return }
+        detachInput()
+    }
+
+    private func detachInput() {
+        coordinator.dismissTabMentions()
+        // Ahead of the mounted check, so a surface that lost its parent some other way still leaves these
+        // behind. Rebuilt by the next mount, against whatever parent that is.
+        legacyKeyboardPinCancellables.removeAll()
+        frozenBottomConstraint?.isActive = false
+        frozenBottomConstraint = nil
+        keyboardBottomConstraint = nil
+
+        let viewController = coordinator.viewController
+        guard viewController.parent != nil else { return }
+        // Handed back clean: this view is reused across mounts, and a slide leaves a transform on it.
+        viewController.view.transform = .identity
+        viewController.willMove(toParent: nil)
+        viewController.view.removeFromSuperview()
+        viewController.removeFromParent()
+    }
+
+    func beginPresentation() {
+        coordinator.beginContextualInputPresentation()
+    }
+
+    func endPresentation() {
+        coordinator.endContextualInputPresentation()
+    }
+
+    func activateInput() {
+        coordinator.showExpanded()
+    }
+
+    /// Collapses to the plain pill, dropping first responder; without that pill, only resigns.
+    func deactivateInput() {
+        coordinator.dismissTabMentions()
+        guard usesFloatingInput else {
+            coordinator.viewController.deactivateInput()
+            return
+        }
+        coordinator.showCollapsed()
+    }
+
+    var isInputFirstResponder: Bool {
+        coordinator.viewController.isInputFirstResponder
+    }
+
+    private func showTabMentionSuggestions(_ suggestions: [MultiTabMentionController.Suggestion]?) {
+        guard let suggestions, let parent = coordinator.viewController.parent else {
+            guard tabMentionSuggestionsView != nil else { return }
+            tabMentionSuggestionsView?.dismiss()
+            tabMentionSuggestionsView = nil
+            onTabMentionVisibilityChanged?(false)
+            return
+        }
+
+        if tabMentionSuggestionsView == nil {
+            tabMentionSuggestionsView = makeTabMentionSuggestionsView(in: parent)
+            onTabMentionVisibilityChanged?(true)
+        }
+        tabMentionSuggestionsView?.configure(with: suggestions)
+    }
+
+    private func makeTabMentionSuggestionsView(in parent: UIViewController) -> MultiTabMentionSuggestionsView {
+        let suggestionsView = MultiTabMentionSuggestionsView(showsGlassShadow: parent is AIChatContextualSheetViewController)
+        suggestionsView.overrideUserInterfaceStyle = coordinator.viewController.handler.isFireTab ? .dark : .unspecified
+        suggestionsView.onSelect = { [weak self] in self?.coordinator.selectTabMention($0) }
+        suggestionsView.onDismiss = { [weak self] in self?.coordinator.dismissTabMentions() }
+        parent.view.insertSubview(suggestionsView, belowSubview: coordinator.viewController.view)
+
+        let topAnchor: NSLayoutYAxisAnchor
+        if let sheet = parent as? AIChatContextualSheetViewController {
+            topAnchor = sheet.inputSuggestionsTopAnchor
+        } else if let browser = parent.parent as? MainViewController,
+                  browser.viewCoordinator.addressBarPosition == .top {
+            topAnchor = browser.viewCoordinator.navigationBarContainer.bottomAnchor
+        } else {
+            topAnchor = parent.view.safeAreaLayoutGuide.topAnchor
+        }
+        NSLayoutConstraint.activate([
+            suggestionsView.leadingAnchor.constraint(equalTo: inputCardLeadingAnchor),
+            suggestionsView.trailingAnchor.constraint(equalTo: inputCardTrailingAnchor),
+            suggestionsView.bottomAnchor.constraint(equalTo: inputCardTopAnchor, constant: -8),
+            suggestionsView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 8),
+            suggestionsView.topAnchor.constraint(greaterThanOrEqualTo: parent.view.safeAreaLayoutGuide.topAnchor, constant: 8),
+        ])
+        return suggestionsView
+    }
+
+    var isInputCollapsed: Bool {
+        coordinator.isContextualChatCollapsed
+    }
+
+    /// A finished transcript belongs in the input, focused so the user can edit or send it.
+    func applyDictatedQuery(_ query: String) {
+        setText(query)
+        activateInput()
+    }
+
+    func setVoiceSearchAvailable(_ available: Bool) {
+        coordinator.updateVoiceSearchAvailability(available)
+    }
+
+    /// Drops a dictated query into the field for the user to review before sending.
+    func setText(_ text: String) {
+        coordinator.setText(text)
+    }
+
+    func endEditMode() {
+        coordinator.endEditMode()
+    }
+
+    func submitQuickActionPrompt(_ prompt: String) {
+        coordinator.submitProgrammatic(text: prompt)
+    }
+
+    func discardTabAttachments() {
+        coordinator.discardTabAttachments()
+        contextualChatViewController?.cancelPendingTabAttachmentPrompt()
+    }
+
+    func prepareForNewChat() {
+        contextualChatViewController?.cancelPendingTabAttachmentPrompt()
+
+        // Back on the start state, so the next prompt is a first prompt again and reports itself.
+        hasDeliveredFirstPrompt = false
+        clearAttachedContext()
+        if startsPreSubmit, let currentUserScript {
+            coordinator.unbind()
+            isBoundToUserScript = false
+            pendingUserScriptToBind = currentUserScript
+        }
+        coordinator.startNewChat()
+        coordinator.showExpanded(activatesInput: false)
+        applyCurrentRenderState()
     }
 
     private func applyCurrentRenderState() {
         coordinator.viewController.apply(coordinator.computeRenderState().viewConfig, animated: false)
         contextualChatViewController?.view.layoutIfNeeded()
+    }
+
+    private func bindCoordinator(to userScript: AIChatUserScript) {
+        isBoundToUserScript = true
+        let chatID = userScript.webView?.url?.duckAIChatID
+        coordinator.bindToTab(userScript, hasExistingChat: hasActiveChat() || chatID != nil)
+        if let chatID {
+            coordinator.restoreLastUsedModel(forChatID: chatID)
+        }
+    }
+
+    private func commitDeferredBindIfNeeded() {
+        guard !isBoundToUserScript, let pendingUserScriptToBind else { return }
+        self.pendingUserScriptToBind = nil
+        bindCoordinator(to: pendingUserScriptToBind)
+    }
+
+    private func handlePromptSubmittedFromUserScript() {
+        reportFirstPromptSubmission()
+        onPromptDelivered?()
+    }
+
+    /// True for the first report only: the input and the frontend both report the same submission.
+    private func claimFirstPromptSubmission() -> Bool {
+        guard !hasDeliveredFirstPrompt else { return false }
+        hasDeliveredFirstPrompt = true
+        return true
+    }
+
+    private func reportFirstPromptSubmission() {
+        guard claimFirstPromptSubmission() else { return }
+        onPromptSubmitted?()
+        commitDeferredBindIfNeeded()
+    }
+
+    func unifiedToggleInputDidSubmitPromptToBoundChat() {
+        onPromptSent?()
+        reportFirstPromptSubmission()
+    }
+
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {
+        onDuckAIPromptSubmitted?(origin)
+    }
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String,
+                                           modelId: String?,
+                                           tools: [AIChatRAGTool]?,
+                                           reasoningEffort: AIChatReasoningEffort?,
+                                           images: [AIChatNativePrompt.NativePromptImage]?,
+                                           files: [AIChatNativePrompt.NativePromptFile]?,
+                                           termsAccepted: Bool) {
+        onPromptSent?()
+        guard claimFirstPromptSubmission() else { return }
+        onPromptSubmitted?()
+        contextualChatViewController?.submitPrompt(prompt,
+                                                   images: images,
+                                                   files: files,
+                                                   modelId: modelId,
+                                                   tools: tools,
+                                                   pageContext: chipViewModel.pendingAttachedContextData,
+                                                   reasoningEffort: reasoningEffort,
+                                                   tabAttachmentRequest: takeTabAttachmentRequest(),
+                                                   termsAccepted: termsAccepted)
+        commitDeferredBindIfNeeded()
+        onPromptDelivered?()
+    }
+
+    func unifiedToggleInputDidSubmitQuery(_ query: String) {}
+    func unifiedToggleInputDidRequestVoiceSearch() {
+        onVoiceSearchRequested?()
+    }
+    func unifiedToggleInputDidRequestAIVoiceChat() {
+        onAIVoiceChatRequested?()
+    }
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String) {}
+    func unifiedToggleInputDidChangeHeight() {}
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode) {}
+    func unifiedToggleInputDidRequestFire() {}
+    func unifiedToggleInputDidRequestAppMenu() {}
+    func unifiedToggleInputDidRequestAppMenuLongPress() {}
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {
+        onEditModeChange?(isEditing)
+    }
+
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {
+        onOpenInNewTabRequested?(url)
     }
 }
 

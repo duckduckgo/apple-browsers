@@ -29,6 +29,18 @@
                   Identifier = "ContentBlockingRulesTests">
                </Test>
                <Test
+                  Identifier = "FloatingUIBottomBarTests">
+               </Test>
+               <Test
+                  Identifier = "FloatingUITopBarTests">
+               </Test>
+               <Test
+                  Identifier = "SitePermissionsXCUITests">
+               </Test>
+               <Test
+                  Identifier = "SubscriptionPromoUITests">
+               </Test>
+               <Test
                   Identifier = "TrackerRadarIntegrationTests">
                </Test>
             </SkippedTests>

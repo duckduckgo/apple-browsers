@@ -53,6 +53,14 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
         didMoveCalled = true
     }
 
+    private(set) var webExtensionTabMoves: [(tab: Tab, oldIndex: Int)] = []
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didMoveTab tab: Tab,
+                                fromWebExtensionIndex oldIndex: Int) {
+        webExtensionTabMoves.append((tab, oldIndex))
+    }
+
     var didSelectCalled = false
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {

@@ -32,7 +32,9 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
                     .newTabScanClickCount,
                     .newTabResultsClickCount,
                     .newTabNoResultsClickCount,
+                    .overFlowScanImpressionCount,
                     .overFlowScanCount,
+                    .overFlowResultsImpressionCount,
                     .overFlowResultsCount:
                 PixelKit.fire(event, frequency: .standard)
             default:
@@ -47,7 +49,9 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
     }
 }
 
-public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
+public enum DataBrokerProtectionFreemiumPixels: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     // Before the first scan
     case newTabScanImpression
@@ -68,8 +72,12 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
     case newTabNoResultsClickCount
     case newTabNoResultsDismiss
     // Overflow menu
+    case overFlowScanImpression
+    case overFlowScanImpressionCount
     case overFlowScan
     case overFlowScanCount
+    case overFlowResultsImpression
+    case overFlowResultsImpressionCount
     case overFlowResults
     case overFlowResultsCount
     // System notification
@@ -110,10 +118,18 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
             return "dbp-free_newtab_no-results_click_c"
         case .newTabNoResultsDismiss:
             return "dbp-free_newtab_no-results_dismiss_u"
+        case .overFlowScanImpression:
+            return "dbp-free_overflow_scan_impression_u"
+        case .overFlowScanImpressionCount:
+            return "dbp-free_overflow_scan_impression_c"
         case .overFlowScan:
             return "dbp-free_overflow_scan_u"
         case .overFlowScanCount:
             return "dbp-free_overflow_scan_c"
+        case .overFlowResultsImpression:
+            return "dbp-free_overflow_results_impression_u"
+        case .overFlowResultsImpressionCount:
+            return "dbp-free_overflow_results_impression_c"
         case .overFlowResults:
             return "dbp-free_overflow_results_u"
         case .overFlowResultsCount:
@@ -146,8 +162,12 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEvent {
                 .newTabNoResultsClick,
                 .newTabNoResultsClickCount,
                 .newTabNoResultsDismiss,
+                .overFlowScanImpression,
+                .overFlowScanImpressionCount,
                 .overFlowScan,
                 .overFlowScanCount,
+                .overFlowResultsImpression,
+                .overFlowResultsImpressionCount,
                 .overFlowResults,
                 .overFlowResultsCount,
                 .firstScanCompleteNotificationSent,

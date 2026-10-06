@@ -19,7 +19,7 @@
 import Carbon.OpenScripting
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import os.log
 import Persistence

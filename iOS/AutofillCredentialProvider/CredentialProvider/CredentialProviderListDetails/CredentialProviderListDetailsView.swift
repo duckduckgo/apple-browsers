@@ -167,7 +167,7 @@ private struct Header: View {
         .frame(minHeight: Constants.viewHeight)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
-        .listRowBackground(Color(designSystemColor: .surface))
+        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
         .listRowInsets(Constants.insets)
     }
 }

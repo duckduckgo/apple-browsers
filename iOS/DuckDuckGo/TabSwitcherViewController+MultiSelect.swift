@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Core
 import Bookmarks
 import DesignResourcesKit
+import PixelKit
 
 // MARK: Source agnostic action implementations
 extension TabSwitcherViewController {
@@ -29,8 +30,8 @@ extension TabSwitcherViewController {
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], title: String, message: String,
                       pixel: Pixel.Event, dailyPixel: Pixel.Event) {
 
-        Pixel.fire(pixel: pixel)
-        DailyPixel.fire(pixel: dailyPixel)
+        PixelKit.fire(pixel)
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
 
         func tabsToBookmarks(_ controller: TabSwitcherViewController) {
             let model = MenuBookmarksViewModel(bookmarksDatabase: controller.bookmarksDatabase, syncService: controller.syncService)
@@ -65,7 +66,19 @@ extension TabSwitcherViewController {
         })
     }
 
+    /// Toggles between grid and list (used by the legacy single toggle button).
     func onTabStyleChange() {
+        applyTabsStyleChange(enableGrid: !tabSwitcherSettings.isGridViewEnabled)
+    }
+
+    /// Sets a specific grid/list style (used by the floating chrome's Grid/List menu).
+    func setTabsStyle(_ style: TabsStyle) {
+        let enableGrid = style == .grid
+        guard tabSwitcherSettings.isGridViewEnabled != enableGrid else { return }
+        applyTabsStyleChange(enableGrid: enableGrid)
+    }
+
+    private func applyTabsStyleChange(enableGrid: Bool) {
         guard isProcessingUpdates == false else { return }
 
         isProcessingUpdates = true
@@ -77,12 +90,12 @@ extension TabSwitcherViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self else { return }
 
-            tabSwitcherSettings.isGridViewEnabled = !tabSwitcherSettings.isGridViewEnabled
+            tabSwitcherSettings.isGridViewEnabled = enableGrid
 
             if tabSwitcherSettings.isGridViewEnabled {
-                Pixel.fire(pixel: .tabSwitcherGridEnabled)
+                PixelKit.fire(Pixel.Event.tabSwitcherGridEnabled)
             } else {
-                Pixel.fire(pixel: .tabSwitcherListEnabled)
+                PixelKit.fire(Pixel.Event.tabSwitcherListEnabled)
             }
 
             self.refreshDisplayModeButton()
@@ -120,8 +133,8 @@ extension TabSwitcherViewController {
         }
 
         let browsingModeParam = [PixelParameters.browsingMode: selectedBrowsingMode.pixelParamValue]
-        Pixel.fire(pixel: .forgetAllPressedTabSwitching, withAdditionalParameters: browsingModeParam)
-        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily, withAdditionalParameters: browsingModeParam)
+        PixelKit.fire(Pixel.Event.forgetAllPressedTabSwitching, options: .parameters(browsingModeParam))
+        PixelKit.fire(Pixel.Event.forgetAllPressedTabSwitcherDaily, frequency: .legacyDailyNoSuffix, options: .parameters(browsingModeParam))
         ViewHighlighter.hideAll()
         presentFireConfirmation()
     }
@@ -143,8 +156,8 @@ extension TabSwitcherViewController {
     }
 
     func closeAllTabs() {
-        Pixel.fire(pixel: .tabSwitcherCloseAll)
-        DailyPixel.fire(pixel: .tabSwitcherCloseAllDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherCloseAll)
+        PixelKit.fire(Pixel.Event.tabSwitcherCloseAllDaily, frequency: .legacyDailyNoSuffix)
 
         let alert = UIAlertController(
             title: UserText.alertTitleCloseAllTabs(withCount: tabsModel.count),
@@ -191,13 +204,13 @@ extension TabSwitcherViewController {
     }
 
     func fireConfirmCloseTabsPixel() {
-        Pixel.fire(pixel: .tabSwitcherConfirmCloseTabs)
-        DailyPixel.fire(pixel: .tabSwitcherConfirmCloseTabsDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherConfirmCloseTabs)
+        PixelKit.fire(Pixel.Event.tabSwitcherConfirmCloseTabsDaily, frequency: .legacyDailyNoSuffix)
     }
 
     func deselectAllTabs() {
-        Pixel.fire(pixel: .tabSwitcherDeselectAll)
-        DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherDeselectAll)
+        PixelKit.fire(Pixel.Event.tabSwitcherDeselectAllDaily, frequency: .legacyDailyNoSuffix)
         activePageController.deselectAll()
         activePageController.reloadData()
         updateUIForSelectionMode()
@@ -205,8 +218,8 @@ extension TabSwitcherViewController {
     }
 
     func selectAllTabs() {
-        Pixel.fire(pixel: .tabSwitcherSelectAll)
-        DailyPixel.fire(pixel: .tabSwitcherSelectAllDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherSelectAll)
+        PixelKit.fire(Pixel.Event.tabSwitcherSelectAllDaily, frequency: .legacyDailyNoSuffix)
         activePageController.reloadData()
         activePageController.selectAll()
         updateUIForSelectionMode()
@@ -214,8 +227,8 @@ extension TabSwitcherViewController {
     }
 
     func shareTabs(_ tabs: [Tab]) {
-        Pixel.fire(pixel: .tabSwitcherSelectModeMenuShareLinks)
-        DailyPixel.fire(pixel: .tabSwitcherSelectModeMenuShareLinksDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherSelectModeMenuShareLinks)
+        PixelKit.fire(Pixel.Event.tabSwitcherSelectModeMenuShareLinksDaily, frequency: .legacyDailyNoSuffix)
 
         let sharingItems = tabs.compactMap { $0.link?.url }
         let controller = UIActivityViewController(activityItems: sharingItems, applicationActivities: nil)
@@ -235,13 +248,15 @@ extension TabSwitcherViewController {
     }
 
     func closeOtherTabs(retainingIndexPaths indexPaths: [IndexPath], pixel: Pixel.Event, dailyPixel: Pixel.Event) {
-        Pixel.fire(pixel: pixel)
-        DailyPixel.fire(pixel: dailyPixel)
+        PixelKit.fire(pixel)
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
 
         let otherIndexPaths = Set<IndexPath>(tabsModel.tabs.indices.map {
             IndexPath(row: $0, section: 0)
         }).subtracting(indexPaths)
-        
+
+        guard !otherIndexPaths.isEmpty else { return }
+
         self.closeTabs(withIndexPaths: [IndexPath](otherIndexPaths),
                        confirmTitle: UserText.alertTitleCloseOtherTabs(withCount: otherIndexPaths.count),
                        confirmMessage: UserText.alertMessageCloseOtherTabs(withCount: otherIndexPaths.count))
@@ -277,27 +292,41 @@ extension TabSwitcherViewController {
                                canDismissOnEmpty: canDismissOnEmpty)
         }
 
-        barsHandler.update(state)
-        barsHandler.configureButtonActions(tabsStyle: tabsStyle, canShowSelectionMenu: canShowSelectionMenu)
+        chrome.update(state: state,
+                      tabsStyle: tabsStyle,
+                      canShowSelectionMenu: multiSelectMenuState.canShowSelectionMenu,
+                      isEditing: isEditing)
+        applyCollectionContentInsets()
+        chrome.trackScrollEdge(of: collectionView)
+    }
 
-        titleBarView.setCenterView(isEditing ? nil : segmentedPickerHostingController?.view)
-        titleBarView.setLeadingButtons(barsHandler.topBarLeftButtons)
-        titleBarView.setTrailingButtons(barsHandler.topBarRightButtons)
-        toolbar.items = barsHandler.bottomBarItems
-        toolbar.isHidden = barsHandler.isBottomBarHidden
-        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
+    func applyCollectionContentInsets() {
+        chrome.applyCollectionContentInset(to: normalPageController.collectionView)
+        if let firePageController {
+            if let fireCollectionView = firePageController.collectionView {
+                chrome.applyCollectionContentInset(to: fireCollectionView)
+            }
+            firePageController.applyFloatingTopClearance(chrome.topBarBottomOffset)
+        }
     }
     
-    func createMultiSelectionMenu() -> UIMenu {
-        let selectedIndexPaths = selectedTabs
-        let selectedTabObjects = selectedIndexPaths.map { tabsModel.get(tabAt: $0.row) }.compactMap { $0 }
-        let state = TabSwitcherMultiSelectMenuState(
+    /// Describes the selection menu for the current selection, so that both the menu contents and
+    /// the enabled state of the control presenting it are derived from the same, up to date, state.
+    var multiSelectMenuState: TabSwitcherMultiSelectMenuState {
+        let selectedTabObjects = selectedTabs.compactMap { tabsModel.get(tabAt: $0.row) }
+        let isFloatingTabSwitcherEnabled = floatingUIManager.isFloatingTabSwitcherEnabled
+        return TabSwitcherMultiSelectMenuState(
             selectedCount: selectedTabObjects.count,
             totalCount: tabsModel.count,
             selectedContainsWebPages: selectedTabObjects.contains(where: { $0.link != nil }),
-            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil })
+            allContainsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
+            shouldShowSelectionToggleActions: !isFloatingTabSwitcherEnabled,
+            shouldShowCloseSelectedAction: !isFloatingTabSwitcherEnabled || interfaceMode.isLarge
         )
-        canShowSelectionMenu = state.canShowSelectionMenu
+    }
+
+    func createMultiSelectionMenu() -> UIMenu {
+        let state = multiSelectMenuState
         return menuBuilder.multiSelectionMenu(state: state, actions: TabSwitcherMultiSelectMenuActions(
             onDeselectAll: { [weak self] in self?.deselectAllTabs() },
             onSelectAll: { [weak self] in self?.selectAllTabs() },
@@ -353,21 +382,33 @@ extension TabSwitcherViewController {
 // MARK: Button configuration
 extension TabSwitcherViewController {
     // Button configuration is now handled in TabSwitcherBarsStateHandler
-    // via the setupBarButtonActions() method called in viewDidLoad()
+    // via the chrome's actions, configured in viewDidLoad() through makeChromeActions()
 }
 
 // MARK: Edit menu actions
 extension TabSwitcherViewController {
 
     func editMenuEnterSelectMode() {
-        Pixel.fire(pixel: .tabSwitcherEditMenuSelectTabs)
-        DailyPixel.fire(pixel: .tabSwitcherEditMenuSelectTabsDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherEditMenuSelectTabs)
+        PixelKit.fire(Pixel.Event.tabSwitcherEditMenuSelectTabsDaily, frequency: .legacyDailyNoSuffix)
+
+        guard floatingUIManager.isFloatingTabSwitcherEnabled else {
+            transitionToMultiSelect()
+            return
+        }
+
+        shouldEnterMultiSelectAfterEditMenuDismissal = true
+    }
+
+    func editMenuDidDismiss() {
+        guard shouldEnterMultiSelectAfterEditMenuDismissal, !isEditing else { return }
+        shouldEnterMultiSelectAfterEditMenuDismissal = false
         transitionToMultiSelect()
     }
 
     func editMenuCloseAllTabs() {
-        Pixel.fire(pixel: .tabSwitcherEditMenuCloseAllTabs)
-        DailyPixel.fire(pixel: .tabSwitcherEditMenuCloseAllTabsDaily)
+        PixelKit.fire(Pixel.Event.tabSwitcherEditMenuCloseAllTabs)
+        PixelKit.fire(Pixel.Event.tabSwitcherEditMenuCloseAllTabsDaily, frequency: .legacyDailyNoSuffix)
         closeAllTabs()
     }
 
@@ -430,12 +471,12 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuShareLinks(tabs: [Tab]) {
-        Pixel.fire(pixel: .tabSwitcherLongPressShare)
+        PixelKit.fire(Pixel.Event.tabSwitcherLongPressShare)
         shareTabs(tabs)
     }
 
     func longPressMenuSelectTabs(indexPaths: [IndexPath]) {
-        Pixel.fire(pixel: .tabSwitcherLongPressSelectTabs)
+        PixelKit.fire(Pixel.Event.tabSwitcherLongPressSelectTabs)
 
         if !isEditing {
             transitionToMultiSelect()
@@ -450,7 +491,7 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuCloseTabs(indexPaths: [IndexPath]) {
-        Pixel.fire(pixel: .tabSwitcherLongPressCloseTab)
+        PixelKit.fire(Pixel.Event.tabSwitcherLongPressCloseTab)
 
         if indexPaths.count == 1 {
             // No confirmation for a single tab

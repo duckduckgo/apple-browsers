@@ -42,6 +42,11 @@ public protocol TunnelController {
     var isConnected: Bool { get async }
 }
 
+/// A tunnel controller that can attribute a manual connection attempt to the screen entry that initiated it.
+public protocol VPNConnectionContextProvidingTunnelController: TunnelController {
+    func start(entryContext: VPNConnectionWideEventData.EntryContext) async
+}
+
 /// A convenience tunnel session provider protocol.
 ///
 /// This should eventually be unified onto `TunnelController`, so that all these requests can be made

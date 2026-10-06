@@ -34,6 +34,13 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if settings.notifyStatusChanges {
             wrappeePresenter.showConnectedNotification(serverLocation: serverLocation, snoozeEnded: snoozeEnded)
         }
+        wrappeePresenter.clearAuthorizationSuppression()
+    }
+
+    public func showStrictRoutingReminderNotification() {
+        if settings.notifyStatusChanges {
+            wrappeePresenter.showStrictRoutingReminderNotification()
+        }
     }
 
     public func showReconnectingNotification() {
@@ -46,6 +53,7 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if settings.notifyStatusChanges {
             wrappeePresenter.showConnectionFailureNotification()
         }
+        wrappeePresenter.clearAuthorizationSuppression()
     }
 
     public func showSnoozingNotification(duration: TimeInterval) {

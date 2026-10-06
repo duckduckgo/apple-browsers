@@ -83,7 +83,7 @@ extension BookmarkDialogStackedContentView {
         .init(
             title: "Name",
             content:
-                TextField("", text: $name)
+                TextField("" as String, text: $name)
                 .textFieldStyle(.roundedBorder)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .font(.system(size: 14))
@@ -92,7 +92,7 @@ extension BookmarkDialogStackedContentView {
         .init(
             title: "URL",
             content:
-                TextField("", text: $url)
+                TextField("" as String, text: $url)
                 .textFieldStyle(.roundedBorder)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .font(.system(size: 14))

@@ -299,7 +299,7 @@ class SwitchBarButtonsView: UIView {
             voiceButton.clipsToBounds = false
         case .aiVoiceAccent:
             voiceButton.setImage(DesignSystemImages.Glyphs.Size24.voice)
-            voiceButton.backgroundColor = UIColor(designSystemColor: .accent)
+            voiceButton.backgroundColor = UIColor(designSystemColor: .accentPrimary)
             voiceButton.tintColor = UIColor(designSystemColor: .accentContentPrimary)
             voiceButton.layer.cornerRadius = Constants.buttonSize / 2
             voiceButton.clipsToBounds = true

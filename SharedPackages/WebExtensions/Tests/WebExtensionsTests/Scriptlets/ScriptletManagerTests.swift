@@ -164,9 +164,18 @@ final class ScriptletManagerTests: XCTestCase {
         let fetchExpectation = expectation(description: "Fetch attempted")
         mockFetcher.onFetch = { fetchExpectation.fulfill() }
 
+        // The fetch callback runs before the manager catches the error and restores availability.
+        let availabilityExpectation = expectation(description: "Existing scriptlets available after failed fetch")
+        let cancellable = manager.availabilityPublisher(for: testExtensionType)
+            .dropFirst()
+            .filter { $0 == .available([existingScriptlet]) }
+            .first()
+            .sink { _ in availabilityExpectation.fulfill() }
+        defer { cancellable.cancel() }
+
         mockConfigProvider.configUpdateSubject.send()
 
-        await fulfillment(of: [fetchExpectation], timeout: 2.0)
+        await fulfillment(of: [fetchExpectation, availabilityExpectation], timeout: 2.0)
 
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
     }

@@ -33,7 +33,7 @@ final class TabHistoryStoreTests: XCTestCase {
         super.setUp()
         let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory")!
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let database = CoreDataDatabase(name: className, containerLocation: location, model: model)
+        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: model)
         database.loadStore { _, error in
             if let e = error {
                 XCTFail("Could not load store: \(e.localizedDescription)")

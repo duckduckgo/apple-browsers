@@ -70,7 +70,7 @@ final class SearchSuggestionsSource: SuggestionsSource {
             guard !suggestions.isEmpty else { return }
             sections.append(SuggestionSection(
                 id: id,
-                rows: suggestions.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: id, includesDeleteAccessory: true) }))
+                rows: suggestions.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: id) }))
         }
 
         section("topHits", effectiveTopHits(from: result, query: query))
@@ -92,7 +92,7 @@ final class SearchSuggestionsSource: SuggestionsSource {
     static func suggestion(forRowID id: String, in result: SuggestionResult, query: String) -> Suggestion? {
         let all = effectiveTopHits(from: result, query: query) + result.duckduckgoSuggestions + result.localSuggestions
         for prefix in ["topHits", "ddg", "local"] {
-            if let match = all.first(where: { SuggestionRowMapper.row(for: $0, query: query, idPrefix: prefix, includesDeleteAccessory: true).id == id }) {
+            if let match = all.first(where: { SuggestionRowMapper.row(for: $0, query: query, idPrefix: prefix).id == id }) {
                 return match
             }
         }

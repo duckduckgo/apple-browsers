@@ -20,69 +20,54 @@ import Foundation
 
 public final class ReleaseNotesParser {
 
+    /// Extracts the "What's new" and "For DuckDuckGo subscribers" bullet lists from an appcast
+    /// item description.
+    ///
+    /// Parsing is done with `XMLDocument` (libxml2) rather than `NSAttributedString`'s HTML
+    /// importer: the latter instantiates WebKit and must run on the main thread, which blocked
+    /// app launch while release notes were parsed. `XMLDocument` is a pure libxml2 parse with no
+    /// such dependency.
     public static func parseReleaseNotes(from description: String?) -> ([String], [String]) {
         guard let description else { return ([], []) }
 
-        var standardReleaseNotes = [String]()
-        var subscriptionReleaseNotes = [String]()
+        guard let document = htmlDocument(from: description) else { return ([], []) }
 
-        // Patterns for the two sections with more flexible spacing
-        let standardPattern = "<h3[^>]*>What's new</h3>\\s*<ul>(.*?)</ul>"
-        let subscriptionPattern = "<h3[^>]*>For DuckDuckGo subscribers</h3>\\s*<ul>(.*?)</ul>"
-
-        do {
-            let standardRegex = try NSRegularExpression(pattern: standardPattern, options: .dotMatchesLineSeparators)
-            let subscriptionRegex = try NSRegularExpression(pattern: subscriptionPattern, options: .dotMatchesLineSeparators)
-
-            // Extract the standard release notes section
-            if let standardMatch = standardRegex.firstMatch(in: description, options: [], range: NSRange(location: 0, length: description.utf16.count)) {
-                if let range = Range(standardMatch.range(at: 1), in: description) {
-                    let standardList = String(description[range])
-                    standardReleaseNotes = extractListItems(from: standardList)
-                }
-            }
-
-            // Extract the Subscription release notes section
-            if let subscriptionMatch = subscriptionRegex.firstMatch(in: description, options: [], range: NSRange(location: 0, length: description.utf16.count)) {
-                if let range = Range(subscriptionMatch.range(at: 1), in: description) {
-                    let subscriptionList = String(description[range])
-                    subscriptionReleaseNotes = extractListItems(from: subscriptionList)
-                }
-            }
-        } catch {
-            assertionFailure("Error creating regular expression: \(error)")
-        }
-
+        let standardReleaseNotes = releaseNotes(in: document, forSectionTitled: "What's new")
+        let subscriptionReleaseNotes = releaseNotes(in: document, forSectionTitled: "For DuckDuckGo subscribers")
         return (standardReleaseNotes, subscriptionReleaseNotes)
     }
 
-    // Helper method to extract list items
-    private static func extractListItems(from list: String) -> [String] {
-        var items = [String]()
-        let pattern = "<li>(.*?)</li>"
+    /// Parses the release notes HTML fragment into an `XMLDocument`.
+    ///
+    /// The fragment is prefixed with a `Content-Type` charset declaration. Without it, libxml2's
+    /// HTML parser assumes ISO-8859-1 and mangles multi-byte characters (e.g. `⌘`). The HTML5
+    /// `<meta charset>` shorthand is not honored by libxml2, so the `http-equiv` form is used.
+    private static func htmlDocument(from description: String) -> XMLDocument? {
+        let charsetDeclaration = #"<meta http-equiv="Content-Type" content="text/html; charset=utf-8">"#
+        guard let data = (charsetDeclaration + description).data(using: .utf8) else { return nil }
 
         do {
-            let regex = try NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators)
-            let matches = regex.matches(in: list, options: [], range: NSRange(location: 0, length: list.utf16.count))
-
-            for match in matches {
-                if let range = Range(match.range(at: 1), in: list) {
-                    let item = String(list[range])
-
-                    // Convert HTML to plain text
-                    if let data = item.data(using: .utf8),
-                       let attributedString = try? NSAttributedString(data: data,
-                                                                      options: [.documentType: NSAttributedString.DocumentType.html,
-                                                                                .characterEncoding: String.Encoding.utf8.rawValue],
-                                                                      documentAttributes: nil) {
-                        items.append(attributedString.string)
-                    }
-                }
-            }
+            return try XMLDocument(data: data, options: [.documentTidyHTML])
         } catch {
-            assertionFailure("Error creating regular expression: \(error)")
+            assertionFailure("Error parsing release notes HTML: \(error)")
+            return nil
         }
+    }
 
-        return items
+    /// Returns the plain-text list items from the `<ul>` immediately following the `<h3>` whose
+    /// text matches `title`.
+    private static func releaseNotes(in document: XMLDocument, forSectionTitled title: String) -> [String] {
+        let xpath = "//h3[normalize-space(.)=\"\(title)\"]/following-sibling::ul[1]/li"
+        guard let items = try? document.nodes(forXPath: xpath) else { return [] }
+
+        return items.compactMap { item in
+            guard let text = item.stringValue else { return nil }
+            // Collapse runs of whitespace (including the newlines/indentation between tags) into
+            // single spaces, matching how the HTML would render as plain text.
+            let normalized = text.components(separatedBy: .whitespacesAndNewlines)
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            return normalized.isEmpty ? nil : normalized
+        }
     }
 }

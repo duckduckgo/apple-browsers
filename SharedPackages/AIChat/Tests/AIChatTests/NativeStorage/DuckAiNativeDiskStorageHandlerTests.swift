@@ -18,8 +18,7 @@
 
 import Combine
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import DuckAiDataStore
 @testable import AIChat
 

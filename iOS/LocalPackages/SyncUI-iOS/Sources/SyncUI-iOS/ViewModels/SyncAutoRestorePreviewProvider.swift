@@ -20,6 +20,7 @@
 struct SyncAutoRestorePreviewProvider: SyncAutoRestoreProviding {
 
     static let disabled = SyncAutoRestorePreviewProvider()
+    static let enabled = SyncAutoRestorePreviewProvider(isAutoRestoreFeatureEnabled: true, existingAutoRestoreDecision: true)
 
     let isAutoRestoreFeatureEnabled: Bool
     private let existingAutoRestoreDecision: Bool?

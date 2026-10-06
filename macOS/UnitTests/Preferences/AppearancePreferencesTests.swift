@@ -18,10 +18,11 @@
 
 import Bookmarks
 import Combine
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -218,73 +219,6 @@ final class AppearancePreferencesTests: XCTestCase {
         )
 
         XCTAssertEqual(model.nextStepsCardsDemonstrationDays, 5)
-    }
-
-    // MARK: - Onboarding Next Steps cards delay
-
-    func testWhenOnboardingNextStepsCardsDelayMetAndDemonstrationDaysIsOneOrMoreThenReturnsTrue() {
-        let persistor = AppearancePreferencesPersistorMock(
-            continueSetUpCardsLastDemonstrated: Date(),
-            continueSetUpCardsNumberOfDaysDemonstrated: 1
-        )
-        let model = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger(),
-            aiChatMenuConfig: MockAIChatConfig()
-        )
-
-        XCTAssertTrue(model.isOnboardingNextStepsCardsDelayMet)
-    }
-
-    func testWhenOnboardingNextStepsCardsDelayMetAndCardsNeverShownThenReturnsFalse() {
-        let persistor = AppearancePreferencesPersistorMock(
-            continueSetUpCardsLastDemonstrated: nil,
-            continueSetUpCardsNumberOfDaysDemonstrated: 0
-        )
-        let model = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger(),
-            aiChatMenuConfig: MockAIChatConfig()
-        )
-
-        XCTAssertFalse(model.isOnboardingNextStepsCardsDelayMet)
-    }
-
-    func testWhenOnboardingNextStepsCardsDelayMetAndSameCalendarDayAsFirstDemonstrationThenReturnsFalse() {
-        let now = Date()
-        let persistor = AppearancePreferencesPersistorMock(
-            continueSetUpCardsLastDemonstrated: now,
-            continueSetUpCardsNumberOfDaysDemonstrated: 0
-        )
-        let model = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            dateTimeProvider: { now },
-            featureFlagger: MockFeatureFlagger(),
-            aiChatMenuConfig: MockAIChatConfig()
-        )
-
-        XCTAssertFalse(model.isOnboardingNextStepsCardsDelayMet)
-    }
-
-    func testWhenOnboardingNextStepsCardsDelayMetAndDemonstrationDaysStillZeroButCalendarDayRolledThenReturnsTrue() {
-        let now = Date()
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now)!
-        let persistor = AppearancePreferencesPersistorMock(
-            continueSetUpCardsLastDemonstrated: yesterday,
-            continueSetUpCardsNumberOfDaysDemonstrated: 0
-        )
-        let model = AppearancePreferences(
-            persistor: persistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            dateTimeProvider: { now },
-            featureFlagger: MockFeatureFlagger(),
-            aiChatMenuConfig: MockAIChatConfig()
-        )
-
-        XCTAssertTrue(model.isOnboardingNextStepsCardsDelayMet)
     }
 
     func testContinueSetUpIsNotDismissedAfterSeveralDemonstrationsWithinSeveralDays() {

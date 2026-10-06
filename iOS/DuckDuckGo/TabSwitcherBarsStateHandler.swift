@@ -21,6 +21,7 @@ import UIKit
 import Core
 import BrowserServicesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 enum TabSwitcherToolbarState: Equatable {
     case regularSize(selectedCount: Int, totalCount: Int, containsWebPages: Bool, showAIChat: Bool, canDismissOnEmpty: Bool)
@@ -54,6 +55,9 @@ protocol TabSwitcherBarsStateHandling {
     var duckChatButton: UIBarButtonItem { get }
 
     var bottomBarItems: [UIBarButtonItem] { get }
+    /// Bottom-bar button views in order, with the `.flexibleSpace()` separators dropped. Used when
+    /// the bottom bar is a `BrowserToolbarView` (equal-spacing stack) instead of a `UIToolbar`.
+    var bottomBarButtonViews: [UIView] { get }
     var topBarLeftButtons: [UIView] { get }
     var topBarRightButtons: [UIView] { get }
 
@@ -106,10 +110,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     lazy var doneTextButton: UIBarButtonItem = {
-        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil) { [weak self] in
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.navigationTitleDone, image: nil, fixedWidth: nil) { [weak self] in
             self?.onDoneButtonTapped?()
         }
-        (item.customView as? BrowserChromeButton)?.setTitle(UserText.navigationTitleDone, for: .normal)
         Self.applyTextConstraints(to: item)
         return item
     }()
@@ -140,7 +143,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     lazy var selectAllButton: UIBarButtonItem = {
-        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil) { [weak self] in
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.selectAllTabs, image: nil, fixedWidth: nil) { [weak self] in
             self?.onSelectAllTapped?()
         }
         Self.applyTextConstraints(to: item)
@@ -148,7 +151,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     lazy var deselectAllButton: UIBarButtonItem = {
-        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil) { [weak self] in
+        let item = BrowserChromeButton.createToolbarButtonItem(title: UserText.deselectAllTabs, image: nil, fixedWidth: nil) { [weak self] in
             self?.onDeselectAllTapped?()
         }
         Self.applyTextConstraints(to: item)
@@ -163,6 +166,9 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     }()
 
     private(set) var bottomBarItems = [UIBarButtonItem]()
+    var bottomBarButtonViews: [UIView] {
+        bottomBarItems.compactMap { $0.customView }
+    }
     private(set) var isBottomBarHidden = false
     private(set) var topBarLeftButtons = [UIView]()
     private(set) var topBarRightButtons = [UIView]()
@@ -238,22 +244,22 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
         let menu = UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
-                Pixel.fire(pixel: .tabLongPressMenuDisplayed, withAdditionalParameters: [
+                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
                     PixelParameters.source: "tab_switcher"
-                ])
+                ]))
                 completion([
                     UIAction(title: UserText.actionNewFireTab,
                              image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 Pixel.fire(pixel: .tabLongPressMenuNewFireTab, withAdditionalParameters: [
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
                                      PixelParameters.source: "tab_switcher"
-                                 ])
+                                 ]))
                                  self?.onNewFireTabTapped?()
                              },
                     UIAction(title: UserText.actionNewTab,
                              image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 Pixel.fire(pixel: .tabLongPressMenuNewNormalTab, withAdditionalParameters: [
+                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
                                      PixelParameters.source: "tab_switcher"
-                                 ])
+                                 ]))
                                  self?.onNewNormalTabTapped?()
                              }
                 ])
@@ -354,7 +360,14 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         button.setImage(DesignSystemImages.Glyphs.Size24.shield)
         button.alpha = 0
         button.isUserInteractionEnabled = false
-        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.frame = CGRect(x: 0, y: 0, width: BrowserChromeButton.toolbarButtonSize, height: BrowserChromeButton.toolbarButtonSize)
+        // Match the real toolbar buttons' fixed size so the equal-spacing stack (used when the
+        // bottom bar is a BrowserToolbarView) distributes this placeholder identically.
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: BrowserChromeButton.toolbarButtonSize),
+            button.heightAnchor.constraint(equalToConstant: BrowserChromeButton.toolbarButtonSize),
+        ])
 
         let barItem = UIBarButtonItem(customView: button)
         if #available(iOS 26.0, *) {

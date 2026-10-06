@@ -171,8 +171,15 @@ enum PairingV2Error: Error, Equatable {
     case unexpectedEvent(PairingV2UnexpectedEvent)
     case pairingSessionNotReady(PairingV2MissingSessionData)
     case nativeCredentialAlreadyPresent
+    case accountCreationFailed
     case recoveryCodePreparationFailed
+    case missingThirdPartyCredential
+    case undecryptableThirdPartyCredential
+    case accountExtendFailed
     case recoveryCodeSendFailed
+    case missingThirdPartyKey
+    case localStorageFailed
+    case invalidCredentials
     case loginFailed
     case upgradeFailed
     case recoveryCodeDenied
@@ -565,7 +572,7 @@ struct PairingV2StateMachine {
 
     private mutating func fail(with error: PairingV2Error) -> [PairingV2Command] {
         let commands: [PairingV2Command]
-        if case .hostPreparingRecoveryCode = state, error == .recoveryCodePreparationFailed {
+        if case .hostPreparingRecoveryCode = state, error.shouldNotifyRecoveryCodeUnavailable {
             commands = [.sendRecoveryCodeUnavailable, .abort(error)]
         } else {
             commands = [.abort(error)]
@@ -591,4 +598,20 @@ struct PairingV2StateMachine {
         PairingV2ProtocolVersion.supports(version)
     }
 
+}
+
+private extension PairingV2Error {
+
+    var shouldNotifyRecoveryCodeUnavailable: Bool {
+        switch self {
+        case .accountCreationFailed,
+                .recoveryCodePreparationFailed,
+                .missingThirdPartyCredential,
+                .undecryptableThirdPartyCredential,
+                .accountExtendFailed:
+            return true
+        default:
+            return false
+        }
+    }
 }

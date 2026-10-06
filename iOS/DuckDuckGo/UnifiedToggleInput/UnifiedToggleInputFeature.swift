@@ -19,9 +19,9 @@
 
 import Foundation
 import Common
-import FoundationExtensions
 import Core
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }
@@ -31,53 +31,38 @@ protocol UnifiedToggleInputFeatureProviding {
     /// No protocol-extension default: every conformer (including test mocks) must declare an
     /// explicit value so test coverage isn't silently masked by a convenient fallback.
     var isToggleHiddenOnDuckAITab: Bool { get }
+
+    /// When true, a native image/file paste is routed into the attachment strip. Backed by `FeatureFlag.unifiedToggleInputAttachmentPaste`.
+    var isAttachmentPasteEnabled: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
-    private static let isFeatureFlagEnabledKey = "com.duckduckgo.unifiedToggleInput.session.enabled"
     private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
+    private static let isAttachmentPasteEnabledKey = "com.duckduckgo.unifiedToggleInput.attachmentPaste.session.enabled"
 
-    private static let controlCohortID = FeatureFlag.DuckAIQueryExperimentCohort.control.rawValue
-
-    private static let nonControlCohortExcludedExperimentIDs: Set<SubfeatureID> = [
-        AIChatSubfeature.onboardingDuckAIQueryExperiment.rawValue,
-        AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment.rawValue,
-    ]
-
-    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads `isAvailable` / `isToggleHiddenOnDuckAITab`.
+    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads them.
     static func resolve(using featureFlagger: FeatureFlagger) {
-        UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInput), forKey: isFeatureFlagEnabledKey)
         UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPaste), forKey: isAttachmentPasteEnabledKey)
     }
 
-    private let featureFlagger: FeatureFlagger
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
-    private var isFeatureFlagEnabled: Bool {
-        UserDefaults.app.bool(forKey: Self.isFeatureFlagEnabledKey)
-    }
-
     var isAvailable: Bool {
-        isFeatureFlagEnabled && devicePlatform.isIphone && !isInExcludedExperimentCohort
+        devicePlatform.isIphone
     }
 
     var isToggleHiddenOnDuckAITab: Bool {
         UserDefaults.app.bool(forKey: Self.isToggleHiddenOnDuckAITabKey)
     }
 
-    private var isInExcludedExperimentCohort: Bool {
-        Self.nonControlCohortExcludedExperimentIDs.contains { experimentID in
-            guard let cohortID = featureFlagger.allActiveExperiments[experimentID]?.cohortID else {
-                return false
-            }
-            return cohortID != Self.controlCohortID
-        }
+    var isAttachmentPasteEnabled: Bool {
+        UserDefaults.app.bool(forKey: Self.isAttachmentPasteEnabledKey)
     }
+
 }

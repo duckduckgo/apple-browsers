@@ -48,6 +48,13 @@ public extension SingleValueMatching where Value == Bool {
         }
         return BooleanMatchingAttribute(expectedValue).matches(value: value)
     }
+
+    func evaluate(for value: Bool?) -> EvaluationResult {
+        guard let value, let expectedValue = self.value else {
+            return .fail
+        }
+        return BooleanMatchingAttribute(expectedValue).matches(value: value)
+    }
 }
 
 public extension SingleValueMatching where Value == String {

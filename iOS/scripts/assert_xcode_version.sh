@@ -5,6 +5,10 @@ script_dir=$(dirname "$(readlink -f "$0")")
 base_dir="${script_dir}/.."
 
 required_xcode_version=$(<"${base_dir}"/../.xcode-version)
+# Legacy CI jobs can explicitly select an older toolchain; local builds always use the file.
+if [[ "${GITHUB_ACTIONS:-}" == "true" && -n "${CI_XCODE_VERSION:-}" ]]; then
+	required_xcode_version="$CI_XCODE_VERSION"
+fi
 current_xcode_version=$(xcodebuild -version | grep 'Xcode' | cut -d\  -f2)
 
 verlte() { 

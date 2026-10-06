@@ -26,11 +26,19 @@ import Foundation
 ///
 final class ActiveDomainPublisher {
 
-    private let windowControllersManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManagerProtocol
     private var activeWindowControllerCancellable: AnyCancellable?
     private var activeTabViewModelCancellable: AnyCancellable?
     private var activeTabContentCancellable: AnyCancellable?
     private var unregisterWindowControllerCancellable: AnyCancellable?
+
+    private let onboardingStateLock = NSLock()
+    private var storedIsActiveTabOnboarding = false
+
+    private(set) var isActiveTabOnboarding: Bool {
+        get { onboardingStateLock.withLock { storedIsActiveTabOnboarding } }
+        set { onboardingStateLock.withLock { storedIsActiveTabOnboarding = newValue } }
+    }
 
     @MainActor private weak var activeWindowController: MainWindowController? {
         didSet {
@@ -45,15 +53,15 @@ final class ActiveDomainPublisher {
     }
 
     @MainActor
-    init(windowControllersManager: WindowControllersManager) {
+    init(windowControllersManager: WindowControllersManagerProtocol) {
 
-        activeDomain = windowControllersManager.activeDomain
+        if let tab = windowControllersManager.lastKeyMainWindowController?.activeTab {
+            activeDomain = WindowControllersManager.domain(from: tab.content)
+        }
         self.windowControllersManager = windowControllersManager
 
-        Task { @MainActor in
-            subscribeToKeyWindowControllerChanges()
-            subscribeToUnregisteringWindowController()
-        }
+        subscribeToKeyWindowControllerChanges()
+        subscribeToUnregisteringWindowController()
     }
 
     @Published
@@ -69,6 +77,9 @@ final class ActiveDomainPublisher {
 
     @MainActor
     private func subscribeToActiveTabViewModel() {
+        if activeWindowController == nil {
+            activeTab = nil
+        }
         activeTabViewModelCancellable = activeWindowController?.mainViewController.tabCollectionViewModel.$selectedTabViewModel
             .map(\.?.tab)
             .assign(to: \.activeTab, onWeaklyHeld: self)
@@ -76,7 +87,11 @@ final class ActiveDomainPublisher {
 
     @MainActor
     private func subscribeToActiveTabContentChanges() {
+        isActiveTabOnboarding = activeTab?.content == .onboarding
         activeTabContentCancellable = activeTab?.$content
+            .handleEvents(receiveOutput: { [weak self] content in
+                self?.isActiveTabOnboarding = content == .onboarding
+            })
             .map(WindowControllersManager.domain(from:))
             .removeDuplicates()
             .assign(to: \.activeDomain, onWeaklyHeld: self)

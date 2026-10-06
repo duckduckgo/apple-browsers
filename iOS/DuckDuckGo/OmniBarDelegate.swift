@@ -30,6 +30,10 @@ enum OmniBarEditingEndResult {
 
 protocol OmniBarDelegate: AnyObject {
 
+    /// The user edited the text, on whichever input surface is in use. Separate from
+    /// `onOmniQueryUpdated`, which also decides what the suggestion tray shows.
+    func onOmniBarTextEdited(_ text: String)
+
     func onOmniQueryUpdated(_ query: String)
     
     func onOmniQuerySubmitted(_ query: String)
@@ -71,12 +75,6 @@ protocol OmniBarDelegate: AnyObject {
     
     func onAIChatPressed()
 
-    /// Called when the AI Chat left button is tapped
-    func onAIChatLeftButtonPressed()
-
-    /// Called when the AI Chat full mode omnibar branding area is tapped.
-    func onAIChatBrandingPressed()
-
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
     // Returns whether field should select the text or not
@@ -113,16 +111,19 @@ protocol OmniBarDelegate: AnyObject {
     // MARK: - iPad Expanded Omnibar
     func onOmniBarExpandedStateChanged(isExpanded: Bool)
 
+    /// Called when the expanded iPad omnibar changes height while staying expanded (e.g. an
+    /// attachment is added or removed), so an anchored popover can be repositioned to follow it.
+    func onOmniBarExpandedContentSizeChanged()
+
+    /// A link in the expanded input's footer card, such as the Terms of Service disclaimer.
+    func onOmniBarFooterLinkTapped(_ url: URL)
+
     /// Called when text changes in the AI Chat text view (iPad tab mode), for filtering chat history suggestions.
     func onAIChatQueryUpdated(_ query: String)
-
-    /// Returns whether search query text on a SERP should be auto-selected in the experimental address bar.
-    func shouldAutoSelectTextForSERPQuery() -> Bool
 
     // MARK: - Experimental Address Bar
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
-    func onExperimentalAddressBarCancelPressed()
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void)
 
     // MARK: - Escape Hatch
@@ -135,14 +136,10 @@ protocol OmniBarDelegate: AnyObject {
     func onTextEntryModeDidChange(_ mode: TextEntryMode)
     func preferredTextEntryModeForCurrentTab() -> TextEntryMode?
 
-    /// When true, the omnibar editing-state transition uses the new behaviour (opaque from frame 0, single logo). Gated by showNTPAfterIdleReturn.
-    func useNewOmnibarTransitionBehaviour() -> Bool
-    
     // MARK: - Voice Mode
     func onDuckAIVoiceModeRequested()
 
     // MARK: - Fire Mode
-    func onTryFireModeRequested()
     func isCurrentTabFireTab() -> Bool
 
     // MARK: - AI Chat suggestions keyboard navigation (iPad)
@@ -154,10 +151,21 @@ protocol OmniBarDelegate: AnyObject {
     func onAIChatSuggestionsActivateHighlight() -> Bool
     /// Clears the highlight, e.g. when the user taps back into the text view.
     func onAIChatSuggestionsClearHighlight()
+
+    /// The page behind the address bar, for the `page_type` param on prompt pixels.
+    func currentPromptPageType() -> UnifiedToggleInputPromptPageType
 }
 
 extension OmniBarDelegate {
-    
+
+    func onOmniBarTextEdited(_ text: String) {
+
+    }
+
+    func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
+        .unknown
+    }
+
     func onOmniQueryUpdated(_ query: String) {
         
     }
@@ -215,12 +223,6 @@ extension OmniBarDelegate {
     func onAIChatPressed() {
     }
 
-    func onAIChatLeftButtonPressed() {
-    }
-
-    func onAIChatBrandingPressed() {
-    }
-
     func onBackPressed() {
     }
     
@@ -242,14 +244,15 @@ extension OmniBarDelegate {
 
     func onOmniBarExpandedStateChanged(isExpanded: Bool) {}
 
-    func onAIChatQueryUpdated(_ query: String) {}
+    func onOmniBarExpandedContentSizeChanged() {}
 
-    func shouldAutoSelectTextForSERPQuery() -> Bool { false }
+    func onOmniBarFooterLinkTapped(_ url: URL) {}
+
+    func onAIChatQueryUpdated(_ query: String) {}
 
     // Default no-op implementations for experimental address bar pixel hooks
     func onExperimentalAddressBarTapped() {}
     func onExperimentalAddressBarClearPressed() {}
-    func onExperimentalAddressBarCancelPressed() {}
 
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
         completion()
@@ -267,10 +270,6 @@ extension OmniBarDelegate {
 
     func escapeHatchForEditingState() -> EscapeHatchModel? {
         nil
-    }
-
-    func useNewOmnibarTransitionBehaviour() -> Bool {
-        false
     }
 
     func onDuckAIVoiceModeRequested() {}

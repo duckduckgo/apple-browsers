@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import Bookmarks
 import DDGSync
 import History
@@ -30,9 +30,16 @@ import Combine
 import SubscriptionTestingUtilities
 import Common
 import FoundationExtensions
-import PersistenceTestingUtils
 @testable import DuckDuckGo
 @testable import Core
+
+private final class MockIdleReturnEligibilityManager: IdleReturnEligibilityManaging {
+    func isFeatureAvailable() -> Bool { false }
+    func isEligibleForNTPAfterIdle() -> Bool { false }
+    func effectiveAfterInactivityOption() -> AfterInactivityOption { .lastUsedTab }
+    func idleThresholdSeconds() -> Int { 60 }
+    func ntpAfterIdleState() -> NTPAfterIdleState { .notEligible }
+}
 
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
@@ -62,6 +69,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             isUserAuthenticated: { false },
             isFreemiumEnabled: { false }
         )
+        let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: freemiumDBPUserDefaults)
         
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
@@ -82,7 +90,9 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
                 subscriptionAuthenticationStateProvider: SubscriptionManagerMock(),
                 freemiumPIRDebugSettings: freemiumPIRDebugSettings
             ),
-            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+            profileStateManager: profileStateManager,
+            idleReturnEligibilityManager: MockIdleReturnEligibilityManager()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
         let tabsModel = TabsModel(desktop: true)
@@ -117,6 +127,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
+            profileStateManager: profileStateManager,
             themeManager: MockThemeManager()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

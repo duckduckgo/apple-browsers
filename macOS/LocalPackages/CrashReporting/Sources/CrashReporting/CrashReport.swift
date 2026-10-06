@@ -30,6 +30,13 @@ protocol CrashReport: CrashReportPresenting {
     var contentData: Data? { get }
     var appVersion: String? { get }
     var bundleID: String? { get }
+
+    /// The date the crash report file was created, used as a proxy for when the crash occurred.
+    var creationDate: Date? { get }
+
+    /// `true` when the report is a non-fatal diagnostic filed via `os_log_fault` rather than a crash.
+    /// The process kept running, so these must not be counted, uploaded, or prompted for as crashes.
+    var isSimulated: Bool { get }
 }
 
 final class LegacyCrashReport: CrashReport {
@@ -88,6 +95,11 @@ final class LegacyCrashReport: CrashReport {
 
     let appVersion: String? = nil
     let bundleID: String? = nil
+
+    // `os_log_fault` diagnostics are only ever written in the JSON (`.ips`) format.
+    let isSimulated = false
+
+    var creationDate: Date? { fileManager.fileCreationDate(url: url) }
 }
 
 final class JSONCrashReport: CrashReport {
@@ -166,4 +178,11 @@ final class JSONCrashReport: CrashReport {
         }
         return version
     }
+
+    // Written as `"is_simulated":1`; NSNumber also accepts a boolean should the type ever change.
+    var isSimulated: Bool {
+        (headerJSON?["is_simulated"] as? NSNumber)?.boolValue ?? false
+    }
+
+    var creationDate: Date? { fileManager.fileCreationDate(url: url) }
 }

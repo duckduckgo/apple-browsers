@@ -16,6 +16,12 @@
 /* The title of the notification shown when DuckDuckGo VPN's connection is interrupted */
 "vpn.interrupted.notification.title" = "DuckDuckGo VPN werd onderbroken";
 
+/* The subtitle of the notification reminding the user to turn the VPN Strict routing setting back on */
+"vpn.strict.routing.reminder.notification.subtitle" = "Als strikte routering uitstaat, kan het zijn dat een deel van het verkeer het VPN omzeilt. Strikte routering wordt aanbevolen voor openbare netwerken.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"vpn.strict.routing.reminder.notification.title" = "Strikte routering staat UIT";
+
 /* The subtitle of the notification shown when the VPN reconnects successfully */
 "vpn.success.notification.subtitle" = "Je locatie en online-activiteiten zijn beschermd.";
 

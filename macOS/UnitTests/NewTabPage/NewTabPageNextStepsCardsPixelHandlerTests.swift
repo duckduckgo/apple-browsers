@@ -25,7 +25,7 @@ import XCTest
 
 final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
     private var pixelHandler: NewTabPageNextStepsCardsPixelHandler!
-    private var firedPixels: [(event: PixelKitEvent, frequency: PixelKit.Frequency, includesAppVersionParameter: Bool)] = []
+    private var firedPixels: [(event: PixelKit.Event, frequency: PixelKit.Frequency, includesAppVersionParameter: Bool)] = []
     private var persistor: MockNewTabPageNextStepsCardsPersistor!
     private var appearancePrefsPersistor: MockAppearancePreferencesPersistor!
 
@@ -406,7 +406,7 @@ final class NewTabPageNextStepsCardsPixelHandlerTests: XCTestCase {
 }
 
 private extension NewTabPageNextStepsCardsPixelHandlerTests {
-    func setUpExpectedClickedEvent(for card: NewTabPageDataModel.CardID) -> PixelKitEvent {
+    func setUpExpectedClickedEvent(for card: NewTabPageDataModel.CardID) -> PixelKit.Event {
         persistor.setTimesShown(expectedCardImpressions, for: card)
         return NewTabPagePixel.nextStepsCardClicked(card.rawValue,
                                                     cardImpressionCount: expectedCardImpressions,
@@ -415,7 +415,7 @@ private extension NewTabPageNextStepsCardsPixelHandlerTests {
                                                     activeUsageDays: expectedNextStepsActiveUsageDays)
     }
 
-    func setUpExpectedDismissedEvent(for card: NewTabPageDataModel.CardID) -> PixelKitEvent {
+    func setUpExpectedDismissedEvent(for card: NewTabPageDataModel.CardID) -> PixelKit.Event {
         persistor.setTimesShown(expectedCardImpressions, for: card)
         return NewTabPagePixel.nextStepsCardDismissed(card.rawValue,
                                                       cardImpressionCount: expectedCardImpressions,

@@ -154,7 +154,14 @@ extension MaliciousSiteProtectionNavigationHandler: SpecialErrorPageActionHandle
         Pixel.fire(MaliciousSiteProtection.Event.visitSite(category: threatKind))
     }
 
-    func leaveSite() { }
+    func leaveSite(errorData: SpecialErrorData) {
+        guard let threatKind = errorData.threatKind else {
+            assertionFailure("Error Data should have a threat kind")
+            return
+        }
+
+        Pixel.fire(MaliciousSiteProtection.Event.leaveSite(category: threatKind))
+    }
 
     func advancedInfoPresented() { }
 
@@ -185,7 +192,7 @@ private extension MaliciousSiteProtectionNavigationHandler {
         // - custom app URL schemes
         // - early failing navigations
         // - navigations whose .request.cachePolicy == .returnCacheDataElseLoad and other cacheable requests including session restoration.
-        if navigationAction.isTargetingMainFrame() && url != lastMainFrameNavigationURL {
+        if navigationAction.isTargetingMainFrame && url != lastMainFrameNavigationURL {
             maliciousSiteDetectionTasks = [:]
         }
     }

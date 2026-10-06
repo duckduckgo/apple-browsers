@@ -54,3 +54,7 @@ The browser includes comprehensive privacy protection:
 
 - <doc:MenuSystem>
 - <doc:NavigationBar>
+
+### Contributing
+
+- <doc:WritingArticles>

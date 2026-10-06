@@ -44,6 +44,22 @@ custom_rules:
     message: "`MainActor.assumeIsolated` may crash on the main thread."
     severity: error
 
+  # SwiftUI and String(localized:) look strings up in the main bundle unless a bundle is passed;
+  # `#bundle` is the bundle of the module the code is in (Bundle.module in a Swift package).
+  localized_swiftui_literal_without_bundle:
+    included: ".*/macOS/DuckDuckGo/.*\\.swift"
+    name: "Localized SwiftUI literal without a bundle"
+    regex: "(?<![\\w.])(Text|Button|Toggle|Picker|Label|Link|Menu|Section|TextField|SecureField|Stepper)\\(\\s*\"(?:[^\"\\\\\\n]|\\\\.)*\"(?!\\s*as String)(?!\\s*\\+)(?!\\s*,\\s*(?:tableName:[^,)]*,\\s*)?bundle:)"
+    message: "Pass `bundle: #bundle` (for views without a bundle parameter, use a `Text(…, bundle: #bundle)` label), or `Text(verbatim:)` / `\"…\" as String` for text that isn't localized."
+    severity: error
+
+  localized_string_without_bundle:
+    included: ".*/macOS/DuckDuckGo/.*\\.swift"
+    name: "Localized string without a bundle"
+    regex: "(?:(?<![\\w.])(?:String|AttributedString)\\(localized:|(?<![\\w.])LocalizedStringResource\\()(?![^)]*bundle:)"
+    message: "Pass `bundle: #bundle`: without it the string is looked up in the main bundle."
+    severity: error
+
 # Rule Config
 cyclomatic_complexity:
   ignores_case_statements: true

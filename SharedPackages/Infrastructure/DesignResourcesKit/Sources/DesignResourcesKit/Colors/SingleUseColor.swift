@@ -20,12 +20,28 @@
 ///
 /// - Important: When used in multiple places, it should be proposed to promote the color to `DesignSystemColor`.
 public enum SingleUseColor {
+
+    // Fire View
+    case fireModeAccent
+
+#if os(iOS)
+    /// Background for grouped-list rows and visually associated inline cards.
+    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
+    /// legacy palette and app-rebranding feature flag are removed.
+    case groupedListContentBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
 
     /// Color used for separator line between text input and content
     case inputContentSeparator
+
+    /// Resting background fill for the floating address bar field (composites over the toolbar's Liquid Glass capsule)
+    case floatingAddressBarBackground
+
+    /// Flat fill for the address field embedded in the bottom floating chrome (no glass highlights).
+    case floatingEmbeddedAddressBarBackground
 
     /// Color used for what's New background
     case whatsNewBackground
@@ -57,12 +73,49 @@ public enum SingleUseColor {
     case toolbarButton
 
     // Fire Mode
-    case fireModeAccent
     case fireModeAccentDark
     case fireModeAccentTertiary
     case fireModeBackground
     case fireModeCardBackground
+
+    /// Fire Mode address bar field fill (Figma: Unified-Input-Fire/Field)
+    case fireModeFieldBackground
+
+    // Duck.ai Grid Cell
+    case duckAIVoiceCellBackground
+
+    /// Native voice-mode chrome (header + status strip) background, matching the web voice background.
+    case duckAIVoiceModeBackground
+
+    /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline
+    case confettiMandarinFill
+    case confettiMandarinStroke
+    case confettiPondwaterFill
+    case confettiPondwaterStroke
+    case confettiLilypadFill
+    case confettiLilypadStroke
+    case confettiBlossomFill
+    case confettiBlossomStroke
+    case confettiPollenFill
+    case confettiPollenStroke
+
+#elseif os(macOS)
+
+    case fireButtonGradientStart
+    case fireButtonGradientEnd
+    case fireButtonPressedGradientStart
+    case fireButtonPressedGradientEnd
+    case fireDialogKnobFill
+    case fireDialogTabBackground
+    case fireDialogTabBackgroundSelected
+    case fireDialogTabShadowPrimary
+    case fireDialogTabShadowSecondary
+
+#endif
+
 }
+
+#if os(iOS)
 
 // MARK: - Onboarding Rebranding 2026
 
@@ -78,21 +131,18 @@ public extension SingleUseColor {
         case accentPrimaryText
         case accentGlowPrimary
 
-        case accentAltPrimary
-        case accentAltGlowPrimary
-
         case backdrop
-
-        case surfaceTertiary
 
         case buttonsPrimaryDefault
         case buttonsPrimaryPressed
         case buttonsPrimaryText
+        case buttonsContentDisabled
 
         case buttonsSecondaryDefault
         case buttonsSecondaryPressed
         case buttonsSecondaryText
-        case backgroundAccent // This in Figma is accentAltGlowPrimary but in the components screen default value is different than onboarding value
+        case buttonsSecondaryDisabledBackground
+        case buttonsSecondaryDisabledText
 
         case destructivePrimary
         case destructivePrimaryPressed
@@ -100,11 +150,15 @@ public extension SingleUseColor {
         case destructiveGlowPrimary
 
         case controlsFillPrimary
+        case controlBorderTertiary
 
         case decorationPrimary
         case decorationSecondary
 
         case alertGreen
+        case calendarStripYellow
     }
 
 }
+
+#endif

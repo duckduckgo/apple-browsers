@@ -70,13 +70,15 @@ public class Favicons: FaviconManaging {
         static let requestModifier = FaviconRequestModifier()
         static let fireproofCache = FaviconsCacheType.fireproof.create()
         static let tabsCache = FaviconsCacheType.tabs.create()
+        static let sitePermissionsCache = FaviconsCacheType.sitePermissions.create()
         static let targetImageSizePoints: CGFloat = 64
         public static let tabsCachePath = "com.onevcat.Kingfisher.ImageCache.tabs"
         public static let maxFaviconSize: CGSize = CGSize(width: 192, height: 192)
         
         public static let caches = [
             FaviconsCacheType.fireproof: fireproofCache,
-            FaviconsCacheType.tabs: tabsCache
+            FaviconsCacheType.tabs: tabsCache,
+            FaviconsCacheType.sitePermissions: sitePermissionsCache
         ]
 
     }
@@ -97,6 +99,7 @@ public class Favicons: FaviconManaging {
         // Prevents the caches being cleaned up
         NotificationCenter.default.removeObserver(Constants.fireproofCache)
         NotificationCenter.default.removeObserver(Constants.tabsCache)
+        NotificationCenter.default.removeObserver(Constants.sitePermissionsCache)
     }
 
     internal func isValidImage(_ image: UIImage, forMaxSize size: CGSize) -> Bool {

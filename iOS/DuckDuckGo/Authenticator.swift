@@ -20,6 +20,7 @@
 import Foundation
 import LocalAuthentication
 import Core
+import PixelKit
 
 protocol Authenticating {
 
@@ -55,7 +56,7 @@ public class Authenticator: Authenticating {
         do {
             return try await context.evaluatePolicy(policy, localizedReason: reason)
         } catch {
-            Pixel.fire(pixel: .dbLocalAuthenticationError, error: error)
+            PixelKit.fire(Pixel.Event.dbLocalAuthenticationError.withError(error))
         }
         return false
     }

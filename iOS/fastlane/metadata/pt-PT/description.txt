@@ -1,28 +1,24 @@
-Na DuckDuckGo, acreditamos que a melhor maneira de proteger as tuas informações pessoais de hackers, burlões e empresas que invadem a privacidade é impedir que sejam recolhidas. É por isso que milhões de pessoas escolhem o navegador gratuito DuckDuckGo em vez do Chrome e de outros navegadores. O nosso motor de pesquisa incorporado é como o Google, mas nunca rastreia as tuas pesquisas. As nossas proteções de navegação ajudam a impedir que outras empresas recolham os teus dados. Os nossos recursos opcionais integrados de IA, como o Search Assist e o Duck.ai, são privados e nunca usam os teus dados para treinar a IA. Recupera o controlo sobre as tuas informações pessoais com o navegador concebido para a proteção de dados e não para a recolha de dados. 
-
-DESTAQUES DAS FUNCIONALIDADES 
-O DuckDuckGo Search vem incorporado para que possas pesquisar facilmente online sem rastreios.  
-A nossa funcionalidade Tracker Loading Protection de terceiros bloqueia a maioria dos rastreadores antes de serem carregados, excedendo em muito o que a maioria dos navegadores populares oferece por predefinição.  
+No DuckDuckGo, acreditamos que a melhor maneira de proteger as tuas informações pessoais de hackers, burlões e empresas que invadem a privacidade é impedir que sejam recolhidas. É por isso que milhões de pessoas escolhem o DuckDuckGo em vez do Chrome e de outros navegadores para pesquisar e navegar online. O nosso motor de pesquisa incorporado é como o Google, mas nunca rastreia as tuas pesquisas. O nosso navegador bloqueia anúncios do YouTube, anúncios invasivos da web e pop-ups de cookies, reduzindo as distrações e ajudando a impedir que outras empresas recolham os teus dados. Os nossos recursos opcionais integrados de IA, como o Search Assist e o Duck.ai, são privados e nunca usam os teus dados para treinar a IA. E o nosso navegador é gratuito. Ganhamos dinheiro com anúncios de pesquisa que respeitam a tua privacidade, não com a exploração dos teus dados. Recupera o controlo sobre as tuas informações pessoais com o navegador concebido para a proteção de dados e não para a recolha de dados.
+DESTAQUES DAS FUNCIONALIDADES
+O DuckDuckGo Search vem incorporado para que possas pesquisar facilmente online sem rastreios.
+A nossa funcionalidade Tracker Loading Protection de terceiros bloqueia a maioria dos rastreadores antes de serem carregados, excedendo em muito o que a maioria dos navegadores populares oferece por predefinição.
 O Duck.ai permite-te conversar com modelos de IA de terceiros. As conversas são anonimizadas por nós e nunca são utilizadas para treinar a IA.
-Utiliza Email Protection para bloquear a maioria dos rastreadores de e-mail e ocultar o teu endereço de e-mail existente com endereços @duck.com.   
-O Duck Player protege-te de anúncios direcionados e cookies no YouTube com uma interface sem distrações, que incorpora as definições de privacidade mais rigorosas do YouTube para vídeos incorporados. 
-Impede que as empresas juntem informações sobre o teu navegador e dispositivo. 
-Sincroniza os marcadores e palavras-passe encriptados entre os teus dispositivos. 
-Limpa os separadores e os dados de navegação num piscar de olhos com o Fire Button. 
+Utiliza Email Protection para bloquear a maioria dos rastreadores de e-mail e ocultar o teu endereço de e-mail existente com endereços @duck.com.
+Bloquear anúncios: O nosso navegador bloqueia os anúncios do YouTube e impede que os rastreadores invasivos sejam carregados nos sites, eliminando eficazmente os anúncios segmentados.
+Impede que as empresas juntem informações sobre o teu navegador e dispositivo.
+Sincroniza os marcadores e palavras-passe encriptados entre os teus dispositivos.
+Limpa os separadores e os dados de navegação num piscar de olhos com o Fire Button.
 Suprime automaticamente os pop-ups de cookies.
-E muitas outras proteções não disponíveis na maioria dos navegadores. 
- 
+E muitas outras proteções não disponíveis na maioria dos navegadores.
 Subscrição DuckDuckGo
-Os subscritores recebem: 
-• A nossa VPN: protege a tua ligação em até 5 dispositivos. 
+Os subscritores recebem:
+• A nossa VPN: protege a tua ligação em até 5 dispositivos.
 • Acesso a modelos avançados de IA no Duck.ai: Conversa em privado com modelos de IA concebidos para tarefas complexas.
 • Personal Information Removal: encontra e remove informações pessoais de sites que as armazenam e vendem.
 • Identity Theft Restoration: se a tua identidade for roubada, ajudamos-te a restaurá-la. 
- 
-Preços e Termos da subscrição da DuckDuckGo   
-O pagamento será debitado automaticamente na tua Conta Apple até cancelares a subscrição, o que podes fazer nas definições da aplicação. Tens a opção de fornecer um endereço de e-mail para ativar a tua subscrição noutros dispositivos, e só usaremos esse endereço de e-mail para validar a tua subscrição. Para consultares os Termos de Utilização e a Política de Privacidade, visita https://duckduckgo.com/pro/privacy-terms 
-Sabe mais sobre as nossas proteções gratuitas contra rastreamento em https://help.duckduckgo.com/privacy/web-tracking-protections 
-Política de Privacidade: https://duckduckgo.com/privacy/  
-Termos de Utilização: https://duckduckgo.com/terms 
+Preços e Termos da subscrição da DuckDuckGo
+O pagamento será debitado automaticamente na tua Conta Apple até cancelares a subscrição, o que podes fazer nas definições da aplicação. Tens a opção de fornecer um endereço de e-mail para ativar a tua subscrição noutros dispositivos, e só usaremos esse endereço de e-mail para validar a tua subscrição. Para consultares os Termos de Utilização e a Política de Privacidade, visita https://duckduckgo.com/pro/privacy-terms
+Sabe mais sobre as nossas proteções gratuitas contra rastreamento em https://help.duckduckgo.com/privacy/web-tracking-protections
+Política de Privacidade: https://duckduckgo.com/privacy/
+Termos de Utilização: https://duckduckgo.com/terms
 Nota sobre a proteção contra rastreadores de terceiros e anúncios de pesquisa: embora existam algumas limitações após os cliques em anúncios de pesquisa, a visualização de anúncios na pesquisa DuckDuckGo é anónima. Sabe mais aqui https://help.duckduckgo.com/privacy/web-tracking-protections
- 

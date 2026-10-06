@@ -80,6 +80,12 @@
         "description": "Fired when WKPageLoadTiming data is available for a site loading navigation. Provides detailed performance timing metrics.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
+        "suffixes": [
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",

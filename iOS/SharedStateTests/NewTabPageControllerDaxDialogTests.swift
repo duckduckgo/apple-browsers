@@ -38,11 +38,12 @@ private class MockURLBasedDebugCommands: URLBasedDebugCommands {
     }
 }
 
+@MainActor
 final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     var variantManager: CapturingVariantManager!
     var dialogFactory: CapturingNewTabDaxDialogProvider!
-    var specProvider: MockNewTabDialogSpecProvider!
+    var specProvider: MockDaxDialogsManager!
     var flowProvider: MockOnboardingFlowProvider!
     var tutorialSettings: MockTutorialSettings!
     var hvc: NewTabPageViewController!
@@ -50,7 +51,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     override func setUpWithError() throws {
         variantManager = CapturingVariantManager()
         dialogFactory = CapturingNewTabDaxDialogProvider()
-        specProvider = MockNewTabDialogSpecProvider()
+        specProvider = MockDaxDialogsManager()
         flowProvider = MockOnboardingFlowProvider()
         tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
 
@@ -98,9 +99,85 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
-    func testWhenViewDidAppear_CorrectTypePassedToDialogFactory() throws {
+    // MARK: - After-idle remote message signal
+
+    /// Builds an NTP the way the focused UTI embedded surface does: a shared messages config and the
+    /// after-idle signal passed in (the embedded surface suppresses its own escape hatch, so the
+    /// signal can't be derived from it).
+    private func makeNewTabPage(openedAfterIdle: Bool,
+                                homePageMessagesConfiguration: HomePageMessagesConfiguration) -> NewTabPageViewController {
+        NewTabPageViewController(
+            isFocussedState: true,
+            openedAfterIdle: openedAfterIdle,
+            dismissKeyboardOnScroll: false,
+            tab: Tab(),
+            interactionModel: MockFavoritesListInteracting(),
+            homePageMessagesConfiguration: homePageMessagesConfiguration,
+            newTabDialogFactory: dialogFactory,
+            daxDialogsManager: specProvider,
+            onboardingFlowProvider: flowProvider,
+            faviconLoader: EmptyFaviconLoading(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingImageLoader: MockRemoteMessagingImageLoader(),
+            appSettings: AppSettingsMock(),
+            faviconsCache: Favicons(),
+            subscriptionManager: SubscriptionManagerMock(),
+            internalUserCommands: MockURLBasedDebugCommands(),
+            tutorialSettings: tutorialSettings)
+    }
+
+    private func makeConfiguration(withScheduledMessage: Bool) -> (HomePageConfiguration, MockRemoteMessagingStore) {
+        let store = MockRemoteMessagingStore()
+        if withScheduledMessage {
+            store.scheduledRemoteMessage = RemoteMessageModel(
+                id: "idle-msg", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        }
+        let config = HomePageConfiguration(remoteMessagingStore: store,
+                                           subscriptionDataReporter: MockSubscriptionDataReporter(),
+                                           isStillOnboarding: { false })
+        return (config, store)
+    }
+
+    func testWhenOpenedAfterIdleTrueThenMessagesConfigFetchesWithAfterIdleTrigger() {
+        // GIVEN a shared config with a scheduled after-idle message
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+
+        // WHEN an embedded (hatch-suppressed) NTP is built seeded with the after-idle signal
+        _ = makeNewTabPage(openedAfterIdle: true, homePageMessagesConfiguration: config)
+
+        // THEN its first refresh fetches the after-idle message (not .noTrigger) and keeps it in the
+        // shared config the focused-content gate reads
+        XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
+        XCTAssertFalse(config.homeMessages.isEmpty)
+    }
+
+    func testWhenOpenedAfterIdleFalseThenMessagesConfigFetchesWithNoTrigger() {
         // GIVEN
-        let expectedSpec = randomDialogType()
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+
+        // WHEN a non-after-idle NTP is built
+        _ = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+
+        // THEN it fetches the standard (.noTrigger) message, not the after-idle one
+        XCTAssertEqual(store.capturedTriggerFilter, .noTrigger)
+    }
+
+    func testWhenSetOpenedAfterIdleTrueThenMessagesConfigRefetchesWithAfterIdleTrigger() {
+        // GIVEN a cached NTP originally built without the after-idle signal
+        let (config, store) = makeConfiguration(withScheduledMessage: true)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: config)
+        store.capturedTriggerFilter = nil
+
+        // WHEN a later after-idle session pushes the signal into the cached controller
+        controller.setOpenedAfterIdle(true)
+
+        // THEN it re-fetches with the after-idle trigger
+        XCTAssertEqual(store.capturedTriggerFilter, .specific(.afterIdle))
+    }
+
+    func testWhenViewDidAppearWithInitialSpecThenDaxDialogIsCreated() throws {
+        // GIVEN
+        let expectedSpec = DaxDialogs.HomeScreenSpec.initial
         specProvider.specToReturn = expectedSpec
 
         // WHEN
@@ -111,11 +188,12 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(self.specProvider.nextHomeScreenMessageNewCalled)
         XCTAssertEqual(self.dialogFactory.homeDialog, expectedSpec)
         XCTAssertNotNil(self.dialogFactory.onDismiss)
+        XCTAssertNil(self.dialogFactory.endOfJourneyContent)
     }
 
-    func testWhenOnboardingComplete_CorrectTypePassedToDialogFactory() throws {
+    func testWhenOnboardingCompletesWithInitialSpecThenDaxDialogIsCreated() throws {
         // GIVEN
-        let expectedSpec = randomDialogType()
+        let expectedSpec = DaxDialogs.HomeScreenSpec.initial
         specProvider.specToReturn = expectedSpec
 
         // WHEN
@@ -126,6 +204,23 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(self.specProvider.nextHomeScreenMessageNewCalled)
         XCTAssertEqual(self.dialogFactory.homeDialog, expectedSpec)
         XCTAssertNotNil(self.dialogFactory.onDismiss)
+        XCTAssertNil(self.dialogFactory.endOfJourneyContent)
+    }
+
+    func testWhenOnboardingCompletesWithFinalSpecThenEndOfJourneyDialogIsCreated() throws {
+        // GIVEN
+        specProvider.specToReturn = .final
+
+        // WHEN
+        hvc.onboardingCompleted()
+
+        // THEN
+        XCTAssertFalse(specProvider.nextHomeScreenMessageCalled)
+        XCTAssertTrue(specProvider.nextHomeScreenMessageNewCalled)
+        XCTAssertNil(dialogFactory.homeDialog)
+        XCTAssertNil(dialogFactory.onDismiss)
+        XCTAssertNotNil(dialogFactory.endOfJourneyContent)
+        XCTAssertNotNil(dialogFactory.onEndOfJourneyAction)
     }
 
     func testWhenShowNextDaxDialog_AndShouldShowDaxDialogs_ThenReturnTrue() {
@@ -192,11 +287,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
         XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
     }
-
-    private func randomDialogType() -> DaxDialogs.HomeScreenSpec {
-        let specs: [DaxDialogs.HomeScreenSpec] = [.initial, .subsequent, .final, .addFavorite]
-        return specs.randomElement()!
-    }
 }
 
 class CapturingVariantManager: VariantManager {
@@ -216,44 +306,23 @@ class CapturingVariantManager: VariantManager {
 class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProviding {
     var homeDialog: DaxDialogs.HomeScreenSpec?
     var onDismiss: ((_ activateSearch: Bool) -> Void)?
+    var endOfJourneyContent: OnboardingEndOfJourneyContent?
+    var onEndOfJourneyAction: ((OnboardingEndOfJourneyAction) -> Void)?
+
     func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         self.homeDialog = homeDialog
         self.onDismiss = onCompletion
         return EmptyView()
     }
 
-    func createExperimentCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
+    func createDuckAIFireOnboardingCompletionDialog(message: String, onDismiss: @escaping () -> Void) -> AnyView {
         AnyView(EmptyView())
     }
-}
 
-
-class MockNewTabDialogSpecProvider: NewTabDialogSpecProvider, SubscriptionPromotionCoordinating {
-    var nextHomeScreenMessageCalled = false
-    var nextHomeScreenMessageNewCalled = false
-    var dismissCalled = false
-    var setFinalOnboardingDialogSeenCalled = false
-    var specToReturn: DaxDialogs.HomeScreenSpec?
-    var isShowingSubscriptionPromotion = false
-    var subscriptionPromotionDialogSeen = false
-    var subscriptionPromotionPending = false
-
-    func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
-        nextHomeScreenMessageCalled = true
-        return specToReturn
-    }
-
-    func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
-        nextHomeScreenMessageNewCalled = true
-        return specToReturn
-    }
-
-    func setFinalOnboardingDialogSeen() {
-        setFinalOnboardingDialogSeenCalled = true
-    }
-
-    func dismiss() {
-        dismissCalled = true
+    func createEndOfJourneyDialog(content: OnboardingEndOfJourneyContent, onAction: @escaping (OnboardingEndOfJourneyAction) -> Void) -> AnyView {
+        endOfJourneyContent = content
+        onEndOfJourneyAction = onAction
+        return AnyView(EmptyView())
     }
 }
 

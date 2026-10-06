@@ -1,0 +1,42 @@
+/* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
+"2pp-PM-6rW.title" = "Tastatură";
+
+/* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
+"13n-KI-KLq.text" = "Lansare aplicație";
+
+/* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
+"bIg-0T-UWq.text" = "Solicită ignifugarea site-urile la autentificare";
+
+/* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
+"cW7-OM-2oW.text" = "Global Privacy Control (GPC)";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
+"dud-qo-Ces.text" = "Label";
+
+/* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
+"fV3-86-QQj.title" = "Global Privacy Control (GPC)";
+
+/* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
+"OfP-Kw-IOk.text" = "Nu există încă site-uri ignifuge";
+
+/* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
+"tGh-di-rfq.headerTitle" = "Afișează tastatura la";
+
+/* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
+"tWw-Lh-ZT1.title" = "Global Privacy Control (GPC)";
+
+/* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
+"UZx-52-aer.text" = "Elimină toate site-urile la care la ieșire se șterge activitatea și istoricul din browser";
+
+/* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
+"xUX-nF-HOl.title" = "Site-uri cu ștergerea activității și istoricului din browser la ieșire";
+
+/* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
+"Zpg-h0-rYv.text" = "Filă nouă";
+
+/* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
+"zWP-d3-nVc.title" = "Ecranul de pornire";
+
+/* Class = "UINavigationItem"; title = "Add Widget to Home Screen"; ObjectID = "zZa-pF-SHk"; */
+"zZa-pF-SHk.title" = "Adaugă un widget la ecranul de întâmpinare";
+

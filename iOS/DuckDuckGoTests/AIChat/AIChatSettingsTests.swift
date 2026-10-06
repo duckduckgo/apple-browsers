@@ -23,8 +23,7 @@ import XCTest
 import PrivacyConfig
 import Combine
 import AIChat
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 class AIChatSettingsTests: XCTestCase {
 
@@ -89,6 +88,86 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertEqual(settings.aiChatURL, URL(string: override))
     }
 
+    func testAttachMoreTabsLimitReturnsDefaultWhenRemoteSettingsAreMissing() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+    }
+
+    func testAttachMoreTabsLimitReturnsPositiveRemoteValue() {
+        (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings[
+            AIChatSubfeature.contextualAttachMoreTabs.rawValue
+        ] = #"{"aiChatAttachMoreTabsLimit":500}"#
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 500)
+    }
+
+    func testAttachMoreTabsLimitReturnsDefaultForNonPositiveRemoteValues() {
+        let privacyConfiguration = mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        for limit in [0, -1] {
+            privacyConfiguration?.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+                #"{"aiChatAttachMoreTabsLimit":\#(limit)}"#
+            XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+        }
+    }
+
+    func testAttachMoreTabsLimitReturnsDefaultForNullRemoteValue() {
+        (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.subfeatureSettings[
+            AIChatSubfeature.contextualAttachMoreTabs.rawValue
+        ] = #"{"aiChatAttachMoreTabsLimit":null}"#
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+    }
+
+    func testPromotionDateRequiresValidTimestampAndDoesNotAffectTabLimit() throws {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+        let config = try XCTUnwrap(mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
+        for value in ["null", "42", "\"invalid\"", "\"2026-09-28\""] {
+            config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+                "{\"aiChatAttachMoreTabsLimit\":5,\"promotionStartDate\":\(value)}"
+            XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
+            XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 5)
+        }
+    }
+
+    func testPromotionDateUpdatesWithoutRecreatingSettingsAndIgnoresInvalidTabLimit() throws {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+        let config = try XCTUnwrap(mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)
+        config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+            #"{"promotionStartDate":"2026-09-28T00:00:00Z","aiChatAttachMoreTabsLimit":"invalid"}"#
+        let firstDate = ISO8601DateFormatter().date(from: "2026-09-28T00:00:00Z")
+        XCTAssertEqual(settings.aiChatAttachMoreTabsPromotionStartDate, firstDate)
+        XCTAssertEqual(settings.aiChatAttachMoreTabsLimit, 3)
+        config.subfeatureSettings[AIChatSubfeature.contextualAttachMoreTabs.rawValue] =
+            #"{"promotionStartDate":"2026-10-12T00:00:00Z"}"#
+        XCTAssertEqual(settings.aiChatAttachMoreTabsPromotionStartDate, firstDate?.addingTimeInterval(14 * 24 * 60 * 60))
+        config.subfeatureSettings.removeValue(forKey: AIChatSubfeature.contextualAttachMoreTabs.rawValue)
+        XCTAssertNil(settings.aiChatAttachMoreTabsPromotionStartDate)
+    }
+
     func testEnableAIChatBrowsingMenuUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       debugSettings: mockAIChatDebugSettings,
@@ -100,6 +179,18 @@ class AIChatSettingsTests: XCTestCase {
 
         settings.enableAIChatBrowsingMenuUserSettings(enable: true)
         XCTAssertTrue(settings.isAIChatBrowsingMenuUserSettingsEnabled)
+    }
+
+    func testAIChatBrowsingMenuUserSettingsDisabledWhenAIChatIsDisabled() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        settings.enableAIChatBrowsingMenuUserSettings(enable: true)
+        settings.enableAIChat(enable: false)
+
+        XCTAssertFalse(settings.isAIChatBrowsingMenuUserSettingsEnabled)
     }
 
     func testEnableAIChatAddressBarUserSettings() {

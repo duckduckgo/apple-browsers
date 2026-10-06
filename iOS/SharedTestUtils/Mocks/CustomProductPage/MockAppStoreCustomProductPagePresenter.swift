@@ -23,9 +23,10 @@ import AIChat
 
 final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCustomProductPagePresenter {
 
-    func openAIVoiceChatFromDeepLink() {}
+    func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {}
 
     func openAIChat(
+        source: AIChatEntryPointSource,
         _ query: String?,
         autoSend: Bool,
         payload: Any?,
@@ -35,6 +36,9 @@ final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCu
         reasoningEffort: AIChat.AIChatReasoningEffort?,
         images: [AIChatNativePrompt.NativePromptImage]?,
         files: [AIChat.AIChatNativePrompt.NativePromptFile]?,
-        fromDeepLink: Bool
+        reportsNewTab: Bool?,
+        forcesNewTab: Bool,
+        fromDeepLink: Bool,
+        termsAccepted: Bool
     ) {}
 }

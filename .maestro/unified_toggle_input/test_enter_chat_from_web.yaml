@@ -16,7 +16,6 @@ name: test_enter_chat_from_web
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
         ff.browsingMenuSheetEnabledByDefault: "true"
-        ff.unifiedToggleInput: "true"
 
 # Dismiss any launch-time modals
 - runFlow:

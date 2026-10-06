@@ -19,6 +19,7 @@
 #if os(iOS)
 
 import SwiftUI
+import UIComponents
 
 // MARK: - Skip Environment Key
 
@@ -116,7 +117,7 @@ private final class TypingAnimationState: ObservableObject {
 ///   `TypingText` animations in the subtree (used for tap-to-skip).
 /// - When `accessibilityReduceMotion` is enabled, the full text appears immediately.
 public struct TypingText: View {
-    private let attributedText: AttributedString
+    private let attributedText: NSAttributedString
     private let startAnimating: Binding<Bool>
     private let onTypingFinished: (() -> Void)?
 
@@ -124,56 +125,56 @@ public struct TypingText: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.typingAnimationSkip) private var skipAnimation
 
-    public init(_ attributedText: AttributedString, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
+    public init(_ attributedText: NSAttributedString, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
         self.attributedText = attributedText
         self.startAnimating = startAnimating
         self.onTypingFinished = onTypingFinished
     }
 
     public init(_ text: String, startAnimating: Binding<Bool> = .constant(true), onTypingFinished: (() -> Void)? = nil) {
-        self.init(AttributedString(text), startAnimating: startAnimating, onTypingFinished: onTypingFinished)
+        self.init(NSAttributedString(string: text), startAnimating: startAnimating, onTypingFinished: onTypingFinished)
     }
 
-    /// Builds an `AttributedString` where the first `visibleCount` characters inherit
-    /// the environment's foreground style and the rest are transparent.
-    /// Because the full text is always rendered, line breaks never shift.
+    /// Builds a `Text` view where the first `visibleCount` characters are visible and the rest
+    /// are transparent. Uses `Text(attributedStringWithAttachments:)` so that inline image
+    /// attachments are handled the same way as in `AnimatableTypingText`: attachments in the
+    /// hidden portion are rendered as transparent placeholders that preserve layout.
     private var revealedText: Text {
         if state.isFinished {
-            return Text(attributedText)
+            return Text(attributedStringWithAttachments: attributedText)
         }
 
-        let splitIndex = attributedText.characters.index(attributedText.startIndex, offsetBy: state.visibleCount)
-        let visibleAttributedString = AttributedString(attributedText[..<splitIndex])
-        var hiddenAttributedString = AttributedString(attributedText[splitIndex...])
-        hiddenAttributedString.foregroundColor = .clear
-
-        return Text(visibleAttributedString) + Text(hiddenAttributedString)
+        let totalRange = NSRange(location: 0, length: attributedText.length)
+        let visibleRange = NSRange(location: 0, length: min(state.visibleCount, attributedText.length))
+        let visibleText = attributedText.applyingColor(.clear, to: totalRange)
+                                        .applyingColor(.label, to: visibleRange)
+        return Text(attributedStringWithAttachments: visibleText)
     }
 
     public var body: some View {
         revealedText
             .onChange(of: skipAnimation) { shouldSkip in
-                if shouldSkip { state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished) }
+                if shouldSkip { state.skip(totalCount: attributedText.length, onFinished: onTypingFinished) }
             }
             .onChange(of: startAnimating.wrappedValue) { shouldAnimate in
                 if shouldAnimate {
                     if reduceMotion {
-                        state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
+                        state.skip(totalCount: attributedText.length, onFinished: onTypingFinished)
                     } else {
-                        state.start(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
+                        state.start(totalCount: attributedText.length, onFinished: onTypingFinished)
                     }
                 } else {
                     state.stop()
                 }
             }
             .onChange(of: reduceMotion) { shouldReduce in
-                if shouldReduce { state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished) }
+                if shouldReduce { state.skip(totalCount: attributedText.length, onFinished: onTypingFinished) }
             }
             .onAppear {
                 if reduceMotion || skipAnimation {
-                    state.skip(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
+                    state.skip(totalCount: attributedText.length, onFinished: onTypingFinished)
                 } else if startAnimating.wrappedValue {
-                    state.start(totalCount: attributedText.characters.count, onFinished: onTypingFinished)
+                    state.start(totalCount: attributedText.length, onFinished: onTypingFinished)
                 }
             }
             .onDisappear { state.stop() }

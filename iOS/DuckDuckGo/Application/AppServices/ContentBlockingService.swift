@@ -1,0 +1,69 @@
+//
+//  ContentBlockingService.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import ContentBlocking
+import Persistence
+import PrivacyConfig
+import Core
+import DDGSync
+import WebExtensions
+
+final class ContentBlockingService {
+
+    public let common: ContentBlocking
+    public let updating: ContentBlockingUpdating
+    public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    public let fireModeStorageController: FireModeNativeStorageController?
+    public let adBlockingAvailability: AdBlockingAvailabilityProviding
+    public var duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? { fireModeStorageController }
+
+    init(appSettings: AppSettings,
+         contentBlocking: ContentBlocking,
+         sync: DDGSyncing,
+         fireproofing: Fireproofing,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+         internalUserDecider: InternalUserDecider,
+         syncErrorHandler: SyncErrorHandler,
+         keyValueStore: ThrowingKeyValueStoring,
+         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         fireModeStorageController: FireModeNativeStorageController? = nil,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
+
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.fireModeStorageController = fireModeStorageController
+        self.adBlockingAvailability = adBlockingAvailability
+        common = contentBlocking
+
+        userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: appSettings,
+                                                                           sync: sync,
+                                                                           privacyConfigurationManager: common.privacyConfigurationManager,
+                                                                           contentBlockingManager: common.contentBlockingManager,
+                                                                           fireproofing: fireproofing,
+                                                                           contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                                           internalUserDecider: internalUserDecider,
+                                                                           syncErrorHandler: syncErrorHandler,
+                                                                           webExtensionAvailability: webExtensionAvailability)
+
+        updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
+                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+    }
+}

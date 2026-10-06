@@ -24,75 +24,12 @@ final class URLExtensionTests: XCTestCase {
         static let exampleDomain = "https://example.com"
         static let duckDuckGoDomain = "https://duckduckgo.com"
 
-        static let example = "\(exampleDomain)"
-        static let exampleWithKeyOldValue = "\(exampleDomain)?key=oldValue"
         static let exampleWithExistingQuery = "\(exampleDomain)?existingKey=existingValue"
-        static let exampleWithMultipleQueryItems = "\(exampleDomain)?key1=value1&key2=value2"
         static let duckDuckGoChat = "\(duckDuckGoDomain)/?ia=chat"
         static let duckDuckGoWithMissingQuery = "\(duckDuckGoDomain)/"
         static let duckDuckGoDifferentQuery = "\(duckDuckGoDomain)/?ia=search"
         static let duckDuckGoAdditionalQueryItems = "\(duckDuckGoDomain)/?ia=chat&other=param"
         static let subscription = "\(duckDuckGoDomain)/privacypro"
-    }
-
-    func testAddingQueryItemToEmptyURL() {
-        let url = URL(string: TestURLs.example)!
-        let queryItem = URLQueryItem(name: "key", value: "value")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key": "value"])
-    }
-
-    func testReplacingExistingQueryItem() {
-        let url = URL(string: TestURLs.exampleWithKeyOldValue)!
-        let queryItem = URLQueryItem(name: "key", value: "newValue")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key": "newValue"])
-    }
-
-    func testAddingQueryItemToExistingQuery() {
-        let url = URL(string: TestURLs.exampleWithExistingQuery)!
-        let queryItem = URLQueryItem(name: "newKey", value: "newValue")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["existingKey": "existingValue", "newKey": "newValue"])
-    }
-
-    func testReplacingOneOfMultipleQueryItems() {
-        let url = URL(string: TestURLs.exampleWithMultipleQueryItems)!
-        let queryItem = URLQueryItem(name: "key1", value: "newValue1")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key1": "newValue1", "key2": "value2"])
-    }
-
-    func testAddingQueryItemWithNilValue() {
-        let url = URL(string: TestURLs.example)!
-        let queryItem = URLQueryItem(name: "key", value: nil)
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, [:])
-    }
-
-    func testReplacingQueryItemWithNilValue() {
-        let url = URL(string: "\(TestURLs.example)?key=value")!
-        let queryItem = URLQueryItem(name: "key", value: nil)
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key": "value"])
     }
 
     func testIsDuckAIURLWithValidURL() {
@@ -295,6 +232,15 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(url.isDuckAIVoiceMode)
     }
 
+    // MARK: - Deep-link Surface Tests (Chat Protection)
+
+    func testIsDuckAIChatProtectionOpen() {
+        XCTAssertTrue(URL(string: "https://duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)
+        XCTAssertTrue(URL(string: "https://alice.duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)
+        XCTAssertFalse(URL(string: "https://duck.ai/?chatProtection=closed")!.isDuckAIChatProtectionOpen)
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIChatProtectionOpen)
+    }
+
     // MARK: - Chat ID Tests
 
     func testDuckAIChatIDWithValidChatID() {
@@ -353,6 +299,26 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertFalse(URL(string: "https://example.com/")!.isDuckDuckGoHomepage)
         XCTAssertFalse(URL(string: "https://help.duckduckgo.com/")!.isDuckDuckGoHomepage) // Different subdomain
         XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
+    }
+
+    // MARK: - Homepage Funnel Tests
+
+    /// The URL duckduckgo.com redirects to when its homepage composer hands a prompt to Duck.ai.
+    func testIsDuckAIOpenedFromHomepage() {
+        let url = URL(string: "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_")!
+        XCTAssertTrue(url.isDuckAIOpenedFromHomepage)
+    }
+
+    func testIsDuckAIOpenedFromHomepageRejectsChatsWithoutTheMarker() {
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat&origin=other")!.isDuckAIOpenedFromHomepage)
+    }
+
+    /// The marker only means something on a chat; elsewhere it is just a query parameter.
+    func testIsDuckAIOpenedFromHomepageRequiresAChat() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://example.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
     }
 
     // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker

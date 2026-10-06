@@ -24,6 +24,7 @@ OTHER_SWIFT_FLAGS[config=Debug][arch=*][sdk=*] = $(inherited) -Xfrontend -warn-l
 COMPILATION_CACHE_ENABLE_CACHING = YES
 
 GROUP_ID_PREFIX = group.com.duckduckgo
+STATISTICS_APP_GROUP = $(GROUP_ID_PREFIX).statistics
 VPN_APP_GROUP = $(GROUP_ID_PREFIX).netp
 
 #include? "../LocalOverrides.xcconfig"

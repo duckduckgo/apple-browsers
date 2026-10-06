@@ -23,6 +23,7 @@ import PrivacyConfig
 import Combine
 import Common
 import FoundationExtensions
+import PixelKit
 
 public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging {
 
@@ -85,7 +86,7 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
                 updatesSubject.send(())
             } catch {
                 let pixel = Pixel.Event.couldNotParseConfiguration(configuration: .privacyConfiguration, target: .vpn)
-                DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
+                PixelKit.fire(pixel.withError(error), frequency: .dailyAndCount)
                 fetchedConfigData = nil
                 return .embeddedFallback
             }

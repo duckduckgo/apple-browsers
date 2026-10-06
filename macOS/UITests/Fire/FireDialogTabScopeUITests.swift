@@ -75,13 +75,18 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay and verify only current tab's domains
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")
@@ -108,6 +113,11 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.fireDialogSitesOverlayCloseButton.click()
         XCTAssertTrue(sitesOverlay.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should close")
 
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
+
         // Enable all toggles
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -129,10 +139,11 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         app.openHistory()
         let historyWebView = app.webViews["History"]
 
-        // Verify background window's domains ARE still in history (check for github.com or stackoverflow.com in page titles)
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "GitHub")).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        // Verify background window's domains ARE still in history. Match the domain, not the page title:
+        // these live sites can serve bot challenges or error pages to CI runners (e.g. "Just a moment...").
+        XCTAssertTrue(historyWebView.staticTexts.element(matching: .keyPath(\.value, contains: "github.com")).waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Background window's GitHub site should still be in history")
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "Stack Overflow")).exists,
+        XCTAssertTrue(historyWebView.staticTexts.element(matching: .keyPath(\.value, contains: "stackoverflow.com")).exists,
                       "Background window's Stack Overflow site should still be in history")
         XCTAssertTrue(historyWebView.links[tab2Title].exists, "tab2 in current window should still be in history")
         XCTAssertTrue(historyWebView.links[tab3Title].exists, "tab3 in current window should still be in history")
@@ -202,7 +213,12 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable only history toggle (tabs and cookies off)
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -298,13 +314,18 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         openFireDialog()
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay and verify only current tab's domains
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")
@@ -404,13 +425,18 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay and verify only current tab's domains
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")
@@ -498,13 +524,18 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable cookies toggle to verify Sites overlay
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
 
         // Click the info button to open sites overlay and verify only current tab's domains
-        app.fireDialogCookiesInfoButton.click()
+        app.fireDialogCookiesDetailButton.click()
 
         let sitesOverlay = fireDialog.groups.containing(.button, identifier: "FireDialogView.sitesOverlayCloseButton").firstMatch
         XCTAssertTrue(sitesOverlay.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites overlay should be open")
@@ -587,7 +618,12 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         openFireDialog()
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable tabs and history, disable cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -673,7 +709,12 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Disable tabs and history, enable cookies only
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
@@ -759,7 +800,12 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
+
+        // Expand Dialog details
+        if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
+            fireDialogDetailsDisclosureButton.click()
+        }
 
         // Enable tabs only, disable history and cookies
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
@@ -817,7 +863,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
 
         // Select "Tab" scope
-        app.fireDialogSegmentedControl.buttons["Tab"].click()
+        app.fireDialogSegmentedControl.buttons["From this tab"].click()
 
         // Enable tabs toggle (close tabs)
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })

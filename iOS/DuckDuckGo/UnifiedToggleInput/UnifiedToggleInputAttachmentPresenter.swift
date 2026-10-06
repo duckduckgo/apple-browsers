@@ -19,13 +19,22 @@
 
 import AIChat
 import Core
+import DesignResourcesKit
 import DesignResourcesKitIcons
+import FoundationExtensions
+import PixelKit
 import PhotosUI
+import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
 @MainActor
 final class UnifiedToggleInputAttachmentPresenter: NSObject {
+
+    private static let recentTabsMenuItemLimit = 3
+    private static let recentTabTitleCharacterLimit = 28
+    private static let recentTabFaviconSize: CGFloat = 16
+    private static let menuImageCanvasSize: CGFloat = 20
 
     struct FileMetadata: Sendable {
         let fileName: String
@@ -34,64 +43,307 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         let url: URL
     }
 
+    var tabPickerPixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface?)?
+    var onTabPickerEvent: ((MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void)?
+
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
     var onFilePicked: ((AIChatFileAttachment, FileMetadata) -> Void)?
     var onFileValidationFailed: ((String, FileMetadata) -> Void)?
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
+    /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
+    var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
+    var isFireTabProvider: (() -> Bool)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
         fileAttachment(from: metadata, id: id)
+    }
+
+    /// Builds a file attachment from already-loaded bytes with PDF inspection; shared by the picker and paste flows.
+    nonisolated static func makeFileAttachment(
+        data: Data,
+        fileName: String,
+        mimeType: String,
+        fileSizeBytes: Int? = nil,
+        id: UUID = UUID()
+    ) -> AIChatFileAttachment {
+        let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: mimeType)
+        return AIChatFileAttachment(
+            id: id,
+            data: data,
+            fileName: fileName,
+            mimeType: mimeType,
+            fileSizeBytes: fileSizeBytes ?? data.count,
+            pageCount: pdfInspection.pageCount,
+            isEncrypted: pdfInspection.isEncrypted
+        )
     }
 
     func makeAttachmentMenu(
         presenterProvider: @escaping () -> UIViewController?,
         photoSelectionLimit: Int,
         canAttachFile: Bool,
-        allowedFileTypes: [UTType]
+        allowedFileTypes: [UTType],
+        showsPageContextAction: Bool = false,
+        pageContextActionHandler: (() -> Void)? = nil,
+        attachableTabs: [MultiTabAttachmentCandidate] = [],
+        attachedTabIds: Set<TabUID> = [],
+        tabAttachmentLimit: Int = 0,
+        isTabSelectionAvailable: @escaping () -> Bool = { false },
+        tabActionHandler: ((MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult)? = nil
     ) -> UIMenu? {
         let canAttachPhoto = photoSelectionLimit > 0
-        guard canAttachPhoto || canAttachFile else { return nil }
+        let canTakePhoto = canAttachPhoto && UIImagePickerController.isSourceTypeAvailable(.camera)
+        let canAttachAllowedFile = canAttachFile && !allowedFileTypes.isEmpty
+        let canAttachPageContext = pageContextActionHandler != nil
+        let showsTabAction = !attachableTabs.isEmpty && tabActionHandler != nil
+        guard canTakePhoto || canAttachPhoto || canAttachAllowedFile || showsPageContextAction || showsTabAction else { return nil }
 
-        var actions = [UIAction]()
-
-        if canAttachPhoto {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                actions.append(
-                    UIAction(
-                        title: UserText.aiChatAttachmentOptionTakePhoto,
-                        image: DesignSystemImages.Glyphs.Size24.camera
-                    ) { [weak self] _ in
-                        guard let presenter = presenterProvider() else { return }
-                        self?.presentCamera(from: presenter)
-                    }
-                )
+        var actions: [UIMenuElement] = [
+            UIAction(
+                title: UserText.aiChatAttachmentOptionTakePhoto,
+                image: DesignSystemImages.Glyphs.Size16.camera,
+                attributes: canTakePhoto ? [] : .disabled
+            ) { [weak self] _ in
+                guard canTakePhoto else { return }
+                guard let presenter = presenterProvider() else { return }
+                self?.presentCamera(from: presenter)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAttachPhoto,
+                image: DesignSystemImages.Glyphs.Size16.image,
+                attributes: canAttachPhoto ? [] : .disabled
+            ) { [weak self] _ in
+                guard canAttachPhoto else { return }
+                guard let presenter = presenterProvider() else { return }
+                self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
+            },
+            UIAction(
+                title: UserText.aiChatAttachmentOptionAttachFile,
+                image: DesignSystemImages.Glyphs.Size16.folder,
+                attributes: canAttachAllowedFile ? [] : .disabled
+            ) { [weak self] _ in
+                guard canAttachAllowedFile else { return }
+                guard let presenter = presenterProvider() else { return }
+                self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
             }
+        ]
 
+        if showsPageContextAction {
             actions.append(
                 UIAction(
-                    title: UserText.aiChatAttachmentOptionAttachPhoto,
-                    image: DesignSystemImages.Glyphs.Size24.image
-                ) { [weak self] _ in
-                    guard let presenter = presenterProvider() else { return }
-                    self?.presentPhotoPicker(from: presenter, selectionLimit: photoSelectionLimit)
+                    title: UserText.aiChatAttachmentOptionAskAboutPage,
+                    image: DesignSystemImages.Glyphs.Size16.tabContent,
+                    attributes: canAttachPageContext ? [] : .disabled
+                ) { _ in
+                    guard canAttachPageContext else { return }
+                    pageContextActionHandler?()
                 }
             )
         }
 
-        if canAttachFile, !allowedFileTypes.isEmpty {
-            actions.append(
-                UIAction(
-                    title: UserText.aiChatAttachmentOptionAttachFile,
-                    image: DesignSystemImages.Glyphs.Size24.folder
-                ) { [weak self] _ in
-                    guard let presenter = presenterProvider() else { return }
-                    self?.presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
-                }
-            )
+        if showsTabAction, let tabActionHandler {
+            actions.insert(Self.makeRecentTabsSection(attachableTabs: attachableTabs,
+                                                      attachedTabIds: attachedTabIds,
+                                                      attachmentLimit: tabAttachmentLimit,
+                                                      tabActionHandler: tabActionHandler), at: 0)
+            actions.append(makeTabPickerAction(presenterProvider: presenterProvider,
+                                              attachableTabs: attachableTabs,
+                                              attachedTabIds: attachedTabIds,
+                                              attachmentLimit: tabAttachmentLimit,
+                                              isAvailable: isTabSelectionAvailable,
+                                              tabActionHandler: tabActionHandler))
         }
 
         return UIMenu(children: actions)
+    }
+
+    private static func makeRecentTabsSection(attachableTabs: [MultiTabAttachmentCandidate],
+                                              attachedTabIds: Set<TabUID>,
+                                              attachmentLimit: Int,
+                                              tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIMenu {
+        let reachedAttachmentLimit = attachedTabIds.count >= attachmentLimit
+        let tabActions: [UIAction] = attachableTabs.prefix(recentTabsMenuItemLimit).map { candidate in
+            let isAttached = attachedTabIds.contains(candidate.tabId)
+            let title = candidate.title
+                .replacingOccurrences(of: "\n", with: " ")
+                .truncated(to: recentTabTitleCharacterLimit, position: .tail)
+            let favicon = makeRecentTabMenuFavicon(for: candidate)
+            return UIAction(title: title,
+                            image: favicon,
+                            attributes: reachedAttachmentLimit && !isAttached ? .disabled : [],
+                            state: isAttached ? .on : .off) { action in
+                guard tabActionHandler(candidate, !isAttached, .recentTabs).isSuccessful else { return }
+                action.state = action.state == .on ? .off : .on
+            }
+        }
+
+        let menu = UIMenu(title: UserText.aiChatAttachmentRecentTabsSectionTitle,
+                          options: .displayInline,
+                          children: tabActions)
+        if #available(iOS 16.0, *) {
+            menu.preferredElementSize = .large
+        }
+        if #available(iOS 17.4, *) {
+            let displayPreferences = UIMenuDisplayPreferences()
+            displayPreferences.maximumNumberOfTitleLines = 1
+            menu.displayPreferences = displayPreferences
+        }
+        return menu
+    }
+
+    private static func makeRecentTabMenuFavicon(for candidate: MultiTabAttachmentCandidate) -> UIImage? {
+        guard let favicon = FaviconsHelper.loadFaviconSync(
+            forDomain: candidate.url.host,
+            usingCache: .tabs,
+            useFakeFavicon: true).image else { return nil }
+
+        let canvasSize = CGSize(width: menuImageCanvasSize, height: menuImageCanvasSize)
+        let faviconOrigin = (menuImageCanvasSize - recentTabFaviconSize) / 2
+        let faviconRect = CGRect(x: faviconOrigin,
+                                 y: faviconOrigin,
+                                 width: recentTabFaviconSize,
+                                 height: recentTabFaviconSize)
+        return UIGraphicsImageRenderer(size: canvasSize).image { _ in
+            favicon.draw(in: faviconRect)
+        }.withRenderingMode(.alwaysOriginal)
+    }
+
+    private func makeTabPickerAction(presenterProvider: @escaping () -> UIViewController?,
+                                     attachableTabs: [MultiTabAttachmentCandidate],
+                                     attachedTabIds: Set<TabUID>,
+                                     attachmentLimit: Int,
+                                     isAvailable: @escaping () -> Bool,
+                                     tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) -> UIAction {
+        UIAction(title: UserText.aiChatAttachmentOptionAddTabs,
+                 image: DesignSystemImages.Glyphs.Size16.tabContent) { [weak self] _ in
+            guard isAvailable(), let presenter = presenterProvider() else { return }
+            self?.presentTabPicker(from: presenter,
+                                   attachableTabs: attachableTabs,
+                                   attachedTabIds: attachedTabIds,
+                                   attachmentLimit: attachmentLimit,
+                                   isAvailable: isAvailable,
+                                   tabActionHandler: tabActionHandler)
+        }
+    }
+
+    private func presentTabPicker(from presenter: UIViewController,
+                                  attachableTabs: [MultiTabAttachmentCandidate],
+                                  attachedTabIds: Set<TabUID>,
+                                  attachmentLimit: Int,
+                                  isAvailable: @escaping () -> Bool,
+                                  tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
+        let pixelSession = MultiTabPickerPixelSession(
+            surfaceProvider: { [weak self] in self?.tabPickerPixelSurfaceProvider?() },
+            report: { [weak self] in self?.onTabPickerEvent?($0, $1) })
+        let viewModel = MultiTabAttachmentPickerViewModel(
+            candidates: attachableTabs,
+            selectedTabIds: attachedTabIds,
+            attachmentLimit: attachmentLimit)
+        let picker = MultiTabAttachmentPickerView(viewModel: viewModel)
+        let hostingController = MultiTabAttachmentPickerHostingController(rootView: picker)
+        hostingController.onAppear = { pixelSession.show() }
+        hostingController.onDismiss = { pixelSession.finish() }
+        let navigationController = UINavigationController(rootViewController: hostingController)
+        navigationController.overrideUserInterfaceStyle = isFireTabProvider?() == true ? .dark : .unspecified
+
+        let closeAction = UIAction { [weak navigationController] _ in
+            navigationController?.dismiss(animated: true)
+        }
+        let closeItem = UIBarButtonItem(title: nil,
+                                        image: DesignSystemImages.Glyphs.Size24.close,
+                                        primaryAction: closeAction,
+                                        menu: nil)
+        closeItem.tintColor = UIColor(designSystemColor: .textPrimary)
+        closeItem.accessibilityLabel = UserText.aiChatChooseTabsCloseAccessibilityLabel
+        hostingController.navigationItem.leftBarButtonItem = closeItem
+
+        let confirmAction = UIAction { [weak navigationController] _ in
+            guard isAvailable() else {
+                navigationController?.dismiss(animated: true)
+                return
+            }
+            Self.confirmTabSelection(viewModel.selectedTabIds,
+                                     initialTabIds: attachedTabIds,
+                                     candidates: attachableTabs,
+                                     pixelSession: pixelSession,
+                                     tabActionHandler: tabActionHandler)
+            navigationController?.dismiss(animated: true)
+        }
+        let confirmItem = UIBarButtonItem(title: nil,
+                                          image: DesignSystemImages.Glyphs.Size24.check,
+                                          primaryAction: confirmAction,
+                                          menu: nil)
+        confirmItem.style = .done
+        if #available(iOS 26.0, *) {
+            confirmItem.style = .prominent
+        }
+        confirmItem.tintColor = UIColor(designSystemColor: .accentPrimary)
+        confirmItem.accessibilityLabel = UserText.aiChatChooseTabsConfirmAccessibilityLabel
+        hostingController.navigationItem.rightBarButtonItem = confirmItem
+
+        navigationController.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .pad ? .formSheet : .pageSheet
+        navigationController.preferredContentSize = CGSize(width: 540, height: 720)
+        if let sheet = navigationController.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
+        }
+        presenter.present(navigationController, animated: true)
+    }
+
+    static func confirmTabSelection(_ selectedTabIds: Set<TabUID>,
+                                    initialTabIds: Set<TabUID>,
+                                    candidates: [MultiTabAttachmentCandidate],
+                                    pixelSession: MultiTabPickerPixelSession,
+                                    tabActionHandler: (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
+        let removedTabIds = initialTabIds.subtracting(selectedTabIds)
+        let addedTabIds = selectedTabIds.subtracting(initialTabIds)
+
+        var results: [TabAttachmentSelectionResult] = []
+        for candidate in candidates where removedTabIds.contains(candidate.tabId) {
+            results.append(tabActionHandler(candidate, false, .tabPicker))
+        }
+        for candidate in candidates where addedTabIds.contains(candidate.tabId) {
+            results.append(tabActionHandler(candidate, true, .tabPicker))
+        }
+        pixelSession.finish(didChoose: results.contains(.changed))
+    }
+
+    /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.
+    func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
+        presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+    }
+}
+
+/// Keeps picker navigation actions visible while SwiftUI search is active.
+private final class MultiTabAttachmentPickerHostingController: UIHostingController<MultiTabAttachmentPickerView> {
+    var onAppear: (() -> Void)?
+    var onDismiss: (() -> Void)?
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        onAppear?()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed || navigationController?.isBeingDismissed == true {
+            onDismiss?()
+        }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        configureSearchPresentation()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        configureSearchPresentation()
+    }
+
+    private func configureSearchPresentation() {
+        navigationItem.searchController?.hidesNavigationBarDuringPresentation = false
     }
 }
 
@@ -157,16 +409,12 @@ private extension UnifiedToggleInputAttachmentPresenter {
             let data = try Data(contentsOf: metadata.url)
             guard !Task.isCancelled else { return nil }
 
-            let pdfInspection = AIChatPDFInspector.inspect(data: data, mimeType: metadata.mimeType)
-
-            return AIChatFileAttachment(
-                id: id,
+            return makeFileAttachment(
                 data: data,
                 fileName: metadata.fileName,
                 mimeType: metadata.mimeType,
-                fileSizeBytes: metadata.fileSizeBytes ?? data.count,
-                pageCount: pdfInspection.pageCount,
-                isEncrypted: pdfInspection.isEncrypted
+                fileSizeBytes: metadata.fileSizeBytes,
+                id: id
             )
         } catch {
             return nil
@@ -190,10 +438,10 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                 guard let image = object as? UIImage else { return }
 
                 Task { @MainActor in
-                    DailyPixel.fireDailyAndCount(
-                        pixel: .unifiedToggleInputImageAttached,
-                        withAdditionalParameters: ["source": "photo_library"]
-                    )
+                    let surface = self?.pixelSurfaceProvider?() ?? .addressBar
+                    PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
+                                  frequency: .dailyAndCount,
+                                  options: .parameters(["source": "photo_library", "surface": surface.rawValue]))
                     self?.onImagePicked?(image, suggestedName)
                 }
             }
@@ -207,10 +455,9 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         picker.dismiss(animated: true)
         onExpandIfNeeded?()
         guard let image = info[.originalImage] as? UIImage else { return }
-        DailyPixel.fireDailyAndCount(
-            pixel: .unifiedToggleInputImageAttached,
-            withAdditionalParameters: ["source": "camera"]
-        )
+        PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
+                      frequency: .dailyAndCount,
+                      options: .parameters(["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]))
         onImagePicked?(image, "photo")
     }
 

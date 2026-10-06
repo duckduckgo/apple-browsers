@@ -18,21 +18,26 @@
 
 import AppKit
 import OSLog
+import Utilities
 import WebExtensions
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
+    private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
 
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
     private let clearCachedScriptletsMenuItem = NSMenuItem(title: "Clear Cached Scriptlets", action: #selector(WebExtensionsDebugMenu.clearCachedScriptlets))
     private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
+    private let simulateCPMBreakageMenuItem = NSMenuItem(title: "", action: #selector(WebExtensionsDebugMenu.toggleCPMBreakageSimulation))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
 
-    init(webExtensionManager: WebExtensionManaging) {
+    init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
         self.webExtensionManager = webExtensionManager
+        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -43,6 +48,9 @@ final class WebExtensionsDebugMenu: NSMenu {
         clearCachedScriptletsMenuItem.isEnabled = true
         printScriptletInfoMenuItem.target = self
         printScriptletInfoMenuItem.isEnabled = true
+        simulateCPMBreakageMenuItem.target = self
+        simulateCPMBreakageMenuItem.isEnabled = true
+        simulateCPMBreakageMenuItem.setAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.simulateCPMBreakage)
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
 
@@ -56,6 +64,13 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(uninstallAllExtensionsMenuItem)
         addItem(clearCachedScriptletsMenuItem)
         addItem(printScriptletInfoMenuItem)
+        updateSimulateCPMBreakageMenuItem()
+        addItem(simulateCPMBreakageMenuItem)
+        let processIdentifier = (webExtensionManager as? WebExtensionManager)?.cpmDiagnosticsRecorder?.currentBackgroundWebProcessIdentifier
+        let processLabel = processIdentifier.map { $0 > 0 ? String($0) : "not running" } ?? "unavailable"
+        let processMenuItem = NSMenuItem(title: "CPM Background WebContent PID: \(processLabel)", action: nil)
+        processMenuItem.isEnabled = false
+        addItem(processMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
 
@@ -78,6 +93,10 @@ final class WebExtensionsDebugMenu: NSMenu {
         submenu.addItem(browseItem)
 
         submenu.addItem(.separator())
+
+        let bitwardenItem = NSMenuItem(title: "Install Bitwarden", action: #selector(installBitwarden))
+        bitwardenItem.target = self
+        submenu.addItem(bitwardenItem)
 
         return submenu
     }
@@ -105,6 +124,12 @@ final class WebExtensionsDebugMenu: NSMenu {
         Task {
             try? await webExtensionManager.installExtension(from: url)
         }
+    }
+
+    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
+    @objc func installBitwarden() {
+        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {
@@ -135,6 +160,21 @@ final class WebExtensionsDebugMenu: NSMenu {
                     """)
             }
         }
+    }
+
+    /// Toggles dropping CPM dashboard responses without unloading the extension.
+    @objc func toggleCPMBreakageSimulation() {
+        cpmMessagingHealthMonitor.setBreakageSimulationEnabled(!cpmMessagingHealthMonitor.isCPMMessagingBreakageSimulationEnabled)
+        updateSimulateCPMBreakageMenuItem()
+    }
+
+    /// Synchronizes the menu title and checkmark with the simulation controller.
+    private func updateSimulateCPMBreakageMenuItem() {
+        let isEnabled = cpmMessagingHealthMonitor.isCPMMessagingBreakageSimulationEnabled
+        simulateCPMBreakageMenuItem.title = isEnabled
+            ? AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOn
+            : AccessibilityIdentifiers.DebugMenu.simulateCPMBreakageMenuTitleOff
+        simulateCPMBreakageMenuItem.state = isEnabled ? .on : .off
     }
 
     @objc func openExtensionsFolderInFinder() {
@@ -172,8 +212,19 @@ final class WebExtensionSubMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
+            NSMenuItem(title: "Open Folder in Finder", action: #selector(openFolderInFinder), target: self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
+    }
+
+    @objc func openFolderInFinder() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        let folder = webExtensionManager.extensionsDirectory.appendingPathComponent(extensionIdentifier, isDirectory: true)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
     }
 
     @objc func uninstallExtension() {

@@ -73,7 +73,7 @@ final class NewTabPageCoordinator {
         duckPlayerPreferences: DuckPlayerPreferencesPersistor,
         syncService: DDGSyncing?,
         pinningManager: PinningManager,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) },
+        fireDailyPixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) },
         promoService: PromoService? = nil,
         dockCustomization: DockCustomization
     ) {

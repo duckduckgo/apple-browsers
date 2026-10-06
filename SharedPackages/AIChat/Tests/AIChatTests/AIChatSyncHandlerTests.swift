@@ -81,7 +81,11 @@ final class AIChatSyncHandlerTests: XCTestCase {
         XCTAssertTrue(result, "Should return true when auth state is active and account exists")
     }
 
-    func testGivenAuthStateInactiveWithAccount_WhenIsSyncTurnedOn_ThenReturnsTrue() {
+    /// The preserved-account state: `syncAutoRestore` keeps the keychain account after sync is
+    /// disabled or the app is reinstalled. Chat sync must be off here — `AIChatSyncCleaner` cannot
+    /// delete chats server-side while inactive, so allowing reads would let the web app restore
+    /// chats the user deleted locally.
+    func testGivenAuthStateInactiveWithPreservedAccount_WhenIsSyncTurnedOn_ThenReturnsFalse() {
         // Given
         mockSync.authState = .inactive
         mockSync.account = MockSyncAccount.valid
@@ -91,7 +95,20 @@ final class AIChatSyncHandlerTests: XCTestCase {
         let result = sut.isSyncTurnedOn()
 
         // Then
-        XCTAssertTrue(result, "Should return true when auth state is not initializing and account exists")
+        XCTAssertFalse(result, "Sync is off when inactive, even though the keychain account survives")
+    }
+
+    func testGivenAuthStateAddingNewDeviceWithAccount_WhenIsSyncTurnedOn_ThenReturnsTrue() {
+        // Given
+        mockSync.authState = .addingNewDevice
+        mockSync.account = MockSyncAccount.valid
+        sut = makeSUT()
+
+        // When
+        let result = sut.isSyncTurnedOn()
+
+        // Then
+        XCTAssertTrue(result, "Mid-pairing is a live session, chat sync should keep working")
     }
 
     // MARK: - getSyncStatus Tests
@@ -177,6 +194,7 @@ final class AIChatSyncHandlerTests: XCTestCase {
     func testGivenRescopeReturnsNil_WhenGetScopedToken_ThenThrowsEmptyResponse() async {
         // Given
         mockSync.authState = .active
+        mockSync.account = MockSyncAccount.valid
         mockSync.mainTokenRescopeResult = nil
         sut = makeSUT()
 
@@ -192,6 +210,7 @@ final class AIChatSyncHandlerTests: XCTestCase {
     func testGivenRescopeReturnsEmptyString_WhenGetScopedToken_ThenThrowsEmptyResponse() async {
         // Given
         mockSync.authState = .active
+        mockSync.account = MockSyncAccount.valid
         mockSync.mainTokenRescopeResult = ""
         sut = makeSUT()
 
@@ -207,6 +226,7 @@ final class AIChatSyncHandlerTests: XCTestCase {
     func testGivenRescopeReturnsToken_WhenGetScopedToken_ThenReturnsToken() async throws {
         // Given
         mockSync.authState = .active
+        mockSync.account = MockSyncAccount.valid
         mockSync.mainTokenRescopeResult = "scoped-token-abc123"
         sut = makeSUT()
 
@@ -216,6 +236,54 @@ final class AIChatSyncHandlerTests: XCTestCase {
         // Then
         XCTAssertEqual(result.token, "scoped-token-abc123")
         XCTAssertEqual(mockSync.mainTokenRescopeScope, "ai_chats")
+    }
+
+    func testGivenAuthStateInactiveWithPreservedAccount_WhenGetScopedToken_ThenThrowsAccountNotFound() async {
+        // Given
+        mockSync.authState = .inactive
+        mockSync.account = MockSyncAccount.valid
+        mockSync.mainTokenRescopeResult = "scoped-token-abc123"
+        sut = makeSUT()
+
+        // When/Then
+        do {
+            _ = try await sut.getScopedToken()
+            XCTFail("Expected accountNotFound to be thrown")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .accountNotFound)
+        }
+        XCTAssertNil(mockSync.mainTokenRescopeScope, "No token should be minted while sync is off")
+    }
+
+    func testGivenAuthStateAddingNewDeviceWithAccount_WhenGetScopedToken_ThenReturnsToken() async throws {
+        // Given
+        mockSync.authState = .addingNewDevice
+        mockSync.account = MockSyncAccount.valid
+        mockSync.mainTokenRescopeResult = "scoped-token-abc123"
+        sut = makeSUT()
+
+        // When
+        let result = try await sut.getScopedToken()
+
+        // Then
+        XCTAssertEqual(result.token, "scoped-token-abc123")
+    }
+
+    func testGivenAuthStateInactiveWithPreservedAccount_WhenGetSyncStatus_ThenReportsAvailableButSignedOut() throws {
+        // Given
+        mockSync.authState = .inactive
+        mockSync.account = MockSyncAccount.valid
+        sut = makeSUT()
+
+        // When
+        let status = try sut.getSyncStatus(featureAvailable: true)
+
+        // Then — available but signed out, so the web app does not treat it as a transient error
+        XCTAssertTrue(status.syncAvailable)
+        XCTAssertNil(status.userId, "Must not expose a userId while sync is off")
+        XCTAssertNil(status.deviceId)
+        XCTAssertNil(status.deviceName)
+        XCTAssertNil(status.deviceType)
     }
 
     // MARK: - encrypt Tests

@@ -28,6 +28,11 @@ public final class MockAIChatHistoryCleaner {
         $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
     }
 
+    /// Stub data for `AIChatHistoryCleaning.allChats()`, kept as plain tuples since this
+    /// package doesn't depend on `AIChat` (where the real `DuckAiChat` type lives) — the
+    /// `AIChatHistoryCleaning` conformance extension maps these into `DuckAiChat` values.
+    public var allChatsStub: [(chatId: String, title: String)] = []
+
     @MainActor
     public func cleanAIChatHistory() async -> Result<Void, Error> {
         didCleanAIChatHistory = true

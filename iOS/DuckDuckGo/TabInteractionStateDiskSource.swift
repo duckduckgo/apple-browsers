@@ -20,6 +20,7 @@ import Foundation
 import os.log
 
 import Core
+import PixelKit
 
 protocol TabInteractionStateSource {
     func saveState(_ state: Any?, for tab: Tab)
@@ -37,15 +38,15 @@ protocol TabInteractionStateSourceDebugging {
 final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInteractionStateSourceDebugging {
     private let fileManager: FileManager
     private let interactionStateCacheLocation: URL
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
     init?(fileManager: FileManager = .default,
-          pixelFiring: PixelFiring.Type = Pixel.self) {
+          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.fileManager = fileManager
         self.pixelFiring = pixelFiring
 
         guard let cachesUrl = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
-            pixelFiring.fire(.tabInteractionStateSourceMissingRootDirectory, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.tabInteractionStateSourceMissingRootDirectory)
             return nil
         }
         let interactionStateLocation = cachesUrl
@@ -86,11 +87,8 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
             // Remove existing file (if present) in case write failed to prevent loading outdated state.
             removeStateForTab(tab)
 
-            pixelFiring.fire(pixel: .tabInteractionStateSourceFailedToWrite,
-                             error: error,
-                             includedParameters: [.appVersion],
-                             withAdditionalParameters: ["dataSizeBytes": TabInteractionStateDataSizeBucket(dataSize: stateData.count).value],
-                             onComplete: { _ in })
+            pixelFiring?.fire(Pixel.Event.tabInteractionStateSourceFailedToWrite.withError(error),
+                             options: .parameters(["dataSizeBytes": TabInteractionStateDataSizeBucket(dataSize: stateData.count).value]))
         }
     }
 

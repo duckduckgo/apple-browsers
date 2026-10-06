@@ -19,10 +19,21 @@
 
 import AppIntents
 import NetworkExtension
+import Persistence
 import VPN
 import WidgetKit
 import Core
 import VPNWidgetSupport
+import PixelKit
+
+/// Configures `PixelKit.shared` for the Widgets extension process, once. Guarded to the extension
+/// only: these intents also compile into the main app, which already has its own `PixelKit.shared`.
+enum WidgetsPixelKitSetup {
+    static let didSetUp: Void = {
+        guard Bundle.main.bundlePath.hasSuffix(".appex") else { return }
+        PixelKitExtensionSetup.setUp(session: "ios-widgets", defaults: UserDefaults.networkProtectionGroupDefaults)
+    }()
+}
 
 // MARK: - Enable & Disable
 
@@ -43,8 +54,9 @@ struct WidgetDisableVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetDisconnectAttempt)
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetDisconnectAttempt, frequency: .dailyAndCount)
 
             let controller = VPNWidgetTunnelController()
             try await controller.stop()
@@ -52,15 +64,15 @@ struct WidgetDisableVPNIntent: AppIntent {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()
 
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetDisconnectSuccess)
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetDisconnectSuccess, frequency: .dailyAndCount)
             return .result()
         } catch VPNWidgetTunnelController.StopFailure.vpnNotConfigured,
                 NEVPNError.configurationDisabled {
 
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetDisconnectCancelled)
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetDisconnectCancelled, frequency: .dailyAndCount)
             return .result()
         } catch {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetDisconnectFailure, error: error)
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetDisconnectFailure.withError(error), frequency: .dailyAndCount)
             throw error
         }
     }
@@ -94,8 +106,9 @@ struct WidgetEnableVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectAttempt)
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetConnectAttempt, frequency: .dailyAndCount)
 
             let controller = VPNWidgetTunnelController()
             try await controller.start(settings: VPNSettings(defaults: .networkProtectionGroupDefaults))
@@ -103,17 +116,17 @@ struct WidgetEnableVPNIntent: AppIntent {
             await VPNSnoozeLiveActivityManager().endSnoozeActivity()
             VPNReloadStatusWidgets()
 
-            DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectSuccess)
+            PixelKit.fire(Pixel.Event.networkProtectionWidgetConnectSuccess, frequency: .dailyAndCount)
             return .result()
         } catch {
             switch error {
             case VPNWidgetTunnelController.StartFailure.vpnNotConfigured,
                 NEVPNError.configurationDisabled:
 
-                DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectCancelled)
+                PixelKit.fire(Pixel.Event.networkProtectionWidgetConnectCancelled, frequency: .dailyAndCount)
                 throw EnableAttemptFailure.cancelled
             default:
-                DailyPixel.fireDailyAndCount(pixel: .networkProtectionWidgetConnectFailure, error: error)
+                PixelKit.fire(Pixel.Event.networkProtectionWidgetConnectFailure.withError(error), frequency: .dailyAndCount)
                 throw error
             }
         }
@@ -132,6 +145,7 @@ struct CancelSnoozeVPNIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         do {
             let managers = try await NETunnelProviderManager.loadAllFromPreferences()
             guard let manager = managers.first, let session = manager.connection as? NETunnelProviderSession else {
@@ -156,7 +170,9 @@ struct CancelSnoozeLiveActivityAppIntent: LiveActivityIntent {
     static var isDiscoverable: Bool = false
     static var openAppWhenRun: Bool = false
 
+    @MainActor
     func perform() async throws -> some IntentResult {
+        _ = WidgetsPixelKitSetup.didSetUp
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         guard let manager = managers.first, let session = manager.connection as? NETunnelProviderSession else {
             return .result()

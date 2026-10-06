@@ -26,13 +26,14 @@ import os.log
 import Persistence
 import URLPredictor
 
-#if !SANDBOX_TEST_TOOL
 import PixelKit
-#endif
 
 extension URL.NavigationalScheme {
 
     static let javascript = URL.NavigationalScheme(rawValue: "javascript")
+
+    /// Custom `WKURLSchemeHandler` scheme for debug / UI-test pages (`debug://<identifier>`).
+    static let debug = URL.NavigationalScheme(rawValue: "debug")
 
     static var validSchemes: [URL.NavigationalScheme] {
         return [.http, .https, .file]
@@ -84,7 +85,6 @@ extension URL {
 
     // MARK: - Factory
 
-#if !SANDBOX_TEST_TOOL
     static func makeSearchUrl(from searchQuery: String) -> URL? {
         let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -158,9 +158,6 @@ extension URL {
         }
         return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
-#endif
-
-    static let blankPage = URL(string: "about:blank")!
 
     static let newtab = URL(string: "duck://newtab")!
     static let welcome = URL(string: "duck://welcome")!
@@ -169,12 +166,14 @@ extension URL {
     static let history = URL(string: "duck://history")!
     /// Debug-only favicon manager page (Debug ▸ Favicon Browser). Served by `DuckURLSchemeHandler`.
     static let favicons = URL(string: "duck://favicons")!
+    /// Debug-only permissions inspector page (Debug ▸ Permissions ▸ Inspect). Served by `DuckURLSchemeHandler`.
+    static let permissions = URL(string: "duck://permissions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
+    static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
 
     static let dataBrokerProtection = URL(string: "duck://personal-information-removal")!
 
-#if !SANDBOX_TEST_TOOL
     static func settingsPane(_ pane: PreferencePaneIdentifier) -> URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
@@ -204,7 +203,10 @@ extension URL {
         return navigationalScheme == .duck && host == URL.favicons.host
     }
 
-#endif
+    /// `duck://permissions` (and its sub-paths) — the debug-only permissions inspector page.
+    var isPermissions: Bool {
+        return navigationalScheme == .duck && host == URL.permissions.host
+    }
 
     enum Invalid {
         static let aboutNewtab = URL(string: "about:newtab")!
@@ -330,7 +332,7 @@ extension URL {
             }
 
             if decodePunycode,
-               let decodedHost = host.idnaDecoded {
+               let decodedHost = host.punycodeDecodedHostname {
                 host = decodedHost
             }
 
@@ -361,18 +363,16 @@ extension URL {
         return "\(host):\(port)"
     }
 
-#if !SANDBOX_TEST_TOOL
     func toString(forUserInput input: String, decodePunycode: Bool = true) -> String {
         let hasInputScheme = input.hasOrIsPrefix(of: self.separatedScheme ?? "")
         let hasInputWww = input.dropping(prefix: self.separatedScheme ?? "").hasOrIsPrefix(of: URL.HostPrefix.www.rawValue)
-        let hasInputHost = (decodePunycode ? host?.idnaDecoded : host)?.hasOrIsPrefix(of: input) ?? false
+        let hasInputHost = (decodePunycode ? host?.punycodeDecodedHostname : host)?.hasOrIsPrefix(of: input) ?? false
 
         return self.toString(decodePunycode: decodePunycode,
                              dropScheme: input.isEmpty || !(hasInputScheme && !hasInputHost),
                              needsWWW: !input.dropping(prefix: self.separatedScheme ?? "").isEmpty && hasInputWww,
                              dropTrailingSlash: !input.hasSuffix("/"))
     }
-#endif
 
     /// Tries to use the file name part of the URL, if available, adjusting for content type, if available.
     var suggestedFilename: String? {
@@ -410,11 +410,69 @@ extension URL {
     }
 
     var isExternalSchemeLink: Bool {
-        return ![.https, .http, .about, .file, .blob, .data, .ftp, .javascript, .duck, .webkitExtension].contains(navigationalScheme)
+        return ![.https, .http, .about, .file, .blob, .data, .ftp, .javascript, .duck, .debug, .webkitExtension].contains(navigationalScheme)
     }
 
     var isWebExtensionUrl: Bool {
         return navigationalScheme == .webkitExtension
+    }
+
+    /// Raw value of ``NavigationalScheme/debug``.
+    static let debugURLScheme = NavigationalScheme.debug.rawValue
+
+    var isDebugURLScheme: Bool {
+        navigationalScheme == .debug
+    }
+
+    /// Host of a `debug://<identifier>` URL.
+    enum DebugURLIdentifier: String {
+        case failure
+    }
+
+    /// Query parameter names for `debug://` URLs.
+    enum DebugURLQueryParameter: String {
+        case alternatingFailures
+        case simulatedError
+
+        /// Truthy value for flag-style parameters such as ``alternatingFailures``.
+        static let enabledValue = "1"
+    }
+
+    /// `simulatedError` query values for ``DebugURLIdentifier/failure``.
+    enum DebugURLSimulatedError: String, CaseIterable {
+        case notConnected
+        case notConnectedToInternet
+        case hostNotFound
+        case cannotFindHost
+
+        init?(queryValue: String) {
+            let folded = queryValue.lowercased()
+            guard let match = Self.allCases.first(where: { $0.rawValue.lowercased() == folded }) else {
+                return nil
+            }
+            self = match
+        }
+    }
+
+    var debugURLIdentifier: DebugURLIdentifier? {
+        guard isDebugURLScheme else { return nil }
+        return host.flatMap(DebugURLIdentifier.init(rawValue:))
+    }
+
+    var debugURLSimulatedError: DebugURLSimulatedError? {
+        guard isDebugURLScheme, let value = getParameter(named: DebugURLQueryParameter.simulatedError.rawValue) else { return nil }
+        return DebugURLSimulatedError(queryValue: value)
+    }
+
+    var hasDebugURLAlternatingFailures: Bool {
+        guard isDebugURLScheme, let item = getQueryItem(named: DebugURLQueryParameter.alternatingFailures.rawValue) else { return false }
+        return item.value == nil || item.value == DebugURLQueryParameter.enabledValue
+    }
+
+    /// Builds `debug://<identifier>` URLs for the debug scheme handler.
+    static func debugURL(_ identifier: DebugURLIdentifier, parameters: KeyValuePairs<DebugURLQueryParameter, String> = [:]) -> URL {
+        URL(string: "\(debugURLScheme)://\(identifier.rawValue)/")!
+            .appendingParameters(parameters.map { (key: $0.key.rawValue, value: $0.value) })
     }
 
     // MARK: - Base URLs (Internal User Configurable)
@@ -497,6 +555,8 @@ extension URL {
         return debugSettings.effectiveHelpBaseURL
     }
 
+    static let internalFeedbackFormHost = "internalapps.duckduckgo.com"
+
     // MARK: - DuckDuckGo
 
     static var onboarding: URL {
@@ -525,7 +585,13 @@ extension URL {
     }
 
     static var internalFeedbackForm: URL {
-        return URL(string: "https://go.duckduckgo.com/feedback")!
+        return URL(string: "https://\(internalFeedbackFormHost)/internal-feedback/")!
+    }
+
+    var isInternalFeedbackForm: Bool {
+        scheme == "https"
+            && host == URL.internalFeedbackFormHost
+            && path.hasPrefix(URL.internalFeedbackForm.path)
     }
 
     static var webTrackingProtection: URL {
@@ -533,7 +599,7 @@ extension URL {
     }
 
     static var cookieConsentPopUpManagement: URL {
-        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management")!
+        return URL(string: "\(base)/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-protection")!
     }
 
     static var gpcLearnMore: URL {
@@ -610,16 +676,20 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/approach-to-ai")!
     }
 
-    static var aiChatSettings: URL {
-        return URL(string: "\(base)/settings?return=aiFeatures#aifeatures")!
-    }
-
     static var aiChatAccessSubscriberModels: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
     }
 
+    static var aiChatPrivacy: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy")!
+    }
+
     static var aiChatHelpPages: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
+    }
+
+    static var hideAIGeneratedImagesLearnMore: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/results/how-to-filter-out-ai-images-in-duckduckgo-search-results")!
     }
 
     // MARK: - Search Settings
@@ -758,6 +828,15 @@ extension URL {
 
     // MARK: - File URL
 
+    /// `true` when the receiver is `directoryURL` itself or is located inside it.
+    /// Paths are resolved first so symlinked locations (`/tmp` vs `/private/tmp`) compare equal.
+    func isContained(in directoryURL: URL) -> Bool {
+        let path = self.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        let directoryPath = directoryURL.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+
+        return path.starts(with: directoryPath)
+    }
+
     var volume: URL? {
         try? self.resourceValues(forKeys: [.volumeURLKey]).volume
     }
@@ -813,6 +892,18 @@ extension URL {
         guard isFileURL,
               FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else { return false }
         return isDirectory.boolValue
+    }
+
+    /// `true` when the receiver is the user's Downloads folder.
+    ///
+    /// Compared by path components, like `isContained(in:)`, so a trailing slash or a symlinked
+    /// path (`/tmp` vs `/private/tmp`) doesn't change the outcome.
+    var isSystemDownloadsDirectory: Bool {
+        guard let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
+            return false
+        }
+
+        return standardizedFileURL.resolvingSymlinksInPath().pathComponents == downloads.standardizedFileURL.resolvingSymlinksInPath().pathComponents
     }
 
     mutating func setFileHidden(_ hidden: Bool) throws {

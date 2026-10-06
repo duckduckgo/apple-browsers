@@ -31,8 +31,8 @@ struct TabInputState: Equatable {
     /// Driven by FE `hideChatInput` / `showChatInput` user-script messages. Persisted per tab
     /// because FE does not re-emit when the user returns to a tab already in voice mode.
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility
-    /// Driven by FE `voiceSessionStarted` / `voiceSessionEnded` user-script messages. Hides the
-    /// header chats/compose pill while voice is active; orthogonal to `aiChatInputBoxVisibility`.
+    /// True while the voice surface is on screen (FE `voiceModeOpened`/`voiceModeClosed` paint events).
+    /// Persisted per tab because FE doesn't re-emit when returning to a tab already in voice mode.
     var isVoiceSessionActive: Bool
     /// Recovery `showModelPicker` pin: keeps the model chip visible mid-chat until prompt submit.
     /// Used when the user has lost access to the selected model.
@@ -70,6 +70,13 @@ struct TabInputState: Equatable {
             && lhs.aiChatInputBoxVisibility == rhs.aiChatInputBoxVisibility
             && lhs.isVoiceSessionActive == rhs.isVoiceSessionActive
             && lhs.isModelPickerForcedVisible == rhs.isModelPickerForcedVisible
+    }
+
+    /// The in-progress composition: what the user is drafting, as opposed to restored/ambient state.
+    mutating func clearDraft() {
+        text = ""
+        attachments = []
+        selectedTool = nil
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and

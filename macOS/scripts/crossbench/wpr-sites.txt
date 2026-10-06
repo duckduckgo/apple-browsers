@@ -1,0 +1,23 @@
+# Keep this list aligned with the Windows runCrossbench.ps1 $navToSites list.
+youtube.com
+wikipedia.org
+reddit.com
+amazon.com
+yelp.com
+weather.com
+yahoo.com
+apple.com
+fandom.com
+tripadvisor.com
+tiktok.com
+indeed.com
+spotify.com
+nih.gov
+espn.com
+walmart.com
+nytimes.com
+clevelandclinic.org
+ny.gov
+quora.com
+zillow.com
+mayoclinic.org

@@ -20,7 +20,7 @@ import Foundation
 
 protocol TitleDisplayPolicy {
     func mustSkipDisplayingTitle(title: String, url: URL?, previousTitle: String?, previousURL: URL?, isLoading: Bool) -> Bool
-    func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool
+    func mustAnimateTitleTransition(title: String, url: URL?, previousTitle: String, previousURL: URL?) -> Bool
 }
 
 struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
@@ -48,7 +48,15 @@ struct DefaultTitleDisplayPolicy: TitleDisplayPolicy {
 
     /// We avoid animating title transitions when the actual text didn't change
     ///
-    func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {
-        title != previousTitle && previousTitle.isEmpty == false
+    func mustAnimateTitleTransition(title: String, url: URL?, previousTitle: String, previousURL: URL?) -> Bool {
+        let isDifferentURL = url != nil && url != previousURL
+        let isDifferentTitle = title != previousTitle && previousTitle.isEmpty == false
+
+        let suggestedTitlePlaceholder = url?.suggestedTitlePlaceholder
+        let isPreviousTitlePlaceholder = suggestedTitlePlaceholder == previousTitle
+        let isCurrentTitlePlaceholder = suggestedTitlePlaceholder == title
+
+        let output = (isDifferentURL && isDifferentTitle) || (isPreviousTitlePlaceholder && !isCurrentTitlePlaceholder)
+        return output
     }
 }

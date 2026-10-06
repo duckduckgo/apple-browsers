@@ -24,7 +24,7 @@ import Swifter
 import WebKit
 import XCTest
 import os.log
-@testable import Navigation
+@testable import DDGNavigation
 
 @available(iOS 15.0, *)
 class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {

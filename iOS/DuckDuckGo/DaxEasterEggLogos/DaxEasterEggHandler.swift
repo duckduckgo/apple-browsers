@@ -71,7 +71,7 @@ class DaxEasterEggHandler: DaxEasterEggHandling {
             return
         }
         
-        Logger.daxEasterEgg.debug("extractLogosForCurrentPage - executing JavaScript directly on URL: \(webView.url?.absoluteString ?? "no-url")")
+        Logger.daxEasterEgg.debug("extractLogosForCurrentPage - executing JavaScript directly on URL: \(webView.url?.shortDescription ?? "no-url")")
         
         Task { [weak self, weak webView] in
             guard let self = self, let webView = webView else { return }

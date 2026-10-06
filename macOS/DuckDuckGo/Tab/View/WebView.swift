@@ -20,7 +20,7 @@ import Carbon.HIToolbox
 import Cocoa
 import Combine
 import CommonObjCExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import WebKit
 

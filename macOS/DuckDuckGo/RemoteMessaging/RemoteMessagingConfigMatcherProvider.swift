@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Common
 import FoundationExtensions
 import DataBrokerProtection_macOS
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Freemium
 import Persistence
@@ -132,6 +132,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionExpiring = false
         var isSubscriptionExpired = false
         var subscriptionPurchasePlatform: String?
+        var subscriptionTier: String?
         var subscriptionFreeTrialActive = false
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
@@ -143,6 +144,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                 subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
                 subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
                 subscriptionPurchasePlatform = subscription.platform.rawValue
+                subscriptionTier = subscription.tier?.rawValue
                 subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
                 switch subscription.status {
@@ -161,14 +163,16 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                     statisticsStore: statisticsStore,
                     vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                     subscriptionDataProvider: subscription,
-                    autofillUsageStore: autofillUsageStore
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
                 )
             } else {
                 surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                     statisticsStore: statisticsStore,
                     vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                     subscriptionDataProvider: nil,
-                    autofillUsageStore: autofillUsageStore
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
                 )
             }
         } catch {
@@ -176,7 +180,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                 subscriptionDataProvider: nil,
-                autofillUsageStore: autofillUsageStore
+                autofillUsageStore: autofillUsageStore,
+                featureDiscovery: featureDiscovery
             )
         }
 
@@ -230,6 +235,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
                                                        subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
                                                        subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       subscriptionTier: subscriptionTier,
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
@@ -262,6 +268,10 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionBilling: String? {
         return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionTier: String? {
+        return tier?.rawValue
     }
 
     public var subscriptionStartDate: Date? {

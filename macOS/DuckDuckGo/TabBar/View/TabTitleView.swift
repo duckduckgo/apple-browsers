@@ -60,7 +60,8 @@ extension TabTitleView {
     ///
     func displayTitleIfNeeded(title: String, url: URL?, isLoading: Bool, animated: Bool = true) {
         let previousTitle = titleTextField.stringValue
-        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: sourceURL, isLoading: isLoading) {
+        let previousURL = sourceURL
+        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL, isLoading: isLoading) {
             return
         }
 
@@ -68,7 +69,7 @@ extension TabTitleView {
         previousTextField.stringValue = previousTitle
         sourceURL = url
 
-        guard animated, displayPolicy.mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
+        guard animated, displayPolicy.mustAnimateTitleTransition(title: title, url: url, previousTitle: previousTitle, previousURL: previousURL) else {
             return
         }
 
@@ -114,6 +115,7 @@ private extension TabTitleView {
     func setupTextFields() {
         titleTextField.textColor = .labelColor
         previousTextField.textColor = .labelColor
+        previousTextField.alphaValue = 0
     }
 
     func buildTitleTextField() -> NSTextField {

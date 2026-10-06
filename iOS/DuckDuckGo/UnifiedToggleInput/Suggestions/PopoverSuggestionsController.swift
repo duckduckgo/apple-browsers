@@ -114,7 +114,7 @@ final class PopoverSuggestionsController: UIViewController {
     }
 
     private func installHostingController() {
-        let listView = SuggestionsListView(viewModel: listViewModel, isAddressBarAtBottom: isAddressBarAtBottom)
+        let listView = SuggestionsListView(viewModel: listViewModel, isAddressBarAtBottom: isAddressBarAtBottom, isFloatingPopover: true)
         let hosting = UIHostingController(rootView: listView)
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false

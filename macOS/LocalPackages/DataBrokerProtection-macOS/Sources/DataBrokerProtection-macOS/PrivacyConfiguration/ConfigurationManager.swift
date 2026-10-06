@@ -23,7 +23,6 @@ import Persistence
 import Configuration
 import Common
 import FoundationExtensions
-import Networking
 import PixelKit
 import DataBrokerProtectionCore
 import PrivacyConfig
@@ -61,10 +60,17 @@ public final class ConfigurationManager: DefaultConfigurationManager {
 
     override public func refreshNow(isDebug: Bool = false) async {
         let updateConfigDependenciesTask = Task {
-            let didFetchConfig = await fetchConfigDependencies(isDebug: isDebug)
-            if didFetchConfig {
-                updateConfigDependencies()
+            do {
+                let fetchResult = try await fetchConfigDependencies(isDebug: isDebug)
+                if fetchResult == .updated {
+                    updateConfigDependencies()
+                }
                 tryAgainLater()
+            } catch {
+                Logger.config.error(
+                    "Failed to complete configuration update to \(Configuration.privacyConfiguration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
+                )
+                tryAgainSoon()
             }
         }
 
@@ -74,18 +80,8 @@ public final class ConfigurationManager: DefaultConfigurationManager {
         log()
     }
 
-    func fetchConfigDependencies(isDebug: Bool) async -> Bool {
-        do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            return true
-        } catch {
-            Logger.config.error(
-                "Failed to complete configuration update to \(Configuration.privacyConfiguration.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)"
-            )
-            tryAgainSoon()
-        }
-
-        return false
+    func fetchConfigDependencies(isDebug: Bool) async throws -> ConfigurationFetchResult {
+        try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
     }
 
     func updateConfigDependencies() {

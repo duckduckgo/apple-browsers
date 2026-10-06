@@ -103,6 +103,12 @@ final class FaviconImageCache: FaviconImageCaching {
     @MainActor
     private var inFlightImageLoads = Set<URL>()
 
+    // Tail of a serial chain of store-mutating work from `insert(_:)`. Each insert enqueues its
+    // remove+save after this task so concurrent inserts can't interleave their remove/save and leave
+    // duplicate rows behind in the store. See `insert(_:)`.
+    @MainActor
+    private var storeWriteTask: Task<Void, Never>?
+
     init(faviconStoring: FaviconStoring) {
         storing = faviconStoring
     }
@@ -143,11 +149,18 @@ final class FaviconImageCache: FaviconImageCaching {
             cacheImage(favicon.image, for: favicon.url)
         }
 
-        Task {
+        // Chain this store write after any in-flight one. Concurrent inserts for the same favicon URL
+        // each remove the previous row and save a new one; if those remove/save pairs interleave, a
+        // removal can run before the row it supersedes has been saved, leaving the old row behind as a
+        // duplicate. Serializing the writes guarantees each insert's save completes before the next
+        // insert's removal runs, so exactly one row survives per favicon URL.
+        let previousWrite = storeWriteTask
+        storeWriteTask = Task {
+            await previousWrite?.value
             do {
                 await self.removeFaviconsFromStore(oldMetadata)
                 try await self.storing.save(favicons)
-                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.absoluteString).description)")
+                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.shortDescription).description)")
                 await MainActor.run {
                     NotificationCenter.default.postFaviconCacheUpdated(
                         faviconURLs: Set(favicons.map(\.url)),
@@ -192,7 +205,7 @@ final class FaviconImageCache: FaviconImageCaching {
         do {
             image = try await storing.loadImage(for: metadata.identifier)
         } catch FaviconStore.FaviconStoreError.imageDecodingFailed {
-            Logger.favicons.error("Favicon image undecodable for \(metadata.url.absoluteString); removing corrupt favicon")
+            Logger.favicons.error("Favicon image undecodable for \(metadata.url.shortDescription); removing corrupt favicon")
             // The stored image is corrupt and can't be decoded. Drop it from the store
             // and caches so the favicon is re-fetched on the next visit.
             await removeUndecodableFavicon(metadata)
@@ -200,7 +213,7 @@ final class FaviconImageCache: FaviconImageCaching {
         } catch {
             // A transient failure (e.g. a Core Data fetch error). Keep the favicon and
             // serve a nil image for now; it will be retried on a later request.
-            Logger.favicons.error("Loading favicon image failed for \(metadata.url.absoluteString): \(error.localizedDescription)")
+            Logger.favicons.error("Loading favicon image failed for \(metadata.url.shortDescription): \(error.localizedDescription)")
             image = nil
         }
         if let image {
@@ -222,7 +235,7 @@ final class FaviconImageCache: FaviconImageCaching {
             do {
                 image = try await storing.loadImage(for: metadata.identifier)
             } catch FaviconStore.FaviconStoreError.imageDecodingFailed {
-                Logger.favicons.error("Favicon image undecodable for \(metadata.url.absoluteString); removing corrupt favicon")
+                Logger.favicons.error("Favicon image undecodable for \(metadata.url.shortDescription); removing corrupt favicon")
                 _ = await MainActor.run {
                     self.inFlightImageLoads.remove(faviconUrl)
                 }
@@ -233,7 +246,7 @@ final class FaviconImageCache: FaviconImageCaching {
             } catch {
                 // A transient failure (e.g. a Core Data fetch error). Keep the favicon; it
                 // will be retried on a later request.
-                Logger.favicons.error("Loading favicon image failed for \(metadata.url.absoluteString): \(error.localizedDescription)")
+                Logger.favicons.error("Loading favicon image failed for \(metadata.url.shortDescription): \(error.localizedDescription)")
                 image = nil
             }
 
@@ -323,6 +336,16 @@ final class FaviconImageCache: FaviconImageCaching {
     @MainActor
     func removeAllFavicons() async {
         await deleteFaviconsAndNotify { _ in true }
+    }
+
+    /// Debug: drops every decoded favicon image from the in-memory `NSCache`, leaving the persisted
+    /// store, the metadata map, and references intact. Images re-decode lazily from the store on the
+    /// next `get(faviconUrl:)`. Posts `.faviconCacheUpdated` (no payload) so open UI re-resolves and
+    /// the reload is observable.
+    @MainActor
+    func clearInMemoryCache() {
+        imageCache.removeAllObjects()
+        NotificationCenter.default.post(name: .faviconCacheUpdated, object: nil)
     }
 
     /// Removes matching favicons. The set to delete is resolved from the store — the inspector's source
@@ -470,6 +493,11 @@ final class EagerFaviconImageCache: FaviconImageCaching {
     @MainActor
     private var entries = [URL: Favicon]()
 
+    // Tail of a serial chain of store-mutating work from `insert(_:)`; see the lazy `FaviconImageCache`
+    // twin for why concurrent inserts must be serialized to avoid leaving duplicate rows.
+    @MainActor
+    private var storeWriteTask: Task<Void, Never>?
+
     init(faviconStoring: FaviconStoring) {
         storing = faviconStoring
     }
@@ -508,11 +536,15 @@ final class EagerFaviconImageCache: FaviconImageCaching {
             entries[favicon.url] = favicon
         }
 
-        Task {
+        // Chain this store write after any in-flight one so concurrent inserts for the same favicon URL
+        // can't interleave their remove/save and leave a superseded row behind. See the lazy twin.
+        let previousWrite = storeWriteTask
+        storeWriteTask = Task {
+            await previousWrite?.value
             do {
                 await self.removeFaviconsFromStore(oldFavicons)
                 try await self.storing.save(favicons)
-                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.absoluteString).description)")
+                Logger.favicons.debug("Favicon saved successfully. URL: \(favicons.map(\.url.shortDescription).description)")
                 await MainActor.run {
                     NotificationCenter.default.postFaviconCacheUpdated(
                         faviconURLs: Set(favicons.map(\.url)),
@@ -625,6 +657,7 @@ final class EagerFaviconImageCache: FaviconImageCaching {
         return await removeFaviconsFromStore(faviconsToRemove)
     }
 
+    @discardableResult
     private func removeFaviconsFromStore(_ favicons: [Favicon]) async -> Result<Void, Error> {
         guard !favicons.isEmpty else { return .success(()) }
 

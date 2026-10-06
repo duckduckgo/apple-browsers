@@ -1,0 +1,15 @@
+{
+  "originHash" : "dff0befb939e121854345e25914a34dcb3a9b8131a0f4b2d0f8651e1d000670e",
+  "pins" : [
+    {
+      "identity" : "punycodeswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gumob/PunycodeSwift.git",
+      "state" : {
+        "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
+        "version" : "3.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}

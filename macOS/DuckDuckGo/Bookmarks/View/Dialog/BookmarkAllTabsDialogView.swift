@@ -50,7 +50,7 @@ struct BookmarkAllTabsDialogView: ModalView {
                 BookmarkDialogStackedContentView(
                     .init(
                         title: UserText.Bookmarks.Dialog.Field.folderName,
-                        content: TextField("", text: $viewModel.bookmarkModel.folderName)
+                        content: TextField("" as String, text: $viewModel.bookmarkModel.folderName)
                             .focusedOnAppear()
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .font(.system(size: 14))

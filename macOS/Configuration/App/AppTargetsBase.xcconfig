@@ -16,10 +16,10 @@
 #include "../Common.xcconfig"
 
 ASSETCATALOG_COMPILER_APPICON_NAME[sdk=*] = AppIcon
-ASSETCATALOG_COMPILER_APPICON_NAME[config=Debug][sdk=*] = Icon - Debug
-ASSETCATALOG_COMPILER_APPICON_NAME[config=CI][sdk=*] = Icon - Debug
-ASSETCATALOG_COMPILER_APPICON_NAME[config=Review][sdk=*] = Icon - Review
-ASSETCATALOG_COMPILER_APPICON_NAME[config=Alpha][sdk=*] = Icon - Alpha
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Debug][sdk=*] = AppIcon-Debug
+ASSETCATALOG_COMPILER_APPICON_NAME[config=CI][sdk=*] = AppIcon-Debug
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Review][sdk=*] = AppIcon-Review
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Alpha][sdk=*] = AppIcon-Alpha
 
 ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = GlobalAccentColor
 

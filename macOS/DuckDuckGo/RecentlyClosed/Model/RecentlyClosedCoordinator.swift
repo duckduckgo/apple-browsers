@@ -297,7 +297,9 @@ extension Tab.TabContent {
         switch self {
         case .url(let url, credential: let credential, source: _):
             .url(url, credential: credential, source: .pendingStateRestoration)
-        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
+        case .aiChat:
+            resettingAIChatSource
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl:
             self
         }
     }
@@ -307,7 +309,9 @@ extension Tab.TabContent {
         case .url(let url, credential: let credential, source: let source):
             let newSource: URLSource = source == .pendingStateRestoration ? .loadedByStateRestoration : .reload
             return .url(url, credential: credential, source: newSource)
-        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
+        case .aiChat:
+            return resettingAIChatSource
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl:
             return self
         }
     }

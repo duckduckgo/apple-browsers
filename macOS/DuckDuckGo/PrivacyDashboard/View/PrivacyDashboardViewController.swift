@@ -26,7 +26,7 @@ import FoundationExtensions
 import PixelKit
 import PixelExperimentKit
 import os.log
-import FeatureFlags
+import FeatureFlags_macOS
 import WebExtensions
 
 protocol PrivacyDashboardViewControllerSizeDelegate: AnyObject {
@@ -80,9 +80,9 @@ final class PrivacyDashboardViewController: NSViewController {
         case .reportBrokenSiteSent: domainEvent = .brokenSiteReportSent
         }
         if let parameters {
-            PixelKit.fire(domainEvent, withAdditionalParameters: parameters, doNotEnforcePrefix: true)
+            PixelKit.fire(domainEvent, withAdditionalParameters: parameters)
         } else {
-            PixelKit.fire(domainEvent, doNotEnforcePrefix: true)
+            PixelKit.fire(domainEvent)
         }
     }
 
@@ -112,8 +112,7 @@ final class PrivacyDashboardViewController: NSViewController {
             BrokenSiteReporter(pixelHandler: { parameters in
                 PixelKit.fire(NonStandardPixel.brokenSiteReport,
                               withAdditionalParameters: parameters,
-                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters,
-                              doNotEnforcePrefix: true)
+                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
             }, keyValueStoring: UserDefaults.standard)
         }()
         super.init(nibName: nil, bundle: nil)
@@ -225,10 +224,10 @@ final class PrivacyDashboardViewController: NSViewController {
         let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         if state.isProtected && configuration.isUserUnprotected(domain: domain) {
             configuration.userEnabledProtection(forDomain: domain)
-            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue))
         } else {
             configuration.userDisabledProtection(forDomain: domain)
-            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue), doNotEnforcePrefix: true)
+            PixelKit.fire(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue))
             let tdsEtag = contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
@@ -414,15 +413,24 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = currentTab.brokenSiteInfo?.lastHttpStatusCode {
             statusCodes = [httpStatusCode]
         }
+        let isAfterTabTermination = currentTab.error?.code == .webContentProcessTerminated
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
 
         var loadedWebExtensions: String?
         var adBlockingScriptletsVersion: String?
+        var cpmExtensionLoaded = false
+        var cpmExtensionDroppedCallbacks = 0
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             loadedWebExtensions = webExtensionManager.loadedWebExtensionsString()
             adBlockingScriptletsVersion = webExtensionManager.adBlockingScriptletsVersion()
+            cpmExtensionLoaded = webExtensionManager.isAutoconsentExtensionLoaded
+            cpmExtensionDroppedCallbacks = webExtensionManager.eventsListener.droppedCallbacksCount
         }
+        let cookieConsentInfo = currentTab.privacyInfo?.cookieConsentManaged?.withCPMRuntimeInfo(
+            extensionLoaded: cpmExtensionLoaded,
+            droppedCallbacks: cpmExtensionDroppedCallbacks
+        )
 
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
@@ -446,11 +454,12 @@ extension PrivacyDashboardViewController {
                                                jsPerformance: jsPerformance,
                                                extendedPerformanceMetrics: privacyAwareWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
-                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
+                                               cookieConsentInfo: cookieConsentInfo,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled,
                                                isForceDarkModeEnabled: NSApp.delegateTyped.darkReaderFeatureSettings?.isForceDarkModeEnabled,
+                                               isAfterTabTermination: isAfterTabTermination,
                                                lastTabSuspension: currentTab.tabSuspension?.lastSuspensionState.rawValue,
                                                pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming,
                                                breakageData: breakageData,

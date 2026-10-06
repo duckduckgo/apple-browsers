@@ -16,64 +16,45 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
-import FoundationExtensions
 import Foundation
+import FoundationExtensions
 import IOKit
 
 final class QuickFeedbackDiagnosticsCollector {
 
     private weak var tabAndWindowCountProvider: TabAndWindowCountProviding?
     private let memoryUsageMonitor: MemoryUsageMonitoring
-    private let appVersion: AppVersion
     private let launchDate: Date
 
     init(tabAndWindowCountProvider: TabAndWindowCountProviding?,
          memoryUsageMonitor: MemoryUsageMonitoring,
-         appVersion: AppVersion = AppVersion(),
          launchDate: Date) {
         self.tabAndWindowCountProvider = tabAndWindowCountProvider
         self.memoryUsageMonitor = memoryUsageMonitor
-        self.appVersion = appVersion
         self.launchDate = launchDate
     }
 
-    func collectDiagnostics() -> String {
-        var lines = [String]()
-
-        lines.append("--- Diagnostics (auto-collected) ---")
-
-        let appVersionModel = AppVersionModel(appVersion: appVersion)
-        lines.append("App Version: \(appVersionModel.versionLabelShort) (\(appVersionModel.distributionLabel))")
-
-        lines.append("macOS: \(appVersion.osVersionMajorMinorPatch)")
-
-        lines.append("Architecture: \(compiledArchitecture)")
-
-        lines.append("GPU: \(gpuDevices)")
-        lines.append("Memory: \(memorySummary)")
-        lines.append("Disk: \(freeDiskSpace)")
+    /// Supplementary device details for an internal feedback report, keyed for the message bridge.
+    /// OS version and architecture are provided separately as top-level fields on `InternalFeedbackDeviceInfo`.
+    func collectDiagnostics() -> [String: String] {
+        var fields = [
+            "GPU": gpuDevices,
+            "Memory": memorySummary,
+            "Disk": freeDiskSpace,
+            "Session": sessionLength,
+        ]
 
         if let provider = tabAndWindowCountProvider {
-            lines.append("Tabs: \(provider.tabCount) tabs / \(provider.windowCount) windows")
+            fields["Tabs"] = String(provider.tabCount)
+            fields["Windows"] = String(provider.windowCount)
         }
 
-        lines.append("Session: \(sessionLength)")
-
-        return lines.joined(separator: "\n")
+        return fields
     }
 
     // MARK: - Private
-
-    private var compiledArchitecture: String {
-        #if arch(arm64)
-        "arm64"
-        #elseif arch(x86_64)
-        "x86_64"
-        #else
-        "unknown"
-        #endif
-    }
 
     /// Queries IOKit for GPU/display device model names.
     private var gpuDevices: String {
@@ -126,7 +107,12 @@ final class QuickFeedbackDiagnosticsCollector {
     private var memorySummary: String {
         let report = memoryUsageMonitor.getCurrentMemoryUsage()
         let physicalGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824.0
-        return "\(report.footprintMemoryString) browser, \(String(format: "%.0f", physicalGB)) GB total"
+        let webContentProcessCount = report.webContentProcessCount.map { " (\($0) processes)" } ?? ""
+        return [
+            "\(report.footprintMemoryString) browser",
+            "\(report.webContentMemoryString) web content\(webContentProcessCount)",
+            "\(String(format: "%.0f", physicalGB)) GB total",
+        ].joined(separator: ", ")
     }
 
     private var freeDiskSpace: String {
@@ -153,4 +139,56 @@ final class QuickFeedbackDiagnosticsCollector {
 protocol TabAndWindowCountProviding: AnyObject {
     var tabCount: Int { get }
     var windowCount: Int { get }
+}
+
+/// Supplies macOS device details for the Internal Feedback web app, provided over the message bridge.
+/// `diagnostics` carries the supplementary values (GPU, memory, disk, tab counts, session length)
+/// that aren't already top level fields.
+///
+final class InternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding {
+
+    private let diagnosticsCollector: QuickFeedbackDiagnosticsCollector
+    private let appVersion: AppVersion
+
+    private static var machineArchitecture: String {
+        #if arch(arm64)
+        "arm64"
+        #elseif arch(x86_64)
+        "x86_64"
+        #else
+        "unknown"
+        #endif
+    }
+
+    init(diagnosticsCollector: QuickFeedbackDiagnosticsCollector, appVersion: AppVersion = AppVersion()) {
+        self.diagnosticsCollector = diagnosticsCollector
+        self.appVersion = appVersion
+    }
+
+    private static var hardwareModel: String? {
+        var size = 0
+        guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 0 else { return nil }
+
+        var buffer = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("hw.model", &buffer, &size, nil, 0) == 0 else { return nil }
+        return String(cString: buffer)
+    }
+
+    @MainActor
+    func deviceInfo() -> InternalFeedbackDeviceInfo {
+        InternalFeedbackDeviceInfo(
+            platform: "macos",
+            appVersion: appVersion.versionNumber,
+            osName: "macOS",
+            osVersion: appVersion.osVersionMajorMinorPatch,
+            appBuild: appVersion.buildNumber,
+            formFactor: "desktop",
+            architecture: Self.machineArchitecture,
+            locale: Locale.current.localeIdentifierAsJsonFormat,
+            channel: AppVersionModel(appVersion: appVersion).distributionLabel,
+            deviceModel: Self.hardwareModel,
+            deviceManufacturer: "Apple",
+            diagnostics: diagnosticsCollector.collectDiagnostics()
+        )
+    }
 }

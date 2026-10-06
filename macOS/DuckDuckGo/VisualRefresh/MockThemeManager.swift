@@ -23,7 +23,6 @@ import PrivacyConfig
 
 final class MockThemeManager: ThemeManaging {
 
-    private let featureFlagger: FeatureFlagger
     @Published var appearance: ThemeAppearance
     @Published var theme: ThemeStyleProviding
 
@@ -40,14 +39,16 @@ final class MockThemeManager: ThemeManaging {
             theme.name
         }
         set {
-            theme = ThemeStyle.buildThemeStyle(themeName: newValue, featureFlagger: featureFlagger)
+            theme = ThemeStyle.buildThemeStyle(themeName: newValue)
         }
     }
 
-    init(featureFlagger: FeatureFlagger = MockFeatureFlagger(), appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, ) {
-        self.featureFlagger = featureFlagger
+    let isAppRebranded: Bool
+
+    init(appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, isAppRebranded: Bool = false) {
         self.appearance = appearance
-        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
+        self.theme = ThemeStyle.buildThemeStyle(themeName: themeName)
+        self.isAppRebranded = isAppRebranded
     }
 }
 #endif

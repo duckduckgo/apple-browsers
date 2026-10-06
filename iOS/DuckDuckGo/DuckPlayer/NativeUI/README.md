@@ -102,6 +102,12 @@ The Native UI includes JavaScript integration for communication between native S
 *   **Error Handling**: Error reporting and handling for web-based video issues.
 *   **Localization Support**: Provides locale information to web components for internationalization.
 
+### Message Contract
+
+The strings in `DuckPlayerUserScript.swift` are the wire contract with the `duckPlayerNative` feature in content-scope-scripts, so rename one only together with the content-scope-scripts side. The Swift constant `onCurrentTimeStamp` carries the wire name `onCurrentTimestamp`.
+
+`DuckPlayerUserScriptYouTube` sends `onUrlChanged` at once but holds every other native-to-web event until the page sends `onDuckPlayerScriptsReady`. Each URL change resets that readiness, and a change to a page that isn't a YouTube page also drops the held events.
+
 ## Views Directory Components
 
 ### Core Views

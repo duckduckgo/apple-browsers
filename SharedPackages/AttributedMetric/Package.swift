@@ -33,14 +33,17 @@ let package = Package(
         .library(name: "AttributedMetricTestsUtils", targets: ["AttributedMetricTestsUtils"]),
     ],
     dependencies: [
+        .package(path: "../DDGError"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit")
     ],
     targets: [
         .target(
             name: "AttributedMetric",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit")
+                .product(name: "PixelKit", package: "PixelKit")
             ],
             swiftSettings: strictConcurrencySettings
         ),

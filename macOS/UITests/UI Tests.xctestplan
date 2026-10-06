@@ -38,8 +38,8 @@
       "skippedTests" : [
         "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
         "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
+        "AppStoreSandboxUITests",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
-        "DownloadsUITests\/testFireWindowWithInProgressDownloadShowsWarning()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
         "NewPermissionViewTests\/test_locationPermissions_whenAccepted_showCorrectStateInBrowser()",
         "NewPermissionViewTests\/test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies()"

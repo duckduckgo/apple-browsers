@@ -312,6 +312,7 @@ final class DownloadsCellView: NSTableCellView {
                     .eraseToAnyPublisher()
             }
             .switchToLatest()
+            .throttle(for: 0.2, scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] progress in
                 guard let self else { return }
 

@@ -44,8 +44,8 @@ struct URLParamRefTests: Decodable {
 final class URLParameterTests: XCTestCase {
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/url-parameters/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/url-parameters/tests.json"
+        static let config = "Res/privacy-reference-tests/url-parameters/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/url-parameters/tests.json"
     }
 
     private static let data = JsonTestDataLoader()

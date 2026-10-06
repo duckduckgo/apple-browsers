@@ -66,6 +66,7 @@ final class DefaultWhatsNewMessageRepository: WhatsNewMessageRepository {
 
     func markMessageAsShown(_ message: RemoteMessageModel) async {
         // 1. Mark in RMF
+        // A scheduled modal has one countable impression when presentation and its shown pixel are confirmed.
         await remoteMessageStore.updateRemoteMessage(withID: message.id, asShown: true)
         await remoteMessageStore.dismissRemoteMessage(withID: message.id)
 

@@ -19,6 +19,7 @@
 
 import XCTest
 @testable import Core
+@testable import DuckDuckGo
 @testable import Subscription
 
 class UserDefaultsFireproofingTests: XCTestCase {

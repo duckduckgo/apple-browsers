@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 import enum UserScript.UserScriptError
 @testable import DuckDuckGo_Privacy_Browser
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 
 final class UserScriptErrorTests: XCTestCase {
 

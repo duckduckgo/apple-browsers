@@ -157,6 +157,10 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         autofillPopoverPresenter.popoverIsShown
     }
 
+    var isAutofillOnboardingPopoverShown: Bool {
+        autofillOnboardingPopover?.isShown ?? false
+    }
+
     var isSaveCredentialsPopoverShown: Bool {
         saveCredentialsPopover?.isShown ?? false
     }
@@ -312,15 +316,17 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         return true
     }
 
+    @discardableResult
     func showAutofillOnboardingPopover(from button: MouseOverButton,
                                        withDelegate delegate: NSPopoverDelegate,
-                                       ctaCallback: @escaping (Bool) -> Void) {
-        guard closeTransientPopovers() else { return }
+                                       ctaCallback: @escaping (Bool) -> Void) -> Bool {
+        guard closeTransientPopovers() else { return false }
         let popover = autofillOnboardingPopover ?? AutofillToolbarOnboardingPopover(ctaCallback: ctaCallback)
 
         popover.delegate = delegate
         autofillOnboardingPopover = popover
         show(popover, positionedBelow: button)
+        return true
     }
 
     func showBookmarkListPopover(from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate, forTab tab: Tab?) {
@@ -511,7 +517,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains, pinningManager: pinningManager)
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)
@@ -632,5 +638,4 @@ extension NavigationBarPopovers: NSPopoverDelegate {
 extension Notification.Name {
     static let loginAutoSaved = Notification.Name(rawValue: "loginAutoSaved")
     static let passwordsAutoPinned = Notification.Name(rawValue: "passwordsAutoPinned")
-    static let passwordsPinningPrompt = Notification.Name(rawValue: "passwordsPinningPrompt")
 }

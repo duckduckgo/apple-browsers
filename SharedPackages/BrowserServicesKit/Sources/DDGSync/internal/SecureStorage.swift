@@ -160,6 +160,19 @@ struct SecureStorage: SecureStoring {
         }
     }
 
+    func protectedKeys() throws -> Data? {
+        var query = Self.protectedKeysQuery
+        query[kSecReturnData] = true
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard [errSecSuccess, errSecItemNotFound].contains(status) else {
+            throw SyncError.failedToReadSecureStore(status: status)
+        }
+
+        return item as? Data
+    }
+
     func removeProtectedKeys() throws {
         let status = SecItemDelete(Self.protectedKeysQuery as CFDictionary)
         guard [errSecSuccess, errSecItemNotFound].contains(status) else {

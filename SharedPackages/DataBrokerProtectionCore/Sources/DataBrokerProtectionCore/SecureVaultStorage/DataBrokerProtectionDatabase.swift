@@ -37,12 +37,14 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
+    func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData]
     /// Includes removed brokers. Prefer `fetchActiveBrokerProfileQueryData()` unless your caller genuinely needs them.
     /// The `reason` parameter is intentionally required so callers document why removed brokers are needed at the call site.
     func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData]
     func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
     func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
+    func fetchAllExtractedProfiles() throws -> [ExtractedProfile]
 
     func fetchAllDataBrokers() throws -> [DataBroker]
 
@@ -73,6 +75,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) throws
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
+    func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
     func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent?
@@ -212,6 +215,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchExtractedProfiles(for: brokerId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchExtractedProfiles for brokerId")
+            throw error
+        }
+    }
+
+    public func fetchAllExtractedProfiles() throws -> [ExtractedProfile] {
+        do {
+            return try vault.fetchAllBrokers().compactMap(\.id).flatMap { try vault.fetchExtractedProfiles(for: $0) }
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllExtractedProfiles")
             throw error
         }
     }
@@ -382,6 +394,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws {
+        do {
+            try vault.updateExtractedProfile(extractedProfile, for: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateExtractedProfile on extractedProfileId")
+            throw error
+        }
+    }
+
     public func add(_ historyEvent: HistoryEvent) throws {
         do {
 
@@ -415,6 +436,13 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
 
     public func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData] {
         try fetchActiveBrokerProfileQueryData().excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+    }
+
+    public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData {
+            guard let broker = try vault.fetchBroker(with: brokerId) else { return [] }
+            return [broker]
+        }
     }
 
     private func fetchBrokerProfileQueryData(brokers: () throws -> [DataBroker]) throws -> [BrokerProfileQueryData] {
@@ -679,6 +707,10 @@ extension DataBrokerProtectionDatabase {
         // The queries we need to create are the one that exist on the new ones but not in the database
         let profileQueriesToCreate = Set(newProfileQueries).subtracting(Set(databaseProfileQueries))
 
+        let profileQueriesToReactivate = Set(databaseProfileQueries.filter(\.deprecated))
+            .intersection(Set(newProfileQueries))
+            .map { $0.with(deprecated: false) }
+
         // Updated profile queries. This is only for use for deprecated matches.
         // We do not use it for updating a particular profile query. The reason is that
         // updates do not exist because the UI returns a complete profile, and does not
@@ -719,6 +751,14 @@ extension DataBrokerProtectionDatabase {
         // Update profileQueries
         if !profileQueriesToUpdate.isEmpty {
             try updateProfileQueries(Array(profileQueriesToUpdate),
+                                     profileID: profileID,
+                                     brokerIDs: brokerIDs,
+                                     vault: vault)
+        }
+
+        // Reactivate
+        if !profileQueriesToReactivate.isEmpty {
+            try updateProfileQueries(profileQueriesToReactivate,
                                      profileID: profileID,
                                      brokerIDs: brokerIDs,
                                      vault: vault)

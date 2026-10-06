@@ -7,6 +7,11 @@
         "description": "Daily pixel schedule type",
         "enum": ["daily"]
     },
+    "monthly": {
+        "type": "string",
+        "description": "Monthly pixel schedule type",
+        "enum": ["monthly"]
+    },
     "daily_standard": {
         "type": "string",
         "description": "Pixel schedule type",

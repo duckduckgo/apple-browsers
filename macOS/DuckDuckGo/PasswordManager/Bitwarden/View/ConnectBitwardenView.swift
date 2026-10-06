@@ -346,7 +346,7 @@ private struct NumberedBadge: View {
         ZStack {
             Circle().fill(.blue) // Color(hex: "3969EF").opacity(0.12)
 
-            Text("\(value)")
+            Text(verbatim: "\(value)")
                 .foregroundColor(.white) // Color(hex: "2B55CA")
         }
         .frame(width: 20, height: 20)

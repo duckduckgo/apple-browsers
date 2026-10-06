@@ -24,7 +24,7 @@ final class NextStepsListUITests: UITestCase {
     private var webView: XCUIElement!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         resetNextSteps()
@@ -56,7 +56,7 @@ final class NextStepsListUITests: UITestCase {
                       "A Next Steps card should be visible on the New Tab Page")
 
         let buttonsBeforeDismissal = visibleWebViewButtonTitles()
-        nextStepsCardDismissButton.tap()
+        nextStepsCardDismissButton.click()
 
         let dismissedCardCycledAway = webView.wait(for: NSPredicate { _, _ in
             !buttonsBeforeDismissal.subtracting(self.visibleWebViewButtonTitles()).isEmpty
@@ -93,7 +93,7 @@ private extension NextStepsListUITests {
     }
 
     var nextStepsSection: XCUIElement {
-        webView.staticTexts["Next Steps"]
+        webView.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
     }
 
     var nextStepsCardDismissButton: XCUIElement {

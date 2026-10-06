@@ -51,7 +51,7 @@ final class TunnelControllerIPCService {
         }
     }
 
-    enum UDSError: PixelKitEvent {
+    enum UDSError: PixelKit.Event {
         case udsServerStartFailure(_ error: Error)
 
         var name: String {

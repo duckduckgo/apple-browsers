@@ -21,8 +21,7 @@ import BrowserServicesKitTestsUtils
 import Combine
 import UserScript
 import WebKit
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -144,6 +143,52 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didGetAIChatTabContent, "getAIChatTabContent should be called")
     }
 
+    // MARK: - Browser tools
+
+    @MainActor func testWhenInitializeIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.initialize.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPInitialize)
+    }
+
+    @MainActor func testWhenInitializedNotificationIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.notificationsInitialized.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPNotificationsInitialized)
+    }
+
+    @MainActor func testWhenToolsListIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsList.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPToolsList)
+    }
+
+    @MainActor func testWhenToolsCallIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPToolsCall)
+    }
+
+    /// A prompt raised by the call must go back to the page that made it, so the script hands
+    /// itself over as the pusher.
+    @MainActor func testWhenToolsCallIsReceivedThenTheScriptIsTheElicitationPusher() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.toolsCall.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.receivedElicitationPusher === userScript)
+    }
+
+    @MainActor func testWhenElicitationResponseIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.elicitationResponse.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPElicitationResponse)
+    }
+
     // MARK: - Open Settings handshake
 
     @MainActor func testRequestOpenSettingsActionArmsHandshake() {
@@ -235,8 +280,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var didGetAIChatPageContext = false
     var didSubmitAIChatPageContext = false
+    var didGetAIChatSelectionContext = false
+    var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     var syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
@@ -259,6 +307,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
     var isFireWindowProvider: (() -> Bool)?
+    var isSidebarProvider: (() -> Bool)?
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
+    var directNavigationFallback: AIChatConversationSource?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling
@@ -267,6 +318,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     func openAIChatSettings(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         didOpenSettings = true
         return nil
+    }
+
+    @MainActor
+    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
+        nil
     }
 
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {
@@ -332,13 +388,22 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         didGetAIChatPageContext = true
+        return nil
+    }
+
+    func getAIChatSelectionContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetAIChatSelectionContext = true
         return nil
     }
 
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
         pageContextSubject.eraseToAnyPublisher()
+    }
+
+    var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> {
+        selectionContextSubject.eraseToAnyPublisher()
     }
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> {
@@ -366,6 +431,39 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    var didCallMCPInitialize = false
+    var didCallMCPNotificationsInitialized = false
+    var didCallMCPToolsList = false
+    var didCallMCPToolsCall = false
+    var didCallMCPElicitationResponse = false
+    var receivedElicitationPusher: (any AIChatElicitationPushing)?
+
+    func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPInitialize = true
+        return nil
+    }
+
+    func mcpNotificationsInitialized(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPNotificationsInitialized = true
+        return nil
+    }
+
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPToolsList = true
+        return nil
+    }
+
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
+        didCallMCPToolsCall = true
+        receivedElicitationPusher = elicitationPusher
+        return nil
+    }
+
+    func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPElicitationResponse = true
+        return nil
+    }
+
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
         chatRestorationDataSubject.eraseToAnyPublisher()
     }
@@ -376,6 +474,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         didSubmitAIChatPageContext = true
+    }
+
+    func resetConversationSourceForNewDocument() {}
+
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        didSubmitAIChatSelectionContext = true
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -436,6 +540,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    func dictationStartFailed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
     // Migration data mocks
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         didStoreMigrationData = true
@@ -451,6 +559,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
     func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         didClearMigrationData = true
+        return nil
+    }
+    func customizeResponsesModalClosed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 }
@@ -470,4 +581,8 @@ private final class MockAIChatMessageHandling: AIChatMessageHandling {
     }
 
     func setData(_ data: Any?, forMessageType type: DuckDuckGo_Privacy_Browser.AIChatMessageType) {}
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {}
+    func getSelectionContexts() -> [AIChatSelectionContextData] { [] }
+    func clearSelectionContexts() {}
 }

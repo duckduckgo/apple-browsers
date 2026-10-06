@@ -45,6 +45,7 @@ private enum AttributesKey: String, CaseIterable {
     case pproDaysUntilExpiryOrRenewal
     case pproPurchasePlatform
     case pproSubscriptionStatus
+    case pproSubscriptionTier
     case subscriptionFreeTrialActive
     case interactedWithMessage
     case interactedWithDeprecatedMacRemoteMessage
@@ -62,6 +63,7 @@ private enum AttributesKey: String, CaseIterable {
     case isCurrentPIRUser
     case allFeatureFlagsEnabled
     case syncEnabled
+    case ntpAfterIdleState
     case shouldShowWinBackOfferUrgencyMessage
     case daysSinceDuckAiUsed
 
@@ -90,6 +92,7 @@ private enum AttributesKey: String, CaseIterable {
         case .pproDaysUntilExpiryOrRenewal: return SubscriptionDaysUntilExpiryMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .pproPurchasePlatform: return SubscriptionPurchasePlatformMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .pproSubscriptionStatus: return SubscriptionStatusMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproSubscriptionTier: return SubscriptionTierMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .subscriptionFreeTrialActive: return SubscriptionFreeTrialActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithMessage: return InteractedWithMessageMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithDeprecatedMacRemoteMessage: return InteractedWithDeprecatedMacRemoteMessageMatchingAttribute(
@@ -109,6 +112,7 @@ private enum AttributesKey: String, CaseIterable {
         case .isCurrentPIRUser: return PIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .ntpAfterIdleState: return NTPAfterIdleStateMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
@@ -161,7 +165,8 @@ struct JsonToRemoteMessageModelMapper {
             let validator = MappingValidator(root: conditions)
             let trigger = try validator.mapEnumIfPresent(\.trigger, to: MessageTrigger.self)
             let dismissAfterDaysShown = conditions.dismissAfterDaysShown.map { max($0, 1) }
-            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown)
+            let maxImpressions = conditions.maxImpressions.map { max($0, 1) }
+            return DisplayConditions(trigger: trigger, dismissAfterDaysShown: dismissAfterDaysShown, maxImpressions: maxImpressions)
         }
     }
 

@@ -97,5 +97,18 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_settings_displayed": {
+        "description": "Fired when the Duck.ai pane is selected in Settings",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_sidebar_setting_changed_u": {
+        "description": "Fired once per install when the user first changes the setting that opens Duck.ai in the sidebar when viewing websites",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

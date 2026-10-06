@@ -26,6 +26,7 @@ public final class SubscriptionCachingServiceMock: SubscriptionCachingService {
     public var resetCalled: Bool = false
 
     public var isPresent: Bool { cachedSubscription != nil }
+    public var cachedSubscriptionStatus: DuckDuckGoSubscription.Status? { cachedSubscription?.status }
 
     public init(cachedSubscription: DuckDuckGoSubscription? = nil) {
         self.cachedSubscription = cachedSubscription

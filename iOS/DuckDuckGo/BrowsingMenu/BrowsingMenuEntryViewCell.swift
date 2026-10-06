@@ -81,7 +81,7 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
         contentView.addSubview(entryLabel)
 
         notificationDot.translatesAutoresizingMaskIntoConstraints = false
-        notificationDot.backgroundColor = UIColor(designSystemColor: .accent)
+        notificationDot.backgroundColor = UIColor(designSystemColor: .accentPrimary)
         contentView.addSubview(notificationDot)
     }
 

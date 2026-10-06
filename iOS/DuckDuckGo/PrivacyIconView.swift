@@ -29,6 +29,11 @@ import Kingfisher
 private extension PrivacyIconView {
     /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size (24/47 ≈ 0.51)
     static let daxLogoScaleFactor: CGFloat = 0.51
+
+    /// The rebranded art draws the shield at 20 units inside its own canvas.
+    /// Using this size results in the shield matching the 24pt DesignResourcesKit icon.
+    static let legacyShieldSize: CGFloat = 47
+    static let legacyShieldDotSize: CGFloat = 44
 }
 
 enum PrivacyIcon {
@@ -36,7 +41,7 @@ enum PrivacyIcon {
 
     fileprivate var staticImage: UIImage? {
         switch self {
-        case .daxLogo: return UIImage(resource: .logoIcon)
+        case .daxLogo: return UIImage(rebrandable: "duckduckgo-favicon-24x24")
         case .alert: return DesignSystemImages.Glyphs.Size24.alertRecolorable
         default: return nil
         }
@@ -55,6 +60,11 @@ class PrivacyIconView: UIView {
     private(set) var shieldAnimationView: LottieAnimationView!
     private(set) var shieldDotAnimationView: LottieAnimationView!
     private var transitionPlaceholderView: UIView!
+
+    private var shieldWidthConstraint: NSLayoutConstraint!
+    private var shieldHeightConstraint: NSLayoutConstraint!
+    private var shieldDotWidthConstraint: NSLayoutConstraint!
+    private var shieldDotHeightConstraint: NSLayoutConstraint!
 
     private(set) var icon: PrivacyIcon = .shield
     private(set) var daxLogoURL: URL?
@@ -85,14 +95,16 @@ class PrivacyIconView: UIView {
         shieldAnimationView.translatesAutoresizingMaskIntoConstraints = false
         shieldAnimationView.contentMode = .scaleAspectFit
         shieldAnimationView.backgroundBehavior = .pauseAndRestore
-        shieldAnimationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
+        // The Core Animation engine is needed for the Repeater that fans the trackers-blocked
+        // confetti out around the shield; the main-thread engine skips it and draws a single dot.
+        shieldAnimationView.configuration = LottieConfiguration(renderingEngine: .automatic)
         addSubview(shieldAnimationView)
 
         shieldDotAnimationView = LottieAnimationView(frame: bounds)
         shieldDotAnimationView.translatesAutoresizingMaskIntoConstraints = false
         shieldDotAnimationView.contentMode = .scaleAspectFit
         shieldDotAnimationView.backgroundBehavior = .pauseAndRestore
-        shieldDotAnimationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
+        shieldDotAnimationView.configuration = LottieConfiguration(renderingEngine: .automatic)
         addSubview(shieldDotAnimationView)
 
         // Static image view for Dax logo and other images
@@ -104,17 +116,21 @@ class PrivacyIconView: UIView {
         ])
 
         // Protections Enabled Animation
+        shieldWidthConstraint = shieldAnimationView.widthAnchor.constraint(equalToConstant: Self.legacyShieldSize)
+        shieldHeightConstraint = shieldAnimationView.heightAnchor.constraint(equalToConstant: Self.legacyShieldSize)
         NSLayoutConstraint.activate([
-            shieldAnimationView.widthAnchor.constraint(equalToConstant: 47),
-            shieldAnimationView.heightAnchor.constraint(equalToConstant: 47),
+            shieldWidthConstraint,
+            shieldHeightConstraint,
             shieldAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
             shieldAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
-        // Protextions Disable Animation
+        // Protections Disable Animation
+        shieldDotWidthConstraint = shieldDotAnimationView.widthAnchor.constraint(equalToConstant: Self.legacyShieldDotSize)
+        shieldDotHeightConstraint = shieldDotAnimationView.heightAnchor.constraint(equalToConstant: Self.legacyShieldDotSize)
         NSLayoutConstraint.activate([
-            shieldDotAnimationView.widthAnchor.constraint(equalToConstant: 44),
-            shieldDotAnimationView.heightAnchor.constraint(equalToConstant: 44),
+            shieldDotWidthConstraint,
+            shieldDotHeightConstraint,
             shieldDotAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
             shieldDotAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
@@ -153,6 +169,7 @@ class PrivacyIconView: UIView {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
 
         let isRebranded = AppRebrand.isAppRebranded()
+
         let shieldAnimationName = isRebranded ? "shield.new" : "shield.new-legacy"
         let shieldDotAnimationName: String
         if useDarkStyle {
@@ -166,6 +183,14 @@ class PrivacyIconView: UIView {
 
         let shieldWithDotAnimation = LottieAnimation.named(shieldDotAnimationName, animationCache: cache)
         shieldDotAnimationView.animation = shieldWithDotAnimation
+
+        let shieldSize = isRebranded ? shieldAnimation?.size : nil
+        shieldWidthConstraint.constant = shieldSize?.width ?? Self.legacyShieldSize
+        shieldHeightConstraint.constant = shieldSize?.height ?? Self.legacyShieldSize
+
+        let shieldDotSize = isRebranded ? shieldWithDotAnimation?.size : nil
+        shieldDotWidthConstraint.constant = shieldDotSize?.width ?? Self.legacyShieldDotSize
+        shieldDotHeightConstraint.constant = shieldDotSize?.height ?? Self.legacyShieldDotSize
     }
     
     func updateIcon(_ newIcon: PrivacyIcon) {
@@ -284,19 +309,27 @@ class PrivacyIconView: UIView {
             staticImageView.isHidden = true
             shieldAnimationView.isHidden = false
             shieldDotAnimationView.isHidden = true
-
-            // Set animated view to frame 1
-            if let animation = shieldAnimationView.animation {
-                let totalFrames = animation.endFrame - animation.startFrame
-                shieldAnimationView.currentProgress = totalFrames > 0 ? 1.0 / totalFrames : 0.0
-            }
+            setRestingFrame(for: icon)
         case .shieldWithDot:
             staticImageView.isHidden = true
             shieldAnimationView.isHidden = true
             shieldDotAnimationView.isHidden = false
+            setRestingFrame(for: icon)
+        }
+    }
 
-            // Set to final frame (100%) to show completed shield with checkmark
-            shieldDotAnimationView.currentProgress = 1.0
+    func resetToRestingFrame() {
+        setRestingFrame(for: icon)
+    }
+
+    private func setRestingFrame(for icon: PrivacyIcon) {
+        switch icon {
+        case .shield:
+            shieldAnimationView.currentProgress = 0
+        case .shieldWithDot:
+            shieldDotAnimationView.currentProgress = 1
+        case .daxLogo, .alert:
+            break
         }
     }
     
@@ -392,7 +425,7 @@ class PrivacyIconView: UIView {
 
             /// If the trait collection changes then it means this view is already visible and animations have
             /// probably completed.
-            shieldDotAnimationView.currentProgress = 1.0
+            resetToRestingFrame()
         }
     }
 }
@@ -404,7 +437,7 @@ extension PrivacyIconView: UIPointerInteractionDelegate {
         if icon == .daxLogo {
             return nil
         }
-        return UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
+        return UIPointerStyle(effect: .lift(.init(view: self)))
     }
     
 }

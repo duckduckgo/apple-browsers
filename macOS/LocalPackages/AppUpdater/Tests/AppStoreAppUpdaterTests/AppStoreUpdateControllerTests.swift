@@ -19,7 +19,7 @@
 import AppUpdaterShared
 import AppUpdaterTestHelpers
 import Combine
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
 import PrivacyConfig
 import XCTest
 

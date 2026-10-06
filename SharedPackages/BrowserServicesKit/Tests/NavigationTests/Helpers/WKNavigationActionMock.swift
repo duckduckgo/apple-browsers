@@ -17,7 +17,7 @@
 //
 
 import WebKit
-@testable import Navigation
+@testable import DDGNavigation
 
 class WKNavigationActionMock: NSObject {
 
@@ -38,6 +38,8 @@ class WKNavigationActionMock: NSObject {
 #endif
 
     @objc var isUserInitiated: Bool
+
+    @objc var isRedirect: Bool = false
 
     @objc var mainFrameNavigation: Any?
 

@@ -1,0 +1,452 @@
+//
+//  SitePermissionsManagementCoordinatorTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+@_spi(Testing) import Persistence
+@testable import SitePermissions
+import XCTest
+
+@MainActor
+final class SitePermissionsManagementCoordinatorTests: XCTestCase {
+
+    func testAcceptedRequestIsTrackedForSheetMembershipButNotMenuEligibility() throws {
+        let harness = try CoordinatorHarness()
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in }, completion: { _ in })
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.requestedPermissionTypesThisVisit, [.camera])
+        XCTAssertEqual(snapshot.relevantPermissionTypes, [.camera])
+        XCTAssertFalse(snapshot.showsMenuEntry)
+    }
+
+    func testRequestBlockedByGlobalNeverDoesNotCreateManagementRow() throws {
+        let harness = try CoordinatorHarness()
+        harness.store.setGlobalDefault(.deny, for: .camera)
+        var resolutions = [SitePermissionResolution]()
+
+        harness.coordinator.request(
+            harness.request([.camera]),
+            promptHandler: { _, _ in XCTFail("Global Never must not prompt") },
+            completion: { resolutions.append($0) }
+        )
+
+        XCTAssertEqual(resolutions, [.deny(systemBlocks: [])])
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertTrue(snapshot.relevantPermissionTypes.isEmpty)
+        XCTAssertFalse(snapshot.showsMenuEntry)
+    }
+
+    func testFreshSystemDenialKeepsSiteAllowIntentAndReminderReachableWithoutActivatingEphemeralGrant() async throws {
+        let harness = try CoordinatorHarness()
+        harness.systemStates[.camera] = .notDetermined
+        harness.authorizationRequester = {
+            harness.systemStates[$0] = .denied
+            return .denied
+        }
+        let requestCompleted = expectation(description: "Request completed")
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { _ in
+            requestCompleted.fulfill()
+        })
+
+        await fulfillment(of: [requestCompleted], timeout: 1)
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.ephemeralPermissionTypes, [])
+        XCTAssertEqual(snapshot.siteAllowedPermissionTypesThisVisit, [.camera])
+        XCTAssertEqual(snapshot.systemBlockedPermissionTypes, [.camera])
+        XCTAssertTrue(snapshot.showsMenuEntry)
+    }
+
+    func testSuccessfulAllowOnceKeepsMenuEntryAfterCaptureEndsUntilReload() async throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try CoordinatorHarness()
+            harness.systemStates[permissionType] = .authorized
+            let requestCompleted = expectation(description: "Request completed")
+
+            harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                respond(.allowOnce)
+            }, completion: { resolution in
+                XCTAssertEqual(resolution, .grant)
+                requestCompleted.fulfill()
+            })
+
+            await fulfillment(of: [requestCompleted], timeout: 1)
+            XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+
+            if permissionType == .location {
+                harness.coordinator.updateGeolocationCaptureState(.active)
+                harness.coordinator.updateGeolocationCaptureState(.inactive)
+            } else {
+                harness.coordinator.captureDidEnd([permissionType])
+            }
+
+            let ended = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertEqual(ended.ephemeralPermissionTypes, [permissionType])
+            XCTAssertEqual(ended.siteAllowedPermissionTypesThisVisit, [permissionType])
+            XCTAssertEqual(ended.relevantPermissionTypes, [permissionType])
+            XCTAssertTrue(ended.showsMenuEntry)
+            XCTAssertEqual(harness.coordinator.captureState(for: permissionType), .inactive)
+            XCTAssertNil(harness.store.decision(for: permissionType, at: harness.site))
+
+            harness.coordinator.pageDidChange(.reload)
+
+            let reloaded = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertTrue(reloaded.ephemeralPermissionTypes.isEmpty)
+            XCTAssertTrue(reloaded.siteAllowedPermissionTypesThisVisit.isEmpty)
+            XCTAssertFalse(reloaded.showsMenuEntry)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+        }
+    }
+
+    func testWhenExplicitAskAllowsOnceAndSystemDeniesThenReminderRemainsReachable() async throws {
+        let harness = try CoordinatorHarness()
+        harness.store.resetDecision(for: .camera, at: harness.site)
+        harness.systemStates[.camera] = .notDetermined
+        harness.authorizationRequester = {
+            harness.systemStates[$0] = .denied
+            return .denied
+        }
+        let completed = expectation(description: "Request completed")
+
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { _ in completed.fulfill() })
+
+        await fulfillment(of: [completed], timeout: 1)
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions[.camera], .ask)
+        XCTAssertEqual(snapshot.systemBlockedPermissionTypes, [.camera])
+        XCTAssertTrue(snapshot.showsMenuEntry)
+
+        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
+        XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).systemBlockedPermissionTypes.isEmpty)
+    }
+
+    func testNavigationClearsRequestedAndSessionStateButPreservesStoredRecord() async throws {
+        let harness = try CoordinatorHarness()
+        harness.store.resetDecision(for: .camera, at: harness.site)
+        harness.systemStates[.microphone] = .authorized
+        let requestCompleted = expectation(description: "Request completed")
+        harness.coordinator.request(harness.request([.microphone]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { _ in requestCompleted.fulfill() })
+        await fulfillment(of: [requestCompleted], timeout: 1)
+
+        harness.coordinator.pageDidChange(.navigation)
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions, [.camera: .ask])
+        XCTAssertTrue(snapshot.requestedPermissionTypesThisVisit.isEmpty)
+        XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+        XCTAssertTrue(snapshot.siteAllowedPermissionTypesThisVisit.isEmpty)
+        XCTAssertTrue(snapshot.showsMenuEntry)
+    }
+
+    func testRemoveManagementSessionStateClearsNonStoredMenuEligibility() async throws {
+        let harness = try CoordinatorHarness()
+        harness.systemStates[.camera] = .authorized
+        let requestCompleted = expectation(description: "Request completed")
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, respond in
+            respond(.allowOnce)
+        }, completion: { _ in requestCompleted.fulfill() })
+        await fulfillment(of: [requestCompleted], timeout: 1)
+
+        harness.coordinator.removeManagementSessionState(for: [.camera], at: harness.site)
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertTrue(snapshot.relevantPermissionTypes.isEmpty)
+        XCTAssertFalse(snapshot.showsMenuEntry)
+    }
+
+    func testFireModeManagementDecisionUpdatesSessionWithoutWritingStore() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try CoordinatorHarness(isFireMode: true)
+
+            harness.coordinator.applyFireModeManagementDecision(.allow, for: permissionType, at: harness.site)
+
+            let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertTrue(snapshot.isFireMode)
+            XCTAssertEqual(snapshot.storedPermissions[permissionType], .allow)
+            XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+            XCTAssertEqual(snapshot.siteAllowedPermissionTypesThisVisit, [permissionType])
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenFireModeManagementChangesThenDurableDecisionsAreUnchangedUntilRemovalAndUndo() throws {
+        let choices: [(SitePermissionPickerOption, SitePermissionDecision)] = [
+            (.askEachTime, .ask), (.alwaysAllow, .allow), (.neverAllow, .deny)
+        ]
+        for permissionType in SitePermissionType.allCases {
+            for (option, decision) in choices {
+                let harness = try CoordinatorHarness(isFireMode: true)
+                harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+                harness.store.setPersistentDecision(.deny, for: .microphone, at: harness.site)
+                harness.store.resetDecision(for: .location, at: harness.site)
+                let original = harness.store.permissions(for: harness.site)
+                var removal: SitePermissionsRemoval?
+                let viewModel = SitePermissionsSheetViewModel(
+                    snapshot: harness.coordinator.managementSnapshot(for: harness.site),
+                    store: harness.store,
+                    onDecisionChanged: { change in
+                        harness.coordinator.applyFireModeManagementDecision(change.to, for: change.permissionType, at: harness.site)
+                    },
+                    onRemovePermissions: {
+                        removal = $0
+                        harness.coordinator.removeManagementSessionState(for: $0.permissionTypes, at: harness.site)
+                    }
+                )
+
+                viewModel.select(option, for: permissionType)
+
+                var expected = original
+                expected[permissionType] = decision
+                XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions, expected)
+                XCTAssertEqual(harness.store.permissions(for: harness.site), original)
+
+                viewModel.removePermissions()
+
+                let removed = try XCTUnwrap(removal)
+                XCTAssertFalse(removed.snapshot.isEmpty)
+                XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions.isEmpty)
+                XCTAssertTrue(harness.store.permissions(for: harness.site).isEmpty)
+
+                harness.coordinator.restoreFireModeManagementState(for: removed.permissionTypes, at: harness.site)
+                harness.store.restore(removed.snapshot)
+
+                XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions, expected)
+                XCTAssertTrue(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes.isEmpty)
+                XCTAssertEqual(harness.store.permissions(for: harness.site), original)
+            }
+        }
+    }
+
+    func testFireModeNeverDecisionIsEffectiveBeforeImmediateRevocationObservationWithoutWritingStore() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.systemStates[.location] = .authorized
+        harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
+        var observedStates = [SitePermissionQueryState]()
+        let viewModel = SitePermissionsSheetViewModel(
+            snapshot: harness.coordinator.managementSnapshot(for: harness.site),
+            store: harness.store,
+            onDecisionChanged: { change in
+                harness.coordinator.applyFireModeManagementDecision(change.to, for: change.permissionType, at: harness.site)
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            },
+            revokePermissions: { permissionTypes in
+                XCTAssertEqual(permissionTypes, [.location])
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            }
+        )
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+
+        viewModel.select(.neverAllow, for: .location)
+
+        XCTAssertEqual(observedStates, [.denied, .denied])
+        XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .allow)
+    }
+
+    func testWhenFireSessionStateIsRemovedDirectlyThenDurableStorageIsLeftToTheCaller() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in }, completion: { _ in })
+
+        harness.coordinator.removeManagementSessionState(for: [.camera], at: harness.site)
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertTrue(snapshot.storedPermissions.isEmpty)
+        XCTAssertFalse(snapshot.showsMenuEntry)
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
+    }
+
+    func testWhenFireDecisionChangesBeforeFirstRequestThenSnapshotAndRequestUseOverride() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
+
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions[.camera], .allow)
+        XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+        var resolutions = [SitePermissionResolution]()
+        harness.coordinator.request(harness.request([.camera]), promptHandler: { _, _ in
+            XCTFail("The Fire override should allow without prompting")
+        }, completion: { resolutions.append($0) })
+        XCTAssertEqual(resolutions, [.grant])
+        XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .deny)
+    }
+
+    func testWhenFireSheetRemovesPermissionsThenDurableAndSessionDecisionsClearBeforeRevocation() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.systemStates[.location] = .authorized
+        harness.store.setPersistentDecision(.allow, for: .location, at: harness.site)
+        var observedStates = [SitePermissionQueryState]()
+        let viewModel = SitePermissionsSheetViewModel(
+            snapshot: harness.coordinator.managementSnapshot(for: harness.site),
+            store: harness.store,
+            onRemovePermissions: { removal in
+                harness.coordinator.removeManagementSessionState(for: removal.permissionTypes, at: harness.site)
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            },
+            revokePermissions: { _ in
+                observedStates.append(harness.coordinator.queryState(for: .location, context: harness.context))
+            }
+        )
+
+        XCTAssertEqual(harness.coordinator.queryState(for: .location, context: harness.context), .granted)
+
+        viewModel.removePermissions()
+
+        XCTAssertEqual(observedStates, [.prompt, .prompt])
+        XCTAssertNil(harness.store.decision(for: .location, at: harness.site))
+    }
+
+    func testWhenRemovalIsUndoneThenStoredRecordReturnsWithoutRestoringAllowOnce() async throws {
+        for isFireMode in [false, true] {
+            for permissionType in [SitePermissionType.microphone, .location] {
+                let harness = try CoordinatorHarness(isFireMode: isFireMode)
+                harness.systemStates[permissionType] = .authorized
+                harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+                let requestCompleted = expectation(description: "\(permissionType) request completed, Fire: \(isFireMode)")
+                harness.coordinator.request(harness.request([permissionType]), promptHandler: { _, respond in
+                    respond(.allowOnce)
+                }, completion: {
+                    XCTAssertEqual($0, .grant)
+                    requestCompleted.fulfill()
+                })
+                await fulfillment(of: [requestCompleted], timeout: 1)
+                XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).ephemeralPermissionTypes, [permissionType])
+                var removal: SitePermissionsRemoval?
+                let viewModel = SitePermissionsSheetViewModel(
+                    snapshot: harness.coordinator.managementSnapshot(for: harness.site),
+                    store: harness.store,
+                    onRemovePermissions: {
+                        removal = $0
+                        harness.coordinator.removeManagementSessionState(for: $0.permissionTypes, at: harness.site)
+                    }
+                )
+
+                viewModel.removePermissions()
+                let removed = try XCTUnwrap(removal)
+                if isFireMode {
+                    harness.coordinator.restoreFireModeManagementState(for: removed.permissionTypes, at: harness.site)
+                }
+                harness.store.restore(removed.snapshot)
+
+                let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+                XCTAssertEqual(snapshot.storedPermissions, [.camera: .allow])
+                XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+                XCTAssertEqual(snapshot.relevantPermissionTypes, [.camera])
+                XCTAssertEqual(harness.store.permissions(for: harness.site), [.camera: .allow])
+                XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+            }
+        }
+    }
+
+    func testWhenFireSessionAllowIsRemovedAndUndoneThenChoiceReturnsWithoutResumingCapture() throws {
+        for permissionType in SitePermissionType.allCases {
+            let harness = try CoordinatorHarness(isFireMode: true)
+            harness.systemStates[permissionType] = .authorized
+            harness.coordinator.applyFireModeManagementDecision(.allow, for: permissionType, at: harness.site)
+            harness.coordinator.captureDidEnd([permissionType])
+
+            harness.coordinator.removeManagementSessionState(for: [permissionType], at: harness.site)
+
+            XCTAssertFalse(harness.coordinator.managementSnapshot(for: harness.site).showsMenuEntry)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .prompt)
+
+            harness.coordinator.restoreFireModeManagementState(for: [permissionType], at: harness.site)
+
+            let restored = harness.coordinator.managementSnapshot(for: harness.site)
+            XCTAssertEqual(restored.storedPermissions[permissionType], .allow)
+            XCTAssertTrue(restored.showsMenuEntry)
+            XCTAssertTrue(restored.ephemeralPermissionTypes.isEmpty)
+            XCTAssertEqual(harness.coordinator.captureState(for: permissionType), .inactive)
+            XCTAssertEqual(harness.coordinator.queryState(for: permissionType, context: harness.context), .granted)
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+        }
+    }
+
+    func testWhenFireChoiceIsMadeAfterRemovalThenUndoPreservesNewerSiteRecord() throws {
+        for permissionType in [SitePermissionType.camera, .location] {
+            let harness = try CoordinatorHarness(isFireMode: true)
+            harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
+            harness.coordinator.removeManagementSessionState(for: [.camera], at: harness.site)
+            harness.coordinator.applyFireModeManagementDecision(.deny, for: permissionType, at: harness.site)
+
+            harness.coordinator.restoreFireModeManagementState(for: [.camera], at: harness.site)
+
+            XCTAssertEqual(harness.coordinator.managementSnapshot(for: harness.site).storedPermissions, [permissionType: .deny])
+            XCTAssertTrue(harness.store.storedSites.isEmpty)
+        }
+    }
+
+    func testExternalRevocationClearsFireOverrideAndRevealsPersistentDecision() throws {
+        let harness = try CoordinatorHarness(isFireMode: true)
+        harness.store.setPersistentDecision(.deny, for: .camera, at: harness.site)
+        harness.coordinator.applyFireModeManagementDecision(.allow, for: .camera, at: harness.site)
+
+        harness.coordinator.revokeManagementSessionState(for: [.camera], at: harness.site)
+
+        let snapshot = harness.coordinator.managementSnapshot(for: harness.site)
+        XCTAssertEqual(snapshot.storedPermissions, [.camera: .deny])
+        XCTAssertTrue(snapshot.ephemeralPermissionTypes.isEmpty)
+    }
+}
+
+@MainActor
+private final class CoordinatorHarness {
+    let site: SitePermissionKey
+    let store: SitePermissionsStore
+    let context: SitePermissionRequestContext
+    let isFireMode: Bool
+
+    lazy var coordinator = SitePermissionsCoordinator(
+        store: store,
+        isFireMode: isFireMode,
+        currentContext: { [context] _, _ in context },
+        authorizationState: { [weak self] in self?.systemStates[$0] ?? .unavailable },
+        requestAuthorization: { [weak self] in await self?.authorizationRequester($0) ?? .unavailable },
+        recoveryHandler: { _, completion in completion() }
+    )
+
+    var systemStates: [SitePermissionType: SystemPermissionAuthorizationState] = [
+        .camera: .authorized,
+        .microphone: .authorized
+    ]
+    var authorizationRequester: (SitePermissionType) async -> SystemPermissionAuthorizationState = { _ in .authorized }
+
+    init(isFireMode: Bool = false) throws {
+        self.isFireMode = isFireMode
+        site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        context = SitePermissionRequestContext(tabID: "tab",
+                                               topLevelSite: site,
+                                               requestingFrameID: 1,
+                                               webContentProcessGeneration: 0,
+                                               navigationGeneration: 0)
+    }
+
+    func request(_ permissionTypes: Set<SitePermissionType>) -> SitePermissionRequest {
+        SitePermissionRequest(context: context, permissionTypes: permissionTypes)
+    }
+}

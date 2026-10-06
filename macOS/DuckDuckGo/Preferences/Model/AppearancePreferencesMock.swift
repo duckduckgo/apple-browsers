@@ -18,7 +18,7 @@
 
 #if DEBUG
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import BrowserServicesKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils

@@ -19,17 +19,22 @@
 
 import XCTest
 import WebKit
-import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
+import UserNotifications
 @testable import DuckDuckGo
 @testable import Common
 @testable import UserScript
 @testable import Subscription
 import SubscriptionTestingUtilities
-import PixelKitTestingUtilities
-import Networking
+@_spi(Testing) import Networking
 import BrowserServicesKitTestsUtils
-import NetworkingTestingUtils
+
+private struct SubscriptionExperimentAttributionProviderStub: SubscriptionExperimentAttributionProviding {
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        nil
+    }
+}
 
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     
@@ -77,7 +82,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             tierEventReporter: mockTierEventReporter,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator)
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub())
     }
 
     override func tearDown() {
@@ -468,7 +474,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
@@ -480,7 +487,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(started.purchasePlatform, .appStore)
         XCTAssertEqual(started.subscriptionIdentifier, "yearly")
         XCTAssertEqual(started.freeTrialEligible, true)
-        XCTAssertEqual(started.funnelName, "funnel_appsettings_ios")
+        XCTAssertEqual(started.entryPoint, .settings)
 
         let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
@@ -489,6 +496,29 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let completion = try XCTUnwrap(mockWideEvent.completions.first)
         XCTAssertTrue(completion.0 is SubscriptionPurchaseWideEventData)
         XCTAssertEqual(completion.1, .success(reason: nil))
+    }
+
+    func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
+            .settings)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.onboarding.rawValue),
+            .onboarding)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.existingUserPromo.rawValue),
+            .appPromotion)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabMenu.rawValue),
+            .newTabPage)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
+            .duckAI)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.toolbarVPN.rawValue),
+            .vpn)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
     @MainActor
@@ -520,7 +550,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
@@ -560,13 +591,14 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
 
         let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
-        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
+        XCTAssertEqual(started.entryPoint, .settings)
     }
 
     // MARK: - SubscriptionChangeSelected Tests
@@ -595,7 +627,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -634,7 +667,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -672,7 +706,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -711,7 +746,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
@@ -747,7 +783,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         // Invalid params - missing "id"
@@ -786,7 +823,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         let params: [String: Any] = ["id": "monthly-plus", "change": "downgrade"]
@@ -829,7 +867,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: mockPendingTransactionHandler,
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
         
         let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -888,7 +927,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
@@ -952,7 +992,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
@@ -1007,7 +1048,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.plus.yearly.renews.us", "change": "downgrade"], original: message)
@@ -1066,7 +1108,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            requestValidator: mockRequestValidator
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
         )
 
         // No "change" parameter provided
@@ -1212,6 +1255,269 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertFalse(mockAppStorePurchaseFlow.changeTierCalled, "Unknown platform must not call performTierChange")
         XCTAssertEqual(sut.transactionStatus, .idle)
         XCTAssertEqual(sut.transactionError, .otherRestoreError)
+    }
+
+    // MARK: - Notification permission & expiration reminder
+
+    private func makeFeature(notificationCenter: MockUNUserNotificationCenter,
+                             scheduler: SubscriptionExpirationReminderSchedulerMock? = nil,
+                             appStorePurchaseFlow: AppStorePurchaseFlowMock? = nil,
+                             isExpirationReminderFeatureEnabled: @escaping () -> Bool = { true }) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+        let purchaseFlow = appStorePurchaseFlow ?? mockAppStorePurchaseFlow!
+        let executer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        return DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: "",
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            tierEventReporter: mockTierEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: executer,
+            requestValidator: mockRequestValidator,
+            userNotificationCenter: notificationCenter,
+            expirationReminderScheduler: scheduler,
+            isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+    }
+
+    func testGetUserSettings_WhenAuthorized_ReturnsGranted() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .authorized
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsPermission, .granted)
+    }
+
+    func testGetUserSettings_WhenProvisional_ReturnsDenied() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .provisional
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        // .provisional has no programmatic upgrade path — only Settings can raise it to .authorized.
+        // Bucketing it with .denied gives FE a clear "needs Settings change" signal.
+        XCTAssertEqual(result.notificationsPermission, .denied)
+    }
+
+    func testGetUserSettings_WhenDenied_ReturnsDenied() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .denied
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsPermission, .denied)
+    }
+
+    func testGetUserSettings_WhenNotDetermined_ReturnsNotDetermined() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsPermission, .notDetermined)
+    }
+
+    func testRequestNotificationsPermission_WhenPreviouslyDenied_ReturnsFalseWithoutPrompting() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .denied
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertFalse(result.granted)
+        XCTAssertFalse(center.didRequestAuthorization,
+                       "iOS must not invoke requestAuthorization when status is .denied — the OS would not surface a prompt")
+    }
+
+    func testRequestNotificationsPermission_WhenAuthorized_ReturnsTrueWithoutPrompting() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .authorized
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertTrue(result.granted)
+        XCTAssertFalse(center.didRequestAuthorization)
+    }
+
+    func testRequestNotificationsPermission_WhenNotDeterminedAndUserAllows_PromptsAndReturnsTrue() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        center.requestAuthorizationResult = true
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertTrue(result.granted)
+        XCTAssertTrue(center.didRequestAuthorization)
+    }
+
+    func testRequestNotificationsPermission_WhenNotDeterminedAndUserDenies_PromptsAndReturnsFalse() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        center.requestAuthorizationResult = false
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertFalse(result.granted)
+        XCTAssertTrue(center.didRequestAuthorization)
+    }
+
+    func testRequestNotificationsPermission_WhenFeatureFlagOff_ReturnsFalseWithoutPrompting() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        let sut = makeFeature(notificationCenter: center, isExpirationReminderFeatureEnabled: { false })
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertFalse(result.granted)
+        XCTAssertFalse(center.didRequestAuthorization,
+                       "Prompt must not fire when the experiment flag is off — the user would be granting permission for nothing")
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenScheduleNotificationProvidedAndPurchaseSucceeds_CallsSchedulerWithDays() async throws {
+        let center = MockUNUserNotificationCenter()
+        let scheduler = SubscriptionExpirationReminderSchedulerMock()
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
+
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let params: [String: Any] = [
+            "id": "yearly",
+            "scheduleNotification": ["daysBeforeCancel": 7]
+        ]
+        _ = await sut.subscriptionSelected(params: params, original: message)
+
+        XCTAssertEqual(scheduler.scheduledDaysBeforeCancel, [7],
+                       "Scheduler must be invoked once with the daysBeforeCancel value from the payload")
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenScheduleNotificationOmitted_DoesNotCallScheduler() async throws {
+        let center = MockUNUserNotificationCenter()
+        let scheduler = SubscriptionExpirationReminderSchedulerMock()
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
+
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertTrue(scheduler.scheduledDaysBeforeCancel.isEmpty,
+                      "Scheduler must not be invoked when scheduleNotification is absent from the payload")
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenScheduleNotificationProvidedButPurchaseFails_DoesNotCallScheduler() async throws {
+        let center = MockUNUserNotificationCenter()
+        let scheduler = SubscriptionExpirationReminderSchedulerMock()
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+
+        let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
+
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let params: [String: Any] = [
+            "id": "yearly",
+            "scheduleNotification": ["daysBeforeCancel": 7]
+        ]
+        _ = await sut.subscriptionSelected(params: params, original: message)
+
+        XCTAssertTrue(scheduler.scheduledDaysBeforeCancel.isEmpty,
+                      "Scheduler must not be invoked when the purchase did not complete successfully")
+    }
+
+    // MARK: - Bridge result payloads
+    //
+    // These tests pin the JSON shape of the `result` payloads our handlers produce.
+    // The broker's envelope wrapping (context / featureName / id) is covered by
+    // `UserScriptMessagingTests.testDelegateRespondsWithResult` in BrowserServicesKit.
+    // Renaming a key here is a breaking change to the FE↔Native contract.
+
+    func testUserSettingsResponse_encodesGranted() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .granted)
+        XCTAssertEqual(try jsonString(response), "{\"notificationsPermission\":\"granted\"}")
+    }
+
+    func testUserSettingsResponse_encodesDenied() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .denied)
+        XCTAssertEqual(try jsonString(response), "{\"notificationsPermission\":\"denied\"}")
+    }
+
+    func testUserSettingsResponse_encodesNotDetermined() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .notDetermined)
+        XCTAssertEqual(try jsonString(response), "{\"notificationsPermission\":\"notDetermined\"}")
+    }
+
+    func testNotificationsPermissionResponse_encodesGrantedTrue() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse(granted: true)
+        XCTAssertEqual(try jsonString(response), "{\"granted\":true}")
+    }
+
+    func testNotificationsPermissionResponse_encodesGrantedFalse() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse(granted: false)
+        XCTAssertEqual(try jsonString(response), "{\"granted\":false}")
+    }
+
+    func testScheduleNotificationPreference_decodesFromExpectedShape() throws {
+        let raw = "{\"daysBeforeCancel\":7}"
+        let preference = try JSONDecoder().decode(DefaultSubscriptionPagesUseSubscriptionFeature.ScheduleNotificationPreference.self,
+                                                  from: Data(raw.utf8))
+        XCTAssertEqual(preference.daysBeforeCancel, 7)
+    }
+
+    private func jsonString<T: Encodable>(_ value: T) throws -> String {
+        let data = try JSONEncoder().encode(value)
+        return try XCTUnwrap(String(data: data, encoding: .utf8))
     }
 }
 

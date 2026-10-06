@@ -25,6 +25,7 @@ import Common
 import FoundationExtensions
 import Core
 import SwiftUI
+import PixelKit
 
 final class CredentialProviderListViewController: UIViewController {
 
@@ -141,7 +142,7 @@ final class CredentialProviderListViewController: UIViewController {
 
         navigationItem.searchController = searchController
 
-        Pixel.fire(pixel: .autofillExtensionPasswordsOpened)
+        PixelKit.fire(Pixel.Event.autofillExtensionPasswordsOpened)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -165,7 +166,7 @@ final class CredentialProviderListViewController: UIViewController {
         view.backgroundColor = UIColor(designSystemColor: .background)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         tableView.separatorColor = UIColor(designSystemColor: .lines)
-        tableView.sectionIndexColor = UIColor(designSystemColor: .accent)
+        tableView.sectionIndexColor = UIColor(designSystemColor: .accentPrimary)
 
         navigationController?.navigationBar.barTintColor = UIColor(designSystemColor: .panel)
         navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
@@ -297,7 +298,7 @@ final class CredentialProviderListViewController: UIViewController {
 
     @objc private func doneTapped() {
         onDismiss()
-        Pixel.fire(pixel: .autofillExtensionPasswordsDismissed)
+        PixelKit.fire(Pixel.Event.autofillExtensionPasswordsDismissed)
     }
 
 }
@@ -320,7 +321,7 @@ extension CredentialProviderListViewController: UITableViewDataSource {
                 fatalError("Could not dequeue cell")
             }
             cell.item = items[indexPath.row]
-            cell.backgroundColor = UIColor(designSystemColor: .surface)
+            cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
 
             cell.disclosureButtonTapped = { [weak self] in
                 let item = items[indexPath.row]
@@ -362,7 +363,7 @@ extension CredentialProviderListViewController: UITableViewDelegate {
                 presentDetailsForCredentials(item: item)
             } else {
                 onRowSelected(item)
-                Pixel.fire(pixel: .autofillExtensionPasswordSelected)
+                PixelKit.fire(Pixel.Event.autofillExtensionPasswordSelected)
             }
         }
     }

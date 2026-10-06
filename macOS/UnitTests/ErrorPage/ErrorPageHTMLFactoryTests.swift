@@ -34,6 +34,8 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
 
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("Phishing")) // Check if the HTML contains "Phishing"
+        XCTAssertFalse(html.contains("window.configureErrorPageLink({"))
+        XCTAssertFalse(html.contains(URL.errorPageReportBrokenSite.absoluteString))
     }
 
     func testMalwareErrorTemplate() {
@@ -80,5 +82,37 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("violet"))
         XCTAssertFalse(html.contains("$THEME_VARIANT$"))
+    }
+
+    func testWhenErrorIsWebContentProcessTerminatedThenReportBrokenSiteLinkIsConfigured() {
+        let error = WKError(.webContentProcessTerminated)
+        let html = ErrorPageHTMLFactory.html(for: error, themeName: .violet)
+
+        XCTAssertTrue(html.contains("window.configureErrorPageLink({"))
+        XCTAssertTrue(html.contains(UserText.sendFeedback))
+        XCTAssertTrue(html.contains("window.location.href = '\(URL.errorPageReportBrokenSite.absoluteString)'"))
+        XCTAssertFalse(html.contains("$ERROR_PAGE_LINK_CONFIGURATION$"))
+        XCTAssertTrue(html.contains("violet"))
+        XCTAssertFalse(html.contains("$THEME_VARIANT$"))
+    }
+
+    func testWhenErrorIsNotWebContentProcessTerminatedThenReportBrokenSiteLinkIsNotConfigured() {
+        let error = WKError(.unknown)
+        let html = ErrorPageHTMLFactory.html(for: error, themeName: .default)
+
+        XCTAssertFalse(html.contains("window.configureErrorPageLink({"))
+        XCTAssertFalse(html.contains(URL.errorPageReportBrokenSite.absoluteString))
+    }
+
+    func testWhenLinkTextContainsJavaScriptControlCharactersThenItIsEscaped() {
+        let error = WKError(.webContentProcessTerminated)
+        let configuration = ErrorPageHTMLConfiguration(
+            linkText: "Send 'feedback'\n</script>\u{2028}&",
+            linkFunction: "function() {}"
+        )
+        let html = ErrorPageHTMLTemplate(error: error, header: "Header", configuration: configuration).makeHTMLFromTemplate()
+
+        XCTAssertTrue(html.contains("text: 'Send \\'feedback\\'\\n\\u003C/script\\u003E\\u2028\\u0026'"))
+        XCTAssertTrue(html.contains("onClick: function() {}"))
     }
 }

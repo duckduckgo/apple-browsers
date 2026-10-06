@@ -63,7 +63,7 @@ struct AddEditBookmarkView: View {
                 BookmarkDialogStackedContentView(
                     .init(
                         title: UserText.Bookmarks.Dialog.Field.name,
-                        content: TextField("", text: $bookmarkName)
+                        content: TextField("" as String, text: $bookmarkName)
                             .focusedOnAppear()
                             .accessibilityIdentifier("bookmark.add.name.textfield")
                             .textFieldStyle(.themed)
@@ -71,7 +71,7 @@ struct AddEditBookmarkView: View {
                     ),
                     .init(
                         title: UserText.Bookmarks.Dialog.Field.url,
-                        content: TextField("", text: bookmarkURLPath ?? .constant(""))
+                        content: TextField("" as String, text: bookmarkURLPath ?? .constant(""))
                             .accessibilityIdentifier("bookmark.add.url.textfield")
                             .textFieldStyle(.themed)
                             .font(.system(size: 14)),

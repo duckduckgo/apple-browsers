@@ -1,0 +1,222 @@
+//
+//  SettingsAIChatShortcutsView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import Core
+import PrivacyConfig
+import FeatureFlags_iOS
+
+/// Visibility logic for the Duck.ai chrome shortcut surfaces.
+///
+/// The chrome shortcut (the Duck.ai pill in the iPad tabs bar and its matching
+/// row in Settings → AI Features → Manage Duck.ai Shortcuts) is iPad-only and
+/// gated behind the `aiChatChromeShortcutIPad` feature flag.
+///
+/// Extracted as a free type so the platform check can be exercised in tests
+/// without depending on `UIDevice.current`.
+enum DuckAIChromeShortcutVisibility {
+    static func isSettingsRowVisible(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        isIPad && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+    }
+
+    /// Address Bar settings row hides whenever the Tab Bar row is shown — they describe the same surface.
+    static func isAddressBarRowVisible(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        !isSettingsRowVisible(isIPad: isIPad, featureFlagger: featureFlagger)
+    }
+
+    /// No `isIPad` parameter — the only caller (`TabsBarViewController`) is iPad-only by construction.
+    /// Shown when the master "Tab Bar" toggle is on and at least one half is still visible.
+    static func isChromeButtonVisible(
+        featureFlagger: FeatureFlagger,
+        isTabBarShortcutEnabled: Bool,
+        isDuckAIButtonVisible: Bool,
+        isContextualSheetButtonVisible: Bool
+    ) -> Bool {
+        featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && isTabBarShortcutEnabled
+            && (isDuckAIButtonVisible || isContextualSheetButtonVisible)
+    }
+
+    static func isChromeMenuButtonAvailable(isIPad: Bool, featureFlagger: FeatureFlagger) -> Bool {
+        isIPad
+            && featureFlagger.isFeatureOn(.aiChatChromeShortcutIPad)
+            && featureFlagger.isFeatureOn(.aiChatChromeMenuButtonIPad)
+    }
+
+    static func isChromeMenuButtonVisible(featureFlagger: FeatureFlagger, isTabBarShortcutEnabled: Bool) -> Bool {
+        isChromeMenuButtonAvailable(isIPad: true, featureFlagger: featureFlagger) && isTabBarShortcutEnabled
+    }
+
+    /// On iPad with the chrome shortcut in play, the in-address-bar Duck.ai button only
+    /// shows at narrow widths where the tabs bar (and chrome pill) is hidden. It mirrors the
+    /// master "Tab Bar" toggle — shown whenever the shortcut is on, hidden only once both
+    /// halves are hidden (which already flips the master toggle off).
+    static func isAddressBarButtonVisibleOnIPad(
+        isLargeWidth: Bool,
+        isTabBarShortcutEnabled: Bool
+    ) -> Bool {
+        !isLargeWidth && isTabBarShortcutEnabled
+    }
+}
+
+struct SettingsAIChatShortcutsView: View {
+    @EnvironmentObject var viewModel: SettingsViewModel
+
+    var body: some View {
+        List {
+            Section(UserText.aiChatSettingsBrowserShortcutsSectionTitle) {
+                SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
+
+                if shouldShowAddressBarShortcut {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                }
+
+                if shouldShowTabBarShortcut {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableTabBarToggle,
+                                     subtitle: UserText.aiChatSettingsEnableTabBarSubtitle,
+                                     accessory: .toggle(isOn: viewModel.aiChatTabBarEnabledBinding),
+                                     accessoryAccessibilityIdentifier: "Settings.AIChat.TabBarToggle")
+                }
+
+                if viewModel.state.voiceSearchEnabled {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                }
+
+                SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+            }
+
+            shortcutsSection
+        }
+        .applySettingsListModifiers(title: UserText.settingsAiChatShortcuts, displayMode: .inline, viewModel: viewModel)
+    }
+
+    @ViewBuilder
+    private var shortcutsSection: some View {
+        if #available(iOS 17.0, *) {
+            Section {
+                NavigationLink {
+                    DuckAIWidgetEducationView()
+                } label: {
+                    Label {
+                        Text(UserText.duckAISettingsAddWidget)
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Color.Size24.addWidget)
+                            .frame(width: 24, height: 24)
+                    }.daxBodyRegular()
+                }
+
+                if #available(iOS 18.0, *) {
+                    NavigationLink {
+                        ControlCenterWidgetEducationView(
+                            navBarTitle: UserText.controlCenterDuckAIWidgetEducationNavBarTitle,
+                            widget: .duckAIVoiceChat,
+                            fourthParagraphText: UserText.controlCenterDuckAIWidgetEducationParagraph
+                        )
+                    } label: {
+                        Label {
+                            Text(UserText.duckAISettingsAddControlCenterWidget)
+                        } icon: {
+                            Image(uiImage: DesignSystemImages.Color.Size24.settings)
+                                .frame(width: 24, height: 24)
+                        }.daxBodyRegular()
+                    }
+                }
+
+                NavigationLink {
+                    SiriEducationView(
+                        title: UserText.duckAISiriEducationScreenTitle,
+                        description: UserText.duckAISiriEducationScreenDescription,
+                        examples: [
+                            UserText.duckAISiriEducationScreenExample1,
+                            UserText.duckAISiriEducationScreenExample2,
+                            UserText.duckAISiriEducationScreenExample3
+                        ]
+                    )
+                } label: {
+                    Label {
+                        Text(UserText.duckAISettingsControlWithSiri)
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Color.Size24.askSiri)
+                            .frame(width: 24, height: 24)
+                    }.daxBodyRegular()
+                }
+            } header: {
+                Text(UserText.duckAIShortcutsSectionHeader)
+            }
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        }
+    }
+
+    private var shouldShowAddressBarShortcut: Bool {
+        DuckAIChromeShortcutVisibility.isAddressBarRowVisible(
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            featureFlagger: viewModel.featureFlagger
+        )
+    }
+
+    private var shouldShowTabBarShortcut: Bool {
+        DuckAIChromeShortcutVisibility.isSettingsRowVisible(
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            featureFlagger: viewModel.featureFlagger
+        )
+    }
+}
+
+private struct DuckAIWidgetEducationView: View {
+
+    var secondParagraphText: Text {
+        if #available(iOS 18, *) {
+            return Text(LocalizedStringKey(UserText.addWidgetSettingsSecondParagraph))
+        } else {
+            return Text("addWidget.settings.secondParagraph.\(Image(.widgetEducationAddIcon))")
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                Text(UserText.settingsAddDuckAIWidget)
+                    .font(.system(size: 22, weight: .bold, design: .default))
+
+                NumberedParagraphListView(
+                    paragraphConfig: [
+                        NumberedParagraphConfig(text: UserText.addWidgetSettingsFirstParagraph),
+                        NumberedParagraphConfig(
+                            text: secondParagraphText,
+                            detail: .image(Image.homeScreen,
+                                           maxWidth: 270)),
+                        NumberedParagraphConfig(text: UserText.addDuckAIWidgetSettingsThirdParagraph),
+                        NumberedParagraphConfig(text: UserText.addDuckAIWidgetSettingsFourthParagraph)
+                    ]
+                )
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+        }
+        .navigationBarTitle("")
+        .background(Color(designSystemColor: .background))
+    }
+}

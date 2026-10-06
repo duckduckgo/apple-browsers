@@ -35,8 +35,10 @@ let package = Package(
         .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.2"),
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.6.1"),
+        .package(path: "../../../SharedPackages/PixelKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
@@ -63,7 +65,7 @@ let package = Package(
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "XPCHelper", package: "XPCHelper"),
                 .product(name: "UDSHelper", package: "UDSHelper"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -78,7 +80,7 @@ let package = Package(
                 "AppInfoRetriever",
                 "VPNAppState",
                 .product(name: "VPN", package: "VPN"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -93,7 +95,7 @@ let package = Package(
                 "NetworkProtectionUI",
                 .product(name: "AppLauncher", package: "AppLauncher"),
                 .product(name: "VPN", package: "VPN"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -117,7 +119,7 @@ let package = Package(
         .target(
             name: "VPNPixels",
             dependencies: [
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -133,7 +135,9 @@ let package = Package(
                 "VPNAppState",
                 "VPNPixels",
                 .product(name: "VPN", package: "VPN"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
                 .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
@@ -153,7 +157,7 @@ let package = Package(
                 "NetworkProtectionUI",
                 .product(name: "VPNTestUtils", package: "VPN"),
                 .product(name: "LoginItems", package: "LoginItems"),
-                .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ]
         ),
     ]

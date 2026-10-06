@@ -29,7 +29,6 @@ struct TabBarRemoteMessageView: View {
     let onTap: (URL) -> Void
     let onHover: () -> Void
     let onHoverEnd: () -> Void
-    let onAppear: () -> Void
 
     private var palette: ThemeColors {
         themeManager.theme.palette
@@ -91,7 +90,6 @@ struct TabBarRemoteMessageView: View {
                     : Color(palette.accentPrimary))
         .frame(height: 24)
         .cornerRadius(8)
-        .onAppear(perform: { onAppear() })
     }
 }
 

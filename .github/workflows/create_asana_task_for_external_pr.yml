@@ -1,0 +1,31 @@
+name: Create Asana Task for External PR
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: read
+
+jobs:
+  create-asana-task:
+    name: Create Asana task
+    if: >-
+      ${{
+        github.event.pull_request.user.type != 'Bot' &&
+        github.event.pull_request.head.repo.full_name != github.repository
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create task from GitHub pull request
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: '1218263236060238'
+          asana-section: '1218266698505984'
+          asana-task-name: 'GitHub PR: #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}'
+          asana-task-description: |
+            ${{ github.event.pull_request.html_url }}
+
+            ${{ github.event.pull_request.body }}

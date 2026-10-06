@@ -31,15 +31,9 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "BookmarksBarCollectionViewItem")
 
-    @IBOutlet private weak var mouseOverView: MouseOverView!
-    @IBOutlet var stackView: NSStackView!
-    @IBOutlet private var faviconView: NSImageView! {
-        didSet {
-            faviconView.setCornerRadius(3.0)
-        }
-    }
-
-    @IBOutlet private var titleLabel: NSTextField!
+    private var mouseOverView: MouseOverView!
+    private var faviconView: NSImageView!
+    private var titleLabel: NSTextField!
 
     private enum EntityType {
         case bookmark(title: String, url: String, favicon: NSImage?, isFavorite: Bool)
@@ -80,6 +74,71 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
             }
             super.highlightState = newValue
         }
+    }
+
+    override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 184, height: 24))
+
+        // Translucent tint overlay that also owns hover/click handling, so it has to stay in front
+        // of the favicon and the title — behind them it would not receive clicks on the favicon.
+        mouseOverView = MouseOverView(frame: .zero)
+        mouseOverView.translatesAutoresizingMaskIntoConstraints = false
+        mouseOverView.mouseOverColor = .buttonMouseOver
+        mouseOverView.mouseDownColor = .buttonMouseDown
+        mouseOverView.cornerRadius = 3
+        mouseOverView.target = self
+        mouseOverView.action = #selector(mouseClickAction)
+        mouseOverView.delegate = self
+
+        // Create favicon image view
+        faviconView = NSImageView()
+        faviconView.translatesAutoresizingMaskIntoConstraints = false
+        faviconView.imageScaling = .scaleProportionallyDown
+        faviconView.image = .bookmark
+        faviconView.contentTintColor = .blackWhite80
+        faviconView.setCornerRadius(3.0)
+
+        // Create title label
+        titleLabel = NSTextField(labelWithString: "Bookmark")
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.lineBreakMode = .byTruncatingMiddle
+        titleLabel.alignment = .left
+        titleLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        titleLabel.focusRingType = .none
+
+        containerView.addSubview(faviconView)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(mouseOverView)
+
+        // Apply constraints
+        NSLayoutConstraint.activate([
+            // Mouse over view fills the entire container
+            mouseOverView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            mouseOverView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            mouseOverView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            mouseOverView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+
+            // Favicon constraints
+            faviconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 6),
+            faviconView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            faviconView.widthAnchor.constraint(equalToConstant: 16),
+            faviconView.heightAnchor.constraint(equalToConstant: 16),
+
+            // Title label constraints
+            titleLabel.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: 3),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -6),
+            titleLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+        ])
+
+        view = containerView
     }
 
     override func viewDidLoad() {
@@ -131,6 +190,24 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         faviconView.isEnabled = !isInteractionPrevented
         titleLabel.isEnabled = !isInteractionPrevented
         titleLabel.alphaValue = isInteractionPrevented ? 0.3 : 1
+    }
+
+    /// Re-resolves this bookmark's favicon and shows it in place once a decoded image is available.
+    ///
+    /// Only ever shows the bookmark's own (URL-resolved) favicon. `Bookmark.favicon(_:)` already falls
+    /// back to the host favicon internally when the bookmark's URL has no favicon of its own, so this
+    /// deliberately does *not* add a separate host-favicon fallback: doing so downgraded the icon to the
+    /// host favicon during the brief off-main decode window of the URL favicon (`favicon(_:)` returns
+    /// `nil` while decoding), making a bookmark whose URL favicon differs from its host favicon flicker
+    /// between the two as `.faviconCacheUpdated` fired repeatedly. While the favicon isn't decoded yet
+    /// this is a no-op, leaving the currently shown icon untouched (never downgraded to a placeholder).
+    func refreshDisplayedFavicon() {
+        guard let bookmark = representedObject as? Bookmark,
+              let favicon = bookmark.favicon(.small)?.copy() as? NSImage else {
+            return
+        }
+        favicon.size = NSSize.faviconSize
+        faviconView.image = favicon
     }
 
     @IBAction func mouseClickAction(_ sender: Any) {

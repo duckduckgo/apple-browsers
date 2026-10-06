@@ -28,27 +28,27 @@ final class DataBrokerPrerequisitesStatusVerifierTests: XCTestCase {
         statusChecker = nil
     }
 
-    func testIncorrectDirectory_thenReturnIncorrectDirectoryStatus() {
+    func testIncorrectDirectory_thenReturnIncorrectDirectoryStatus() async {
         statusChecker.isInCorrectDirectoryValue = false
-        let result = DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
+        let result = await DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
         XCTAssertEqual(result, DataBrokerPrerequisitesStatus.invalidDirectory)
     }
 
-    func testIncorrectPermission_thenReturnIncorrectPermissionStatus() {
+    func testIncorrectPermission_thenReturnIncorrectPermissionStatus() async {
         statusChecker.doesHavePermissionValue = false
-        let result = DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
+        let result = await DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
         XCTAssertEqual(result, DataBrokerPrerequisitesStatus.invalidSystemPermission)
     }
 
-    func testIncorrectDirectoryAndIncorrectPermission_thenReturnIncorrectPermissionStatus() {
+    func testIncorrectDirectoryAndIncorrectPermission_thenReturnIncorrectPermissionStatus() async {
         statusChecker.isInCorrectDirectoryValue = false
         statusChecker.doesHavePermissionValue = false
-        let result = DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
+        let result = await DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
         XCTAssertEqual(result, DataBrokerPrerequisitesStatus.invalidSystemPermission)
     }
 
-    func testCorrectStatus_thenReturnValidStatus() {
-        let result = DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
+    func testCorrectStatus_thenReturnValidStatus() async {
+        let result = await DefaultDataBrokerPrerequisitesStatusVerifier(statusChecker: statusChecker).checkStatus()
         XCTAssertEqual(result, DataBrokerPrerequisitesStatus.valid)
     }
 }

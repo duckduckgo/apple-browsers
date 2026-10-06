@@ -22,10 +22,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
 
     private let sidebarButtonIdentifier = "PreferencesSidebar.youTubeAdBlockingButton"
 
-    override func setUpWithError() throws {
-        continueAfterFailure = false
-    }
-
     // MARK: - Settings sidebar visibility
 
     func testSettingsEntryVisible_whenFullyEnabled() throws {
@@ -130,10 +126,12 @@ final class YouTubeAdBlockingUITests: UITestCase {
         ])
         app.enforceSingleWindow()
         app.navigateToYouTubeVideo("dQw4w9WgXcQ")
+
+        Thread.sleep(forTimeInterval: 2)
+
         let youTubeAdBlockButton = app.buttons[youTubeAdBlockButtonIdentifier]
         XCTAssertTrue(youTubeAdBlockButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "YouTube ad block button should still appear when remotely disabled")
-        youTubeAdBlockButton.click()
         let contingencyMessage = app.descendants(matching: .any)["YouTubeAdBlockPopover.unavailableMessage"]
         XCTAssertTrue(contingencyMessage.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Popover should show the contingency message when feature is remotely disabled")
@@ -147,9 +145,10 @@ final class YouTubeAdBlockingUITests: UITestCase {
         ])
         app.enforceSingleWindow()
         XCTAssertTrue(app.addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        app.addressBar.typeURL(URL(string: "https://example.com")!)
-        XCTAssertTrue(app.windows.webViews["Example Domain"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "example.com page did not load")
+        app.addressBar.typeURL(URL(string: "https://github.com")!)
+        let githubContent = app.windows.webViews.firstMatch.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(githubContent.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "github.com page did not load")
         XCTAssertFalse(app.buttons[youTubeAdBlockButtonIdentifier].exists,
                        "YouTube ad block button should not appear on non-YouTube URLs")
     }

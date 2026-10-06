@@ -21,6 +21,7 @@ import Foundation
 struct TabBarRemoteMessage {
     static let tabBarPermanentSurveyRemoteMessageId = "macos_permanent_survey_tab_bar"
 
+    let id: String
     let buttonTitle: String
     let popupTitle: String
     let popupSubtitle: String

@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Combine
+import PixelKit
 
 public class TabsModel: NSObject, NSCoding, TabsModelManaging {
 
@@ -306,9 +307,9 @@ private extension TabsModel {
     private func validateTabMode(_ tab: Tab, operation: Operation) -> Bool {
         guard tab.fireTab == shouldCreateFireTabs else {
             assertionFailure("Tab mode mismatch in \(operation): tab.fireTab=\(tab.fireTab), model.mode=\(mode)")
-            Pixel.fire(pixel: .debugTabsModelCrossModeMismatch, withAdditionalParameters: [
+            PixelKit.fire(Pixel.Event.debugTabsModelCrossModeMismatch, options: .parameters([
                 PixelParameters.tabsModelOperation: operation.rawValue
-            ])
+            ]))
             return false
         }
         return true

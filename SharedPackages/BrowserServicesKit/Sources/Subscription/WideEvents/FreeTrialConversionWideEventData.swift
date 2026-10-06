@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import FoundationExtensions
-import PixelKit
+import WideEvent
 
 public class FreeTrialConversionWideEventData: WideEventData {
     public static let metadata = WideEventMetadata(

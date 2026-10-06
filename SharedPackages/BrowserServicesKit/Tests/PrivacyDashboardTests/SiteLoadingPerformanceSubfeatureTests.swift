@@ -25,7 +25,7 @@ import BrowserServicesKitTestsUtils
 final class SiteLoadingPerformanceSubfeatureTests: XCTestCase {
 
     private struct FiredPixel {
-        let event: PixelKitEvent
+        let event: PixelKit.Event
         let frequency: PixelKit.Frequency
     }
 

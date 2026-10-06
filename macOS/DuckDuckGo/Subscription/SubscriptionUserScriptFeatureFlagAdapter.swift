@@ -17,7 +17,7 @@
 //
 
 import PrivacyConfig
-import FeatureFlags
+import FeatureFlags_macOS
 import Subscription
 
 /// Adapter that provides feature flags to SubscriptionUserScript

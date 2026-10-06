@@ -18,10 +18,12 @@
 //
 
 import Foundation
+import FoundationExtensions
 import Core
 import CoreData
 import os.log
 import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol AppRatingPromptStorage {
     

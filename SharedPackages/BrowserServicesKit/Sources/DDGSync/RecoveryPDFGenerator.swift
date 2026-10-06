@@ -134,8 +134,8 @@ public struct RecoveryPDFGenerator {
 
 private struct Helper: PDFGeneratorHelping {
 
-    let qrCodeYOffset: Int = 335
-    let textCodeYOffset: Int = -480
+    let qrCodeYOffset: Int = 252
+    let textCodeYOffset: Int = -566
     let textCodeFont = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
     var textCodeColor = NSColor.black
 
@@ -164,8 +164,8 @@ private struct Helper: PDFGeneratorHelping {
 
 private struct Helper: PDFGeneratorHelping {
 
-    let qrCodeYOffset: Int = 280
-    let textCodeYOffset: Int = 280
+    let qrCodeYOffset: Int = 360
+    let textCodeYOffset: Int = 355
     let textCodeFont = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
     var textCodeColor = UIColor.black
 

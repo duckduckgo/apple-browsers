@@ -27,15 +27,20 @@ public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
     private let userNotificationService: DataBrokerProtectionUserNotificationService
     private let freemiumUserStateManager: FreemiumDBPUserStateManaging
 
+    /// - Parameter onProfileSaved: called synchronously on a profile save, for app-side state that tracks
+    ///   whether PIR has been activated. A closure rather than a protocol so no app type has to be visible
+    ///   to this package. Fires for subscriber and freemium saves alike, which is the union the app needs.
     public init(
         userNotificationService: DataBrokerProtectionUserNotificationService,
-        freemiumUserStateManager: FreemiumDBPUserStateManaging
+        freemiumUserStateManager: FreemiumDBPUserStateManaging,
+        onProfileSaved: (() -> Void)? = nil
     ) {
         self.userNotificationService = userNotificationService
         self.freemiumUserStateManager = freemiumUserStateManager
         super.init { event, _, _, onComplete in
             switch event {
             case .profileSaved:
+                onProfileSaved?()
                 userNotificationService.resetFirstScanCompletedNotificationState()
                 userNotificationService.requestNotificationPermission()
                 Task {

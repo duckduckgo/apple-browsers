@@ -45,6 +45,10 @@ final class UserText {
         return String(format: localized, serverLocation)
     }
 
+    static let networkProtectionStrictRoutingReminderNotificationTitle = NSLocalizedString("network.protection.strict.routing.reminder.notification.title", value: "Strict Routing is OFF", comment: "The title of the notification reminding the user to turn the VPN Strict routing setting back on")
+
+    static let networkProtectionStrictRoutingReminderNotificationBody = NSLocalizedString("network.protection.strict.routing.reminder.notification.body", value: "Some traffic may bypass the VPN while off. Strict Routing is recommended for public networks.", comment: "The body of the notification reminding the user to turn the VPN Strict routing setting back on")
+
     static let networkProtectionConnectionInterruptedNotificationBody = NSLocalizedString("network.protection.interrupted.notification.body", value: "DuckDuckGo VPN was interrupted. Attempting to reconnect now...", comment: "The body of the notification shown when VPN connection is interrupted")
 
     static let networkProtectionConnectionFailureNotificationBody = NSLocalizedString("network.protection.failure.notification.body", value: "DuckDuckGo VPN failed to connect. Please try again later.", comment: "The body of the notification shown when VPN fails to reconnect")

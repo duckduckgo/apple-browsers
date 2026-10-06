@@ -18,7 +18,7 @@
 //
 
 import XCTest
-@testable import Core
+@testable import DuckDuckGo
 
 final class DebouncerTests: XCTestCase {
     private var sut: Debouncer!

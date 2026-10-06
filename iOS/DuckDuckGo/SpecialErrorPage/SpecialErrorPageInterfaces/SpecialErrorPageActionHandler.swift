@@ -38,6 +38,12 @@ protocol SpecialErrorPageActionHandler {
     func visitSite()
 
     /// Handles the action of leaving the site associated with the error page
+    /// - Parameters:
+    ///  - errorData: The special error information.
+    @MainActor
+    func leaveSite(errorData: SpecialErrorData)
+
+    /// Handles the action of leaving the site associated with the error page
     @MainActor
     func leaveSite()
 
@@ -51,5 +57,9 @@ extension SpecialErrorPageActionHandler {
     func visitSite(url: URL, errorData: SpecialErrorData) { }
 
     func visitSite() { }
+
+    func leaveSite(errorData: SpecialErrorData) {}
+
+    func leaveSite() { }
 
 }

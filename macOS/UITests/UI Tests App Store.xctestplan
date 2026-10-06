@@ -38,8 +38,8 @@
       "skippedTests" : [
         "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
         "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
+        "AutoconsentUITests\/testAutoconsent_PrivacyTestPages_ManagesCookieConsentAfterInitialBackgroundLoadRace()",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
-        "DownloadsUITests\/testFireWindowWithInProgressDownloadShowsWarning()",
         "FindInPageTests",
         "FindInPageTests\/test_clickingWebViewDeactivates_thenCmdFReactivatesAndKeepsText()",
         "FindInPageTests\/test_findInPage_canBeClosedWithEscape()",

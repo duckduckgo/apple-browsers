@@ -117,7 +117,9 @@ private struct QuitSurveyInitialView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.daxResponse48)
+            Image(DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseQuestion96 : .daxResponse)
+                .resizable()
+                .frame(width: 48, height: 48)
 
             Text(UserText.quitSurveyInitialQuestion)
                 .systemTitle2()
@@ -225,7 +227,7 @@ private struct DomainToggleRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
-            Toggle("", isOn: $isSelected)
+            Toggle("" as String, isOn: $isSelected)
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .accessibilityLabel(entry.title ?? entry.domain)
@@ -324,7 +326,9 @@ private struct QuitSurveyPositiveView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.duckDuckGoResponseHeart)
+            Image(DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseHeart : .duckDuckGoResponseHeartLegacy)
+                .resizable()
+                .frame(width: 48, height: 48)
 
             Text(UserText.quitSurveyPositiveTitle)
                 .systemTitle2()

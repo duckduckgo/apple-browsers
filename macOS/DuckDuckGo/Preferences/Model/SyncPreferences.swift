@@ -20,13 +20,14 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
+import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
 import SyncUI_macOS
 import SwiftUI
 import PDFKit
-import Navigation
+import DDGNavigation
 import PixelKit
 import os.log
 import PrivacyConfig
@@ -198,9 +199,12 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
+    @Published var isAppRebranded: Bool = false
+    @Published var isSimplifiedSyncSetupV2Enabled: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
     let syncSettingsHandler: SyncSettingsViewHandling
+    private let pixelFiring: PixelFiring?
 
     private func updateSyncFeatureFlags(_ syncFeatureFlags: SyncFeatureFlags) {
         isDataSyncingAvailable = syncFeatureFlags.contains(.dataSyncing)
@@ -231,7 +235,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
-        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -242,6 +247,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncFeatureFlags = syncService.featureFlags
         self.syncPausedStateManager = syncPausedStateManager
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
+        self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
+        self.isAIChatSyncEnabled = featureFlagger.isFeatureOn(.aiChatSync)
+        self.isSimplifiedSyncSetupV2Enabled = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
@@ -267,10 +276,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private func updateInvalidObjects() {
         invalidBookmarksTitles = syncBookmarksAdapter.provider?
             .fetchDescriptionsForObjectsThatFailedValidation()
-            .map { $0.truncated(length: 15) } ?? []
+            .map { $0.truncated(to: 15, position: .tail) } ?? []
 
         let invalidCredentialsObjects: [String] = (try? syncCredentialsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
-        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(length: 15) })
+        invalidCredentialsTitles = invalidCredentialsObjects.map({ $0.truncated(to: 15, position: .tail) })
 
         if let syncCreditCardsAdapter = syncCreditCardsAdapter {
             let invalidCreditCardsObjects: [String] = (try? syncCreditCardsAdapter.provider?.fetchDescriptionsForObjectsThatFailedValidation()) ?? []
@@ -301,6 +310,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .sink { [weak self] in
                 guard let self else { return }
                 self.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+                self.isSimplifiedSyncSetupV2Enabled = self.featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
             }
             .store(in: &cancellables)
 
@@ -398,6 +408,11 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .store(in: &cancellables)
     }
 
+    @MainActor
+    func settingsScreenDidAppear() {
+        pixelFiring?.fire(SyncSettingsPixelKitEvent.settingsScreenShown(isSyncEnabled: isSyncEnabled))
+    }
+
     // MARK: - Delegation to syncSettingsHandler
 
     @MainActor
@@ -406,8 +421,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeviceDetails(_ device: SyncDevice) {
-        syncSettingsHandler.presentDeviceDetails(device)
+    func presentDeviceDetails(_ device: SyncDevice) async {
+        await syncSettingsHandler.presentDeviceDetails(device)
     }
 
     @MainActor
@@ -416,8 +431,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     @MainActor
-    func presentDeleteAccount() {
-        syncSettingsHandler.presentDeleteAccount()
+    func presentDeleteAccount() async {
+        await syncSettingsHandler.presentDeleteAccount()
     }
 
     @MainActor
@@ -437,6 +452,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     @MainActor
     func saveRecoveryPDF() {
-        syncSettingsHandler.saveRecoveryPDF()
+        syncSettingsHandler.saveRecoveryPDF(requiresAuthentication: true)
     }
 }

@@ -22,8 +22,7 @@ import XCTest
 import BrowserServicesKit
 import Bookmarks
 import DDGSync
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Core
 import Common
 import FoundationExtensions
@@ -39,7 +38,6 @@ final class AutofillSettingsViewModelTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var syncService: MockDDGSyncing!
     private var dataProviders: SyncDataProviders!
-    private var mockExperimentPixels: MockAutofillOnboardingExperimentPixelFiring!
 
     override func setUpWithError() throws {
         super.setUp()
@@ -47,7 +45,6 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         manager = AutofillNeverPromptWebsitesManager(secureVault: vault)
         mockDelegate = MockAutofillSettingsViewModelDelegate()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockExperimentPixels = MockAutofillOnboardingExperimentPixelFiring()
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
         let db = CoreDataDatabase.bookmarksMock
 
@@ -71,8 +68,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             secureVault: vault,
             source: .settings,
             syncService: syncService,
-            syncDataProviders: dataProviders,
-            experimentPixels: mockExperimentPixels
+            syncDataProviders: dataProviders
         )
         viewModel.delegate = mockDelegate
     }
@@ -82,7 +78,6 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         mockDelegate = nil
         manager = nil
         mockFeatureFlagger = nil
-        mockExperimentPixels = nil
 
         try super.tearDownWithError()
     }
@@ -98,8 +93,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             secureVault: vault,
             source: .settings,
             syncService: syncService,
-            syncDataProviders: dataProviders,
-            experimentPixels: mockExperimentPixels
+            syncDataProviders: dataProviders
         )
         
         // Then
@@ -123,8 +117,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             secureVault: vault,
             source: .settings,
             syncService: syncService,
-            syncDataProviders: dataProviders,
-            experimentPixels: mockExperimentPixels
+            syncDataProviders: dataProviders
         )
         
         // Then
@@ -154,8 +147,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             secureVault: nil,
             source: .settings,
             syncService: syncService,
-            syncDataProviders: dataProviders,
-            experimentPixels: mockExperimentPixels
+            syncDataProviders: dataProviders
         )
         
         // When/Then (handles nil vault)
@@ -197,8 +189,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -215,8 +206,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -236,8 +226,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -255,8 +244,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
 
         // When
@@ -282,8 +270,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
 
         // Then
@@ -319,8 +306,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
 
         // Add new items without refreshing
@@ -356,8 +342,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
                 source: .settings,
                 featureFlagger: mockFeatureFlagger,
                 syncService: syncService,
-                syncDataProviders: dataProviders,
-                experimentPixels: mockExperimentPixels
+                syncDataProviders: dataProviders
         )
         viewModel.delegate = mockDelegate
 
@@ -460,8 +445,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             source: .settings,
             featureFlagger: mockFeatureFlagger,
             syncService: syncService,
-            syncDataProviders: dataProviders,
-            experimentPixels: mockExperimentPixels
+            syncDataProviders: dataProviders
         )
 
         // Then
@@ -478,8 +462,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
             source: .settings,
             featureFlagger: mockFeatureFlagger,
             syncService: syncService,
-            syncDataProviders: dataProviders,
-            experimentPixels: mockExperimentPixels
+            syncDataProviders: dataProviders
         )
 
         // Then

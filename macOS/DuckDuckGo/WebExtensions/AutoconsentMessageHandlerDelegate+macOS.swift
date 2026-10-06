@@ -36,7 +36,7 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
     }
 
     func refreshDashboardState(url: URL, consentStatus: ConsentStatusInfo) {
-        Logger.webExtensions.debug("macOS: Refreshing dashboard state for \(url.absoluteString)")
+        Logger.webExtensions.debug("macOS: Refreshing dashboard state for \(url.shortDescription)")
         NotificationCenter.default.post(
             name: .webExtensionAutoconsentDashboardStateRefresh,
             object: self,
@@ -48,7 +48,7 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
     }
 
     func handleCookiePopup(_ popupInfo: CookiePopupHandledInfo) {
-        Logger.webExtensions.debug("macOS: Cookie popup handled for \(popupInfo.url.absoluteString)")
+        Logger.webExtensions.debug("macOS: Cookie popup handled for \(popupInfo.url.shortDescription)")
 
         let message = popupInfo.message
         let userInfo = AutoconsentPopupManagedEvent.makeNotificationUserInfo(

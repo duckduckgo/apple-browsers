@@ -1,0 +1,262 @@
+//
+//  VPNSessionHealthWideEventData+Transitions.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+/// # Session Health Transitions: `event + timestamp -> new event`.
+///
+/// Transitions return updated event values. Callers must not apply one to an event that has ended;
+/// `DefaultVPNSessionHealthInstrumentation.applyTransition(_:)` is the single place that enforces it.
+extension VPNSessionHealthWideEventData {
+
+    /// Number of Connection Tester failures before an outage is considered extended.
+    static let extendedFailureThreshold = PacketTunnelProvider.connectionTesterExtendedFailuresCount
+
+    // MARK: - Monitoring
+
+    func markingMonitoringStarted(at now: Date) -> Self {
+        applying { next in
+            next.connectionMonitorsActive = true
+            next.monitoringStarted = true
+            next.recordHealthMonitoringActivity(at: now)
+        }
+    }
+
+    func markingMonitoringFailedToStart(at now: Date) -> Self {
+        applying { next in
+            next.markMonitoringStopped(at: now)
+            next.monitoringInterrupted = true
+        }
+    }
+
+    func markingMonitoringStopped(at now: Date, isIntentional: Bool) -> Self {
+        applying { next in
+            next.markMonitoringStopped(at: now)
+
+            if !next.isPaused && !isIntentional {
+                next.monitoringInterrupted = true
+            }
+        }
+    }
+
+    // MARK: - Health
+
+    /// Counts failed checks within each outage independently of the tester's cumulative count.
+    func applyingConnectionTestResult(_ result: ConnectionTestingResult, at now: Date) -> Self {
+        applying { next in
+            switch result {
+            case .connected:
+                break
+
+            case .disconnected:
+                if next.activeOutageFailedCheckCount == 0 {
+                    next.connectionTestOutageCount += 1
+                    next.markFirstErrorDetectedIfNeeded(at: now)
+                }
+
+                next.activeOutageFailedCheckCount += 1
+
+                if next.activeOutageFailedCheckCount >= Self.extendedFailureThreshold {
+                    next.extendedRoutingOutageDetected = true
+                }
+
+            case .reconnected:
+                next.markOutageAsEnded(at: now)
+            }
+
+            next.connectionTestDidReport = true
+            next.recordHealthMonitoringActivity(at: now)
+        }
+    }
+
+    func applyingHandshakeCheckResult(_ result: NetworkProtectionTunnelFailureMonitor.Result, at now: Date) -> Self {
+        applying { next in
+            switch result {
+            case .failureDetected:
+                next.staleHandshakeDetected = true
+                next.staleHandshakeActive = true
+                next.markFirstErrorDetectedIfNeeded(at: now)
+
+            case .failureRecovered:
+                next.staleHandshakeRecovered = true
+                next.staleHandshakeActive = false
+
+            case .networkPathChanged:
+                // Diagnostic noise, not a health transition.
+                break
+            }
+        }
+    }
+
+    func applyingFailureRecoveryStep(_ step: FailureRecoveryStep, at now: Date) -> Self {
+        applying { next in
+            next.failureRecoveryAttempted = true
+
+            switch step {
+            case .started:
+                break
+
+            case .completed:
+                next.failureRecoverySucceeded = true
+
+            case .failed:
+                next.failureRecoverySucceeded = false
+                next.failureRecoveryFailed = true
+                next.markFirstErrorDetectedIfNeeded(at: now)
+            }
+        }
+    }
+
+    func markingLeakDetected() -> Self {
+        return applying { next in
+            next.leakDetected = true
+        }
+    }
+
+    // MARK: - Availability
+
+    func markingPaused(_ reason: PauseReason, at now: Date) -> Self {
+        applying { next in
+            next.markMonitoringStopped(at: now)
+
+            // An intentional pause ends the outage; a reassert does not.
+            if reason != .reconfiguration {
+                next.activeOutageFailedCheckCount = 0
+            }
+
+            next.isPaused = true
+        }
+    }
+
+    func markingResumed(at now: Date) -> Self {
+        applying { next in
+            next.isPaused = false
+            next.recordHealthMonitoringActivity(at: now)
+        }
+    }
+
+    // MARK: - Termination
+
+    /// Records a first error if needed for failure stops or user stops during an active outage, then returns the ended event and its outcome.
+    func finalized(for endReason: EventEndReason, at now: Date, processStartDate: Date, processStartReason: EventStartReason? = nil, processIdentifier: Int32, appVersion: String) -> (event: Self, outcome: EventOutcome) {
+        let needsEnding = endedAt == nil
+        let endDate = endReason == .processDied ? min(now, lastObservedAt) : now
+
+        let event = applying { next in
+            if needsEnding && (endReason.isFailure || (endReason == .stoppedByUser && connectionTestFailureActive)) {
+                next.markFirstErrorDetectedIfNeeded(at: now)
+            }
+
+            if needsEnding {
+                next.markEnded(endReason, at: endDate)
+            }
+
+            next.recordCompletionDiagnostics(at: now, processStartDate: processStartDate, processStartReason: processStartReason, processIdentifier: processIdentifier, appVersion: appVersion)
+        }
+
+        return (event, event.completedOutcome())
+    }
+
+    func finalizedAfterOrphanRecovery(at now: Date, processStartDate: Date, processStartReason: EventStartReason, processIdentifier: Int32, appVersion: String) -> (event: Self, outcome: EventOutcome) {
+        // Finalization backdates the end timestamp while diagnostics use the current recovery time.
+        finalized(for: .processDied, at: now, processStartDate: processStartDate, processStartReason: processStartReason, processIdentifier: processIdentifier, appVersion: appVersion)
+    }
+}
+
+// MARK: - Private
+
+private extension VPNSessionHealthWideEventData {
+
+    func applying(_ body: (inout Self) -> Void) -> Self {
+        var next = self
+        body(&next)
+        return next
+    }
+
+    mutating func markMonitoringStopped(at now: Date) {
+        /// Reset Monitoring Flags
+        connectionMonitorsActive = false
+        connectionTestDidReport = false
+        staleHandshakeActive = false
+        stopTrackingOutageTimeAndRefreshStats(at: now)
+    }
+
+    mutating func markOutageAsEnded(at now: Date) {
+        stopTrackingOutageTimeAndRefreshStats(at: now)
+        activeOutageFailedCheckCount = 0
+    }
+
+    mutating func markFirstErrorDetectedIfNeeded(at now: Date) {
+        guard timeToFirstError == nil else {
+            return
+        }
+
+        timeToFirstError = max(0, now.timeIntervalSince(startedAt))
+    }
+
+    mutating func recordHealthMonitoringActivity(at now: Date) {
+        guard canTrackOutageTime else {
+            return
+        }
+
+        healthMonitoringEverActivated = true
+
+        if connectionTestFailureActive, outageTrackingStartedAt == nil {
+            outageTrackingStartedAt = now
+        }
+    }
+
+    mutating func stopTrackingOutageTimeAndRefreshStats(at now: Date) {
+        guard let began = outageTrackingStartedAt else {
+            return
+        }
+
+        totalOutageDuration += max(0, now.timeIntervalSince(began))
+        outageTrackingStartedAt = nil
+    }
+
+    mutating func markEnded(_ reason: EventEndReason, at now: Date) {
+        stopTrackingOutageTimeAndRefreshStats(at: now)
+
+        endedAt = now
+        endReason = reason
+    }
+
+    mutating func recordCompletionDiagnostics(at now: Date, processStartDate: Date, processStartReason: EventStartReason?, processIdentifier: Int32, appVersion: String) {
+        let processLifetime = max(0, now.timeIntervalSince(processStartDate))
+        if eventDurationExceedsProcessLifetime == nil, eventDuration(asOf: now) > processLifetime {
+            eventDurationExceedsProcessLifetime = true
+        }
+
+        if processIDChanged == nil, let sessionStartPID, sessionStartPID != processIdentifier {
+            processIDChanged = true
+        }
+
+        if currentProcessStartReason == nil {
+            currentProcessStartReason = processStartReason
+        }
+
+        if processRestartGap == nil, processStartReason != nil, processStartDate >= lastObservedAt {
+            processRestartGap = processStartDate.timeIntervalSince(lastObservedAt)
+        }
+
+        if appVersionChanged == nil, appData.version != appVersion {
+            appVersionChanged = true
+        }
+    }
+}

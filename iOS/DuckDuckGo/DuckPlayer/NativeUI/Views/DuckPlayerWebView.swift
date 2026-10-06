@@ -189,7 +189,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
               return
           }
 
-          Logger.duckplayer.log("[DuckPlayer] Navigation request to: \(url.absoluteString), type: \(navigationAction.navigationType.rawValue)")
+          Logger.duckplayer.log("[DuckPlayer] Navigation request to: \(url.shortDescription), type: \(navigationAction.navigationType.rawValue)")
 
           // Always allow youtube-nocookie.com iframe content
           if url.isDuckPlayer {
@@ -212,7 +212,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
                if !url.isDuckPlayer {
                    viewModel?.handleYouTubeNavigation(url)
                } else {
-                   Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.absoluteString)")
+                   Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.shortDescription)")
                }
            }
            return nil

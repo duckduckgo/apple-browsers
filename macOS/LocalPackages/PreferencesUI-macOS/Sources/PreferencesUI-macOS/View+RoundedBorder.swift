@@ -16,14 +16,16 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
 
 extension View {
     public func roundedBorder() -> some View {
-        background(ZStack {
-            RoundedRectangle(cornerRadius: 8)
+        let cornerRadius: CGFloat = DesignSystemRebrand.isAppRebranded() ? 12 : 8
+        return background(ZStack {
+            RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(Color(.blackWhite10), lineWidth: 1)
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color(.blackWhite1))
         })
     }

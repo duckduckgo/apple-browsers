@@ -73,7 +73,7 @@ struct PasswordManagementCreditCardItemView: View {
 
                     Buttons()
                         .padding(.top, model.isInEditMode ? 12 : 10)
-                        .padding(.bottom, model.isInEditMode ? 12 : 3)
+                        .padding(.bottom, model.isInEditMode ? 12 : 1)
 
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -152,7 +152,7 @@ private struct Buttons: View {
                     model.save()
                 }
                 .disabled(!model.isDirty || !model.isCardValid)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid))
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty && model.isCardValid, topPadding: 4, bottomPadding: 4))
                 .keyboardShortcut(.defaultAction)
 
             } else {
@@ -163,12 +163,9 @@ private struct Buttons: View {
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-
             }
-
         }
     }
-
 }
 
 private struct EditableCreditCardField: View {
@@ -370,7 +367,7 @@ private struct ExpirationField: View {
                 if model.isInEditMode {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
-                            Picker("", selection: $model.expirationMonth) {
+                            Picker("" as String, selection: $model.expirationMonth) {
                                 if model.expirationMonth == nil {
                                     Text(UserText.pmMonth)
                                         .tag(nil as Int?)
@@ -382,7 +379,7 @@ private struct ExpirationField: View {
                             }
                             .labelsHidden()
 
-                            Picker("", selection: $model.expirationYear) {
+                            Picker("" as String, selection: $model.expirationYear) {
                                 if model.expirationYear == nil {
                                     Text(UserText.pmYear)
                                         .tag(nil as Int?)

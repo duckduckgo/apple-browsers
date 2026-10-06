@@ -89,7 +89,7 @@ struct DataImportSummaryDetailView: View {
 
             iconWithWhiteBackground(
                 image: DesignSystemImages.Glyphs.Size20.checkSolid,
-                foregroundColor: Color(designSystemColor: .alertGreen)
+                foregroundColor: Color(designSystemColor: .statusGreen)
             )
         }
         .padding(.horizontal, Metrics.sectionInnerPadding)
@@ -176,7 +176,7 @@ struct DataImportSummaryDetailView: View {
     }
     private func failedRowText(item: ImportItem) -> Text {
         guard case .password(let title, let domain, let username, let errorMessage) = item else {
-            return Text("")
+            return Text(verbatim: "")
         }
 
         func valueOrNone(_ value: String?) -> String {

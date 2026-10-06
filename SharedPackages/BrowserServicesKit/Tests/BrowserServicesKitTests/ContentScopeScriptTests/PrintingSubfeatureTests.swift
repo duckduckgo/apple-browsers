@@ -17,7 +17,7 @@
 //
 
 #if os(macOS)
-import Navigation
+import DDGNavigation
 #endif
 import BrowserServicesKitTestsUtils
 import WebKit

@@ -53,7 +53,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
                                                         vault: vault,
                                                         pixelHandler: pixelHandler,
                                                         runTypeProvider: runTypeProvider,
-                                                        isAuthenticatedUser: { [authenticationManager] in authenticationManager.isUserAuthenticated })
+                                                        isAuthenticatedUser: { [authenticationManager] in authenticationManager.isUserAuthenticated },
+                                                        optOutRetryErrorFeatureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
 
         let defaults = UserDefaults(suiteName: "com.dbp.tests.\(UUID().uuidString)")!
         settings = DataBrokerProtectionSettings(defaults: defaults)
@@ -559,6 +560,6 @@ extension HTTPURLResponse {
                                             headerFields: ["ETag": "something"])!
 }
 
-private class MockFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
-    var isRemoteBrokerDeliveryFeatureOn: Bool { true }
+private class MockFeatureFlagger: OptOutRetryErrorFeatureFlagging {
+    var isOptOutRetryErrorFrequencyExperimentOn: Bool { false }
 }

@@ -19,6 +19,7 @@
 
 import Core
 import XCTest
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
 
@@ -29,6 +30,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
     private var featureFlagger: MockFeatureFlagger!
     private var privacyConfigurationManager: PrivacyConfigurationManagerMock!
     private var variantManager: MockVariantManager!
+    private var pixelKitMock: PixelKitMock!
 
     private let fileMarker = BoolFileMarker(name: .init(rawValue: "ad-attribution-successful"))!
 
@@ -38,6 +40,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         privacyConfigurationManager = PrivacyConfigurationManagerMock()
         variantManager = MockVariantManager()
+        pixelKitMock = PixelKitMock()
 
         featureFlagger.enabledFeatureFlags.append(.adAttributionReporting)
         fileMarker.unmark()
@@ -48,8 +51,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
         fetcherStorage = nil
         featureFlagger = nil
         privacyConfigurationManager = nil
-
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
     }
 
     func testReportsAttribution() async {
@@ -58,7 +60,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         let result = await sut.reportAttributionIfNeeded()
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.appleAdAttribution.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.appleAdAttribution.name)
         XCTAssertTrue(result)
     }
 
@@ -69,7 +71,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
         await fetcherStorage.markAttributionReportSuccessful()
         let result = await sut.reportAttributionIfNeeded()
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         XCTAssertFalse(result)
     }
 
@@ -79,7 +81,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         let result = await sut.reportAttributionIfNeeded()
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, "m_apple-ad-attribution")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "m_apple-ad-attribution")
         XCTAssertTrue(result)
     }
 
@@ -90,7 +92,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         await sut.reportAttributionIfNeeded()
 
-        let pixelAttributes = try XCTUnwrap(PixelFiringMock.lastParams)
+        let pixelAttributes = try XCTUnwrap(pixelKitMock.actualFireCalls.last?.additionalParameters)
 
         XCTAssertEqual(pixelAttributes["org_id"], "1")
         XCTAssertEqual(pixelAttributes["campaign_id"], "2")
@@ -110,7 +112,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         await sut.reportAttributionIfNeeded()
 
-        let pixelAttributes = try XCTUnwrap(PixelFiringMock.lastParams)
+        let pixelAttributes = try XCTUnwrap(pixelKitMock.actualFireCalls.last?.additionalParameters)
 
         XCTAssertEqual(pixelAttributes["is_reinstall"], "1")
     }
@@ -121,9 +123,9 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         await sut.reportAttributionIfNeeded()
 
-        let pixelAttributes = try XCTUnwrap(PixelFiringMock.lastIncludedParams)
+        let fireCall = try XCTUnwrap(pixelKitMock.actualFireCalls.last)
 
-        XCTAssertEqual(pixelAttributes, [.appVersion])
+        XCTAssertTrue(fireCall.includeAppVersionParameter)
     }
 
     func testPixelAttributes_WhenPartialAttributionData() async throws {
@@ -141,7 +143,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         await sut.reportAttributionIfNeeded()
 
-        let pixelAttributes = try XCTUnwrap(PixelFiringMock.lastParams)
+        let pixelAttributes = try XCTUnwrap(pixelKitMock.actualFireCalls.last?.additionalParameters)
 
         XCTAssertEqual(pixelAttributes["org_id"], "1")
         XCTAssertEqual(pixelAttributes["campaign_id"], "2")
@@ -158,7 +160,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         let result = await sut.reportAttributionIfNeeded()
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         XCTAssertTrue(fetcherStorage.wasAttributionReportSuccessful)
         XCTAssertTrue(result)
     }
@@ -169,7 +171,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         let result = await sut.reportAttributionIfNeeded()
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         XCTAssertFalse(fetcherStorage.wasAttributionReportSuccessful)
         XCTAssertFalse(result)
     }
@@ -177,7 +179,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
     func testDoesNotMarkSuccessful_WhenPixelFiringFailed() async {
         let sut = createSUT()
         attributionFetcher.fetchResponse = ("example", AdServicesAttributionResponse(attribution: true))
-        PixelFiringMock.expectedFireError = NSError(domain: "PixelFailure", code: 1)
+        pixelKitMock.expectedFireError = NSError(domain: "PixelFailure", code: 1)
 
         let result = await sut.reportAttributionIfNeeded()
 
@@ -193,7 +195,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
         await fetcherStorage.markAttributionReportSuccessful()
         let result = await sut.reportAttributionIfNeeded()
 
-        XCTAssertNil(PixelFiringMock.lastPixelName)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         XCTAssertFalse(result)
         XCTAssertFalse(attributionFetcher.wasFetchCalled)
     }
@@ -205,7 +207,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         await sut.reportAttributionIfNeeded()
 
-        let pixelAttributes = try XCTUnwrap(PixelFiringMock.lastParams)
+        let pixelAttributes = try XCTUnwrap(pixelKitMock.actualFireCalls.last?.additionalParameters)
 
         XCTAssertNil(pixelAttributes["attribution_token"])
     }
@@ -219,7 +221,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
 
         await sut.reportAttributionIfNeeded()
 
-        let pixelAttributes = try XCTUnwrap(PixelFiringMock.lastParams)
+        let pixelAttributes = try XCTUnwrap(pixelKitMock.actualFireCalls.last?.additionalParameters)
 
         XCTAssertNotNil(pixelAttributes["attribution_token"])
     }
@@ -230,7 +232,7 @@ final class AdAttributionPixelReporterTests: XCTestCase {
                                    featureFlagger: featureFlagger,
                                    privacyConfigurationManager: privacyConfigurationManager,
                                    variantManager: MockVariantManager(isSupportedReturns: false, currentVariant: variant),
-                                   pixelFiring: PixelFiringMock.self)
+                                   pixelFiring: pixelKitMock)
     }
 }
 

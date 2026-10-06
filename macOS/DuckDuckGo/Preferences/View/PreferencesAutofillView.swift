@@ -183,6 +183,7 @@ extension Preferences {
                         Text(UserText.autofillNeverLock).tag(false)
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
@@ -206,6 +207,7 @@ extension Preferences {
                 content()
             }, label: {})
             .pickerStyle(.radioGroup)
+            .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
         }
 
@@ -383,7 +385,7 @@ struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 HStack {
-                    Text("1.")
+                    Text(verbatim: "1.")
                     Button(UserText.bitwardenIncompatibleStep1, action: {
                         openNewTab(with: URL(string: "https://github.com/bitwarden/clients/releases/download/desktop-mac-v2025.4.2/Bitwarden-2025.4.2-universal.dmg")!)
                     }).foregroundColor(.accentColor)

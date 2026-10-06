@@ -35,16 +35,18 @@ final class RemoteMessagingDebugMenu: NSMenu {
     struct MessageModel: CustomStringConvertible {
         let id: String
         let shown: String
+        let impressionCount: Int64
         let status: String
 
         init(message: RemoteMessageManagedObject) {
             self.id = message.id ?? "?"
             self.shown = message.shown ? "shown" : "not shown"
+            self.impressionCount = message.impressionCount
             self.status = Self.statusString(for: message.status)
         }
 
         var description: String {
-            "ID: \(id) | \(shown) | \(status)"
+            "ID: \(id) | \(shown) | impressions: \(impressionCount) | \(status)"
         }
 
         /// This should be kept in sync with `RemoteMessageStatus` private enum from BSK

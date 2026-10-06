@@ -370,6 +370,56 @@ class TabsModelTests: XCTestCase {
         XCTAssertNil(model.currentIndex)
     }
 
+    // MARK: - Duck.ai Entry Source
+
+    func testWhenSwitchingDuckAITabsThenEachTabKeepsItsOriginalEntrySource() {
+        let firstTab = Tab(link: exampleLink, duckAIEntrySource: .addressBarPrompt)
+        let secondTab = Tab(link: exampleLink, duckAIEntrySource: .contextualChat)
+        let model = TabsModel(tabs: [firstTab, secondTab], currentIndex: 0, desktop: false)
+
+        XCTAssertEqual(model.currentTab?.duckAIEntrySource, .addressBarPrompt)
+
+        model.select(tab: secondTab)
+
+        XCTAssertEqual(model.currentTab?.duckAIEntrySource, .contextualChat)
+        XCTAssertEqual(firstTab.duckAIEntrySource, .addressBarPrompt)
+    }
+
+    func testWhenTabWithDuckAIEntrySourceIsArchivedThenUnarchivedTabRestoresIt() throws {
+        let tab = Tab(link: exampleLink)
+        tab.duckAIEntrySource = .serp
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: tab, requiringSecureCoding: false)
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        unarchiver.requiresSecureCoding = false
+        let decoded = unarchiver.decodeObject(of: Tab.self, forKey: NSKeyedArchiveRootObjectKey)
+
+        XCTAssertEqual(decoded?.duckAIEntrySource, .serp)
+    }
+
+    func testWhenTabWithoutDuckAIEntrySourceIsArchivedThenUnarchivedTabHasNilSource() throws {
+        let tab = Tab(link: exampleLink)
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: tab, requiringSecureCoding: false)
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        unarchiver.requiresSecureCoding = false
+        let decoded = unarchiver.decodeObject(of: Tab.self, forKey: NSKeyedArchiveRootObjectKey)
+
+        XCTAssertNil(decoded?.duckAIEntrySource)
+    }
+
+    func testWhenFireTabWithDuckAIEntrySourceIsArchivedThenUnarchivedTabRestoresIt() throws {
+        let tab = Tab(link: exampleLink, fireTab: true)
+        tab.duckAIEntrySource = .addressBarPrompt
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: tab, requiringSecureCoding: false)
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+        unarchiver.requiresSecureCoding = false
+        let decoded = unarchiver.decodeObject(of: Tab.self, forKey: NSKeyedArchiveRootObjectKey)
+
+        XCTAssertEqual(decoded?.duckAIEntrySource, .addressBarPrompt)
+    }
+
     // MARK: - NSCopying
 
     func testWhenTabSnapshotTakenThenAllPersistedFieldsArePreserved() {
@@ -387,7 +437,8 @@ class TabsModelTests: XCTestCase {
                       contextualChatURL: "https://chat.example.com",
                       supportsTabHistory: true,
                       fireTab: false,
-                      unifiedInputState: unifiedState)
+                      unifiedInputState: unifiedState,
+                      duckAIEntrySource: .widgetFavorite)
 
         let snapshot = tab.archivalSnapshot()
 
@@ -405,6 +456,7 @@ class TabsModelTests: XCTestCase {
         XCTAssertEqual(snapshot.supportsTabHistory, true)
         XCTAssertEqual(snapshot.fireTab, false)
         XCTAssertEqual(snapshot.unifiedInputState, unifiedState)
+        XCTAssertEqual(snapshot.duckAIEntrySource, .widgetFavorite)
     }
 
     func testWhenModelSnapshotTakenThenMutatingSourceDoesNotAffectSnapshot() {

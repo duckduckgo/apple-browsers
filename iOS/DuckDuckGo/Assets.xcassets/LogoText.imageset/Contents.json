@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "light_portrait_logo.pdf",
+      "filename" : "Logo-Stacked.svg",
       "idiom" : "universal"
     },
     {
@@ -11,11 +11,11 @@
           "value" : "dark"
         }
       ],
-      "filename" : "dark_portrait_logo.pdf",
+      "filename" : "Logo-Stacked-Dark.svg",
       "idiom" : "universal"
     },
     {
-      "filename" : "updatedLogoGrayText2.pdf",
+      "filename" : "Logo-Horizontal.svg",
       "height-class" : "compact",
       "idiom" : "universal"
     },
@@ -26,7 +26,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "updatedLogoWhiteText2.pdf",
+      "filename" : "Logo-Horizontal-Dark.svg",
       "height-class" : "compact",
       "idiom" : "universal"
     }
@@ -34,5 +34,8 @@
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
   }
 }

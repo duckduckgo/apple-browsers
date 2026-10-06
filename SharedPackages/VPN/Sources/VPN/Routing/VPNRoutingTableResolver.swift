@@ -31,12 +31,15 @@ struct VPNRoutingTableResolver {
 
     private let dnsServers: [DNSServer]
     private let excludeLocalNetworks: Bool
+    private let excludeCGNAT: Bool
 
     init(dnsServers: [DNSServer],
-         excludeLocalNetworks: Bool) {
+         excludeLocalNetworks: Bool,
+         excludeCGNAT: Bool = false) {
 
         self.dnsServers = dnsServers
         self.excludeLocalNetworks = excludeLocalNetworks
+        self.excludeCGNAT = excludeCGNAT
     }
 
     var excludedRoutes: [IPAddressRange] {
@@ -48,6 +51,10 @@ struct VPNRoutingTableResolver {
             routes += VPNRoutingRange.localIPv6NetworkRange
         }
 
+        if excludeCGNAT {
+            routes += VPNRoutingRange.cgnatRange
+        }
+
         return routes
     }
 
@@ -56,6 +63,10 @@ struct VPNRoutingTableResolver {
 
         if !excludeLocalNetworks {
             routes += VPNRoutingRange.localNetworkRange
+        }
+
+        if !excludeCGNAT {
+            routes += VPNRoutingRange.cgnatRange
         }
 
         return routes

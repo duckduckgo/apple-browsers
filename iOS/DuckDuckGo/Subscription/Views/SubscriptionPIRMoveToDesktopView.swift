@@ -138,11 +138,11 @@ struct SubscriptionPIRMoveToDesktopView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(Color(designSystemColor: .accentPrimary))
             .daxButton()
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                    .stroke(Color(designSystemColor: .accent), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .accentPrimary), lineWidth: 1)
                 
             )
             .padding(.horizontal, Constants.generalSpacing)
@@ -159,11 +159,11 @@ struct SubscriptionPIRMoveToDesktopView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .foregroundColor(Color(designSystemColor: .accent))
+            .foregroundColor(Color(designSystemColor: .accentPrimary))
             .daxButton()
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                    .stroke(Color(designSystemColor: .accent), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .accentPrimary), lineWidth: 1)
                 
             )
             .padding(.horizontal, Constants.generalSpacing)

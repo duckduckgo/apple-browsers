@@ -164,9 +164,7 @@ public extension OnboardingTheme {
                 minTopMargin: 32,
                 maxTopMargin: 32,
                 progressBarTrailingPadding: 16.0,
-                progressBarTopPadding: 12.0,
-                rebrandingBadgeLeadingPadding: 12.0,
-                rebrandingBadgeTopPadding: 12.0
+                progressBarTopPadding: 12.0
             ),
             linearTitleTextAlignment: .center,
             linearBodyTextAlignment: .center,

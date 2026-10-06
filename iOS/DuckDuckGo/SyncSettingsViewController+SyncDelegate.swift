@@ -24,6 +24,8 @@ import SyncUI_iOS
 import DDGSync
 import AVFoundation
 import os.log
+import FeatureFlags_iOS
+import PixelKit
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
@@ -166,64 +168,28 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
-        authenticateUser { [weak self] error in
-            guard error == nil, let self else { return }
-            Task { @MainActor in
-                do {
-                    guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
-                        return
-                    }
-                    await self.dismissPresentedViewController()
-                    await self.showPreparingSync()
-                    try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
-                    let additionalParameters = self.source.map { ["source": $0] } ?? [:]
-                    try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
-                    self.syncSetupExperimentPixels.fireSignupDirect()
-                    Pixel.fire(pixel: .syncSetupEndedSuccessful,
-                               withAdditionalParameters: [PixelParameters.source: "signup"],
-                               includedParameters: [.appVersion],
-                               onComplete: { _ in })
-                    self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
-                    AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
-                    self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
-                    self.refreshDevices()
-                    self.dismissVCAndShowRecoveryPDF()
-                } catch {
-                    await self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
-                }
-            }
-        }
-    }
-
     func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
         Task { @MainActor in
             defer { optionsViewModel.isBusy = false }
             do {
                 guard await self.performDeferredPreservedAccountCleanupIfNeeded() else {
+                    optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                     return
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
-                let additionalParameters = self.source.map { ["source": $0] } ?? [:]
-                try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
-                self.syncSetupExperimentPixels.fireSignupDirect()
-                Pixel.fire(pixel: .syncSetupEndedSuccessful,
-                           withAdditionalParameters: [PixelParameters.source: "signup"],
-                           includedParameters: [.appVersion],
-                           onComplete: { _ in })
-                self.syncSetupExperimentPixels.fireSetupEndedSuccessful()
-                AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(true)
+                var additionalParameters = self.uiVersionParameters
+                additionalParameters[PixelParameters.source] = self.source
+                try await pixelFiring?.fireAsync(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
+                var setupEndedParameters = self.uiVersionParameters
+                setupEndedParameters[PixelParameters.source] = "signup"
+                pixelFiring?.fire(Pixel.Event.syncSetupEndedSuccessful, options: .parameters(setupEndedParameters))
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
 
-                let didShowPrompt = optionsViewModel.checkAndShowSyncWithAnotherDevicePrompt()
-                if didShowPrompt {
-                    optionsViewModel.scheduleSyncEnabledToastAfterSyncWithAnotherDevicePromptDismissal()
-                } else {
-                    self.showSimplifiedSyncEnabledToast()
-                }
+                optionsViewModel.showSuccess(recoveryCode: self.recoveryCode, isRecovery: false)
             } catch {
+                optionsViewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
                 self.firePixelIfNeededFor(event: .syncSignupError, error: error)
                 ActionMessageView.present(message: UserText.simplifiedSyncSetupFailedToast)
             }
@@ -243,7 +209,18 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let okAction = UIAlertAction(title: type.buttonTitle, style: .default, handler: nil)
             alertController.addAction(okAction)
 
-            if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
+            if isPresentingConnectingSheet {
+                viewModel.dismissConnectingSheet()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    guard let self else {
+                        continuation.resume()
+                        return
+                    }
+                    self.topmostPresentedViewController().present(alertController, animated: true) {
+                        continuation.resume()
+                    }
+                }
+            } else if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
                 // Gives time to the is syncing view to appear
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     self.dismissPresentedViewController { [weak self] in
@@ -278,33 +255,33 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             preferredStyle: .alert)
         alertController.addAction(title: UserText.syncAlertSwitchAccountButton, style: .default) { [weak self] in
             Task {
-                Pixel.fire(pixel: .syncUserAcceptedSwitchingAccount)
+                self?.pixelFiring?.fire(Pixel.Event.syncUserAcceptedSwitchingAccount)
                 await self?.switchAccounts(recoveryKey: recoveryKey)
             }
         }
         alertController.addAction(title: UserText.actionCancel, style: .cancel) { [weak self] in
-            Pixel.fire(pixel: .syncUserCancelledSwitchingAccount)
+            self?.pixelFiring?.fire(Pixel.Event.syncUserCancelledSwitchingAccount)
             self?.navigationController?.presentedViewController?.dismiss(animated: true)
         }
 
         let viewControllerToPresentFrom = navigationController?.presentedViewController ?? self
         viewControllerToPresentFrom.present(alertController, animated: true, completion: nil)
-        Pixel.fire(pixel: .syncAskUserToSwitchAccount)
+        pixelFiring?.fire(Pixel.Event.syncAskUserToSwitchAccount)
     }
 
     func switchAccounts(recoveryKey: SyncCode.RecoveryKey) async {
         do {
             try await syncService.disconnect()
         } catch {
-            Pixel.fire(pixel: .syncUserSwitchedLogoutError)
+            pixelFiring?.fire(Pixel.Event.syncUserSwitchedLogoutError)
         }
 
         do {
             try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
         } catch {
-            Pixel.fire(pixel: .syncUserSwitchedLoginError)
+            pixelFiring?.fire(Pixel.Event.syncUserSwitchedLoginError)
         }
-        Pixel.fire(pixel: .syncUserSwitchedAccount)
+        pixelFiring?.fire(Pixel.Event.syncUserSwitchedAccount)
     }
 
     private func getErrorType(from errorString: String?) -> AsyncErrorType? {
@@ -317,12 +294,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func firePixelIfNeededFor(event: Pixel.Event, error: Error?) {
         if let syncError = error as? SyncError {
             if !syncError.isServerError {
-                Pixel.fire(pixel: event, error: syncError, withAdditionalParameters: syncError.errorParameters)
+                pixelFiring?.fire(event.withError(syncError), options: .parameters(syncError.errorParameters))
             }
         } else if let error {
-            Pixel.fire(pixel: event, error: error)
+            pixelFiring?.fire(event.withError(error))
         } else {
-            Pixel.fire(pixel: event)
+            pixelFiring?.fire(event)
         }
     }
 
@@ -340,7 +317,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         dismissPresentedViewController { [weak self] in
             guard let self else { return }
             let readyView = AutoRestoreReadyView(model: self.viewModel, onCancel: { [weak self] in
-                Pixel.fire(pixel: .syncAutoRestoreSettingsCancelled, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
+                self?.pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsCancelled, options: .parameters([PixelParameters.source: promptSource.rawValue]))
                 self?.viewModel.clearPendingPreservedAccountContinuation()
                 self?.viewModel.isBusy = false
                 self?.autoRestorePromptSource = nil
@@ -354,7 +331,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 }
             })
             self.navigationController?.present(controller, animated: true) {
-                Pixel.fire(pixel: .syncAutoRestoreSettingsReadyShown, withAdditionalParameters: [PixelParameters.source: promptSource.rawValue])
+                self.pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsReadyShown, options: .parameters([PixelParameters.source: promptSource.rawValue]))
             }
         }
     }
@@ -404,20 +381,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func showSyncWithAnotherDevice() {
-        collectCode(showQRCode: true)
+        collectCode(intent: .syncAnotherDevice)
     }
 
     func showRecoveryCodeEntry() {
         dismissRecoverSyncedDataSheetIfNeeded { [weak self] in
             self?.presentRecoveryCodeScan()
-        }
-    }
-
-    func showDeviceConnected() {
-        let controller = UIHostingController(rootView: DeviceConnectedView(model: viewModel))
-        navigationController?.present(controller, animated: true) { [weak self] in
-            guard let self else { return }
-            self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
         }
     }
 
@@ -431,94 +400,63 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
         switch event {
         case .appear:
-            Pixel.fire(.syncGetOtherDevices, withAdditionalParameters: params)
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevices, options: .parameters(params))
         case .copy:
-            Pixel.fire(.syncGetOtherDevicesCopy, withAdditionalParameters: params)
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesCopy, options: .parameters(params))
         case .share:
-            Pixel.fire(.syncGetOtherDevicesShare, withAdditionalParameters: params)
+            pixelFiring?.fire(Pixel.Event.syncGetOtherDevicesShare, options: .parameters(params))
         }
     }
 
     func fireAutoRestorePixel(event: SyncSettingsViewModel.AutoRestorePixelEvent) {
         switch event {
         case .settingsPageShown:
-            Pixel.fire(pixel: .syncAutoRestoreSettingsPageShown)
+            pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsPageShown)
         case .settingsPageToggleChanged(let enabled):
             if enabled {
-                Pixel.fire(pixel: .syncAutoRestoreSettingsPageToggleEnabled)
+                pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsPageToggleEnabled)
             } else {
-                Pixel.fire(pixel: .syncAutoRestoreSettingsPageToggleDisabled)
+                pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsPageToggleDisabled)
             }
         case .manualRecoveryShown:
-            Pixel.fire(pixel: .syncAutoRestoreSettingsManualRecoveryShown)
+            pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsManualRecoveryShown)
         case .readyRestoreTapped:
-            Pixel.fire(pixel: .syncAutoRestoreSettingsRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
+            pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsRestoreTapped, options: .parameters(autoRestorePromptSourceParameters))
         case .readySkipRestoreTapped:
-            Pixel.fire(pixel: .syncAutoRestoreSettingsSkipRestoreTapped, withAdditionalParameters: autoRestorePromptSourceParameters)
+            pixelFiring?.fire(Pixel.Event.syncAutoRestoreSettingsSkipRestoreTapped, options: .parameters(autoRestorePromptSourceParameters))
         }
     }
 
     func fireSyncSetupPixel(event: SyncSettingsViewModel.SyncSetupPixelEvent) {
         switch event {
         case .backUpThisDeviceTapped:
-            Pixel.fire(pixel: .settingsSyncBackUpThisDeviceTapped, includedParameters: [.appVersion])
+            pixelFiring?.fire(Pixel.Event.settingsSyncBackUpThisDeviceTapped,
+                              options: .parameters(uiVersionParameters))
         case .signupConfirmedTapped:
-            Pixel.fire(pixel: .settingsSyncSignupConfirmedTapped, includedParameters: [.appVersion])
+            pixelFiring?.fire(Pixel.Event.settingsSyncSignupConfirmedTapped,
+                              options: .parameters(uiVersionParameters))
         case .signupAbandoned:
-            Pixel.fire(pixel: .syncSetupEndedAbandoned,
-                       withAdditionalParameters: [PixelParameters.source: "signup"],
-                       includedParameters: [.appVersion])
-            syncSetupExperimentPixels.fireSetupEndedAbandoned()
+            var parameters = uiVersionParameters
+            parameters[PixelParameters.source] = "signup"
+            pixelFiring?.fire(Pixel.Event.syncSetupEndedAbandoned,
+                              options: .parameters(parameters))
         case .recoverSyncedDataTapped:
-            Pixel.fire(pixel: .settingsSyncRecoverSyncedDataTapped, includedParameters: [.appVersion])
+            pixelFiring?.fire(Pixel.Event.settingsSyncRecoverSyncedDataTapped,
+                              options: .parameters(uiVersionParameters))
         case .recoveryConfirmedTapped:
-            Pixel.fire(pixel: .settingsSyncRecoveryConfirmedTapped, includedParameters: [.appVersion])
-        }
-    }
-
-    func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices) async {
-        await withCheckedContinuation { continuation in
-            showPreparingSync(context: context) {
-                continuation.resume()
-            }
-        }
-    }
-
-    func showPreparingSync(context: SimplifiedConnectingSheetView.Context = .syncingDevices, _ completion: (() -> Void)?) {
-        if useSimplifiedLayout {
-            let controller = UIHostingController(rootView: SimplifiedConnectingSheetView(context: context))
-            controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
-            controller.sheetPresentationController?.detents = [.large()]
-            navigationController?.present(controller, animated: true, completion: completion)
-        } else {
-            let controller = UIHostingController(rootView: PreparingToSyncView(isAIChatSyncEnabled: viewModel.isAIChatSyncEnabled))
-            navigationController?.present(controller, animated: true, completion: completion)
-        }
-    }
-
-    @MainActor
-    func showRecoveryPDF() {
-        let model = SaveRecoveryKeyViewModel(
-            key: recoveryCode,
-            showRecoveryPDFAction: { [weak self] in
-                self?.shareRecoveryPDF()
-            },
-            onDismiss: { [weak self] in
-                self?.refreshAutoRestoreDecisionState()
-                self?.showDeviceConnected()
-            },
-            autoRestoreProvider: syncAutoRestoreHandler,
-            onAutoRestoreToggleShown: {
-                Pixel.fire(pixel: .syncAutoRestoreToggleShown)
-            },
-            onAutoRestoreToggleOptedOut: {
-                Pixel.fire(pixel: .syncAutoRestoreToggleOptedOut)
-            }
-        )
-        let controller = UIHostingController(rootView: SaveRecoveryKeyView(model: model))
-        navigationController?.present(controller, animated: true) { [weak self] in
-            guard let self else { return }
-            self.viewModel.syncEnabled(recoveryCode: self.recoveryCode)
+            pixelFiring?.fire(Pixel.Event.settingsSyncRecoveryConfirmedTapped,
+                              options: .parameters(uiVersionParameters))
+        case .anotherDevicePromptShown:
+            pixelFiring?.fire(Pixel.Event.settingsSyncAnotherDevicePromptShown,
+                              options: .parameters(uiVersionParameters))
+        case .anotherDevicePromptOptionTapped(let option):
+            var parameters = uiVersionParameters
+            parameters[PixelParameters.syncPromptOption] = option.rawValue
+            pixelFiring?.fire(Pixel.Event.settingsSyncAnotherDevicePromptOptionTapped,
+                              options: .parameters(parameters))
+        case .anotherDevicePromptDismissed:
+            pixelFiring?.fire(Pixel.Event.settingsSyncAnotherDevicePromptDismissed,
+                              options: .parameters(uiVersionParameters))
         }
     }
 
@@ -540,13 +478,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         do {
             try syncService.removePreservedSyncAccount()
         } catch {
-            Pixel.fire(pixel: .syncAutoRestorePreservedAccountClearFailed, error: error, withAdditionalParameters: autoRestorePromptSourceParameters)
+            pixelFiring?.fire(Pixel.Event.syncAutoRestorePreservedAccountClearFailed.withError(error), options: .parameters(autoRestorePromptSourceParameters))
             Logger.sync.error("Failed to clear preserved sync account before server operation: \(error.localizedDescription, privacy: .public)")
             presentPreservedAccountCleanupFailureAlert()
             return false
         }
 
-        Pixel.fire(pixel: .syncAutoRestorePreservedAccountCleared, withAdditionalParameters: autoRestorePromptSourceParameters)
+        pixelFiring?.fire(Pixel.Event.syncAutoRestorePreservedAccountCleared, options: .parameters(autoRestorePromptSourceParameters))
         needsPreservedAccountCleanupBeforeServerOperation = false
         autoRestorePromptSource = nil
         return true
@@ -555,19 +493,18 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     @MainActor
     private func continueSyncSetupFlow(entryPoint: SyncSettingsViewModel.SyncSetupEntryPoint) {
         switch entryPoint {
-        case .backup:
-            viewModel.showSyncWithSetUpSheet()
         case .pairing:
             showSyncWithAnotherDevice()
         case .simplifiedToggle:
-            viewModel.beginSimplifiedSyncSetup()
+            viewModel.isBusy = false
+            viewModel.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
         }
     }
 
     @MainActor
     private func presentRecoveryCodeScan() {
         viewModel.isRecoverSyncedDataSheetVisible = false
-        collectCode(showQRCode: false)
+        collectCode(intent: .recoverData)
     }
 
     @MainActor
@@ -589,10 +526,16 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         completion()
     }
 
-    private func collectCode(showQRCode: Bool) {
+    enum CodeCollectionIntent {
+        case syncAnotherDevice
+        case recoverData
+    }
+
+    private func collectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
+        codeCollectionIntent = intent
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-            legacyCollectCode(showQRCode: showQRCode)
+            legacyCollectCode(intent: intent)
             return
         }
         Task { @MainActor in
@@ -603,6 +546,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .exchange)
                     await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
@@ -611,43 +555,40 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startConnectMode()
                     source = .connect
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
-            if !showQRCode {
+            if intent == .recoverData {
                 source = .recovery
             }
             let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
             presentScanOrPasteCodeView(
                 codeForDisplayOrPasting: pairingInfo.base64Code,
                 stringForQRCode: stringForQRCode,
-                showQRCode: showQRCode,
-                source: source,
-                onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion))
+                source: source)
         }
     }
 
-    private func legacyCollectCode(showQRCode: Bool) {
+    private func legacyCollectCode(intent: CodeCollectionIntent) {
         pairingV2PeerKind = nil
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
-            let onPresentPixelInfo: SyncSetupPixelInfo?
             let source: SyncSetupSource
             if shouldUsePreservedAccountForConnectionFlow {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
-                onPresentPixelInfo = nil
-                source = showQRCode ? .exchange : .recovery
+                source = intent == .syncAnotherDevice ? .exchange : .recovery
             } else {
                 do {
                     let pairingInfo = try await connectionController.startConnectMode()
                     stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                     codeForDisplayOrPasting = pairingInfo.base64Code
-                    source = showQRCode ? .connect : .recovery
-                    onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: source, flowVersion: syncSetupPixelFlowVersion)
+                    source = intent == .syncAnotherDevice ? .connect : .recovery
                 } catch {
+                    sendPairingV2PresenterStartFailurePixelIfNeeded(error, setupSource: .connect)
                     await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
@@ -655,63 +596,45 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             presentScanOrPasteCodeView(
                 codeForDisplayOrPasting: codeForDisplayOrPasting,
                 stringForQRCode: stringForQRCode,
-                showQRCode: showQRCode,
-                source: source,
-                onPresentPixelInfo: onPresentPixelInfo)
+                source: source)
         }
     }
 
     private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String,
                                             stringForQRCode: String,
-                                            showQRCode: Bool,
-                                            source: SyncSetupSource,
-                                            onPresentPixelInfo: SyncSetupPixelInfo?) {
+                                            source: SyncSetupSource) {
+        scanSetupSource = source
         let model = ScanOrPasteCodeViewModel(
             codeForDisplayOrPasting: codeForDisplayOrPasting,
             qrCodeString: stringForQRCode,
             source: CodeCollectionSource(syncSetupSource: source))
         model.delegate = self
-        
-        var controller: UIHostingController<AnyView>
-        if useSimplifiedLayout {
-            controller = UIHostingController(rootView: AnyView(SimplifiedScanOrShowCodeView(model: model)))
-        } else if showQRCode {
-            controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
-        } else {
-            controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
-        }
-        
+        scanCodeViewModel = model
+
+        let rootView = ScanQRCodeView(model: model)
+        let controller = UIHostingController(rootView: rootView)
+
         let navController = UIDevice.current.userInterfaceIdiom == .phone
         ? PortraitNavigationController(rootViewController: controller)
         : UINavigationController(rootViewController: controller)
-        
+
         navController.overrideUserInterfaceStyle = .dark
-        if useSimplifiedLayout {
-            navController.view.backgroundColor = UIColor(baseColor: .gray90)
-            let transparentAppearance = UINavigationBarAppearance()
-            transparentAppearance.configureWithTransparentBackground()
-            navController.navigationBar.standardAppearance = transparentAppearance
-            navController.navigationBar.scrollEdgeAppearance = transparentAppearance
-        }
+        navController.view.backgroundColor = UIColor(baseColor: .gray90)
+        let transparentAppearance = UINavigationBarAppearance()
+        transparentAppearance.configureWithTransparentBackground()
+        navController.navigationBar.standardAppearance = transparentAppearance
+        navController.navigationBar.scrollEdgeAppearance = transparentAppearance
         navController.setNeedsStatusBarAppearanceUpdate()
-        if useSimplifiedLayout, UIDevice.current.userInterfaceIdiom == .pad {
+        if UIDevice.current.userInterfaceIdiom == .pad {
             navController.modalPresentationStyle = .formSheet
         } else {
             navController.modalPresentationStyle = .fullScreen
         }
-        navigationController?.present(navController, animated: true) {
-            self.checkCameraPermission(model: model)
-            if let onPresentPixelInfo {
-                let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
-                var parameters = [
-                    PixelParameters.source: pixelSource,
-                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg
-                ]
-                parameters[SyncSetupPixelInfo.Parameter.flowVersion] = onPresentPixelInfo.flowVersion
-                Pixel.fire(pixel: onPresentPixelInfo.pixel, withAdditionalParameters: parameters, includedParameters: [.appVersion])
-                self.syncSetupExperimentPixels.fireBarcodeScreenShown()
-            }
-        }
+        navigationController?.present(navController, animated: true)
+    }
+
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel) {
+        checkCameraPermission(model: model)
     }
 
     func checkCameraPermission(model: ScanOrPasteCodeViewModel) {
@@ -736,8 +659,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func controllerShouldJoinPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        // codeSource is unused for the abandonment pixel; only the source/role matter.
-        await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, .qrCode))
+        let codeSource = pairingV2JoinerCodeSource ?? .qrCode
+        let isConfirmed = await confirmPairingV2Peer(peerName: peerName, peerKind: peerKind, setupRole: .receiver(.exchange, codeSource))
+        pairingV2JoinerCodeSource = nil
+        return isConfirmed
     }
 
     private func confirmPairingV2Peer(peerName: String?, peerKind: PairingV2DeviceKind, setupRole: SyncSetupRole) async -> Bool {
@@ -746,7 +671,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         let isConfirmed = await presentPairingV2ConfirmationAlert(message: message)
         if !isConfirmed {
             sendSyncConfirmationDeniedSetupEndedAbandonedPixel(setupRole: setupRole)
-            dismissPairingV2UIAfterDeniedConfirmation()
+            if isPresentingConnectingSheet {
+                viewModel.connectingSheetPhase = nil
+            } else {
+                dismissPairingV2UIAfterDeniedConfirmation()
+            }
         } else {
             pairingV2PeerKind = peerKind
         }
@@ -754,18 +683,27 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func presentPairingV2ConfirmationAlert(message: String) async -> Bool {
-        await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncPairingV2ConfirmationTitle, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
                 continuation.resume(returning: false)
             })
-            alert.addAction(UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
+            let confirmAction = UIAlertAction(title: UserText.syncPairingV2ConfirmationAction, style: .default) { _ in
                 continuation.resume(returning: true)
-            })
+            }
+            alert.addAction(confirmAction)
+            alert.preferredAction = confirmAction
 
-            let viewControllerToPresentFrom = navigationController?.presentedViewController ?? presentedViewController ?? self
-            viewControllerToPresentFrom.present(alert, animated: true)
+            topmostPresentedViewController().present(alert, animated: true)
         }
+    }
+
+    private func topmostPresentedViewController() -> UIViewController {
+        var topController: UIViewController = view.window?.rootViewController ?? navigationController ?? self
+        while let presented = topController.presentedViewController, !presented.isBeingDismissed {
+            topController = presented
+        }
+        return topController
     }
 
     private func pairingV2DisplayName(for peerName: String?) -> String {
@@ -781,40 +719,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func confirmAndDisableSync() async -> Bool {
-        return await withCheckedContinuation { continuation in
-            let alert = UIAlertController(title: UserText.syncTurnOffConfirmTitle,
-                                          message: UserText.syncTurnOffConfirmMessage,
-                                          preferredStyle: .alert)
-            self.onConfirmSyncDisable = { [weak self] in
-                guard let self else { return }
-                Task { @MainActor in
-                    do {
-                        try await self.syncService.disconnect()
-                        Pixel.fire(pixel: .syncDisabled)
-                        self.syncSetupExperimentPixels.fireSyncDisabled()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
-                        self.viewModel.isSyncEnabled = false
-                        self.syncPausedStateManager.syncDidTurnOff()
-                        continuation.resume(returning: true)
-                    } catch {
-                        await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
-                        continuation.resume(returning: false)
-                    }
-                }
-            }
-            let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
-                continuation.resume(returning: false)
-            }
-            let confirmAction = UIAlertAction(title: UserText.syncTurnOffConfirmAction, style: .destructive) { _ in
-                self.onConfirmSyncDisable?()
-            }
-            alert.addAction(cancelAction)
-            alert.addAction(confirmAction)
-            self.present(alert, animated: true)
-        }
-    }
-
     func simplifiedConfirmAndDisableSync() async -> Bool {
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.simplifiedSyncTurnOffTitle,
@@ -827,9 +731,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Task { @MainActor in
                     do {
                         try await self.syncService.disconnect()
-                        Pixel.fire(pixel: .syncDisabled)
-                        self.syncSetupExperimentPixels.fireSyncDisabled()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
+                        self.pixelFiring?.fire(Pixel.Event.syncDisabled, options: .parameters(self.uiVersionParameters))
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
@@ -846,9 +748,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     func confirmAndDeleteAllData() async -> Bool {
         let deviceCount = viewModel.devices.count
+        let pixelParameters = uiVersionParameters
         return await withCheckedContinuation { continuation in
-            let alert = UIAlertController(title: UserText.syncDeleteAllConfirmTitle,
-                                          message: UserText.syncDeleteAllConfirmMessage,
+            let alert = UIAlertController(title: UserText.simplifiedSyncDeleteAllConfirmTitle,
+                                          message: UserText.simplifiedSyncDeleteAllConfirmMessage,
                                           preferredStyle: .alert)
             alert.addAction(title: UserText.actionCancel, style: .cancel) {
                 continuation.resume(returning: false)
@@ -857,11 +760,12 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Task { @MainActor in
                     do {
                         try await self?.syncService.deleteAccount()
-                        Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
-                        self?.syncSetupExperimentPixels.fireSyncDisabledAndDeleted()
-                        AutofillOnboardingExperimentPixelReporter().fireSyncEnabled(false)
+                        var parameters = pixelParameters
+                        parameters[PixelParameters.connectedDevices] = "\(deviceCount)"
+                        self?.pixelFiring?.fire(Pixel.Event.syncDisabledAndDeleted, options: .parameters(parameters))
                         self?.viewModel.isSyncEnabled = false
                         self?.syncPausedStateManager.syncDidTurnOff()
+                        ActionMessageView.present(message: UserText.simplifiedSyncDataDeletedToast)
                         continuation.resume(returning: true)
                     } catch {
                         await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
@@ -903,13 +807,30 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func codeEntryScreenShown() {
-        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown,
-                   withAdditionalParameters: [
-                    SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
-                    SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion
-                   ],
-                   includedParameters: [.appVersion])
-        syncSetupExperimentPixels.fireManualCodeEntryScreenShown()
+        pixelFiring?.fire(Pixel.Event.syncSetupManualCodeEntryScreenShown,
+                          options: .parameters([
+                            SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+                            SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
+                            PixelParameters.uiVersion: syncUIVersion
+                          ]))
+    }
+
+    func barcodeScreenShown() {
+        fireScanFlowScreenShownPixel(.syncSetupBarcodeScreenShown)
+    }
+
+    func scanQRCodeScreenShown() {
+        fireScanFlowScreenShownPixel(.syncSetupScanQRScreenShown)
+    }
+
+    private func fireScanFlowScreenShownPixel(_ pixel: Pixel.Event) {
+        var parameters = [
+            SyncSetupPixelInfo.Parameter.myKind: SyncSetupPixelInfo.Value.ddg,
+            SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
+            PixelParameters.uiVersion: syncUIVersion
+        ]
+        parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
+        pixelFiring?.fire(pixel, options: .parameters(parameters))
     }
 
     func codeCopied(_ code: String, source: CodeCollectionSource) {
@@ -937,8 +858,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         switch continuation {
         case .setup(let entryPoint):
             switch entryPoint {
-            case .backup:
-                return .syncBackup
             case .pairing:
                 return .syncPairing
             case .simplifiedToggle:
@@ -962,26 +881,12 @@ extension SyncSettingsViewController {
         }
     }
 
-    func showSimplifiedSyncEnabledToast() {
-        DispatchQueue.main.async {
-            ActionMessageView.present(message: UserText.simplifiedSyncEnabledToast)
-        }
-    }
-
     func simplifiedCopyRecoveryCode() {
         UIPasteboard.general.string = recoveryCode
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         ActionMessageView.present(message: UserText.simplifiedRecoveryCodeCopiedToast)
     }
 
-    private enum SimplifiedSyncSettingsKey: String {
-        case hasShownSimplifiedSyncAnotherDevicePrompt = "sync.simplified.sync-another-device-prompt.shown"
-    }
-
-    var hasShownSimplifiedSyncAnotherDevicePrompt: Bool {
-        get { syncSettingsStore.object(forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) as? Bool ?? false }
-        set { syncSettingsStore.set(newValue, forKey: SimplifiedSyncSettingsKey.hasShownSimplifiedSyncAnotherDevicePrompt.rawValue) }
-    }
 }
 
 // MARK: - DismissibleHostingController
@@ -1030,7 +935,7 @@ private extension CodeCollectionSource {
     }
 }
 
-private struct SyncSetupPixelInfo {
+private enum SyncSetupPixelInfo {
     enum Parameter {
         static let flowVersion = "flow_version"
         static let myKind = "my_kind"
@@ -1041,10 +946,6 @@ private struct SyncSetupPixelInfo {
         static let v1 = "v1"
         static let v2 = "v2"
     }
-
-    let pixel: Pixel.Event
-    let source: SyncSetupSource
-    let flowVersion: String?
 }
 
 extension SyncSettingsViewController {

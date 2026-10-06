@@ -23,4 +23,12 @@ public extension Locale {
         let baseIdentifier = self.identifier.components(separatedBy: "@").first ?? self.identifier
         return baseIdentifier.replacingOccurrences(of: "_", with: "-")
     }
+
+    var isEnglishLanguage: Bool {
+        Locale.preferredLanguages.first?.lowercased().hasPrefix("en") ?? false
+    }
+
+    var isEnglishUnitedStates: Bool {
+        languageCode == "en" && regionCode == "US"
+    }
 }

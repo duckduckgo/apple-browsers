@@ -20,11 +20,12 @@ import BrowserServicesKit
 import Combine
 import Common
 import FoundationExtensions
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Subscription
 import UserScript
@@ -43,6 +44,7 @@ public protocol SparkleUpdateControllerFactory {
                             pixelFiring: PixelFiring?,
                             notificationPresenter: any UpdateNotificationPresenting,
                             keyValueStore: any ThrowingKeyValueStoring,
+                            applicationUpdateDetector: ApplicationUpdateDetector,
                             allowCustomUpdateFeed: Bool,
                             isAutoUpdatePaused: @escaping () -> Bool,
                             wideEvent: WideEventManaging,
@@ -116,15 +118,6 @@ public protocol UpdateController: UpdateControllerObjC {
     /// **Usage**: Displayed in Settings to show "Last checked: X" information.
     /// Used for rate limiting automatic checks (typically 24-hour intervals).
     var lastUpdateCheckDate: Date? { get }
-
-    /// Timestamp when update notification was last shown to user.
-    ///
-    /// **Rate Limiting**: Notifications are throttled to once per 7 days to avoid spam.
-    /// Resets when new update becomes available or user manually triggers check.
-    ///
-    /// **Usage**: Controls frequency of system notifications about available updates.
-    /// Prevents showing the same update notification repeatedly.
-    var lastUpdateNotificationShownDate: Date { get set }
 
     // MARK: - Update Progress Tracking
 
@@ -221,6 +214,9 @@ public protocol SparkleUpdateControlling: UpdateController, SparkleUpdateControl
     /// **Usage**: Drives UI state to show "Restart to Update" button in Settings.
     var isAtRestartCheckpoint: Bool { get }
 
+    /// Whether the release notes page should automatically trigger an update check on load.
+    var shouldAutoCheckOnReleaseNotesLoad: Bool { get }
+
     /// Publisher that emits when the app is about to relaunch for an update.
     ///
     /// **Sparkle Behavior**: Emits just before Sparkle performs automatic relaunch.
@@ -289,15 +285,9 @@ extension UpdateController {
         latestUpdate == nil
     }
 
-    private var isUpdateNotificationAllowed: Bool {
-        Date().timeIntervalSince(lastUpdateNotificationShownDate) > .days(7)
-    }
-
     public func showUpdateNotificationIfNeeded(isOnboardingFinished: () -> Bool) {
-        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished(), isUpdateNotificationAllowed else { return }
+        guard let latestUpdate, hasPendingUpdate, isOnboardingFinished() else { return }
 
         notificationPresenter.showUpdateNotification(for: latestUpdate.type, areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
-
-        lastUpdateNotificationShownDate = Date()
     }
 }

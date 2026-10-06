@@ -262,7 +262,9 @@ archive_and_export() {
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
 		${extra_xcargs:+"${extra_xcargs}"} \
+		${EXCLUDED_ARCHS:+"EXCLUDED_ARCHS=${EXCLUDED_ARCHS}"} \
 		2>&1 \
+		| tee "${workdir}/archive.log" \
 		| ${log_formatter}
 
 	if [[ "${release_type}" == "sandbox-review" ]]; then
@@ -286,6 +288,7 @@ archive_and_export() {
 		-skipPackagePluginValidation -skipMacroValidation \
 		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
+		| tee "${workdir}/export.log" \
 		| ${log_formatter}
 }
 

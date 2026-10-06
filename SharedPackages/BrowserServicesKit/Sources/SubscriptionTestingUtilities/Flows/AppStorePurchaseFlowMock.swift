@@ -28,7 +28,7 @@ public final class AppStorePurchaseFlowMock: AppStorePurchaseFlow {
     public var purchaseSubscriptionIncludeProTier: Bool?
     public var changeTierCalled = false
     public var changeTierSubscriptionIdentifier: String?
-    public var completeSubscriptionAdditionalParams: [String: String]?
+    public var completeSubscriptionExperimentAttribution: PurchaseExperimentAttribution?
 
     public init() { }
 
@@ -39,8 +39,10 @@ public final class AppStorePurchaseFlowMock: AppStorePurchaseFlow {
     }
 
     @discardableResult
-    public func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
-        self.completeSubscriptionAdditionalParams = additionalParams
+    public func completeSubscriptionPurchase(
+        with transactionJWS: TransactionJWS,
+        experimentAttribution: PurchaseExperimentAttribution?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
+        completeSubscriptionExperimentAttribution = experimentAttribution
         return completeSubscriptionPurchaseResult!
     }
 

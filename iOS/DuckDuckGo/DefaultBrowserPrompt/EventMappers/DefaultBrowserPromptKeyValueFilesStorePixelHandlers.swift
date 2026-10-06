@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import PixelKit
 import class Common.EventMapping
 import Core
 
@@ -33,35 +34,35 @@ enum DefaultBrowserPromptKeyValueFilesStorePixelHandlers {
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Current Activity: \(error)")
             pixelEvent = .debugDefaultBrowserPromptFailedToSaveCurrentActivity
         }
-        DailyPixel.fireDailyAndCount(pixel: pixelEvent, error: error)
+        PixelKit.fire(pixelEvent.withError(error), frequency: .dailyAndCount)
     }
 
     static let promptTypeDebugPixelHandler = EventMapping<DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent> { event, _, _, _ in
         switch event {
         case let .failedToRetrieveValue(.lastModalShownDate(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Last Modal Shown Date: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate.withError(error), frequency: .dailyAndCount)
         case let .failedToSaveValue(.lastModalShownDate(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Last Modal Shown Date: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToSaveLastModalShownDate, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToSaveLastModalShownDate.withError(error), frequency: .dailyAndCount)
         case let .failedToRetrieveValue(.modalShownOccurrences(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Modal Shown Occurrences: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences.withError(error), frequency: .dailyAndCount)
         case let .failedToSaveValue(.modalShownOccurrences(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Modal Shown Occurrences: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToSaveModalShownOccurrences, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToSaveModalShownOccurrences.withError(error), frequency: .dailyAndCount)
         case let .failedToRetrieveValue(.permanentlyDismissPrompt(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Permanently Dismissed Prompt: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt.withError(error), frequency: .dailyAndCount)
         case let .failedToSaveValue(.permanentlyDismissPrompt(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Permanently Dismissed Prompt: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt.withError(error), frequency: .dailyAndCount)
         case let .failedToRetrieveValue(.inactiveModalShown(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Inactive Modal Shown: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown.withError(error), frequency: .dailyAndCount)
         case let .failedToSaveValue(.inactiveModalShown(error)):
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Inactive Modal Shown: \(error)")
-            DailyPixel.fireDailyAndCount(pixel: .debugDefaultBrowserPromptFailedToSaveInactiveModalShown, error: error)
+            PixelKit.fire(Pixel.Event.debugDefaultBrowserPromptFailedToSaveInactiveModalShown.withError(error), frequency: .dailyAndCount)
         }
     }
 
@@ -75,7 +76,7 @@ enum DefaultBrowserPromptKeyValueFilesStorePixelHandlers {
             Logger.defaultBrowserPrompt.error("[Default Browser Prompt] - Failed to Save Default Browser Prompt User Type. Reason: \(error)")
             pixelEvent = .debugDefaultBrowserPromptFailedToSaveUserType
         }
-        DailyPixel.fireDailyAndCount(pixel: pixelEvent, error: error)
+        PixelKit.fire(pixelEvent.withError(error), frequency: .dailyAndCount)
     }
 
 }

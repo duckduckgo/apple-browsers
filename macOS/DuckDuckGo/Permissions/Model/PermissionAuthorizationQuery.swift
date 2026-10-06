@@ -23,6 +23,7 @@ struct PermissionAuthorizationQueryInfo {
     let domain: String
     let permissions: [PermissionType]
     var wasShownOnce: Bool = false
+    var wasDismissed: Bool = false
     var shouldShowAlwaysAllowCheckbox: Bool = false
     var shouldShowCancelInsteadOfDeny: Bool = false
     var isSystemPermissionDisabled: Bool = false
@@ -39,6 +40,10 @@ extension PermissionAuthorizationQuery {
     var wasShownOnce: Bool {
         get { parameters.wasShownOnce }
         set { parameters.wasShownOnce = newValue }
+    }
+    var wasDismissed: Bool {
+        get { parameters.wasDismissed }
+        set { parameters.wasDismissed = newValue }
     }
     var shouldShowAlwaysAllowCheckbox: Bool {
         get { parameters.shouldShowAlwaysAllowCheckbox }

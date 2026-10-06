@@ -29,6 +29,8 @@ import WebKit
 import DesignResourcesKit
 import SecureStorage
 import Combine
+import FeatureFlags_iOS
+import PixelKit
 
 class EmailSignupViewController: UIViewController {
 
@@ -150,7 +152,7 @@ class EmailSignupViewController: UIViewController {
         isModalInPresentation = true
         navigationController?.presentationController?.delegate = self
 
-        Pixel.fire(pixel: .emailIncontextModalDisplayed)
+        PixelKit.fire(Pixel.Event.emailIncontextModalDisplayed)
     }
 
 
@@ -271,7 +273,7 @@ class EmailSignupViewController: UIViewController {
 
     @objc
     private func cancelButtonPressed() {
-        Pixel.fire(pixel: .emailIncontextModalDismissed)
+        PixelKit.fire(Pixel.Event.emailIncontextModalDismissed)
         completed(false)
     }
 
@@ -309,11 +311,11 @@ extension EmailSignupViewController: UIAdaptivePresentationControllerDelegate {
             let alert = UIAlertController(title: UserText.emailSignupExitEarlyAlertTitle, message: nil, preferredStyle: .alert)
 
             let continueAction = UIAlertAction(title: UserText.emailSignupExitEarlyActionContinue, style: .default) { _ in
-                Pixel.fire(pixel: .emailIncontextModalExitEarlyContinue)
+                PixelKit.fire(Pixel.Event.emailIncontextModalExitEarlyContinue)
             }
 
             let cancelAction = UIAlertAction(title: UserText.emailSignupExitEarlyActionExit, style: .default) { [weak self] _ in
-                Pixel.fire(pixel: .emailIncontextModalExitEarly)
+                PixelKit.fire(Pixel.Event.emailIncontextModalExitEarly)
                 self?.completed(false)
             }
 
@@ -325,7 +327,7 @@ extension EmailSignupViewController: UIAdaptivePresentationControllerDelegate {
         } else if case .complete = signupStage {
             completed(true)
         } else {
-            Pixel.fire(pixel: .emailIncontextModalDismissed)
+            PixelKit.fire(Pixel.Event.emailIncontextModalDismissed)
             completed(false)
         }
     }
@@ -480,7 +482,7 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
             return
         }
 
-        Pixel.fire(pixel: .autofillJSPixelFired(pixel))
+        PixelKit.fire(Pixel.Event.autofillJSPixelFired(pixel))
     }
 
 }

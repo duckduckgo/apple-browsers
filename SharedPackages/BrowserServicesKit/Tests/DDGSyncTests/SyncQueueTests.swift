@@ -129,7 +129,7 @@ class SyncQueueTests: XCTestCase {
         let cancellable = syncQueue.isSyncInProgressPublisher.sink(receiveValue: { isInProgressEvents.append($0) })
         defer { cancellable.cancel() }
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await syncQueue.startSync()
         XCTAssertEqual(isInProgressEvents, [false, true, false])
 

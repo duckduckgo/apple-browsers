@@ -8,48 +8,48 @@
 	<string>developer-id</string>
 	<key>provisioningProfiles</key>
 	<dict>
-		<key>com.duckduckgo.macos.browser</key>
-		<string>match Direct com.duckduckgo.macos.browser macos</string>
 		<key>com.duckduckgo.macos.DBP.backgroundAgent</key>
 		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent macos</string>
-		<key>com.duckduckgo.macos.vpn.network-extension</key>
-		<string>match Direct com.duckduckgo.macos.vpn.network-extension macos</string>
-		<key>com.duckduckgo.macos.vpn</key>
-		<string>match Direct com.duckduckgo.macos.vpn macos</string>
-		<key>com.duckduckgo.macos.browser.alpha</key>
-		<string>match Direct com.duckduckgo.macos.browser.alpha macos</string>
 		<key>com.duckduckgo.macos.DBP.backgroundAgent.alpha</key>
 		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent.alpha macos</string>
-		<key>com.duckduckgo.macos.vpn.network-extension.alpha</key>
-		<string>match Direct com.duckduckgo.macos.vpn.network-extension.alpha macos</string>
-		<key>com.duckduckgo.macos.vpn.alpha</key>
-		<string>match Direct com.duckduckgo.macos.vpn.alpha macos</string>
-		<key>com.duckduckgo.macos.browser.review</key>
-		<string>match Direct com.duckduckgo.macos.browser.review macos</string>
 		<key>com.duckduckgo.macos.DBP.backgroundAgent.review</key>
 		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent.review macos</string>
+		<key>com.duckduckgo.macos.browser</key>
+		<string>match Direct com.duckduckgo.macos.browser macos</string>
+		<key>com.duckduckgo.macos.browser.alpha</key>
+		<string>match Direct com.duckduckgo.macos.browser.alpha macos</string>
+		<key>com.duckduckgo.macos.browser.review</key>
+		<string>match Direct com.duckduckgo.macos.browser.review macos</string>
+		<key>com.duckduckgo.macos.vpn</key>
+		<string>match Direct com.duckduckgo.macos.vpn macos</string>
+		<key>com.duckduckgo.macos.vpn.alpha</key>
+		<string>match Direct com.duckduckgo.macos.vpn.alpha macos</string>
+		<key>com.duckduckgo.macos.vpn.network-extension</key>
+		<string>match Direct com.duckduckgo.macos.vpn.network-extension macos</string>
+		<key>com.duckduckgo.macos.vpn.network-extension.alpha</key>
+		<string>match Direct com.duckduckgo.macos.vpn.network-extension.alpha macos</string>
 		<key>com.duckduckgo.macos.vpn.network-extension.review</key>
 		<string>match Direct com.duckduckgo.macos.vpn.network-extension.review macos</string>
 		<key>com.duckduckgo.macos.vpn.review</key>
 		<string>match Direct com.duckduckgo.macos.vpn.review macos</string>
-        <key>com.duckduckgo.mobile.ios.review</key>
-        <string>match Direct com.duckduckgo.mobile.ios.review macos</string>
-        <key>com.duckduckgo.mobile.ios.vpn.agent.review</key>
-        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review macos</string>
-        <key>com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension</key>
-        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension macos</string>
-        <key>com.duckduckgo.mobile.ios.vpn.agent.network-extension.review</key>
-        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.network-extension.review macos</string>
-        <key>com.duckduckgo.mobile.ios.vpn.agent.review.proxy</key>
-        <string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review.proxy macos</string>
-        <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent.review</key>
-        <string>match Direct com.duckduckgo.mobile.ios.DBP.backgroundAgent.review macos</string>
+		<key>com.duckduckgo.mobile.ios.DBP.backgroundAgent.review</key>
+		<string>match Direct com.duckduckgo.mobile.ios.DBP.backgroundAgent.review macos</string>
+		<key>com.duckduckgo.mobile.ios.review</key>
+		<string>match Direct com.duckduckgo.mobile.ios.review macos</string>
+		<key>com.duckduckgo.mobile.ios.vpn.agent.network-extension.review</key>
+		<string>match Direct com.duckduckgo.mobile.ios.vpn.agent.network-extension.review macos</string>
+		<key>com.duckduckgo.mobile.ios.vpn.agent.review</key>
+		<string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review macos</string>
+		<key>com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension</key>
+		<string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension macos</string>
+		<key>com.duckduckgo.mobile.ios.vpn.agent.review.proxy</key>
+		<string>match Direct com.duckduckgo.mobile.ios.vpn.agent.review.proxy macos</string>
 	</dict>
 	<key>signingCertificate</key>
-	<string></string>
+	<string>8EDFF78919E9FA96289557E02427D0D7562A5C9F</string>
 	<key>signingStyle</key>
 	<string>manual</string>
 	<key>teamID</key>
-	<string></string>
+	<string>HKE973VLUW</string>
 </dict>
 </plist>

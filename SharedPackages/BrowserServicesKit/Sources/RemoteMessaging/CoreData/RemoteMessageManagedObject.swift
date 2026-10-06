@@ -32,6 +32,7 @@ public class RemoteMessageManagedObject: NSManagedObject {
 
     @NSManaged public var firstShownDate: Date?
     @NSManaged public var id: String?
+    @NSManaged public var impressionCount: Int64
     @NSManaged public var message: String?
     @NSManaged public var shown: Bool
     @NSManaged public var status: NSNumber?

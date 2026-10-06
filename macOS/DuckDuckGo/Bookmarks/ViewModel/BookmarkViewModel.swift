@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 
 struct BookmarkViewModel {
 
@@ -36,7 +37,7 @@ struct BookmarkViewModel {
         if title.count <= MainMenu.Constants.maxTitleLength {
             return title
         } else {
-            return String(title.truncated(length: MainMenu.Constants.maxTitleLength))
+            return title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
         }
 
     }
@@ -47,9 +48,9 @@ struct BookmarkViewModel {
             let favicon = bookmark.favicon(.small)?.copy() as? NSImage
             favicon?.size = NSSize.faviconSize
 
-            return favicon ?? .bookmarkDefaultFavicon
+            return favicon ?? DesignSystemImages.Color.Size16.bookmark
         } else if entity is BookmarkFolder {
-            return .folder
+            return DesignSystemImages.Color.Size16.folder
         } else {
             return nil
         }

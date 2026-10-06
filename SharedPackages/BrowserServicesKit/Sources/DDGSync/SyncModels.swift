@@ -178,6 +178,13 @@ public struct PairingInfo {
     public let deviceName: String
     let kind: Kind
 
+    public var isPairingV2: Bool {
+        if case .pairingV2 = kind {
+            return true
+        }
+        return false
+    }
+
     public init?(url: URL) {
         guard Self.isPairing(url: url) else {
             return nil
@@ -186,6 +193,10 @@ public struct PairingInfo {
             return nil
         }
         let dict = Self.fragmentParameters(from: fragment)
+        if dict[Keys.pairingV2Code] != nil {
+            self.init(pairingV2URL: url, deviceName: "")
+            return
+        }
         guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
             return nil
         }
@@ -258,6 +269,10 @@ public enum SyncCredentialID {
     public static let thirdParty = "3party"
 }
 
+enum ProtectedKeyPurpose {
+    static let accountInfo = "account_info"
+}
+
 // AccessCredential is decoded from API responses using JSONDecoder.snakeCaseKeys. The server key
 // is "encrypted_3party_credential", and .convertFromSnakeCase maps that to encrypted3PartyCredential.
 // Adding a CodingKeys raw value for the literal server key would make decoding return nil.
@@ -320,6 +335,16 @@ public struct ProtectedKeyPublicKey: Codable, Sendable, Equatable {
     public let kty: String
     public let n: String?
     public let use: String?
+
+    fileprivate func hasSameKeyMaterial(as other: ProtectedKeyPublicKey) -> Bool {
+        guard let modulus = n,
+              let exponent = e,
+              let otherModulus = other.n,
+              let otherExponent = other.e else {
+            return false
+        }
+        return kty == other.kty && modulus == otherModulus && exponent == otherExponent
+    }
 }
 
 private struct ProtectedKeyWrappingIdentity: Hashable {
@@ -334,18 +359,34 @@ private struct ProtectedKeyWrappingIdentity: Hashable {
     }
 }
 
-extension ProtectedKey {
-    func hasSameWrappingIdentity(as other: ProtectedKey) -> Bool {
-        kid == other.kid && encryptedWith == other.encryptedWith && purpose == other.purpose
-    }
-}
-
 extension Sequence where Element == ProtectedKey {
     func removingDuplicateWrappingIdentities() -> [ProtectedKey] {
         var seenIdentities: Set<ProtectedKeyWrappingIdentity> = []
         return filter { key in
             seenIdentities.insert(ProtectedKeyWrappingIdentity(key: key)).inserted
         }
+    }
+
+    /// Preserves cached wrapping variants for the same key so an out-of-order snapshot cannot remove a newly added wrapper.
+    func preservingCachedWrappersForMatchingKeys(_ cachedKeys: [ProtectedKey]) -> [ProtectedKey] {
+        let incomingKeys = removingDuplicateWrappingIdentities()
+        let incomingWrappingIdentities = Set(incomingKeys.map { ProtectedKeyWrappingIdentity(key: $0) })
+        let cachedWrappersToPreserve = cachedKeys.removingDuplicateWrappingIdentities().compactMap { cachedKey -> ProtectedKey? in
+            guard !incomingWrappingIdentities.contains(ProtectedKeyWrappingIdentity(key: cachedKey)),
+                  let matchingIncomingKey = incomingKeys.first(where: { incomingKey in
+                      incomingKey.kid == cachedKey.kid
+                      && incomingKey.purpose == cachedKey.purpose
+                      && incomingKey.publicKey.hasSameKeyMaterial(as: cachedKey.publicKey)
+                  }) else {
+                return nil
+            }
+            return ProtectedKey(kid: cachedKey.kid,
+                                encryptedPrivateKey: cachedKey.encryptedPrivateKey,
+                                publicKey: matchingIncomingKey.publicKey,
+                                encryptedWith: cachedKey.encryptedWith,
+                                purpose: cachedKey.purpose)
+        }
+        return incomingKeys + cachedWrappersToPreserve
     }
 }
 

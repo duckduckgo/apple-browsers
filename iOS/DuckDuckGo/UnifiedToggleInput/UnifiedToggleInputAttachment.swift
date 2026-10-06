@@ -46,10 +46,52 @@ struct UnifiedToggleInputInvalidFileAttachment: Identifiable {
     }
 }
 
+enum TabAttachmentOrigin: Equatable {
+    case recentTabs
+    case tabPicker
+    case mention
+}
+
+enum TabAttachmentSelectionResult: Equatable {
+    /// Applied the requested attachment change.
+    case changed
+    /// The attachment already matched the requested state.
+    case unchanged
+    /// The request could not be applied.
+    case rejected
+
+    var isSuccessful: Bool { self != .rejected }
+}
+
+/// An explicitly attached browser tab, identified independently of its current address.
+///
+/// `id` is the attachment's own identity, because the enum's `id` is a `UUID` while a tab is
+/// identified by a `String`. `tabId` carries the tab's identity: two tabs can hold the same URL
+/// and the same title, and both must be attachable.
+struct UnifiedToggleInputTabAttachment: Identifiable, Equatable {
+    let id: UUID
+    let tabId: TabUID
+    let title: String
+    let url: URL
+    let favicon: UIImage?
+    let source: TabAttachmentOrigin
+
+    init(id: UUID = UUID(), tabId: TabUID, title: String, url: URL, favicon: UIImage? = nil,
+         source: TabAttachmentOrigin) {
+        self.id = id
+        self.tabId = tabId
+        self.title = title
+        self.url = url
+        self.favicon = favicon
+        self.source = source
+    }
+}
+
 enum UnifiedToggleInputAttachment: Identifiable {
     case image(AIChatImageAttachment)
     case file(AIChatFileAttachment)
     case invalidFile(UnifiedToggleInputInvalidFileAttachment)
+    case tab(UnifiedToggleInputTabAttachment)
 
     var id: UUID {
         switch self {
@@ -58,6 +100,8 @@ enum UnifiedToggleInputAttachment: Identifiable {
         case .file(let attachment):
             return attachment.id
         case .invalidFile(let attachment):
+            return attachment.id
+        case .tab(let attachment):
             return attachment.id
         }
     }
@@ -70,12 +114,26 @@ enum UnifiedToggleInputAttachment: Identifiable {
             return attachment.fileName
         case .invalidFile(let attachment):
             return attachment.fileName
+        case .tab(let attachment):
+            return attachment.title
         }
+    }
+
+    var tabAttachment: UnifiedToggleInputTabAttachment? {
+        guard case .tab(let attachment) = self else { return nil }
+        return attachment
+    }
+
+    var isTab: Bool {
+        if case .tab = self {
+            return true
+        }
+        return false
     }
 
     var fileSizeBytes: Int {
         switch self {
-        case .image:
+        case .image, .tab:
             return 0
         case .file(let attachment):
             return attachment.fileSizeBytes
@@ -95,7 +153,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
         switch self {
         case .file, .invalidFile:
             return true
-        case .image:
+        case .image, .tab:
             return false
         }
     }
@@ -119,7 +177,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
 
     var mimeType: String? {
         switch self {
-        case .image:
+        case .image, .tab:
             return nil
         case .file(let attachment):
             return attachment.mimeType

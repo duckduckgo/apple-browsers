@@ -18,10 +18,9 @@
 //
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 @testable import Core
-@testable import PersistenceTestingUtils
 
 class TabsModelPersistenceTests: XCTestCase {
 

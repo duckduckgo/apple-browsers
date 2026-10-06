@@ -21,7 +21,7 @@ import Foundation
 import Testing
 import RemoteMessaging
 import RemoteMessagingTestsUtils
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @Suite("What's New - Repository")

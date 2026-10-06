@@ -35,7 +35,6 @@ final class TabViewGridCell: TabViewCell {
         static let unreadOffset: CGFloat = 7
         static let previewHorizontalInset: CGFloat = 8
         static let previewBottomPadding: CGFloat = 4
-        static let richCardInset: UIEdgeInsets = .init(top: 4, left: 8, bottom: 8, right: 8)
     }
 
     static let reuseIdentifier = "TabViewGridCell"
@@ -74,7 +73,6 @@ final class TabViewGridCell: TabViewCell {
         previewClipView.clipsToBounds = true
         previewClipView.layer.cornerRadius = TabViewCell.Constants.previewCornerRadius
         previewClipView.layer.cornerCurve = .continuous
-        previewClipView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         background.addSubview(previewClipView)
 
         let previewImageView = UIImageView()
@@ -89,6 +87,9 @@ final class TabViewGridCell: TabViewCell {
         let richCard = DuckAIGridCardView()
         richCard.translatesAutoresizingMaskIntoConstraints = false
         richCard.isHidden = true
+        // The Duck.ai card occupies the exact same slot as the screenshot preview, so it matches
+        // the preview's corner radius (which the app rebrand enlarges) in both rebrand states.
+        richCard.layer.cornerRadius = TabViewCell.Constants.previewCornerRadius
         background.addSubview(richCard)
         richCardContainer = richCard
 
@@ -140,10 +141,12 @@ final class TabViewGridCell: TabViewCell {
             pvBottom,
             pvTrailing,
 
-            richCard.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: Constants.richCardInset.top),
-            richCard.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: Constants.richCardInset.left),
-            richCard.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -Constants.richCardInset.right),
-            richCard.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -Constants.richCardInset.bottom),
+            // Exactly overlap the screenshot preview — same position, size, and (via the
+            // corner radius set above) rounding, in both rebrand states.
+            richCard.topAnchor.constraint(equalTo: previewClipView.topAnchor),
+            richCard.leadingAnchor.constraint(equalTo: previewClipView.leadingAnchor),
+            richCard.trailingAnchor.constraint(equalTo: previewClipView.trailingAnchor),
+            richCard.bottomAnchor.constraint(equalTo: previewClipView.bottomAnchor),
         ])
     }
 }

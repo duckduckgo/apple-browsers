@@ -128,6 +128,13 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(decoded.content.urlForWebView, URL(string: "https://nasa.gov")!)
     }
 
+    func testDuckAIContentRoundTripsWithoutItsNavigationSource() throws {
+        let url = URL(string: "https://duck.ai/chat")!
+        let original = makeRestorationData(content: .aiChat(url, source: .userEntered("duck.ai")))
+        let decoded = try encodeThenDecode(original)
+        XCTAssertEqual(decoded.content, .aiChat(url))
+    }
+
     func testNewTabContentRoundTrip() throws {
         let original = makeRestorationData(content: .newtab)
         let decoded = try encodeThenDecode(original)

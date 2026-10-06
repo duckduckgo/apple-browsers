@@ -20,18 +20,21 @@ on:
 
 jobs:
   update_code_signing:
-    runs-on: macos-15
+    runs-on: [image:osx-tahoe-27, general-purpose]
     name: Update Code Signing Assets
 
     steps:
 
       - name: Register SSH keys for access to certificates
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
       - name: Check out the code
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Setup Ruby and dependencies for iOS
         if: startsWith(inputs.target, 'ios')
@@ -96,6 +99,6 @@ jobs:
               lane="sync_signing_ci"
               ;;
           esac
- 
+
           cd "$platform"
           bundle exec fastlane ${lane}

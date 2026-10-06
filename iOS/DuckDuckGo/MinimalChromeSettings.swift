@@ -18,31 +18,21 @@
 //
 
 import Foundation
-import PrivacyConfig
 
 protocol MinimalChromeSettingsProviding {
 
-    var isFeatureEnabled: Bool { get }
     func shouldApplyMinimalChrome(isCurrentTabAITab: Bool) -> Bool
 }
 
 struct MinimalChromeSettings: MinimalChromeSettingsProviding {
 
-    private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
-        self.featureFlagger = featureFlagger
+    init(unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
     }
 
-    var isFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.minimalChromeInLandscape)
-    }
-
     func shouldApplyMinimalChrome(isCurrentTabAITab: Bool) -> Bool {
-        guard isFeatureEnabled else { return false }
         if isCurrentTabAITab && unifiedToggleInputFeature.isAvailable { return false }
         return true
     }

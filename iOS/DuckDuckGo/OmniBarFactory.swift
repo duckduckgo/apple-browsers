@@ -20,7 +20,8 @@
 import UIKit
 
 final class OmniBarFactory {
-    static func createOmniBarViewController(with dependencies: OmnibarDependencyProvider) -> OmniBarViewController {
-        DefaultOmniBarViewController(dependencies: dependencies)
+    static func createOmniBarViewController(with dependencies: OmnibarDependencyProvider,
+                                            isFloatingUIEnabled: Bool = false) -> OmniBarViewController {
+        DefaultOmniBarViewController(dependencies: dependencies, isFloatingUIEnabled: isFloatingUIEnabled)
     }
 }

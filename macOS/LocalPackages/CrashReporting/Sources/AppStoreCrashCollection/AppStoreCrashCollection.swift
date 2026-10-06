@@ -21,7 +21,7 @@ import Common
 import FoundationExtensions
 import Crashes
 import CrashReportingShared
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 

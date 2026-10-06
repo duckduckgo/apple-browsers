@@ -28,6 +28,7 @@ import Common
 import FoundationExtensions
 import os.log
 import PixelExperimentKit
+import PixelKit
 
 final class PrivacyDashboardViewController: UIViewController {
 
@@ -39,20 +40,22 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let featureFlagger: FeatureFlagger
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
+    private lazy var brokenSiteReporter: BrokenSiteReporter = { [featureFlagger] in
         BrokenSiteReporter(pixelHandler: { parameters in
-            Pixel.fire(pixel: .brokenSiteReport,
-                       withAdditionalParameters: parameters,
-                       allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: parameters, featureFlagger: featureFlagger)
+            PixelKit.fire(Pixel.Event.brokenSiteReport,
+                          options: PixelKit.Options(additionalParameters: parameters,
+                                                    allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
         }, keyValueStoring: UserDefaults.standard)
     }()
 
     private let toggleProtectionsOffReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
-            Pixel.fire(pixel: .protectionToggledOffBreakageReport,
-                       withAdditionalParameters: parameters,
-                       allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+            PixelKit.fire(Pixel.Event.protectionToggledOffBreakageReport,
+                          options: PixelKit.Options(additionalParameters: parameters,
+                                                    allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
         }, keyValueStoring: UserDefaults.standard)
     }()
 
@@ -64,9 +67,9 @@ final class PrivacyDashboardViewController: UIViewController {
         case .reportBrokenSiteSent: domainEvent = .reportBrokenSiteSent
         }
         if let parameters {
-            Pixel.fire(pixel: domainEvent, withAdditionalParameters: parameters)
+            PixelKit.fire(domainEvent, options: .parameters(parameters))
         } else {
-            Pixel.fire(pixel: domainEvent)
+            PixelKit.fire(domainEvent)
         }
     }
 
@@ -75,7 +78,8 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -88,6 +92,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.featureFlagger = featureFlagger
 
         super.init(nibName: nil, bundle: nil)
 
@@ -146,7 +151,7 @@ final class PrivacyDashboardViewController: UIViewController {
         if state.isProtected {
             privacyConfiguration.userEnabledProtection(forDomain: domain)
             ActionMessageView.present(message: UserText.messageProtectionEnabled.format(arguments: domain))
-            Pixel.fire(pixel: .dashboardProtectionAllowlistRemove, withAdditionalParameters: pixelParam)
+            PixelKit.fire(Pixel.Event.dashboardProtectionAllowlistRemove, options: .parameters(pixelParam))
         } else {
             privacyConfiguration.userDisabledProtection(forDomain: domain)
             if didSendReport {
@@ -154,10 +159,10 @@ final class PrivacyDashboardViewController: UIViewController {
             } else {
                 ActionMessageView.present(message: UserText.messageProtectionDisabled.format(arguments: domain))
             }
-            Pixel.fire(pixel: .dashboardProtectionAllowlistAdd, withAdditionalParameters: pixelParam)
+            PixelKit.fire(Pixel.Event.dashboardProtectionAllowlistAdd, options: .parameters(pixelParam))
             let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
-                UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
+                PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
             }
         }
         
@@ -306,8 +311,11 @@ extension PrivacyDashboardViewController {
         let isForceDarkModeEnabled: Bool?
         let autoplayBlockingMode: String?
         let isAfterSuppressedXSafariRedirect: Bool
+        let isAfterTabTermination: Bool
         let loadedWebExtensions: String?
         let adBlockingExtensionScriptletsVersion: String?
+        let cpmExtensionLoaded: Bool
+        let cpmExtensionDroppedCallbacks: Int
     }
     
     enum BrokenSiteReportError: Error {
@@ -342,6 +350,10 @@ extension PrivacyDashboardViewController {
         let blockedTrackerDomains = privacyInfo.trackerInfo.trackersBlocked.compactMap { $0.domain }
         let protectionsState = privacyConfigurationManager.privacyConfig.isFeature(.contentBlocking,
                                                                                    enabledForDomain: breakageAdditionalInfo.currentURL.host)
+        let cookieConsentInfo = privacyInfo.cookieConsentManaged?.withCPMRuntimeInfo(
+            extensionLoaded: breakageAdditionalInfo.cpmExtensionLoaded,
+            droppedCallbacks: breakageAdditionalInfo.cpmExtensionDroppedCallbacks
+        )
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -355,7 +367,7 @@ extension PrivacyDashboardViewController {
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
-                                osVersion: "\(ProcessInfo().operatingSystemVersion.majorVersion)",
+                                osVersion: AppVersion.shared.osVersionMajorMinorPatch,
                                 manufacturer: "Apple",
                                 upgradedHttps: breakageAdditionalInfo.httpsForced,
                                 tdsETag: ContentBlocking.shared.contentBlockingManager.currentMainRules?.etag ?? "",
@@ -377,13 +389,14 @@ extension PrivacyDashboardViewController {
                                 extendedPerformanceMetrics: privacyAwareWebVitals,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: "",
-                                cookieConsentInfo: privacyInfo.cookieConsentManaged,
+                                cookieConsentInfo: cookieConsentInfo,
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyInfo.privacyExperimentCohorts,
                                 isPirEnabled: nil,
                                 isForceDarkModeEnabled: breakageAdditionalInfo.isForceDarkModeEnabled,
                                 autoplayBlockingMode: breakageAdditionalInfo.autoplayBlockingMode,
                                 isAfterSuppressedXSafariRedirect: breakageAdditionalInfo.isAfterSuppressedXSafariRedirect,
+                                isAfterTabTermination: breakageAdditionalInfo.isAfterTabTermination,
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
                                 adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion)

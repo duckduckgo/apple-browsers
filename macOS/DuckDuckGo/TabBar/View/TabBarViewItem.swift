@@ -22,7 +22,7 @@ import CombineExtensions
 import Common
 import FoundationExtensions
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import WebKit
 
@@ -170,7 +170,6 @@ final class TabBarItemCellView: NSView {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
-    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
     private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
@@ -224,70 +223,13 @@ final class TabBarItemCellView: NSView {
         }
     }
 
-    fileprivate let mouseOverView = {
-        let mouseOverView = MouseOverView()
-        return mouseOverView
-    }()
-
-    /// Deprecated: Replaced by `TabBackgroundView`
-    fileprivate let roundedBackgroundColorView = {
-        let view = ColorView(frame: .zero)
-        view.alphaValue = 0.8
-        return view
-    }()
+    fileprivate let mouseOverView = MouseOverView()
 
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
-    /// Deprecated: Replaced by `TabBackgroundView`
-    fileprivate lazy var rightRampView: RampView = {
-        let view = RampView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    /// Deprecated: Replaced by `TabBackgroundView`
-    fileprivate lazy var leftRampView: RampView = {
-        let view = RampView()
-        view.isFlippedHorizontally = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-
-    fileprivate lazy var borderLayer: CALayer = {
-        let layer = CALayer()
-        layer.borderWidth = TabShadowConfig.dividerSize
-        layer.opacity = TabShadowConfig.alpha
-        layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
-        layer.cornerRadius = 8
-        layer.mask = layerMask
-        return layer
-    }()
-
-    private lazy var layerMask: CALayer = {
-        let layer = CALayer()
-        layer.addSublayer(leftPixelMask)
-        layer.addSublayer(rightPixelMask)
-        layer.addSublayer(topContentLineMask)
-        return layer
-    }()
-
-    private let leftPixelMask: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.white.cgColor
-        return layer
-    }()
-
-    private let rightPixelMask: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.white.cgColor
-        return layer
-    }()
-
-    private let topContentLineMask: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.white.cgColor
-        return layer
-    }()
+    private var mustLayoutCloseButton: Bool {
+        closeButton.isShown || !widthStage.isCloseButtonHidden || NSApp.isCommandPressed
+    }
 
     convenience init() {
         self.init(frame: .zero)
@@ -304,20 +246,8 @@ final class TabBarItemCellView: NSView {
             .layerMaxXMaxYCorner
         ]
 
-        if displaysTabsAnimations {
-            addSubview(backgroundView)
-        } else if theme.tabStyleProvider.shouldShowSShapedTab {
-            addSubview(leftRampView)
-            addSubview(rightRampView)
-        } else {
-            mouseOverView.layer?.addSublayer(borderLayer)
-        }
-
+        addSubview(backgroundView)
         addSubview(mouseOverView)
-        if !displaysTabsAnimations, theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-            roundedBackgroundColorView.cornerRadius = 6
-            addSubview(roundedBackgroundColorView)
-        }
 
         faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
         titleView.setAccessibilityIdentifier("TabBarViewItem.title")
@@ -326,7 +256,7 @@ final class TabBarItemCellView: NSView {
         closeButton.setAccessibilityLabel(UserText.closeTab)
         closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
         closeButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsSelectedCornerRadius
-        closeButton.mustAnimateOnMouseOver = displaysTabsAnimations
+        closeButton.mustAnimateOnMouseOver = true
 
         audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
         // Accessibility Title and toolTip are updated in `updateAudioPlayState`
@@ -366,41 +296,10 @@ final class TabBarItemCellView: NSView {
 
     private func layout(widthStage: WidthStage) {
         mouseOverView.frame = bounds
-        if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-            let padding: CGFloat = 4
-            let height = bounds.height - (padding * 2)
-            let y = bounds.midY - (height / 2)
-            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
-                                                      y: y,
-                                                      width: bounds.width - (padding * 2),
-                                                      height: height)
-        }
 
-        if displaysTabsAnimations, backgroundView.frame != bounds {
+        if backgroundView.frame != bounds {
             withoutAnimation {
                 backgroundView.frame = bounds
-            }
-
-            withoutAnimation {
-                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
-            }
-
-        } else if theme.tabStyleProvider.shouldShowSShapedTab {
-            withoutAnimation {
-                rightRampView.frame = CGRect(x: bounds.width, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
-                leftRampView.frame = CGRect(x: -RampView.Consts.rampWidth, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
-                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
-            }
-        } else {
-            withoutAnimation {
-                borderLayer.frame = bounds
-                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
             }
         }
 
@@ -435,7 +334,7 @@ final class TabBarItemCellView: NSView {
             minX = audioButton.frame.maxX
         }
         var maxX = bounds.maxX - 9
-        if closeButton.isShown {
+        if mustLayoutCloseButton {
             closeButton.frame = NSRect(x: maxX - Metrics.closeButtonDimension, y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             maxX = closeButton.frame.minX - 4
         } else {
@@ -492,7 +391,7 @@ final class TabBarItemCellView: NSView {
             audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.audioAndCrashButtonSide, height: Metrics.audioAndCrashButtonSide)
             x = audioButton.frame.maxX + spacing
         }
-        if closeButton.isShown {
+        if mustLayoutCloseButton {
             // close button appears in place of favicon in compact mode
             closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - Metrics.closeButtonDimension * 0.5, width: Metrics.closeButtonDimension, height: Metrics.closeButtonDimension)
             x = closeButton.frame.maxX + spacing
@@ -522,14 +421,6 @@ final class TabBarItemCellView: NSView {
         }
     }
 
-    override func updateLayer() {
-        NSAppearance.withAppAppearance {
-            if !theme.tabStyleProvider.shouldShowSShapedTab {
-                borderLayer.borderColor = NSColor.tabShadowLine.cgColor
-            }
-        }
-    }
-
     func clear() {
         faviconView.reset()
         titleView.reset()
@@ -551,11 +442,9 @@ final class TabBarItemCellView: NSView {
         faviconView.startSpinnerIfNeeded(isLoading: isLoading, url: url, error: error)
     }
 
-    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool, animated: Bool = true) {
-        guard displaysTabsAnimations else {
-            return
-        }
-
+    func refreshStateIfNeeded(isSelected: Bool, isDragged: Bool, isMouseOver: Bool) {
+        // Don't animate when switching Tabs via Keyboard Shortcuts
+        let animated = NSApp.currentEvent?.isMouse ?? true
         backgroundView.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver, animated: animated)
     }
 }
@@ -566,16 +455,9 @@ extension TabBarItemCellView: ThemeUpdateListening {
         let tabStyleProvider = theme.tabStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        if displaysTabsAnimations {
-            backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
-            backgroundView.overlayColor = tabStyleProvider.hoverTabColor
-            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
-        } else {
-            leftRampView.rampColor = colorsProvider.navigationBackgroundColor
-            rightRampView.rampColor = colorsProvider.navigationBackgroundColor
-            mouseOverView.mouseOverColor = tabStyleProvider.hoverTabColor
-            rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
-        }
+        backgroundView.backgroundColor = colorsProvider.navigationBackgroundColor
+        backgroundView.overlayColor = tabStyleProvider.hoverTabColor
+        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 }
 // MARK: NSAccessibilityRadioButton
@@ -686,6 +568,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         static let maximum: CGFloat = 240
     }
 
+    /// The Background Leading + Trailing Ramp(s) are rendered outside bounds, by design. This constant will be required for accurate frame calculations when scrolling
+    static var horizontalInset: CGFloat {
+        TabBackgroundView.Metrics.tabRampSize.width
+    }
+
     private var widthStage: TabBarItemCellView.WidthStage {
         if isPinned {
             return .pinned
@@ -731,8 +618,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var activePermissionIconTimer: Timer?
     private var activePermissionTypes: [PermissionType] = []
     private var currentActivePermissionIndex = 0
-
-    private let displaysTabsAnimations: Bool = NSApp.delegateTyped.displaysTabsAnimations
 
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
@@ -827,6 +712,7 @@ final class TabBarViewItem: NSCollectionViewItem {
                 view.layer?.shadowOpacity = 0
             }
 
+            refreshLayoutIfNeeded(isSelected: isSelected, wasSelected: oldValue)
             updateSubviews()
 
             cell.refreshStateIfNeeded(isSelected: isSelected, isDragged: isDragged, isMouseOver: isMouseOver)
@@ -1050,36 +936,9 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.faviconView.alphaValue = alpha
             cell.titleView.alphaValue = alpha
 
-            if displaysTabsAnimations {
-                cell.mouseOverView.backgroundColor = nil
-                cell.mouseOverView.mouseOverColor = nil
-                cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
-
-            } else if isSelected || isDragged {
-                cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = theme.colorsProvider.navigationBackgroundColor
-                cell.roundedBackgroundColorView.isHidden = true
-            } else {
-                if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-                    cell.mouseOverView.mouseOverColor = nil
-                    cell.mouseOverView.backgroundColor = theme.colorsProvider.baseBackgroundColor
-                    cell.roundedBackgroundColorView.backgroundColor = theme.tabStyleProvider.hoverTabColor
-                    cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
-                } else {
-                    cell.mouseOverView.mouseOverColor = .tabMouseOver
-                    cell.mouseOverView.backgroundColor = nil
-                }
-
-            }
-
-            if !displaysTabsAnimations {
-                if theme.tabStyleProvider.shouldShowSShapedTab {
-                    cell.rightRampView.isHidden = !(isSelected || isDragged)
-                    cell.leftRampView.isHidden = !(isSelected || isDragged)
-                } else {
-                    cell.borderLayer.isHidden = !isSelected
-                }
-            }
+            cell.mouseOverView.backgroundColor = nil
+            cell.mouseOverView.mouseOverColor = nil
+            cell.closeButton.cornerRadius = isSelected ? tabStyleProvider.tabButtonActionsSelectedCornerRadius : tabStyleProvider.tabButtonActionsHighlightedCornerRadius
         }
 
         if isPinned {
@@ -1102,6 +961,15 @@ final class TabBarViewItem: NSCollectionViewItem {
         let tintColor: NSColor? = isBurnerTab ? .textColor : nil
 
         cell.faviconView.imageTintColor = tintColor
+    }
+
+    private func refreshLayoutIfNeeded(isSelected: Bool, wasSelected: Bool) {
+        guard isSelected != wasSelected else {
+            return
+        }
+
+        /// Fix: Ensure the Close button layout is re-evaluated whenever the `TabBarViewItem` is selected
+        view.needsLayout = true
     }
 
     private var usedPermissions = Permissions() {
@@ -1348,14 +1216,14 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addNewToTheRightMenuItem(to menu: NSMenu) {
         let newTabMenuItem = NSMenuItem(title: UserText.newTabToTheRight, action: #selector(newToTheRightAction(_:)), keyEquivalent: "")
-        newTabMenuItem.image = DesignSystemImages.Glyphs.Size12.tabNew
+        newTabMenuItem.withImage(DesignSystemImages.Glyphs.Size12.tabNew, visibleOnMacOS27: true)
         newTabMenuItem.target = self
         menu.addItem(newTabMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
         let duplicateMenuItem = NSMenuItem(title: UserText.duplicateTab, action: #selector(duplicateAction(_:)), keyEquivalent: "")
-        duplicateMenuItem.image = DesignSystemImages.Glyphs.Size12.windowDuplicate
+        duplicateMenuItem.withImage(DesignSystemImages.Glyphs.Size12.windowDuplicate, visibleOnMacOS27: true)
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
@@ -1371,7 +1239,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addPinMenuItem(to menu: NSMenu) {
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
-        pinMenuItem.image = isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin
+        pinMenuItem.withImage(isPinned ? DesignSystemImages.Glyphs.Size12.pinRemove : DesignSystemImages.Glyphs.Size12.pin, visibleOnMacOS27: true)
         pinMenuItem.target = self
         if !isPinned {
             pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
@@ -1381,7 +1249,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addBookmarkMenuItem(to menu: NSMenu) {
         let bookmarkMenuItem = NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(bookmarkThisPageAction(_:)), keyEquivalent: "")
-        bookmarkMenuItem.image = DesignSystemImages.Glyphs.Size12.bookmarkAdd
+        bookmarkMenuItem.withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd, visibleOnMacOS27: true)
         bookmarkMenuItem.target = self
         bookmarkMenuItem.isEnabled = delegate?.tabBarViewItemCanBeBookmarked(self) ?? false
         menu.addItem(bookmarkMenuItem)
@@ -1414,7 +1282,7 @@ extension TabBarViewItem: NSMenuDelegate {
             }
             menuItem.isEnabled = true
         }
-        menuItem.image = DesignSystemImages.Glyphs.Size12.fireproof
+        menuItem.withImage(DesignSystemImages.Glyphs.Size12.fireproof, visibleOnMacOS27: true)
         menuItem.target = self
         menu.addItem(menuItem)
     }
@@ -1424,7 +1292,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
-        muteUnmuteMenuItem.image = audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute
+        muteUnmuteMenuItem.withImage(audioState.isMuted ? DesignSystemImages.Glyphs.Size12.audio : DesignSystemImages.Glyphs.Size12.audioMute, visibleOnMacOS27: true)
         muteUnmuteMenuItem.target = self
         menu.addItem(muteUnmuteMenuItem)
     }
@@ -1466,7 +1334,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
     private func addCloseMenuItem(to menu: NSMenu) {
         let closeMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(closeButtonAction(_:)), keyEquivalent: "")
-        closeMenuItem.image = DesignSystemImages.Glyphs.Size12.close
+        closeMenuItem.withImage(DesignSystemImages.Glyphs.Size12.close, visibleOnMacOS27: true)
         closeMenuItem.target = self
         menu.addItem(closeMenuItem)
     }

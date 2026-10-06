@@ -23,6 +23,7 @@ import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 /// Constants used in DuckPlayerWelcomePillView
 private struct Constants {
@@ -35,6 +36,8 @@ private struct Constants {
     static let cornerRadius: CGFloat = 12
     static let shadowOpacity: CGFloat = 0.1
     static let shadowRadius: CGFloat = 3
+    static let floatingShadowOpacity: CGFloat = 0.16
+    static let floatingShadowRadius: CGFloat = 10
     static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
     static let primingImageName: String = "DuckPlayer-PrimingAnimation"
     static let imageWidth: CGFloat = 150
@@ -59,6 +62,7 @@ private struct Constants {
 /// The welcome pill view that appears when a user first encounters DuckPlayer
 struct DuckPlayerWelcomePillView: View {
     @ObservedObject var viewModel: DuckPlayerWelcomePillViewModel
+    var usesFloatingStyle = false
     @State private var isAnimating: Bool = true
     @Environment(\.colorScheme) private var colorScheme
 
@@ -80,7 +84,7 @@ struct DuckPlayerWelcomePillView: View {
                 Text(UserText.duckPlayerOptInPillTitle)
             }
         }
-        .buttonStyle(PrimaryButtonStyle(compact: true))
+        .buttonStyle(PrimaryButtonStyle())
         .padding(.top, Constants.buttonTopPadding)
         .accessibilityLabel("Watch in DuckPlayer")
         .accessibilityHint("Opens the video in DuckPlayer for privacy protection")
@@ -104,18 +108,23 @@ struct DuckPlayerWelcomePillView: View {
         .accessibilityIdentifier("duckPlayerWelcomeCloseButton")
     }
 
+    @ViewBuilder
     private var phoneView: some View {
-        LottieView(
-            lottieFile: Constants.primingImageName,
-            loopMode: .mode(.playOnce),
-            isAnimating: $isAnimating
-        )
-        .frame(width: Constants.phoneViewWidth, height: Constants.phoneViewHeight)
-        .background(Color.clear)
-        .scaleEffect(Constants.phoneViewScaleEffect)
-        .padding(.top, Constants.phoneViewTopPadding)
-        .accessibilityLabel("DuckPlayer animation")
-        .accessibilityHint("Animated illustration showing DuckPlayer functionality")
+        if AppRebrand.isAppRebranded() {
+            Image(uiImage: DesignSystemImages.Color.Size96.youtubeClean)
+        } else {
+            LottieView(
+                lottieFile: Constants.primingImageName,
+                loopMode: .mode(.playOnce),
+                isAnimating: $isAnimating
+            )
+            .frame(width: Constants.phoneViewWidth, height: Constants.phoneViewHeight)
+            .background(Color.clear)
+            .scaleEffect(Constants.phoneViewScaleEffect)
+            .padding(.top, Constants.phoneViewTopPadding)
+            .accessibilityLabel("DuckPlayer animation")
+            .accessibilityHint("Animated illustration showing DuckPlayer functionality")
+        }
     }
 
     // MARK: - Body
@@ -144,15 +153,19 @@ struct DuckPlayerWelcomePillView: View {
                 }
                 mainActionButton
             }
-            .padding(.horizontal, Constants.horizontalPadding)
+            .padding(.horizontal, AppRebrand.isAppRebranded() ?
+                     ButtonStackMetrics.containerPadding
+                     : Constants.horizontalPadding)
             .padding(.vertical, Constants.verticalPadding)
             .background(
-                Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary  : .backgroundSheets)
+                Color(designSystemColor: usesFloatingStyle || colorScheme == .light ? .backgroundSheets : .controlsFillPrimary)
             )
-            .cornerRadius(Constants.cornerRadius)
+            .cornerRadius(AppRebrand.isAppRebranded() ?
+                          ContainerMetrics.cornerRadius
+                          : Constants.cornerRadius)
             .shadow(
-                color: Color.black.opacity(Constants.shadowOpacity),
-                radius: Constants.shadowRadius,
+                color: Color.black.opacity(usesFloatingStyle ? Constants.floatingShadowOpacity : Constants.shadowOpacity),
+                radius: usesFloatingStyle ? Constants.floatingShadowRadius : Constants.shadowRadius,
                 x: Constants.shadowOffset.width,
                 y: Constants.shadowOffset.height
             )
@@ -172,4 +185,11 @@ struct DuckPlayerWelcomePillView: View {
             }
         }
     }
+}
+
+#Preview {
+    DuckPlayerWelcomePillView(
+        viewModel: DuckPlayerWelcomePillViewModel(onOpen: {}, onClose: {})
+    )
+    .padding()
 }

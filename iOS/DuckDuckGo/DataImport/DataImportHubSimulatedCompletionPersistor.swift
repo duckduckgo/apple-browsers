@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Persistence
+import PixelKit
 
 struct DataImportHubSimulatedCompletionPersistor {
 
@@ -106,12 +107,12 @@ struct DataImportHubSimulatedCompletionPersistor {
 
     func fireExpiredFailurePixelsIfNeeded(now: Date = Date()) {
         if let parameters = consumeExpiredSafariFileFailureParameters(now: now) {
-            Pixel.fire(pixel: .importHubSafariFileSimulatedFailure, withAdditionalParameters: parameters)
+            PixelKit.fire(Pixel.Event.importHubSafariFileSimulatedFailure, options: .parameters(parameters))
         }
 
         if consumeExpiredCredentialExchangeFailure(now: now) {
-            Pixel.fire(pixel: .importHubCredentialExchangeSimulatedFailure,
-                       withAdditionalParameters: [PixelParameters.source: DataImportHubPixelConstants.unknownSource])
+            PixelKit.fire(Pixel.Event.importHubCredentialExchangeSimulatedFailure,
+                          options: .parameters([PixelParameters.source: DataImportHubPixelConstants.unknownSource]))
         }
     }
 

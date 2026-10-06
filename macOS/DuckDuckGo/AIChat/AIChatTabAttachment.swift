@@ -25,11 +25,22 @@ import Foundation
 struct AIChatTabAttachment: Identifiable {
     /// The tab's UUID. Stable while the tab is open; lost when the tab is closed.
     let id: String
+    /// Identifies this act of attaching. Detaching and reattaching the same tab makes a new one, so
+    /// a submission in flight can tell its own attachment from a later one for the same tab.
+    let instanceID: UUID
     let title: String
     let url: URL
     /// Resolved favicon for native rendering. `nil` when unavailable; the UI falls back to a
     /// generic page glyph in that case.
     let favicon: NSImage?
+
+    init(id: String, title: String, url: URL, favicon: NSImage?, instanceID: UUID = UUID()) {
+        self.id = id
+        self.title = title
+        self.url = url
+        self.favicon = favicon
+        self.instanceID = instanceID
+    }
 }
 
 extension AIChatTabAttachment: Equatable {
@@ -42,5 +53,24 @@ extension AIChatTabAttachment: Equatable {
             && lhs.title == rhs.title
             && lhs.url == rhs.url
             && lhs.favicon === rhs.favicon
+    }
+}
+
+/// Resolves what the "Add Tabs" modal's confirmed selection means for the current attachments.
+/// Removals are scoped to the tabs the modal actually offered, so an attachment that dropped out of
+/// the picker (navigated to an excluded URL, closed, moved windows) survives an untouched confirm.
+enum AIChatTabSelectionDiff {
+
+    static func compute(current: [AIChatTabAttachment],
+                        selected: [AIChatTabAttachment],
+                        offered: [AIChatTabAttachment]) -> (remove: [String], add: [AIChatTabAttachment]) {
+        let selectedIds = Set(selected.map(\.id))
+        let offeredIds = Set(offered.map(\.id))
+        let currentIds = Set(current.map(\.id))
+        let remove = current
+            .filter { offeredIds.contains($0.id) && !selectedIds.contains($0.id) }
+            .map(\.id)
+        let add = selected.filter { !currentIds.contains($0.id) }
+        return (remove, add)
     }
 }

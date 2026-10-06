@@ -19,7 +19,7 @@
 
 import Foundation
 import AIChat
-import PixelKit
+import WideEvent
 
 enum DuckAIWideEventFlowScope: Hashable {
     case tab(TabUID)
@@ -35,6 +35,7 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           origin: AIChatEntryPointSource?,
                            inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,
@@ -88,6 +89,11 @@ protocol DuckAIWideEventInstrumentation: AnyObject {
     /// `NSError` domain/code to the event's error data. No-op if no flow is in
     /// flight.
     func pageLoadFailed(scope: DuckAIWideEventFlowScope, error: Error)
+
+    /// The submitted text was interpreted as a URL and navigated to instead of
+    /// being sent to Duck.ai. Completes the active flow as CANCELLED with
+    /// `cancellation_reason = interpreted_as_url`. No-op if no flow is active.
+    func promptInterpretedAsURL(scope: DuckAIWideEventFlowScope)
 }
 
 @MainActor
@@ -118,6 +124,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
                            userTier: AIChatUserTier,
                            reasoningEffort: AIChatReasoningEffort?,
                            entryPoint: DuckAIPromptWideEventData.EntryPoint,
+                           origin: AIChatEntryPointSource? = nil,
                            inputMode: DuckAIPromptWideEventData.InputMode,
                            fireMode: Bool,
                            isFirstPrompt: Bool,
@@ -132,6 +139,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             userTier: userTier.rawValue,
             reasoningEffort: reasoningEffort?.rawValue,
             entryPoint: entryPoint,
+            origin: origin?.rawValue,
             inputMode: inputMode,
             fireMode: fireMode,
             isFirstPrompt: isFirstPrompt,
@@ -156,6 +164,10 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
         if let didSendBridgeMessage {
             data.didSendBridgeMessage = didSendBridgeMessage
+        }
+
+        if wasQueued != true {
+            data.didAttemptDelivery = true
         }
 
         wideEvent.updateFlow(data)
@@ -252,6 +264,10 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
         activeFlow.data.endedInterval.end = dateProvider()
         wideEvent.completeFlow(activeFlow.data, status: .failure, onComplete: { _, _ in })
         activeFlows[scope] = nil
+    }
+
+    func promptInterpretedAsURL(scope: DuckAIWideEventFlowScope) {
+        cancelFlow(scope: scope, reason: .interpretedAsURL)
     }
 
     // MARK: - Helpers

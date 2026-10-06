@@ -1,0 +1,581 @@
+//
+//  SettingsSitePermissionsViewModelTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+@_spi(Testing) import Persistence
+import Foundation
+import PrivacyConfig
+import FeatureFlags_iOS
+import SitePermissions
+import XCTest
+@testable import DuckDuckGo
+
+@MainActor
+final class SettingsSitePermissionsViewModelTests: XCTestCase {
+
+    func testSettingsViewModelCallbacksMapExactEventsAndRevocationWithoutSiteMetadata() throws {
+        var events = [SitePermissionsEvent]()
+        var revocations = [(SitePermissionKey, Set<SitePermissionType>)]()
+        let callbacks = SettingsViewModel.makeSitePermissionsCallbacks(
+            eventHandler: { events.append($0) },
+            revocationHandler: { revocations.append(($0, $1)) }
+        )
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://private.example")!))
+
+        callbacks.didOpen()
+        callbacks.didChangeGlobalDefault(.camera, .deny)
+        callbacks.didChangeSiteDecision(.microphone, .deny, .allow)
+        callbacks.didOpenSystemSettings()
+        callbacks.didRequestRevocation(site, [.camera, .microphone, .location])
+        callbacks.didRemoveSite()
+        callbacks.didRemoveAll()
+        callbacks.didUndoRemoval()
+
+        XCTAssertEqual(events, [
+            .settingsSitePermissionsOpen,
+            .settingsSitePermissionsGlobalChanged(type: .camera, to: .deny),
+            .permissionCenterChanged(type: .microphone, from: .deny, to: .allow),
+            .permissionSystemSettingsOpened(type: .cameraAndMicrophone),
+            .permissionRemoveSite,
+            .permissionRemoveAll,
+            .permissionRemoveUndo
+        ])
+        XCTAssertFalse(events.map { String(describing: $0) }.joined().contains(site.host))
+        XCTAssertEqual(revocations.first?.0, site)
+        XCTAssertEqual(revocations.first?.1, [.camera, .microphone, .location])
+        XCTAssertEqual(revocations.count, 1)
+    }
+
+    func testSupportedPermissionTypesIncludeLocation() {
+        XCTAssertEqual(SettingsSitePermissionsViewModel.supportedPermissionTypes, [.location, .camera, .microphone])
+    }
+
+    func testGlobalPickerHasOnlyAskAndDenyOptions() {
+        XCTAssertEqual(GlobalSitePermissionDecision.allCases, [.ask, .deny])
+    }
+
+    func testMainSettingsEntryVisibilityFollowsPublishedSettingsState() {
+        var state = SettingsState.defaults
+        let builder = SettingsMainSettingsView.SettingsViewBuilder()
+
+        state.sitePermissionsEnabled = false
+        XCTAssertFalse(builder.shouldShowSitePermissions(state: state))
+
+        state.sitePermissionsEnabled = true
+        XCTAssertTrue(builder.shouldShowSitePermissions(state: state))
+    }
+
+    func testGlobalDefaultBindingPersistsSelectionAndReportsChange() {
+        let store = makeStore()
+        var changes = [(SitePermissionType, GlobalSitePermissionDecision)]()
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didChangeGlobalDefault = { changes.append(($0, $1)) }
+        let sut = makeSUT(store: store, callbacks: callbacks)
+
+        sut.globalDefaultBinding(for: .location).wrappedValue = .deny
+
+        XCTAssertEqual(store.globalDefault(for: .location), .deny)
+        XCTAssertEqual(sut.globalDefault(for: .location), .deny)
+        XCTAssertEqual(changes.first?.0, .location)
+        XCTAssertEqual(changes.first?.1, .deny)
+        XCTAssertEqual(changes.count, 1)
+    }
+
+    func testWhenSiteDecisionChangesThenOtherPermissionTypesAndGlobalDefaultsRemainUnchanged() throws {
+        for changedType in SitePermissionType.allCases {
+            for decision in [SitePermissionDecision.ask, .deny] {
+                let store = makeStore()
+                let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+                for permissionType in SitePermissionType.allCases {
+                    store.setPersistentDecision(.allow, for: permissionType, at: site)
+                    store.setGlobalDefault(.deny, for: permissionType)
+                }
+                let sut = makeSUT(store: store)
+
+                sut.siteDecisionBinding(for: changedType, at: site).wrappedValue = decision
+
+                for permissionType in SitePermissionType.allCases {
+                    let expected: SitePermissionDecision = permissionType == changedType ? decision : .allow
+                    XCTAssertEqual(store.decision(for: permissionType, at: site), expected, "\(changedType), \(decision), \(permissionType)")
+                    XCTAssertEqual(sut.siteDecision(for: permissionType, at: site), expected)
+                    XCTAssertEqual(store.globalDefault(for: permissionType), .deny)
+                }
+            }
+        }
+    }
+
+    func testWhenGlobalDefaultChangesThenOtherPermissionTypesAndSiteDecisionsRemainUnchanged() throws {
+        for changedType in SitePermissionType.allCases {
+            for decision in GlobalSitePermissionDecision.allCases {
+                let store = makeStore()
+                let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+                let previous: GlobalSitePermissionDecision = decision == .ask ? .deny : .ask
+                for permissionType in SitePermissionType.allCases {
+                    store.setPersistentDecision(.allow, for: permissionType, at: site)
+                    store.setGlobalDefault(previous, for: permissionType)
+                }
+                let sut = makeSUT(store: store)
+
+                sut.globalDefaultBinding(for: changedType).wrappedValue = decision
+
+                for permissionType in SitePermissionType.allCases {
+                    let expected = permissionType == changedType ? decision : previous
+                    XCTAssertEqual(store.globalDefault(for: permissionType), expected, "\(changedType), \(decision), \(permissionType)")
+                    XCTAssertEqual(sut.globalDefault(for: permissionType), expected)
+                    XCTAssertEqual(store.decision(for: permissionType, at: site), .allow)
+                }
+            }
+        }
+    }
+
+    func testWhenFeatureIsDisabledWhileSettingsIsOpenThenActionsDoNotMutateOrReportEvents() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        var events = [SitePermissionsEvent]()
+        var revocationCount = 0
+        var systemSettingsOpenCount = 0
+        var toastCount = 0
+        let callbacks = SettingsViewModel.makeSitePermissionsCallbacks(
+            eventHandler: { events.append($0) },
+            revocationHandler: { _, _ in revocationCount += 1 })
+        let sut = makeSUT(
+            store: store,
+            isEnabled: { featureFlagger.isFeatureOn(.sitePermissions) },
+            openSystemSettings: { systemSettingsOpenCount += 1 },
+            presentUndoToast: { _, _ in toastCount += 1 },
+            callbacks: callbacks)
+        sut.didOpen()
+        XCTAssertEqual(events, [.settingsSitePermissionsOpen])
+        events.removeAll()
+
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        sut.didOpen()
+        sut.globalDefaultBinding(for: .camera).wrappedValue = .deny
+        sut.siteDecisionBinding(for: .camera, at: site).wrappedValue = .deny
+        sut.siteDecisionBinding(for: .camera, at: site).wrappedValue = .ask
+        sut.openSystemSettings()
+        sut.removePermissions(for: site)
+        sut.removeAllSitePermissions()
+
+        XCTAssertEqual(store.globalDefault(for: .camera), .ask)
+        XCTAssertEqual(store.permissions(for: site), [.camera: .allow])
+        XCTAssertTrue(events.isEmpty)
+        XCTAssertEqual(revocationCount, 0)
+        XCTAssertEqual(systemSettingsOpenCount, 0)
+        XCTAssertEqual(toastCount, 0)
+
+        featureFlagger.enabledFeatureFlags = [.sitePermissions]
+        featureFlagger.triggerUpdate()
+        sut.globalDefaultBinding(for: .camera).wrappedValue = .deny
+        XCTAssertEqual(store.globalDefault(for: .camera), .deny)
+        XCTAssertEqual(events, [.settingsSitePermissionsGlobalChanged(type: .camera, to: .deny)])
+    }
+
+    func testWhenFeatureIsDisabledAfterRemovalThenUndoRestoresWithoutReportingEvent() throws {
+        for removeAll in [false, true] {
+            let store = makeStore()
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+            store.setPersistentDecision(.allow, for: .camera, at: site)
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+            var undo: (() -> Void)?
+            var undoCount = 0
+            var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+            callbacks.didUndoRemoval = { undoCount += 1 }
+            let sut = makeSUT(
+                store: store,
+                isEnabled: { featureFlagger.isFeatureOn(.sitePermissions) },
+                presentUndoToast: { _, action in undo = action },
+                callbacks: callbacks)
+
+            if removeAll {
+                sut.removeAllSitePermissions()
+            } else {
+                sut.removePermissions(for: site)
+            }
+            featureFlagger.enabledFeatureFlags = []
+            featureFlagger.triggerUpdate()
+            try XCTUnwrap(undo)()
+
+            XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+            XCTAssertEqual(undoCount, 0)
+        }
+    }
+
+    func testWhenLastPermanentDecisionIsResetToAskThenSiteRemainsInSettings() throws {
+        for previousDecision in [SitePermissionDecision.allow, .deny] {
+            let store = makeStore()
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+            store.setPersistentDecision(previousDecision, for: .location, at: site)
+            var changes = [(SitePermissionType, SitePermissionDecision, SitePermissionDecision)]()
+            var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+            callbacks.didChangeSiteDecision = { changes.append(($0, $1, $2)) }
+            let sut = makeSUT(store: store, callbacks: callbacks)
+
+            sut.siteDecisionBinding(for: .location, at: site).wrappedValue = .ask
+
+            XCTAssertEqual(store.decision(for: .location, at: site), .ask)
+            XCTAssertEqual(sut.storedSites, [site])
+            XCTAssertEqual(sut.permissionTypes(for: site), [.location])
+            XCTAssertEqual(sut.siteDecision(for: .location, at: site), .ask)
+            XCTAssertEqual(changes.first?.0, .location)
+            XCTAssertEqual(changes.first?.1, previousDecision)
+            XCTAssertEqual(changes.first?.2, .ask)
+            XCTAssertEqual(changes.count, 1)
+
+            let reopenedSettings = makeSUT(store: store)
+            XCTAssertEqual(reopenedSettings.storedSites, [site])
+            XCTAssertEqual(reopenedSettings.permissionTypes(for: site), [.location])
+            XCTAssertEqual(reopenedSettings.siteDecision(for: .location, at: site), .ask)
+        }
+    }
+
+    func testWhenSiteHasExplicitAskDecisionsThenSettingsShowsOnlyStoredTypes() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        let askOnlySite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://ask.example")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.setPersistentDecision(.deny, for: .location, at: site)
+        store.resetDecision(for: .microphone, at: site)
+        store.resetDecision(for: .camera, at: askOnlySite)
+        let sut = makeSUT(store: store)
+
+        XCTAssertEqual(sut.storedSites, [askOnlySite, site])
+        XCTAssertEqual(sut.permissionTypes(for: site), [.location, .camera, .microphone])
+        XCTAssertEqual(sut.siteDecision(for: .camera, at: site), .allow)
+        XCTAssertEqual(sut.siteDecision(for: .location, at: site), .deny)
+        XCTAssertEqual(sut.siteDecision(for: .microphone, at: site), .ask)
+        XCTAssertEqual(sut.permissionTypes(for: askOnlySite), [.camera])
+        XCTAssertEqual(sut.siteDecision(for: .camera, at: askOnlySite), .ask)
+
+        sut.siteDecisionBinding(for: .camera, at: site).wrappedValue = .ask
+
+        XCTAssertEqual(sut.storedSites, [askOnlySite, site])
+        XCTAssertEqual(sut.permissionTypes(for: site), [.location, .camera, .microphone])
+        XCTAssertEqual(store.permissions(for: site), [.location: .deny, .camera: .ask, .microphone: .ask])
+        XCTAssertEqual(store.permissions(for: askOnlySite), [.camera: .ask])
+    }
+
+    func testWhenSheetHasTemporaryAndSystemBlockedPermissionsThenSettingsShowsOnlySavedDecisions() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        let snapshot = SitePermissionsManagementSnapshot(
+            site: site,
+            storedPermissions: store.permissions(for: site),
+            ephemeralPermissionTypes: [.microphone],
+            siteAllowedPermissionTypesThisVisit: [.microphone],
+            requestedPermissionTypesThisVisit: [.microphone],
+            captureStates: [.microphone: .active],
+            systemAuthorizationStates: [.camera: .denied, .microphone: .authorized],
+            systemBlockedPermissionTypes: [.camera])
+        let sheet = SitePermissionsSheetViewModel(snapshot: snapshot, store: store)
+        let sut = makeSUT(store: store)
+
+        XCTAssertEqual(sheet.rows.map(\.permissionType), [.camera, .microphone])
+        XCTAssertEqual(sheet.systemSettingsPermissionTypes, [.camera])
+        XCTAssertEqual(sut.permissionTypes(for: site), [.camera])
+        XCTAssertEqual(sut.siteDecision(for: .camera, at: site), .allow)
+        XCTAssertEqual(store.permissions(for: site), [.camera: .allow])
+    }
+
+    func testWhenRemoveAllIncludesAskOnlySiteThenItsAccessIsRevokedAndUndoRestoresItsRow() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        let askOnlySite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://ask.example")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.resetDecision(for: .microphone, at: askOnlySite)
+        var revokedSites = Set<SitePermissionKey>()
+        var undo: (() -> Void)?
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didRequestRevocation = { site, _ in revokedSites.insert(site) }
+        let sut = makeSUT(store: store, presentUndoToast: { _, action in undo = action }, callbacks: callbacks)
+
+        sut.removeAllSitePermissions()
+
+        XCTAssertEqual(revokedSites, [site, askOnlySite])
+        XCTAssertTrue(store.storedSites.isEmpty)
+
+        try XCTUnwrap(undo)()
+
+        XCTAssertEqual(sut.storedSites, [askOnlySite, site])
+        XCTAssertEqual(sut.permissionTypes(for: site), [.camera])
+        XCTAssertEqual(sut.permissionTypes(for: askOnlySite), [.microphone])
+        XCTAssertEqual(store.permissions(for: askOnlySite), [.microphone: .ask])
+    }
+
+    func testDenyRequestsStoreFirstRevocationForOnlyTheChangedType() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        store.setPersistentDecision(.allow, for: .location, at: site)
+        var revocations = [(SitePermissionKey, Set<SitePermissionType>)]()
+        var decisionAtRevocation: SitePermissionDecision?
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didRequestRevocation = {
+            decisionAtRevocation = store.decision(for: .location, at: $0)
+            revocations.append(($0, $1))
+        }
+        let sut = makeSUT(store: store, callbacks: callbacks)
+
+        sut.siteDecisionBinding(for: .location, at: site).wrappedValue = .deny
+
+        XCTAssertEqual(decisionAtRevocation, .deny)
+        XCTAssertEqual(revocations.first?.0, site)
+        XCTAssertEqual(revocations.first?.1, [.location])
+        XCTAssertEqual(revocations.count, 1)
+    }
+
+    func testAskAndAllowDoNotRequestRevocation() throws {
+        for decision in [SitePermissionDecision.ask, .allow] {
+            let store = makeStore()
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+            store.setPersistentDecision(.deny, for: .location, at: site)
+            var revocations = [(SitePermissionKey, Set<SitePermissionType>)]()
+            var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+            callbacks.didRequestRevocation = { revocations.append(($0, $1)) }
+            let sut = makeSUT(store: store, callbacks: callbacks)
+
+            sut.siteDecisionBinding(for: .location, at: site).wrappedValue = decision
+
+            XCTAssertEqual(store.decision(for: .location, at: site), decision)
+            XCTAssertTrue(revocations.isEmpty)
+        }
+    }
+
+    func testStoredSitesAreLocaleSorted() throws {
+        let store = makeStore()
+        let second = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://zulu.example")!))
+        let first = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://alpha.example")!))
+        store.setPersistentDecision(.allow, for: .camera, at: second)
+        store.setPersistentDecision(.deny, for: .location, at: first)
+
+        let sut = makeSUT(store: store)
+
+        XCTAssertEqual(sut.storedSites, [first, second])
+    }
+
+    func testRemoveSiteOffersUndoAndRestoresSnapshot() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.setPersistentDecision(.deny, for: .microphone, at: site)
+        store.resetDecision(for: .location, at: site)
+        let original = store.permissions(for: site)
+        var presentedMessage: String?
+        var undo: (() -> Void)?
+        var removedCount = 0
+        var undoCount = 0
+        var revocations = [(SitePermissionKey, Set<SitePermissionType>)]()
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didRemoveSite = { removedCount += 1 }
+        callbacks.didUndoRemoval = { undoCount += 1 }
+        callbacks.didRequestRevocation = { revocations.append(($0, $1)) }
+        let sut = makeSUT(store: store, presentUndoToast: {
+            presentedMessage = $0
+            undo = $1
+        }, callbacks: callbacks)
+
+        sut.removePermissions(for: site)
+
+        XCTAssertTrue(store.permissions(for: site).isEmpty)
+        XCTAssertEqual(presentedMessage, "Permissions removed for example.com")
+        XCTAssertEqual(removedCount, 1)
+        XCTAssertEqual(revocations.first?.0, site)
+        XCTAssertEqual(revocations.first?.1, [.camera, .microphone, .location])
+
+        try XCTUnwrap(undo)()
+
+        XCTAssertEqual(store.permissions(for: site), original)
+        XCTAssertEqual(sut.storedSites, [site])
+        XCTAssertEqual(undoCount, 1)
+    }
+
+    func testWhenSettingsModelIsReleasedThenUndoStillRestoresRemovedPermissions() throws {
+        for removeAll in [false, true] {
+            let store = makeStore()
+            let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+            store.setPersistentDecision(.allow, for: .camera, at: site)
+            var undo: (() -> Void)?
+            var undoCount = 0
+            var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+            callbacks.didUndoRemoval = { undoCount += 1 }
+            var sut: SettingsSitePermissionsViewModel? = makeSUT(
+                store: store,
+                presentUndoToast: { _, action in undo = action },
+                callbacks: callbacks)
+            weak var weakSUT = sut
+
+            if removeAll {
+                sut?.removeAllSitePermissions()
+            } else {
+                sut?.removePermissions(for: site)
+            }
+            sut = nil
+
+            XCTAssertNil(weakSUT)
+            XCTAssertNil(store.decision(for: .camera, at: site))
+            try XCTUnwrap(undo)()
+            XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+            XCTAssertEqual(undoCount, 1)
+        }
+    }
+
+    func testUndoDoesNotOverwriteNewerSiteDecision() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        var undo: (() -> Void)?
+        let sut = makeSUT(store: store, presentUndoToast: { _, action in undo = action })
+
+        sut.removePermissions(for: site)
+        store.setPersistentDecision(.deny, for: .camera, at: site)
+        try XCTUnwrap(undo)()
+
+        XCTAssertEqual(store.decision(for: .camera, at: site), .deny)
+        XCTAssertEqual(sut.siteDecision(for: .camera, at: site), .deny)
+    }
+
+    func testRemoveAllPreservesGlobalDefaultsAndUndoRestoresSites() throws {
+        let store = makeStore()
+        let first = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://one.example")!))
+        let second = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://two.example")!))
+        store.setGlobalDefault(.deny, for: .camera)
+        store.setGlobalDefault(.ask, for: .microphone)
+        store.setGlobalDefault(.deny, for: .location)
+        let originalDefaults = SitePermissionType.allCases.map { store.globalDefault(for: $0) }
+        store.setPersistentDecision(.allow, for: .camera, at: first)
+        store.setPersistentDecision(.deny, for: .microphone, at: second)
+        store.resetDecision(for: .location, at: first)
+        store.setPersistentDecision(.allow, for: .location, at: second)
+        let originalFirst = store.permissions(for: first)
+        let originalSecond = store.permissions(for: second)
+        var presentedMessage: String?
+        var undo: (() -> Void)?
+        var removedAllCount = 0
+        var revokedSites = Set<SitePermissionKey>()
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didRemoveAll = { removedAllCount += 1 }
+        callbacks.didRequestRevocation = {
+            revokedSites.insert($0)
+            XCTAssertEqual($1, [.camera, .microphone, .location])
+        }
+        let sut = makeSUT(store: store, presentUndoToast: {
+            presentedMessage = $0
+            undo = $1
+        }, callbacks: callbacks)
+
+        sut.removeAllSitePermissions()
+
+        XCTAssertTrue(sut.storedSites.isEmpty)
+        XCTAssertEqual(SitePermissionType.allCases.map { store.globalDefault(for: $0) }, originalDefaults)
+        XCTAssertEqual(presentedMessage, "Permissions removed for all sites")
+        XCTAssertEqual(removedAllCount, 1)
+        XCTAssertEqual(revokedSites, [first, second])
+
+        try XCTUnwrap(undo)()
+
+        XCTAssertEqual(Set(sut.storedSites), [first, second])
+        XCTAssertEqual(store.permissions(for: first), originalFirst)
+        XCTAssertEqual(store.permissions(for: second), originalSecond)
+        XCTAssertEqual(SitePermissionType.allCases.map { store.globalDefault(for: $0) }, originalDefaults)
+    }
+
+    func testWhenFireSheetRemovesDurablePermissionsThenOpeningSettingsReflectsRemovalAndUndo() throws {
+        let store = makeStore()
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://example.com")!))
+        let otherSite = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://other.example")!))
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.resetDecision(for: .location, at: site)
+        store.setPersistentDecision(.deny, for: .microphone, at: otherSite)
+        store.setGlobalDefault(.deny, for: .camera)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
+        let isEnabled = featureFlagger.isFeatureOn(.sitePermissions)
+        let settings = makeSUT(store: store, isEnabled: { isEnabled })
+        var removal: SitePermissionsRemoval?
+        let sheet = SitePermissionsSheetViewModel(
+            snapshot: SitePermissionsManagementSnapshot(
+                site: site,
+                isFireMode: true,
+                storedPermissions: [.camera: .deny, .microphone: .deny, .location: .ask],
+                ephemeralPermissionTypes: [],
+                siteAllowedPermissionTypesThisVisit: [],
+                requestedPermissionTypesThisVisit: [],
+                captureStates: [:],
+                systemAuthorizationStates: [:],
+                systemBlockedPermissionTypes: []
+            ),
+            store: store,
+            onRemovePermissions: { removal = $0 }
+        )
+        XCTAssertEqual(Set(settings.storedSites), [site, otherSite])
+        XCTAssertEqual(settings.siteDecision(for: .camera, at: site), .allow)
+
+        sheet.removePermissions()
+        settings.didOpen()
+
+        XCTAssertEqual(settings.storedSites, [otherSite])
+        XCTAssertEqual(settings.siteDecision(for: .camera, at: site), .ask)
+        XCTAssertEqual(settings.siteDecision(for: .microphone, at: otherSite), .deny)
+        XCTAssertEqual(settings.globalDefault(for: .camera), .deny)
+        XCTAssertTrue(store.permissions(for: site).isEmpty)
+
+        store.restore(try XCTUnwrap(removal).snapshot)
+        settings.didOpen()
+
+        XCTAssertEqual(Set(settings.storedSites), [site, otherSite])
+        XCTAssertEqual(settings.siteDecision(for: .camera, at: site), .allow)
+        XCTAssertEqual(settings.siteDecision(for: .location, at: site), .ask)
+        XCTAssertEqual(store.permissions(for: site), [.camera: .allow, .location: .ask])
+        XCTAssertEqual(settings.globalDefault(for: .camera), .deny)
+    }
+
+    func testOpenAndSystemSettingsActionsUseInjectedCallbacks() {
+        var openCount = 0
+        var settingsCount = 0
+        var callbacks = SettingsSitePermissionsViewModel.Callbacks()
+        callbacks.didOpen = { openCount += 1 }
+        callbacks.didOpenSystemSettings = { settingsCount += 1 }
+        var systemSettingsOpenCount = 0
+        let sut = makeSUT(openSystemSettings: { systemSettingsOpenCount += 1 }, callbacks: callbacks)
+
+        sut.didOpen()
+        sut.openSystemSettings()
+
+        XCTAssertEqual(openCount, 1)
+        XCTAssertEqual(settingsCount, 1)
+        XCTAssertEqual(systemSettingsOpenCount, 1)
+    }
+
+    private func makeStore() -> SitePermissionsStore {
+        SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+    }
+
+    private func makeSUT(store: SitePermissionsStore? = nil,
+                         isEnabled: @escaping () -> Bool = { true },
+                         openSystemSettings: @escaping () -> Void = {},
+                         presentUndoToast: @escaping SettingsSitePermissionsViewModel.UndoToastPresenter = { _, _ in },
+                         callbacks: SettingsSitePermissionsViewModel.Callbacks = .init()) -> SettingsSitePermissionsViewModel {
+        SettingsSitePermissionsViewModel(store: store ?? makeStore(),
+                                         isEnabled: isEnabled,
+                                         openSystemSettings: openSystemSettings,
+                                         presentUndoToast: presentUndoToast,
+                                         callbacks: callbacks)
+    }
+}

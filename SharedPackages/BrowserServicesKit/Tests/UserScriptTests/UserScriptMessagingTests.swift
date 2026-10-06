@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import WebKit
+import JavaScriptCore
 import BrowserServicesKitTestsUtils
 @testable import UserScript
 
@@ -303,5 +304,92 @@ struct TestDelegate: Subfeature {
     func responseExample(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let person = Person(name: "Kittie")
         return person
+    }
+}
+
+/// Subscription names are not always valid JS identifiers. These execute the generated JS rather
+/// than asserting on its shape, because the failure guarded against is a runtime `ReferenceError`.
+final class SubscriptionEventToJSTests: XCTestCase {
+
+    func testWhenSubscriptionNameIsAPlainIdentifierThenTheHandlerIsCalled() throws {
+        let result = try evaluate(subscriptionName: "submitAIChatPageContext")
+
+        XCTAssertTrue(result.handlerWasCalled)
+        XCTAssertNil(result.exception)
+    }
+
+    func testWhenSubscriptionNameContainsSlashesThenTheHandlerIsStillCalled() throws {
+        for name in ["elicitation/create", "notifications/tools/list_changed"] {
+            let result = try evaluate(subscriptionName: name)
+
+            XCTAssertTrue(result.handlerWasCalled, "expected \(name) to reach its handler")
+            XCTAssertNil(result.exception, "expected \(name) to evaluate without throwing")
+        }
+    }
+
+    func testWhenSubscriptionNameContainsQuotesOrBackslashesThenItIsEscaped() throws {
+        let result = try evaluate(subscriptionName: #"od"d\name"#)
+
+        XCTAssertTrue(result.handlerWasCalled)
+        XCTAssertNil(result.exception)
+    }
+
+    func testWhenHandlerIsNotSubscribedThenNothingIsCalledAndNothingThrows() throws {
+        let result = try evaluate(subscriptionName: "elicitation/create", subscribe: false)
+
+        XCTAssertFalse(result.handlerWasCalled)
+        XCTAssertNil(result.exception)
+    }
+
+    /// The handler receives the whole `SubscriptionEvent`, not just its `params` — so a
+    /// correlation id carried at `params.id` is read by the page as `envelope.params.id`.
+    func testWhenEventIsPushedThenTheHandlerReceivesTheWholeEnvelope() throws {
+        let result = try evaluate(subscriptionName: "elicitation/create")
+
+        XCTAssertEqual(result.receivedEnvelope?["subscriptionName"] as? String, "elicitation/create")
+        XCTAssertEqual(result.receivedEnvelope?["featureName"] as? String, "aiChat")
+        XCTAssertEqual(result.receivedEnvelope?["context"] as? String, "contentScopeScripts")
+        let params = result.receivedEnvelope?["params"] as? [String: Any]
+        XCTAssertEqual(params?["mode"] as? String, "form")
+    }
+
+    // MARK: -
+
+    private struct EvaluationResult {
+        let handlerWasCalled: Bool
+        let receivedEnvelope: [String: Any]?
+        let exception: String?
+    }
+
+    /// Builds a stub `navigator.duckduckgo.messageHandlers`, evaluates the generated JS against it,
+    /// and reports whether the subscription's handler was reached.
+    private func evaluate(subscriptionName: String, subscribe: Bool = true) throws -> EvaluationResult {
+        let context = try XCTUnwrap(JSContext())
+        var exception: String?
+        context.exceptionHandler = { _, value in exception = value?.toString() }
+
+        context.evaluateScript("var handlerWasCalled = false; var receivedEnvelope = null;")
+        context.evaluateScript("var navigator = { duckduckgo: { messageHandlers: {} } };")
+        if subscribe {
+            context.setObject(subscriptionName, forKeyedSubscript: "handlerName" as NSString)
+            context.evaluateScript("""
+                navigator.duckduckgo.messageHandlers[handlerName] = function (event) {
+                    handlerWasCalled = true;
+                    receivedEnvelope = event;
+                };
+                """)
+        }
+
+        let js = try XCTUnwrap(SubscriptionEvent.toJS(context: "contentScopeScripts",
+                                                      featureName: "aiChat",
+                                                      subscriptionName: subscriptionName,
+                                                      params: ["mode": "form"]))
+        context.evaluateScript(js)
+
+        return EvaluationResult(
+            handlerWasCalled: context.objectForKeyedSubscript("handlerWasCalled")?.toBool() ?? false,
+            receivedEnvelope: context.objectForKeyedSubscript("receivedEnvelope")?.toDictionary() as? [String: Any],
+            exception: exception
+        )
     }
 }

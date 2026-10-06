@@ -217,6 +217,17 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
         }
     }
 
+    func startDebugServer(completion: @escaping (Bool) -> Void) {
+        Task {
+            let didStart = await serverDelegate?.startDebugServer() ?? false
+            completion(didStart)
+        }
+    }
+
+    func stopDebugServer() {
+        serverDelegate?.stopDebugServer()
+    }
+
     func checkForEmailConfirmationData() {
         Task {
             await serverDelegate?.checkForEmailConfirmationData()

@@ -123,6 +123,42 @@ final class FaviconImageCacheTests: XCTestCase {
         XCTAssertEqual(store.loadImageCallCount, 1)
     }
 
+    // MARK: insert store-write serialization (race)
+
+    @MainActor
+    func testConcurrentInsertsForSameURLLeaveExactlyOneStoredRow() async throws {
+        let store = RecordingFaviconStore()
+        let cache = FaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+
+        // Each insert persists a freshly-identified row that is meant to supersede the previous row for
+        // the same favicon URL (remove the old row, save the new one). Fire many back-to-back: without
+        // serialized store writes, a later insert's removal can run before an earlier insert's save lands,
+        // so the superseded row is never deleted and survives as a duplicate.
+        let insertCount = 25
+        let cacheUpdated = expectation(forNotification: .faviconCacheUpdated, object: nil)
+        cacheUpdated.expectedFulfillmentCount = insertCount
+
+        for _ in 0..<insertCount {
+            cache.insert([
+                Favicon(identifier: UUID(),
+                        url: faviconURL,
+                        image: makeBitmapImage(pixelsWide: 16, pixelsHigh: 16),
+                        relation: .favicon,
+                        documentUrl: documentURL,
+                        dateCreated: Date())
+            ])
+        }
+
+        await fulfillment(of: [cacheUpdated], timeout: 10)
+
+        XCTAssertEqual(store.savedCount(forURL: faviconURL), 1,
+                       "Exactly one row should remain for a single favicon URL after concurrent inserts")
+    }
+
     // MARK: eager fallback cache (faviconLazyImageLoading kill switch OFF)
 
     @MainActor
@@ -148,6 +184,37 @@ final class FaviconImageCacheTests: XCTestCase {
         // the on-demand loadImage path.
         XCTAssertEqual(store.loadFaviconsCallCount, 1)
         XCTAssertEqual(store.loadImageCallCount, 0)
+    }
+
+    @MainActor
+    func testEagerCacheConcurrentInsertsForSameURLLeaveExactlyOneStoredRow() async throws {
+        let store = RecordingFaviconStore()
+        let cache = EagerFaviconImageCache(faviconStoring: store)
+        try await cache.load()
+
+        let faviconURL = try XCTUnwrap("https://example.com/favicon.ico".url)
+        let documentURL = try XCTUnwrap("https://example.com".url)
+
+        // Same serialization invariant as the lazy cache: superseding inserts must not leave duplicates.
+        let insertCount = 25
+        let cacheUpdated = expectation(forNotification: .faviconCacheUpdated, object: nil)
+        cacheUpdated.expectedFulfillmentCount = insertCount
+
+        for _ in 0..<insertCount {
+            cache.insert([
+                Favicon(identifier: UUID(),
+                        url: faviconURL,
+                        image: makeBitmapImage(pixelsWide: 16, pixelsHigh: 16),
+                        relation: .favicon,
+                        documentUrl: documentURL,
+                        dateCreated: Date())
+            ])
+        }
+
+        await fulfillment(of: [cacheUpdated], timeout: 10)
+
+        XCTAssertEqual(store.savedCount(forURL: faviconURL), 1,
+                       "Exactly one row should remain for a single favicon URL after concurrent inserts")
     }
 
     // MARK: async get
@@ -362,4 +429,46 @@ final class FaviconImageCacheTests: XCTestCase {
 
 private enum TestError: Error {
     case transientFailure
+}
+
+/// A favicon store that records persisted favicons (honoring removals) so tests can assert how many rows
+/// survive for a given favicon URL. `save` yields a few times before recording to widen the window in
+/// which a concurrent insert's removal can race ahead of this save — surfacing duplicate rows when
+/// inserts aren't serialized.
+private final class RecordingFaviconStore: FaviconStoring, @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var savedFavicons: [Favicon] = []
+
+    func savedCount(forURL url: URL) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return savedFavicons.filter { $0.url == url }.count
+    }
+
+    func loadFavicons() async throws -> [Favicon] { [] }
+    func loadFaviconMetadata() async throws -> [FaviconMetadata] { [] }
+    func loadImage(for identifier: UUID) async throws -> NSImage? { nil }
+
+    func save(_ favicons: [Favicon]) async throws {
+        // Suspend a few times so a concurrent insert's removal can interleave before this save records —
+        // exactly the window that produces duplicate rows when store writes aren't serialized.
+        for _ in 0..<4 { await Task.yield() }
+        lock.lock()
+        savedFavicons.append(contentsOf: favicons)
+        lock.unlock()
+    }
+
+    func removeFavicons(_ favicons: [Favicon]) async throws {
+        let identifiers = Set(favicons.map(\.identifier))
+        lock.lock()
+        savedFavicons.removeAll { identifiers.contains($0.identifier) }
+        lock.unlock()
+    }
+
+    func loadFaviconReferences() async throws -> ([FaviconHostReference], [FaviconUrlReference]) { ([], []) }
+    func save(hostReference: FaviconHostReference) async throws {}
+    func save(urlReference: FaviconUrlReference) async throws {}
+    func remove(hostReferences: [FaviconHostReference]) async throws {}
+    func remove(urlReferences: [FaviconUrlReference]) async throws {}
 }

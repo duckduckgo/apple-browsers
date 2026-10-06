@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
@@ -25,10 +27,12 @@ import PrivacyConfig
 import HistoryView
 import Persistence
 import PixelKit
+import SERPInstallOrigin
 import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
@@ -36,10 +40,10 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
+    let chromeWebStoreUserScript: Subfeature?
     let hoverUserScript = HoverUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
-    let clickToLoadScript: ClickToLoadUserScript
 
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
@@ -54,14 +58,15 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let serpUserScript: SERPInstallOriginUserScript
     let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
-    let webEventsSubfeature: WebEventsSubfeature
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -69,10 +74,17 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
-        clickToLoadScript = ClickToLoadUserScript()
+        if #available(macOS 15.4, *) {
+            chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
+                NSApp.delegateTyped.webExtensionManager?.chromeWebStore
+            }, buildType: buildType)
+        } else {
+            chromeWebStoreUserScript = nil
+        }
         // `setupSucceeded == nil` (setup still in flight) is treated as "available"
         // so the launch path is not blocked. Only force the JS fallback when a
         // permanent setup failure has been observed.
@@ -103,7 +115,18 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
+        let installOriginEnabled = StandardApplicationBuildType().isSparkleBuild
+        serpUserScript = SERPInstallOriginUserScript(
+            serpBaseURL: URL.duckDuckGo,
+            installOriginEnabled: installOriginEnabled,
+            installOriginVariantProvider: installOriginEnabled ? DefaultInstallOriginVariantProvider() : nil
+        )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
+
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+            attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
+        )
 
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
@@ -137,8 +160,17 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager, excludedFeatures: [PrivacyFeature.autoconsent.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+            // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
+            // Windows found injecting it broke the aiChat message bridge, which is shared code.
+            let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
@@ -147,18 +179,6 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
         }
-
-        let youTubeAdBlockingStorage: any KeyedStoring<YouTubeAdBlockingSettings> = UserDefaults.standard.keyedStoring()
-        webEventsSubfeature = WebEventsSubfeature(
-            isUserOptedIn: {
-                (youTubeAdBlockingStorage.youTubeAdBlockingEnabled ?? false)
-                    && (youTubeAdBlockingStorage.youTubeAnalyticsEnabled ?? false)
-            },
-            onEvent: { type, loginState in
-                guard let pixel = WebExtensionPixel.adBlockingDetectedEvent(type: type, loginState: loginState.rawValue) else { return }
-                PixelKit.fire(pixel, frequency: .daily)
-            }
-        )
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
@@ -214,13 +234,14 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: webEventsSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
+        if let chromeWebStoreUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
+        }
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
@@ -236,6 +257,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
+
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)
         }
@@ -243,6 +266,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if let serpSettingsUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpUserScript)
 
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)

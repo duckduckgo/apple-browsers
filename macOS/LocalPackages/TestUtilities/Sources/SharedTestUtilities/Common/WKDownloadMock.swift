@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import WebKit
 
 public final class WKDownloadMock: NSObject, WebKitDownload, ProgressReporting {

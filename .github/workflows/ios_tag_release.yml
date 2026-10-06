@@ -68,7 +68,7 @@ jobs:
 
     name: Tag Release
 
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     env:
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
@@ -89,6 +89,9 @@ jobs:
         fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.BRANCH }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Assert release branch
       run: |
@@ -134,7 +137,7 @@ jobs:
       run: touch ${{ github.workspace }}/.github/stop_workflow
 
     - name: Upload stop_workflow flag artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: steps.tag-release.outputs.stop_workflow == 'true'
       with:
         name: stop_workflow
@@ -145,7 +148,7 @@ jobs:
       run: echo ${{ steps.tag-release.outputs.tag }} > ${{ github.workspace }}/.github/tag
 
     - name: Upload tag artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: tag
         path: ${{ github.workspace }}/.github/tag

@@ -20,7 +20,7 @@ import Foundation
 import Common
 import PrivacyConfig
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 
 public protocol EmailConfirmationJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }

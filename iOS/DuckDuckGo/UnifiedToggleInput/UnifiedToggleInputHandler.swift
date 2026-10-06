@@ -30,7 +30,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     private(set) var isTopBarPosition: Bool = false
     let isUsingExpandedBottomBarHeight: Bool = false
     let usesExpandedAIChatTextEntryLayout: Bool = true
-    /// The fadeOutOnToggle experiment applies only to the OmniBar editing state, not here.
+    /// The UTI uses the new layout metrics (insets / heights), never the legacy ones.
+    let usesLegacyLayoutMetrics: Bool = false
     let isUsingFadeOutAnimation: Bool = false
     let shouldDisableAutocorrectOnEmpty: Bool = true
     var modeParameters: [String: String] { ["mode": currentToggleState.rawValue] }
@@ -45,6 +46,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     @Published private(set) var isCurrentTextValidURL: Bool = false
     @Published var hasSubmittedPrompt: Bool = false
     @Published var submitsAIChatOnKeyboardReturn: Bool = false
+    @Published var usesReturnKeySubmitButtonStyle: Bool = false
+    @Published var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton?
+    /// The terms are unaccepted, so `termsOfServiceSendButton` may appear at any time and the toolbar reserves its width.
+    @Published var reservesTermsOfServiceSendButton: Bool = false
 
     var hasSubmittedPromptPublisher: AnyPublisher<Bool, Never> {
         $hasSubmittedPrompt.eraseToAnyPublisher()
@@ -52,6 +57,18 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
 
     var submitsAIChatOnKeyboardReturnPublisher: AnyPublisher<Bool, Never> {
         $submitsAIChatOnKeyboardReturn.eraseToAnyPublisher()
+    }
+
+    var usesReturnKeySubmitButtonStylePublisher: AnyPublisher<Bool, Never> {
+        $usesReturnKeySubmitButtonStyle.eraseToAnyPublisher()
+    }
+
+    var termsOfServiceSendButtonPublisher: AnyPublisher<DuckAiTermsOfServiceSendButton?, Never> {
+        $termsOfServiceSendButton.eraseToAnyPublisher()
+    }
+
+    var reservesTermsOfServiceSendButtonPublisher: AnyPublisher<Bool, Never> {
+        $reservesTermsOfServiceSendButton.eraseToAnyPublisher()
     }
 
     var isGenerating: Bool = false {
@@ -83,9 +100,10 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
-    var isAIVoiceChatEnabled: Bool = false {
+    /// Where the button dictates, voice-chat availability must not keep a dead microphone on screen.
+    var prefersDictationOverVoiceChat: Bool = false {
         didSet {
-            guard isAIVoiceChatEnabled != oldValue else { return }
+            guard prefersDictationOverVoiceChat != oldValue else { return }
             updateButtonState()
         }
     }
@@ -111,6 +129,12 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         }
     }
 
+    var isImageGenerationSelected: Bool = false
+
+    /// Mirrors the usage card's blocking state, so every path into a prompt is closed and not just
+    /// the buttons that look closed.
+    var isInputBlockedByUsageLimit: Bool = false
+
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -133,8 +157,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
         $buttonState.eraseToAnyPublisher()
     }
 
-    private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
-    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> {
+    private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never>()
+    var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger), Never> {
         textSubmissionSubject.eraseToAnyPublisher()
     }
 
@@ -186,13 +210,20 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
+        submitText(text, trigger: .textEntry)
     }
 
+    func submitText(_ text: String, trigger: TextSubmissionTrigger) {
+        guard !isInputBlockedByUsageLimit else { return }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        textSubmissionSubject.send((text: trimmed, mode: currentToggleState, trigger: trigger))
+    }
+
+    /// Only the send button submits a prompt with nothing but attachments.
     func submitAIChatAttachmentOnlyPrompt() {
-        textSubmissionSubject.send((text: "", mode: .aiChat))
+        guard !isInputBlockedByUsageLimit else { return }
+        textSubmissionSubject.send((text: "", mode: .aiChat, trigger: .sendButton))
     }
 
     func setToggleState(_ state: TextEntryMode) {
@@ -244,7 +275,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     // MARK: - Private
 
     private func updateButtonState() {
-        let aiVoiceChatAvailable = !isExpanded && isAIVoiceChatEnabled && currentToggleState == .aiChat
+        let aiVoiceChatAvailable = !isExpanded && currentToggleState == .aiChat && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
         let nextButtonState: SwitchBarButtonState
 

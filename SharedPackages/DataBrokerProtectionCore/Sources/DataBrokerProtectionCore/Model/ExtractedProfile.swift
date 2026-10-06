@@ -56,17 +56,35 @@ public struct ExtractProfileSelectors: Codable, Sendable {
     }
 }
 
+/// Open map of config-defined fields with no dedicated property on the model. C-S-S extracts these
+/// during a scan and reads them back during opt out; we store and forward them verbatim, so a new
+/// broker field can ship as a config change alone. String values only, omitted when empty.
+public typealias ProfileExtras = [String: String]
+
 public struct AddressCityState: Codable, Hashable, Sendable {
     public let city: String
     public let state: String
+    public let extras: ProfileExtras?
 
-    public init(city: String, state: String) {
+    public init(city: String, state: String, extras: ProfileExtras? = nil) {
         self.city = city
         self.state = state
+        self.extras = extras
     }
 
     public var fullAddress: String {
         "\(city), \(state)"
+    }
+
+    /// Extras are opaque passthrough data, so two addresses for the same place remain equal
+    /// regardless of which extras the broker config happened to scrape for each.
+    public static func == (lhs: AddressCityState, rhs: AddressCityState) -> Bool {
+        lhs.city == rhs.city && lhs.state == rhs.state
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(city)
+        hasher.combine(state)
     }
 }
 
@@ -85,6 +103,7 @@ public struct ExtractedProfile: Codable, Sendable {
     public var removedDate: Date?
     public let fullName: String?
     public let identifier: String?
+    public let extras: ProfileExtras?
 
     enum CodingKeys: CodingKey {
         case id
@@ -101,6 +120,7 @@ public struct ExtractedProfile: Codable, Sendable {
         case removedDate
         case fullName
         case identifier
+        case extras
     }
 
     public init(id: Int64? = nil,
@@ -115,7 +135,8 @@ public struct ExtractedProfile: Codable, Sendable {
                 age: String? = nil,
                 email: String? = nil,
                 removedDate: Date? = nil,
-                identifier: String? = nil) {
+                identifier: String? = nil,
+                extras: ProfileExtras? = nil) {
         self.id = id
         self.name = name
         self.alternativeNames = alternativeNames
@@ -130,6 +151,7 @@ public struct ExtractedProfile: Codable, Sendable {
         self.removedDate = removedDate
         self.fullName = name
         self.identifier = identifier
+        self.extras = extras
     }
 
     public init(from decoder: Decoder) throws {
@@ -147,6 +169,7 @@ public struct ExtractedProfile: Codable, Sendable {
         email = try container.decodeIfPresent(String.self, forKey: .email)
         removedDate = try container.decodeIfPresent(Date.self, forKey: .removedDate)
         fullName = try container.decodeIfPresent(String.self, forKey: .fullName)
+        extras = try container.decodeIfPresent(ProfileExtras.self, forKey: .extras)
         if let identifier = try container.decodeIfPresent(String.self, forKey: .identifier) {
             self.identifier = identifier
         } else {
@@ -168,7 +191,8 @@ public struct ExtractedProfile: Codable, Sendable {
             age: self.age ?? String(profile.age),
             email: self.email,
             removedDate: self.removedDate,
-            identifier: self.identifier
+            identifier: self.identifier,
+            extras: self.extras
         )
     }
 
@@ -220,7 +244,45 @@ extension ExtractedProfile {
                          age: age,
                          email: email,
                          removedDate: removedDate,
-                         identifier: identifier)
+                         identifier: identifier,
+                         extras: extras)
+    }
+
+    /// Returns this stored record brought up to date with a re-scrape of the same profile, keeping
+    /// the state the broker doesn't own (`id`, `email`, `removedDate`).
+    ///
+    /// Extras the re-scrape didn't return keep their stored value, so a broker changing its markup
+    /// before we update the config doesn't strip fields the pending opt out still needs.
+    func refreshed(from scrapedProfile: ExtractedProfile) -> ExtractedProfile {
+        ExtractedProfile(id: id,
+                         name: scrapedProfile.name,
+                         alternativeNames: scrapedProfile.alternativeNames,
+                         addressFull: scrapedProfile.addressFull,
+                         addresses: scrapedProfile.addresses?.map { $0.mergingExtras(storedIn: addresses) },
+                         phoneNumbers: scrapedProfile.phoneNumbers,
+                         relatives: scrapedProfile.relatives,
+                         profileUrl: scrapedProfile.profileUrl,
+                         reportId: scrapedProfile.reportId,
+                         age: scrapedProfile.age,
+                         email: email,
+                         removedDate: removedDate,
+                         identifier: identifier,
+                         extras: extras.merging(scrapedProfile.extras))
+    }
+}
+
+private extension AddressCityState {
+    func mergingExtras(storedIn storedAddresses: [AddressCityState]?) -> AddressCityState {
+        let storedExtras = storedAddresses?.first { $0 == self }?.extras
+        return AddressCityState(city: city, state: state, extras: storedExtras.merging(extras))
+    }
+}
+
+private extension Optional where Wrapped == ProfileExtras {
+    func merging(_ scrapedExtras: ProfileExtras?) -> ProfileExtras? {
+        guard let storedExtras = self else { return scrapedExtras }
+        guard let scrapedExtras else { return storedExtras }
+        return storedExtras.merging(scrapedExtras) { _, scrapedValue in scrapedValue }
     }
 }
 

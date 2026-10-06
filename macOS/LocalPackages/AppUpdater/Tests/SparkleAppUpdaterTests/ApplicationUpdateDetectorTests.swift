@@ -18,11 +18,8 @@
 
 import AppUpdaterShared
 import BrowserServicesKit
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import XCTest
-
-@testable import SparkleAppUpdater
 
 final class ApplicationUpdateDetectorTests: XCTestCase {
 

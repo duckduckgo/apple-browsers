@@ -55,6 +55,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let disableRekeyingMenuItem = NSMenuItem(title: "Disable Rekeying", action: #selector(NetworkProtectionDebugMenu.toggleRekeyingDisabled))
 
     private let excludeLocalNetworksMenuItem = NSMenuItem(title: "excludeLocalNetworks", action: #selector(NetworkProtectionDebugMenu.toggleShouldExcludeLocalRoutes))
+    private let excludeCGNATMenuItem = NSMenuItem(title: "excludeCGNAT", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCGNAT))
     private let excludeAPNsMenuItem = NSMenuItem(title: "excludeAPNs", action: #selector(NetworkProtectionDebugMenu.toggleExcludeAPNs))
     private let excludeCellularServicesMenuItem = NSMenuItem(title: "excludeCellularServices", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCellularServices))
     private let excludeDeviceCommunicationMenuItem = NSMenuItem(title: "excludeDeviceCommunication", action: #selector(NetworkProtectionDebugMenu.toggleExcludeDeviceCommunication))
@@ -116,6 +117,14 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Show Excluded Sites", action: #selector(NetworkProtectionDebugMenu.showExcludedDomainsScreen(_:)))
+                .targetting(self)
+
+            NSMenuItem(title: "Show Excluded Apps", action: #selector(NetworkProtectionDebugMenu.showExcludedAppsScreen(_:)))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             NSMenuItem(title: "Adapter") {
                 NSMenuItem(title: "Restart Adapter", action: #selector(NetworkProtectionDebugMenu.restartAdapter(_:)))
                     .targetting(self)
@@ -134,6 +143,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
                     .targetting(self)
 
                 excludeLocalNetworksMenuItem
+                    .targetting(self)
+
+                excludeCGNATMenuItem
                     .targetting(self)
 
                 shouldEnforceRoutesMenuItem
@@ -222,12 +234,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         Application.appDelegate.vpnSettings
     }
 
-    // MARK: - Upsell Visibility
-
-    private var upsellVisibilityManager: VPNUpsellVisibilityManager {
-        Application.appDelegate.vpnUpsellVisibilityManager
-    }
-
     // MARK: - Debug Logic
 
     private lazy var debugUtilities = NetworkProtectionDebugUtilities(pinningManager: pinningManager)
@@ -264,7 +270,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     ///
     @objc func disableLoginItem(_ sender: Any?) {
         Task { @MainActor in
-            debugUtilities.disableLoginItems()
+            await debugUtilities.disableLoginItems()
         }
     }
 
@@ -298,6 +304,20 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     /// Removes the system extension and agents for DuckDuckGo VPN.
     ///
+    /// The VPN section only appears in Settings with an active subscription, so this is the
+    /// only way to reach the screen on a build without one.
+    @objc func showExcludedDomainsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNDomainExclusions()
+        }
+    }
+
+    @objc func showExcludedAppsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNAppExclusions()
+        }
+    }
+
     @objc func restartAdapter(_ sender: Any?) {
         Task { @MainActor in
             do {
@@ -438,6 +458,15 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
     }
 
+    @objc func toggleExcludeCGNAT(_ sender: Any?) {
+        settings.excludeCGNAT.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
     @objc func toggleExcludeAPNs(_ sender: Any?) {
         settings.excludeAPNs.toggle()
 
@@ -492,12 +521,10 @@ final class NetworkProtectionDebugMenu: NSMenu {
     }
 
     private func populateNetworkProtectionUpsellMenuItems() {
-        let toggleTitle = upsellVisibilityManager.state == .visible ? "Hide Upsell Button" : "Show Upsell Button"
         upsellMenu.items = [
             NSMenuItem(title: "⚠️ Please restart the browser after resetting upsell state", action: nil, target: nil),
             NSMenuItem.separator(),
             NSMenuItem(title: "Reset Upsell State", action: #selector(resetUpsellState), target: self, keyEquivalent: ""),
-            NSMenuItem(title: toggleTitle, action: #selector(toggleUpsellVisibility), target: self, keyEquivalent: ""),
         ]
     }
 
@@ -576,7 +603,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         updatePreferredServerMenu()
         updateRekeyValidityMenu()
         updateNetworkProtectionMenuItemsState()
-        updateUpsellMenuToggleTitle()
     }
 
     private func updateEnvironmentMenu() {
@@ -635,6 +661,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         shouldEnforceRoutesMenuItem.state = settings.enforceRoutes ? .on : .off
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off
+        excludeCGNATMenuItem.state = settings.excludeCGNAT ? .on : .off
         disableRekeyingMenuItem.state = settings.disableRekeying ? .on : .off
 
         if #available(macOS 13.3, *) {
@@ -661,26 +688,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
     }
 
-    private func updateUpsellMenuToggleTitle() {
-        let toggleTitle = upsellVisibilityManager.state == .visible ? "Hide Upsell Button" : "Show Upsell Button"
-        upsellMenu.items[3].title = toggleTitle
-    }
-
     // MARK: - Upsell
 
-    @objc func toggleUpsellVisibility(_ sender: Any?) {
-        if upsellVisibilityManager.state == .visible {
-            upsellVisibilityManager.makeNotEligible()
-        } else {
-            upsellVisibilityManager.makeVisible()
-        }
-
-        updateUpsellMenuToggleTitle()
-    }
-
     @objc func resetUpsellState(_ sender: Any?) {
-        upsellVisibilityManager.makeNotEligible()
-
         // Clear all statistics to simulate first launch
         Application.appDelegate.resetInstallStatistics()
 

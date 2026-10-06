@@ -23,19 +23,20 @@ import Common
 import FoundationExtensions
 import Persistence
 import Core
+import PixelKit
 
 public class CreditCardsCleanupErrorHandling: EventMapping<CreditCardsCleanupError> {
 
     public init() {
         super.init { event, _, _, _ in
             if event.cleanupError is CreditCardsCleanupCancelledError {
-                Pixel.fire(pixel: .creditCardsCleanupAttemptedWhileSyncWasEnabled)
+                PixelKit.fire(Pixel.Event.creditCardsCleanupAttemptedWhileSyncWasEnabled)
             } else {
                 let domainEvent = Pixel.Event.creditCardsDatabaseCleanupFailed
                 let processedErrors = CoreDataErrorsParser.parse(error: event.cleanupError as NSError)
                 let params = processedErrors.errorPixelParameters
 
-                Pixel.fire(pixel: domainEvent, error: event.cleanupError, withAdditionalParameters: params)
+                PixelKit.fire(domainEvent.withError(event.cleanupError), options: .parameters(params))
             }
         }
     }

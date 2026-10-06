@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
+import MetricBuilder
 
 struct ImportSourceDetailView: View {
 
@@ -44,7 +45,7 @@ struct ImportSourceDetailView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     .listRowSeparator(.hidden)
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
 
             if let bottomSection = source.bottomSection {
                 Section {
@@ -52,7 +53,7 @@ struct ImportSourceDetailView: View {
                 } header: {
                     Text(UserText.importDetailDoneExportingHeader)
                 }
-                .listRowBackground(Color(designSystemColor: .surface))
+                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
             }
         }
         .applyInsetGroupedListStyle()
@@ -70,7 +71,7 @@ struct ImportSourceDetailView: View {
                 .daxBodyRegular()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, ButtonStackMetrics.containerPadding)
                 .padding(.top, 12)
 
             if !source.steps.isEmpty {
@@ -82,7 +83,7 @@ struct ImportSourceDetailView: View {
             if let buttonTitle = source.primaryButtonTitle {
                 primaryButton(title: buttonTitle)
                     .padding(.top, 24)
-                    .padding([.horizontal, .bottom], 16)
+                    .padding([.horizontal, .bottom], ButtonStackMetrics.containerPadding)
             }
         }
         .frame(maxWidth: .infinity)

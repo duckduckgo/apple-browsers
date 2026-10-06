@@ -1,7 +1,7 @@
 <!--
 Note: This template is a reminder of our Engineering Expectations and Definition of Done. Remove sections that don't apply to your changes.
 
-⚠️ If you're an external contributor, please file an issue before working on a PR. Discussing your changes beforehand will help ensure they align with our roadmap and that your time is well spent.
+⚠️ External contributors: file an issue before opening a PR.
 -->
 
 Task/Issue URL:
@@ -9,9 +9,10 @@ Tech Design URL:
 CC:
 
 ### Description
+<!-- What changed and why, in plain English. No class names, method names, or implementation details — the diff shows those. Keep it brief. -->
 
 ### Testing Steps
-<!-- Assume the reviewer is unfamiliar with this part of the app -->
+<!-- One action per step. Note expected outcome inline where relevant, e.g. "3. Tap Save → settings screen dismisses". Assume the reviewer is unfamiliar with this part of the app. -->
 1.
 2.
 
@@ -26,7 +27,7 @@ If you encountered issues writing tests due to any class in the codebase, please
    - Add a new entry
 -->
 
-### Impact and Risks
+### Impact
 <!-- 
 What's the impact on users if something goes wrong?
 
@@ -37,20 +38,10 @@ None: Internal tooling, documentation
 -->
 
 #### What could go wrong?
-<!-- Describe specific scenarios and how you've addressed them -->
+<!-- Before submitting: identify realistic failure scenarios and check a mitigation exists in this diff (test, flag, guard). Only keep this section if the risk is non-obvious to a reviewer. Otherwise delete it. One line per scenario: "X could happen → mitigated by Y." -->
 
 ### Quality Considerations
-<!-- 
-Focus on what matters for your changes:
-- What edge cases exist?
-- How does this affect performance?
-- What monitoring have you added?
-- What documentation needs updating?
-- How does this impact privacy/security?
--->
-
-### Notes to Reviewer
-<!-- Anything specific you want reviewers to focus on -->
+<!-- Edge cases, performance, privacy/security impact — omit if not applicable -->
 
 ---
 ###### Internal references:

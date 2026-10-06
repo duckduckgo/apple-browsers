@@ -165,12 +165,16 @@ final class TabCollection: NSObject {
 
     func moveTab(at fromIndex: Int, to otherCollection: TabCollection, at toIndex: Int) -> Bool {
         guard let tab = tabs[safe: fromIndex],
-              otherCollection.insert(tab, at: toIndex)
-        else {
+              toIndex >= 0,
+              toIndex <= otherCollection.tabs.endIndex,
+              !otherCollection.isPopup || otherCollection.tabs.isEmpty else {
             assertionFailure("TabCollection: Index out of bounds")
             return false
         }
 
+        // This is the same tab changing collections, not a close followed by an open.
+        // The higher-level operation is responsible for the corresponding WebExtensions notification.
+        otherCollection.tabs.insert(tab, at: toIndex)
         tabs.remove(at: fromIndex)
         return true
     }
@@ -202,13 +206,14 @@ final class TabCollection: NSObject {
 
     @MainActor
     func removeAll(andAppend tab: Tab) {
-        tabsWillClose(range: 0..<tabs.count)
-        tabs = [.loaded(tab)]
+        removeAll(andAppend: .loaded(tab))
     }
 
     @MainActor
     func removeAll(andAppend tab: AnyTab) {
-        tabsWillClose(range: 0..<tabs.count)
+        for index in tabs.indices where tabs[index] != tab {
+            tabWillClose(at: index, forced: false)
+        }
         tabs = [tab]
     }
 

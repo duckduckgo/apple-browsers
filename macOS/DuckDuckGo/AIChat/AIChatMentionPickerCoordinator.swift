@@ -237,10 +237,15 @@ final class AIChatMentionPickerCoordinator {
         // its re-entrant `dismiss(reason: .tokenGone)` is a no-op; we then dismiss
         // explicitly with `.accept` to tear the panel down and skip the canceled pixel.
         let wasAttached = omnibarController.activeTabAttachments.contains(where: { $0.id == attachment.id })
+        // Toggle first: when the tab has closed or moved on since the picker listed it nothing is
+        // attached, and splicing would have eaten the mention the user typed for no result.
+        guard omnibarController.togglePickedTabAttachment(attachment) else {
+            dismiss(reason: .accept)
+            return
+        }
         isSplicing = true
         spliceTokenFromTextView()
         isSplicing = false
-        omnibarController.toggleTabAttachment(attachment)
         let pixel: AIChatPixel = wasAttached
             ? .aiChatAddressBarMentionTabRemoved
             : .aiChatAddressBarMentionTabChosen

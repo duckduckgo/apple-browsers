@@ -27,8 +27,11 @@ import Foundation
 /// the behavior survives `replaceAllEntries`.
 public enum DuckAiNativeStorageConsent {
 
+    /// The web app's own record of Terms of Service acceptance, stored as the string `"true"`.
+    public static let termsOfServiceEntryKey = "duckaiHasAgreedToTerms"
+
     public static let entryKeys: Set<String> = [
-        "duckaiHasAgreedToTerms",
+        termsOfServiceEntryKey,
         "hasVoiceModeConsent"
     ]
 }

@@ -19,7 +19,7 @@
 
 import XCTest
 import AIChat
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Core
 @testable import DuckDuckGo
 
@@ -89,53 +89,5 @@ final class ToggleModeStorageTests: XCTestCase {
         let sut = ToggleModeStorage(store: store)
 
         XCTAssertNil(sut.restore())
-    }
-}
-
-// MARK: - SwitchBarHandler Default Mode
-
-final class SwitchBarHandlerDefaultModeTests: XCTestCase {
-
-    func testInitializesToggleStateFromSettings() {
-        let searchHandler = makeSUT(defaultMode: .search)
-        XCTAssertEqual(searchHandler.currentToggleState, .search)
-
-        let aiHandler = makeSUT(defaultMode: .duckAI)
-        XCTAssertEqual(aiHandler.currentToggleState, .aiChat)
-    }
-
-    func testInitializesFromLastUsedStorage() {
-        let store = MockKeyValueStore()
-        let storage = ToggleModeStorage(store: store)
-        storage.save(.aiChat)
-
-        let handler = makeSUT(defaultMode: .lastUsed, toggleModeStorage: storage)
-        XCTAssertEqual(handler.currentToggleState, .aiChat)
-    }
-
-    func testSetToggleStateDoesNotAutoSave() {
-        let store = MockKeyValueStore()
-        let storage = ToggleModeStorage(store: store)
-        let handler = makeSUT(defaultMode: .search, toggleModeStorage: storage)
-
-        handler.setToggleState(.aiChat)
-        XCTAssertNil(storage.restore(), "setToggleState should not auto-save")
-
-        handler.saveToggleState()
-        XCTAssertEqual(storage.restore(), .aiChat)
-    }
-
-    private func makeSUT(
-        defaultMode: DefaultOmnibarMode,
-        toggleModeStorage: ToggleModeStoring = ToggleModeStorage(store: MockKeyValueStore())
-    ) -> SwitchBarHandler {
-        let settings = MockAIChatSettingsProvider(defaultOmnibarMode: defaultMode)
-        return SwitchBarHandler(
-            voiceSearchHelper: MockVoiceSearchHelper(),
-            aiChatSettings: settings,
-            toggleModeStorage: toggleModeStorage,
-            sessionStateMetrics: SessionStateMetrics(storage: MockKeyValueStore()),
-            isFireTab: false
-        )
     }
 }

@@ -18,6 +18,15 @@
 //
 
 import Foundation
+import UIKit
+
+/// Downloads a thumbnail image so the floating pill can render a ready image (no async view swap).
+enum DuckPlayerThumbnailLoader {
+    static func loadImage(from url: URL) async -> UIImage? {
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        return UIImage(data: data)
+    }
+}
 
 public struct OEmbedResponse: Decodable {
     public let title: String

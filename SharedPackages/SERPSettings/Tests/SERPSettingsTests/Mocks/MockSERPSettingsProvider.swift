@@ -20,8 +20,7 @@ import Foundation
 import UserScript
 import AIChat
 import Common
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import SERPSettings
 
 final class MockSERPSettingsProvider: SERPSettingsProviding {
@@ -82,6 +81,8 @@ final class MockAIChatSettingsProvider: AIChatSettingsProvider {
     var aiChatURL: URL = URL(string: "https://duckduckgo.com/ai")!
     var isAIChatEnabled: Bool = false
     var sessionTimerInMinutes: Int = 30
+    var aiChatAttachMoreTabsLimit: Int = 3
+    var aiChatAttachMoreTabsPromotionStartDate: Date?
     var isAIChatAddressBarUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsEnabled: Bool = false
     var isAIChatSearchInputUserSettingsDisabledByUser: Bool = false

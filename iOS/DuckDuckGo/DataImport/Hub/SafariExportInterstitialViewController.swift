@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import DesignResourcesKit
 import Core
+import PixelKit
 
 final class SafariExportInterstitialViewController: UIViewController {
 
@@ -44,7 +45,7 @@ final class SafariExportInterstitialViewController: UIViewController {
         view.backgroundColor = UIColor(designSystemColor: .background)
         presentationController?.delegate = self
         setupView()
-        Pixel.fire(pixel: .importHubSafariInterstitialDisplayed, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        PixelKit.fire(Pixel.Event.importHubSafariInterstitialDisplayed, options: .parameters(entryPoint.importHubEntryPointParameters))
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -57,7 +58,7 @@ final class SafariExportInterstitialViewController: UIViewController {
             onOpenSettingsToExport: { [weak self] in
                 guard let self else { return }
                 self.didRequestExport = true
-                Pixel.fire(pixel: .importHubSafariInterstitialExportTapped, withAdditionalParameters: self.entryPoint.importHubEntryPointParameters)
+                PixelKit.fire(Pixel.Event.importHubSafariInterstitialExportTapped, options: .parameters(self.entryPoint.importHubEntryPointParameters))
                 self.dismiss(animated: true) {
                     self.onRequestExport?()
                 }
@@ -99,7 +100,7 @@ final class SafariExportInterstitialViewController: UIViewController {
         }
 
         didFireCancelledPixel = true
-        Pixel.fire(pixel: .importHubSafariInterstitialCancelled, withAdditionalParameters: entryPoint.importHubEntryPointParameters)
+        PixelKit.fire(Pixel.Event.importHubSafariInterstitialCancelled, options: .parameters(entryPoint.importHubEntryPointParameters))
     }
 }
 

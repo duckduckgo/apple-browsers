@@ -51,10 +51,11 @@ import Foundation
 import CryptoKit
 import AppKit
 import SQLite3
-
+// swiftlint:disable identifier_name
 let SERVICE_DEFAULT = "DuckDuckGo Privacy Browser Encryption Key v2"
 let ACCOUNT_DEFAULT = "com.duckduckgo.macos.browser"
 let DB_DEFAULT = ("~/Library/Containers/com.duckduckgo.macos.browser.debug/Data/Library/Application Support/Database.sqlite" as NSString).expandingTildeInPath
+// swiftlint:enable identifier_name
 
 func die(_ msg: String) -> Never {
     FileHandle.standardError.write(Data(("error: " + msg + "\n").utf8))

@@ -46,9 +46,11 @@ final class PairingV2Coordinator {
     private let deviceType: String
     private let localKind: PairingV2DeviceKind
     private let flags: PairingV2RolloutFlags
+    private let makeKeyPair: () throws -> PairingV2KeyPair
     private weak var confirmationDelegate: PairingV2ConfirmationDelegate?
 
     private var stateMachine = PairingV2StateMachine()
+    private var entryRole: PairingV2EntryRole?
     private var localKeyPair: PairingV2KeyPair?
     private var peerChannelID: String?
     private var peerPublicKey: String?
@@ -64,7 +66,8 @@ final class PairingV2Coordinator {
          deviceType: String,
          localKind: PairingV2DeviceKind = .ddg,
          flags: PairingV2RolloutFlags,
-         confirmationDelegate: PairingV2ConfirmationDelegate? = nil) {
+         confirmationDelegate: PairingV2ConfirmationDelegate? = nil,
+         makeKeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() }) {
         self.syncService = syncService
         self.messageExchanger = messageExchanger
         self.messageCrypto = messageCrypto
@@ -73,6 +76,7 @@ final class PairingV2Coordinator {
         self.localKind = localKind
         self.flags = flags
         self.confirmationDelegate = confirmationDelegate
+        self.makeKeyPair = makeKeyPair
     }
 
     var state: PairingV2State {
@@ -80,12 +84,9 @@ final class PairingV2Coordinator {
     }
 
     func startPresenting() async throws -> PairingV2QRCodePayload {
-        let keyPair = try PairingV2KeyPairFactory.makeKeyPair()
+        prepareForNewSession(entryRole: .presenter)
+        let keyPair = try generateKeyPair(failureStage: .presenterGenerateCode)
         localKeyPair = keyPair
-        peerChannelID = nil
-        peerPublicKey = nil
-        lastProcessedSequence = 0
-        hasClosedLocalChannel = false
 
         let commands = stateMachine.handle(
             .presentCodeRequested(localClient: localClient(isPresenter: true), flags: flags)
@@ -96,12 +97,11 @@ final class PairingV2Coordinator {
     }
 
     func startScanning(qrPayload: PairingV2QRCodePayload) async throws {
-        let keyPair = try PairingV2KeyPairFactory.makeKeyPair()
+        prepareForNewSession(entryRole: .scanner)
+        let keyPair = try generateKeyPair(failureStage: .scannerGenerateKeys)
         localKeyPair = keyPair
         peerChannelID = qrPayload.channelId
         peerPublicKey = qrPayload.publicKey
-        lastProcessedSequence = 0
-        hasClosedLocalChannel = false
 
         let commands = stateMachine.handle(
             .scannedCode(.v2Linking(peerChannelID: qrPayload.channelId, localChannelID: keyPair.channelID), localClient: localClient(isPresenter: false), flags: flags)
@@ -118,13 +118,16 @@ final class PairingV2Coordinator {
 
         let messages: [PairingV2SequencedMessage]
         do {
-            messages = try await messageExchanger.fetchMessages(from: channelID, after: lastProcessedSequence)
-        } catch PairingV2Error.relayChannelUnavailable {
-            try await execute(stateMachine.handle(.failed(.relayChannelUnavailable)))
-            throw PairingV2Error.relayChannelUnavailable
-        } catch PairingV2Error.relayChannelExpired {
-            try await execute(stateMachine.handle(.failed(.relayChannelExpired)))
-            throw PairingV2Error.relayChannelExpired
+            messages = try await performRelayOperation(
+                at: failureStage(presenter: .presenterPollOwnChannel, scanner: .scannerPollOwnChannel)
+            ) {
+                try await messageExchanger.fetchMessages(from: channelID, after: lastProcessedSequence)
+            }
+        } catch let operationFailure as PairingV2OperationFailure {
+            if let stateMachineError = operationFailure.context.kind?.stateMachineError {
+                try await execute(stateMachine.handle(.failed(stateMachineError)))
+            }
+            throw operationFailure
         }
         for message in messages.sorted(by: { $0.seq < $1.seq }) {
             guard !hasFinishedPairing else {
@@ -254,29 +257,33 @@ final class PairingV2Coordinator {
 
     // swiftlint:disable:next cyclomatic_complexity
     private func execute(_ command: PairingV2Command) async throws {
+        let relayFailureStage = entryRole.flatMap { command.relayFailureStage(for: $0) }
+
         switch command {
         case .openV2Channel(let channelID):
             let channelID = try channelID ?? requiredLocalChannelID()
-            try await messageExchanger.openChannel(channelID)
+            try await performRelayOperation(at: relayFailureStage) {
+                try await messageExchanger.openChannel(channelID)
+            }
 
         case .sendHello:
             let keyPair = try requiredLocalKeyPair()
-            try await send(.hello(.init(channelId: keyPair.channelID, publicKey: keyPair.publicKey)))
+            try await send(.hello(.init(channelId: keyPair.channelID, publicKey: keyPair.publicKey)), failureStage: relayFailureStage)
 
         case .sendRecoveryCodeStatus(let status):
-            try await send(recoveryCodeStatusMessage(for: status))
+            try await send(recoveryCodeStatusMessage(for: status), failureStage: relayFailureStage)
 
         case .sendRecoveryCodeAwaitingConfirmation:
-            try await send(.recoveryCodeAwaitingConfirmation(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAwaitingConfirmation)))
+            try await send(.recoveryCodeAwaitingConfirmation(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAwaitingConfirmation)), failureStage: relayFailureStage)
 
         case .sendRecoveryCodeConfirmed:
-            try await send(.recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed)))
+            try await send(.recoveryCodeConfirmed(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed)), failureStage: relayFailureStage)
 
         case .sendRecoveryCodeDenied:
-            try await send(.recoveryCodeDenied(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeDenied)))
+            try await send(.recoveryCodeDenied(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeDenied)), failureStage: relayFailureStage)
 
         case .sendRecoveryCodeUnavailable:
-            try await send(.recoveryCodeUnavailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeUnavailable)))
+            try await send(.recoveryCodeUnavailable(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeUnavailable)), failureStage: relayFailureStage)
 
         case .requestHostConfirmation(let peerName, let peerKind):
             guard let confirmationDelegate else {
@@ -300,19 +307,20 @@ final class PairingV2Coordinator {
             let recoveryCode: String
             do {
                 recoveryCode = try await prepareRecoveryCode(credentialKind: credentialKind, purpose: purpose)
+            } catch let error as PairingV2Error {
+                try await handleRecoveryCodePreparationFailure(error)
             } catch {
-                do {
-                    try await execute(stateMachine.handle(.failed(.recoveryCodePreparationFailed)))
-                } catch {
-                    await closeLocalChannel()
-                }
-                throw PairingV2Error.recoveryCodePreparationFailed
+                let pairingError = pairingV2RecoveryCodePreparationError(for: error)
+                try await handleRecoveryCodePreparationFailure(pairingError)
             }
             try await execute(stateMachine.handle(.recoveryCodePrepared(recoveryCode)))
 
         case .sendRecoveryCode(let recoveryCode):
             do {
-                try await sendRecoveryCode(recoveryCode)
+                try await sendRecoveryCode(recoveryCode, failureStage: relayFailureStage)
+            } catch let operationFailure as PairingV2OperationFailure {
+                try await execute(stateMachine.handle(.failed(.recoveryCodeSendFailed)))
+                throw operationFailure
             } catch let error as PairingV2Error {
                 try await execute(stateMachine.handle(.failed(error)))
                 throw error
@@ -327,6 +335,12 @@ final class PairingV2Coordinator {
                 try await login(with: recoveryCode)
             } catch SyncError.accountAlreadyExists {
                 throw SyncError.accountAlreadyExists
+            } catch SyncError.unexpectedStatusCode(let statusCode) where statusCode == 401 {
+                try await execute(stateMachine.handle(.failed(.invalidCredentials)))
+                throw PairingV2Error.invalidCredentials
+            } catch SyncError.failedToWriteSecureStore {
+                try await execute(stateMachine.handle(.failed(.localStorageFailed)))
+                throw PairingV2Error.localStorageFailed
             } catch {
                 try await execute(stateMachine.handle(.failed(.loginFailed)))
                 throw PairingV2Error.loginFailed
@@ -337,13 +351,7 @@ final class PairingV2Coordinator {
             do {
                 try await upgradeThirdPartyAccount(with: recoveryCode)
             } catch let error as ThirdPartyAccountUpgradeError {
-                let pairingError: PairingV2Error
-                switch error {
-                case .nativeCredentialAlreadyPresent:
-                    pairingError = .nativeCredentialAlreadyPresent
-                default:
-                    pairingError = .upgradeFailed
-                }
+                let pairingError = pairingV2AccountUpgradeError(for: error)
                 try await execute(stateMachine.handle(.failed(pairingError)))
                 throw pairingError
             } catch let error as PairingV2Error {
@@ -364,7 +372,7 @@ final class PairingV2Coordinator {
         }
     }
 
-    private func send(_ message: PairingV2ApplicationMessage) async throws {
+    private func send(_ message: PairingV2ApplicationMessage, failureStage: PairingV2FailureStage?) async throws {
         guard let peerChannelID else {
             throw PairingV2Error.pairingSessionNotReady(.peerChannelID)
         }
@@ -373,7 +381,9 @@ final class PairingV2Coordinator {
         }
 
         let encryptedMessage = try messageCrypto.encrypt(message, recipientPublicKey: peerPublicKey, senderChannelID: try requiredLocalChannelID())
-        try await messageExchanger.send([encryptedMessage], to: peerChannelID)
+        try await performRelayOperation(at: failureStage) {
+            try await messageExchanger.send([encryptedMessage], to: peerChannelID)
+        }
     }
 
     private func recoveryCodeStatusMessage(for status: PairingV2PeerStatus) -> PairingV2ApplicationMessage {
@@ -408,15 +418,19 @@ final class PairingV2Coordinator {
             return
         }
 
-        try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
+        do {
+            try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
+        } catch {
+            throw PairingV2Error.accountCreationFailed
+        }
         await confirmationDelegate?.pairingV2CoordinatorDidCreateSyncAccount(credentialKind: credentialKind)
     }
 
-    private func sendRecoveryCode(_ recoveryCode: String) async throws {
+    private func sendRecoveryCode(_ recoveryCode: String, failureStage: PairingV2FailureStage?) async throws {
         let response = PairingV2ApplicationMessage.recoveryCodeResponse(
             .init(recoveryCode: recoveryCode)
         )
-        try await send(response)
+        try await send(response, failureStage: failureStage)
     }
 
     private func login(with recoveryCode: String) async throws {
@@ -440,8 +454,88 @@ final class PairingV2Coordinator {
         }
     }
 
+    private func pairingV2RecoveryCodePreparationError(for error: Error) -> PairingV2Error {
+        guard let error = error as? ScopedAccessCredentialError else {
+            return .recoveryCodePreparationFailed
+        }
+
+        switch error {
+        case .missingThirdPartyCredential:
+            return .missingThirdPartyCredential
+        case .undecryptableThirdPartyCredential:
+            return .undecryptableThirdPartyCredential
+        case .accountExtendFailed:
+            return .accountExtendFailed
+        }
+    }
+
+    private func handleRecoveryCodePreparationFailure(_ error: PairingV2Error) async throws -> Never {
+        do {
+            try await execute(stateMachine.handle(.failed(error)))
+        } catch let relayFailure as PairingV2OperationFailure {
+            await closeLocalChannel()
+            throw relayFailure
+        } catch {
+            await closeLocalChannel()
+        }
+        throw error
+    }
+
+    private func pairingV2AccountUpgradeError(for error: ThirdPartyAccountUpgradeError) -> PairingV2Error {
+        switch error {
+        case .nativeCredentialAlreadyPresent:
+            return .nativeCredentialAlreadyPresent
+        case .noUsableThirdPartyProtectedKeys:
+            return .missingThirdPartyKey
+        case .localStorageFailed:
+            return .localStorageFailed
+        case .invalidCredentials:
+            return .invalidCredentials
+        case .finalNativeLoginFailed,
+                .invalidFinalNativeLoginResponse:
+            return .loginFailed
+        default:
+            return .upgradeFailed
+        }
+    }
+
     private func localClient(isPresenter: Bool) -> PairingV2LocalClient {
         PairingV2LocalClient(name: deviceName, kind: localKind, hasAccount: syncService.account != nil, isPresenter: isPresenter, userId: syncService.account?.userId)
+    }
+
+    private func prepareForNewSession(entryRole: PairingV2EntryRole) {
+        self.entryRole = entryRole
+        localKeyPair = nil
+        peerChannelID = nil
+        peerPublicKey = nil
+        lastProcessedSequence = 0
+        hasClosedLocalChannel = false
+    }
+
+    private func generateKeyPair(failureStage: PairingV2FailureStage) throws -> PairingV2KeyPair {
+        do {
+            return try makeKeyPair()
+        } catch {
+            throw PairingV2OperationFailure(generationStage: failureStage, underlyingError: error)
+        }
+    }
+
+    private func failureStage(presenter: PairingV2FailureStage, scanner: PairingV2FailureStage) -> PairingV2FailureStage? {
+        entryRole?.failureStage(presenter: presenter, scanner: scanner)
+    }
+
+    private func performRelayOperation<Result>(at failureStage: PairingV2FailureStage?,
+                                               operation: () async throws -> Result) async throws -> Result {
+        do {
+            return try await operation()
+        } catch let operationFailure as PairingV2OperationFailure {
+            throw operationFailure
+        } catch {
+            guard let failureStage, let operationFailure = PairingV2OperationFailure(relayError: error, stage: failureStage) else {
+                throw error
+            }
+            throw operationFailure
+        }
     }
 
     private func requiredLocalKeyPair() throws -> PairingV2KeyPair {
@@ -472,6 +566,68 @@ final class PairingV2Coordinator {
             return true
         default:
             return false
+        }
+    }
+}
+
+enum PairingV2EntryRole {
+    case presenter
+    case scanner
+
+    func failureStage(presenter: PairingV2FailureStage, scanner: PairingV2FailureStage) -> PairingV2FailureStage {
+        switch self {
+        case .presenter:
+            return presenter
+        case .scanner:
+            return scanner
+        }
+    }
+}
+
+extension PairingV2Command {
+
+    func relayFailureStage(for entryRole: PairingV2EntryRole) -> PairingV2FailureStage? {
+        switch self {
+        case .openV2Channel:
+            return entryRole.failureStage(presenter: .presenterOpenOwnChannel, scanner: .scannerOpenOwnChannel)
+        case .sendHello:
+            guard case .scanner = entryRole else {
+                return nil
+            }
+            return .scannerSendHello
+        case .sendRecoveryCodeStatus:
+            return entryRole.failureStage(presenter: .presenterSendPeerStatus, scanner: .scannerSendPeerStatus)
+        case .sendRecoveryCodeAwaitingConfirmation,
+                .sendRecoveryCodeConfirmed:
+            return entryRole.failureStage(presenter: .presenterSendConfirmationStatus, scanner: .scannerSendConfirmationStatus)
+        case .sendRecoveryCodeDenied:
+            return entryRole.failureStage(presenter: .presenterSendRecoveryDenied, scanner: .scannerSendRecoveryDenied)
+        case .sendRecoveryCode:
+            return entryRole.failureStage(presenter: .presenterSendRecoveryCode, scanner: .scannerSendRecoveryCode)
+        case .sendRecoveryCodeUnavailable:
+            return entryRole.failureStage(presenter: .presenterSendRecoveryUnavailable, scanner: .scannerSendRecoveryUnavailable)
+        case .stopPolling,
+                .requestHostConfirmation,
+                .requestJoinerConfirmation,
+                .prepareRecoveryCode,
+                .loginWithRecoveryCode,
+                .upgradeThirdPartyAccountWithRecoveryCode,
+                .abort:
+            return nil
+        }
+    }
+}
+
+private extension PairingV2FailureKind {
+
+    var stateMachineError: PairingV2Error? {
+        switch self {
+        case .unavailable:
+            return .relayChannelUnavailable
+        case .expired:
+            return .relayChannelExpired
+        case .httpError, .networkError:
+            return nil
         }
     }
 }

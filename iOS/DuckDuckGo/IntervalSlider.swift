@@ -83,7 +83,7 @@ struct IntervalSliderRepresentable: UIViewRepresentable {
 
     func makeUIView(context: Context) -> IntervalSlider {
         let slider = IntervalSlider(frame: .zero)
-        slider.minimumTrackTintColor = UIColor(designSystemColor: .accent)
+        slider.minimumTrackTintColor = UIColor(designSystemColor: .accentPrimary)
         slider.maximumTrackTintColor = UIColor.systemGray3
         slider.steps = steps
         slider.minimumValue = Float(0)

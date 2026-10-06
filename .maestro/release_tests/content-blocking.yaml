@@ -15,11 +15,6 @@ tags:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
-- inputText: "https://privacy-test-pages.site/"
-- pressKey: Enter
-
-- tapOn:
-    id: "searchEntry"
 - inputText: "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html"
 - pressKey: Enter
 
@@ -40,8 +35,7 @@ tags:
 - assertVisible: "Don't Send"
 - tapOn: "Don't Send"
 
-- runFlow: ../shared/pull_to_refresh.yaml
-- extendedWaitUntil: 
+- extendedWaitUntil:
     notVisible: "Nonsense text that won't exist"
     timeout: 2000
 
@@ -49,4 +43,49 @@ tags:
 
 - tapOn: "Privacy Icon"
 - assertVisible: "Protections are OFF for this site"
+- tapOn: "Done"
+
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element:
+      text: "Enable Privacy Protection"
+- tapOn: "Enable Privacy Protection"
+- assertVisible: ".*Privacy Protection enabled for.*"
+- assertVisible: "Undo"
+- extendedWaitUntil:
+    notVisible: "Undo"
+    timeout: 8000
+- tapOn: "Privacy Icon"
+- assertVisible: "Protections are ON for this site"
+- assertVisible: "We blocked Google Ads (Google) from loading tracking requests on this page."
+- tapOn: "Done"
+
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element:
+      text: "Disable Privacy Protection"
+- tapOn: "Disable Privacy Protection"
+- assertVisible: ".*Privacy Protection disabled for.*"
+- assertVisible: "Undo"
+- extendedWaitUntil:
+    notVisible: "Undo"
+    timeout: 8000
+- tapOn: "Privacy Icon"
+- assertVisible: "Protections are OFF for this site"
+- assertNotVisible: "We blocked Google Ads (Google) from loading tracking requests on this page."
+- tapOn: "Done"
+
+- tapOn: "Browsing menu"
+- scrollUntilVisible:
+    element:
+      text: "Enable Privacy Protection"
+- tapOn: "Enable Privacy Protection"
+- assertVisible: ".*Privacy Protection enabled for.*"
+- tapOn: "Undo"
+- extendedWaitUntil:
+    notVisible: "Undo"
+    timeout: 8000
+- tapOn: "Privacy Icon"
+- assertVisible: "Protections are OFF for this site"
+- assertNotVisible: "We blocked Google Ads (Google) from loading tracking requests on this page."
 

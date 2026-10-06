@@ -57,6 +57,10 @@ public extension Color {
         self = palette.paletteDefinition.dynamicColor(for: designSystemColor).color
     }
 
+    init(singleUseColor: SingleUseColor, palette: ColorPalette = DesignSystemPalette.current) {
+        self = palette.paletteDefinition.dynamicColor(for: singleUseColor).color
+    }
+
     init(baseColor: BaseColor, palette: ColorPalette = DesignSystemPalette.current) {
         self = palette.paletteDefinition.color(for: baseColor)
     }
@@ -65,6 +69,10 @@ public extension Color {
 public extension NSColor {
     convenience init(designSystemColor: DesignSystemColor, palette: ColorPalette = DesignSystemPalette.current) {
         self.init(name: nil, dynamicProvider: palette.paletteDefinition.dynamicColor(for: designSystemColor).dynamicProvider)
+    }
+
+    convenience init(singleUseColor: SingleUseColor, palette: ColorPalette = DesignSystemPalette.current) {
+        self.init(name: nil, dynamicProvider: palette.paletteDefinition.dynamicColor(for: singleUseColor).dynamicProvider)
     }
 
     convenience init(baseColor: BaseColor, palette: ColorPalette = DesignSystemPalette.current) {

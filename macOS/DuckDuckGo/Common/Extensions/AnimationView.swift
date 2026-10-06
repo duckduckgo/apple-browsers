@@ -30,5 +30,4 @@ extension LottieAnimationView {
         self.init(animation: animation, imageProvider: imageProvider)
         identifier = NSUserInterfaceItemIdentifier(rawValue: animationName)
     }
-
 }

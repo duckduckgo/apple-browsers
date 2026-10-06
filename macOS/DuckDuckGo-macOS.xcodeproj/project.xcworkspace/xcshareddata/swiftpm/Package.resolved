@@ -34,7 +34,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
         "branch" : "pr-releases/alavrenchuk/ntp-tos",
-        "revision" : "051fe2f9cde20ebf24d2332a01cf22212910889a"
+        "revision" : "61cfc79f23c6cb826b5a81625f61893489dd6f8e"
       }
     },
     {

@@ -84,17 +84,8 @@ struct Foreground: ForegroundHandling {
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
                                     isFirstForeground: isFirstForeground)
-        let daxDialogsManager = appDependencies.mainCoordinator.controller.daxDialogsManager
-        let idleReturnEligibilityManager = IdleReturnEligibilityManager(
-            featureFlagger: appDependencies.featureFlagger,
-            keyValueStore: appDependencies.services.keyValueFileStoreService.keyValueFilesStore,
-            privacyConfigurationManager: appDependencies.services.contentBlockingService.common.privacyConfigurationManager,
-            isStillOnboarding: { daxDialogsManager.isStillOnboarding() }
-        )
-        let idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager,
-                                                     lastBackgroundDateStorage: lastBackgroundDateStorage)
         appReturnInstrumentation = DefaultAppReturnInstrumentation(
-            eligibilityManager: idleReturnEligibilityManager,
+            eligibilityManager: appDependencies.idleReturnEligibilityManager,
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
         )
         launchActionHandler = LaunchActionHandler(
@@ -103,7 +94,7 @@ struct Foreground: ForegroundHandling {
             userActivityHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
             launchSourceService: appDependencies.launchSourceManager,
-            idleReturnEvaluator: idleReturnEvaluator,
+            idleReturnEvaluator: appDependencies.idleReturnEvaluator,
             idleReturnDelegate: appDependencies.mainCoordinator
         )
         interactionManager = UIInteractionManager(

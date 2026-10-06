@@ -51,6 +51,8 @@ struct Launching: LaunchingHandling {
     private let fireproofing: Fireproofing = UserDefaultsFireproofing()
     private let favicons: Favicons
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let idleReturnEligibilityManager: IdleReturnEligibilityManaging
+    private let idleReturnEvaluator: IdleReturnEvaluating
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
 
@@ -233,6 +235,10 @@ struct Launching: LaunchingHandling {
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
+        self.idleReturnEligibilityManager = idleReturnEligibilityManager
+        self.idleReturnEvaluator = IdleReturnEvaluator(eligibilityManager: idleReturnEligibilityManager,
+                                                       lastBackgroundDateStorage: lastBackgroundDateStorage)
+
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -336,6 +342,7 @@ struct Launching: LaunchingHandling {
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
                                               daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                              idleReturnEligibilityManager: idleReturnEligibilityManager,
                                               reportingService: reportingService,
                                               variantManager: configuration.atbAndVariantConfiguration.variantManager,
                                               subscriptionService: subscriptionService,
@@ -553,7 +560,9 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             voiceSearchHelper: voiceSearchHelper,
             appSettings: appSettings,
-            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger)
+            backgroundTaskManager: BackgroundTaskManager(featureFlagger: featureFlagger),
+            idleReturnEligibilityManager: idleReturnEligibilityManager,
+            idleReturnEvaluator: idleReturnEvaluator
         )
     }
 

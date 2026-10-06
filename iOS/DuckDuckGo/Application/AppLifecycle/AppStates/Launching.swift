@@ -343,6 +343,7 @@ struct Launching: LaunchingHandling {
                                               remoteMessagingService: remoteMessagingService,
                                               daxDialogs: configuration.onboardingConfiguration.daxDialogs,
                                               idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                              idleReturnEvaluator: idleReturnEvaluator,
                                               reportingService: reportingService,
                                               variantManager: configuration.atbAndVariantConfiguration.variantManager,
                                               subscriptionService: subscriptionService,

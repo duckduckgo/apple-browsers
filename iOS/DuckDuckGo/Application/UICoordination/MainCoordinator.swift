@@ -113,6 +113,7 @@ final class MainCoordinator {
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
          idleReturnEligibilityManager: IdleReturnEligibilityManaging,
+         idleReturnEvaluator: IdleReturnEvaluating,
          reportingService: ReportingService,
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
@@ -297,6 +298,7 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         isFloatingUIFeatureEnabledForCurrentLaunch: isFloatingUIFeatureEnabledForCurrentLaunch,
                                         idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                        idleReturnEvaluator: idleReturnEvaluator,
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
@@ -942,6 +944,15 @@ extension MainCoordinator: UserActivityHandling {
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
+        // The launch already landed this return on the NTP and the render already started its
+        // session; anything else here would cancel that session and record the return as untreated.
+        // The page is already showing, so it completes as kept — which hands the keyboard to the
+        // same app-open handling as any other return that finds the NTP in place.
+        if controller.consumeIdleReturnTreatmentAppliedAtLaunch() {
+            completion(.keptCurrent)
+            return
+        }
+
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             completion(.suppressed)

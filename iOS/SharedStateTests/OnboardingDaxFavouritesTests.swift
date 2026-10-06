@@ -36,6 +36,10 @@ import Combine
 import PrivacyConfig
 import AIChatTestingUtilities
 
+private final class MockIdleReturnEvaluatorForMainVC: IdleReturnEvaluating {
+    func evaluateReturn() -> IdleReturnOutcome { .ordinary(timeAwayMs: nil) }
+}
+
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
     func isFeatureAvailable() -> Bool { false }
     func isEligibleForNTPAfterIdle() -> Bool { false }
@@ -183,6 +187,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
                 featureFlagger: featureFlagger,
                 idleReturnEligibilityManager: MockIdleReturnEligibilityManagerForMainVC(),
+                idleReturnEvaluator: MockIdleReturnEvaluatorForMainVC(),
                 afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: self.keyValueStore),
                 lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: self.keyValueStore),
                 syncAutoRestoreHandler: syncAutoRestoreHandler,

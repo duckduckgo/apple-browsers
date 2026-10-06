@@ -31,6 +31,7 @@ import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
@@ -862,7 +863,9 @@ extension AppDelegate {
 
     @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
-        SyncPromoManager().resetPromos()
+        let legacyStorage = KeyedStorage<SyncPromoLegacySettings>(storage: UserDefaults.standard)
+        legacyStorage.bookmarksDismissedDate = nil
+        legacyStorage.passwordsDismissedDate = nil
         promoService?.undismiss(promoId: PromoServiceFactory.syncSetupBookmarksPromoID, clearHistory: true)
         promoService?.undismiss(promoId: PromoServiceFactory.syncSetupAutofillPromoID, clearHistory: true)
         DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)

@@ -26,13 +26,9 @@ import Persistence
 import PrivacyConfig
 
 protocol SyncPromoManaging {
-    func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) -> Bool
-    @MainActor func goToSyncSettings(for touchpoint: SyncPromoManager.Touchpoint)
-    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint)
-    func resetPromos()
-
     var isPromoActive: Bool { get }
     var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
+    @MainActor func goToSyncSettings(for touchpoint: SyncPromoManager.Touchpoint)
     @MainActor func promoDismissed()
 }
 
@@ -88,7 +84,6 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
     }
 
     public struct SyncPromoManagerNotifications {
-        public static let didDismissPromo = NSNotification.Name(rawValue: "com.duckduckgo.syncPromo.didDismiss")
         public static let didGoToSync = NSNotification.Name(rawValue: "com.duckduckgo.syncPromo.didGoToSync")
     }
 
@@ -101,8 +96,7 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
         public static let syncPromoIdentitiesSource = "promotion_identities"
     }
 
-    /// `nil` for an instance built with the legacy initializer, which takes no part in the promo queue.
-    private let content: SyncPromoContent?
+    private let content: SyncPromoContent
     private let featureFlagger: FeatureFlagger
     private let syncService: DDGSyncing?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -118,14 +112,6 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
     private let eligibilityQueue = DispatchQueue(label: "com.duckduckgo.syncPromoManager.eligibility", qos: .utility)
     private var cancellables = Set<AnyCancellable>()
     private var didStartSetupFromPromo = false
-
-    private let autofillPrefs = AutofillPreferences()
-
-    @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
-    private var syncPromoBookmarksDismissed: Date?
-
-    @UserDefaultsWrapper(key: .syncPromoPasswordsDismissed, defaultValue: nil)
-    private var syncPromoPasswordsDismissed: Date?
 
     /// Builds an instance that serves as the promo queue delegate for `content`.
     /// - Parameters:
@@ -155,21 +141,6 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
         self.recordResult = recordResult
 
         subscribeToEligibilityChanges()
-    }
-
-    init(syncService: DDGSyncing? = NSApp.delegateTyped.syncService,
-         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager) {
-        self.content = nil
-        self.featureFlagger = NSApp.delegateTyped.featureFlagger
-        self.syncService = syncService
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.contentCountProvider = { 0 }
-        self.isDuckDuckGoPasswordManager = { false }
-        self.legacyStorage = KeyedStorage(storage: UserDefaults.standard)
-        self.openSyncSettings = {
-            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
-        }
-        self.recordResult = { _, _ in }
     }
 
     // MARK: - Promo queue eligibility
@@ -214,7 +185,7 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
 
     @MainActor
     private func handleAuthStateChange(_ authState: SyncAuthState) {
-        if Self.isSyncTurnedOn(authState), didStartSetupFromPromo, let content {
+        if Self.isSyncTurnedOn(authState), didStartSetupFromPromo {
             // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
             didStartSetupFromPromo = false
             recordResult(content.promoID, .actioned)
@@ -227,7 +198,7 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        guard let content, featureFlagger.isFeatureOn(content.promoFlag) else { return false }
+        guard featureFlagger.isFeatureOn(content.promoFlag) else { return false }
 
         let privacyConfig = privacyConfigurationManager.privacyConfig
         guard let syncService,
@@ -283,7 +254,6 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
 
     @MainActor
     func promoDismissed() {
-        assert(content != nil, "promoDismissed() requires a promo queue instance")
         resolve(with: .ignored())
     }
 
@@ -293,8 +263,6 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
             legacyStorage.bookmarksDismissedDate != nil
         case .autofill:
             legacyStorage.passwordsDismissedDate != nil
-        case nil:
-            false
         }
     }
 
@@ -307,56 +275,10 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
         continuation.resume(returning: result)
     }
 
-    func shouldPresentPromoFor(_ touchpoint: Touchpoint) -> Bool {
-        guard let syncService = syncService else {
-            return false
-        }
-
-        switch touchpoint {
-        case .bookmarks:
-            if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.bookmarks),
-               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
-               syncService.authState == .inactive,
-               syncPromoBookmarksDismissed == nil {
-                return true
-            }
-        case .passwords, .autofill:
-            if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.passwords),
-               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
-               autofillPrefs.passwordManager == .duckduckgo,
-               syncService.authState == .inactive,
-               syncPromoPasswordsDismissed == nil {
-                return true
-            }
-        case .creditCards:
-            if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.passwords),
-               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards),
-               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
-               autofillPrefs.passwordManager == .duckduckgo,
-               syncService.authState == .inactive,
-               syncPromoPasswordsDismissed == nil {
-                return true
-            }
-        case .identities:
-            if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.passwords),
-               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities),
-               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
-               autofillPrefs.passwordManager == .duckduckgo,
-               syncService.authState == .inactive,
-               syncPromoPasswordsDismissed == nil {
-                return true
-            }
-        }
-
-        return false
-    }
-
     @MainActor func goToSyncSettings(for touchpoint: Touchpoint) {
-        if let content {
-            assert(content.contains(touchpoint), "\(touchpoint) doesn't belong to the \(content) sync promo")
-            // Tapping the CTA alone doesn't resolve the promo; it's actioned only if sync turns on in this session.
-            didStartSetupFromPromo = true
-        }
+        assert(content.contains(touchpoint), "\(touchpoint) doesn't belong to the \(content) sync promo")
+        // Tapping the CTA alone doesn't resolve the promo; it's actioned only if sync turns on in this session.
+        didStartSetupFromPromo = true
 
         openSyncSettings()
 
@@ -379,21 +301,5 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
                 Constants.syncPromoSourceKey: source
             ])
         }
-    }
-
-    func dismissPromoFor(_ touchpoint: Touchpoint) {
-        switch touchpoint {
-        case .bookmarks:
-            syncPromoBookmarksDismissed = Date()
-            NotificationCenter.default.post(name: SyncPromoManagerNotifications.didDismissPromo, object: nil)
-        default:
-            syncPromoPasswordsDismissed = Date()
-        }
-    }
-
-    func resetPromos() {
-        syncPromoBookmarksDismissed = nil
-        syncPromoPasswordsDismissed = nil
-        NotificationCenter.default.post(name: SyncPromoManagerNotifications.didDismissPromo, object: nil)
     }
 }

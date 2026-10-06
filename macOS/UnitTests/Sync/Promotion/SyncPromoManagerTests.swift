@@ -42,8 +42,6 @@ final class SyncPromoManagerTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        UserDefaultsWrapper<Any>.clearAll()
-
         privacyConfigurationManager.privacyConfig = config
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
         featureFlagger = MockFeatureFlagger()
@@ -58,7 +56,6 @@ final class SyncPromoManagerTests: XCTestCase {
 
     @MainActor
     override func tearDown() {
-        UserDefaultsWrapper<Any>.clearAll()
         syncService = nil
         config = nil
         privacyConfigurationManager = nil
@@ -66,140 +63,6 @@ final class SyncPromoManagerTests: XCTestCase {
         legacyStorage = nil
         recordedResults = []
         customAssert = nil
-    }
-
-    func testWhenAllConditionsMetThenShouldPresentPromoForBookmarks() {
-        config.isSubfeatureEnabledCheck = { _, _ in
-            return true
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.bookmarks))
-    }
-
-    func testWhenSyncPromotionBookmarksFeatureFlagDisabledThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureEnabledCheck = { subfeature, _ in
-            if subfeature.rawValue == SyncSubfeature.level0ShowSync.rawValue {
-                return true
-            }
-            return false
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks))
-    }
-
-    func testWhenSyncFeatureFlagDisabledThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureEnabledCheck = { subfeature, _ in
-            if subfeature.rawValue == SyncPromotionSubfeature.bookmarks.rawValue {
-                return true
-            }
-            return false
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks))
-    }
-
-    func testWhenSyncServiceAuthStateActiveThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureEnabledCheck = { _, _ in
-            return true
-        }
-        syncService.authState = .active
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks))
-    }
-
-    func testWhenSyncPromoBookmarksDismissedThenShouldNotPresentPromoForBookmarks() {
-        config.isSubfeatureEnabledCheck = { _, _ in
-            return true
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-        syncPromoManager.dismissPromoFor(.bookmarks)
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.bookmarks))
-    }
-
-    func testWhenAllConditionsMetThenShouldPresentPromoForPasswords() {
-        config.isSubfeatureEnabledCheck = { _, _ in
-            return true
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertTrue(syncPromoManager.shouldPresentPromoFor(.passwords))
-    }
-
-    func testWhenSyncPromotionPasswordsFeatureFlagDisabledThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureEnabledCheck = { subfeature, _ in
-            if subfeature.rawValue == SyncPromotionSubfeature.passwords.rawValue {
-                return false
-            }
-            return true
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords))
-    }
-
-    func testWhenSyncFeatureFlagDisabledThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureEnabledCheck = { subfeature, _ in
-            if subfeature.rawValue == SyncSubfeature.level0ShowSync.rawValue {
-                return false
-            }
-            return true
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords))
-    }
-
-    func testWhenSyncServiceAuthStateActiveThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureEnabledCheck = { _, _ in
-            return true
-        }
-        syncService.authState = .active
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords))
-    }
-
-    func testWhenSyncPromoPasswordsDismissedThenShouldNotPresentPromoForPasswords() {
-        config.isSubfeatureEnabledCheck = { _, _ in
-            return true
-        }
-        syncService.authState = .inactive
-
-        let syncPromoManager = SyncPromoManager(syncService: syncService, privacyConfigurationManager: privacyConfigurationManager)
-        syncPromoManager.resetPromos()
-        syncPromoManager.dismissPromoFor(.passwords)
-
-        XCTAssertFalse(syncPromoManager.shouldPresentPromoFor(.passwords))
     }
 
     // MARK: - Promo queue eligibility

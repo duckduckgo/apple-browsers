@@ -36,7 +36,7 @@ public final class PageSignalsCollector {
         self.tld = tld
     }
 
-    public func startObservingSignals(for url: URL?) {
+    public func startCollectingSignals(for url: URL?) {
         let domain = tld.eTLDPlus1(url: url)
         signals = PageSignals(host: domain)
     }
@@ -47,7 +47,7 @@ public final class PageSignalsCollector {
             return
         }
 
-        startObservingSignals(for: url)
+        startCollectingSignals(for: url)
         recordResourceFailure(resourceLoadError, for: url)
     }
 

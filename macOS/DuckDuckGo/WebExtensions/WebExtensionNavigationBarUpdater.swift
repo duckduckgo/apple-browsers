@@ -35,7 +35,7 @@ import WebKit
 /// it turns back on. When the closure returns `nil`, the updater removes every button.
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
+final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NSMenuDelegate {
 
     private enum Constants {
         static let buttonSize: CGFloat = 28
@@ -183,6 +183,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         button.toolTip = context.webExtension.displayActionLabel ?? context.webExtension.displayName
         button.target = self
         button.action = #selector(toolbarButtonClicked)
+        button.menu = ExtensionButtonMenu(button: button, context: context, delegate: self)
 
         // The extension supplies its own artwork, so the button keeps no tint color.
         button.image = context.webExtension.actionIcon(for: Constants.iconSize)
@@ -201,6 +202,27 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private func applyThemeStyle(theme: ThemeStyleProviding, to button: MouseOverButton) {
         button.mouseOverColor = theme.colorsProvider.buttonMouseOverColor
         button.cornerRadius = theme.toolbarButtonsCornerRadius
+    }
+
+    /// The right-click menu of an extension button: the toolbar's own menu, plus, for internal users, the
+    /// extension's API compatibility log. A button with a menu of its own would otherwise hide the toolbar's.
+    private final class ExtensionButtonMenu: NSMenu {
+        weak var button: NSView?
+        /// The extension's name and version as the API compatibility log records them.
+        let extensionName: String
+        let version: String
+
+        init(button: NSView, context: WKWebExtensionContext, delegate: NSMenuDelegate) {
+            self.button = button
+            self.extensionName = WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.displayName)
+            self.version = WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.version)
+            super.init(title: "")
+            self.delegate = delegate
+        }
+
+        required init(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
     }
 
     // MARK: - Actions
@@ -237,5 +259,44 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         """)
 
         context.performAction(for: nil)
+    }
+
+    @objc private func showAPICompatibilityLog(sender: NSMenuItem) {
+        guard let menu = sender.menu as? ExtensionButtonMenu else { return }
+        WebExtensionAPICompatibilityLogPresenter.shared.show(extensionName: menu.extensionName, version: menu.version)
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard let menu = menu as? ExtensionButtonMenu else { return }
+        menu.removeAllItems()
+
+        // The toolbar fills in its own items, whose actions reach it through the responder chain.
+        if let toolbarMenu = menu.button?.enclosingMenu {
+            toolbarMenu.delegate?.menuNeedsUpdate?(menu)
+        }
+
+        guard NSApp.delegateTyped.internalUserDecider.isInternalUser else { return }
+        if !menu.items.isEmpty {
+            menu.addItem(.separator())
+        }
+        let item = NSMenuItem(title: "JavaScript API Compatibility…", action: #selector(showAPICompatibilityLog))
+        item.target = self
+        menu.addItem(item)
+    }
+}
+
+private extension NSView {
+    /// The menu of the nearest ancestor that has one.
+    var enclosingMenu: NSMenu? {
+        var view = superview
+        while let current = view {
+            if let menu = current.menu {
+                return menu
+            }
+            view = current.superview
+        }
+        return nil
     }
 }

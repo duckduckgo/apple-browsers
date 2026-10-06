@@ -1161,21 +1161,3 @@ extension DistributedNavigationDelegate {
     }
 
 }
-
-#if PRIVATE_PAGE_SIGNALS_ENABLED
-// MARK: - Page signals
-
-extension DistributedNavigationDelegate {
-
-    @MainActor
-    @objc(_webView:contentRuleListWithIdentifier:performedAction:forURL:)
-    public func webView(_ webView: WKWebView, contentRuleListWithIdentifier identifier: String, performedAction action: NSObject, forURL url: URL) {
-        let action = ContentRuleListAction(webKitAction: action)
-
-        for responder in (startedNavigation?.navigationResponders ?? responders) {
-            responder.navigationDidPerformContentRuleListAction(action, forURL: url, ruleListIdentifier: identifier)
-        }
-    }
-
-}
-#endif

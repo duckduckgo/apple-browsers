@@ -20,7 +20,7 @@
 import AppKit
 import DataBrokerProtectionCore
 
-/// A read-only preview of the original page in the PIR background agent.
+/// A snapshot of the agent's page with a shortcut to take control.
 @MainActor
 public final class DBPLivePreviewViewController: NSViewController {
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
@@ -84,6 +84,16 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderLabel)
 
+        snapshotButton.title = ""
+        snapshotButton.isBordered = false
+        snapshotButton.target = self
+        snapshotButton.action = #selector(takeControlPressed)
+        snapshotButton.isEnabled = false
+        snapshotButton.setAccessibilityLabel("Take Control of broker page")
+        snapshotButton.toolTip = "Click to Take Control"
+        snapshotButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(snapshotButton)
+
         progressLabel.font = .systemFont(ofSize: 12, weight: .medium)
         progressLabel.textColor = .secondaryLabelColor
         progressLabel.lineBreakMode = .byTruncatingTail
@@ -124,6 +134,10 @@ public final class DBPLivePreviewViewController: NSViewController {
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
             imageView.widthAnchor.constraint(equalToConstant: 300),
             imageView.heightAnchor.constraint(equalToConstant: 300),
+            snapshotButton.topAnchor.constraint(equalTo: imageView.topAnchor),
+            snapshotButton.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
+            snapshotButton.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
+            snapshotButton.bottomAnchor.constraint(equalTo: imageView.bottomAnchor),
             takeControlButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10),
             takeControlButton.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
             takeControlButton.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
@@ -175,6 +189,8 @@ public final class DBPLivePreviewViewController: NSViewController {
     private let scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)?
     private let takeControl: (@MainActor (String) async throws -> Bool)?
     private let takeControlButton = NSButton()
+    private let snapshotButton = NSButton()
+    private var controlRequestInProgress = false
     private var operationID: String?
     private let progressLabel = NSTextField(labelWithString: "Scan progress unavailable")
     private let progressSpinner = NSProgressIndicator()
@@ -252,9 +268,11 @@ public final class DBPLivePreviewViewController: NSViewController {
         }
         operationID = frame.operationID
         takeControlButton.title = frame.isManualControl ? "You have control" : "Take Control"
-        takeControlButton.isEnabled = frame.canTakeControl && takeControl != nil
+        takeControlButton.isEnabled = frame.canTakeControl && takeControl != nil && !controlRequestInProgress
+        snapshotButton.isEnabled = takeControlButton.isEnabled
         brokerLabel.stringValue = frame.brokerName
-        activityLabel.stringValue = frame.activity
+        activityLabel.stringValue = frame.needsAssistance ? "Help needed: complete the CAPTCHA" : frame.activity
+        activityLabel.textColor = frame.needsAssistance ? .systemOrange : .secondaryLabelColor
         imageView.image = image
         updateFavicon(frame.faviconURL)
         placeholderLabel.isHidden = true
@@ -268,19 +286,24 @@ public final class DBPLivePreviewViewController: NSViewController {
         progressSpinner.stopAnimation(nil)
         operationID = nil
         takeControlButton.isEnabled = false
+        snapshotButton.isEnabled = false
         takeControlButton.title = "Take Control"
         updateFavicon(nil)
         brokerLabel.stringValue = "PIR activity"
         activityLabel.stringValue = message
+        activityLabel.textColor = .secondaryLabelColor
         imageView.image = nil
         placeholderLabel.stringValue = "Waiting for a broker page"
         placeholderLabel.isHidden = false
     }
 
     @objc private func takeControlPressed() {
-        guard let operationID, let takeControl else { return }
+        guard takeControlButton.isEnabled, let operationID, let takeControl else { return }
+        controlRequestInProgress = true
         takeControlButton.isEnabled = false
+        snapshotButton.isEnabled = false
         Task { @MainActor [weak self] in
+            defer { self?.controlRequestInProgress = false }
             do {
                 guard try await takeControl(operationID) else {
                     self?.activityLabel.stringValue = "This step is no longer available"

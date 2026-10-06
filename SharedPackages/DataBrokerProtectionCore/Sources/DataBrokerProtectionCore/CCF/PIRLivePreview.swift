@@ -28,9 +28,10 @@ public struct PIRLivePreviewFrame: Sendable {
     public let faviconURL: URL?
     public let canTakeControl: Bool
     public let isManualControl: Bool
+    public let needsAssistance: Bool
 
     public init(imageData: Data, operationID: UUID, brokerName: String, activity: String, faviconURL: URL? = nil,
-                canTakeControl: Bool = false, isManualControl: Bool = false) {
+                canTakeControl: Bool = false, isManualControl: Bool = false, needsAssistance: Bool = false) {
         self.imageData = imageData
         self.operationID = operationID
         self.brokerName = brokerName
@@ -38,6 +39,7 @@ public struct PIRLivePreviewFrame: Sendable {
         self.faviconURL = faviconURL
         self.canTakeControl = canTakeControl
         self.isManualControl = isManualControl
+        self.needsAssistance = needsAssistance
     }
 }
 
@@ -63,7 +65,8 @@ public final class PIRLivePreview {
         return PIRLivePreviewFrame(imageData: imageData, operationID: source.operationID,
                                    brokerName: source.brokerName, activity: source.activity, faviconURL: faviconURL,
                                    canTakeControl: source.handler?.manualControl.canTakeControl ?? false,
-                                   isManualControl: source.handler?.manualControl.isPaused ?? false)
+                                   isManualControl: source.handler?.manualControl.isPaused ?? false,
+                                   needsAssistance: source.handler?.manualControl.isManagedChallenge ?? false)
     }
 
     public func register(webView: WKWebView, operationID: UUID, brokerName: String, activity: String = "Opening the broker website") {

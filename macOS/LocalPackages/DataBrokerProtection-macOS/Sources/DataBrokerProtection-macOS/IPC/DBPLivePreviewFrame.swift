@@ -31,6 +31,7 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
     public let faviconURL: URL?
     public let canTakeControl: Bool
     public let isManualControl: Bool
+    public let needsAssistance: Bool
 
     init(frame: PIRLivePreviewFrame) {
         imageData = frame.imageData
@@ -40,6 +41,7 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
         faviconURL = frame.faviconURL
         canTakeControl = frame.canTakeControl
         isManualControl = frame.isManualControl
+        needsAssistance = frame.needsAssistance
     }
 
     public init?(coder: NSCoder) {
@@ -54,6 +56,7 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
         faviconURL = coder.decodeObject(of: NSURL.self, forKey: "faviconURL") as URL?
         canTakeControl = coder.decodeBool(forKey: "canTakeControl")
         isManualControl = coder.decodeBool(forKey: "isManualControl")
+        needsAssistance = coder.decodeBool(forKey: "needsAssistance")
     }
 
     public func encode(with coder: NSCoder) {
@@ -64,6 +67,7 @@ public final class DBPLivePreviewFrame: NSObject, NSSecureCoding {
         coder.encode(faviconURL as NSURL?, forKey: "faviconURL")
         coder.encode(canTakeControl, forKey: "canTakeControl")
         coder.encode(isManualControl, forKey: "isManualControl")
+        coder.encode(needsAssistance, forKey: "needsAssistance")
     }
 }
 #endif

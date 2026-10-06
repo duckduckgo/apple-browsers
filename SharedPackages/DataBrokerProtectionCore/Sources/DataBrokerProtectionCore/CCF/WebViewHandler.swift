@@ -413,7 +413,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             manualControl.isManagedChallenge = true
             userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true)
             if manualControl.isPaused { manualGuidance?.stringValue = manualControl.instruction }
-            PIRLivePreview.shared.updateActivity("Cloudflare security check needs your help", operationID: livePreviewOperationID)
+            PIRLivePreview.shared.updateActivity("Help needed: complete the CAPTCHA", operationID: livePreviewOperationID)
             return
         }
         guard isAwaitingManagedChallengeDestination, (200..<400).contains(response.statusCode),
@@ -422,6 +422,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         didReachManagedChallengeDestination = true
         if !manualControl.isPaused {
             manualControl.isManagedChallenge = false
+            PIRLivePreview.shared.updateActivity(automaticPreviewActivity, operationID: livePreviewOperationID)
             resumeAfterManagedNavigation = true
         }
     }

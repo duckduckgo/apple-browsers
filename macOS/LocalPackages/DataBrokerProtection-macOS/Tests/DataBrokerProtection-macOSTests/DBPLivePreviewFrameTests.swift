@@ -25,7 +25,7 @@ final class DBPLivePreviewFrameTests: XCTestCase {
     func testPreviewFrameSurvivesSecureCoding() throws {
         let operationID = UUID()
         let source = PIRLivePreviewFrame(imageData: Data([0, 1, 2, 255]), operationID: operationID,
-                                         brokerName: "Test broker", activity: "Checking page")
+                                         brokerName: "Test broker", activity: "Checking page", needsAssistance: true)
         let frame = DBPLivePreviewFrame(frame: source)
         let data = try NSKeyedArchiver.archivedData(withRootObject: frame, requiringSecureCoding: true)
         let decoded = try XCTUnwrap(NSKeyedUnarchiver.unarchivedObject(ofClass: DBPLivePreviewFrame.self, from: data))
@@ -34,6 +34,7 @@ final class DBPLivePreviewFrameTests: XCTestCase {
         XCTAssertEqual(decoded.operationID, operationID.uuidString)
         XCTAssertEqual(decoded.brokerName, source.brokerName)
         XCTAssertEqual(decoded.activity, source.activity)
+        XCTAssertTrue(decoded.needsAssistance)
     }
 }
 #endif

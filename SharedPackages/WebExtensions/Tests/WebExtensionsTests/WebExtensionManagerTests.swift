@@ -863,12 +863,12 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenManagerIsCreated_ThenAPIStubsAreNotAddedForEveryExtension() {
+    func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() {
         let manager = makeManager()
 
         let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
 
-        XCTAssertFalse(userScripts.contains { $0.source == WebExtensionAPIStubScript.source })
+        XCTAssertFalse(userScripts.contains { WebExtensionLoader.thirdPartyScriptSources.contains($0.source) })
     }
 
     // MARK: - Additional Helpers

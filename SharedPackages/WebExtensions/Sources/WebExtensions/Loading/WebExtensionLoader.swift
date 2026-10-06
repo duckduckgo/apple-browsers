@@ -66,8 +66,8 @@ public final class WebExtensionLoader: WebExtensionLoading {
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
     private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
-    /// The API stub script added for each loaded third-party extension, by identifier.
-    private var stubScripts: [String: WKUserScript] = [:]
+    /// The scripts added for each loaded third-party extension, by identifier.
+    private var thirdPartyScripts: [String: [WKUserScript]] = [:]
     private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
@@ -114,7 +114,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Notify delegate before loading to allow handler registration
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try loadWithStubScript(context, identifier: identifier, into: controller)
+        try loadWithThirdPartyScripts(context, identifier: identifier, into: controller)
 
         return WebExtensionLoadResult(
             identifier: identifier,
@@ -155,55 +155,77 @@ public final class WebExtensionLoader: WebExtensionLoading {
         // Notify delegate before loading to allow handler registration.
         delegate?.webExtensionLoader(self, willLoad: context, identifier: identifier)
 
-        try loadWithStubScript(context, identifier: identifier, into: controller)
+        try loadWithThirdPartyScripts(context, identifier: identifier, into: controller)
     }
 
-    /// Loads `context`, adding the API stub script for its pages first when it is a third-party extension.
+    /// Scripts that run in every page of a third-party extension, and only there.
+    /// The compatibility script comes first, so the stubs can report through it.
+    static let thirdPartyScriptSources = [WebExtensionAPICompatibilityScript.source, WebExtensionAPIStubScript.source]
+
+    /// Loads `context`, adding the third-party scripts for its pages first when it is a third-party extension.
     ///
-    /// WebKit lacks several Chrome APIs (`notifications`, `offscreen`, `idle`, …), and a top-level
-    /// reference to one aborts an extension's background script; the stub script defines them. It is
-    /// a user script because one on the controller's configuration reaches every page the extension
-    /// owns — background page, popup, options page and, with `forMainFrameOnly: false`, the offscreen
-    /// iframe the stubs create — and is exempt from the page's CSP. The controller's user scripts are
-    /// shared by every extension, so the script is limited to this extension's base URL: our own
-    /// extensions never run it. It must be added before the context loads, because a user script
-    /// only reaches documents created after it was added.
+    /// They are user scripts because one on the controller's configuration reaches every page the
+    /// extension owns — background page, popup, options page and iframes — and is exempt from the page's
+    /// CSP. The controller's user scripts are shared by every extension, so each script is limited to this
+    /// extension's base URL: our own extensions never run them. They must be added before the context
+    /// loads, because a user script only reaches documents created after it was added.
     @MainActor
-    private func loadWithStubScript(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
-        removeStubScript(for: identifier, from: controller)
+    private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
+        removeThirdPartyScripts(for: identifier, from: controller)
 
         if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
-            addStubScript(for: context, identifier: identifier, to: controller)
+            addThirdPartyScripts(for: context, identifier: identifier, to: controller)
+            reportDroppedPermissions(of: context.webExtension)
         }
 
         do {
             try controller.load(context)
         } catch {
-            removeStubScript(for: identifier, from: controller)
+            removeThirdPartyScripts(for: identifier, from: controller)
             permissionController?.didUnload(identifier)
             throw error
         }
     }
 
-    private func addStubScript(for context: WKWebExtensionContext, identifier: String, to controller: WKWebExtensionController) {
+    private func addThirdPartyScripts(for context: WKWebExtensionContext, identifier: String, to controller: WKWebExtensionController) {
         // The base URL is new for every context, so the pattern is too.
         let pattern = context.baseURL.absoluteString + "*"
-        guard let script = WebExtensionScopedUserScript.make(source: WebExtensionAPIStubScript.source,
-                                                             injectionTime: .atDocumentStart,
-                                                             forMainFrameOnly: false,
-                                                             includeMatchPatterns: [pattern]) else {
-            Logger.webExtensions.error("❌ Could not create the API stub script for \(identifier, privacy: .public)")
+        let scripts = Self.thirdPartyScriptSources.compactMap { source in
+            WebExtensionScopedUserScript.make(source: source,
+                                              injectionTime: .atDocumentStart,
+                                              forMainFrameOnly: false,
+                                              includeMatchPatterns: [pattern])
+        }
+        guard scripts.count == Self.thirdPartyScriptSources.count else {
+            Logger.webExtensions.error("❌ Could not create the third-party scripts for \(identifier, privacy: .public)")
             return
         }
 
-        controller.configuration.webViewConfiguration.userContentController.addUserScript(script)
-        stubScripts[identifier] = script
+        let userContentController = controller.configuration.webViewConfiguration.userContentController
+        scripts.forEach(userContentController.addUserScript)
+        thirdPartyScripts[identifier] = scripts
     }
 
-    /// Removes the extension's stub script, which would otherwise stay on the shared controller after the extension unloads.
-    private func removeStubScript(for identifier: String, from controller: WKWebExtensionController) {
-        guard let script = stubScripts.removeValue(forKey: identifier) else { return }
-        WebExtensionScopedUserScript.remove(script, from: controller.configuration.webViewConfiguration.userContentController)
+    /// Removes the extension's scripts, which would otherwise stay on the shared controller after the extension unloads.
+    private func removeThirdPartyScripts(for identifier: String, from controller: WKWebExtensionController) {
+        guard let scripts = thirdPartyScripts.removeValue(forKey: identifier) else { return }
+        let userContentController = controller.configuration.webViewConfiguration.userContentController
+        scripts.forEach { WebExtensionScopedUserScript.remove($0, from: userContentController) }
+    }
+
+    /// WebKit drops manifest permissions it does not implement; the compatibility log lists them.
+    private func reportDroppedPermissions(of webExtension: WKWebExtension) {
+        let webKitPermissions = Set(webExtension.requestedPermissions.union(webExtension.optionalPermissions).map(\.rawValue))
+        let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: webExtension.manifest,
+                                                                                 webKitPermissions: webKitPermissions)
+        for permission in dropped {
+            WebExtensionAPICompatibilityReporter.shared.report(
+                kind: .missing,
+                api: WebExtensionAPICompatibilityClassifier.permissionPrefix + permission,
+                extensionName: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.displayName),
+                version: WebExtensionAPICompatibilityLog.sanitizedField(webExtension.version)
+            )
+        }
     }
 
     @MainActor
@@ -217,7 +239,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         try controller.unload(context)
-        removeStubScript(for: identifier, from: controller)
+        removeThirdPartyScripts(for: identifier, from: controller)
         permissionController?.didUnload(identifier)
     }
 

@@ -174,10 +174,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
-        // The stub script, which `WebExtensionLoader` adds for each third-party extension, reports
-        // which unsupported APIs the extension touches, for the API compatibility log.
+        // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
+        // reports which unsupported APIs the extension touches, for the API compatibility log.
         controllerConfiguration.webViewConfiguration.userContentController.add(apiCompatibilityHandler,
-                                                                                name: WebExtensionAPIStubScript.compatibilityMessageHandlerName)
+                                                                                name: WebExtensionAPICompatibilityScript.messageHandlerName)
 
         self.controller = WKWebExtensionController(configuration: controllerConfiguration)
 

@@ -686,7 +686,7 @@ extension DefaultOmniBarViewController {
             messages.append(.init(id: .termsConsent, message: message))
         }
         if attachmentPrivacyNotice.isPresented {
-            messages.append(.init(id: .attachmentPrivacy, message: IPadAttachmentPrivacyNotice.message()))
+            messages.append(.init(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage()))
         }
         if let notice = toolPickerController?.currentModelSwitchNotice {
             messages.append(.init(id: .modelSwitch, message: UTIFooterMessageMapper().message(for: notice)))

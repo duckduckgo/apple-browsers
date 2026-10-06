@@ -147,17 +147,4 @@ final class IPadAttachmentPrivacyNotice {
         isDisplayed = false
     }
 
-    static func message() -> UTIFooterMessage {
-        let learnMoreText = UserText.aiChatAttachmentPrivacyNoticeLearnMore
-        return UTIFooterMessage(
-            icon: .info,
-            title: String(format: UserText.aiChatAttachmentPrivacyNoticeFormat, learnMoreText),
-            subtitle: nil,
-            primaryAction: nil,
-            isDismissible: false,
-            link: URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files").map {
-                .init(text: learnMoreText, url: $0)
-            }
-        )
-    }
 }

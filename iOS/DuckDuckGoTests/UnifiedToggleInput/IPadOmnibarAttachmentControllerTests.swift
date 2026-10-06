@@ -274,7 +274,7 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
 
         sut.aiChatTextView.text = "Draft with attachment"
-        let url = try XCTUnwrap(IPadAttachmentPrivacyNotice.message().link?.url)
+        let url = try XCTUnwrap(UTIFooterMessageMapper().attachmentPrivacyMessage().link?.url)
         sut.onFooterLinkTapped?(.attachmentPrivacy, url)
         controller.endEditing()
         controller.cancel()
@@ -325,7 +325,7 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         sut.setSearchAreaExpanded(true, animated: false)
         let messages = [
             UTIFooterItem(id: .termsConsent, message: UTIFooterMessageMapper().termsOfServiceMessage()),
-            UTIFooterItem(id: .attachmentPrivacy, message: IPadAttachmentPrivacyNotice.message())
+            UTIFooterItem(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())
         ]
         var visibility: [[UTIFooterItem.ID]] = []
         sut.onFooterVisibilityChanged = { visibility.append($0) }
@@ -358,13 +358,13 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         let mapper = UTIFooterMessageMapper()
         sut.setFooterMessages([
             .init(id: .termsConsent, message: mapper.termsOfServiceMessage()),
-            .init(id: .attachmentPrivacy, message: IPadAttachmentPrivacyNotice.message())
+            .init(id: .attachmentPrivacy, message: UTIFooterMessageMapper().attachmentPrivacyMessage())
         ], animated: false)
         var tappedID: UTIFooterItem.ID?
         var tappedURL: URL?
         sut.onFooterLinkTapped = { tappedID = $0; tappedURL = $1 }
         let card = try XCTUnwrap(footerCards(in: sut).last)
-        let url = try XCTUnwrap(IPadAttachmentPrivacyNotice.message().link?.url)
+        let url = try XCTUnwrap(UTIFooterMessageMapper().attachmentPrivacyMessage().link?.url)
 
         card.onLinkTap?(url)
 

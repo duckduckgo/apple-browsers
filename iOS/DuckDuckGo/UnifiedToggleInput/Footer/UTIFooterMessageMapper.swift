@@ -87,7 +87,7 @@ struct UTIFooterMessageMapper {
         )
     }
 
-    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy"
+    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files"
 
     func message(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool = true) -> UTIFooterMessage {
         UTIFooterMessage(

@@ -2472,10 +2472,7 @@ public struct UserText {
             comment: "Instruction above the tab attachment list. Parameter is the configured maximum number of tabs.")
         return String(format: format, attachmentLimit)
     }
-    public static let aiChatChooseTabsSearchPlaceholder = NotLocalizedString(
-        "aichat.choose-tabs.search.placeholder",
-        value: "Search",
-        comment: "placeholder in the tab attachment search field")
+    public static let aiChatChooseTabsSearchPlaceholder = UserText.aiChatHistorySearchBarPlaceholder
     public static let aiChatChooseTabsNoMatches = NSLocalizedString(
         "aichat.choose-tabs.no-matches",
         value: "No matching tabs",

@@ -170,6 +170,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             if isExpanded {
                 if let draft = self.pendingFooterLinkDraft, self.selectedTextEntryMode == .aiChat {
                     self.omniBarView.aiChatTextView.text = draft
+                    self.omniBarView.updateTextFieldPlaceholderVisibility(hasText: !draft.isEmpty)
                     self.modeToggleTextModel.updateText(draft)
                     self.pendingFooterLinkDraft = nil
                 }

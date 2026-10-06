@@ -271,9 +271,10 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         let url = try XCTUnwrap(IPadAttachmentPrivacyNotice.message().link?.url)
         sut.onFooterLinkTapped?(.attachmentPrivacy, url)
         sut.setSearchAreaExpanded(false, animated: false)
-        sut.textField.text = url.absoluteString
+        sut.textField.text = ""
         sut.setSearchAreaExpanded(true, animated: false)
         XCTAssertEqual(sut.aiChatTextView.text, "Draft with attachment")
+        XCTAssertEqual(sut.textField.alpha, 0)
         XCTAssertEqual(sut.attachmentsStripView.attachments.count, 1)
         XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, AttachmentPrivacyPixel(action: .learnMoreTapped, kind: .file, surface: .addressBar).name)
     }

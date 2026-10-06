@@ -591,9 +591,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
 
-    /// Global switch to disable advanced card ordering for the Next Steps List widget
-    case nextStepsListAdvancedCardOrdering
-
     /// Enables deleting history-based search suggestions from the New Tab Page omnibar
     case searchSuggestionsDeletion
 }

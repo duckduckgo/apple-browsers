@@ -1302,12 +1302,16 @@
 		37AA00AD2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */; };
 		42D48B438872FA0BF2940227 /* DuckAIFirstPromptNewInstallCohort.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */; };
 		D5F106663497E18BACD4E3AA /* DuckAIFirstPromptNewInstallCohort.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */; };
+		528319F2B8E6B55D0232E673 /* AIChatSettingsStatePixelSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EEC618A9860F92133BC2A9 /* AIChatSettingsStatePixelSender.swift */; };
+		2736AF4EFDD6049E3E0C4778 /* AIChatSettingsStatePixelSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EEC618A9860F92133BC2A9 /* AIChatSettingsStatePixelSender.swift */; };
 		37AA01732E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */; };
 		37AA01742E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */; };
 		37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */; };
 		37AA017D2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */; };
 		37AA017F2E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */; };
 		37AA01802E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */; };
+		D9A26BE624EE354DA9042780 /* AIChatSettingsStatePixelSenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A48D5BA91CC64E616E0172CA /* AIChatSettingsStatePixelSenderTests.swift */; };
+		F10D1D76E1DBF3889550A035 /* AIChatSettingsStatePixelSenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A48D5BA91CC64E616E0172CA /* AIChatSettingsStatePixelSenderTests.swift */; };
 		37ABFE7C2DED901200DE39F2 /* SettingsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */; };
 		37ABFE7D2DED901200DE39F2 /* SettingsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */; };
 		37ADC3EE2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */; };
@@ -5513,9 +5517,11 @@
 		37A803DA27FD69D300052F4C /* DataImportResources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DataImportResources; sourceTree = "<group>"; };
 		37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSummarizer.swift; sourceTree = "<group>"; };
 		D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAIFirstPromptNewInstallCohort.swift; sourceTree = "<group>"; };
+		72EEC618A9860F92133BC2A9 /* AIChatSettingsStatePixelSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsStatePixelSender.swift; sourceTree = "<group>"; };
 		37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifier.swift; sourceTree = "<group>"; };
 		37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifierTests.swift; sourceTree = "<group>"; };
 		37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandlerTests.swift; sourceTree = "<group>"; };
+		A48D5BA91CC64E616E0172CA /* AIChatSettingsStatePixelSenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsStatePixelSenderTests.swift; sourceTree = "<group>"; };
 		37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPixel.swift; sourceTree = "<group>"; };
 		37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuPixel.swift; sourceTree = "<group>"; };
 		37ADC4002DF040000001CA03 /* WebViewZoomPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewZoomPixel.swift; sourceTree = "<group>"; };
@@ -8287,6 +8293,7 @@
 				FB0C0800000000000000CE01 /* PageContextExtractionPixelHandler.swift */,
 				37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */,
 				D59D21E17986E9359FE3449C /* DuckAIFirstPromptNewInstallCohort.swift */,
+				72EEC618A9860F92133BC2A9 /* AIChatSettingsStatePixelSender.swift */,
 				AA5E1EC72A0000000000C001 /* AIChatSelectionContextAttacher.swift */,
 				1EB01D902E61DF2B006CB411 /* AIChatTranslator.swift */,
 				312E63962D9D821500806E2A /* AIChatURL.swift */,
@@ -8450,6 +8457,7 @@
 				A1C2E3013B74000100000001 /* AttachmentPrivacyDisclosurePixelTests.swift */,
 				BBF17D1F2F7B4D33004AFCF4 /* AIChatMenuTests.swift */,
 				37AA017E2E2164A500844427 /* AIChatUserScriptHandlerTests.swift */,
+				A48D5BA91CC64E616E0172CA /* AIChatSettingsStatePixelSenderTests.swift */,
 				AB1E70020000000000000010 /* BrowserTools */,
 				D1A7B0010000000000000021 /* AIChatTabPickerSourceTests.swift */,
 				D1A7B0010000000000000041 /* AIChatSelectionActionPageContextTests.swift */,
@@ -16574,6 +16582,7 @@
 				84A74E1E2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,
 				37AA00AC2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */,
 				42D48B438872FA0BF2940227 /* DuckAIFirstPromptNewInstallCohort.swift in Sources */,
+				528319F2B8E6B55D0232E673 /* AIChatSettingsStatePixelSender.swift in Sources */,
 				AA5E1EC72A0000000000C002 /* AIChatSelectionContextAttacher.swift in Sources */,
 				3706FBF2293F65D500E42796 /* FindInPageModel.swift in Sources */,
 				1D9A4E5B2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */,
@@ -17365,6 +17374,7 @@
 				C17CA7B32B9B5317008EC3C1 /* MockAutofillPopoverPresenter.swift in Sources */,
 				BBDF565D2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift in Sources */,
 				37AA01802E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
+				F10D1D76E1DBF3889550A035 /* AIChatSettingsStatePixelSenderTests.swift in Sources */,
 				AB1E70020000000000000003 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000006 /* BrowserToolCatalogTests.swift in Sources */,
 				AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */,
@@ -18282,6 +18292,7 @@
 				EEBF15C22E4CE72E0053D15B /* BookmarksEmptyStateView.swift in Sources */,
 				37AA00AD2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */,
 				D5F106663497E18BACD4E3AA /* DuckAIFirstPromptNewInstallCohort.swift in Sources */,
+				2736AF4EFDD6049E3E0C4778 /* AIChatSettingsStatePixelSender.swift in Sources */,
 				AA5E1EC72A0000000000C003 /* AIChatSelectionContextAttacher.swift in Sources */,
 				84F1C8DE2C774D4200716446 /* NSTableViewExtension.swift in Sources */,
 				7B7F5D212C526CE600826256 /* AddExcludedDomainView.swift in Sources */,
@@ -19736,6 +19747,7 @@
 				FEE12B412E520E4D00AD9807 /* PromoHistoryRecordTests.swift in Sources */,
 				56504F102E0D9A8C00333A1E /* MockSubscriptionTabsShowing.swift in Sources */,
 				37AA017F2E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
+				D9A26BE624EE354DA9042780 /* AIChatSettingsStatePixelSenderTests.swift in Sources */,
 				AB1E70020000000000000002 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000005 /* BrowserToolCatalogTests.swift in Sources */,
 				AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */,

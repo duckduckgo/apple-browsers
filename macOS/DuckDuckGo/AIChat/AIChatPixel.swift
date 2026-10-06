@@ -544,6 +544,15 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: Fires daily when the app becomes active, reporting whether AI Chat features are enabled or disabled
     case aiChatIsEnabled(isEnabled: Bool)
 
+    /// Event Trigger: Fires daily when the app becomes active, reporting the Duck.ai settings.
+    /// The settings' own pixels only cover users who change them; this sizes each setting's base.
+    case aiChatSettingsState(duckAIEnabled: Bool,
+                             addressBarToggle: Bool,
+                             tabBarButton: Bool,
+                             globalShortcut: Bool,
+                             menuBarIcon: Bool,
+                             newTabPage: AIChatNewTabPageSettingsState?)
+
     /// Event Trigger: The Duck.ai FE reported that `getUserMedia()` rejected while attempting
     /// to start a voice chat. `reason` distinguishes the case we acted on (`mic_os_denied`)
     /// from anything else (`other`) — useful for measuring how often the FE hook fires for
@@ -881,6 +890,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_tab_termination_loop"
         case .aiChatIsEnabled:
             return "aichat_is_enabled"
+        case .aiChatSettingsState:
+            return "aichat_settings_state_macos"
         case .aiChatVoiceChatStartFailed:
             return "aichat_voice_chat_start_failed"
         case .aiFeaturesState:
@@ -1068,6 +1079,20 @@ enum AIChatPixel: PixelKit.Event {
             return ["flow_type": flowType, "source": source, "origin": origin]
         case .aiChatIsEnabled(let isEnabled):
             return ["is_enabled": isEnabled ? "1" : "0"]
+        case .aiChatSettingsState(let duckAIEnabled, let addressBarToggle, let tabBarButton, let globalShortcut, let menuBarIcon, let newTabPage):
+            var params = [
+                "duckai_enabled": String(duckAIEnabled),
+                "addressbar_toggle": String(addressBarToggle),
+                "tabbar_button": String(tabBarButton),
+                "global_shortcut": String(globalShortcut),
+                "menubar_icon": String(menuBarIcon)
+            ]
+            if let newTabPage {
+                params["ntp_search_box"] = String(newTabPage.isSearchBoxVisible)
+                params["ntp_duckai"] = String(newTabPage.isDuckAIShortcutEnabled)
+                params["ntp_mode"] = newTabPage.isDuckAIModeSelected ? "ai" : "search"
+            }
+            return params
         case .aiFeaturesState(let duckAI, let searchAssist, let hideAIImages, let noAI):
             return [
                 "duck_ai": duckAI ? "true" : "false",
@@ -1285,6 +1310,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarWebSearchDeactivated,
                 .aiChatAddressBarWebSearchSubmitted,
                 .aiChatIsEnabled,
+                .aiChatSettingsState,
                 .aiChatVoiceChatStartFailed,
                 .aiChatTabDidTerminate,
                 .aiChatTabTerminationLoop,
@@ -1309,7 +1335,8 @@ enum AIChatPixel: PixelKit.Event {
         case .aiChatAddressBarGatedRowClick,
                 .aiChatNtpGatedRowClick,
                 .aiChatDuckAIDirectNavigation,
-                .aiChatEntryPoint:
+                .aiChatEntryPoint,
+                .aiChatSettingsState:
             return .none
         default:
             return .platformDefault
@@ -1326,6 +1353,13 @@ enum AIChatPromptSurface: String, CaseIterable {
     case duckAI = "duck_ai"
     case sidebar
     case floating
+}
+
+/// The New Tab Page search box settings, reported only where that search box exists.
+struct AIChatNewTabPageSettingsState {
+    let isSearchBoxVisible: Bool
+    let isDuckAIShortcutEnabled: Bool
+    let isDuckAIModeSelected: Bool
 }
 
 /// Action performed when address bar button is clicked

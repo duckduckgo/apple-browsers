@@ -17,11 +17,13 @@
 //
 
 @testable import AIChat
+import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Common
 import FoundationExtensions
 @testable import DDGSync
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 @_spi(Testing) import SharedTestUtilities
@@ -96,10 +98,13 @@ struct AIChatUserScriptHandlerTests {
     private var handler: AIChatUserScriptHandler
     private var statisticsLoader = StatisticsLoader(statisticsStore: MockStatisticsStore())
     private var mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
+    /// An install that has prompted before, so only the tests about the first prompt see the flag.
+    private var featureDiscovery = MockFeatureDiscovery()
 
     @MainActor
     init() {
         windowControllersManager = WindowControllersManagerMock()
+        featureDiscovery.setReturnValue(true, for: .duckAIPrompt)
 
         handler = AIChatUserScriptHandler(
             storage: storage,
@@ -112,7 +117,8 @@ struct AIChatUserScriptHandlerTests {
             featureFlagger: MockFeatureFlagger(),
             aiChatUserScriptErrorEventMapper: userScriptErrorEventMapper,
             freeTrialConversionService: mockFreeTrialConversionService,
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery
         )
     }
 
@@ -403,7 +409,8 @@ struct AIChatUserScriptHandlerTests {
                 syncServiceProvider: { nil },
                 syncErrorHandler: syncErrorHandler,
                 featureFlagger: MockFeatureFlagger(),
-                notificationCenter: notificationCenter
+                notificationCenter: notificationCenter,
+                featureDiscovery: featureDiscovery
             )
 
             await withCheckedContinuation { continuation in
@@ -434,7 +441,8 @@ struct AIChatUserScriptHandlerTests {
                 syncServiceProvider: { nil },
                 syncErrorHandler: syncErrorHandler,
                 featureFlagger: MockFeatureFlagger(),
-                notificationCenter: notificationCenter
+                notificationCenter: notificationCenter,
+                featureDiscovery: featureDiscovery
             )
 
             await withCheckedContinuation { continuation in
@@ -452,7 +460,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -463,7 +471,8 @@ struct AIChatUserScriptHandlerTests {
             syncServiceProvider: { nil },
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery
         )
 
         await withCheckedContinuation { continuation in
@@ -484,7 +493,7 @@ struct AIChatUserScriptHandlerTests {
         sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -496,7 +505,8 @@ struct AIChatUserScriptHandlerTests {
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter,
-            conversationSourceHandler: sourceHandler
+            conversationSourceHandler: sourceHandler,
+            featureDiscovery: featureDiscovery
         )
 
         // The chat's first native-config fetch (load) consumes and stores the pending source...
@@ -517,7 +527,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitPromptFiresSentPromptOngoingChatPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -528,7 +538,8 @@ struct AIChatUserScriptHandlerTests {
             syncServiceProvider: { nil },
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery
         )
 
         await withCheckedContinuation { continuation in
@@ -559,7 +570,8 @@ struct AIChatUserScriptHandlerTests {
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter,
-            fireNewAIChatExperimentPixels: { firedCount += 1 }
+            fireNewAIChatExperimentPixels: { firedCount += 1 },
+            featureDiscovery: featureDiscovery
         )
 
         await withCheckedContinuation { continuation in
@@ -593,7 +605,8 @@ struct AIChatUserScriptHandlerTests {
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter,
-            conversationSourceHandler: sourceHandler
+            conversationSourceHandler: sourceHandler,
+            featureDiscovery: featureDiscovery
         )
 
         // The first native-config fetch is what consumes the pending source.
@@ -810,6 +823,253 @@ struct AIChatUserScriptHandlerTests {
         #expect(parameters?["source"] == "new-tab-page")
     }
 
+    // MARK: - Prompt surface
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Prompt surface values match the pixel definition", .timeLimit(.minutes(1)))
+    func testPromptSurfaceRawValuesMatchPixelDefinition() {
+        #expect(AIChatPromptSurface.allCases.map(\.rawValue) == ["address_bar", "new_tab_page", "prompt_bar", "duck_ai", "sidebar", "floating"])
+    }
+
+    /// Loads a chat the way it would after `source` opened it.
+    @MainActor
+    private func loadChat(stampedWith source: AIChatConversationSource,
+                          pixelFiring testPixelFiring: PixelKitMock,
+                          webView: WKWebView) async -> AIChatUserScriptHandler {
+        let sourceHandler = AIChatConversationSourceHandler()
+        sourceHandler.setData(source)
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
+        return testHandler
+    }
+
+    @MainActor
+    private func reportPrompt(_ metricName: String = "userDidSubmitFirstPrompt",
+                              to testHandler: AIChatUserScriptHandler,
+                              webView: WKWebView) async {
+        _ = await testHandler.reportMetric(params: ["metricName": metricName], message: WKScriptMessage.mock(webView: webView))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt typed in a Duck.ai tab reports duck_ai", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAPromptInADuckAITabReportsDuckAI() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/")
+        let testHandler = await loadChat(stampedWith: .tabBarButton, pixelFiring: testPixelFiring, webView: webView)
+
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "duck_ai")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt typed in the sidebar reports sidebar", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAPromptInTheSidebarReportsSidebar() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/?placement=sidebar")
+        let testHandler = await loadChat(stampedWith: .tabBarSidebar, pixelFiring: testPixelFiring, webView: webView)
+        testHandler.isSidebarProvider = { true }
+
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "sidebar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt typed in a detached sidebar reports floating", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAPromptInADetachedSidebarReportsFloating() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/?placement=sidebar")
+        let window = AIChatFloatingWindow()
+        window.contentView = webView
+        let testHandler = await loadChat(stampedWith: .tabBarSidebar, pixelFiring: testPixelFiring, webView: webView)
+        testHandler.isSidebarProvider = { true }
+
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "floating")
+        window.contentView = nil
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt a native composer hands to a new chat reports that composer", .timeLimit(.minutes(1)), arguments: [
+        (AIChatConversationSource.omnibar, "address_bar"),
+        (.addressBar, "address_bar"),
+        (.addressBarSuggestion, "address_bar"),
+        (.addressBarContextMenu, "address_bar"),
+        (.newTabPage, "new_tab_page"),
+        (.promptBar, "prompt_bar")
+    ])
+    @MainActor
+    func testThatAPulledNativePromptReportsItsComposer(source: AIChatConversationSource, expectedSurface: String) async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/")
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("Hello", autoSubmit: true) }
+        let testHandler = await loadChat(stampedWith: source, pixelFiring: testPixelFiring, webView: webView)
+
+        _ = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock(webView: webView))
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == expectedSurface)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt a native composer pushes into an open chat reports that composer", .timeLimit(.minutes(1)), arguments: [
+        (AIChatConversationSource.omnibar, "address_bar"),
+        (.addressBar, "address_bar"),
+        (.addressBarSuggestion, "address_bar"),
+        (.addressBarContextMenu, "address_bar"),
+        (.newTabPage, "new_tab_page"),
+        (.promptBar, "prompt_bar")
+    ])
+    @MainActor
+    func testThatAPushedNativePromptReportsItsComposer(source: AIChatConversationSource, expectedSurface: String) async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/?placement=sidebar")
+        let testHandler = await loadChat(stampedWith: source, pixelFiring: testPixelFiring, webView: webView)
+        testHandler.isSidebarProvider = { true }
+
+        testHandler.submitAIChatNativePrompt(.queryPrompt("Hello", autoSubmit: true))
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == expectedSurface)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A native prompt the user still has to send reports where the chat is shown", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANativePromptWithoutAutoSubmitReportsTheWindowSurface() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/")
+        messageHandler.getDataForMessageTypeImpl = { _ in
+            AIChatNativePrompt.queryPrompt("", autoSubmit: false, mode: AIChatNativePrompt.voiceMode)
+        }
+        let testHandler = await loadChat(stampedWith: .omnibar, pixelFiring: testPixelFiring, webView: webView)
+
+        _ = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock(webView: webView))
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "duck_ai")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A summary sent to an open sidebar reports sidebar", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatASummaryPushedToAnOpenSidebarReportsSidebar() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/?placement=sidebar")
+        let testHandler = await loadChat(stampedWith: .addressBar, pixelFiring: testPixelFiring, webView: webView)
+        testHandler.isSidebarProvider = { true }
+
+        testHandler.submitAIChatNativePrompt(.summaryPrompt("Some text", url: nil, title: nil))
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "sidebar")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A prompt handed over by anything but a native composer reports where the chat is shown", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANonComposerNativePromptReportsTheWindowSurface() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/")
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("Hello", autoSubmit: true) }
+        let testHandler = await loadChat(stampedWith: .serp, pixelFiring: testPixelFiring, webView: webView)
+
+        _ = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock(webView: webView))
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "duck_ai")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only the prompt a composer handed over reports that composer", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAHandedOverPromptReportsItsComposerOnlyOnce() async {
+        let testPixelFiring = PixelKitMock()
+        let webView = mockWebView(url: "https://duck.ai/")
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("Hello", autoSubmit: true) }
+        let testHandler = await loadChat(stampedWith: .newTabPage, pixelFiring: testPixelFiring, webView: webView)
+
+        _ = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock(webView: webView))
+        await reportPrompt("userDidSubmitFirstPrompt", to: testHandler, webView: webView)
+        await reportPrompt("userDidSubmitPrompt", to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.map { $0.pixel.parameters?["surface"] } == ["new_tab_page", "duck_ai"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A handed-over prompt that was never sent does not carry into the next document", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatANewDocumentDropsAnUnsentHandedOverPrompt() async {
+        let sourceHandler = AIChatConversationSourceHandler()
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: sourceHandler, pixelFiring: testPixelFiring)
+        let webView = mockWebView(url: "https://duck.ai/")
+        messageHandler.getDataForMessageTypeImpl = { _ in AIChatNativePrompt.queryPrompt("Hello", autoSubmit: true) }
+
+        sourceHandler.setData(.omnibar)
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
+        _ = await testHandler.getAIChatNativePrompt(params: [], message: WKScriptMessage.mock(webView: webView))
+
+        sourceHandler.setData(.omnibar)
+        testHandler.resetConversationSourceForNewDocument()
+        _ = await testHandler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock(webView: webView))
+        await reportPrompt(to: testHandler, webView: webView)
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["surface"] == "duck_ai")
+    }
+
+    // MARK: - First prompt on a new install
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only a new install's first prompt reports first_prompt_new_install", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatOnlyTheFirstPromptOfANewInstallReportsTheFlag() async {
+        let testPixelFiring = PixelKitMock()
+        let newInstall = DefaultFeatureDiscovery(wasUsedBeforeStorage: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
+        let testHandler = makeHandler(sourceHandler: AIChatConversationSourceHandler(),
+                                      pixelFiring: testPixelFiring,
+                                      featureDiscovery: newInstall)
+
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.map { $0.pixel.parameters?["first_prompt_new_install"] } == ["true", nil, nil])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An ongoing-chat prompt can be a new install's first and reports it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAnOngoingChatPromptReportsTheFlagOnANewInstall() async {
+        let testPixelFiring = PixelKitMock()
+        let newInstall = MockFeatureDiscovery()
+        let testHandler = makeHandler(sourceHandler: AIChatConversationSourceHandler(),
+                                      pixelFiring: testPixelFiring,
+                                      featureDiscovery: newInstall)
+
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?["first_prompt_new_install"] == "true")
+        #expect(newInstall.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An install that has prompted before never reports first_prompt_new_install", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAnInstallThatPromptedBeforeOmitsTheFlag() async {
+        let testPixelFiring = PixelKitMock()
+        let testHandler = makeHandler(sourceHandler: AIChatConversationSourceHandler(), pixelFiring: testPixelFiring)
+
+        _ = await testHandler.reportMetric(params: ["metricName": "userDidSubmitFirstPrompt"], message: WKScriptMessage.mock())
+
+        #expect(testPixelFiring.actualFireCalls.last?.pixel.parameters?.keys.contains("first_prompt_new_install") == false)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("didReportMetric does not fire pixels for non-prompt metrics", .timeLimit(.minutes(1)))
     @MainActor
@@ -825,7 +1085,8 @@ struct AIChatUserScriptHandlerTests {
             syncServiceProvider: { nil },
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery
         )
 
         let otherMetrics: [AIChatMetricName] = [
@@ -1356,14 +1617,16 @@ struct AIChatUserScriptHandlerTests {
             syncErrorHandler: syncErrorHandler,
             featureFlagger: featureFlagger,
             freeTrialConversionService: mockFreeTrialConversionService,
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery
         )
     }
 
     /// For tests that stage the mailbox mid-flight, so they hold it and the pixel mock themselves.
     @MainActor
     private func makeHandler(sourceHandler: AIChatConversationSourceHandler,
-                             pixelFiring: PixelKitMock) -> AIChatUserScriptHandler {
+                             pixelFiring: PixelKitMock,
+                             featureDiscovery: FeatureDiscovery? = nil) -> AIChatUserScriptHandler {
         AIChatUserScriptHandler(
             storage: storage,
             messageHandling: messageHandler,
@@ -1374,7 +1637,8 @@ struct AIChatUserScriptHandlerTests {
             syncErrorHandler: syncErrorHandler,
             featureFlagger: MockFeatureFlagger(),
             notificationCenter: notificationCenter,
-            conversationSourceHandler: sourceHandler
+            conversationSourceHandler: sourceHandler,
+            featureDiscovery: featureDiscovery ?? self.featureDiscovery
         )
     }
 
@@ -1622,7 +1886,8 @@ struct AIChatUserScriptHandlerTests {
             featureFlagger: featureFlagger,
             freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter,
-            voiceChatFailureHandler: failureHandler
+            voiceChatFailureHandler: failureHandler,
+            featureDiscovery: featureDiscovery
         )
 
         _ = await handler.voiceChatStartFailed(
@@ -1651,7 +1916,8 @@ struct AIChatUserScriptHandlerTests {
             featureFlagger: featureFlagger,
             freeTrialConversionService: mockFreeTrialConversionService,
             notificationCenter: notificationCenter,
-            voiceChatFailureHandler: failureHandler
+            voiceChatFailureHandler: failureHandler,
+            featureDiscovery: featureDiscovery
         )
 
         _ = await handler.voiceChatStartFailed(
@@ -1759,6 +2025,7 @@ struct AIChatConversationSourcePixelTests {
         "prompt-bar-voice",
         "main-menu-file-new-chat",
         "main-menu-sidebar",
+        "main-menu-ask-about-page",
         "main-menu-open-duck-ai",
         "main-menu-new-chat",
         "main-menu-view-all-chats",
@@ -1792,19 +2059,20 @@ struct AIChatConversationSourcePixelTests {
     @Test("Every source is reported verbatim by both conversation pixels", .timeLimit(.minutes(1)),
           arguments: AIChatConversationSource.allCases)
     func testEverySourceIsReportedVerbatim(source: AIChatConversationSource) {
-        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: source, hasPageContext: false)
+        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: source, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false)
             .parameters?["source"] == source.rawValue)
-        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: source, hasPageContext: false)
+        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: source, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false)
             .parameters?["source"] == source.rawValue)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("A button surface with page context reports every parameter", .timeLimit(.minutes(1)))
     func testButtonSourceWithPageContextParameters() {
-        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: .askAboutPage, hasPageContext: true).parameters == [
+        #expect(AIChatPixel.aiChatMetricStartNewConversation(source: .askAboutPage, hasPageContext: true, surface: .duckAI, firstPromptNewInstall: false).parameters == [
             "source": "ask-about-page",
             "isOpenedFromAskDuckAiButton": "true",
-            "hasPageContext": "true"
+            "hasPageContext": "true",
+            "surface": "duck_ai"
         ])
     }
 
@@ -1856,10 +2124,53 @@ struct AIChatConversationSourcePixelTests {
     @available(iOS 16, macOS 13, *)
     @Test("An unattributed chat reports every parameter", .timeLimit(.minutes(1)))
     func testUnattributedSourceParameters() {
-        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false).parameters == [
+        #expect(AIChatPixel.aiChatMetricSentPromptOngoingChat(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false).parameters == [
             "source": "unattributed",
             "isOpenedFromAskDuckAiButton": "false",
-            "hasPageContext": "false"
+            "hasPageContext": "false",
+            "surface": "duck_ai"
         ])
+    }
+}
+
+struct DuckAIFirstPromptNewInstallCohortTests {
+
+    private let statisticsStore = MockStatisticsStore()
+    private let featureDiscovery = MockFeatureDiscovery()
+    private let marker = InMemoryKeyValueStore()
+
+    private func assignCohort() {
+        DuckAIFirstPromptNewInstallCohort.assignIfNeeded(statisticsStore: statisticsStore,
+                                                         featureDiscovery: featureDiscovery,
+                                                         marker: marker)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An install with statistics is marked as having prompted, so it never reports the flag", .timeLimit(.minutes(1)))
+    func testThatAnExistingInstallIsMarked() {
+        statisticsStore.atb = "v123-1"
+
+        assignCohort()
+
+        #expect(featureDiscovery.wasSetWasUsedBeforeCalled(for: .duckAIPrompt))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new install is left unmarked", .timeLimit(.minutes(1)))
+    func testThatANewInstallIsLeftUnmarked() {
+        assignCohort()
+
+        #expect(featureDiscovery.setWasUsedBeforeCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new install's later launch is not marked once it has statistics", .timeLimit(.minutes(1)))
+    func testThatTheMarkerStopsALaterLaunchFromMarking() {
+        assignCohort()
+        statisticsStore.atb = "v123-1"
+
+        assignCohort()
+
+        #expect(featureDiscovery.setWasUsedBeforeCallCount == 0)
     }
 }

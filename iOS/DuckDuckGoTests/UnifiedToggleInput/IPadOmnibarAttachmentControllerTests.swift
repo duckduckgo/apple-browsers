@@ -267,9 +267,18 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls.first?.frequency, .dailyAndCount)
         XCTAssertEqual(pixels.actualFireCalls.first?.pixel.parameters, ["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue])
 
+        let displayedCards = footerCards(in: sut)
+        sut.onFooterVisibilityChanged?([.attachmentPrivacy])
+        XCTAssertEqual(footerCards(in: sut).count, displayedCards.count)
+        XCTAssertTrue(zip(displayedCards, footerCards(in: sut)).allSatisfy { $0 === $1 })
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+
         sut.aiChatTextView.text = "Draft with attachment"
         let url = try XCTUnwrap(IPadAttachmentPrivacyNotice.message().link?.url)
         sut.onFooterLinkTapped?(.attachmentPrivacy, url)
+        controller.endEditing()
+        controller.cancel()
+        XCTAssertEqual(sut.attachmentsStripView.attachments.count, 1)
         sut.setSearchAreaExpanded(false, animated: false)
         sut.textField.text = ""
         sut.setSearchAreaExpanded(true, animated: false)
@@ -277,6 +286,36 @@ final class IPadOmnibarAttachmentButtonPresentationTests: XCTestCase {
         XCTAssertEqual(sut.textField.alpha, 0)
         XCTAssertEqual(sut.attachmentsStripView.attachments.count, 1)
         XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, AttachmentPrivacyPixel(action: .learnMoreTapped, kind: .file, surface: .addressBar).name)
+
+        sut.attachmentsStripView.removeAllAttachments()
+        XCTAssertFalse(sut.visibleFooterMessages.contains { $0.id == .attachmentPrivacy })
+        sut.attachmentsStripView.addAttachment(.file(AIChatFileAttachment(data: Data([1]), fileName: "second.pdf", mimeType: "application/pdf")))
+        XCTAssertFalse(sut.visibleFooterMessages.contains { $0.id == .attachmentPrivacy })
+        XCTAssertTrue(displayStore.hasShown)
+        XCTAssertEqual(pixels.actualFireCalls.count, 2)
+    }
+
+    func testRemovingAttachmentEndsDisclosureWithoutShowingAgain() throws {
+        let suiteName = UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: defaults)
+        let disclosure = AttachmentPrivacyDisclosure(store: store, webKeySource: nil, isEnabled: { true })
+        var kind: UTIAttachmentPrivacyKind? = .file
+        let notice = IPadAttachmentPrivacyNotice(attachmentKind: { kind }, isEnabled: { true }, disclosure: disclosure)
+        notice.refresh()
+        XCTAssertTrue(notice.recordDisplay())
+        XCTAssertTrue(notice.isPresented)
+
+        kind = nil
+        notice.refresh()
+        XCTAssertFalse(notice.isPresented)
+
+        kind = .file
+        notice.refresh()
+        XCTAssertFalse(notice.isPresented)
+        XCTAssertFalse(notice.recordDisplay())
+        XCTAssertTrue(store.hasShown)
     }
 
     func testPrivacyAndTermsCardsStackAndReportVisibilityOnlyInWindow() {

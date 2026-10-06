@@ -134,7 +134,11 @@ final class IPadAttachmentPrivacyNotice {
     }
 
     func recordDisplay() -> Bool {
-        guard isPresented, !isDisplayed, isEnabled(), disclosure.claim() else { return false }
+        guard isPresented, !isDisplayed else { return false }
+        guard isEnabled(), disclosure.claim() else {
+            isPresented = false
+            return false
+        }
         isDisplayed = true
         return true
     }

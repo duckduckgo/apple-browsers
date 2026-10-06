@@ -196,7 +196,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             if ids.contains(.attachmentPrivacy) {
                 if attachmentPrivacyNotice.recordDisplay() {
                     fireAttachmentPrivacyPixel(.shown)
-                } else {
+                } else if !attachmentPrivacyNotice.isPresented {
                     refreshFooterMessage(animated: false)
                 }
             } else {

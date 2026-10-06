@@ -135,6 +135,18 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testAttachmentPrivacyBridgeHandlerRemainsAbsentOnIPhone() {
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler,
+                                     debugSettings: MockAIChatDebugSettingsForTests(),
+                                     devicePlatform: MockDevicePlatform.self)
+        for isIphone in [true, false] {
+            MockDevicePlatform.isIphone = isIphone
+            let handler = script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue)
+            XCTAssertEqual(handler == nil, isIphone)
+        }
+    }
+
+    @MainActor
     func testAttachmentPrivacyRechecksDeviceFlagWithoutConsumingDisabledRequests() async {
         let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
         let message = MockUserScriptMessage(name: "test", body: [:])
@@ -158,7 +170,9 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     @MainActor
     func testAttachmentPrivacyMessageClaimsOnceAndReturnsShowResponse() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
-        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler,
+                                     debugSettings: MockAIChatDebugSettingsForTests(),
+                                     devicePlatform: MockDevicePlatform.self)
         XCTAssertNotNil(script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue))
         let message = MockUserScriptMessage(name: "test", body: [:])
         let firstResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message)

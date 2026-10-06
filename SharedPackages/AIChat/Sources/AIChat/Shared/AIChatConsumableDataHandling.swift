@@ -89,6 +89,7 @@ public enum AIChatConversationSource: String, CaseIterable {
 
     case mainMenuFileNewChat = "main-menu-file-new-chat"
     case mainMenuSidebar = "main-menu-sidebar"
+    case mainMenuAskAboutPage = "main-menu-ask-about-page"
     case mainMenuOpenDuckAI = "main-menu-open-duck-ai"
     case mainMenuNewChat = "main-menu-new-chat"
     case mainMenuViewAllChats = "main-menu-view-all-chats"
@@ -122,10 +123,11 @@ public enum AIChatConversationSource: String, CaseIterable {
     case unattributed = "unattributed"
 
     /// Backs the pixels' `isOpenedFromAskDuckAiButton`, now redundant with `source` and kept
-    /// only for continuity with dashboards that predate it.
+    /// only for continuity with dashboards that predate it. The main-menu Ask About Page counts
+    /// because it reported as the tab-bar one until it had its own source.
     public var isAskDuckAiButton: Bool {
         switch self {
-        case .tabBarButton, .askAboutPage, .tabBarSidebar, .tabBarChats:
+        case .tabBarButton, .askAboutPage, .tabBarSidebar, .tabBarChats, .mainMenuAskAboutPage:
             return true
         default:
             return false
@@ -140,10 +142,27 @@ public final class AIChatConversationSourceHandler: AIChatConsumableDataHandling
     public typealias DataType = AIChatConversationSource
     private var data: DataType?
 
+    /// The same stamp, kept for the entry-point pixel: the opener reports it as soon as Duck.ai
+    /// opens, while the chat consumes `data` only when it loads.
+    private var unreportedEntry: DataType?
+
     public init() {}
 
     public func setData(_ data: DataType) {
         self.data = data
+        unreportedEntry = data
+    }
+
+    /// Returns the latest stamp for the entry-point pixel, once.
+    public func takeUnreportedEntry() -> DataType? {
+        defer { unreportedEntry = nil }
+        return unreportedEntry
+    }
+
+    /// The open was abandoned, so neither the entry-point pixel nor the next chat may use the stamp.
+    public func discardPendingOpen() {
+        data = nil
+        unreportedEntry = nil
     }
 
     public func consumeData() -> DataType? {

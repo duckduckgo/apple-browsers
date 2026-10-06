@@ -1478,7 +1478,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     /// Opens the sidebar and force-attaches the current page regardless of the auto-send preference.
-    func openDuckAISidebarWithPageAttachment() {
+    func openDuckAISidebarWithPageAttachment(conversationSource: AIChatConversationSource = .askAboutPage,
+                                             sidebarOpenSource: AIChatSidebarOpenSource = .askAboutPage) {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return }
         let tabID = tab.uuid
 
@@ -1488,13 +1489,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             if aiChatCoordinator?.isSidebarOpen(for: tabID) == false {
                 PixelKit.fire(
                     AIChatPixel.aiChatSidebarOpened(
-                        source: .askAboutPage,
+                        source: sidebarOpenSource,
                         shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
                         minutesSinceSidebarHidden: aiChatCoordinator?.sidebarHiddenAt(for: tabID)?.minutesSinceNow()
                     ),
                     frequency: .dailyAndStandard
                 )
-                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.askAboutPage)
+                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(conversationSource)
             }
             aiChatCoordinator?.revealChat()
         }

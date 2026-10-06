@@ -20,7 +20,8 @@
                     "translation",
                     "attach-selection",
                     "tabbar-button",
-                    "ask-about-page"
+                    "ask-about-page",
+                    "main-menu-ask-about-page"
                 ]
             },
             {
@@ -129,13 +130,31 @@
             "aiChatFirstPromptNewInstall",
             {
                 "key": "isOpenedFromAskDuckAiButton",
-                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar) and kept only for continuity with dashboards that predate `source`.",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'), or from Ask About Page in the main menu. False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar, tab-bar-chats, main-menu-ask-about-page) and kept only for continuity with dashboards that predate `source`.",
                 "type": "boolean"
             },
             {
                 "key": "hasPageContext",
                 "description": "Whether page context with content was attached to the chat when the prompt was submitted. In practice only sidebar chats can report true, since a full-tab Duck.ai chat is never attachable. Text selections do not count (separate channel). Best-effort native signal, matching Windows' win_aichat_start_new_conversation.",
                 "type": "boolean"
+            }
+        ]
+    },
+    "aichat_entry_point_macos": {
+        "description": "Fired when a native surface opens Duck.ai, once per open. Not fired when the surface finds Duck.ai already open and only focuses or reuses it, nor for direct navigation to duck.ai.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "aiChatConversationSource",
+            {
+                "key": "target",
+                "description": "Where Duck.ai opened: the current tab, a new tab, a new window, or the sidebar.",
+                "type": "string",
+                "enum": ["current_tab", "new_tab", "new_window", "sidebar"]
             }
         ]
     },
@@ -152,7 +171,7 @@
             "aiChatFirstPromptNewInstall",
             {
                 "key": "isOpenedFromAskDuckAiButton",
-                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'). False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar) and kept only for continuity with dashboards that predate `source`.",
+                "description": "Whether the chat this prompt was submitted in was opened from the tab-bar Ask Duck.ai button, by any of its gestures: the menu's 'New Chat', a middle-click on the button, or its sidebar entry ('Ask About Page' / 'Open Sidebar'), or from Ask About Page in the main menu. False for every other surface, and for a chat nothing was recorded for (a session restored at startup or a direct navigation to duck.ai). Derived from `source` (true for tab-bar-button, ask-about-page, tab-bar-sidebar, tab-bar-chats, main-menu-ask-about-page) and kept only for continuity with dashboards that predate `source`.",
                 "type": "boolean"
             },
             {

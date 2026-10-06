@@ -1993,6 +1993,7 @@ struct AIChatConversationSourcePixelTests {
         "prompt-bar-voice",
         "main-menu-file-new-chat",
         "main-menu-sidebar",
+        "main-menu-ask-about-page",
         "main-menu-open-duck-ai",
         "main-menu-new-chat",
         "main-menu-view-all-chats",

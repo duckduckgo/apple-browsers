@@ -85,6 +85,10 @@ enum AIChatPixel: PixelKit.Event {
 
     // MARK: - Sidebar
 
+    /// Event Trigger: A surface opens Duck.ai in a tab, a window or the sidebar.
+    /// `source` names the surface; `target` is where Duck.ai opened.
+    case aiChatEntryPoint(source: AIChatConversationSource, target: AIChatEntryPointTarget)
+
     /// Event Trigger: User opens a tab sidebar
     case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?, minutesSinceSidebarHidden: Int?)
 
@@ -589,6 +593,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_settings_displayed"
         case .aiChatAddressBarButtonClicked:
             return "aichat_addressbar_button_clicked"
+        case .aiChatEntryPoint:
+            return "aichat_entry_point_macos"
         case .aiChatSidebarOpened:
             return "aichat_sidebar_opened"
         case .aiChatSidebarClosed:
@@ -1083,6 +1089,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["category": category, "reason": "non_attachable", "trigger": trigger]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
+        case .aiChatEntryPoint(let source, let target):
+            return ["source": source.rawValue, "target": target.rawValue]
         case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
             var params = ["source": source.rawValue]
             if let shouldAutomaticallySendPageContext {
@@ -1134,6 +1142,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatSettingsDisplayed,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatAddressBarButtonClicked,
+                .aiChatEntryPoint,
                 .aiChatSidebarOpened,
                 .aiChatSidebarClosed,
                 .aiChatSidebarExpanded,
@@ -1284,11 +1293,12 @@ enum AIChatPixel: PixelKit.Event {
         }
     }
 
-    // Native gated-row pixels omit the legacy platform prefix used by existing AI Chat pixels.
+    // Native gated-row pixels and new `_macos` pixels omit the legacy platform prefix used by existing AI Chat pixels.
     var namePrefix: PixelKitNamePrefix {
         switch self {
         case .aiChatAddressBarGatedRowClick,
-                .aiChatNtpGatedRowClick:
+                .aiChatNtpGatedRowClick,
+                .aiChatEntryPoint:
             return .none
         default:
             return .platformDefault
@@ -1324,6 +1334,15 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
     case askAboutPage = "ask-about-page"
+    case mainMenuAskAboutPage = "main-menu-ask-about-page"
+}
+
+/// Where an entry point opened Duck.ai, as `aiChatEntryPoint` reports it.
+enum AIChatEntryPointTarget: String, CaseIterable {
+    case currentTab = "current_tab"
+    case newTab = "new_tab"
+    case newWindow = "new_window"
+    case sidebar
 }
 
 /// Source of AI Chat sidebar close action

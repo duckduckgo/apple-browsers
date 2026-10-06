@@ -223,6 +223,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor private var permissionStatusRegistry = GeolocationWatchRegistry()
     @MainActor private var frameRegistrations = GeolocationFrameRegistrationStore()
     @MainActor private var lifecycleGeneration: UInt64 = 0
+    @MainActor private var pendingDocumentEvaluations = [UUID: CheckedContinuation<Any?, Never>]()
 
     @MainActor
     /// - Parameter installImmediately: Hardens the page API synchronously at document start. Use only when the
@@ -271,6 +272,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
         let generation = lifecycleGeneration
         guard let policy = await documentPolicy(in: frame, webView: webView),
+              generation == lifecycleGeneration,
               policy.documentID == registration.documentID,
               body["documentID"] as? String == registration.pageDocumentID,
               await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView),
@@ -313,6 +315,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor
     public func cancelAllWatches() {
         lifecycleGeneration &+= 1
+        let evaluations = pendingDocumentEvaluations
+        pendingDocumentEvaluations.removeAll()
+        evaluations.values.forEach { $0.resume(returning: nil) }
         let requestIDs = watchRegistry.removeAll()
         let statusIDs = permissionStatusRegistry.removeAll()
         frameRegistrations.removeAll()
@@ -427,6 +432,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
         guard let webView,
               frame.isAssociated(with: webView),
               let policy = await documentPolicy(in: frame, webView: webView),
+              generation == lifecycleGeneration,
               await isCurrentDocument(pageDocumentID, in: frame, webView: webView),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true,
@@ -447,9 +453,12 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor
     private func documentPolicy(in frame: GeolocationFrame,
                                 webView: WKWebView) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
-        guard let value = try? await webView.callAsyncJavaScript(
-            "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
-            arguments: [:], in: frame.frameInfo, contentWorld: .defaultClient),
+        let value = await evaluateDocumentJavaScript { completion in
+            webView.callAsyncJavaScript(
+                "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
+                arguments: [:], in: frame.frameInfo, in: .defaultClient, completionHandler: completion)
+        }
+        guard let value,
               let policy = value as? [String: Any],
               let documentID = policy["documentID"] as? String,
               Self.isValidNonce(documentID) else { return nil }
@@ -458,9 +467,24 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     @MainActor
     private func isCurrentDocument(_ documentID: String, in frame: GeolocationFrame, webView: WKWebView) async -> Bool {
-        await withCheckedContinuation { continuation in
-            webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID", in: frame.frameInfo, in: .page) { result in
-                continuation.resume(returning: (try? result.get()) as? String == documentID)
+        let value = await evaluateDocumentJavaScript { completion in
+            webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID",
+                                       in: frame.frameInfo, in: .page, completionHandler: completion)
+        }
+        return value as? String == documentID
+    }
+
+    @MainActor
+    private func evaluateDocumentJavaScript(
+        _ evaluate: (@escaping @MainActor @Sendable (Result<Any, Error>) -> Void) -> Void
+    ) async -> Any? {
+        let evaluationID = UUID()
+        return await withCheckedContinuation { continuation in
+            pendingDocumentEvaluations[evaluationID] = continuation
+            // WebKit may never finish an evaluation in a retired document. Page teardown resolves
+            // the wait; removing its entry also makes a late WebKit completion harmless.
+            evaluate { [weak self] result in
+                self?.pendingDocumentEvaluations.removeValue(forKey: evaluationID)?.resume(returning: try? result.get())
             }
         }
     }

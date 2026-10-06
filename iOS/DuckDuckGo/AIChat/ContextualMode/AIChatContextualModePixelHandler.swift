@@ -83,6 +83,7 @@ protocol AIChatContextualModePixelFiring {
     // MARK: - Page Context Collection
     func firePageContextCollectionEmpty()
     func firePageContextCollectionUnavailable()
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason)
 
     // MARK: - Prompt Submission
     func firePromptSubmittedWithContext()
@@ -281,6 +282,10 @@ final class AIChatContextualModePixelHandler: AIChatContextualModePixelFiring {
 
     func firePageContextCollectionUnavailable() {
         firePixel(.aiChatContextualPageContextCollectionUnavailable)
+    }
+
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {
+        firePixelKitEvent(MultiTabCollectionWaitTimeoutPixel(reason: reason), .dailyAndCount)
     }
 
     // MARK: - Prompt Submission

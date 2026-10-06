@@ -303,7 +303,6 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             keyValueStore: UserDefaults.app,
             memoryWarningTelemetryWindow: { tabEvictionSettings.memoryWarningTelemetryWindow })
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
-            featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager)
         self.applicationState = applicationState ?? { UIApplication.shared.applicationState }
         self.isPad = isPad ?? (UIDevice.current.userInterfaceIdiom == .pad)

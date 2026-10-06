@@ -2472,10 +2472,7 @@ public struct UserText {
             comment: "Instruction above the tab attachment list. Parameter is the configured maximum number of tabs.")
         return String(format: format, attachmentLimit)
     }
-    public static let aiChatChooseTabsSearchPlaceholder = NotLocalizedString(
-        "aichat.choose-tabs.search.placeholder",
-        value: "Search",
-        comment: "placeholder in the tab attachment search field")
+    public static let aiChatChooseTabsSearchPlaceholder = UserText.aiChatHistorySearchBarPlaceholder
     public static let aiChatChooseTabsNoMatches = NSLocalizedString(
         "aichat.choose-tabs.no-matches",
         value: "No matching tabs",
@@ -2565,8 +2562,7 @@ public struct UserText {
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")
     public static let aiChatHeaderEditMessageTitle = NSLocalizedString("aichat.header.editMessage", value: "Edit Message", comment: "Title shown in the Duck.ai tab header while editing a previously sent message")
     public static let aiChatEditReplaceResponseDisclaimer = NSLocalizedString("aichat.edit.replaceResponseDisclaimer", value: "Editing will replace the response with a new one.", comment: "Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response")
-    public static let aiChatMultiTabPromotion = NSLocalizedString("aichat.multiTab.promotion", value: "New · Type “@” or tap the {attachment} icon to add a tab.", comment: "Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. The translation of New must match aichat.multiTab.promotion.new so it can be emphasized.")
-    public static let aiChatMultiTabPromotionNew = NSLocalizedString("aichat.multiTab.promotion.new", value: "New", comment: "Emphasized prefix in the multi-tab feature promotion. Must exactly match the translated New in aichat.multiTab.promotion.")
+    public static let aiChatMultiTabPromotion = NSLocalizedString("aichat.multiTab.promotion", value: "New · Type “@” or tap the {attachment} icon to add a tab.", comment: "Multi-tab feature promotion. Keep {attachment} unchanged; it is replaced by an inline attachment icon. Keep the · separator; the text before its first occurrence is emphasized.")
     public static let aiChatMultiTabPromotionAttachment = NSLocalizedString("aichat.multiTab.promotion.attachment", value: "attachment", comment: "Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label.")
     public static let aiChatAttachmentPrivacyNoticeFormat = NSLocalizedString("aichat.attachment.privacy.notice.format", value: "Files are automatically scanned for illegal content. Flagged chats have limited data retention. %@", comment: "Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence.")
     public static let aiChatAttachmentPrivacyNoticeLearnMore = NSLocalizedString("aichat.attachment.privacy.notice.learnMore", value: "Learn more", comment: "Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format.")

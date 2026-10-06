@@ -66,8 +66,8 @@ public final class WebExtensionLoader: WebExtensionLoading {
     private let storageProvider: WebExtensionStorageProviding
     private let isInspectable: Bool
     private let backgroundPagePatcher = WebExtensionBackgroundPagePatcher()
-    /// The scripts added for each loaded third-party extension, by identifier.
-    private var thirdPartyScripts: [String: [WKUserScript]] = [:]
+    /// Whether the third-party scripts are on the controller, which happens when the first third-party extension loads.
+    private var areThirdPartyScriptsInstalled = false
     private let permissionController: WebExtensionPermissionController?
     public weak var delegate: WebExtensionLoadingDelegate?
 
@@ -161,59 +161,39 @@ public final class WebExtensionLoader: WebExtensionLoading {
         try loadWithThirdPartyScripts(context, identifier: identifier, into: controller)
     }
 
-    /// Scripts that run in every page of a third-party extension, and only there.
+    /// Scripts for the pages of third-party extensions. Each returns early in our own extensions.
     /// The compatibility script comes first, so the stubs can report through it.
     static let thirdPartyScriptSources = [WebExtensionAPICompatibilityScript.source, WebExtensionAPIStubScript.source]
 
-    /// Loads `context`, adding the third-party scripts for its pages first when it is a third-party extension.
+    /// Loads `context`, first adding the third-party scripts when it is the first third-party extension to load.
     ///
-    /// They are user scripts because one on the controller's configuration reaches every page the
-    /// extension owns — background page, popup, options page and iframes — and is exempt from the page's
-    /// CSP. The controller's user scripts are shared by every extension, so each script is limited to this
-    /// extension's base URL: our own extensions never run them. They must be added before the context
-    /// loads, because a user script only reaches documents created after it was added.
+    /// They are user scripts because one on the controller's configuration reaches every page the extension
+    /// owns — background page, popup, options page and iframes — and is exempt from the page's CSP. Those are
+    /// shared by every extension, so each script checks the page's manifest and returns early in our own.
+    /// They are only added once a third-party extension loads, so without one, no page ever runs them. They
+    /// must be added before the context loads, because a user script only reaches documents created after it.
     @MainActor
     private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
-        removeThirdPartyScripts(for: identifier, from: controller)
-
         if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
-            addThirdPartyScripts(for: context, identifier: identifier, to: controller)
+            installThirdPartyScriptsIfNeeded(on: controller)
             reportDroppedPermissions(of: context.webExtension)
         }
 
         do {
             try controller.load(context)
         } catch {
-            removeThirdPartyScripts(for: identifier, from: controller)
             permissionController?.didUnload(identifier)
             throw error
         }
     }
 
-    private func addThirdPartyScripts(for context: WKWebExtensionContext, identifier: String, to controller: WKWebExtensionController) {
-        // The base URL is new for every context, so the pattern is too.
-        let pattern = context.baseURL.absoluteString + "*"
-        let scripts = Self.thirdPartyScriptSources.compactMap { source in
-            WebExtensionScopedUserScript.make(source: source,
-                                              injectionTime: .atDocumentStart,
-                                              forMainFrameOnly: false,
-                                              includeMatchPatterns: [pattern])
-        }
-        guard scripts.count == Self.thirdPartyScriptSources.count else {
-            Logger.webExtensions.error("❌ Could not create the third-party scripts for \(identifier, privacy: .public)")
-            return
-        }
-
+    private func installThirdPartyScriptsIfNeeded(on controller: WKWebExtensionController) {
+        guard !areThirdPartyScriptsInstalled else { return }
         let userContentController = controller.configuration.webViewConfiguration.userContentController
-        scripts.forEach(userContentController.addUserScript)
-        thirdPartyScripts[identifier] = scripts
-    }
-
-    /// Removes the extension's scripts, which would otherwise stay on the shared controller after the extension unloads.
-    private func removeThirdPartyScripts(for identifier: String, from controller: WKWebExtensionController) {
-        guard let scripts = thirdPartyScripts.removeValue(forKey: identifier) else { return }
-        let userContentController = controller.configuration.webViewConfiguration.userContentController
-        scripts.forEach { WebExtensionScopedUserScript.remove($0, from: userContentController) }
+        for source in Self.thirdPartyScriptSources {
+            userContentController.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        }
+        areThirdPartyScriptsInstalled = true
     }
 
     /// WebKit drops manifest permissions it does not implement; the compatibility log lists them.
@@ -242,7 +222,6 @@ public final class WebExtensionLoader: WebExtensionLoading {
         }
 
         try controller.unload(context)
-        removeThirdPartyScripts(for: identifier, from: controller)
         permissionController?.didUnload(identifier)
     }
 

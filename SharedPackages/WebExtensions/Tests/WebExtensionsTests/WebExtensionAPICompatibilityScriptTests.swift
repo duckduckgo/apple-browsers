@@ -199,6 +199,22 @@ final class WebExtensionAPICompatibilityScriptTests: XCTestCase {
         try assertNoExceptions()
     }
 
+    func testWhenManifestIsADuckDuckGoExtension_ThenNothingIsHookedOrReported() throws {
+        context.evaluateScript("""
+        chrome.runtime.getManifest = function() {
+            return { browser_specific_settings: { duckduckgo: { id: "com.duckduckgo.web-extension.embedded" } } };
+        };
+        """)
+        try evaluateScript()
+
+        context.evaluateScript("console.error('Invalid call to one.two().');")
+        try assertNoExceptions()
+
+        try assertTrue("Object.keys(listeners).length === 0")
+        try assertTrue("typeof \(WebExtensionAPICompatibilityScript.reportFunctionName) === 'undefined'")
+        try assertReports("[]")
+    }
+
     func testWhenPageIsAWebsite_ThenNothingIsHookedOrReported() throws {
         context.evaluateScript("var location = { protocol: 'https:' };")
         try evaluateScript()

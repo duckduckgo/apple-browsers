@@ -19,7 +19,7 @@
 import Foundation
 
 /// Reports which unsupported `chrome.*` APIs a third-party extension's pages run into, for the API
-/// compatibility log (see `WebExtensionAPICompatibilityLog`).
+/// compatibility log (see `WebExtensionAPICompatibilityLog`). It returns early in our own extensions.
 ///
 /// It watches the errors a page raises or logs (`error`, `unhandledrejection`, `console.error`,
 /// `console.warn`) and posts the ones shaped like a missing or rejected API to
@@ -53,6 +53,17 @@ public enum WebExtensionAPICompatibilityScript {
             }
         } catch (error) {
             return;
+        }
+
+        // Our own extensions declare `browser_specific_settings.duckduckgo` and are not logged.
+        try {
+            var settings = api.runtime && typeof api.runtime.getManifest === "function"
+                ? api.runtime.getManifest().browser_specific_settings : undefined;
+            if (settings && settings.duckduckgo) {
+                return;
+            }
+        } catch (error) {
+            // A page that cannot read its manifest is treated like any other extension page.
         }
 
         // Reports unsupported API use to the browser, which logs the kind and the API path only.

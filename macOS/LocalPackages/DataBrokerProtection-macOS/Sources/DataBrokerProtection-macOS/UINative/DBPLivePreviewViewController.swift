@@ -84,14 +84,16 @@ public final class DBPLivePreviewViewController: NSViewController {
 
         progressLabel.font = .systemFont(ofSize: 12, weight: .medium)
         progressLabel.textColor = .secondaryLabelColor
-        progressBar.style = .bar
-        progressBar.isIndeterminate = false
-        progressBar.minValue = 0
-        progressBar.maxValue = 1
-        let progress = NSStackView(views: [progressLabel, progressBar])
-        progress.orientation = .vertical
-        progress.alignment = .leading
-        progress.spacing = 6
+        progressLabel.lineBreakMode = .byTruncatingTail
+        progressLabel.translatesAutoresizingMaskIntoConstraints = false
+        progressSpinner.style = .spinning
+        progressSpinner.controlSize = .small
+        progressSpinner.isIndeterminate = true
+        progressSpinner.isDisplayedWhenStopped = false
+        progressSpinner.translatesAutoresizingMaskIntoConstraints = false
+        let progress = NSView()
+        progress.addSubview(progressSpinner)
+        progress.addSubview(progressLabel)
         progress.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(progress)
 
@@ -110,9 +112,16 @@ public final class DBPLivePreviewViewController: NSViewController {
             progress.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 12),
             progress.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
             progress.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
-            progress.heightAnchor.constraint(equalToConstant: 30),
+            progress.heightAnchor.constraint(equalToConstant: 20),
             progress.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
-            progressBar.widthAnchor.constraint(equalTo: progress.widthAnchor),
+            progressSpinner.leadingAnchor.constraint(equalTo: progress.leadingAnchor),
+            progressSpinner.centerYAnchor.constraint(equalTo: progress.centerYAnchor),
+            progressSpinner.widthAnchor.constraint(equalToConstant: 16),
+            progressSpinner.heightAnchor.constraint(equalToConstant: 16),
+            progressLabel.leadingAnchor.constraint(equalTo: progressSpinner.trailingAnchor, constant: 8),
+            progressLabel.trailingAnchor.constraint(equalTo: progress.trailingAnchor),
+            progressLabel.centerYAnchor.constraint(equalTo: progress.centerYAnchor),
+            progressLabel.heightAnchor.constraint(equalToConstant: 16),
             placeholderLabel.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
             placeholderLabel.centerYAnchor.constraint(equalTo: imageView.centerYAnchor)
         ])
@@ -142,7 +151,7 @@ public final class DBPLivePreviewViewController: NSViewController {
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
     private let scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)?
     private let progressLabel = NSTextField(labelWithString: "Scan progress unavailable")
-    private let progressBar = NSProgressIndicator()
+    private let progressSpinner = NSProgressIndicator()
     private let hidesWhenIdle: Bool
     private let brokerLabel = NSTextField(labelWithString: "PIR activity")
     private let activityLabel = NSTextField(labelWithString: "Connecting to PIR agent")
@@ -198,14 +207,12 @@ public final class DBPLivePreviewViewController: NSViewController {
     private func displayProgress(_ progress: DBPUIScanProgress?) {
         guard let progress, progress.totalScans > 0 else {
             progressLabel.stringValue = progress == nil ? "Scan progress unavailable" : "No scans yet"
-            progressBar.doubleValue = 0
             return
         }
         let completed = max(0, min(progress.currentScans, progress.totalScans))
         progressLabel.stringValue = completed == progress.totalScans
             ? "Scan complete: \(completed) of \(progress.totalScans)"
             : "Scanning \(completed) of \(progress.totalScans)"
-        progressBar.doubleValue = Double(completed) / Double(progress.totalScans)
     }
 
     private func display(_ frame: DBPLivePreviewFrame?) {
@@ -222,12 +229,14 @@ public final class DBPLivePreviewViewController: NSViewController {
         imageView.image = image
         updateFavicon(frame.faviconURL)
         placeholderLabel.isHidden = true
+        progressSpinner.startAnimation(nil)
         view.alphaValue = 1
     }
 
     private func clearFrame(message: String) {
         // Keep polling while the card is transparent so a new operation can reveal it.
         view.alphaValue = hidesWhenIdle ? 0 : 1
+        progressSpinner.stopAnimation(nil)
         updateFavicon(nil)
         brokerLabel.stringValue = "PIR activity"
         activityLabel.stringValue = message

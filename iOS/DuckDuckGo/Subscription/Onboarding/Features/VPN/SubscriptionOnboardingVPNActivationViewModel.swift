@@ -267,8 +267,6 @@ protocol SubscriptionOnboardingVPNControlling {
     /// Carries the user-facing message for a start failure that aborts before the tunnel session exists
     var controllerErrorPublisher: AnyPublisher<String?, Never> { get }
     func start() async
-    /// Whether a VPN configuration is already installed.
-    func isVPNConfigured() async -> Bool
 }
 
 /// The live controller, wrapping the app's existing VPN plumbing: it starts the tunnel through
@@ -309,10 +307,6 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
         let status = await notificationsAuthorization.authorizationStatus
         let mightPrompt = status == .notDetermined || status == .provisional
         await tunnelController.start(suppressNotificationAuthorizationRequest: mightPrompt)
-    }
-
-    func isVPNConfigured() async -> Bool {
-        await tunnelController.isConfigurationInstalled
     }
 }
 
@@ -359,8 +353,6 @@ struct PreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNCont
     var controllerErrorPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 
     func start() async {}
-
-    func isVPNConfigured() async -> Bool { false }
 }
 
 /// A preview controller that starts disconnected and flips to connected on `start()`, for the off→on reveal.
@@ -380,8 +372,6 @@ struct RevealPreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingV
     func start() async {
         subject.send(true)
     }
-
-    func isVPNConfigured() async -> Bool { false }
 }
 
 /// A no-network connection-info service for previews: never resolves, so seeded values stand.

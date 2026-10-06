@@ -166,32 +166,38 @@ struct WebExtensionAPICompatibilityLogView: View {
     }
 }
 
-/// Owns the single compatibility log window, so the Debug Menu and the extension toolbar buttons open the same one.
+/// Opens the compatibility log window. The window is found by its identifier, so the Debug Menu and the
+/// extension toolbar buttons bring up the same one.
 @available(macOS 15.4, *)
 @MainActor
-final class WebExtensionAPICompatibilityLogPresenter {
+enum WebExtensionAPICompatibilityLogWindow {
 
-    static let shared = WebExtensionAPICompatibilityLogPresenter()
-
-    private let viewModel = WebExtensionAPICompatibilityLogViewModel()
-    private var window: NSWindow?
+    static let identifier = NSUserInterfaceItemIdentifier("WebExtensionAPICompatibilityLog")
 
     /// Opens the window, limited to the given extension (as the log names it) or showing all of them.
-    func show(extensionName: String? = nil, version: String? = nil) {
-        if window == nil {
-            let window = NSWindow(contentViewController: NSHostingController(
-                rootView: WebExtensionAPICompatibilityLogView(viewModel: viewModel)))
-            window.title = "JavaScript API Compatibility Log"
-            window.isReleasedWhenClosed = false
-            window.center()
-            self.window = window
+    static func show(extensionName: String? = nil, version: String? = nil) {
+        let window = NSApp.windows.first { $0.identifier == identifier } ?? makeWindow()
+        guard let viewModel = (window.contentViewController as? NSHostingController<WebExtensionAPICompatibilityLogView>)?.rootView.viewModel else {
+            return
         }
+
         if let extensionName, let version {
             viewModel.selectedExtension = WebExtensionAPICompatibilityLogViewModel.extensionLabel(name: extensionName, version: version)
         } else {
             viewModel.selectedExtension = nil
         }
         viewModel.refresh()
-        window?.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private static func makeWindow() -> NSWindow {
+        let window = NSWindow(contentViewController: NSHostingController(
+            rootView: WebExtensionAPICompatibilityLogView(viewModel: WebExtensionAPICompatibilityLogViewModel())))
+        window.identifier = identifier
+        window.title = "JavaScript API Compatibility Log"
+        // Nothing else holds the window: AppKit keeps it until it is closed, then releases it.
+        window.isReleasedWhenClosed = true
+        window.center()
+        return window
     }
 }

@@ -182,7 +182,7 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func showAPICompatibilityLog() {
-        WebExtensionAPICompatibilityLogPresenter.shared.show()
+        WebExtensionAPICompatibilityLogWindow.show()
     }
 
     @objc func openExtensionsFolderInFinder() {

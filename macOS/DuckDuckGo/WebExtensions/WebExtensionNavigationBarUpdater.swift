@@ -263,7 +263,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening, NS
 
     @objc private func showAPICompatibilityLog(sender: NSMenuItem) {
         guard let menu = sender.menu as? ExtensionButtonMenu else { return }
-        WebExtensionAPICompatibilityLogPresenter.shared.show(extensionName: menu.extensionName, version: menu.version)
+        WebExtensionAPICompatibilityLogWindow.show(extensionName: menu.extensionName, version: menu.version)
     }
 
     // MARK: - NSMenuDelegate

@@ -154,7 +154,7 @@ struct UnifiedToggleInputModelMenuFactory {
     }
 }
 
-private extension AIChatModel {
+extension AIChatModel {
     var updatedModelPickerMenuIcon: UIImage? {
         switch provider {
         case .unknown:

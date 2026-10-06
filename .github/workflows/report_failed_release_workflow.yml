@@ -31,7 +31,7 @@ jobs:
   report_failure:
     name: Report Failure
 
-    runs-on: [image:osx-tahoe-26, general-purpose]
+    runs-on: [image:osx-tahoe-27, general-purpose]
 
     steps:
 

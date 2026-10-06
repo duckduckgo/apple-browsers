@@ -35,6 +35,7 @@ class TestEntity: NSManagedObject {
     @NSManaged public var relationFrom: TestEntity?
 }
 
+@MainActor
 final class CoreDataErrorsParserTests {
 
     static func tempDBDir() -> URL {

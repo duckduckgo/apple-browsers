@@ -28,10 +28,10 @@ struct PageSignalsCollectorTests {
     private let collector = PageSignalsCollector(tld: TLD())
 
     @available(iOS 16, macOS 13, *)
-    @Test("Starting observation resets signals to the page's eTLD+1", .timeLimit(.minutes(1)))
-    func startObservingResetsSignals() {
+    @Test("Starting collection resets signals to the page's eTLD+1", .timeLimit(.minutes(1)))
+    func startCollectingResetsSignals() {
         collector.recordResourceFailure(.dns, for: URL(string: "https://cdn.example.com")!)
-        collector.startObservingSignals(for: URL(string: "https://www.duckduckgo.com/about")!)
+        collector.startCollectingSignals(for: URL(string: "https://www.duckduckgo.com/about")!)
 
         #expect(collector.signals.host == "duckduckgo.com")
         #expect(collector.signals.resourceFailures.isEmpty)
@@ -64,7 +64,7 @@ struct PageSignalsCollectorTests {
     @available(iOS 16, macOS 13, *)
     @Test("Classified provisional failures start the failed page's signals", .timeLimit(.minutes(1)))
     func classifiedProvisionalFailureStartsSignals() {
-        collector.startObservingSignals(for: URL(string: "https://previous.com")!)
+        collector.startCollectingSignals(for: URL(string: "https://previous.com")!)
         collector.didFailProvisionalNavigation(to: URL(string: "https://www.example.com")!, with: URLError(.cannotFindHost))
 
         #expect(collector.signals.host == "example.com")
@@ -74,7 +74,7 @@ struct PageSignalsCollectorTests {
     @available(iOS 16, macOS 13, *)
     @Test("Unclassified provisional failures leave signals untouched", .timeLimit(.minutes(1)))
     func unclassifiedProvisionalFailureIsIgnored() {
-        collector.startObservingSignals(for: URL(string: "https://previous.com")!)
+        collector.startCollectingSignals(for: URL(string: "https://previous.com")!)
         collector.didFailProvisionalNavigation(to: URL(string: "https://www.example.com")!, with: URLError(.cancelled))
 
         #expect(collector.signals.host == "previous.com")

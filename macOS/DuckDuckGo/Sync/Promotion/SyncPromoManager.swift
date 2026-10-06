@@ -18,21 +18,34 @@
 
 import AppKit
 import Combine
+import ConcurrencyExtensions
 import DDGSync
 import FeatureFlags_macOS
 import Foundation
+import Persistence
 import PrivacyConfig
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) -> Bool
-    func goToSyncSettings(for touchpoint: SyncPromoManager.Touchpoint)
+    @MainActor func goToSyncSettings(for touchpoint: SyncPromoManager.Touchpoint)
     func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint)
     func resetPromos()
+
+    var isPromoActive: Bool { get }
+    var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
+    @MainActor func promoDismissed()
 }
 
 enum SyncPromoContent {
     case bookmarks
     case autofill
+
+    var promoID: String {
+        switch self {
+        case .bookmarks: PromoServiceFactory.syncSetupBookmarksPromoID
+        case .autofill: PromoServiceFactory.syncSetupAutofillPromoID
+        }
+    }
 
     var promoFlag: FeatureFlag {
         switch self {
@@ -47,9 +60,24 @@ enum SyncPromoContent {
         case .autofill: .passwords
         }
     }
+
+    func contains(_ touchpoint: SyncPromoManager.Touchpoint) -> Bool {
+        switch touchpoint {
+        case .bookmarks:
+            self == .bookmarks
+        case .autofill, .passwords, .creditCards, .identities:
+            self == .autofill
+        }
+    }
 }
 
-final class SyncPromoManager: SyncPromoManaging {
+/// Dismissals recorded by the sync promos before they moved to the promo queue.
+struct SyncPromoLegacySettings: StoringKeys {
+    let bookmarksDismissedDate = StorageKey<Date>(UserDefaultsKeys.syncPromoBookmarksDismissed, assertionHandler: { _ in })
+    let passwordsDismissedDate = StorageKey<Date>(UserDefaultsKeys.syncPromoPasswordsDismissed, assertionHandler: { _ in })
+}
+
+final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
 
     enum Touchpoint: String {
         case bookmarks
@@ -80,10 +108,17 @@ final class SyncPromoManager: SyncPromoManaging {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentCountProvider: () -> Int
     private let isDuckDuckGoPasswordManager: () -> Bool
+    private let legacyStorage: KeyedStorage<SyncPromoLegacySettings>
+    private let openSyncSettings: @MainActor () -> Void
+    private let recordResult: @MainActor (_ promoID: String, PromoResult) -> Void
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
+    private let isPromoActiveSubject = CurrentValueSubject<Bool, Never>(false)
+    private var resultContinuation: CheckedContinuation<PromoResult, Never>?
     /// Runs the refreshes this class starts itself, so counting content never blocks the main thread.
     private let eligibilityQueue = DispatchQueue(label: "com.duckduckgo.syncPromoManager.eligibility", qos: .utility)
     private var cancellables = Set<AnyCancellable>()
+    private var didStartSetupFromPromo = false
+
     private let autofillPrefs = AutofillPreferences()
 
     @UserDefaultsWrapper(key: .syncPromoBookmarksDismissed, defaultValue: nil)
@@ -97,6 +132,7 @@ final class SyncPromoManager: SyncPromoManaging {
     ///   - contentCountProvider: Number of items of `content` the user has. Must be synchronous and safe to call off the main thread.
     ///   - isDuckDuckGoPasswordManager: Whether DuckDuckGo is the selected password manager. Only used for `.autofill`.
     ///     Must be safe to call off the main thread.
+    ///   - recordResult: Records a result with the promo queue, including after the promo has been hidden.
     ///
     /// Eligibility isn't computed until `refreshEligibility()` is first called, which `PromoService` does before reading it.
     init(content: SyncPromoContent,
@@ -104,13 +140,19 @@ final class SyncPromoManager: SyncPromoManaging {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: DDGSyncing?,
          contentCountProvider: @escaping () -> Int,
-         isDuckDuckGoPasswordManager: @escaping () -> Bool) {
+         isDuckDuckGoPasswordManager: @escaping () -> Bool,
+         legacyStorage: KeyedStorage<SyncPromoLegacySettings>,
+         openSyncSettings: @escaping @MainActor () -> Void,
+         recordResult: @escaping @MainActor (_ promoID: String, PromoResult) -> Void) {
         self.content = content
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.syncService = syncService
         self.contentCountProvider = contentCountProvider
         self.isDuckDuckGoPasswordManager = isDuckDuckGoPasswordManager
+        self.legacyStorage = legacyStorage
+        self.openSyncSettings = openSyncSettings
+        self.recordResult = recordResult
 
         subscribeToEligibilityChanges()
     }
@@ -123,6 +165,11 @@ final class SyncPromoManager: SyncPromoManaging {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentCountProvider = { 0 }
         self.isDuckDuckGoPasswordManager = { false }
+        self.legacyStorage = KeyedStorage(storage: UserDefaults.standard)
+        self.openSyncSettings = {
+            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
+        }
+        self.recordResult = { _, _ in }
     }
 
     // MARK: - Promo queue eligibility
@@ -140,12 +187,13 @@ final class SyncPromoManager: SyncPromoManaging {
     }
 
     private func subscribeToEligibilityChanges() {
-        // The hop to another queue also means `syncService.authState` holds the new value when eligibility is recomputed.
         syncService?.authStatePublisher
             .dropFirst()
-            .receive(on: eligibilityQueue)
-            .sink { [weak self] _ in
-                self?.refreshEligibility()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] authState in
+                MainActor.assumeMainThread {
+                    self?.handleAuthStateChange(authState)
+                }
             }
             .store(in: &cancellables)
 
@@ -156,6 +204,26 @@ final class SyncPromoManager: SyncPromoManaging {
                 self?.refreshEligibility()
             }
             .store(in: &cancellables)
+    }
+
+    private func scheduleEligibilityRefresh() {
+        eligibilityQueue.async { [weak self] in
+            self?.refreshEligibility()
+        }
+    }
+
+    @MainActor
+    private func handleAuthStateChange(_ authState: SyncAuthState) {
+        if Self.isSyncTurnedOn(authState), didStartSetupFromPromo, let content {
+            // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
+            didStartSetupFromPromo = false
+            recordResult(content.promoID, .actioned)
+        }
+        scheduleEligibilityRefresh()
+    }
+
+    private static func isSyncTurnedOn(_ authState: SyncAuthState) -> Bool {
+        authState == .active || authState == .addingNewDevice
     }
 
     private func computeEligibility() -> Bool {
@@ -173,8 +241,70 @@ final class SyncPromoManager: SyncPromoManaging {
         case .bookmarks:
             return contentCountProvider() > 0
         case .autofill:
-            return isDuckDuckGoPasswordManager() && contentCountProvider() > 0
+            return (isPromoActive || isDuckDuckGoPasswordManager()) && contentCountProvider() > 0
         }
+    }
+
+    // MARK: - Promo queue display
+
+    @MainActor
+    func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
+        if !force, isDismissedInLegacyPromo {
+            return .retired
+        }
+
+        resolve(with: .noChange)
+        // Only a CTA tap during this showing can make it actioned.
+        didStartSetupFromPromo = false
+        return await withCheckedContinuation { continuation in
+            resultContinuation = continuation
+            isPromoActiveSubject.send(true)
+        }
+    }
+
+    @MainActor
+    func hide() {
+        // Hidden because sync turned on: `handleAuthStateChange` can still record `.actioned`.
+        if syncService?.authState == .inactive {
+            didStartSetupFromPromo = false
+        }
+        resolve(with: .noChange)
+    }
+
+    var isPromoActive: Bool {
+        isPromoActiveSubject.value
+    }
+
+    var isPromoActivePublisher: AnyPublisher<Bool, Never> {
+        isPromoActiveSubject
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    @MainActor
+    func promoDismissed() {
+        assert(content != nil, "promoDismissed() requires a promo queue instance")
+        resolve(with: .ignored())
+    }
+
+    private var isDismissedInLegacyPromo: Bool {
+        switch content {
+        case .bookmarks:
+            legacyStorage.bookmarksDismissedDate != nil
+        case .autofill:
+            legacyStorage.passwordsDismissedDate != nil
+        case nil:
+            false
+        }
+    }
+
+    /// Single funnel for every resolution path.
+    @MainActor
+    private func resolve(with result: PromoResult) {
+        guard let continuation = resultContinuation else { return }
+        resultContinuation = nil
+        isPromoActiveSubject.send(false)
+        continuation.resume(returning: result)
     }
 
     func shouldPresentPromoFor(_ touchpoint: Touchpoint) -> Bool {
@@ -222,7 +352,13 @@ final class SyncPromoManager: SyncPromoManaging {
     }
 
     @MainActor func goToSyncSettings(for touchpoint: Touchpoint) {
-        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
+        if let content {
+            assert(content.contains(touchpoint), "\(touchpoint) doesn't belong to the \(content) sync promo")
+            // Tapping the CTA alone doesn't resolve the promo; it's actioned only if sync turns on in this session.
+            didStartSetupFromPromo = true
+        }
+
+        openSyncSettings()
 
         var source: String
         switch touchpoint {

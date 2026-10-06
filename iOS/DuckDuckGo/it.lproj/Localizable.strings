@@ -4702,6 +4702,48 @@
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Imposta la posizione della barra degli indirizzi";
 
+/* Website permission option in Settings that saves approval for this site; iOS app permission is separate. */
+"settings.site.permissions.always.allow" = "Consenti sempre";
+
+/* Website permission option in Settings that asks again when the site requests access. */
+"settings.site.permissions.ask.each.time" = "Chiedi ogni volta";
+
+/* Website camera permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.camera" = "Fotocamera";
+
+/* Website location permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.location" = "Posizione";
+
+/* Settings header for websites with saved permission choices. */
+"settings.site.permissions.manage.sites" = "Gestisci siti";
+
+/* Website microphone permission row in Settings, separate from DuckDuckGo's iOS app permission. */
+"settings.site.permissions.microphone" = "Microfono";
+
+/* Website permission option in Settings that saves denial for this site; it can be changed later. */
+"settings.site.permissions.never.allow" = "Non consentire mai";
+
+/* Settings button that removes all saved website permission choices. */
+"settings.site.permissions.remove.all" = "Rimuovi tutte le autorizzazioni per i siti";
+
+/* Settings button that removes saved permission choices for one website. */
+"settings.site.permissions.remove.site" = "Rimuovi autorizzazioni";
+
+/* Toast after all stored site permissions are removed */
+"settings.site.permissions.removed.all" = "Autorizzazioni rimosse per tutti i siti";
+
+/* Toast after one site's stored website permissions are removed. %@ is the website domain. */
+"settings.site.permissions.removed.site.format" = "Autorizzazioni rimosse per %@";
+
+/* Header for one site's website permission settings. %@ is the website domain. */
+"settings.site.permissions.site.header.format" = "Autorizzazioni per %@";
+
+/* Settings footer about DuckDuckGo's iOS app permissions. The placeholder is a tappable link to DuckDuckGo's page in iOS Settings; translators may move it within the sentence. */
+"settings.site.permissions.system.settings.footer.format" = "Puoi visualizzare e modificare le autorizzazioni di sistema di DuckDuckGo in %@";
+
+/* Linked text that opens DuckDuckGo's page in iOS Settings. The English period is part of the link. */
+"settings.site.permissions.system.settings.link" = "Impostazioni di sistema.";
+
 /* Privacy pro description subtitle in settings when the is activating */
 "settings.subscription.activating" = "Attivazione in corso…";
 
@@ -4899,6 +4941,9 @@
 
 /* Prompt asking user to send report to us if we suspect site may be broken */
 "site.not.working.title" = "Il sito non funziona? Comunicalo a DuckDuckGo.";
+
+/* Browser menu item and Settings title for website camera, microphone, and location permissions. */
+"site.permissions" = "Autorizzazioni del sito";
 
 /* Report a Broken Site screen confirmation button */
 "siteFeedback.buttonText" = "Invia segnalazione";
@@ -5853,3 +5898,9 @@
 
 /* Address bar Duck.ai menu option that opens the full chat history */
 "duckai.address.bar.menu.all.chats" = "Tutte le chat";
+
+/* Attachment privacy disclosure. %@ is the localized Learn more link; keep the placeholder and position it naturally in the sentence. */
+"aichat.attachment.privacy.notice.format" = "I file vengono scansionati automaticamente alla ricerca di contenuti illegali. Le chat segnalate hanno una conservazione dei dati limitata. %@";
+
+/* Link label inserted into the %@ placeholder in aichat.attachment.privacy.notice.format. */
+"aichat.attachment.privacy.notice.learnMore" = "Ulteriori informazioni";

@@ -90,11 +90,12 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 
         // Give the non-editable placeholder a VoiceOver action without intercepting trailing buttons.
         let activateButton = context.coordinator.activateButton
+        activateButton.searchView = view
         view.addSubview(activateButton)
         activateButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             activateButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            activateButton.trailingAnchor.constraint(equalTo: view.textField.trailingAnchor),
+            activateButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             activateButton.topAnchor.constraint(equalTo: view.topAnchor),
             activateButton.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
@@ -117,9 +118,25 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         view.voiceSearchButton.isHidden = !isVoiceSearchEnabled
     }
 
+    final class ActivationButton: UIButton {
+        weak var searchView: DefaultOmniBarSearchView?
+
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            if let searchView {
+                // Let visible trailing controls handle their own taps beneath this full-width button.
+                for button in [searchView.aiChatButton, searchView.voiceSearchButton] where !button.isHidden {
+                    if button.point(inside: convert(point, to: button), with: event) {
+                        return false
+                    }
+                }
+            }
+            return super.point(inside: point, with: event)
+        }
+    }
+
     final class Coordinator: NSObject {
         var field: NewTabPageRestingSearchField
-        let activateButton = UIButton(type: .custom)
+        let activateButton = ActivationButton(type: .custom)
 
         init(field: NewTabPageRestingSearchField) {
             self.field = field

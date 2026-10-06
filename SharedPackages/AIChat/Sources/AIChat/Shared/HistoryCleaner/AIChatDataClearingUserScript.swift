@@ -43,6 +43,7 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
         case duckAiClearData
         case duckAiClearDataCompleted
         case duckAiClearDataFailed
+        case duckAiClearDataReady
 
     }
 
@@ -50,7 +51,10 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     enum ClearError: Error, DDGError {
         case notReady
         case timeout
-        case failedFromScript
+        case failedFromScript(ScriptFailure)
+        case scriptNeverReady
+        case navigationTimeout
+        case webContentProcessTerminated
 
         static var errorDomain: String = "com.duckduckgo.aiChatDataClearing"
 
@@ -59,6 +63,9 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             case .notReady: return "AIChatDataClearingUserScript not ready to clear data"
             case .timeout: return "AIChatDataClearingUserScript timed out waiting for response from script"
             case .failedFromScript: return "AIChatDataClearingUserScript reported failure from script"
+            case .scriptNeverReady: return "AIChatDataClearingUserScript never reported that it is ready"
+            case .navigationTimeout: return "AIChatDataClearingUserScript timed out waiting for the page to load"
+            case .webContentProcessTerminated: return "AIChatDataClearingUserScript web content process terminated"
             }
         }
 
@@ -67,7 +74,29 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             case .notReady: return 1
             case .timeout: return 2
             case .failedFromScript: return 3
+            case .scriptNeverReady: return 4
+            case .navigationTimeout: return 5
+            case .webContentProcessTerminated: return 6
             }
+        }
+
+        /// Whether the page must be reloaded before the next clear: a late reply may still arrive, or the page is gone.
+        var requiresPageReload: Bool {
+            switch self {
+            case .timeout, .webContentProcessTerminated: return true
+            case .notReady, .failedFromScript, .scriptNeverReady, .navigationTimeout: return false
+            }
+        }
+
+        /// Everything but `notReady` (no web view or broker, i.e. misuse) can succeed on a fresh page.
+        var isTransient: Bool {
+            guard case .notReady = self else { return true }
+            return false
+        }
+
+        var underlyingError: Error? {
+            guard case .failedFromScript(let failure) = self else { return nil }
+            return failure
         }
     }
 
@@ -82,6 +111,8 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     @MainActor private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
     @MainActor private var timeoutTask: Task<Void, Never>?
+    @MainActor private let readyWaiter = CallbackWaiter()
+    @MainActor private var isScriptReady = false
 
     // MARK: - Initialization
 
@@ -117,6 +148,7 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
         switch message {
         case .duckAiClearDataCompleted: return aiChatDataClearingSucceeded
         case .duckAiClearDataFailed: return aiChatDataClearingFailed
+        case .duckAiClearDataReady: return aiChatDataClearingReady
         default: return nil
         }
     }
@@ -139,6 +171,26 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
                 self?.finish(result: .failure(ClearError.timeout))
             }
         }
+    }
+
+    /// Forgets the previous page's readiness. Call it before loading a page: the script can report ready before the load finishes.
+    @MainActor
+    func prepareForPageLoad() {
+        isScriptReady = false
+    }
+
+    /// Waits until the script listens for the clear message, so the message isn't sent into the void.
+    @MainActor
+    func waitUntilReady(timeout: TimeInterval = 5) async -> Result<Void, Error> {
+        guard !isScriptReady else { return .success(()) }
+        return await readyWaiter.wait(timeout: timeout, timeoutError: ClearError.scriptNeverReady)
+    }
+
+    /// Fails whatever is still waiting on the script, e.g. because its page is gone.
+    @MainActor
+    func failPendingWaits(with error: ClearError) {
+        readyWaiter.failPending(with: error)
+        finish(result: .failure(error))
     }
 
     // MARK: - Private helpers
@@ -171,7 +223,14 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     @MainActor
     private func aiChatDataClearingFailed(params: Any, message: UserScriptMessage) -> Encodable? {
-        finish(result: .failure(ClearError.failedFromScript))
+        finish(result: .failure(ClearError.failedFromScript(ScriptFailure(payload: params))))
+        return nil
+    }
+
+    @MainActor
+    private func aiChatDataClearingReady(params: Any, message: UserScriptMessage) -> Encodable? {
+        isScriptReady = true
+        readyWaiter.complete(nil, with: .success(()))
         return nil
     }
 }

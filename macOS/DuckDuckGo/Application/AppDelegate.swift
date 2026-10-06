@@ -48,6 +48,7 @@ import History
 import HistoryView
 import Lottie
 import MetricKit
+import HangMetrics
 import Network
 import Networking
 import NetworkProtectionIPC
@@ -99,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
     private var hangReportingFeatureMonitor: HangReportingFeatureMonitor?
+    private let hangMetricsService: HangMetricsService
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -240,6 +242,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let attributedMetricManager: AttributedMetricManager
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry?
+    let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring = AttachmentPrivacyDisclosureStore()
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -351,7 +354,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
         featureFlagger: featureFlagger,
-        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+        buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
 
@@ -399,10 +402,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionManager,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            persistor: vpnUpsellUserDefaultsPersistor,
             timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
     }()
+
+    lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate( // swiftlint:disable:this weak_delegate
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
+
+    lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate( // swiftlint:disable:this weak_delegate
+        featureFlagger: featureFlagger,
+        visibilityManager: vpnUpsellVisibilityManager,
+        persistor: vpnUpsellUserDefaultsPersistor
+    )
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -898,7 +912,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
-                                                              windowControllersManager: windowControllersManager)
+                                                              windowControllersManager: windowControllersManager,
+                                                              historyCoordinator: historyCoordinator)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -1236,6 +1251,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watchdog = Watchdog(eventMapper: eventMapper)
         watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
+        hangMetricsService = HangMetricsService()
+
 #if !DEBUG
         if AppVersion.runType == .normal {
             hangReportingFeatureMonitor = HangReportingFeatureMonitor(
@@ -1540,7 +1557,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateController: updateController,
             updateNotificationBridge: updateNotificationPromoBridge,
             brokenSitePromptPresentationCoordinator: brokenSitePromptPresentationCoordinator,
-            quitSurveyPromoObserver: quitSurveyPromoObserver
+            quitSurveyPromoObserver: quitSurveyPromoObserver,
+            vpnUpsellToolbarButtonPromoDelegate: vpnUpsellToolbarButtonPromoDelegate,
+            vpnUpsellDotBadgePromoDelegate: vpnUpsellDotBadgePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -1670,6 +1689,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
         _ = newTabPageCoordinator
         promoService?.applicationDidBecomeActive()
+
+        hangMetricsService.resume()
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
@@ -2156,6 +2177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Create manager synchronously so it's available during state restoration.
             // Tabs restored before the manager exists won't have webExtensionController attached.
             let webExtensionManager = WebExtensionManagerFactory.makeManager(
+                keyValueStore: keyValueStore,
                 privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
                 autoconsentPreferences: cookiePopupProtectionPreferences,
                 darkReaderExcludedDomainsProvider: darkReaderSettings,
@@ -2165,6 +2187,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             let coordinator = WebExtensionLifecycleCoordinator(
                 manager: webExtensionManager,
+                initialLoadGateEnabledProvider: { [weak self] in
+                    self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+                },
                 pixelFiring: MacOSWebExtensionPixelFiring()
             ) { [weak self] in
                 self?.enabledEmbeddedExtensionTypes() ?? []
@@ -2187,6 +2212,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
+            keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
@@ -2196,6 +2222,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
+            initialLoadGateEnabledProvider: { [weak self] in
+                self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
+            },
             pixelFiring: MacOSWebExtensionPixelFiring()
         ) { [weak self] in
             self?.enabledEmbeddedExtensionTypes() ?? []

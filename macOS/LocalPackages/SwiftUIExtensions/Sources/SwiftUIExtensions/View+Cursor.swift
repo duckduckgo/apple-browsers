@@ -42,17 +42,17 @@ private struct CursorModifier: ViewModifier {
         content
             .onHover { inside in
 
-                if let onHoverChanged = onHoverChanged {
+                onHoverChanged?(inside)
 
-                    onHoverChanged(inside)
-
-                    // Async dispatch is required here in case when onHoverChanged
-                    // updates a State variable that triggers view re-rendering.
-                    // As seen on https://stackoverflow.com/a/67890394.
-                    DispatchQueue.main.async {
-                        updateCursor(isHovered: inside)
-                    }
-                } else {
+                // Async dispatch is required in case a State variable update triggers view
+                // re-rendering: a cursor set made inline is dropped along with the old rendering.
+                // As seen on https://stackoverflow.com/a/67890394.
+                //
+                // Unconditional, because the re-render can just as well come from an ancestor's
+                // own hover handler — a row that reveals a button on hover, say. Handling only the
+                // `onHoverChanged` case left the cursor depending on which side the pointer
+                // entered from.
+                DispatchQueue.main.async {
                     updateCursor(isHovered: inside)
                 }
             }

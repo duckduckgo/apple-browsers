@@ -162,8 +162,9 @@ final class CircularButton: UIButton {
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         assert(Constants.hitSize >= frame.height)
-        let offset = (frame.height - Constants.hitSize) / 2
-        let rect = CGRect(x: offset, y: offset, width: Constants.hitSize, height: Constants.hitSize)
+        // Grows the target to the minimum hit size on each axis, and keeps a wider (titled) button's full width.
+        let rect = bounds.insetBy(dx: min(0, (bounds.width - Constants.hitSize) / 2),
+                                  dy: (bounds.height - Constants.hitSize) / 2)
         guard rect.contains(point) else { return nil }
         return self
     }

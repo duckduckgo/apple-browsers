@@ -22,20 +22,15 @@ import Contacts
 import Core
 import EventKit
 import Foundation
-import PixelKit
 import PrivacyConfig
 
 class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     var fileURL: URL
     var fileSize: String
 
-    private let pixelFiring: (any PixelKitFiring)?
-
-    init(fileURL: URL,
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+    init(fileURL: URL) {
         self.fileURL = fileURL
         self.fileSize = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: Int64(fileURL.fileSize))
-        self.pixelFiring = pixelFiring
         super.init(filename: fileURL.filename)
     }
 
@@ -56,15 +51,6 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
         guard FilePreviewHelper.hasVCardFileExtension(url: fileURL, filename: nil) else {
             return nil
         }
-        guard let result = VCardFileReader.read(at: fileURL) else {
-            pixelFiring?.fire(Pixel.Event.vcardContactFallbackParseFailure)
-            return nil
-        }
-        if result.wasTruncated {
-            // Open the first contact's card and ignore the rest, but still record the multi-contact
-            // open so this entry point mirrors the link-tap path.
-            pixelFiring?.fire(Pixel.Event.vcardContactMultipleContactsTruncated)
-        }
-        return result.contact
+        return VCardFileReader.read(at: fileURL)
     }
 }

@@ -132,6 +132,13 @@ final class DuckAiUsageWarningPixelAdapterTests: XCTestCase {
         XCTAssertEqual(lastParameters, ["surface": "duck_ai", "window": "daily"])
     }
 
+    func testWhenTheWeeklyLimitCTAIsTappedThenItIsReportedWithItsWindow() {
+        sut.fire(.weeklyLimitTapped(limitReached))
+
+        XCTAssertEqual(firedNames, ["aichat_usage_warning_weekly_limit_tapped"])
+        XCTAssertEqual(lastParameters, ["surface": "duck_ai", "window": "daily"])
+    }
+
     // MARK: - High-usage model notice
 
     func testWhenTheHighUsageNoticeIsShownThenItReportsTheModelItIsAbout() {

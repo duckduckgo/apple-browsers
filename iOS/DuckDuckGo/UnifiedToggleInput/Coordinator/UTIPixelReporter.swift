@@ -134,6 +134,12 @@ final class UTIPixelReporter {
 
     // MARK: - Attachments
 
+    func reportAttachmentPrivacy(_ action: AttachmentPrivacyPixel.Action, kind: AttachmentPrivacyPixel.Kind) {
+        withContext {
+            firing.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: $0.surface), frequency: .dailyAndCount)
+        }
+    }
+
     func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
         reportFileValidationFailed(reason: reason.rawValue, source: source)
     }
@@ -165,6 +171,26 @@ final class UTIPixelReporter {
 
     func reportImageAttached(source: String) {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
+    }
+
+    func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
+                             surface: UnifiedToggleInputPixelSurface? = nil) {
+        guard let surface = surface ?? context()?.surface else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, surface: surface), frequency: .dailyAndCount)
+    }
+
+    /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.
+    func makeTabSubmissionReporter(requestedTabCount: Int) -> (MultiTabAttachmentRequest.SubmissionResult) -> Void {
+        guard requestedTabCount > 0, let surface = context()?.surface else { return { _ in } }
+        return { [firing] result in
+            if result.additionalTabCount > 0 {
+                firing.fire(MultiTabSentPixel(count: result.totalTabCount, surface: surface), frequency: .dailyAndCount)
+            }
+            if result.additionalTabCount < requestedTabCount {
+                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.additionalTabCount == 0 ? .all : .partial
+                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, surface: surface), frequency: .dailyAndCount)
+            }
+        }
     }
 
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {

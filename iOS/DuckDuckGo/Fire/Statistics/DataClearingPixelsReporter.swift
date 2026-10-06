@@ -30,6 +30,10 @@ final class DataClearingPixelsReporter {
     private var lastFireTime: CFTimeInterval?
     private let retriggerWindow: TimeInterval = 20.0
 
+    /// Start of the burn for the burn currently in progress
+    @MainActor
+    private var currentBurnMeasurement: Measurement?
+
     // MARK: - Initialization
 
     init(pixelFiring: PixelFiring? = PixelKit.shared,
@@ -55,6 +59,22 @@ final class DataClearingPixelsReporter {
         lastFireTime = now
     }
 
+    /// Marks the start of a burn, so `fireDroppedBurnPixel` can report how long it had been running.
+    @MainActor
+    func burnDidStart() {
+        currentBurnMeasurement = beginMeasurement()
+    }
+
+    /// Fires when a burn request is dropped because another burn is still in progress.
+    @MainActor
+    func fireDroppedBurnPixel(request: FireRequest) {
+        let elapsed = currentBurnMeasurement.map { duration(of: $0) } ?? 0
+        let pixel = DataClearingPixels.burnDropped(trigger: request.trigger.pixelValue,
+                                                   scope: request.scope.pixelValue,
+                                                   elapsed: .init(seconds: elapsed))
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+    }
+
     func fireUserActionBeforeCompletionPixel() {
         pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
     }
@@ -78,5 +98,31 @@ final class DataClearingPixelsReporter {
 
     func fireDataClearingCompletionPixel(_ pixel: DataClearingCompletionPixels) {
         pixelFiring?.fire(pixel, frequency: .standard)
+    }
+}
+
+// MARK: - Pixel Parameter Values
+
+private extension FireRequest.Trigger {
+
+    var pixelValue: String {
+        switch self {
+        case .manualFire: return "manual_fire"
+        case .autoClearOnLaunch: return "auto_clear_on_launch"
+        case .autoClearOnForeground: return "auto_clear_on_foreground"
+        case .fireModeAutoClear: return "fire_mode_auto_clear"
+        }
+    }
+}
+
+private extension FireRequest.Scope {
+
+    var pixelValue: String {
+        switch self {
+        case .tab: return "tab"
+        case .fireMode: return "fire_mode"
+        case .normalMode: return "normal_mode"
+        case .all: return "all"
+        }
     }
 }

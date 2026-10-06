@@ -45,6 +45,7 @@
             "vpnSystemExtension",
             "vpnSystemExtensionAppStore",
             "vpnProxyExtension",
+            "vpnSystemExtensionProxy",
             "dbpBackgroundAgent"
         ]
     },
@@ -657,7 +658,12 @@
     "background_events": {
         "key": "bg_events",
         "type": "string",
-        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), process death, graveyard hold/release, context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+    },
+    "background_graveyard_enabled": {
+        "key": "background_graveyard_enabled",
+        "type": "boolean",
+        "description": "Whether graveyard treatment was enabled for the background-process termination associated with this CPM health episode."
     },
     "web_extension_type": {
         "key": "extension_type",
@@ -676,5 +682,40 @@
         "type": "string",
         "description": "Reload operation that failed.",
         "enum": ["unload", "load", "light_load", "full_load", "fallback_load"]
+    },
+    "eventHubAttributionPeriod": {
+        "key": "attributionPeriod",
+        "type": "integer",
+        "description": "Unix timestamp (UTC seconds) denoting the start of the measurement period"
+    },
+    "eventHubBucketedCount": {
+        "key": "count",
+        "type": "string",
+        "description": "Bucketed count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubYouTubeLoginState": {
+        "key": "loginState",
+        "type": "string",
+        "description": "The user's YouTube login state, as percent-encoded JSON, recorded as the last value seen during the period",
+        "enum": ["%22unknown%22", "%22logged-in%22", "%22logged-out%22", "%22premium%22"]
+    },
+    "eventHubBaseline": {
+        "key": "baseline",
+        "type": "string",
+        "description": "Bucketed count of periods in which EventHub ran. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdwallCount": {
+        "key": "adwallCount",
+        "type": "string",
+        "description": "Bucketed adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdmiralAdwallCount": {
+        "key": "admiralAdwallCount",
+        "type": "string",
+        "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
     }
 }

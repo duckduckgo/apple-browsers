@@ -61,6 +61,7 @@ public class Tab: NSObject, NSCoding {
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
+    let favoritesExpansionState = FavoritesExpansionState()
     /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
     ///
     /// Deliberately outlives the provisional load that starts it: a provisional load replaced before
@@ -68,11 +69,11 @@ public class Tab: NSObject, NSCoding {
     /// restoration, and the replacement must be attributed to it too.
     private(set) var hasPendingSessionRestoration = false
 
-    /// The date last time this tab was displayed.
+    /// The date this tab was last displayed.
     ///
-    /// - Warning: This value **must not** be used for any other purpose than for inactive tabs buckets aggregation
-    /// into a daily pixel in `TabSwitcherOpenDailyPixel`. If you plan to do something else,
-    /// read through https://app.asana.com/0/69071770703008/1208795393823862/f and reopen if necessary.
+    /// Used for inactive-tab bucket aggregation in `TabSwitcherOpenDailyPixel` and the redesigned
+    /// New Tab Page's last-viewed caption. Before adding other uses, read through
+    /// https://app.asana.com/0/69071770703008/1208795393823862/f and reopen if necessary.
     private(set) var lastViewedDate: Date?
 
     var isDesktop: Bool = false {
@@ -135,9 +136,6 @@ public class Tab: NSObject, NSCoding {
     
     /// Indicates whether this tab is a fire tab or not.
     let fireTab: Bool
-
-    /// Fire Tab disclosure displays count only within this instance and are never archived or copied.
-    var attachmentPrivacyNoticeDisplayCount = 0
 
     /// Indicates whether this tab was created from an external launch (URL or shortcut).
     /// Used to determine animation behavior for externally-launched tabs.

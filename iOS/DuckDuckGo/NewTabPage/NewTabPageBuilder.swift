@@ -57,10 +57,8 @@ struct NewTabPageBuilder {
     func makeNewTabPage(tab: Tab,
                         openedAfterIdle: Bool,
                         daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
-        // Fire tabs are excluded because their empty state is drawn elsewhere and would cover the
-        // page.
-        if !tab.fireTab, redesignFeature.isAvailable {
-            return makeRedesignedNewTabPage(openedAfterIdle: openedAfterIdle)
+        if usesRedesignedPage(for: tab) {
+            return makeRedesignedNewTabPage(tab: tab, openedAfterIdle: openedAfterIdle)
         }
 
         return makeCurrentNewTabPage(tab: tab,
@@ -68,18 +66,24 @@ struct NewTabPageBuilder {
                                      daxDialogFactory: daxDialogFactory)
     }
 
-    private func makeRedesignedNewTabPage(openedAfterIdle: Bool) -> any NewTabPage {
+    func usesRedesignedPage(for tab: Tab) -> Bool {
+        // Fire tabs draw their empty state elsewhere.
+        !tab.fireTab && redesignFeature.isAvailable
+    }
+
+    private func makeRedesignedNewTabPage(tab: Tab, openedAfterIdle: Bool) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
+        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+            NewTabPageSearchInputModel.Settings(
+                isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
+                // Must match the address bar's home-tab mode resolution.
+                defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
+        })
         let searchInputView = NewTabPageSearchInputView(
-            model: NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
-                NewTabPageSearchInputModel.Settings(
-                    isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                    isAIChatEnabled: aiChatSettings.isAIChatEnabled,
-                    isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-                    // Must match the address bar's home-tab mode resolution.
-                    defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
-            }),
+            model: searchInputModel,
             onActivate: { textEntryMode in
                 newTabPage?.beginSearch(textEntryMode: textEntryMode)
             },
@@ -106,6 +110,7 @@ struct NewTabPageBuilder {
             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: favoritesInteractionModel),
             faviconLoader: faviconLoader,
             faviconsCache: faviconsCache)
+        favoritesModel.expansionState = tab.favoritesExpansionState
         favoritesModel.onFavoriteURLSelected = { [internalUserCommands] favorite in
             guard let newTabPage else { return }
             if let url = favorite.url.flatMap(URL.init(string:)), internalUserCommands.handle(url: url) {
@@ -128,12 +133,12 @@ struct NewTabPageBuilder {
                                              contextChanges: daxGreetingChanges,
                                              updateAppearance: updateDaxGreetingAppearance))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
+            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)),
             NewTabPageSwiftUIBlock(id: .escapeHatch,
                                   rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
             NewTabPageSwiftUIBlock(id: .messages,
-                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel)),
-            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel))
-        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel)
+                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel)
         newTabPage = page
         return page
     }

@@ -19,8 +19,6 @@
 
 import Contacts
 import ContactsUI
-import Core
-import PixelKit
 import SwiftUI
 import UIKit
 
@@ -36,8 +34,7 @@ struct ContactCardView: UIViewControllerRepresentable {
             for: contact,
             delegate: context.coordinator,
             cancelTarget: context.coordinator,
-            cancelAction: #selector(Coordinator.cancelButtonTapped),
-            pixelFiring: context.coordinator.pixelFiring
+            cancelAction: #selector(Coordinator.cancelButtonTapped)
         )
     }
 
@@ -54,16 +51,13 @@ struct ContactCardView: UIViewControllerRepresentable {
     }
 
     final class Coordinator: NSObject, CNContactViewControllerDelegate {
-        let pixelFiring: (any PixelKitFiring)?
         private let onSaved: () -> Void
         private let onDismiss: () -> Void
-        private let completion: ContactCardCompletion
+        private let completion = ContactCardCompletion()
 
-        init(onSaved: @escaping () -> Void, onDismiss: @escaping () -> Void, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        init(onSaved: @escaping () -> Void, onDismiss: @escaping () -> Void) {
             self.onSaved = onSaved
             self.onDismiss = onDismiss
-            self.pixelFiring = pixelFiring
-            self.completion = ContactCardCompletion(pixelFiring: pixelFiring)
         }
 
         @objc func cancelButtonTapped() {
@@ -74,10 +68,10 @@ struct ContactCardView: UIViewControllerRepresentable {
             complete(saved: contact != nil)
         }
 
-        /// The shared completion fires the saved/cancelled pixel and guards so the delegate callback,
+        /// The shared completion guards so the delegate callback,
         /// the Cancel button, and a swipe-dismiss can't run this more than once.
         func complete(saved: Bool) {
-            guard completion.recordCompletion(saved: saved) else { return }
+            guard completion.recordCompletion() else { return }
             if saved { onSaved() }
             onDismiss()
         }

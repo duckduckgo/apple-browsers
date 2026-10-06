@@ -23,26 +23,12 @@ import Foundation
 /// Pure, side-effect-free classifier for a `.vcf` file URL.
 enum VCardFileReader {
 
-    /// The first presentable contact in the file, plus whether other presentable contacts were
-    /// dropped (so the caller can fire the "truncated" pixel). `read(at:)` returns `nil` when the
-    /// file can't be parsed or has no presentable contact.
-    struct Result {
-        let contact: CNContact
-        let wasTruncated: Bool
-    }
-
-    /// Parses a `.vcf` into a `Result`, or `nil` when it can't be parsed or has no presentable contact.
-    static func read(at url: URL) -> Result? {
+    /// Returns the first presentable contact in a `.vcf`, or `nil` when it can't be parsed or has no presentable contact.
+    static func read(at url: URL) -> CNContact? {
         guard let data = try? Data(contentsOf: url) else { return nil }
         do {
             let contacts = try CNContactVCardSerialization.contacts(with: data)
-            let presentableContacts = contacts.filter(isPresentable)
-            guard let presentable = presentableContacts.first else { return nil }
-            // Multiplicity is keyed off the count of *presentable* contacts, not the raw parsed count,
-            // so a single real contact followed by a field-less stub (common in real-world exports)
-            // isn't mis-reported as truncated. We carry the first presentable contact and flag
-            // truncation only when we actually drop one.
-            return Result(contact: presentable, wasTruncated: presentableContacts.count > 1)
+            return contacts.first(where: isPresentable)
         } catch {
             return nil
         }

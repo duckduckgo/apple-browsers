@@ -100,7 +100,7 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(glass.transform.ty, 0, accuracy: 0.001)
     }
 
-    func testWhenStandaloneCollapseProgressIsAppliedThenIconsAreNotInsideGlassContentView() {
+    func testWhenStandaloneFloatingThenIconsAreInsideGlassContentView() {
         let sut = makeSUT(embeddedOmnibar: false)
         let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
         sut.setToolbarButtons([fire])
@@ -116,7 +116,7 @@ final class BrowserToolbarViewTests: XCTestCase {
             ancestor = view.superview
         }
 
-        XCTAssertFalse(isInsideGlassContentView)
+        XCTAssertTrue(isInsideGlassContentView)
     }
 
     func testWhenStandaloneGlassChangesAppearanceThenItStaysUntinted() throws {
@@ -127,10 +127,22 @@ final class BrowserToolbarViewTests: XCTestCase {
 
         let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
         XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
 
         sut.refreshMaterialAppearance(interfaceStyle: .light)
 
         XCTAssertNil((glassView.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenStandaloneGlassUsesDarkInterfaceStyleThenItRemainsAdaptive() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let sut = makeSUT(embeddedOmnibar: false)
+
+        sut.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
     func testWhenNotFloatingThenProgressIsANoOp() {

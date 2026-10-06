@@ -26,7 +26,9 @@ public protocol CPMDiagnosticsFeatureFlagsProviding: AnyObject {
     /// Whether `CPMBackgroundWebViewDelegateProxy` may be installed on the background web view. Turning it off at
     /// runtime hands WebKit's original navigation delegate back.
     var isBackgroundDelegateProxyEnabled: Bool { get }
-    /// Emits whenever the value above may have changed (remote config update, local override).
+    /// Enables temporary retention after background process termination.
+    var isBackgroundGraveyardTreatmentEnabled: Bool { get }
+    /// Emits whenever a value above may have changed (remote config update, local override).
     var updatesPublisher: AnyPublisher<Void, Never> { get }
 }
 
@@ -36,10 +38,15 @@ public final class CPMDiagnosticsStaticFeatureFlags: CPMDiagnosticsFeatureFlagsP
     public var isBackgroundDelegateProxyEnabled: Bool {
         didSet { subject.send() }
     }
+    public var isBackgroundGraveyardTreatmentEnabled: Bool {
+        didSet { subject.send() }
+    }
     private let subject = PassthroughSubject<Void, Never>()
     public var updatesPublisher: AnyPublisher<Void, Never> { subject.eraseToAnyPublisher() }
 
-    public init(isBackgroundDelegateProxyEnabled: Bool = true) {
+    public init(isBackgroundDelegateProxyEnabled: Bool = true,
+                isBackgroundGraveyardTreatmentEnabled: Bool = false) {
         self.isBackgroundDelegateProxyEnabled = isBackgroundDelegateProxyEnabled
+        self.isBackgroundGraveyardTreatmentEnabled = isBackgroundGraveyardTreatmentEnabled
     }
 }

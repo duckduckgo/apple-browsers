@@ -43,6 +43,7 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public func loadInstalledExtensions() async {}
     public func reloadInstalledExtensions() async {}
     public func installExtension(from sourceURL: URL) async throws {}
+    public func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
     @MainActor public func uninstallExtension(identifier: String) throws {}
 
     @MainActor

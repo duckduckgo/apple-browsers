@@ -18,6 +18,7 @@
 
 import Foundation
 import AppKit
+import DataBrokerProtectionCore
 
 public final class StatusBarMenu: NSObject {
     private let statusItem: NSStatusItem
@@ -26,7 +27,6 @@ public final class StatusBarMenu: NSObject {
     public override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = StatusBarPopover()
-        popover.behavior = .transient
         super.init()
 
         setupStatusItem()
@@ -50,6 +50,7 @@ public final class StatusBarMenu: NSObject {
     @MainActor
     public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
         popover.setLivePreviewContent(agentInterface: agentInterface)
+        PIRLivePreview.shared.automationResumed = { [weak self] in self?.showPopover() }
     }
     #endif
 
@@ -57,13 +58,21 @@ public final class StatusBarMenu: NSObject {
         if popover.isShown {
             popover.close()
         } else {
-            guard let button = statusItem.button else {
-                return
-            }
-
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
-            popover.contentViewController?.view.window?.makeKey()
+            showPopover()
         }
+    }
+
+    private func showPopover() {
+        guard !popover.isShown, let button = statusItem.button else { return }
+        statusItem.isVisible = true
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+        #if DEBUG
+        if popover.behavior == .applicationDefined {
+            popover.contentViewController?.view.window?.hidesOnDeactivate = false
+            popover.contentViewController?.view.window?.level = .floating
+        }
+        #endif
+        popover.contentViewController?.view.window?.makeKey()
     }
 
     // MARK: - Showing & Hiding the menu

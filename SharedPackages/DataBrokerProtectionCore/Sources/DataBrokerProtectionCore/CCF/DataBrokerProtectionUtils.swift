@@ -43,8 +43,13 @@ final class DataBrokerUserContentController: WKUserContentController {
                                                          executionConfig: executionConfig,
                                                          shouldContinueActionHandler: shouldContinueActionHandler,
                                                          contentBlocking: contentBlocking)
-        dataBrokerUserScripts?.userScripts.forEach {
-            let userScript = $0.makeWKUserScriptSync()
+        try dataBrokerUserScripts?.userScripts.forEach {
+            var userScript = $0.makeWKUserScriptSync()
+            #if os(macOS) && DEBUG
+            if $0 === dataBrokerUserScripts?.contentScopeUserScriptIsolated {
+                userScript = try PIRManualControl.guardedScript(userScript)
+            }
+            #endif
             self.installUserScripts([userScript], handlers: [$0])
         }
 

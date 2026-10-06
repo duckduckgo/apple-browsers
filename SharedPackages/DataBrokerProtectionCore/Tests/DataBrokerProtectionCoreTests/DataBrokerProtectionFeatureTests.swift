@@ -37,6 +37,52 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         mockCSSDelegate.reset()
     }
 
+    #if os(macOS) && DEBUG
+    @MainActor
+    func testOrdinaryManualPauseSuspendsActionTimeoutUntilResume() async throws {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(cssActionTimeout: 0.05), shouldContinueActionHandler: { true })
+        sut.with(broker: mockBroker)
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+        sut.setManualControl(true, preservingAutomation: true)
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertNil(mockCSSDelegate.lastError)
+        let timeout = expectation(description: "Action timeout resumes after manual control")
+        mockCSSDelegate.onErrorCallback = { _ in timeout.fulfill() }
+        sut.setManualControl(false)
+        await fulfillment(of: [timeout], timeout: 2)
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError,
+                       .actionFailed(actionID: action.id, message: "Action timed out"))
+    }
+
+    @MainActor
+    func testOrdinaryManualPauseDefersCompletedActionWithoutReplayingIt() async throws {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+        sut.setManualControl(true, preservingAutomation: true)
+        let params = ["result": ["success": ["actionID": "click", "actionType": "click"] as [String: Any]]]
+        let completion = Task { try await sut.onActionCompleted(params: params, original: WKScriptMessage.mock()) }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertNil(mockCSSDelegate.successActionId)
+        sut.setManualControl(false)
+        _ = try await completion.value
+        XCTAssertEqual(mockCSSDelegate.successActionId, "click")
+    }
+
+    @MainActor
+    func testManagedChallengeDiscardsResultDeferredDuringOrdinaryPause() async throws {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
+        sut.setManualControl(true, preservingAutomation: true)
+        let params = ["result": ["success": ["actionID": "click", "actionType": "click"] as [String: Any]]]
+        let completion = Task { try await sut.onActionCompleted(params: params, original: WKScriptMessage.mock()) }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        sut.setManualControl(true)
+        sut.setManualControl(false)
+        _ = try await completion.value
+        XCTAssertNil(mockCSSDelegate.successActionId)
+    }
+    #endif
+
     func testWhenParseActionCompletedFailsOnParsing_thenDelegateSendsBackTheCorrectError() async {
         let params = ["result": "something"]
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })

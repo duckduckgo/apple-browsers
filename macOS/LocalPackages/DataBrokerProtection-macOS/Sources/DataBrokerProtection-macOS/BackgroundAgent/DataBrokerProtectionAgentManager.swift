@@ -267,6 +267,13 @@ public final class DataBrokerProtectionAgentManager {
         self.resourceMonitor = resourceMonitor
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
 
+        #if DEBUG
+        Task { @MainActor [weak self] in
+            PIRLivePreview.shared.manualControlChanged = { [weak self] operationID, active in
+                self?.queueManager.setManualControlActive(active, operationID: operationID)
+            }
+        }
+        #endif
         self.activityScheduler.delegate = self
         self.activityScheduler.dataSource = self
         self.queueManager.delegate = self
@@ -561,6 +568,12 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 
 #if DEBUG
+    @MainActor
+    public func takeControlOfLivePreview(operationID: String) async throws -> Bool {
+        guard let id = UUID(uuidString: operationID) else { return false }
+        return try await PIRLivePreview.shared.takeControl(operationID: id)
+    }
+
     @MainActor
     public func getLivePreviewScanProgress() throws -> DBPUIScanProgress {
         let queryData = try dataManager.fetchBrokerProfileQueryData(ignoresCache: true)

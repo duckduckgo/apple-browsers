@@ -156,7 +156,14 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         await executeNextStep()
     }
 
+    #if os(macOS) && DEBUG
+    @MainActor
+    #endif
     public func executeNextStep() async {
+        #if os(macOS) && DEBUG
+        let epoch = await automationEpoch()
+        guard await permitsAutomation(epoch) else { return }
+        #endif
         guard !isCancelled else {
             await failAsCancelledAndTearDown()
             return
@@ -170,6 +177,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
+        #if os(macOS) && DEBUG
+        guard await permitsAutomation(epoch) else { return }
+        #endif
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
             stageCalculator.setLastAction(action)

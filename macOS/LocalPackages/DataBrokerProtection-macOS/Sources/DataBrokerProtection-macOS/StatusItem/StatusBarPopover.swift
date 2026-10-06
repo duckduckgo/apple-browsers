@@ -38,10 +38,11 @@ public final class StatusBarPopover: NSPopover {
     #if DEBUG
     @MainActor
     public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
-        let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false) {
-            try agentInterface.getLivePreviewScanProgress()
-        }
-        let size = NSSize(width: 324, height: 409)
+        behavior = .applicationDefined
+        let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false,
+                                                      scanProgressProvider: { try agentInterface.getLivePreviewScanProgress() },
+                                                      takeControl: { try await agentInterface.takeControlOfLivePreview(operationID: $0) })
+        let size = NSSize(width: 324, height: 449)
         controller.view.frame = NSRect(origin: .zero, size: size)
         contentViewController = controller
         contentSize = size

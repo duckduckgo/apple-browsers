@@ -53,6 +53,16 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 #if os(macOS)
 #if DEBUG
     private let livePreviewOperationID = UUID()
+    let manualControl = PIRManualControl()
+    private var manualDeadline: Task<Void, Never>?
+    private var manualGuidance: NSTextField?
+    private var manualResumeButton: NSButton?
+    private var manualNavigationURL: URL?
+    private var isAwaitingManagedChallengeDestination = false
+    private var isManagedChallengeResponse = false
+    private var didReachManagedChallengeDestination = false
+    private var expectedManagedChallengeURL: URL?
+    private var resumeAfterManagedNavigation = false
     private let previewBrokerName: String?
 #endif
     private var urlObservation: NSKeyValueObservation?
@@ -117,6 +127,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 #if os(macOS) && DEBUG
         if let webView, let previewBrokerName {
             PIRLivePreview.shared.register(webView: webView, operationID: livePreviewOperationID, brokerName: previewBrokerName)
+            PIRLivePreview.shared.attach(handler: self, operationID: livePreviewOperationID)
         }
 #endif
 
@@ -181,6 +192,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         PIRLivePreview.shared.updateActivity("Opening the broker website", operationID: livePreviewOperationID)
 #endif
 #endif
+        #if os(macOS) && DEBUG
+        guard await manualControl.waitForAutomation(manualControl.epoch) else { return }
+        manualNavigationURL = url
+        #endif
         webView?.load(url)
         Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
@@ -194,8 +209,22 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func finish() {
 #if os(macOS) && DEBUG
+        manualDeadline?.cancel()
+        manualDeadline = nil
+        manualControl.invalidateAutomation()
+        if manualControl.isPaused {
+            manualControl.endPause()
+            PIRLivePreview.shared.manualControlChanged?(livePreviewOperationID, false)
+        }
+        userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true)
+        window?.orderOut(nil)
+        window?.contentView = nil
+        window = nil
+        manualControl.resume = nil
+        manualControl.cancel = nil
         PIRLivePreview.shared.unregister(operationID: livePreviewOperationID)
 #endif
+        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
         Logger.action.log("WebViewHandler finished")
         webView?.stopLoading()
         userContentController?.cleanUpBeforeClosing()
@@ -238,12 +267,171 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
 #if os(macOS) && DEBUG
+    func takeManualControl() async throws -> Bool {
+        guard manualControl.canTakeControl, let webView else { return false }
+        let preservingAutomation = !manualControl.isManagedChallenge
+        manualControl.pause(preservingAutomation: preservingAutomation)
+        userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true, preservingAutomation: preservingAutomation)
+        stopTimer()
+        do {
+            let script = "globalThis.__pirControl.paused = true" + (preservingAutomation ? "" : "; globalThis.__pirControl.epoch++")
+            let _: Any = try await webView.evaluateJavaScript(script, in: nil, in: .defaultClient)
+        } catch {
+            manualControl.invalidateAutomation()
+            manualControl.endPause()
+            await manualControl.cancel?()
+            throw error
+        }
+        guard manualControl.isPaused, self.webView === webView else { return false }
+        PIRLivePreview.shared.manualControlChanged?(livePreviewOperationID, true)
+        PIRLivePreview.shared.updateActivity("Paused for your assistance", operationID: livePreviewOperationID)
+        let content = NSView()
+        let guidance = NSTextField(labelWithString: manualControl.instruction)
+        guidance.font = .systemFont(ofSize: 14, weight: .medium)
+        guidance.translatesAutoresizingMaskIntoConstraints = false
+        let resume = NSButton(title: "Resume automatically", target: self, action: #selector(resumeManualControl))
+        resume.bezelStyle = .rounded
+        resume.translatesAutoresizingMaskIntoConstraints = false
+        webView.removeFromSuperview()
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        content.addSubview(guidance)
+        content.addSubview(resume)
+        content.addSubview(webView)
+        NSLayoutConstraint.activate([
+            guidance.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 16),
+            guidance.centerYAnchor.constraint(equalTo: resume.centerYAnchor),
+            guidance.trailingAnchor.constraint(lessThanOrEqualTo: resume.leadingAnchor, constant: -12),
+            resume.topAnchor.constraint(equalTo: content.topAnchor, constant: 12),
+            resume.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -16),
+            webView.topAnchor.constraint(equalTo: resume.bottomAnchor, constant: 12),
+            webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            webView.bottomAnchor.constraint(equalTo: content.bottomAnchor)
+        ])
+        manualGuidance = guidance
+        manualResumeButton = resume
+        window?.orderOut(nil)
+        let manualWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1024, height: 850),
+                                    styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        manualWindow.title = previewBrokerName ?? "Personal Information Removal"
+        manualWindow.isReleasedWhenClosed = false
+        manualWindow.delegate = self
+        manualWindow.contentView = content
+        manualWindow.standardWindowButton(.closeButton)?.isEnabled = false
+        window = manualWindow
+        manualWindow.center()
+        manualWindow.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        manualDeadline = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: 600_000_000_000) } catch { return }
+            guard let self, self.manualControl.isPaused else { return }
+            await self.manualControl.cancel?()
+        }
+        return true
+    }
+
+    @objc private func resumeManualControl() {
+        guard manualControl.isPaused, manualResumeButton?.isEnabled == true else { return }
+        manualResumeButton?.isEnabled = false
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let completed = self.verifyManualStep()
+            guard self.manualControl.isPaused else { return }
+            guard completed else {
+                self.manualGuidance?.stringValue = "Step incomplete. " + self.manualControl.instruction
+                self.manualResumeButton?.isEnabled = true
+                return
+            }
+            guard let webView = self.webView else { return }
+            let resumeInterruptedAutomation = self.manualControl.preservesAutomation && !self.manualControl.isManagedChallenge
+            // Only a challenge handoff discards interrupted work. A normal pause preserves its result.
+            do {
+                let script = (resumeInterruptedAutomation ? "" : "globalThis.__pirControl.epoch++; ") + "globalThis.__pirControl.paused = false"
+                let _: Any = try await webView.evaluateJavaScript(script, in: nil, in: .defaultClient)
+            } catch {
+                self.manualGuidance?.stringValue = "Page check failed. Please try Resume automatically again."
+                self.manualResumeButton?.isEnabled = true
+                return
+            }
+            guard self.manualControl.isPaused, self.webView === webView else { return }
+            guard self.verifyManualStep(),
+                  resumeInterruptedAutomation == (self.manualControl.preservesAutomation && !self.manualControl.isManagedChallenge) else {
+                let _: Any? = try? await webView.evaluateJavaScript("globalThis.__pirControl.paused = true", in: nil, in: .defaultClient)
+                self.manualGuidance?.stringValue = "Page changed. " + self.manualControl.instruction
+                self.manualResumeButton?.isEnabled = true
+                return
+            }
+            webView.removeFromSuperview()
+            webView.translatesAutoresizingMaskIntoConstraints = true
+            webView.frame = CGRect(x: 0, y: 0, width: 1024, height: 1024)
+            self.window?.orderOut(nil)
+            self.window?.contentView = nil
+            self.window = nil
+            self.manualDeadline?.cancel()
+            self.manualDeadline = nil
+            self.resumeAfterManagedNavigation = false
+            self.manualControl.isManagedChallenge = false
+            self.manualControl.endPause()
+            self.resumeActiveContinuation(with: .success(()))
+            self.userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(false)
+            PIRLivePreview.shared.manualControlChanged?(self.livePreviewOperationID, false)
+            self.installTimer()
+            PIRLivePreview.shared.automationResumed?()
+            if !resumeInterruptedAutomation { await self.manualControl.resume?() }
+        }
+    }
+
+    private func verifyManualStep() -> Bool {
+        guard let webView, !webView.isLoading else { return false }
+        if !manualControl.isManagedChallenge { return webView.url != nil }
+        return !isManagedChallengeResponse && didReachManagedChallengeDestination
+            && isExpectedManagedChallengeDestination(webView.url)
+    }
+
+    private func isExpectedManagedChallengeDestination(_ url: URL?) -> Bool {
+        func normalizedHost(_ host: String?) -> String? {
+            guard let host else { return nil }
+            return host.lowercased().hasPrefix("www.") ? String(host.dropFirst(4)).lowercased() : host.lowercased()
+        }
+        guard let expectedHost = normalizedHost(expectedManagedChallengeURL?.host),
+              let responseHost = normalizedHost(url?.host) else { return false }
+        return responseHost == expectedHost || responseHost.hasSuffix(".\(expectedHost)") || expectedHost.hasSuffix(".\(responseHost)")
+    }
+
+    func updateManagedChallengeState(response: HTTPURLResponse) {
+        // Same main-frame detector and destination proof as apple-browsers-haki.
+        isManagedChallengeResponse = response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame
+        if isManagedChallengeResponse {
+            if !isAwaitingManagedChallengeDestination {
+                expectedManagedChallengeURL = manualNavigationURL ?? response.url
+            }
+            isAwaitingManagedChallengeDestination = true
+            didReachManagedChallengeDestination = false
+            manualControl.isManagedChallenge = true
+            userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true)
+            if manualControl.isPaused { manualGuidance?.stringValue = manualControl.instruction }
+            PIRLivePreview.shared.updateActivity("Cloudflare security check needs your help", operationID: livePreviewOperationID)
+            return
+        }
+        guard isAwaitingManagedChallengeDestination, (200..<400).contains(response.statusCode),
+              isExpectedManagedChallengeDestination(response.url) else { return }
+        isAwaitingManagedChallengeDestination = false
+        didReachManagedChallengeDestination = true
+        if !manualControl.isPaused {
+            manualControl.isManagedChallenge = false
+            resumeAfterManagedNavigation = true
+        }
+    }
+
     public func updateLivePreviewActivity(for actionType: ActionType, stepType: StepType?) {
         PIRLivePreview.shared.updateActivity(actionType.livePreviewActivity(for: stepType), operationID: livePreviewOperationID)
     }
 #endif
 
-    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
+    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
+        #if os(macOS) && DEBUG
+        guard await manualControl.waitForAutomation(manualControl.epoch) else { return }
+        #endif
 #if os(macOS) && DEBUG
         updateLivePreviewActivity(for: action.actionType, stepType: stepType)
 #endif
@@ -257,6 +445,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func evaluateJavaScript(_ javaScript: String) async throws {
+        #if os(macOS) && DEBUG
+        guard await manualControl.waitForAutomation(manualControl.epoch) else { return }
+        #endif
         try await webView?.evaluateJavaScript(javaScript) as Void?
     }
 
@@ -423,6 +614,9 @@ private extension DataBrokerProtectionWebViewHandler {
 
 extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
+        #if DEBUG
+        if manualControl.isPaused { return false }
+        #endif
         sender.orderOut(nil)
         return false
     }
@@ -464,6 +658,17 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.log("WebViewHandler didFinish")
 #if os(macOS)
         updateAddressBar(with: webView.url)
+        #if DEBUG
+        guard !isAwaitingManagedChallengeDestination, !manualControl.isPaused else { return }
+        if resumeAfterManagedNavigation {
+            resumeAfterManagedNavigation = false
+            userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(false)
+            if activeContinuation == nil {
+                Task { @MainActor [weak self] in await self?.manualControl.resume?() }
+                return
+            }
+        }
+        #endif
 #endif
 
         resumeActiveContinuation(with: .success(()))
@@ -482,11 +687,23 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
 #if os(macOS)
         updateAddressBar(with: webView.url)
+        #if DEBUG
+        if manualControl.isPaused && manualControl.preservesAutomation {
+            // A manual navigation replaces the interrupted document. Resume from the resulting page.
+            manualControl.invalidateAutomation()
+            userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true)
+        }
+        #endif
 #endif
     }
 
     public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         let response = navigationResponse.response
+        #if os(macOS) && DEBUG
+        if navigationResponse.isForMainFrame, let response = response as? HTTPURLResponse {
+            updateManagedChallengeState(response: response)
+        }
+        #endif
 #if os(macOS)
         recordChallengeDetectionIfPresent(in: response, isForMainFrame: navigationResponse.isForMainFrame)
         if navigationResponse.isForMainFrame {

@@ -50,6 +50,43 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     weak var delegate: CCFCommunicationDelegate?
 
+    #if os(macOS) && DEBUG
+    private var isManualControlActive = false
+    private var manualGeneration = UUID()
+    private var timeoutGeneration = UUID()
+    private var preservesManualAutomation = false
+    private var actionResponseTimerAction: Action?
+    private var suspendedAction: Action?
+
+    @MainActor
+    func setManualControl(_ active: Bool, preservingAutomation: Bool = false) {
+        timeoutGeneration = UUID()
+        if active && preservingAutomation && !isManualControlActive {
+            suspendedAction = actionResponseTimerAction
+        } else if active && !preservingAutomation {
+            suspendedAction = nil
+            manualGeneration = UUID()
+        }
+        isManualControlActive = active
+        preservesManualAutomation = active && preservingAutomation
+        actionResponseTimer?.invalidate()
+        actionResponseTimer = nil
+        actionResponseTimerAction = nil
+        if !active, let action = suspendedAction {
+            suspendedAction = nil
+            installActionTimer(for: action)
+        }
+    }
+
+    @MainActor
+    private func waitForManualResume(generation: UUID) async -> Bool {
+        while isManualControlActive && preservesManualAutomation && manualGeneration == generation {
+            do { try await Task.sleep(nanoseconds: 50_000_000) } catch { return false }
+        }
+        return !Task.isCancelled && !isManualControlActive && manualGeneration == generation
+    }
+    #endif
+
     private var actionResponseTimer: Timer?
     private var taskCancellationTimer: Timer?
 
@@ -90,7 +127,14 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionCompleted(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        #if os(macOS) && DEBUG
+        let generation = await MainActor.run { manualGeneration }
+        guard await waitForManualResume(generation: generation) else { return nil }
+        #endif
         await removeTimers()
+        #if os(macOS) && DEBUG
+        guard await waitForManualResume(generation: generation) else { return nil }
+        #endif
 
         Logger.action.log("Action completed")
 
@@ -142,7 +186,14 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionError(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        #if os(macOS) && DEBUG
+        let generation = await MainActor.run { manualGeneration }
+        guard await waitForManualResume(generation: generation) else { return nil }
+        #endif
         await removeTimers()
+        #if os(macOS) && DEBUG
+        guard await waitForManualResume(generation: generation) else { return nil }
+        #endif
 
         let error = DataBrokerProtectionError.parse(params: params)
         Logger.action.log("Action Error: \(String(describing: error.localizedDescription), privacy: .public)")
@@ -157,6 +208,9 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     @MainActor
     func pushAction(method: CCFSubscribeActionName, webView: WKWebView, params: Encodable) {
+        #if os(macOS) && DEBUG
+        guard !isManualControlActive else { return }
+        #endif
         guard let broker = broker else {
             assertionFailure("Cannot continue without broker instance")
             return
@@ -180,6 +234,9 @@ public class DataBrokerProtectionFeature: Subfeature {
     private func installActionTimer(for action: Action?) {
         actionResponseTimer?.invalidate()
         actionResponseTimer = nil
+        #if os(macOS) && DEBUG
+        actionResponseTimerAction = action
+        #endif
 
         guard let action else { return }
 
@@ -213,10 +270,17 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     @MainActor
     private func handleTimeout(for action: Action) {
+        #if os(macOS) && DEBUG
+        guard !isManualControlActive else { return }
+        let generation = timeoutGeneration
+        #endif
         Logger.action.log("Action timeout: \(String(describing: action))")
 
         removeTimers()
-        Task {
+        Task { @MainActor in
+            #if os(macOS) && DEBUG
+            guard !isManualControlActive, timeoutGeneration == generation else { return }
+            #endif
             await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action.id,
                                                                                   message: "Action timed out"))
         }
@@ -236,6 +300,10 @@ public class DataBrokerProtectionFeature: Subfeature {
     private func removeTimers() {
         actionResponseTimer?.invalidate()
         actionResponseTimer = nil
+        #if os(macOS) && DEBUG
+        actionResponseTimerAction = nil
+        suspendedAction = nil
+        #endif
 
         taskCancellationTimer?.invalidate()
         taskCancellationTimer = nil

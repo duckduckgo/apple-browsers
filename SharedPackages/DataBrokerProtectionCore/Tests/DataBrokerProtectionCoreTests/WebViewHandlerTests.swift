@@ -132,6 +132,95 @@ final class WebViewHandlerTests: XCTestCase {
     }
 #endif
 
+    #if os(macOS) && DEBUG
+    @MainActor
+    func testTakeControlIsAvailableWithoutManagedChallenge() {
+        let control = PIRManualControl()
+        XCTAssertFalse(control.canTakeControl)
+        control.action = NavigateAction(id: "navigate", actionType: .navigate, url: "https://example.com")
+        XCTAssertTrue(control.canTakeControl)
+        control.pause(preservingAutomation: true)
+        XCTAssertFalse(control.canTakeControl)
+        control.endPause()
+        XCTAssertTrue(control.canTakeControl)
+    }
+
+    @MainActor
+    func testOrdinaryTakeoverPreservesInterruptedAutomationUntilResume() async throws {
+        let control = PIRManualControl()
+        let epoch = control.epoch
+        control.pause(preservingAutomation: true)
+        var didContinue = false
+        let pending = Task { @MainActor in
+            didContinue = await control.waitForAutomation(epoch)
+        }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertFalse(didContinue)
+        control.endPause()
+        await pending.value
+        XCTAssertTrue(didContinue)
+    }
+
+    @MainActor
+    func testChallengeDuringOrdinaryTakeoverDiscardsInterruptedAutomation() async {
+        let control = PIRManualControl()
+        let epoch = control.epoch
+        control.pause(preservingAutomation: true)
+        control.isManagedChallenge = true
+        let allowed = await control.waitForAutomation(epoch)
+        XCTAssertFalse(allowed)
+        XCTAssertFalse(control.preservesAutomation)
+        XCTAssertTrue(control.isPaused)
+    }
+
+    @MainActor
+    func testCancellationEndsWaitForOrdinaryManualResume() async {
+        let control = PIRManualControl()
+        let epoch = control.epoch
+        control.pause(preservingAutomation: true)
+        let pending = Task { @MainActor in await control.waitForAutomation(epoch) }
+        pending.cancel()
+        let allowed = await pending.value
+        XCTAssertFalse(allowed)
+    }
+
+    @MainActor
+    func testManagedChallengeUsesMitigatedHeaderRatherThanHTTPStatus() throws {
+        let sut = try makeWebViewHandler()
+        let url = URL(string: "https://example.com/search")!
+        sut.updateManagedChallengeState(response: HTTPURLResponse(url: url, statusCode: 403, httpVersion: nil, headerFields: [:])!)
+        XCTAssertFalse(sut.manualControl.isManagedChallenge)
+        sut.updateManagedChallengeState(response: HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["cf-mitigated": "challenge"])!)
+        XCTAssertTrue(sut.manualControl.isManagedChallenge)
+    }
+
+    @MainActor
+    func testManagedChallengeRequiresExpectedDestinationAndExplicitManualResume() throws {
+        let sut = try makeWebViewHandler()
+        let broker = URL(string: "https://example.com/search")!
+        sut.updateManagedChallengeState(response: HTTPURLResponse(url: broker, statusCode: 403, httpVersion: nil, headerFields: ["cf-mitigated": "challenge"])!)
+        sut.updateManagedChallengeState(response: HTTPURLResponse(url: URL(string: "https://unrelated.test")!, statusCode: 200, httpVersion: nil, headerFields: [:])!)
+        XCTAssertTrue(sut.manualControl.isManagedChallenge)
+        sut.manualControl.pause()
+        sut.updateManagedChallengeState(response: HTTPURLResponse(url: broker, statusCode: 200, httpVersion: nil, headerFields: [:])!)
+        XCTAssertTrue(sut.manualControl.isPaused)
+        XCTAssertTrue(sut.manualControl.isManagedChallenge)
+        XCTAssertFalse(sut.manualControl.allows(sut.manualControl.epoch))
+    }
+
+    @MainActor
+    func testManualHandoffRejectsLateAutomationAfterResume() {
+        let control = PIRManualControl()
+        let oldEpoch = control.epoch
+        XCTAssertTrue(control.allows(oldEpoch))
+        control.pause()
+        XCTAssertFalse(control.allows(oldEpoch))
+        control.endPause()
+        XCTAssertFalse(control.allows(oldEpoch))
+        XCTAssertTrue(control.allows(control.epoch))
+    }
+    #endif
+
     @MainActor
     private func makeWebViewHandler(
         applicationNameForUserAgentProvider: @escaping () -> String? = { nil },

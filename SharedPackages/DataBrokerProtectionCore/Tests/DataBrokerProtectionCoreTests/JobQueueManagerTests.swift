@@ -65,6 +65,29 @@ final class JobQueueManagerTests: XCTestCase {
                                                         applicationNameForUserAgentProvider: { nil })
     }
 
+    #if os(macOS) && DEBUG
+    func testManualControlReleasesOneQueueSlotPerPausedOperation() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        let first = UUID()
+        let second = UUID()
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, 1)
+        sut.setManualControlActive(true, operationID: first)
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, 2)
+        sut.setManualControlActive(true, operationID: first)
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, 2)
+        sut.setManualControlActive(true, operationID: second)
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, 3)
+        sut.setManualControlActive(false, operationID: first)
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, 2)
+        sut.setManualControlActive(false, operationID: second)
+        XCTAssertEqual(mockQueue.maxConcurrentOperationCount, 1)
+    }
+    #endif
+
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
         // Given
         sut = JobQueueManager(jobQueue: mockQueue,

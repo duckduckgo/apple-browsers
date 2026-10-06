@@ -26,13 +26,18 @@ public struct PIRLivePreviewFrame: Sendable {
     public let brokerName: String
     public let activity: String
     public let faviconURL: URL?
+    public let canTakeControl: Bool
+    public let isManualControl: Bool
 
-    public init(imageData: Data, operationID: UUID, brokerName: String, activity: String, faviconURL: URL? = nil) {
+    public init(imageData: Data, operationID: UUID, brokerName: String, activity: String, faviconURL: URL? = nil,
+                canTakeControl: Bool = false, isManualControl: Bool = false) {
         self.imageData = imageData
         self.operationID = operationID
         self.brokerName = brokerName
         self.activity = activity
         self.faviconURL = faviconURL
+        self.canTakeControl = canTakeControl
+        self.isManualControl = isManualControl
     }
 }
 
@@ -57,7 +62,9 @@ public final class PIRLivePreview {
         // A page can finish while WebKit captures it. Never deliver its stale frame.
         guard sources.contains(where: { $0 === source }), webView.url == pageURL else { return nil }
         return PIRLivePreviewFrame(imageData: imageData, operationID: source.operationID,
-                                   brokerName: source.brokerName, activity: activity, faviconURL: faviconURL)
+                                   brokerName: source.brokerName, activity: activity, faviconURL: faviconURL,
+                                   canTakeControl: source.handler?.manualControl.canTakeControl ?? false,
+                                   isManualControl: source.handler?.manualControl.isPaused ?? false)
     }
 
     public func register(webView: WKWebView, operationID: UUID, brokerName: String, activity: String = "Opening the broker website") {
@@ -71,6 +78,18 @@ public final class PIRLivePreview {
 
     public func unregister(operationID: UUID) {
         sources.removeAll { $0.operationID == operationID }
+    }
+
+    public var manualControlChanged: ((UUID, Bool) -> Void)?
+    public var automationResumed: (() -> Void)?
+
+    func attach(handler: DataBrokerProtectionWebViewHandler, operationID: UUID) {
+        sources.first { $0.operationID == operationID }?.handler = handler
+    }
+
+    public func takeControl(operationID: UUID) async throws -> Bool {
+        guard let handler = sources.first(where: { $0.operationID == operationID })?.handler else { return false }
+        return try await handler.takeManualControl()
     }
 
     private var sources: [Source] = []
@@ -96,6 +115,7 @@ public final class PIRLivePreview {
 
     private final class Source {
         weak var webView: WKWebView?
+        weak var handler: DataBrokerProtectionWebViewHandler?
         let operationID: UUID
         let brokerName: String
         var activity: String

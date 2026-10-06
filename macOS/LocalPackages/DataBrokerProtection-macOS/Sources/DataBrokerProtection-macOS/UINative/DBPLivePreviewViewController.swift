@@ -25,10 +25,12 @@ import DataBrokerProtectionCore
 public final class DBPLivePreviewViewController: NSViewController {
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
                 hidesWhenIdle: Bool = true,
-                scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)? = nil) {
+                scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)? = nil,
+                takeControl: (@MainActor (String) async throws -> Bool)? = nil) {
         self.agentInterface = agentInterface
         self.hidesWhenIdle = hidesWhenIdle
         self.scanProgressProvider = scanProgressProvider
+        self.takeControl = takeControl
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -97,6 +99,14 @@ public final class DBPLivePreviewViewController: NSViewController {
         progress.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(progress)
 
+        takeControlButton.title = "Take Control"
+        takeControlButton.bezelStyle = .rounded
+        takeControlButton.target = self
+        takeControlButton.action = #selector(takeControlPressed)
+        takeControlButton.isEnabled = false
+        takeControlButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(takeControlButton)
+
         let divider = NSBox()
         divider.boxType = .separator
         divider.translatesAutoresizingMaskIntoConstraints = false
@@ -114,7 +124,11 @@ public final class DBPLivePreviewViewController: NSViewController {
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
             imageView.widthAnchor.constraint(equalToConstant: 300),
             imageView.heightAnchor.constraint(equalToConstant: 300),
-            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
+            takeControlButton.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 10),
+            takeControlButton.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
+            takeControlButton.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
+            takeControlButton.heightAnchor.constraint(equalToConstant: 30),
+            takeControlButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
             progress.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
             progress.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
             progress.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
@@ -159,6 +173,9 @@ public final class DBPLivePreviewViewController: NSViewController {
 
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
     private let scanProgressProvider: (@MainActor () async throws -> DBPUIScanProgress)?
+    private let takeControl: (@MainActor (String) async throws -> Bool)?
+    private let takeControlButton = NSButton()
+    private var operationID: String?
     private let progressLabel = NSTextField(labelWithString: "Scan progress unavailable")
     private let progressSpinner = NSProgressIndicator()
     private let hidesWhenIdle: Bool
@@ -233,12 +250,15 @@ public final class DBPLivePreviewViewController: NSViewController {
             clearFrame(message: "Preview unavailable")
             return
         }
+        operationID = frame.operationID
+        takeControlButton.title = frame.isManualControl ? "You have control" : "Take Control"
+        takeControlButton.isEnabled = frame.canTakeControl && takeControl != nil
         brokerLabel.stringValue = frame.brokerName
         activityLabel.stringValue = frame.activity
         imageView.image = image
         updateFavicon(frame.faviconURL)
         placeholderLabel.isHidden = true
-        progressSpinner.startAnimation(nil)
+        if frame.isManualControl { progressSpinner.stopAnimation(nil) } else { progressSpinner.startAnimation(nil) }
         view.alphaValue = 1
     }
 
@@ -246,12 +266,31 @@ public final class DBPLivePreviewViewController: NSViewController {
         // Keep polling while the card is transparent so a new operation can reveal it.
         view.alphaValue = hidesWhenIdle ? 0 : 1
         progressSpinner.stopAnimation(nil)
+        operationID = nil
+        takeControlButton.isEnabled = false
+        takeControlButton.title = "Take Control"
         updateFavicon(nil)
         brokerLabel.stringValue = "PIR activity"
         activityLabel.stringValue = message
         imageView.image = nil
         placeholderLabel.stringValue = "Waiting for a broker page"
         placeholderLabel.isHidden = false
+    }
+
+    @objc private func takeControlPressed() {
+        guard let operationID, let takeControl else { return }
+        takeControlButton.isEnabled = false
+        Task { @MainActor [weak self] in
+            do {
+                guard try await takeControl(operationID) else {
+                    self?.activityLabel.stringValue = "This step is no longer available"
+                    return
+                }
+                self?.requestFrameIfVisible()
+            } catch {
+                self?.activityLabel.stringValue = "Could not pause this operation"
+            }
+        }
     }
 
     private func updateFavicon(_ url: URL?) {
@@ -292,6 +331,8 @@ public final class DBPLivePreviewViewController: NSViewController {
 private final class PreviewCardView: NSVisualEffectView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard alphaValue > 0, super.hitTest(point) != nil else { return nil }
+        let hit = super.hitTest(point)
+        if hit is NSButton { return hit }
         return self
     }
 

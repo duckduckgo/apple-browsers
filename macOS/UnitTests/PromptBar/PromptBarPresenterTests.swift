@@ -104,8 +104,9 @@ final class PromptBarPresenterTests: XCTestCase {
         presenter.dismiss(reason: .submission)
         presenter.show(source: .menuBarIcon)
 
-        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.shownFromShortcut.name,
-                                                 PromptBarPixel.shownFromMenuBarIcon.name])
+        let firstUse = PromptBarPixel.firstUse(source: .keyboardShortcut, promoOutcome: nil).name
+        XCTAssertEqual(firedPixels.map(\.name), [PromptBarPixel.shownFromShortcut.name, firstUse,
+                                                 PromptBarPixel.shownFromMenuBarIcon.name, firstUse])
     }
 
     func testWhenDismissedAfterSubmittingThenNoCancellationIsReported() {

@@ -59,6 +59,7 @@ final class DuckAiLauncherPromoTests: XCTestCase {
                                         preferences: preferences,
                                         chatCountPublisher: chatCount.eraseToAnyPublisher(),
                                         keyValueStore: keyValueStore,
+                                        surface: .newTab,
                                         openSettings: { [weak self] in self?.openSettingsCount += 1 })
         RunLoop.main.run(until: Date().addingTimeInterval(0.01))
         return promo

@@ -284,6 +284,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private var isShowingLauncherPromo = false
     /// Another message held the card during this opening, so the promo waits for the next one.
     private var isLauncherPromoDeferred = false
+    private var didReportLauncherPromoShown = false
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
@@ -1368,6 +1369,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         usageWarningCardView.update(with: promo)
         isShowingLauncherPromo = true
         setUsageWarningVisible(!isSuggestionsCollapsedByUnfocus)
+        if isUsageWarningVisible, !didReportLauncherPromoShown {
+            didReportLauncherPromoShown = true
+            launcherPromo?.shown()
+        }
     }
 
     /// Re-resolves the notice and re-applies whichever message wins. The warning half is published,
@@ -1543,6 +1548,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         highUsageNoticeSource?.clear()
         isShowingLauncherPromo = false
         isLauncherPromoDeferred = false
+        didReportLauncherPromoShown = false
         applyUsageWarningVisibility(false)
         usageWarningShadowView.removeFromSuperview()
     }

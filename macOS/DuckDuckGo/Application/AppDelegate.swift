@@ -2620,7 +2620,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
-            presenter: PromptBarPresenter(content: content)
+            presenter: PromptBarPresenter(content: content,
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
         )
         coordinator.start()
         promptBarCoordinator = coordinator

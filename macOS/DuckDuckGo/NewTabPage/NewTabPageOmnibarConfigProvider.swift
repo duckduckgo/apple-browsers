@@ -510,7 +510,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     @MainActor
-    func launcherPromoShown() {}
+    func launcherPromoShown() {
+        duckAiLauncherPromo?.shown()
+    }
 
     @MainActor
     func selectLauncherPromoCta() {

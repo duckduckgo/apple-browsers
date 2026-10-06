@@ -26,6 +26,13 @@ enum PromptBarPresentationSource: Equatable, CaseIterable {
     case keyboardShortcut
     case menuBarIcon
 
+    var pixelValue: String {
+        switch self {
+        case .keyboardShortcut: "shortcut"
+        case .menuBarIcon: "menu_bar_icon"
+        }
+    }
+
     var shownPixel: PromptBarPixel {
         switch self {
         case .keyboardShortcut: .shownFromShortcut
@@ -77,6 +84,7 @@ final class PromptBarPresenter: PromptBarPresenting {
     private let screenProvider: PromptBarScreenProviding
     private let makeWindow: (NSRect) -> PromptBarWindow
     private let firePixel: (PromptBarPixel) -> Void
+    private let promoOutcome: () -> DuckAiLauncherPromoOutcome?
 
     private var window: PromptBarWindow?
     private var resignKeyCancellable: AnyCancellable?
@@ -89,10 +97,18 @@ final class PromptBarPresenter: PromptBarPresenting {
     init(content: PromptBarContentHosting,
          screenProvider: PromptBarScreenProviding? = nil,
          makeWindow: @escaping (NSRect) -> PromptBarWindow = { PromptBarWindow(contentRect: $0) },
-         firePixel: @escaping (PromptBarPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
+         promoOutcome: @escaping () -> DuckAiLauncherPromoOutcome? = { nil },
+         firePixel: @escaping (PromptBarPixel) -> Void = { pixel in
+            if case .firstUse = pixel {
+                PixelKit.fire(pixel, frequency: .uniqueByName, includeAppVersionParameter: true)
+            } else {
+                PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
+         }) {
         self.content = content
         self.screenProvider = screenProvider ?? MouseLocationScreenProvider()
         self.makeWindow = makeWindow
+        self.promoOutcome = promoOutcome
         self.firePixel = firePixel
 
         self.content.onSubmit = { [weak self] in
@@ -128,6 +144,7 @@ final class PromptBarPresenter: PromptBarPresenting {
         subscribeToResignKey(of: window)
 
         firePixel(source.shownPixel)
+        firePixel(.firstUse(source: source, promoOutcome: promoOutcome()))
     }
 
     func dismiss(reason: PromptBarDismissReason) {

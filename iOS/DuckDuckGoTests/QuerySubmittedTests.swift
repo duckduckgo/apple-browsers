@@ -22,6 +22,8 @@ import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
+import Testing
+import FeatureFlags_iOS
 
 @testable import DuckDuckGo
 
@@ -295,6 +297,88 @@ class QuerySubmittedTests: XCTestCase {
 
         XCTAssertEqual(mock.query, expected)
         XCTAssertFalse(mock.wasOnOmniSuggestionSelectedCalled)
+    }
+}
+
+@MainActor
+final class NewTabPageAppOpenFocusTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("New Tab app-open focus activates unified input before the legacy field is visible", .timeLimit(.minutes(1)), arguments: [false, true])
+    func appOpenFocusActivatesUnifiedInput(flagOn: Bool) {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let activating = RecordingUnifiedInputActivator()
+        sut.unifiedToggleInputOmnibarActivating = activating
+        sut.loadViewIfNeeded()
+        sut.barView.textField.text = "  search words  "
+        #expect(sut.view.window == nil)
+        #expect(sut.expandableBarView?.isSearchAreaExpanded == false)
+
+        sut.beginEditingOnNewTabPageAppOpen()
+
+        #expect(activating.callCount == (flagOn ? 1 : 0))
+        #expect(!sut.barView.textField.isFirstResponder)
+        if flagOn {
+            #expect(activating.currentText == "search words")
+            #expect(activating.tapped == false)
+            #expect(activating.textEntryMode == nil)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("New Tab app-open focus follows flag changes on the same controller", .timeLimit(.minutes(1)), arguments: [false, true])
+    func appOpenFocusFollowsFlagChanges(initiallyEnabled: Bool) {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.alwaysShowKeyboardOnNewTabPage] : [])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let activating = RecordingUnifiedInputActivator()
+        sut.unifiedToggleInputOmnibarActivating = activating
+        sut.loadViewIfNeeded()
+
+        sut.beginEditingOnNewTabPageAppOpen()
+        #expect(activating.callCount == (initiallyEnabled ? 1 : 0))
+
+        featureFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.alwaysShowKeyboardOnNewTabPage]
+        sut.beginEditingOnNewTabPageAppOpen()
+
+        #expect(activating.callCount == 1)
+        #expect(activating.currentText == nil)
+        #expect(activating.tapped == false)
+        #expect(activating.textEntryMode == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Other programmatic focus keeps the legacy path with the flag enabled", .timeLimit(.minutes(1)))
+    func otherProgrammaticFocusKeepsLegacyPath() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.alwaysShowKeyboardOnNewTabPage])
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+                                               isFloatingUIEnabled: false)
+        let activating = RecordingUnifiedInputActivator()
+        sut.unifiedToggleInputOmnibarActivating = activating
+        sut.loadViewIfNeeded()
+        #expect(sut.view.window == nil)
+
+        sut.beginEditing(animated: true, forTextEntryMode: .aiChat)
+
+        #expect(activating.callCount == 0)
+        #expect(!sut.barView.textField.isFirstResponder)
+    }
+}
+
+private final class RecordingUnifiedInputActivator: UnifiedToggleInputOmnibarActivating {
+    private(set) var callCount = 0
+    private(set) var currentText: String?
+    private(set) var tapped: Bool?
+    private(set) var textEntryMode: TextEntryMode?
+
+    func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?) -> UnifiedToggleInputActivationDecision {
+        callCount += 1
+        self.currentText = currentText
+        self.tapped = tapped
+        self.textEntryMode = textEntryMode
+        return .intercept
     }
 }
 

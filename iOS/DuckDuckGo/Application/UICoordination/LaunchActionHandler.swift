@@ -115,16 +115,13 @@ final class LaunchActionHandler: LaunchActionHandling {
             userActivityHandler.handleUserActivity(userActivity)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground):
             launchSourceManager.setSource(.standard)
-            let timeAwayMs = lastBackgroundDate.map { Int(Date().timeIntervalSince($0) * 1000) }
-            if idleReturnEvaluator.didReturnAfterIdle(lastBackgroundDate: lastBackgroundDate) {
-                switch idleReturnEvaluator.treatmentForIdleReturn() {
-                case .ntp:
-                    idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
-                    return
-                case .lut:
-                    idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
-                }
-            } else {
+            switch idleReturnEvaluator.evaluateReturn() {
+            case .afterIdle(.ntp, let timeAwayMs):
+                idleReturnDelegate?.showNewTabPageAfterIdleReturn(timeAwayMs: timeAwayMs)
+                return
+            case .afterIdle(.lut, let timeAwayMs):
+                idleReturnDelegate?.markLastUsedTabAsResumedAfterIdle(timeAwayMs: timeAwayMs)
+            case .ordinary(let timeAwayMs):
                 idleReturnDelegate?.recordOrdinaryReturn(timeAwayMs: timeAwayMs)
             }
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: isFirstForeground ? nil : lastBackgroundDate)

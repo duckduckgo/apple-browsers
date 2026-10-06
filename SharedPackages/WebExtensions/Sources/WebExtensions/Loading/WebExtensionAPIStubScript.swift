@@ -18,39 +18,13 @@
 
 import Foundation
 
-/// JavaScript injected at document start into every page an extension owns, ahead of the
-/// extension's own scripts (see `WebExtensionLoader`, which adds it for third-party extensions).
+/// JavaScript that defines placeholders for the `chrome.*` APIs WebKit doesn't implement, so an
+/// extension built for Chrome keeps running when it uses them instead of throwing.
 ///
-/// WebKit implements a subset of the `chrome.*` extension API. In a background page these
-/// namespaces are undefined even when the matching permission is declared *and* granted:
-/// `notifications`, `offscreen`, `downloads`, `idle`, `management`, `privacy`, `browsingData`,
-/// `topSites`, `sidePanel`. Sub-namespaces and events on namespaces that *do* exist can be
-/// missing too — `storage.managed` and `webNavigation.onCreatedNavigationTarget`, for instance.
-///
-/// Chrome builds routinely touch those APIs at the top level of their background script — the
-/// Bitwarden extension calls `chrome.notifications.onClicked.addListener(...)` while wiring up its
-/// listeners — and a missing namespace makes that a `TypeError` on the very first statement, which
-/// aborts the whole startup: no listeners are registered and the extension never initializes.
-///
-/// Defining inert stubs for the missing pieces lets that top-level code run to completion, so the
-/// listeners for the APIs WebKit *does* implement get registered and the extension comes up. The
-/// stubbed calls themselves do nothing; the feature behind them stays unavailable either way, the
-/// difference is whether the rest of the extension works. Most stubs are generic and resolve to
-/// `undefined`; where callers read straight off the result — `storage.managed.get()` — the stub is
-/// shaped to answer with the empty value Chrome would return.
-///
-/// One behavior of the host is worth calling out, established by measurement on macOS 26.6.2:
-/// - `chrome.webNavigation`, `chrome.tabs` and friends are native wrapper objects that WebKit
-///   discards once JavaScript stops referencing them, taking any property we added with them: an
-///   event stub installed on `chrome.webNavigation` vanished within about half a second. The script
-///   therefore parks every object it decorates in a retention array on `globalThis`, which kept the
-///   stubs alive for the lifetime of the background page.
-///
-/// Note that stubs are only installed for names that are actually missing, so a future WebKit that
-/// implements one of them wins automatically.
-///
-/// The script also reports its stub calls to the API compatibility log, through
-/// `WebExtensionAPICompatibilityScript`.
+/// A placeholder accepts any call and does nothing: it answers `undefined`, or an empty value where
+/// callers read from the result, like `storage.managed.get()`. Only missing names are filled, so the
+/// APIs WebKit implements are left alone. The script does nothing in our own extensions, and it
+/// reports calls to placeholders to the API compatibility log.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native

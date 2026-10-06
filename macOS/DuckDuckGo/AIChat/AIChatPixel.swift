@@ -177,10 +177,11 @@ enum AIChatPixel: PixelKit.Event {
 
     // MARK: - Address bar toggle pixels
 
-    /// Event Trigger: User selects address bar and toggle settings is ON (duck.ai mode)
+    /// Event Trigger: User activates the address bar while Duck.ai is enabled and the Search & Duck.ai toggle setting is on.
+    /// Reports the setting, not the toggle's current mode.
     case aiChatAddressBarActivatedToggleOn
 
-    /// Event Trigger: User selects address bar and toggle settings is OFF (search mode)
+    /// Event Trigger: User activates the address bar while Duck.ai is enabled and the Search & Duck.ai toggle setting is off
     case aiChatAddressBarActivatedToggleOff
 
     /// Event Trigger: User changes toggle to duck.ai

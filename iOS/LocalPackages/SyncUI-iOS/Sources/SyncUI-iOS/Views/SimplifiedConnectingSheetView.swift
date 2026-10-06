@@ -49,7 +49,7 @@ public struct SimplifiedConnectingSheetView: View {
                     isRecovery: false,
                     isFinishing: false,
                     isWaitingForOtherDevice: true,
-                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                    onAnimationFinished: {}
                 )
             case .success(let isRecovery):
                 SyncSuccessView(model: model, isRecovery: isRecovery)

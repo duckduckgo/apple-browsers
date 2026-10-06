@@ -4806,6 +4806,13 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        guard isViewLoaded,
+              let viewCoordinator,
+              viewCoordinator.toolbar != nil,
+              viewCoordinator.navigationBarContainer != nil,
+              viewCoordinator.tabBarContainer != nil else { return }
+        guard !animated || viewIfLoaded?.window != nil else { return }
+
         lastChromeVisibilityPercent = percent
 
         if percent < 1 {
@@ -4832,22 +4839,23 @@ extension MainViewController: BrowserChromeDelegate {
                 percent,
                 fullTraversalDuration: animationDuration.map(Double.init),
                 onProgress: { [weak self] progress in
-                    guard let self else { return }
+                    guard let self, let view = self.viewIfLoaded, view.window != nil else { return }
                     self.applyBarsVisibilityState(progress, postChromeVisibilityNotification: false)
-                    self.view.layoutIfNeeded()
+                    view.layoutIfNeeded()
                 },
                 onComplete: { [weak self] in
-                    guard let self else { return }
+                    guard let self, let view = self.viewIfLoaded, view.window != nil else { return }
                     let settled = self.lastChromeVisibilityPercent
                     self.applyBarsVisibilityState(settled, postChromeVisibilityNotification: settled == 0 || settled == 1)
-                    self.view.layoutIfNeeded()
+                    view.layoutIfNeeded()
                 })
         } else if animated {
             chromeMorphAnimator.jump(to: percent)
             self.view.layoutIfNeeded()
-            UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
+            UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) { [weak self] in
+                guard let self, let view = self.viewIfLoaded, view.window != nil else { return }
                 self.applyBarsVisibilityState(percent, postChromeVisibilityNotification: postNotification)
-                self.view.layoutIfNeeded()
+                view.layoutIfNeeded()
             }
         } else {
             chromeMorphAnimator.jump(to: percent)
@@ -4871,6 +4879,12 @@ extension MainViewController: BrowserChromeDelegate {
     /// the floating capsule morph scrub. `.browserChromeVisibilityChanged` is posted only when
     /// requested (the settled 0/1 endpoints), so intermediate scrub frames don't emit it.
     private func applyBarsVisibilityState(_ percent: CGFloat, postChromeVisibilityNotification: Bool) {
+        guard isViewLoaded,
+              let viewCoordinator,
+              let toolbar = viewCoordinator.toolbar,
+              let navigationBarContainer = viewCoordinator.navigationBarContainer,
+              let tabBarContainer = viewCoordinator.tabBarContainer else { return }
+
         if isFloatingUIEnabled {
             viewCoordinator.ensureBottomOmnibarAttachedToToolbarIfNeeded()
         }
@@ -4881,7 +4895,7 @@ extension MainViewController: BrowserChromeDelegate {
                 collapseStart: FloatingDomainCapsuleController.handoffStart
               )
             : 0
-        let panelHeight = viewCoordinator.toolbar.setButtonRowCollapseProgress(
+        let panelHeight = toolbar.setButtonRowCollapseProgress(
             buttonCollapseProgress,
             reduceMotion: reduceMotion
         )
@@ -4890,7 +4904,7 @@ extension MainViewController: BrowserChromeDelegate {
         let standaloneCollapseProgress = isFloatingCapsuleActive && !viewCoordinator.isOmnibarInToolbar && !reduceMotion
             ? 1 - percent
             : 0
-        viewCoordinator.toolbar.setStandaloneCollapseProgress(standaloneCollapseProgress, reduceMotion: reduceMotion)
+        toolbar.setStandaloneCollapseProgress(standaloneCollapseProgress, reduceMotion: reduceMotion)
 
         updateToolbarConstant(percent)
         updateNavBarConstant(percent)
@@ -4898,13 +4912,13 @@ extension MainViewController: BrowserChromeDelegate {
         updateFloatingTopNewTabPageInset(for: percent)
 
         let chromeAlpha = chromeAlpha(for: percent)
-        viewCoordinator.navigationBarContainer.alpha = chromeAlpha
-        viewCoordinator.tabBarContainer.alpha = chromeAlpha
+        navigationBarContainer.alpha = chromeAlpha
+        tabBarContainer.alpha = chromeAlpha
         if isWindowControlsRowEnabled {
             tabsBarController?.setCurrentTabSelectionAlpha(currentTabSelectionAlpha(for: chromeAlpha))
         }
         if !isTabSwitcherTransitionOwningToolbar {
-            viewCoordinator.toolbar.alpha = toolbarAlpha(for: percent)
+            toolbar.alpha = toolbarAlpha(for: percent)
         }
         updateFloatingDomainCapsuleVisibility(for: percent)
 
